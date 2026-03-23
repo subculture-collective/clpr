@@ -1,6 +1,11 @@
 import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface ToastProps {
   id: string;
   /**
@@ -12,6 +17,10 @@ export interface ToastProps {
    * Toast message
    */
   message: string;
+  /**
+   * Optional action button (e.g. "Undo")
+   */
+  action?: ToastAction;
   /**
    * Duration in milliseconds before auto-dismiss
    * @default 3000
@@ -67,16 +76,17 @@ export const Toast: React.FC<ToastProps> = ({
   id,
   variant = 'info',
   message,
+  action,
   duration = 3000,
   onDismiss,
 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onDismiss(id);
-    }, duration);
+    }, action ? Math.max(duration, 5000) : duration);
 
     return () => clearTimeout(timer);
-  }, [id, duration, onDismiss]);
+  }, [id, duration, action, onDismiss]);
 
   return (
     <div
@@ -97,6 +107,17 @@ export const Toast: React.FC<ToastProps> = ({
       <div className="flex-1 text-sm font-medium">
         {message}
       </div>
+      {action && (
+        <button
+          onClick={() => {
+            action.onClick();
+            onDismiss(id);
+          }}
+          className="flex-shrink-0 text-sm font-bold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
+        >
+          {action.label}
+        </button>
+      )}
       <button
         onClick={() => onDismiss(id)}
         className="flex-shrink-0 hover:opacity-70 transition-opacity cursor-pointer"

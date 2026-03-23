@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Card, Button, Badge, Spinner, Alert, Modal, TextArea } from '../../components';
+import { Film, MessageSquare, User as UserIcon, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { listReports, updateReport } from '../../lib/report-api';
@@ -106,13 +107,13 @@ export function AdminReportsPage() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'clip':
-        return '🎬';
+        return <Film size={16} strokeWidth={1.75} />;
       case 'comment':
-        return '💬';
+        return <MessageSquare size={16} strokeWidth={1.75} />;
       case 'user':
-        return '👤';
+        return <UserIcon size={16} strokeWidth={1.75} />;
       default:
-        return '📝';
+        return <FileText size={16} strokeWidth={1.75} />;
     }
   };
 
@@ -208,7 +209,7 @@ export function AdminReportsPage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{getTypeIcon(report.reportable_type)}</span>
+                    {getTypeIcon(report.reportable_type)}
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium capitalize">{report.reportable_type}</span>

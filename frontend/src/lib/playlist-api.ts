@@ -48,3 +48,23 @@ export async function removeClipFromPlaylist(
 ): Promise<void> {
     await apiClient.delete(`/playlists/${playlistId}/clips/${clipId}`);
 }
+
+/**
+ * Fetch bookmarked playlists for the current user
+ */
+export async function fetchBookmarkedPlaylists(page = 1, limit = 20): Promise<{
+    playlists: Playlist[];
+    total: number;
+    has_next: boolean;
+}> {
+    const response = await apiClient.get<{
+        success: boolean;
+        data: Playlist[];
+        meta: { total: number; has_next: boolean };
+    }>(`/playlists/bookmarks?page=${page}&limit=${limit}`);
+    return {
+        playlists: response.data.data || [],
+        total: response.data.meta?.total || 0,
+        has_next: response.data.meta?.has_next || false,
+    };
+}

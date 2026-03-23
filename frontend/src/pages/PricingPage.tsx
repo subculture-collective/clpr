@@ -110,21 +110,21 @@ export default function PricingPage() {
                 description='Upgrade to clpr Pro for an ad-free experience, advanced search and filtering, priority support, and exclusive features. Choose monthly or yearly billing.'
                 canonicalUrl='/pricing'
             />
-            <div className='min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8'>
+            <div className='min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8'>
                 <div className='max-w-7xl mx-auto'>
                     {/* Header */}
                     <div className='text-center mb-12'>
                         <h1 className='text-4xl font-bold text-white mb-4'>
                             Upgrade to clpr Pro
                         </h1>
-                        <p className='text-xl text-gray-400'>
+                        <p className='text-xl text-muted-foreground'>
                             Get the most out of clpr with exclusive Pro features
                         </p>
                     </div>
 
                     {/* Billing period toggle */}
                     <div className='flex justify-center mb-12'>
-                        <div className='bg-gray-800 rounded-lg p-1 inline-flex'>
+                        <div className='bg-surface rounded-lg p-1 inline-flex'>
                             <button
                                 onClick={() =>
                                     handleBillingPeriodChange('monthly')
@@ -132,7 +132,7 @@ export default function PricingPage() {
                                 className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
                                     billingPeriod === 'monthly'
                                         ? 'bg-purple-600 text-white'
-                                        : 'text-gray-400 hover:text-white'
+                                        : 'text-muted-foreground hover:text-white'
                                 }`}
                             >
                                 Monthly
@@ -144,7 +144,7 @@ export default function PricingPage() {
                                 className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
                                     billingPeriod === 'yearly'
                                         ? 'bg-purple-600 text-white'
-                                        : 'text-gray-400 hover:text-white'
+                                        : 'text-muted-foreground hover:text-white'
                                 }`}
                             >
                                 Yearly
@@ -158,12 +158,12 @@ export default function PricingPage() {
                     {/* Pricing cards */}
                     <div className='grid md:grid-cols-2 gap-8 max-w-4xl mx-auto'>
                         {/* Free Plan */}
-                        <div className='bg-gray-800 rounded-lg p-8 border border-gray-700'>
+                        <div className='bg-surface rounded-lg p-8 border border-border'>
                             <div className='mb-6'>
                                 <h2 className='text-2xl font-bold text-white mb-2'>
                                     Free
                                 </h2>
-                                <p className='text-gray-400'>
+                                <p className='text-muted-foreground'>
                                     Perfect for casual users
                                 </p>
                             </div>
@@ -172,7 +172,7 @@ export default function PricingPage() {
                                 <span className='text-4xl font-bold text-white'>
                                     $0
                                 </span>
-                                <span className='text-gray-400'>/month</span>
+                                <span className='text-muted-foreground'>/month</span>
                             </div>
 
                             <ul className='space-y-3 mb-8'>
@@ -190,7 +190,7 @@ export default function PricingPage() {
                                             d='M5 13l4 4L19 7'
                                         />
                                     </svg>
-                                    <span className='text-gray-300'>
+                                    <span className='text-foreground'>
                                         Browse all clips
                                     </span>
                                 </li>
@@ -208,7 +208,7 @@ export default function PricingPage() {
                                             d='M5 13l4 4L19 7'
                                         />
                                     </svg>
-                                    <span className='text-gray-300'>
+                                    <span className='text-foreground'>
                                         Basic search
                                     </span>
                                 </li>
@@ -226,7 +226,7 @@ export default function PricingPage() {
                                             d='M5 13l4 4L19 7'
                                         />
                                     </svg>
-                                    <span className='text-gray-300'>
+                                    <span className='text-foreground'>
                                         Vote and comment
                                     </span>
                                 </li>
@@ -244,7 +244,7 @@ export default function PricingPage() {
                                             d='M5 13l4 4L19 7'
                                         />
                                     </svg>
-                                    <span className='text-gray-300'>
+                                    <span className='text-foreground'>
                                         Create favorites
                                     </span>
                                 </li>
@@ -252,7 +252,7 @@ export default function PricingPage() {
 
                             <button
                                 disabled
-                                className='w-full py-3 px-6 rounded-md bg-gray-700 text-gray-400 font-medium cursor-not-allowed'
+                                className='w-full py-3 px-6 rounded-md bg-surface text-muted-foreground font-medium cursor-not-allowed'
                             >
                                 Current Plan
                             </button>
@@ -260,7 +260,7 @@ export default function PricingPage() {
 
                         {/* Pro Plan */}
                         <div className='bg-linear-to-br from-purple-600 to-indigo-600 rounded-lg p-8 border-2 border-purple-400 shadow-xl relative'>
-                            <div className='absolute top-0 right-0 bg-yellow-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg'>
+                            <div className='absolute top-0 right-0 bg-yellow-400 text-background text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg'>
                                 POPULAR
                             </div>
 
@@ -327,7 +327,7 @@ export default function PricingPage() {
                             <button
                                 onClick={() => handleSubscribe(billingPeriod)}
                                 disabled={isLoading !== null}
-                                className='w-full py-3 px-6 rounded-md bg-white text-purple-600 font-bold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                className='w-full py-3 px-6 rounded-md bg-white text-purple-600 font-bold hover:bg-surface-raised transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                             >
                                 {isLoading === billingPeriod
                                     ? 'Processing...'
@@ -338,11 +338,11 @@ export default function PricingPage() {
 
                     {/* FAQ or additional info */}
                     <div className='mt-16 text-center'>
-                        <p className='text-gray-400 mb-4'>
+                        <p className='text-muted-foreground mb-4'>
                             Cancel anytime. No hidden fees. Secure payment with
                             Stripe.
                         </p>
-                        <p className='text-sm text-gray-500'>
+                        <p className='text-sm text-muted-foreground'>
                             Have questions?{' '}
                             <Link
                                 to='/support'

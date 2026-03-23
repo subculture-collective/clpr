@@ -155,8 +155,15 @@ export function PlaylistDetail() {
         try {
             if (data?.data?.is_bookmarked) {
                 await unbookmarkMutation.mutateAsync(id);
+                toast.success('Bookmark removed', {
+                    action: {
+                        label: 'Undo',
+                        onClick: () => bookmarkMutation.mutate(id),
+                    },
+                });
             } else {
                 await bookmarkMutation.mutateAsync(id);
+                toast.success('Playlist bookmarked');
             }
         } catch {
             toast.error('Failed to update bookmark');

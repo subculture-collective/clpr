@@ -253,7 +253,7 @@ export function ProfilePage() {
                                         {!user.is_verified && (
                                             <Link
                                                 to='/verification/apply'
-                                                className='inline-block text-xs xs:text-sm text-blue-600 dark:text-blue-400 hover:underline'
+                                                className='inline-block text-xs xs:text-sm text-primary-600 hover:underline'
                                             >
                                                 Apply for verification →
                                             </Link>

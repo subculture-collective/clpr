@@ -2,6 +2,7 @@ import { useAddToQueue, useQueue } from '@/hooks/useQueue';
 import { useIsAuthenticated, useToast } from '@/hooks';
 import { useAuth } from '@/context/AuthContext';
 import { AxiosError } from 'axios';
+import { ListPlus, Check } from 'lucide-react';
 
 interface AddToQueueButtonProps {
     clipId: string;
@@ -71,38 +72,13 @@ export function AddToQueueButton({ clipId }: AddToQueueButtonProps) {
                 : 'Add to queue'
             }
         >
-            <svg
-                className='w-5 h-5 shrink-0'
-                fill={isInQueue ? 'currentColor' : 'none'}
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                {isInQueue ? (
-                    <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M5 13l4 4L19 7'
-                    />
-                ) : (
-                    <>
-                        <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M12 4v16m8-8H4'
-                        />
-                        <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h2M15 5h2a2 2 0 012 2v10a2 2 0 01-2 2h-2'
-                        />
-                    </>
-                )}
-            </svg>
+            {isInQueue ? (
+                <Check size={18} className='shrink-0' strokeWidth={1.75} />
+            ) : (
+                <ListPlus size={18} className='shrink-0' strokeWidth={1.75} />
+            )}
             <span className='hidden sm:inline'>
-                {isInQueue ? 'In Queue' : 'Add to Queue'}
+                {isInQueue ? 'In Queue' : 'Queue'}
             </span>
         </button>
     );

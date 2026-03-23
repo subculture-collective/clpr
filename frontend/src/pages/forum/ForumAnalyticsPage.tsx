@@ -59,7 +59,7 @@ export function ForumAnalyticsPage() {
           {/* Header */}
           <Link
             to="/forum"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Forum</span>
@@ -68,7 +68,7 @@ export function ForumAnalyticsPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Forum Analytics</h1>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Community insights and trending discussions
               </p>
             </div>
@@ -81,7 +81,7 @@ export function ForumAnalyticsPage() {
                 <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-red-400 font-semibold mb-1">Failed to load analytics</h3>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-foreground text-sm">
                     {analyticsError && 'Unable to fetch analytics data. '}
                     {popularError && 'Unable to fetch popular discussions. '}
                     {helpfulError && 'Unable to fetch helpful replies. '}
@@ -95,8 +95,8 @@ export function ForumAnalyticsPage() {
           {/* Loading State */}
           {analyticsLoading && (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="text-gray-400 mt-4">Loading analytics...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+              <p className="text-muted-foreground mt-4">Loading analytics...</p>
             </div>
           )}
 
@@ -104,12 +104,12 @@ export function ForumAnalyticsPage() {
           {!analyticsLoading && analyticsData && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {/* Total Threads */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <FileText className="w-5 h-5 text-blue-400" />
+                  <div className="p-2 bg-primary-500/10 rounded-lg">
+                    <FileText className="w-5 h-5 text-primary-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     Total Threads
                   </h3>
                 </div>
@@ -117,12 +117,12 @@ export function ForumAnalyticsPage() {
               </div>
 
               {/* Total Replies */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-green-500/10 rounded-lg">
                     <MessageSquare className="w-5 h-5 text-green-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     Total Replies
                   </h3>
                 </div>
@@ -130,12 +130,12 @@ export function ForumAnalyticsPage() {
               </div>
 
               {/* Active Users */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-purple-500/10 rounded-lg">
                     <Users className="w-5 h-5 text-purple-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     Total Users
                   </h3>
                 </div>
@@ -143,12 +143,12 @@ export function ForumAnalyticsPage() {
               </div>
 
               {/* Posts Today */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-orange-500/10 rounded-lg">
                     <Activity className="w-5 h-5 text-orange-400" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     Posts Today
                   </h3>
                 </div>
@@ -161,56 +161,56 @@ export function ForumAnalyticsPage() {
           {!analyticsLoading && analyticsData && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {/* This Week */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <Clock className="w-5 h-5 text-blue-400" />
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <Clock className="w-5 h-5 text-primary-400" />
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     This Week
                   </h3>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Posts:</span>
+                    <span className="text-muted-foreground">Posts:</span>
                     <span className="text-white font-semibold">{analyticsData.posts_this_week}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Active Users:</span>
+                    <span className="text-muted-foreground">Active Users:</span>
                     <span className="text-white font-semibold">{analyticsData.active_users_week}</span>
                   </div>
                 </div>
               </div>
 
               {/* This Month */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <Calendar className="w-5 h-5 text-green-400" />
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     This Month
                   </h3>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Posts:</span>
+                    <span className="text-muted-foreground">Posts:</span>
                     <span className="text-white font-semibold">{analyticsData.posts_this_month}</span>
                   </div>
                 </div>
               </div>
 
               {/* Today's Activity */}
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <Activity className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     Today
                   </h3>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Posts:</span>
+                    <span className="text-muted-foreground">Posts:</span>
                     <span className="text-white font-semibold">{analyticsData.posts_today}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Active Users:</span>
+                    <span className="text-muted-foreground">Active Users:</span>
                     <span className="text-white font-semibold">{analyticsData.active_users_today}</span>
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export function ForumAnalyticsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Trending Topics */}
             {!analyticsLoading && analyticsData && (
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="w-5 h-5 text-orange-400" />
                   <h2 className="text-xl font-semibold text-white">Trending Topics</h2>
@@ -232,21 +232,21 @@ export function ForumAnalyticsPage() {
                       <Link
                         key={topic}
                         to={`/forum?tags=${encodeURIComponent(topic)}`}
-                        className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-full text-sm text-gray-300 hover:text-white transition-colors"
+                        className="px-3 py-1.5 bg-surface hover:bg-surface-hover border border-subtle rounded-full text-sm text-foreground hover:text-white transition-colors"
                       >
                         #{topic}
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400">No trending topics yet</p>
+                  <p className="text-muted-foreground">No trending topics yet</p>
                 )}
               </div>
             )}
 
             {/* Top Contributors */}
             {!analyticsLoading && analyticsData && analyticsData.top_contributors && (
-              <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <div className="bg-background border border-border rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <Award className="w-5 h-5 text-yellow-400" />
                   <h2 className="text-xl font-semibold text-white">Top Contributors</h2>
@@ -256,28 +256,28 @@ export function ForumAnalyticsPage() {
                     {analyticsData.top_contributors.map((contributor: UserContribution, index: number) => (
                       <div
                         key={contributor.user_id}
-                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-surface rounded-lg"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-gray-500 font-semibold w-6 text-center">
+                          <span className="text-muted-foreground font-semibold w-6 text-center">
                             #{index + 1}
                           </span>
                           <div>
                             <p className="text-white font-medium">{contributor.username}</p>
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-muted-foreground">
                               {contributor.thread_count} threads, {contributor.reply_count} replies
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-400">Reputation</p>
+                          <p className="text-sm text-muted-foreground">Reputation</p>
                           <p className="text-white font-semibold">{contributor.reputation_score}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400">No contributors yet</p>
+                  <p className="text-muted-foreground">No contributors yet</p>
                 )}
               </div>
             )}
@@ -303,17 +303,17 @@ export function ForumAnalyticsPage() {
                 {helpfulReplies.map((reply: HelpfulReply) => (
                   <div
                     key={reply.id}
-                    className="bg-gray-900 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors"
+                    className="bg-background border border-border rounded-lg p-6 hover:border-subtle transition-colors"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <Link
                           to={`/forum/threads/${reply.thread_id}`}
-                          className="text-lg font-semibold text-white hover:text-blue-400 transition-colors"
+                          className="text-lg font-semibold text-white hover:text-primary-400 transition-colors"
                         >
                           {reply.thread_title}
                         </Link>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           by {reply.username}
                         </p>
                       </div>
@@ -329,13 +329,13 @@ export function ForumAnalyticsPage() {
                         <span className={`text-sm font-semibold ${
                           reply.net_votes > 0 ? 'text-green-400' :
                           reply.net_votes < 0 ? 'text-red-400' :
-                          'text-gray-400'
+                          'text-muted-foreground'
                         }`}>
                           Net: {reply.net_votes}
                         </span>
                       </div>
                     </div>
-                    <p className="text-gray-300 line-clamp-3">{reply.content}</p>
+                    <p className="text-foreground line-clamp-3">{reply.content}</p>
                   </div>
                 ))}
               </div>

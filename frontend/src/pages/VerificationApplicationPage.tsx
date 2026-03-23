@@ -167,17 +167,17 @@ export function VerificationApplicationPage() {
         return (
             <Container>
                 <div className="py-8 max-w-3xl mx-auto">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
                         Creator Verification Application
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    <p className="text-muted-foreground mb-6">
                         View the status of your verification application
                     </p>
 
                     <Card className="p-6">
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                <h3 className="text-lg font-semibold text-foreground mb-2">
                                     Application Status
                                 </h3>
                                 <p className={`text-2xl font-bold ${getStatusColor(existingApplication.status)}`}>
@@ -186,23 +186,23 @@ export function VerificationApplicationPage() {
                             </div>
 
                             <div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <span className="text-sm font-medium text-foreground">
                                     Submitted on:
                                 </span>{' '}
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                <span className="text-sm text-muted-foreground">
                                     {formatDate(existingApplication.created_at)}
                                 </span>
                             </div>
 
                             <div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <span className="text-sm font-medium text-foreground">
                                     Twitch Channel:
                                 </span>{' '}
                                 <a
                                     href={existingApplication.twitch_channel_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:underline"
+                                    className="text-sm text-primary-600 hover:underline"
                                 >
                                     {existingApplication.twitch_channel_url}
                                 </a>
@@ -210,10 +210,10 @@ export function VerificationApplicationPage() {
 
                             {existingApplication.reviewed_at && (
                                 <div>
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <span className="text-sm font-medium text-foreground">
                                         Reviewed on:
                                     </span>{' '}
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    <span className="text-sm text-muted-foreground">
                                         {formatDate(existingApplication.reviewed_at)}
                                     </span>
                                 </div>
@@ -221,10 +221,10 @@ export function VerificationApplicationPage() {
 
                             {existingApplication.reviewer_notes && (
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    <h4 className="text-sm font-medium text-foreground mb-1">
                                         Reviewer Notes:
                                     </h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                    <p className="text-sm text-muted-foreground bg-surface p-3 rounded">
                                         {existingApplication.reviewer_notes}
                                     </p>
                                 </div>
@@ -264,25 +264,25 @@ export function VerificationApplicationPage() {
     return (
         <Container>
             <div className="py-8 max-w-3xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <h1 className="text-3xl font-bold text-foreground mb-2">
                     Apply for Creator Verification
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-muted-foreground mb-6">
                     Get a verified badge to show that you're an authentic creator
                 </p>
 
                 <Card className="p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">
                         What is Creator Verification?
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-muted-foreground mb-3">
                         Creator verification is a trust signal that helps viewers identify authentic creators on Clipper.
                         Verified creators receive a blue checkmark badge displayed next to their name.
                     </p>
-                    <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-2">
+                    <h4 className="text-md font-semibold text-foreground mb-2">
                         Eligibility Requirements:
                     </h4>
-                    <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                         <li>Active Twitch streaming presence</li>
                         <li>Established follower base</li>
                         <li>Consistent content creation</li>
@@ -306,7 +306,7 @@ export function VerificationApplicationPage() {
                 <form onSubmit={handleSubmit}>
                     <Card className="p-6 space-y-4">
                         <div>
-                            <label htmlFor="twitch-channel-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label htmlFor="twitch-channel-url" className="block text-sm font-medium text-foreground mb-2">
                                 Twitch Channel URL <span className="text-red-500">*</span>
                             </label>
                             <Input
@@ -317,14 +317,14 @@ export function VerificationApplicationPage() {
                                 placeholder="https://twitch.tv/your_channel"
                                 required
                             />
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                                 Your primary Twitch channel URL
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label htmlFor="follower-count" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="follower-count" className="block text-sm font-medium text-foreground mb-2">
                                     Follower Count
                                 </label>
                                 <Input
@@ -338,7 +338,7 @@ export function VerificationApplicationPage() {
                             </div>
 
                             <div>
-                                <label htmlFor="subscriber-count" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="subscriber-count" className="block text-sm font-medium text-foreground mb-2">
                                     Subscriber Count
                                 </label>
                                 <Input
@@ -352,7 +352,7 @@ export function VerificationApplicationPage() {
                             </div>
 
                             <div>
-                                <label htmlFor="avg-viewers" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="avg-viewers" className="block text-sm font-medium text-foreground mb-2">
                                     Average Viewers
                                 </label>
                                 <Input
@@ -367,7 +367,7 @@ export function VerificationApplicationPage() {
                         </div>
 
                         <div>
-                            <label htmlFor="content-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label htmlFor="content-description" className="block text-sm font-medium text-foreground mb-2">
                                 Content Description
                             </label>
                             <TextArea
@@ -380,12 +380,12 @@ export function VerificationApplicationPage() {
                         </div>
 
                         <div>
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            <h4 className="text-sm font-medium text-foreground mb-3">
                                 Social Media Links (Optional)
                             </h4>
                             <div className="space-y-3">
                                 <div>
-                                    <label htmlFor="twitter-link" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                    <label htmlFor="twitter-link" className="block text-xs text-muted-foreground mb-1">
                                         Twitter/X
                                     </label>
                                     <Input
@@ -400,7 +400,7 @@ export function VerificationApplicationPage() {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="youtube-link" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                    <label htmlFor="youtube-link" className="block text-xs text-muted-foreground mb-1">
                                         YouTube
                                     </label>
                                     <Input
@@ -415,7 +415,7 @@ export function VerificationApplicationPage() {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="instagram-link" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                    <label htmlFor="instagram-link" className="block text-xs text-muted-foreground mb-1">
                                         Instagram
                                     </label>
                                     <Input
@@ -430,7 +430,7 @@ export function VerificationApplicationPage() {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="discord-link" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                    <label htmlFor="discord-link" className="block text-xs text-muted-foreground mb-1">
                                         Discord Server
                                     </label>
                                     <Input

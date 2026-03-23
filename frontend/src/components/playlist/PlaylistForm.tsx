@@ -67,7 +67,7 @@ export function PlaylistForm({
             <div>
                 <label
                     htmlFor='title'
-                    className='block text-sm font-medium text-zinc-300 mb-2'
+                    className='block text-sm font-medium text-foreground mb-2'
                 >
                     Title <span className='text-red-500'>*</span>
                 </label>
@@ -79,13 +79,13 @@ export function PlaylistForm({
                     placeholder='My favorite clips'
                     maxLength={100}
                     className={cn(
-                        'w-full px-4 py-3 bg-zinc-900 border border-zinc-700',
-                        'text-white placeholder-zinc-400 rounded-lg',
+                        'w-full px-4 py-3 bg-surface border border-border',
+                        'text-white placeholder-muted-foreground rounded-lg',
                         'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent',
                     )}
                     required
                 />
-                <p className='mt-1 text-xs text-zinc-500'>
+                <p className='mt-1 text-xs text-text-secondary'>
                     {titleLength}/100 characters
                 </p>
             </div>
@@ -93,7 +93,7 @@ export function PlaylistForm({
             <div>
                 <label
                     htmlFor='description'
-                    className='block text-sm font-medium text-zinc-300 mb-2'
+                    className='block text-sm font-medium text-foreground mb-2'
                 >
                     Description
                 </label>
@@ -105,12 +105,12 @@ export function PlaylistForm({
                     rows={4}
                     maxLength={500}
                     className={cn(
-                        'w-full px-4 py-3 bg-zinc-900 border border-zinc-700',
-                        'text-white placeholder-zinc-400 rounded-lg resize-none',
+                        'w-full px-4 py-3 bg-surface border border-border',
+                        'text-white placeholder-muted-foreground rounded-lg resize-none',
                         'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent',
                     )}
                 />
-                <p className='mt-1 text-xs text-zinc-500'>
+                <p className='mt-1 text-xs text-text-secondary'>
                     {descriptionLength}/500 characters
                 </p>
             </div>
@@ -118,7 +118,7 @@ export function PlaylistForm({
             <div>
                 <label
                     htmlFor='cover-url'
-                    className='block text-sm font-medium text-zinc-300 mb-2'
+                    className='block text-sm font-medium text-foreground mb-2'
                 >
                     Cover Image URL
                 </label>
@@ -129,12 +129,12 @@ export function PlaylistForm({
                     onChange={e => handleChange('cover_url', e.target.value)}
                     placeholder='https://example.com/cover.jpg'
                     className={cn(
-                        'w-full px-4 py-3 bg-zinc-900 border border-zinc-700',
-                        'text-white placeholder-zinc-400 rounded-lg',
+                        'w-full px-4 py-3 bg-surface border border-border',
+                        'text-white placeholder-muted-foreground rounded-lg',
                         'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent',
                     )}
                 />
-                <p className='mt-1 text-xs text-zinc-500'>
+                <p className='mt-1 text-xs text-text-secondary'>
                     Optional. Use a direct image URL.
                 </p>
             </div>
@@ -142,7 +142,7 @@ export function PlaylistForm({
             <div>
                 <label
                     htmlFor='visibility'
-                    className='block text-sm font-medium text-zinc-300 mb-2'
+                    className='block text-sm font-medium text-foreground mb-2'
                 >
                     Visibility
                 </label>
@@ -156,7 +156,7 @@ export function PlaylistForm({
                         )
                     }
                     className={cn(
-                        'w-full px-4 py-3 bg-zinc-900 border border-zinc-700',
+                        'w-full px-4 py-3 bg-surface border border-border',
                         'text-white rounded-lg',
                         'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent',
                     )}

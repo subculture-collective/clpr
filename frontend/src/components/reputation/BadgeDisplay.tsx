@@ -39,7 +39,7 @@ export function BadgeDisplay({
         </div>
       ))}
       {remainingCount > 0 && (
-        <span className="text-sm text-gray-400">
+        <span className="text-sm text-muted-foreground">
           +{remainingCount}
         </span>
       )}
@@ -55,7 +55,7 @@ interface BadgeGridProps {
 export function BadgeGrid({ badges, columns = 3 }: BadgeGridProps) {
   if (badges.length === 0) {
     return (
-      <div className="py-8 text-center text-gray-400">
+      <div className="py-8 text-center text-muted-foreground">
         No badges earned yet
       </div>
     );
@@ -69,7 +69,7 @@ export function BadgeGrid({ badges, columns = 3 }: BadgeGridProps) {
       {badges.map((badge) => (
         <div
           key={badge.id}
-          className="hover:bg-gray-750 p-4 transition-colors bg-gray-800 rounded-lg"
+          className="hover:bg-surface-hover p-4 transition-colors bg-surface-raised rounded-lg"
         >
           <div className="flex items-start gap-3">
             <div className="shrink-0 text-3xl">
@@ -79,10 +79,10 @@ export function BadgeGrid({ badges, columns = 3 }: BadgeGridProps) {
               <h3 className="font-semibold text-white truncate">
                 {badge.name}
               </h3>
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {badge.description}
               </p>
-              <div className="mt-2 text-xs text-gray-500">
+              <div className="mt-2 text-xs text-text-secondary">
                 Earned {new Date(badge.awarded_at).toLocaleDateString()}
               </div>
             </div>
@@ -100,7 +100,7 @@ interface BadgeListProps {
 export function BadgeList({ badges }: BadgeListProps) {
   if (badges.length === 0) {
     return (
-      <div className="py-4 text-center text-gray-400">
+      <div className="py-4 text-center text-muted-foreground">
         No badges earned yet
       </div>
     );
@@ -111,7 +111,7 @@ export function BadgeList({ badges }: BadgeListProps) {
       {badges.map((badge) => (
         <div
           key={badge.id}
-          className="hover:bg-gray-750 flex items-center gap-3 p-3 transition-colors bg-gray-800 rounded-lg"
+          className="hover:bg-surface-hover flex items-center gap-3 p-3 transition-colors bg-surface-raised rounded-lg"
         >
           <div className="shrink-0 text-2xl">
             {badge.icon}
@@ -120,11 +120,11 @@ export function BadgeList({ badges }: BadgeListProps) {
             <div className="font-semibold text-white">
               {badge.name}
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-muted-foreground">
               {badge.description}
             </div>
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-text-secondary">
             {new Date(badge.awarded_at).toLocaleDateString()}
           </div>
         </div>

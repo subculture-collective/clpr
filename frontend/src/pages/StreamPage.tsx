@@ -33,7 +33,7 @@ export function StreamPage() {
     return (
       <Container>
         <div className="text-center py-12">
-          <p className="text-gray-400">Invalid stream URL</p>
+          <p className="text-muted-foreground">Invalid stream URL</p>
         </div>
       </Container>
     );
@@ -50,7 +50,7 @@ export function StreamPage() {
         }
       />
 
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen bg-background">
         {/* Stream Player and Chat Container */}
         <div className="w-full bg-black">
           <div className="max-w-[2000px] mx-auto">
@@ -74,7 +74,7 @@ export function StreamPage() {
         <Container className="py-6">
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-4 flex-wrap">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold text-foreground">
                 {streamer}
               </h1>
               {streamInfo?.is_live && (
@@ -90,7 +90,7 @@ export function StreamPage() {
               <div className="ml-auto flex items-center gap-2">
                 <button
                   onClick={() => setShowChat(!showChat)}
-                  className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  className="px-3 py-1 text-sm rounded border border-border hover:bg-surface-hover text-foreground"
                 >
                   {showChat ? 'Hide Chat' : 'Show Chat'}
                 </button>
@@ -98,7 +98,7 @@ export function StreamPage() {
                   <select
                     value={chatPosition}
                     onChange={(e) => setChatPosition(e.target.value as 'side' | 'bottom')}
-                    className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    className="px-3 py-1 text-sm rounded border border-border bg-surface text-foreground"
                   >
                     <option value="side">Side</option>
                     <option value="bottom">Bottom</option>
@@ -113,11 +113,11 @@ export function StreamPage() {
 
             {streamInfo?.is_live && streamInfo.title && (
               <div className="space-y-2">
-                <h2 className="text-xl text-gray-800 dark:text-gray-200">
+                <h2 className="text-xl text-foreground">
                   {streamInfo.title}
                 </h2>
                 {streamInfo.game_name && (
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-muted-foreground">
                     Playing: {streamInfo.game_name}
                   </p>
                 )}
@@ -127,7 +127,7 @@ export function StreamPage() {
 
           {/* Recent Clips */}
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">
               Recent Clips
             </h2>
 
@@ -143,7 +143,7 @@ export function StreamPage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">
+                <p className="text-muted-foreground">
                   No clips available yet
                 </p>
               </div>

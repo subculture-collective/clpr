@@ -128,12 +128,12 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
     };
 
     return (
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+        <div className="bg-surface rounded-lg border border-border p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-bold text-white">Collaborators</h3>
-                    <p className="text-sm text-zinc-400 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                         {collaborators.length === 0
                             ? 'No collaborators yet'
                             : `${collaborators.length} collaborator${collaborators.length === 1 ? '' : 's'}`
@@ -160,10 +160,10 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
 
             {/* Add Collaborator Form */}
             {showAddForm && canManageCollaborators && (
-                <div className="mb-6 bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+                <div className="mb-6 bg-surface-raised rounded-lg p-4 border border-border">
                     <div className="space-y-3">
                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">
+                            <label className="block text-sm font-medium text-muted-foreground mb-2">
                                 User ID
                             </label>
                             <input
@@ -171,21 +171,21 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                                 value={newCollaboratorUserId}
                                 onChange={(e) => setNewCollaboratorUserId(e.target.value)}
                                 placeholder="Enter user UUID"
-                                className="w-full bg-zinc-900 text-white px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:border-purple-500"
+                                className="w-full bg-surface text-white px-3 py-2 rounded-lg border border-border focus:outline-none focus:border-purple-500"
                                 disabled={submitting}
                             />
-                            <p className="text-xs text-zinc-500 mt-1">
+                            <p className="text-xs text-text-secondary mt-1">
                                 Enter the user's UUID. You can find this in their profile URL.
                             </p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">
+                            <label className="block text-sm font-medium text-muted-foreground mb-2">
                                 Permission Level
                             </label>
                             <select
                                 value={newCollaboratorPermission}
                                 onChange={(e) => setNewCollaboratorPermission(e.target.value as 'view' | 'edit' | 'admin')}
-                                className="w-full bg-zinc-900 text-white px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:border-purple-500"
+                                className="w-full bg-surface text-white px-3 py-2 rounded-lg border border-border focus:outline-none focus:border-purple-500"
                                 disabled={submitting}
                             >
                                 <option value="view">View Only</option>
@@ -197,7 +197,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                             <button
                                 onClick={addCollaborator}
                                 disabled={submitting}
-                                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-surface-raised disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                             >
                                 {submitting ? 'Adding...' : 'Add Collaborator'}
                             </button>
@@ -207,7 +207,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                                     setError(null);
                                 }}
                                 disabled={submitting}
-                                className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                                className="px-4 py-2 bg-surface-raised hover:bg-surface-hover disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                             >
                                 Cancel
                             </button>
@@ -220,14 +220,14 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
             {loading ? (
                 <div className="text-center py-8">
                     <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
-                    <p className="mt-4 text-zinc-400">Loading collaborators...</p>
+                    <p className="mt-4 text-muted-foreground">Loading collaborators...</p>
                 </div>
             ) : collaborators.length === 0 ? (
                 <div className="text-center py-8">
-                    <UserPlus className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
-                    <p className="text-zinc-400">No collaborators yet</p>
+                    <UserPlus className="h-12 w-12 text-text-tertiary mx-auto mb-3" />
+                    <p className="text-muted-foreground">No collaborators yet</p>
                     {canManageCollaborators && (
-                        <p className="text-sm text-zinc-500 mt-2">
+                        <p className="text-sm text-text-secondary mt-2">
                             Add collaborators to work on this playlist together
                         </p>
                     )}
@@ -237,7 +237,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                     {collaborators.map((collab) => (
                         <div
                             key={collab.id}
-                            className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg border border-zinc-700"
+                            className="flex items-center justify-between p-3 bg-surface-raised rounded-lg border border-border"
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 {/* Avatar */}
@@ -258,7 +258,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                                     <p className="font-medium text-white truncate">
                                         {collab.user?.display_name || 'Unknown User'}
                                     </p>
-                                    <p className="text-sm text-zinc-400 truncate">
+                                    <p className="text-sm text-muted-foreground truncate">
                                         @{collab.user?.username || collab.user_id}
                                     </p>
                                 </div>
@@ -270,23 +270,23 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                                     <select
                                         value={collab.permission}
                                         onChange={(e) => updatePermission(collab.user_id, e.target.value as 'view' | 'edit' | 'admin')}
-                                        className="bg-zinc-900 text-white px-3 py-1 rounded text-sm border border-zinc-700 focus:outline-none focus:border-purple-500"
+                                        className="bg-surface text-white px-3 py-1 rounded text-sm border border-border focus:outline-none focus:border-purple-500"
                                     >
                                         <option value="view">View Only</option>
                                         <option value="edit">Can Edit</option>
                                         {isOwner && <option value="admin">Admin</option>}
                                     </select>
                                 ) : (
-                                    <div className="flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded text-sm">
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-surface rounded text-sm">
                                         {getPermissionIcon(collab.permission)}
-                                        <span className="text-zinc-300">{getPermissionLabel(collab.permission)}</span>
+                                        <span className="text-foreground">{getPermissionLabel(collab.permission)}</span>
                                     </div>
                                 )}
 
                                 {canManageCollaborators && (
                                     <button
                                         onClick={() => removeCollaborator(collab.user_id)}
-                                        className="p-1 text-zinc-400 hover:text-red-400 transition-colors"
+                                        className="p-1 text-muted-foreground hover:text-red-400 transition-colors"
                                         title="Remove collaborator"
                                     >
                                         <Trash2 className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Container, Spinner, Button, ClipCard } from '../components';
+import { Container, Spinner, Button } from '../components';
+import { ClipGridCard } from '../components/clip';
 import { gameApi } from '../lib/game-api';
 import type { GameWithStats } from '../types/game';
 import type { Clip } from '../types/clip';
@@ -227,7 +228,7 @@ export function GamePage() {
             :   <>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8'>
                         {clips.map(clip => (
-                            <ClipCard key={clip.id} clip={clip} />
+                            <ClipGridCard key={clip.id} clip={clip} />
                         ))}
                     </div>
 

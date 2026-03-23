@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { getWatchPartyAnalytics } from '@/lib/watch-party-api';
 import type { WatchPartyAnalytics } from '@/types/watchParty';
+import { Users, TrendingUp, Eye, Clock, MessageSquare, Heart, Flame, AlertTriangle } from 'lucide-react';
 
 interface Props {
   partyId: string;
@@ -9,7 +10,7 @@ interface Props {
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon: string;
+  icon: ReactNode;
   subtext?: string;
 }
 
@@ -18,7 +19,7 @@ function StatCard({ label, value, icon, subtext }: StatCardProps) {
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
       <div className="flex items-center justify-between mb-2">
         <span className="text-gray-400 text-sm font-medium">{label}</span>
-        <span className="text-2xl">{icon}</span>
+        <span className="text-gray-400">{icon}</span>
       </div>
       <div className="text-3xl font-bold text-white mb-1">{value}</div>
       {subtext && <div className="text-gray-500 text-xs">{subtext}</div>}
@@ -68,7 +69,7 @@ export default function WatchPartyAnalytics({ partyId }: Props) {
     return (
       <div className="p-6 bg-gray-900 rounded-lg">
         <div className="text-red-500 text-center">
-          <p className="text-xl mb-2">⚠️</p>
+          <p className="text-xl mb-2"><AlertTriangle size={20} strokeWidth={1.75} className="inline" /></p>
           <p>{error}</p>
           <button
             onClick={loadAnalytics}
@@ -100,25 +101,25 @@ export default function WatchPartyAnalytics({ partyId }: Props) {
         <StatCard
           label="Total Viewers"
           value={analytics.unique_viewers}
-          icon="👥"
+          icon={<Users size={20} strokeWidth={1.75} />}
           subtext="Unique participants"
         />
         <StatCard
           label="Peak Concurrent"
           value={analytics.peak_concurrent}
-          icon="📈"
+          icon={<TrendingUp size={20} strokeWidth={1.75} />}
           subtext="Maximum viewers at once"
         />
         <StatCard
           label="Current Viewers"
           value={analytics.current_viewers}
-          icon="👁️"
+          icon={<Eye size={20} strokeWidth={1.75} />}
           subtext="Live now"
         />
         <StatCard
           label="Avg Watch Time"
           value={`${avgWatchMinutes}m`}
-          icon="⏱️"
+          icon={<Clock size={20} strokeWidth={1.75} />}
           subtext={`${analytics.avg_duration_seconds}s total`}
         />
       </div>
@@ -127,17 +128,17 @@ export default function WatchPartyAnalytics({ partyId }: Props) {
         <StatCard
           label="Chat Messages"
           value={analytics.chat_messages}
-          icon="💬"
+          icon={<MessageSquare size={20} strokeWidth={1.75} />}
         />
         <StatCard
           label="Reactions"
           value={analytics.reactions}
-          icon="❤️"
+          icon={<Heart size={20} strokeWidth={1.75} />}
         />
         <StatCard
           label="Engagement Rate"
           value={`${engagementRate}%`}
-          icon="🔥"
+          icon={<Flame size={20} strokeWidth={1.75} />}
           subtext="Interactions per viewer"
         />
       </div>

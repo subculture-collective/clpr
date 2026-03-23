@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ExternalLink, Film } from 'lucide-react';
 import { Button } from '../ui';
 import type { StreamInfo } from '../../lib/stream-api';
 
@@ -30,7 +31,7 @@ function formatRelativeTime(dateString?: string | null): string {
 
 export function StreamOfflineScreen({ channel, streamInfo }: StreamOfflineScreenProps) {
   return (
-    <div className="w-full aspect-video bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex flex-col items-center justify-center text-center p-8">
+    <div className="w-full aspect-video bg-gradient-to-br from-background via-surface-raised to-background flex flex-col items-center justify-center text-center p-8">
       <div className="max-w-2xl">
         {/* Offline Icon */}
         <div className="text-6xl mb-6 opacity-50">📺</div>
@@ -42,11 +43,11 @@ export function StreamOfflineScreen({ channel, streamInfo }: StreamOfflineScreen
 
         {/* Last Streamed Info */}
         {streamInfo?.last_went_offline ? (
-          <p className="text-gray-400 dark:text-gray-500 mb-8 text-lg">
+          <p className="text-muted-foreground mb-8 text-lg">
             Last streamed {formatRelativeTime(streamInfo.last_went_offline)}
           </p>
         ) : (
-          <p className="text-gray-400 dark:text-gray-500 mb-8 text-lg">
+          <p className="text-muted-foreground mb-8 text-lg">
             Check back later for the next stream
           </p>
         )}
@@ -60,20 +61,20 @@ export function StreamOfflineScreen({ channel, streamInfo }: StreamOfflineScreen
               window.open(`https://twitch.tv/${channel}`, '_blank', 'noopener,noreferrer');
             }}
           >
-            <span className="mr-2">📣</span>
+            <ExternalLink size={16} strokeWidth={1.75} className="mr-2" />
             Visit on Twitch
           </Button>
 
           <Link to={`/clips?streamer=${channel}`}>
             <Button variant="secondary" size="lg">
-              <span className="mr-2">🎬</span>
+              <Film size={16} strokeWidth={1.75} className="mr-2" />
               View Recent Clips
             </Button>
           </Link>
         </div>
 
         {/* Additional Info */}
-        <div className="mt-8 text-sm text-gray-500 dark:text-gray-600">
+        <div className="mt-8 text-sm text-text-secondary">
           <p>This page will automatically update when {channel} goes live</p>
         </div>
       </div>

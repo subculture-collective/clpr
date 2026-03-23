@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { categoryApi } from '../../lib/category-api';
 import { tagApi } from '../../lib/tag-api';
 import {
     fetchPopularBroadcasters,
     type PopularBroadcaster,
 } from '../../lib/broadcaster-api';
+import { CategoryIcon } from '../ui/CategoryIcon';
 import type { Category } from '../../types/category';
 import type { Tag } from '../../types/tag';
 
@@ -110,9 +112,9 @@ export function CategoriesNav() {
                                     key={tab.key}
                                     type='button'
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                                    className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap cursor-pointer ${
                                         activeTab === tab.key ?
-                                            'bg-primary text-primary-foreground'
+                                            'bg-brand text-white'
                                         :   'text-muted-foreground hover:text-foreground hover:bg-muted'
                                     }`}
                                 >
@@ -128,23 +130,10 @@ export function CategoriesNav() {
                             <button
                                 type='button'
                                 onClick={() => scrollByAmount('left')}
-                                className='absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-background'
+                                className='absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer'
                                 aria-label='Scroll left'
                             >
-                                <svg
-                                    className='w-4 h-4'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    strokeWidth='2'
-                                    viewBox='0 0 24 24'
-                                    aria-hidden='true'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        d='M15 19l-7-7 7-7'
-                                    />
-                                </svg>
+                                <ChevronLeft size={16} strokeWidth={2} aria-hidden='true' />
                             </button>
                         )}
 
@@ -152,23 +141,10 @@ export function CategoriesNav() {
                             <button
                                 type='button'
                                 onClick={() => scrollByAmount('right')}
-                                className='absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-background'
+                                className='absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer'
                                 aria-label='Scroll right'
                             >
-                                <svg
-                                    className='w-4 h-4'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    strokeWidth='2'
-                                    viewBox='0 0 24 24'
-                                    aria-hidden='true'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        d='M9 5l7 7-7 7'
-                                    />
-                                </svg>
+                                <ChevronRight size={16} strokeWidth={2} aria-hidden='true' />
                             </button>
                         )}
 
@@ -183,12 +159,10 @@ export function CategoriesNav() {
                                     <Link
                                         key={category.id}
                                         to={`/category/${category.slug}`}
-                                        className='flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap text-sm transition-colors'
+                                        className='flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
                                         role='listitem'
                                     >
-                                        {category.icon && (
-                                            <span>{category.icon}</span>
-                                        )}
+                                        <CategoryIcon icon={category.icon} size='sm' />
                                         <span>{category.name}</span>
                                     </Link>
                                 ))}
@@ -198,7 +172,7 @@ export function CategoriesNav() {
                                     <Link
                                         key={tag.id}
                                         to={`/tag/${tag.slug}`}
-                                        className='flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap text-sm transition-colors'
+                                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
                                         role='listitem'
                                     >
                                         <span
@@ -222,12 +196,10 @@ export function CategoriesNav() {
                                     <Link
                                         key={streamer.broadcaster_id}
                                         to={`/broadcaster/${streamer.broadcaster_id}`}
-                                        className='flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap text-sm transition-colors'
+                                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
                                         role='listitem'
                                     >
-                                        <span className='text-purple-500'>
-                                            ●
-                                        </span>
+                                        <span className='w-2 h-2 rounded-full bg-primary-500 shrink-0' />
                                         <span>{streamer.broadcaster_name}</span>
                                         <span className='text-xs text-muted-foreground'>
                                             {streamer.clip_count} clips

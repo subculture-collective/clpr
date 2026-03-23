@@ -37,8 +37,8 @@ export function ForumFilters({
           className={cn(
             'px-3 py-1.5 text-sm rounded-lg border transition-colors',
             filters.tags?.includes('help')
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
+              ? 'bg-primary-600 border-primary-600 text-white'
+              : 'bg-surface border-border text-foreground hover:bg-surface-hover'
           )}
         >
           Help
@@ -49,8 +49,8 @@ export function ForumFilters({
           className={cn(
             'px-3 py-1.5 text-sm rounded-lg border transition-colors',
             filters.tags?.includes('discussion')
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
+              ? 'bg-primary-600 border-primary-600 text-white'
+              : 'bg-surface border-border text-foreground hover:bg-surface-hover'
           )}
         >
           Discussion
@@ -61,8 +61,8 @@ export function ForumFilters({
           className={cn(
             'px-3 py-1.5 text-sm rounded-lg border transition-colors',
             filters.tags?.includes('suggestion')
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
+              ? 'bg-primary-600 border-primary-600 text-white'
+              : 'bg-surface border-border text-foreground hover:bg-surface-hover'
           )}
         >
           Suggestion
@@ -73,8 +73,8 @@ export function ForumFilters({
           className={cn(
             'px-3 py-1.5 text-sm rounded-lg border transition-colors',
             filters.tags?.includes('bug')
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
+              ? 'bg-primary-600 border-primary-600 text-white'
+              : 'bg-surface border-border text-foreground hover:bg-surface-hover'
           )}
         >
           Bug Report
@@ -84,7 +84,7 @@ export function ForumFilters({
           <button
             type="button"
             onClick={handleClearFilters}
-            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+            className="px-3 py-1.5 text-sm text-muted-foreground hover:text-white transition-colors"
           >
             Clear filters
           </button>

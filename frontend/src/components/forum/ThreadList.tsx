@@ -14,11 +14,11 @@ export function ThreadList({ threads, loading, className }: ThreadListProps) {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="p-4 bg-gray-900 rounded-lg border border-gray-700 animate-pulse"
+            className="p-4 bg-surface rounded-lg border border-border animate-pulse"
           >
-            <div className="h-6 bg-gray-700 rounded w-3/4 mb-2" />
-            <div className="h-4 bg-gray-700 rounded w-full mb-2" />
-            <div className="h-4 bg-gray-700 rounded w-5/6" />
+            <div className="h-6 bg-surface-raised rounded w-3/4 mb-2" />
+            <div className="h-4 bg-surface-raised rounded w-full mb-2" />
+            <div className="h-4 bg-surface-raised rounded w-5/6" />
           </div>
         ))}
       </div>
@@ -28,8 +28,8 @@ export function ThreadList({ threads, loading, className }: ThreadListProps) {
   if (threads.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400 text-lg">No threads found</p>
-        <p className="text-gray-500 text-sm mt-2">
+        <p className="text-muted-foreground text-lg">No threads found</p>
+        <p className="text-muted-foreground text-sm mt-2">
           Be the first to start a discussion!
         </p>
       </div>

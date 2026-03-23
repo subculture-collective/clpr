@@ -33,10 +33,10 @@ const PersonalStatsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-foreground">
             My Statistics
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-muted-foreground">
             Your activity and engagement on the platform
           </p>
         </div>
@@ -47,10 +47,10 @@ const PersonalStatsPage: React.FC = () => {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 animate-pulse"
+                className="bg-surface rounded-lg shadow p-6 animate-pulse"
               >
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2 mb-4"></div>
+                <div className="h-8 bg-muted rounded w-3/4"></div>
               </div>
             ))}
           </div>
@@ -106,7 +106,7 @@ const PersonalStatsPage: React.FC = () => {
             {/* Voting Distribution */}
             {(stats.clips_upvoted > 0 || stats.clips_downvoted > 0) && (
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                <h2 className="text-xl font-bold text-foreground mb-4">
                   Voting Behavior
                 </h2>
 
@@ -120,18 +120,18 @@ const PersonalStatsPage: React.FC = () => {
                     colors={['#10b981', '#ef4444']}
                   />
 
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <div className="bg-surface rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">
                       Engagement Summary
                     </h3>
 
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-sm text-muted-foreground">
                             Total Votes Cast
                           </span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <span className="text-sm font-semibold text-foreground">
                             {stats.clips_upvoted + stats.clips_downvoted}
                           </span>
                         </div>
@@ -139,10 +139,10 @@ const PersonalStatsPage: React.FC = () => {
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-sm text-muted-foreground">
                             Positivity Rate
                           </span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <span className="text-sm font-semibold text-foreground">
                             {(
                               (stats.clips_upvoted /
                                 Math.max(
@@ -154,7 +154,7 @@ const PersonalStatsPage: React.FC = () => {
                             %
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                           <div
                             className="bg-green-500 h-2 rounded-full"
                             style={{
@@ -173,10 +173,10 @@ const PersonalStatsPage: React.FC = () => {
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-sm text-muted-foreground">
                             Comments per Vote
                           </span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <span className="text-sm font-semibold text-foreground">
                             {(
                               stats.comments_posted /
                               Math.max(
@@ -194,41 +194,41 @@ const PersonalStatsPage: React.FC = () => {
             )}
 
             {/* Account Information */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">
                 Account Summary
               </h3>
 
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <dt className="text-sm font-medium text-muted-foreground">
                     Total Karma
                   </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <dd className="mt-1 text-2xl font-semibold text-foreground">
                     {stats.total_karma_earned}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <dt className="text-sm font-medium text-muted-foreground">
                     Days Active
                   </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <dd className="mt-1 text-2xl font-semibold text-foreground">
                     {stats.days_active}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <dt className="text-sm font-medium text-muted-foreground">
                     Contribution Score
                   </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <dd className="mt-1 text-2xl font-semibold text-foreground">
                     {stats.comments_posted + stats.clips_upvoted}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <dt className="text-sm font-medium text-muted-foreground">
                     Engagement Level
                   </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                  <dd className="mt-1 text-2xl font-semibold text-foreground">
                     {stats.comments_posted > 50 || stats.clips_upvoted > 100
                       ? 'High'
                       : stats.comments_posted > 10 || stats.clips_upvoted > 20

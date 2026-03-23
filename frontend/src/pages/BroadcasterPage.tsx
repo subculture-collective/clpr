@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Container, SEO } from '../components';
-import { ClipCard } from '../components/clip';
+import { ClipGridCard } from '../components/clip';
 import { Button } from '../components/ui';
 import { Spinner } from '../components';
 import { LiveBadge } from '../components/broadcaster';
@@ -346,7 +346,7 @@ export function BroadcasterPage() {
                     <>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8'>
                             {(clipsData.data ?? []).map(clip => (
-                                <ClipCard key={clip.id} clip={clip} />
+                                <ClipGridCard key={clip.id} clip={clip} />
                             ))}
                         </div>
 

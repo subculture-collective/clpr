@@ -362,6 +362,17 @@ func (s *PlaylistService) ListPublicPlaylists(ctx context.Context, userID *uuid.
 	return playlists, total, nil
 }
 
+// ListBookmarkedPlaylists retrieves playlists bookmarked by a user
+func (s *PlaylistService) ListBookmarkedPlaylists(ctx context.Context, userID uuid.UUID, page, limit int) ([]*models.PlaylistListItem, int, error) {
+	offset := (page - 1) * limit
+	playlists, total, err := s.playlistRepo.ListBookmarkedByUser(ctx, userID, &userID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list bookmarked playlists: %w", err)
+	}
+
+	return playlists, total, nil
+}
+
 // ListFeaturedPlaylists returns featured/curated playlists for public discovery.
 func (s *PlaylistService) ListFeaturedPlaylists(ctx context.Context, userID *uuid.UUID, page, limit int) ([]*models.PlaylistListItem, int, error) {
 	offset := (page - 1) * limit

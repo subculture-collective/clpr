@@ -103,9 +103,9 @@ export function VoteButtons({
         onClick={() => handleVote(1)}
         disabled={isLoading || disabled}
         className={cn(
-          'p-1 hover:bg-gray-700 rounded transition-colors',
+          'p-1 hover:bg-surface-hover rounded transition-colors',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          localVote === 1 && 'text-green-500 bg-green-500/10'
+          localVote === 1 && 'text-upvote bg-upvote/10'
         )}
         title="Upvote"
         aria-label="Upvote"
@@ -128,9 +128,9 @@ export function VoteButtons({
       <span
         className={cn(
           'text-sm font-semibold min-w-[2.5rem] text-center',
-          isPositive && 'text-green-500',
-          isNegative && 'text-red-500',
-          voteCount === 0 && 'text-gray-400'
+          isPositive && 'text-upvote',
+          isNegative && 'text-downvote',
+          voteCount === 0 && 'text-muted-foreground'
         )}
       >
         {voteCount > 0 ? '+' : ''}
@@ -142,9 +142,9 @@ export function VoteButtons({
         onClick={() => handleVote(-1)}
         disabled={isLoading || disabled}
         className={cn(
-          'p-1 hover:bg-gray-700 rounded transition-colors',
+          'p-1 hover:bg-surface-hover rounded transition-colors',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          localVote === -1 && 'text-red-500 bg-red-500/10'
+          localVote === -1 && 'text-downvote bg-downvote/10'
         )}
         title="Downvote"
         aria-label="Downvote"

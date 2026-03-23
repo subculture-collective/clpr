@@ -283,6 +283,11 @@ const PublicPlaylistsPage = lazy(() =>
         default: m.PublicPlaylistsPage,
     })),
 );
+const BookmarkedPlaylistsPage = lazy(() =>
+    import('./pages/BookmarkedPlaylistsPage').then(m => ({
+        default: m.BookmarkedPlaylistsPage,
+    })),
+);
 const SmartPlaylistsPage = lazy(() =>
     import('./pages/SmartPlaylistsPage').then(m => ({
         default: m.SmartPlaylistsPage,
@@ -637,6 +642,14 @@ function App() {
                                             element={
                                                 <ProtectedRoute>
                                                     <SmartPlaylistsPage />
+                                                </ProtectedRoute>
+                                            }
+                                        />
+                                        <Route
+                                            path='/playlists/bookmarks'
+                                            element={
+                                                <ProtectedRoute>
+                                                    <BookmarkedPlaylistsPage />
                                                 </ProtectedRoute>
                                             }
                                         />

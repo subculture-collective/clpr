@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle } from 'lucide-react';
 import { fetchStreamStatus } from '../../lib/stream-api';
 import { StreamOfflineScreen } from './StreamOfflineScreen';
 import { LiveIndicator } from './LiveIndicator';
@@ -141,10 +142,10 @@ export function TwitchPlayer({ channel, showChat = false }: TwitchPlayerProps) {
 
   if (isLoading) {
     return (
-      <div className="w-full aspect-video bg-gray-900 dark:bg-gray-950 flex items-center justify-center">
+      <div className="w-full aspect-video bg-surface flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-          <p className="text-gray-400">Loading stream...</p>
+          <p className="text-muted-foreground">Loading stream...</p>
         </div>
       </div>
     );
@@ -152,9 +153,9 @@ export function TwitchPlayer({ channel, showChat = false }: TwitchPlayerProps) {
 
   if (error) {
     return (
-      <div className="w-full aspect-video bg-gray-900 dark:bg-gray-950 flex items-center justify-center">
+      <div className="w-full aspect-video bg-surface flex items-center justify-center">
         <div className="text-center text-red-500">
-          <p className="text-xl mb-2">⚠️</p>
+          <p className="text-xl mb-2"><AlertTriangle size={16} strokeWidth={1.75} className="inline" /></p>
           <p>Failed to load stream information</p>
         </div>
       </div>

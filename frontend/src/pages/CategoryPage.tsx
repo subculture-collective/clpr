@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Container, Spinner, ClipCard, Button } from '../components';
+import { Gamepad2 } from 'lucide-react';
+import { Container, Spinner, Button, CategoryIcon } from '../components';
+import { ClipGridCard } from '../components/clip';
 import { categoryApi } from '../lib/category-api';
 import type { Category } from '../types/category';
 import type { GameWithStats } from '../types/game';
@@ -97,9 +99,7 @@ export function CategoryPage() {
             {/* Category Header */}
             <div className='mb-8'>
                 <div className='flex items-center gap-3 mb-2'>
-                    {category.icon && (
-                        <span className='text-4xl'>{category.icon}</span>
-                    )}
+                    <CategoryIcon icon={category.icon} size='lg' />
                     <h1 className='text-4xl font-bold'>{category.name}</h1>
                 </div>
                 {category.description && (
@@ -130,15 +130,15 @@ export function CategoryPage() {
                                             className='w-full h-full object-cover'
                                         />
                                     ) : (
-                                        <div className='w-full h-full bg-gray-700 flex items-center justify-center'>
-                                            <span className='text-4xl'>🎮</span>
+                                        <div className='w-full h-full bg-surface flex items-center justify-center'>
+                                            <Gamepad2 size={16} strokeWidth={1.75} />
                                         </div>
                                     )}
                                     <div className='absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-2'>
                                         <h3 className='text-sm font-semibold text-white truncate'>
                                             {game.name}
                                         </h3>
-                                        <p className='text-xs text-gray-300'>
+                                        <p className='text-xs text-foreground'>
                                             {game.clip_count} clips
                                         </p>
                                     </div>
@@ -201,7 +201,7 @@ export function CategoryPage() {
                 <>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
                         {clips.map(clip => (
-                            <ClipCard key={clip.id} clip={clip} />
+                            <ClipGridCard key={clip.id} clip={clip} />
                         ))}
                     </div>
 

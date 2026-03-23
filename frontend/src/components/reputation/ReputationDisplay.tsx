@@ -7,7 +7,7 @@ interface ReputationDisplayProps {
 }
 
 const rankColors: Record<string, string> = {
-  'Newcomer': 'text-gray-400',
+  'Newcomer': 'text-muted-foreground',
   'Member': 'text-green-400',
   'Regular': 'text-blue-400',
   'Contributor': 'text-purple-400',
@@ -16,7 +16,7 @@ const rankColors: Record<string, string> = {
 };
 
 export function ReputationDisplay({ reputation, compact = false }: ReputationDisplayProps) {
-  const rankColor = rankColors[reputation.rank] || 'text-gray-400';
+  const rankColor = rankColors[reputation.rank] || 'text-muted-foreground';
 
   if (compact) {
     return (
@@ -26,7 +26,7 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
           <span className="font-semibold text-purple-400">
             {reputation.karma_points.toLocaleString()}
           </span>
-          <span className="text-xs text-gray-400">karma</span>
+          <span className="text-xs text-muted-foreground">karma</span>
         </div>
 
         {/* Rank */}
@@ -43,7 +43,7 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
   }
 
   return (
-    <div className="p-6 bg-gray-800 rounded-lg">
+    <div className="p-6 bg-surface-raised rounded-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -65,27 +65,27 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
 
       {/* Karma */}
       <div className="mb-6">
-        <div className="p-4 text-center bg-gray-900 rounded-lg">
+        <div className="p-4 text-center bg-surface rounded-lg">
           <div className="text-4xl font-bold text-purple-400">
             {((reputation?.karma_points) || 0).toLocaleString()}
           </div>
-          <div className="mt-1 text-sm text-gray-400">Total Karma</div>
+          <div className="mt-1 text-sm text-muted-foreground">Total Karma</div>
         </div>
       </div>
 
       {/* Scores */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-4 text-center bg-gray-900 rounded-lg">
+        <div className="p-4 text-center bg-surface rounded-lg">
           <div className="text-2xl font-bold text-green-400">
             {((reputation?.trust_score) || 0)}
           </div>
-          <div className="mt-1 text-sm text-gray-400">Trust Score</div>
+          <div className="mt-1 text-sm text-muted-foreground">Trust Score</div>
         </div>
-        <div className="p-4 text-center bg-gray-900 rounded-lg">
+        <div className="p-4 text-center bg-surface rounded-lg">
           <div className="text-2xl font-bold text-blue-400">
             {((reputation?.engagement_score) || 0).toLocaleString()}
           </div>
-          <div className="mt-1 text-sm text-gray-400">Engagement</div>
+          <div className="mt-1 text-sm text-muted-foreground">Engagement</div>
         </div>
       </div>
 
@@ -99,26 +99,26 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
 
       {/* Stats */}
       {reputation.stats ? (
-        <div className="pt-6 mt-6 border-t border-gray-700">
+        <div className="pt-6 mt-6 border-t border-border">
           <h3 className="mb-3 text-lg font-semibold text-white">Activity</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-xl font-bold text-white">
                 {((reputation.stats?.total_comments) || 0).toLocaleString()}
               </div>
-              <div className="mt-1 text-xs text-gray-400">Comments</div>
+              <div className="mt-1 text-xs text-muted-foreground">Comments</div>
             </div>
             <div>
               <div className="text-xl font-bold text-white">
                 {((reputation.stats?.total_votes_cast) || 0).toLocaleString()}
               </div>
-              <div className="mt-1 text-xs text-gray-400">Votes</div>
+              <div className="mt-1 text-xs text-muted-foreground">Votes</div>
             </div>
             <div>
               <div className="text-xl font-bold text-white">
                 {((reputation.stats?.total_clips_submitted) || 0).toLocaleString()}
               </div>
-              <div className="mt-1 text-xs text-gray-400">Submissions</div>
+              <div className="mt-1 text-xs text-muted-foreground">Submissions</div>
             </div>
           </div>
         </div>
@@ -133,7 +133,7 @@ interface RankBadgeProps {
 }
 
 export function RankBadge({ rank, size = 'md' }: RankBadgeProps) {
-  const rankColor = rankColors[rank] || 'text-gray-400';
+  const rankColor = rankColors[rank] || 'text-muted-foreground';
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5',
     md: 'text-sm px-3 py-1',
@@ -141,7 +141,7 @@ export function RankBadge({ rank, size = 'md' }: RankBadgeProps) {
   };
 
   return (
-    <span className={`${rankColor} ${sizeClasses[size]} bg-gray-800 rounded-full font-semibold`}>
+    <span className={`${rankColor} ${sizeClasses[size]} bg-surface-raised rounded-full font-semibold`}>
       {rank}
     </span>
   );

@@ -52,9 +52,9 @@ export function TrendingSearches({ limit = 10, days = 7, className = '' }: Trend
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-3"></div>
+        <div className="h-6 bg-surface-raised rounded w-32 mb-3"></div>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+          <div key={i} className="h-8 bg-surface-raised rounded mb-2"></div>
         ))}
       </div>
     );
@@ -66,7 +66,7 @@ export function TrendingSearches({ limit = 10, days = 7, className = '' }: Trend
 
   return (
     <div className={className} data-testid="trending-searches">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+      <h3 className="text-sm font-semibold text-white mb-3">
         Trending Searches
       </h3>
       <div className="space-y-1">
@@ -74,19 +74,19 @@ export function TrendingSearches({ limit = 10, days = 7, className = '' }: Trend
           <button
             key={item.query}
             onClick={() => handleSearchClick(item.query)}
-            className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+            className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors group"
             data-testid={`trending-search-${index}`}
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-5">
+                <span className="text-xs font-medium text-muted-foreground w-5">
                   {index + 1}
                 </span>
-                <span className="text-sm text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                <span className="text-sm text-white truncate group-hover:text-blue-400">
                   {item.query}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span title="Search count">{item.search_count}</span>
                 {item.avg_results > 0 && (
                   <span className="text-green-600 dark:text-green-400" title="Average results">

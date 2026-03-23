@@ -10,14 +10,14 @@ import { useToast } from '@/context/ToastContext';
 import { cn } from '@/lib/utils';
 
 export const FORUM_TOPICS = [
-  { value: 'discussion', label: 'Discussion', color: '#3B82F6' },
+  { value: 'discussion', label: 'Discussion', color: '#818CF8' },
   { value: 'help', label: 'Help', color: '#22C55E' },
   { value: 'suggestion', label: 'Suggestion', color: '#F59E0B' },
   { value: 'bug-report', label: 'Bug Report', color: '#EF4444' },
-  { value: 'feature-request', label: 'Feature Request', color: '#8B5CF6' },
-  { value: 'news', label: 'News', color: '#06B6D4' },
+  { value: 'feature-request', label: 'Feature Request', color: '#A855F7' },
+  { value: 'news', label: 'News', color: '#6366F1' },
   { value: 'clip-highlight', label: 'Clip Highlight', color: '#F97316' },
-  { value: 'meta', label: 'Meta', color: '#6366F1' },
+  { value: 'meta', label: 'Meta', color: '#C084FC' },
 ] as const;
 
 export function CreateThread() {

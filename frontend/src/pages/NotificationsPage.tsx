@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -64,16 +65,16 @@ export function NotificationsPage() {
         <div className="max-w-4xl mx-auto py-8">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Notifications
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Stay updated with your activity
             </p>
           </div>
 
           {/* Actions Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div className="bg-surface rounded-lg shadow-sm border border-border p-4 mb-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               {/* Filter Tabs */}
               <div className="flex gap-2 flex-wrap">
@@ -128,7 +129,7 @@ export function NotificationsPage() {
                 )}
                 <Link to="/notifications/preferences">
                   <Button variant="ghost" size="sm">
-                    ⚙️ Preferences
+                    <Settings size={16} strokeWidth={1.75} className='mr-1.5 inline' /> Preferences
                   </Button>
                 </Link>
               </div>
@@ -136,7 +137,7 @@ export function NotificationsPage() {
           </div>
 
           {/* Notifications List */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
             {isLoading ? (
               <div className="p-4">
                 <NotificationSkeleton />
@@ -163,7 +164,7 @@ export function NotificationsPage() {
               </div>
             ) : data && data.notifications && data.notifications.length > 0 ? (
               <>
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                <div className="divide-y divide-border">
                   {data.notifications.map((notification) => (
                     <div key={notification.id} className="relative group">
                       <NotificationItem
@@ -179,11 +180,11 @@ export function NotificationsPage() {
                             deleteMutation.mutate(notification.id);
                           }
                         }}
-                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-surface-hover"
                         aria-label="Delete notification"
                       >
                         <svg
-                          className="w-4 h-4 text-gray-500 dark:text-gray-400"
+                          className="w-4 h-4 text-muted-foreground"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -202,7 +203,7 @@ export function NotificationsPage() {
 
                 {/* Pagination */}
                 {(data.has_more || page > 1) && (
-                  <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-center gap-2">
+                  <div className="p-4 border-t border-border flex justify-center gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -211,7 +212,7 @@ export function NotificationsPage() {
                     >
                       Previous
                     </Button>
-                    <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span className="px-4 py-2 text-sm text-muted-foreground">
                       Page {page}
                     </span>
                     <Button

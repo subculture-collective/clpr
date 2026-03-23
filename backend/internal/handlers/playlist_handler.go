@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -612,6 +613,54 @@ func (h *PlaylistHandler) ListPublicPlaylists(c *gin.Context) {
 			Error: &ErrorInfo{
 				Code:    "INTERNAL_ERROR",
 				Message: "Failed to list public playlists",
+			},
+		})
+		return
+	}
+
+	// Build pagination metadata
+	totalPages := (total + limit - 1) / limit
+	meta := PaginationMeta{
+		Page:       page,
+		Limit:      limit,
+		Total:      total,
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
+	}
+
+	c.JSON(http.StatusOK, StandardResponse{
+		Success: true,
+		Data:    playlists,
+		Meta:    meta,
+	})
+}
+
+// ListBookmarkedPlaylists handles GET /api/playlists/bookmarks
+func (h *PlaylistHandler) ListBookmarkedPlaylists(c *gin.Context) {
+	userID := c.MustGet("user_id").(uuid.UUID)
+
+	// Parse pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	// Validate and constrain parameters
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	// Get bookmarked playlists
+	playlists, total, err := h.playlistService.ListBookmarkedPlaylists(c.Request.Context(), userID, page, limit)
+	if err != nil {
+		log.Printf("ERROR: ListBookmarkedPlaylists failed for user %s: %v", userID, err)
+		c.JSON(http.StatusInternalServerError, StandardResponse{
+			Success: false,
+			Error: &ErrorInfo{
+				Code:    "INTERNAL_ERROR",
+				Message: "Failed to list bookmarked playlists",
 			},
 		})
 		return

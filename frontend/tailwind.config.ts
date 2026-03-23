@@ -124,19 +124,19 @@ const config: Config = {
           950: '#450a0a',
         },
 
-        // Info state
+        // Info state (indigo — complements the violet brand)
         info: {
-          50: '#ecfeff',
-          100: '#cffafe',
-          200: '#a5f3fc',
-          300: '#67e8f9',
-          400: '#22d3ee',
-          500: '#06b6d4',
-          600: '#0891b2',
-          700: '#0e7490',
-          800: '#155e75',
-          900: '#164e63',
-          950: '#083344',
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
         },
 
         // Neutral grays: purple-tinted for dark UI
@@ -171,6 +171,12 @@ const config: Config = {
           '"Space Grotesk"',
           'system-ui',
           '-apple-system',
+          'sans-serif',
+        ],
+        accent: [
+          'Syne',
+          '"Space Grotesk"',
+          'system-ui',
           'sans-serif',
         ],
         mono: [
@@ -223,6 +229,11 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
+        'vote-pulse': {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.2)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
 
       animation: {
@@ -233,6 +244,7 @@ const config: Config = {
         'slide-in-up': 'slide-in-up 0.3s ease-out',
         'slide-in-down': 'slide-in-down 0.3s ease-out',
         shimmer: 'shimmer 2s infinite',
+        'vote-pulse': 'vote-pulse 200ms ease-out',
       },
     },
   },

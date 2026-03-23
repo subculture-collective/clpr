@@ -23,14 +23,14 @@ export const calculateSavingsPercent = (monthlyPrice: number, yearlyPrice: numbe
  * Pro feature list with icons
  */
 export const PRO_FEATURES = [
-  { icon: '🚫', text: 'Ad-free browsing' },
-  { icon: '⭐', text: 'Unlimited favorites' },
-  { icon: '📁', text: 'Custom collections' },
-  { icon: '🔍', text: 'Advanced search & filters' },
-  { icon: '🔄', text: 'Cross-device sync' },
-  { icon: '📊', text: 'Export your data' },
-  { icon: '🎯', text: '5x higher rate limits' },
-  { icon: '✉️', text: 'Priority support' },
+  { icon: 'ban', text: 'Ad-free browsing' },
+  { icon: 'star', text: 'Unlimited favorites' },
+  { icon: 'folder', text: 'Custom collections' },
+  { icon: 'search', text: 'Advanced search & filters' },
+  { icon: 'refresh-cw', text: 'Cross-device sync' },
+  { icon: 'bar-chart-3', text: 'Export your data' },
+  { icon: 'target', text: '5x higher rate limits' },
+  { icon: 'mail', text: 'Priority support' },
 ] as const;
 
 /**

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Search, MousePointer, Tag, PenLine, Zap, Lock } from 'lucide-react';
 import { Container, Card, CardBody, SEO, Button } from '../components';
 
 const CHROME_STORE_URL = 'https://chrome.google.com/webstore/detail/clipper';
@@ -7,7 +8,7 @@ const GITHUB_EXTENSION_URL =
     'https://github.com/subculture-collective/clipper/tree/main/extension';
 
 interface FeatureProps {
-    icon: string;
+    icon: React.ReactNode;
     title: string;
     description: string;
 }
@@ -15,7 +16,7 @@ interface FeatureProps {
 function Feature({ icon, title, description }: FeatureProps) {
     return (
         <div className="flex gap-4">
-            <span className="text-2xl flex-shrink-0" aria-hidden="true">
+            <span className="flex-shrink-0" aria-hidden="true">
                 {icon}
             </span>
             <div>
@@ -75,32 +76,32 @@ export function ExtensionPage() {
                         <h2 className="text-2xl font-semibold mb-6">Features</h2>
                         <div className="grid gap-6 sm:grid-cols-2">
                             <Feature
-                                icon="🔍"
+                                icon={<Search size={16} strokeWidth={1.75} />}
                                 title="Auto-detect clips"
                                 description="Automatically detects Twitch clip pages (twitch.tv and clips.twitch.tv) and enables the share button."
                             />
                             <Feature
-                                icon="🖱️"
+                                icon={<MousePointer size={16} strokeWidth={1.75} />}
                                 title="Context menu"
                                 description='Right-click any Twitch clip page to see "Share to Clipper" in the context menu.'
                             />
                             <Feature
-                                icon="✏️"
+                                icon={<PenLine size={16} strokeWidth={1.75} />}
                                 title="Editable metadata"
                                 description="Pre-fills the clip title from Twitch. You can edit the title, add a description, and pick tags before sharing."
                             />
                             <Feature
-                                icon="🏷️"
+                                icon={<Tag size={16} strokeWidth={1.75} />}
                                 title="Tag selection"
                                 description="Browse and search all Clipper tags directly in the popup and apply multiple tags to your submission."
                             />
                             <Feature
-                                icon="⚡"
+                                icon={<Zap size={16} strokeWidth={1.75} />}
                                 title="One-click submit"
                                 description="Click Share Clip to submit instantly. A desktop notification confirms when your clip is pending review."
                             />
                             <Feature
-                                icon="🔐"
+                                icon={<Lock size={16} strokeWidth={1.75} />}
                                 title="Secure auth"
                                 description="Authenticates using your existing Clipper account. No separate credentials required."
                             />

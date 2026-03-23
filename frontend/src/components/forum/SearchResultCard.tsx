@@ -49,8 +49,8 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
     <Link
       to={link}
       className={cn(
-        'block p-4 bg-gray-900 border border-gray-700 rounded-lg',
-        'hover:bg-gray-800 hover:border-gray-600 transition-all duration-200',
+        'block p-4 bg-surface border border-border rounded-lg',
+        'hover:bg-surface-hover hover:border-subtle transition-all duration-200',
         className
       )}
     >
@@ -61,7 +61,7 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
               {result.title}
             </h3>
           )}
-          <div className="flex items-center gap-3 text-sm text-gray-400 flex-wrap">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
               <span>{result.author_name}</span>
@@ -108,7 +108,7 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
 
       {/* Highlighted snippet */}
       <div
-        className="text-sm text-gray-300 line-clamp-3 search-highlight"
+        className="text-sm text-foreground line-clamp-3 search-highlight"
         dangerouslySetInnerHTML={{ __html: sanitizedHeadline }}
       />
     </Link>

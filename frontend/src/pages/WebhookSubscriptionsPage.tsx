@@ -259,7 +259,7 @@ export function WebhookSubscriptionsPage() {
                                                             Active
                                                         </span>
                                                     ) : (
-                                                        <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded">
+                                                        <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded">
                                                             Inactive
                                                         </span>
                                                     )}
@@ -709,7 +709,7 @@ function DeliveriesModal({
             pending: 'bg-warning-100 text-warning-700',
             failed: 'bg-error-100 text-error-700',
         };
-        return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-700';
+        return colors[status as keyof typeof colors] || 'bg-muted text-muted-foreground';
     };
 
     return (

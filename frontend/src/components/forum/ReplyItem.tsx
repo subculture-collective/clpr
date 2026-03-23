@@ -106,8 +106,8 @@ export function ReplyItem({
     return (
       <div
         className={cn(
-          'p-3 bg-gray-800 rounded border border-gray-700',
-          'text-sm text-gray-500 italic',
+          'p-3 bg-surface-raised rounded border border-border',
+          'text-sm text-muted-foreground italic',
           className
         )}
       >
@@ -131,7 +131,7 @@ export function ReplyItem({
   return (
     <div
       className={cn(
-        'bg-gray-900 rounded-lg border border-gray-700 p-4',
+        'bg-surface rounded-lg border border-border p-4',
         className
       )}
     >
@@ -156,7 +156,7 @@ export function ReplyItem({
                   <ReputationBadge score={reply.reputation.score} badge={reply.reputation.badge} />
                 )}
               </div>
-              <p className="text-xs text-gray-500" title={timestamp.title}>
+              <p className="text-xs text-muted-foreground" title={timestamp.title}>
                 {timestamp.display}
               </p>
             </div>
@@ -166,13 +166,13 @@ export function ReplyItem({
               <div className="flex gap-2 text-xs">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-white transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  className="text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   Delete
                 </button>
@@ -187,8 +187,8 @@ export function ReplyItem({
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 className={cn(
-                  'w-full bg-gray-800 text-white rounded-lg p-3',
-                  'border border-gray-700 focus:border-blue-500 focus:outline-none',
+                  'w-full bg-surface-raised text-white rounded-lg p-3',
+                  'border border-border focus:border-primary-500 focus:outline-none',
                   'resize-none'
                 )}
                 rows={4}
@@ -197,14 +197,14 @@ export function ReplyItem({
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-sm bg-surface-raised hover:bg-surface-hover text-white rounded transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={!editContent.trim()}
-                  className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
                 >
                   Save
                 </button>
@@ -212,7 +212,7 @@ export function ReplyItem({
             </div>
           ) : (
             <>
-              <div className="prose prose-invert prose-sm max-w-none">
+              <div className="forum-body max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {reply.content}
                 </ReactMarkdown>
@@ -234,7 +234,7 @@ export function ReplyItem({
                 {depth < maxDepth && (
                   <button
                     onClick={() => onReply(reply.id)}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
                   >
                     Reply
                   </button>
@@ -244,7 +244,7 @@ export function ReplyItem({
                 {currentUserId && !isAuthor && (
                   <button
                     onClick={() => setShowReportModal(true)}
-                    className="flex items-center gap-1 text-sm text-gray-400 hover:text-red-400 transition-colors"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-red-400 transition-colors"
                   >
                     <Flag className="w-3.5 h-3.5" />
                     Report
@@ -276,13 +276,13 @@ export function ReplyItem({
         size="sm"
       >
         <div className="p-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Reason
           </label>
           <select
             value={reportReason}
             onChange={(e) => setReportReason(e.target.value as FlagContentRequest['reason'])}
-            className="w-full bg-gray-800 text-white rounded-lg p-2.5 border border-gray-700 focus:border-blue-500 focus:outline-none mb-4"
+            className="w-full bg-surface-raised text-white rounded-lg p-2.5 border border-border focus:border-primary-500 focus:outline-none mb-4"
           >
             <option value="spam">Spam</option>
             <option value="harassment">Harassment</option>
@@ -291,13 +291,13 @@ export function ReplyItem({
             <option value="other">Other</option>
           </select>
 
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Additional details (optional)
           </label>
           <textarea
             value={reportDetails}
             onChange={(e) => setReportDetails(e.target.value)}
-            className="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-700 focus:border-blue-500 focus:outline-none resize-none mb-4"
+            className="w-full bg-surface-raised text-white rounded-lg p-3 border border-border focus:border-primary-500 focus:outline-none resize-none mb-4"
             rows={3}
             placeholder="Provide any additional context..."
           />
@@ -305,7 +305,7 @@ export function ReplyItem({
           <div className="flex gap-3 justify-end">
             <button
               onClick={() => setShowReportModal(false)}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              className="px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg transition-colors"
             >
               Cancel
             </button>

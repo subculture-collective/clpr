@@ -95,16 +95,16 @@ export function CreatorDashboardPage() {
 
       <Container className="py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Creator Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Manage your clips - edit titles and control visibility
           </p>
         </div>
 
         {data?.clips.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 py-12">
+          <div className="text-center text-muted-foreground py-12">
             <p className="text-lg">No clips found</p>
           </div>
         ) : (
@@ -112,7 +112,7 @@ export function CreatorDashboardPage() {
             {data?.clips.map((clip) => (
               <div
                 key={clip.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+                className="bg-surface rounded-lg shadow-md p-6"
               >
                 <div className="flex items-start gap-4">
                   {/* Clip thumbnail */}
@@ -141,7 +141,7 @@ export function CreatorDashboardPage() {
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-surface text-foreground"
                           placeholder="Clip title"
                           aria-describedby={`clip-title-help-${clip.id}`}
                         />
@@ -169,7 +169,7 @@ export function CreatorDashboardPage() {
                     ) : (
                       <>
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-lg font-semibold text-foreground">
                             {clip.title}
                             {clip.is_hidden && (
                               <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400">
@@ -179,14 +179,14 @@ export function CreatorDashboardPage() {
                           </h3>
                           <button
                             onClick={() => handleEditClick(clip)}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                            className="p-2 hover:bg-surface-hover rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                             title="Edit title"
                             aria-label={`Edit title for ${clip.title}`}
                           >
                             <Pencil className="w-4 h-4" aria-hidden="true" />
                           </button>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        <p className="text-sm text-muted-foreground mb-3">
                           Created by {clip.creator_name} • {clip.view_count} views • Score: {clip.vote_score}
                         </p>
                       </>
@@ -223,7 +223,7 @@ export function CreatorDashboardPage() {
 
         {/* Pagination info */}
         {data && data.total > 0 && (
-          <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             Showing {data.clips.length} of {data.total} clips
           </div>
         )}

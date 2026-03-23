@@ -1,3 +1,4 @@
+import { Trophy, Tv, Zap } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -104,7 +105,7 @@ export default function LeaderboardPage() {
                 <h1 className='text-4xl font-bold text-white mb-2'>
                     Leaderboards
                 </h1>
-                <p className='text-gray-400'>
+                <p className='text-muted-foreground'>
                     Top contributors in the clpr community
                 </p>
             </div>
@@ -113,33 +114,33 @@ export default function LeaderboardPage() {
             <div className='flex gap-2 mb-6'>
                 <button
                     onClick={() => handleTypeChange('karma')}
-                    className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
                         type === 'karma'
                             ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
+                            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
-                    🏆 Karma
+                    <Trophy size={20} /> Karma
                 </button>
                 <button
                     onClick={() => handleTypeChange('engagement')}
-                    className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
                         type === 'engagement'
                             ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
+                            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
-                    ⚡ Engagement
+                    <Zap size={20} /> Engagement
                 </button>
                 <button
                     onClick={() => handleTypeChange('streamers')}
-                    className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
                         type === 'streamers'
                             ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
+                            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
-                    🎮 Streamers
+                    <Tv size={20} /> Streamers
                 </button>
             </div>
 
@@ -187,14 +188,17 @@ export default function LeaderboardPage() {
                             {streamerRankings.map((streamer, idx) => {
                                 const rank = idx + 1;
                                 const rankBadge =
-                                    rank === 1 ? '\u{1F947}' :
-                                    rank === 2 ? '\u{1F948}' :
-                                    rank === 3 ? '\u{1F949}' :
-                                    `#${rank}`;
+                                    rank <= 3 ? (
+                                        <span className={`font-accent font-extrabold text-lg ${
+                                            rank === 1 ? 'text-yellow-400' :
+                                            rank === 2 ? 'text-neutral-300' :
+                                            'text-amber-600'
+                                        }`}>{rank}</span>
+                                    ) : `#${rank}`;
                                 return (
                                     <tr
                                         key={streamer.broadcaster_id}
-                                        className='border-b border-border last:border-b-0 hover:bg-gray-800/50 transition-colors'
+                                        className='border-b border-border last:border-b-0 hover:bg-surface-hover transition-colors'
                                     >
                                         <td className='px-4 py-3 text-text-primary font-semibold text-lg'>
                                             {rankBadge}
@@ -228,7 +232,7 @@ export default function LeaderboardPage() {
             )}
 
             {!loading && !error && type === 'streamers' && streamerRankings.length === 0 && (
-                <div className='text-center text-gray-400 py-12'>
+                <div className='text-center text-muted-foreground py-12'>
                     <p>No streamer rankings available yet.</p>
                 </div>
             )}
@@ -256,17 +260,17 @@ export default function LeaderboardPage() {
                             <button
                                 onClick={() => handlePageChange(page - 1)}
                                 disabled={page === 1}
-                                className='px-6 py-3 bg-gray-800 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-750 transition-colors'
+                                className='px-6 py-3 bg-surface text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-hover transition-colors'
                             >
                                 Previous
                             </button>
-                            <div className='px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold'>
+                            <div className='px-6 py-3 bg-background text-white rounded-lg font-semibold'>
                                 Page {page}
                             </div>
                             <button
                                 onClick={() => handlePageChange(page + 1)}
                                 disabled={leaderboard.entries.length < limit}
-                                className='px-6 py-3 bg-gray-800 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-750 transition-colors'
+                                className='px-6 py-3 bg-surface text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-hover transition-colors'
                             >
                                 Next
                             </button>

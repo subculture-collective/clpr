@@ -24,9 +24,9 @@ export function SearchHistory({ className = '', maxItems = 10 }: SearchHistoryPr
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-3"></div>
+        <div className="h-6 bg-surface-raised rounded w-32 mb-3"></div>
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+          <div key={i} className="h-8 bg-surface-raised rounded mb-2"></div>
         ))}
       </div>
     );
@@ -42,12 +42,12 @@ export function SearchHistory({ className = '', maxItems = 10 }: SearchHistoryPr
     <>
       <div className={className} data-testid="search-history">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-white">
             Recent Searches
           </h3>
           <button
             onClick={() => setShowConfirmModal(true)}
-            className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-xs text-muted-foreground hover:text-foreground"
             data-testid="clear-history-button"
           >
             Clear
@@ -58,14 +58,14 @@ export function SearchHistory({ className = '', maxItems = 10 }: SearchHistoryPr
           <button
             key={`${item.query}-${index}`}
             onClick={() => handleSearchClick(item.query)}
-            className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+            className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors group"
             data-testid={`history-item-${index}`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-gray-900 dark:text-white truncate flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+              <span className="text-sm text-white truncate flex-1 group-hover:text-blue-400">
                 {item.query}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 {item.result_count > 0 ? `${item.result_count}` : '0'}
               </span>
             </div>

@@ -33,7 +33,7 @@ export function LiveFeedPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Live Now</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Broadcasters you follow who are currently streaming
           </p>
         </div>
@@ -53,10 +53,10 @@ export function LiveFeedPage() {
         )}
 
         {!isLoading && !error && liveBroadcasters.length === 0 && (
-          <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
-            <PlayCircle className="mx-auto mb-4 text-gray-400" size={48} />
+          <div className="bg-surface border border-border rounded-lg p-8 text-center">
+            <PlayCircle className="mx-auto mb-4 text-muted-foreground" size={48} />
             <h3 className="text-xl font-semibold mb-2">No live streams</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               None of the broadcasters you follow are currently live.
             </p>
             <Link
@@ -73,9 +73,9 @@ export function LiveFeedPage() {
             {liveBroadcasters.map((broadcaster) => (
               <div
                 key={broadcaster.broadcaster_id}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-surface border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
               >
-                <div className="relative aspect-video bg-gray-900">
+                <div className="relative aspect-video bg-background">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <PlayCircle className="text-white/50" size={64} />
                   </div>
@@ -111,18 +111,18 @@ export function LiveFeedPage() {
                   </div>
 
                   {broadcaster.stream_title && (
-                    <p className="text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
+                    <p className="text-foreground mb-2 line-clamp-2">
                       {broadcaster.stream_title}
                     </p>
                   )}
 
                   {broadcaster.game_name && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-muted-foreground mb-3">
                       Playing {broadcaster.game_name}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Eye size={16} />
                       <span>

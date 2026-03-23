@@ -347,6 +347,10 @@ func (s *PlaylistScriptService) GeneratePlaylist(ctx context.Context, scriptID u
 		return nil, fmt.Errorf("invalid script owner")
 	}
 	if len(clips) == 0 {
+		// Soft-delete the previous playlist so stale content isn't shown
+		if script.LastGeneratedPlaylistID != nil {
+			_ = s.playlistRepo.SoftDelete(ctx, *script.LastGeneratedPlaylistID)
+		}
 		return nil, fmt.Errorf("strategy %s returned no clips", script.Strategy)
 	}
 

@@ -12,6 +12,7 @@ import {
     ListPlus,
     Repeat,
     Shuffle,
+    ClipboardList,
 } from 'lucide-react';
 import { Button, Spinner } from '@/components/ui';
 import { SEO } from '@/components/SEO';
@@ -126,7 +127,7 @@ export function QueuePage() {
                 {/* Empty State */}
                 {!isLoading && !isError && queueItems.length === 0 && (
                     <div className='text-center py-16 bg-card rounded-xl border border-border'>
-                        <div className='text-5xl mb-4'>📋</div>
+                        <div className='mb-4 text-text-tertiary'><ClipboardList size={48} strokeWidth={1.5} /></div>
                         <h2 className='text-xl font-semibold mb-2'>
                             Your queue is empty
                         </h2>

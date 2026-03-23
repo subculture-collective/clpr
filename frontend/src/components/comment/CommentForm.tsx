@@ -7,7 +7,7 @@ import { MarkdownHelpModal } from '@/components/ui/MarkdownHelpModal';
 import { LinkInputModal } from '@/components/ui/LinkInputModal';
 import { useCreateComment, useUpdateComment, useToast } from '@/hooks';
 import { useAutoSave, useDraftStorage } from '@/hooks/useAutoSave';
-import { HelpCircle, Smile, Save } from 'lucide-react';
+import { HelpCircle, Smile, Save, Link2, Quote } from 'lucide-react';
 
 interface CommentFormProps {
     clipId: string;
@@ -252,7 +252,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                         className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm cursor-pointer'
                         title='Insert Link'
                     >
-                        🔗
+                        <Link2 size={16} strokeWidth={1.75} />
                     </button>
                     <button
                         type='button'
@@ -260,7 +260,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                         className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm cursor-pointer'
                         title='Quote'
                     >
-                        ❝
+                        <Quote size={16} strokeWidth={1.75} />
                     </button>
                     <button
                         type='button'

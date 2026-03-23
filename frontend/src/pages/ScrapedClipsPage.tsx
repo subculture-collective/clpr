@@ -146,7 +146,7 @@ export function ScrapedClipsPage() {
               onClick={handleTop10kToggle}
               className={`
                 relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-                ${top10kEnabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'}
+                ${top10kEnabled ? 'bg-primary-500' : 'bg-muted'}
               `}
               role="switch"
               aria-checked={top10kEnabled}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
 @import 'tailwindcss';
 
 /* Custom breakpoints for Tailwind v4 */
@@ -32,18 +32,18 @@
         /* Interaction */
         --color-upvote: 249 115 22;
         --color-downvote: 99 102 241;
-        --color-cta: 59 130 246;
-        --color-cta-hover: 37 99 235;
+        --color-cta: 129 140 248;
+        --color-cta-hover: 99 102 241;
 
         /* Focus */
         --color-focus-ring: 124 58 237;
 
-        /* Thread depth colors */
+        /* Thread depth colors (violet-pink warm family) */
         --color-thread-0: 124 58 237;
-        --color-thread-1: 99 102 241;
-        --color-thread-2: 59 130 246;
-        --color-thread-3: 6 182 212;
-        --color-thread-4: 20 184 166;
+        --color-thread-1: 168 85 247;
+        --color-thread-2: 192 132 252;
+        --color-thread-3: 232 121 168;
+        --color-thread-4: 240 171 171;
 
         /* Nav height for sticky calculations */
         --nav-height: 56px;
@@ -91,27 +91,27 @@
     }
 
     h1 {
-        @apply text-3xl xs:text-4xl lg:text-5xl;
-    }
-
-    h2 {
         @apply text-2xl xs:text-3xl lg:text-4xl;
     }
 
-    h3 {
+    h2 {
         @apply text-xl xs:text-2xl lg:text-3xl;
     }
 
-    h4 {
+    h3 {
         @apply text-lg xs:text-xl lg:text-2xl;
     }
 
-    h5 {
+    h4 {
         @apply text-base xs:text-lg lg:text-xl;
     }
 
-    h6 {
+    h5 {
         @apply text-sm xs:text-base lg:text-lg;
+    }
+
+    h6 {
+        @apply text-xs xs:text-sm lg:text-base;
     }
 
     a {
@@ -225,6 +225,15 @@
         border-color: rgb(var(--color-brand));
     }
 
+    /* Brand tint utilities for notifications */
+    .bg-brand-tint {
+        background-color: rgb(var(--color-brand) / 0.08);
+    }
+
+    .hover\:bg-brand-tint-hover:hover {
+        background-color: rgb(var(--color-brand) / 0.12);
+    }
+
     /* Thread depth border colors */
     .border-thread-0 {
         border-color: rgb(var(--color-thread-0));
@@ -310,6 +319,108 @@
 
     .comment-body li {
         margin-top: 0.125rem;
+    }
+
+    /* Forum body markdown rendering — larger line-height than comment-body */
+    .forum-body {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 0.9375rem; /* 15px */
+        line-height: 1.75;
+        color: rgb(var(--color-text-primary));
+    }
+
+    .forum-body p + p {
+        margin-top: 0.75rem;
+    }
+
+    .forum-body blockquote {
+        border-left: 3px solid rgb(var(--color-border));
+        padding-left: 1rem;
+        color: rgb(var(--color-text-secondary));
+        font-style: italic;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .forum-body code {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.8125rem;
+        background: rgb(var(--color-surface-raised));
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .forum-body pre code {
+        display: block;
+        padding: 1rem;
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+
+    .forum-body a {
+        color: rgb(var(--color-brand));
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .forum-body a:hover {
+        color: rgb(var(--color-brand-hover));
+    }
+
+    .forum-body ul,
+    .forum-body ol {
+        padding-left: 1.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .forum-body li {
+        margin-top: 0.25rem;
+    }
+
+    .forum-body li + li {
+        margin-top: 0.25rem;
+    }
+
+    .forum-body h1,
+    .forum-body h2,
+    .forum-body h3,
+    .forum-body h4 {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: rgb(var(--color-text-primary));
+    }
+
+    .forum-body h1 { font-size: 1.5rem; }
+    .forum-body h2 { font-size: 1.25rem; }
+    .forum-body h3 { font-size: 1.125rem; }
+
+    .forum-body hr {
+        border-color: rgb(var(--color-border));
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .forum-body img {
+        max-width: 100%;
+        border-radius: 8px;
+    }
+
+    .forum-body table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .forum-body th,
+    .forum-body td {
+        border: 1px solid rgb(var(--color-border));
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+    }
+
+    .forum-body th {
+        background: rgb(var(--color-surface-raised));
+        font-weight: 600;
     }
 
     /* Clip detail side-by-side layout */
@@ -591,6 +702,17 @@
     & b {
         @apply font-semibold text-yellow-400 bg-yellow-900/30 px-0.5 rounded;
     }
+}
+
+/* Vote pulse micro-interaction */
+@keyframes vote-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.vote-active {
+    animation: vote-pulse 200ms ease-out;
 }
 
 /* Reduced motion preference */

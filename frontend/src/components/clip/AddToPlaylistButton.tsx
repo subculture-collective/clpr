@@ -4,6 +4,7 @@ import { fetchUserPlaylists, addClipToPlaylist } from '@/lib/playlist-api';
 import { useIsAuthenticated, useToast } from '@/hooks';
 import { Link } from 'react-router-dom';
 import { Modal } from '@/components/ui';
+import { ClipboardList, ListMusic } from 'lucide-react';
 
 interface AddToPlaylistButtonProps {
     clipId: string;
@@ -66,20 +67,8 @@ export function AddToPlaylistButton({ clipId }: AddToPlaylistButtonProps) {
                     !isAuthenticated ? 'Log in to add to playlist' : undefined
                 }
             >
-                <svg
-                    className='w-5 h-5 shrink-0'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                >
-                    <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'
-                    />
-                </svg>
-                <span className='hidden sm:inline'>Add to Playlist</span>
+                <ClipboardList size={18} className='shrink-0' strokeWidth={1.75} />
+                <span className='hidden sm:inline'>Playlist</span>
             </button>
 
             <Modal
@@ -95,7 +84,7 @@ export function AddToPlaylistButton({ clipId }: AddToPlaylistButtonProps) {
                     </div>
                 : playlists.length === 0 ?
                     <div className='py-8 text-center'>
-                        <div className='text-4xl mb-3'>📋</div>
+                        <div className='mb-3 text-text-tertiary'><ClipboardList size={40} strokeWidth={1.5} /></div>
                         <p className='text-muted-foreground mb-4'>
                             You don't have any playlists yet
                         </p>
@@ -116,7 +105,7 @@ export function AddToPlaylistButton({ clipId }: AddToPlaylistButtonProps) {
                                 className='w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors disabled:opacity-50 flex items-center gap-3 cursor-pointer'
                             >
                                 <div className='w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0'>
-                                    🎵
+                                    <ListMusic size={20} strokeWidth={1.75} />
                                 </div>
                                 <div className='min-w-0 flex-1'>
                                     <div className='font-medium truncate'>

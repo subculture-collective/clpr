@@ -113,7 +113,7 @@ export function VerifiedBadgeTestPage() {
         </Card>
 
         {/* Dark Mode Preview */}
-        <Card className="bg-slate-900 text-white">
+        <Card className="bg-background text-white">
           <CardBody>
             <h2 className="text-xl font-semibold mb-4">Dark Mode</h2>
             <div className="flex items-center gap-6">
@@ -122,7 +122,7 @@ export function VerifiedBadgeTestPage() {
                 <VerifiedBadge size="md" />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-400">With smaller badge:</span>
+                <span className="text-sm text-muted-foreground">With smaller badge:</span>
                 <VerifiedBadge size="sm" />
               </div>
             </div>
