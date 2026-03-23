@@ -19,8 +19,9 @@ import {
     Calendar,
     ChevronLeft,
     ChevronRight,
+    AlertTriangle,
 } from 'lucide-react';
-import { ClipCard } from '../components/clip';
+import { ClipGridCard } from '../components/clip';
 
 type TabType = 'clips' | 'activity' | 'followers' | 'following';
 
@@ -229,8 +230,9 @@ export function UserProfilePage() {
                                         className='mb-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-3'
                                     >
                                         <div className='flex items-start gap-2'>
-                                            <span className='text-red-600 dark:text-red-400 font-semibold text-sm'>
-                                                ⚠️ This user is banned
+                                            <span className='text-red-600 dark:text-red-400 font-semibold text-sm flex items-center gap-1'>
+                                                <AlertTriangle size={16} strokeWidth={1.75} />
+                                                This user is banned
                                             </span>
                                         </div>
                                         {userData.ban_reason && (
@@ -346,7 +348,7 @@ export function UserProfilePage() {
                                 <>
                                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                         {clipsData.clips.map(clip => (
-                                            <ClipCard
+                                            <ClipGridCard
                                                 key={clip.id}
                                                 clip={clip}
                                             />

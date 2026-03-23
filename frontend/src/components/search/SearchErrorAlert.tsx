@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from '../ui/Alert';
+import { Zap } from 'lucide-react';
 
 export interface SearchErrorAlertProps {
     /**
@@ -172,14 +173,14 @@ export function SearchErrorAlert({
                         {/* Circuit Breaker Status */}
                         {isCircuitOpen && (
                             <p className='mt-2 text-sm text-muted-foreground' data-testid='circuit-breaker-status'>
-                                ⚡ Service protection active - automatic retries paused
+                                <Zap size={14} strokeWidth={1.75} className='inline mr-1' /> Service protection active - automatic retries paused
                             </p>
                         )}
                     </div>
 
                     {/* Retry Progress Bar */}
                     {isRetrying && (
-                        <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden' data-testid='retry-progress-bar'>
+                        <div className='w-full bg-surface-raised rounded-full h-2 overflow-hidden' data-testid='retry-progress-bar'>
                             <div 
                                 className='h-full bg-primary animate-pulse'
                                 style={{ width: `${((retryCount - 1) / maxRetries) * 100}%` }}
@@ -199,7 +200,7 @@ export function SearchErrorAlert({
                         <button
                             onClick={handleRetry}
                             disabled={isRetrying}
-                            className='inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                            className='inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface-raised border border-border hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
                             data-testid='retry-search'
                             aria-label={
                                 isRetrying
@@ -257,7 +258,7 @@ export function SearchErrorAlert({
                         {isRetrying && onCancelRetry && (
                             <button
                                 onClick={handleCancelRetry}
-                                className='inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+                                className='inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface-raised border border-border hover:bg-surface-hover transition-colors'
                                 data-testid='cancel-retry'
                                 aria-label='Cancel retry'
                             >

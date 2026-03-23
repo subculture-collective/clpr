@@ -1,6 +1,8 @@
-import { Container, SEO } from '../components';
+import { SEO } from '../components';
 import { PlaylistCard } from '../components/playlist/PlaylistCard';
 import { Button } from '../components/ui';
+import { FeedLayout } from '../components/layout/FeedLayout';
+import { FeedSidebar } from '../components/layout/FeedSidebar';
 import { useEffect, useState } from 'react';
 import { useFeaturedPlaylists } from '../hooks/usePlaylist';
 import type { Playlist } from '../types/playlist';
@@ -41,8 +43,7 @@ export function DiscoveryListsPage() {
         description="Browse curated collections of amazing Twitch clips. Find new content organized by theme, game, and community favorites."
         canonicalUrl="/discover/lists"
       />
-      <Container className="py-8">
-        <div className="max-w-6xl mx-auto">
+      <FeedLayout sidebar={<FeedSidebar />}>
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -95,8 +96,7 @@ export function DiscoveryListsPage() {
               </p>
             </div>
           )}
-        </div>
-      </Container>
+      </FeedLayout>
     </>
   );
 }

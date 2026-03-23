@@ -224,6 +224,48 @@ func (h *BroadcasterHandler) ListPopularBroadcasters(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"broadcasters": broadcasters})
 }
 
+// GetBroadcasterRankings returns the ranked broadcaster list
+// GET /api/v1/broadcasters/rankings
+func (h *BroadcasterHandler) GetBroadcasterRankings(c *gin.Context) {
+	limit := 20
+	offset := 0
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+	if o := c.Query("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	rankings, total, err := h.broadcasterRepo.GetRankedBroadcasters(c.Request.Context(), limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get broadcaster rankings"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    rankings,
+		"meta": gin.H{
+			"total":  total,
+			"limit":  limit,
+			"offset": offset,
+		},
+	})
+}
+
+// RefreshBroadcasterRankings triggers a refresh of the rankings materialized view (admin only)
+// POST /api/v1/admin/broadcasters/refresh-rankings
+func (h *BroadcasterHandler) RefreshBroadcasterRankings(c *gin.Context) {
+	if err := h.broadcasterRepo.RefreshRankings(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh rankings"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Rankings refreshed"})
+}
+
 // ListBroadcasterClips returns all clips for a broadcaster
 // GET /api/v1/broadcasters/:id/clips
 func (h *BroadcasterHandler) ListBroadcasterClips(c *gin.Context) {

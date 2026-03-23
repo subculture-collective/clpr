@@ -1,3 +1,4 @@
+import { Film, MessageSquare, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LeaderboardEntry } from '../../types/reputation';
 import { RankBadge } from './ReputationDisplay';
@@ -8,59 +9,69 @@ interface LeaderboardTableProps {
   currentUserId?: string;
 }
 
-const rankMedals: Record<number, string> = {
-  1: '🥇',
-  2: '🥈',
-  3: '🥉',
+const rankColors: Record<number, string> = {
+  1: 'text-yellow-400',
+  2: 'text-neutral-300',
+  3: 'text-amber-600',
 };
+
+function RankMedal({ rank }: { rank: number }) {
+  const colorClass = rankColors[rank];
+  if (!colorClass) return null;
+  return (
+    <span className={`font-accent font-extrabold text-lg ${colorClass}`}>
+      {rank}
+    </span>
+  );
+}
 
 export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
       <div className="py-12 text-center">
-        <div className="text-lg text-gray-400">No leaderboard data available</div>
+        <div className="text-lg text-muted-foreground">No leaderboard data available</div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden bg-gray-800 rounded-lg">
+    <div className="overflow-hidden bg-surface-raised rounded-lg">
       <table className="w-full">
-        <thead className="bg-gray-900">
+        <thead className="bg-surface">
           <tr>
-            <th className="px-6 py-4 text-sm font-semibold text-left text-gray-300">
+            <th className="px-6 py-4 text-sm font-semibold text-left text-foreground">
               Rank
             </th>
-            <th className="px-6 py-4 text-sm font-semibold text-left text-gray-300">
+            <th className="px-6 py-4 text-sm font-semibold text-left text-foreground">
               User
             </th>
-            <th className="px-6 py-4 text-sm font-semibold text-left text-gray-300">
+            <th className="px-6 py-4 text-sm font-semibold text-left text-foreground">
               Tier
             </th>
-            <th className="px-6 py-4 text-sm font-semibold text-right text-gray-300">
+            <th className="px-6 py-4 text-sm font-semibold text-right text-foreground">
               {type === 'karma' ? 'Karma' : 'Engagement'}
             </th>
             {type === 'engagement' && (
-              <th className="px-6 py-4 text-sm font-semibold text-right text-gray-300">
+              <th className="px-6 py-4 text-sm font-semibold text-right text-foreground">
                 Activity
               </th>
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-700">
+        <tbody className="divide-y divide-border">
           {entries.map((entry) => {
             const isCurrentUser = entry.user_id === currentUserId;
             const rowClasses = isCurrentUser
               ? 'bg-purple-900/20 hover:bg-purple-900/30'
-              : 'hover:bg-gray-750';
+              : 'hover:bg-surface-hover';
 
             return (
               <tr key={entry.user_id} className={rowClasses}>
                 {/* Rank */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    {rankMedals[entry.rank] && (
-                      <span className="text-2xl">{rankMedals[entry.rank]}</span>
+                    {rankColors[entry.rank] && (
+                      <RankMedal rank={entry.rank} />
                     )}
                     <span className="text-lg font-semibold text-white">
                       #{entry.rank}
@@ -81,8 +92,8 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
-                      <div className="flex items-center justify-center w-10 h-10 bg-gray-700 rounded-full">
-                        <span className="text-lg font-semibold text-gray-400">
+                      <div className="flex items-center justify-center w-10 h-10 bg-surface-raised rounded-full">
+                        <span className="text-lg font-semibold text-muted-foreground">
                           {entry.username[0].toUpperCase()}
                         </span>
                       </div>
@@ -91,7 +102,7 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
                       <div className="group-hover:text-purple-400 font-semibold text-white transition-colors">
                         {entry.display_name || entry.username}
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-muted-foreground">
                         @{entry.username}
                       </div>
                     </div>
@@ -113,10 +124,10 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
                 {/* Activity Stats (for engagement leaderboard) */}
                 {type === 'engagement' && (
                   <td className="px-6 py-4">
-                    <div className="space-y-1 text-sm text-right text-gray-400">
-                      <div>💬 {entry.total_comments?.toLocaleString() || 0} comments</div>
-                      <div>👍 {entry.total_votes_cast?.toLocaleString() || 0} votes</div>
-                      <div>📹 {entry.total_clips_submitted?.toLocaleString() || 0} clips</div>
+                    <div className="space-y-1 text-sm text-right text-muted-foreground">
+                      <div className="flex items-center justify-end gap-1"><MessageSquare size={16} strokeWidth={1.75} /> {entry.total_comments?.toLocaleString() || 0} comments</div>
+                      <div className="flex items-center justify-end gap-1"><ThumbsUp size={16} strokeWidth={1.75} /> {entry.total_votes_cast?.toLocaleString() || 0} votes</div>
+                      <div className="flex items-center justify-end gap-1"><Film size={16} strokeWidth={1.75} /> {entry.total_clips_submitted?.toLocaleString() || 0} clips</div>
                     </div>
                   </td>
                 )}
@@ -147,9 +158,9 @@ export function LeaderboardSummary({ entries, type }: LeaderboardSummaryProps) {
         <Link
           key={entry.user_id}
           to={`/profile/${entry.username}`}
-          className="hover:bg-gray-750 p-6 text-center transition-colors bg-gray-800 rounded-lg"
+          className="hover:bg-surface-hover p-6 text-center transition-colors bg-surface-raised rounded-lg"
         >
-          <div className="mb-2 text-4xl">{rankMedals[index + 1]}</div>
+          <div className="mb-2 text-4xl"><RankMedal rank={index + 1} /></div>
           <div className="mb-2">
             {entry.avatar_url ? (
               <img
@@ -158,8 +169,8 @@ export function LeaderboardSummary({ entries, type }: LeaderboardSummaryProps) {
                 className="w-16 h-16 mx-auto rounded-full"
               />
             ) : (
-              <div className="flex items-center justify-center w-16 h-16 mx-auto bg-gray-700 rounded-full">
-                <span className="text-2xl font-semibold text-gray-400">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto bg-surface-raised rounded-full">
+                <span className="text-2xl font-semibold text-muted-foreground">
                   {entry.username[0].toUpperCase()}
                 </span>
               </div>
@@ -172,7 +183,7 @@ export function LeaderboardSummary({ entries, type }: LeaderboardSummaryProps) {
           <div className="mt-3 text-2xl font-bold text-purple-400">
             {entry.score.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs text-gray-400">
+          <div className="mt-1 text-xs text-muted-foreground">
             {type === 'karma' ? 'karma' : 'engagement'}
           </div>
         </Link>

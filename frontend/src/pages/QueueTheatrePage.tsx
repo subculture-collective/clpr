@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
     useQueue,
-    useMarkAsPlayed,
     useRemoveFromQueue,
     useReorderQueue,
 } from '@/hooks/useQueue';
@@ -16,7 +15,6 @@ import type { QueueItemWithClip } from '@/types/queue';
 export function QueueTheatrePage() {
     const navigate = useNavigate();
     const { data: queue, isLoading, isError } = useQueue(500);
-    const markAsPlayed = useMarkAsPlayed();
     const removeFromQueue = useRemoveFromQueue();
     const reorderQueue = useReorderQueue();
     const queryClient = useQueryClient();
@@ -32,41 +30,26 @@ export function QueueTheatrePage() {
             played_at: item.played_at,
         })) || [];
 
-    // Set first unplayed item as current if none selected
+    // Auto-select first item
     if (!currentItemId && playlistItems.length > 0) {
-        const firstUnplayed = playlistItems.find(item => !item.played_at);
-        if (firstUnplayed) {
-            setCurrentItemId(firstUnplayed.id);
-        } else if (playlistItems.length > 0) {
-            setCurrentItemId(playlistItems[0].id);
-        }
+        setCurrentItemId(playlistItems[0].id);
     }
 
     const handleItemClick = useCallback(
         (item: PlaylistItem) => {
             setCurrentItemId(item.id);
-            // Mark as played
-            markAsPlayed.mutate(item.id);
         },
-        [markAsPlayed],
+        [],
     );
 
     const handleItemRemove = useCallback(
         (itemId: string) => {
-            // If removing current item, move to next unplayed
             if (itemId === currentItemId) {
                 const currentIndex = playlistItems.findIndex(
                     item => item.id === itemId,
                 );
-                const nextItem = playlistItems
-                    .slice(currentIndex + 1)
-                    .find(item => !item.played_at);
-
-                if (nextItem) {
-                    setCurrentItemId(nextItem.id);
-                } else {
-                    setCurrentItemId(null);
-                }
+                const nextItem = playlistItems[currentIndex + 1] || playlistItems[currentIndex - 1];
+                setCurrentItemId(nextItem?.id || null);
             }
             removeFromQueue.mutate(itemId);
         },

@@ -1,5 +1,6 @@
 export { ClipFeed } from './ClipFeed';
 export { ClipCard } from './ClipCard';
+export { ClipGridCard } from './ClipGridCard';
 export { DiscoverClipCard } from './DiscoverClipCard';
 export { ClipCardSkeleton } from './ClipCardSkeleton';
 export { EmptyState } from './EmptyState';

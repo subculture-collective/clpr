@@ -16,7 +16,7 @@ export const TagList: React.FC<TagListProps> = ({ clipId, maxVisible = 5 }) => {
                 {[...Array(3)].map((_, i) => (
                     <div
                         key={i}
-                        className='h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse'
+                        className='h-6 w-16 bg-surface-raised rounded-full animate-pulse'
                     />
                 ))}
             </div>
@@ -40,7 +40,7 @@ export const TagList: React.FC<TagListProps> = ({ clipId, maxVisible = 5 }) => {
                 />
             ))}
             {remainingCount > 0 && (
-                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                <span className='text-xs text-muted-foreground'>
                     +{remainingCount} more
                 </span>
             )}

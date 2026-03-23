@@ -86,8 +86,8 @@ export function NotificationPreferencesPage() {
       <Container>
         <div className="max-w-2xl mx-auto py-8">
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-primary-600"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading preferences...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-border border-t-primary-600"></div>
+            <p className="mt-4 text-muted-foreground">Loading preferences...</p>
           </div>
         </div>
       </Container>
@@ -110,10 +110,10 @@ export function NotificationPreferencesPage() {
             >
               ← Back to Notifications
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Notification Preferences
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Customize how and when you receive notifications
             </p>
           </div>
@@ -121,8 +121,8 @@ export function NotificationPreferencesPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Master Toggle */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Master Settings
               </h2>
 
@@ -136,7 +136,7 @@ export function NotificationPreferencesPage() {
 
                 {formData.email_enabled && (
                   <div className="ml-6 pt-2 space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-foreground">
                       Email Frequency
                     </label>
                     <select
@@ -144,7 +144,7 @@ export function NotificationPreferencesPage() {
                       onChange={(e) =>
                         handleEmailDigestChange(e.target.value as 'immediate' | 'daily' | 'weekly' | 'never')
                       }
-                      className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                      className="block w-full rounded-md border-border bg-surface text-foreground shadow-sm focus:border-primary-500 focus:ring-primary-500"
                     >
                       <option value="immediate">Immediate</option>
                       <option value="daily">Daily Digest</option>
@@ -164,11 +164,11 @@ export function NotificationPreferencesPage() {
             </div>
 
             {/* Account & Security */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Account &amp; Security
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Important security alerts for your account
               </p>
 
@@ -204,11 +204,11 @@ export function NotificationPreferencesPage() {
             </div>
 
             {/* Content Notifications */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Content
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Notifications about content and submissions
               </p>
 
@@ -258,11 +258,11 @@ export function NotificationPreferencesPage() {
             </div>
 
             {/* Community Notifications */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Community
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Notifications about community interactions
               </p>
 
@@ -320,11 +320,11 @@ export function NotificationPreferencesPage() {
             </div>
 
             {/* Creator Notifications */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Creator Notifications
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Get notified about activity on clips you've created
               </p>
 
@@ -360,11 +360,11 @@ export function NotificationPreferencesPage() {
             </div>
 
             {/* Stream & Broadcaster Notifications */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Stream & Broadcaster Notifications
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Get notified when streamers and broadcasters you follow go live
               </p>
 
@@ -386,11 +386,11 @@ export function NotificationPreferencesPage() {
             </div>
 
             {/* Global Preferences */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Global &amp; Marketing
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Platform updates and promotional emails
               </p>
 
@@ -476,9 +476,9 @@ function ToggleSwitch({ label, description, checked, onChange, disabled = false 
   return (
     <div className="flex items-start justify-between">
       <div className="flex-1">
-        <label className="text-sm font-medium text-gray-900 dark:text-white">{label}</label>
+        <label className="text-sm font-medium text-foreground">{label}</label>
         {description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{description}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
         )}
       </div>
       <button
@@ -486,7 +486,7 @@ function ToggleSwitch({ label, description, checked, onChange, disabled = false 
         onClick={onChange}
         disabled={disabled}
         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-          checked ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'
+          checked ? 'bg-primary-600' : 'bg-muted'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <span

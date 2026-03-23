@@ -82,8 +82,8 @@ All colors defined as CSS custom properties using space-separated RGB for Tailwi
 | `--color-upvote-hover`   | `#F9731626` | Upvote hover background (15% opacity)   |
 | `--color-downvote`       | `#6366F1`   | Downvote active state — indigo          |
 | `--color-downvote-hover` | `#6366F126` | Downvote hover background (15% opacity) |
-| `--color-cta`            | `#3B82F6`   | Reply button, primary actions — blue    |
-| `--color-cta-hover`      | `#2563EB`   | CTA hover state                         |
+| `--color-cta`            | `#818CF8`   | Reply button, primary actions — indigo  |
+| `--color-cta-hover`      | `#6366F1`   | CTA hover state                         |
 | `--color-focus-ring`     | `#7C3AED`   | Focus outline for keyboard navigation   |
 
 ### Semantic Colors
@@ -93,7 +93,7 @@ All colors defined as CSS custom properties using space-separated RGB for Tailwi
 | `--color-success` | `#22C55E` | Success states, positive feedback             |
 | `--color-warning` | `#F59E0B` | Warnings, edit indicators                     |
 | `--color-error`   | `#EF4444` | Errors, delete confirmations, removed content |
-| `--color-info`    | `#06B6D4` | Informational, tips                           |
+| `--color-info`    | `#6366F1` | Informational, tips (indigo — matches brand)  |
 
 ### Thread Colors
 
@@ -102,13 +102,13 @@ Nested comment threads use progressively subtle left-border colors:
 | Depth    | Border Color       | Hex       |
 | -------- | ------------------ | --------- |
 | 0 (root) | `--color-brand`    | `#7C3AED` |
-| 1        | `--color-thread-1` | `#6366F1` |
-| 2        | `--color-thread-2` | `#3B82F6` |
-| 3        | `--color-thread-3` | `#06B6D4` |
-| 4        | `--color-thread-4` | `#14B8A6` |
+| 1        | `--color-thread-1` | `#A855F7` |
+| 2        | `--color-thread-2` | `#C084FC` |
+| 3        | `--color-thread-3` | `#E879A8` |
+| 4        | `--color-thread-4` | `#F0ABAB` |
 | 5+       | `--color-border`   | `#2A2A3A` |
 
-Colored thread lines help users visually trace reply chains in deep threads — a pattern proven on Reddit and Lemmy.
+Thread colors stay in the violet-pink warm family for cohesion with the brand palette. Colored thread lines help users visually trace reply chains in deep threads.
 
 ---
 
@@ -118,10 +118,11 @@ Colored thread lines help users visually trace reply chains in deep threads — 
 
 **Headings & UI Labels**: Space Grotesk — geometric, techy, distinctive character
 **Body & Comments**: Inter — designed for screens, exceptional readability at 14px
+**Accent & Stats**: Syne — bold, artistic character for hero numbers, achievements, and empty states
 **Code Blocks**: JetBrains Mono — clear distinction between similar characters
 
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
 ```
 
 ```typescript
@@ -129,9 +130,12 @@ Colored thread lines help users visually trace reply chains in deep threads — 
 fontFamily: {
   sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
   heading: ['Space Grotesk', 'system-ui', 'sans-serif'],
+  accent: ['Syne', 'Space Grotesk', 'system-ui', 'sans-serif'],
   mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
 }
 ```
+
+**Accent font usage**: Leaderboard positions, achievement titles, empty state headlines, stat counters on profile pages. Use `font-accent` with weights 600-800 and tight letter spacing (-0.02em).
 
 ### Type Scale
 
@@ -740,12 +744,12 @@ All text tokens verified against their intended background:
         /* Focus */
         --color-focus-ring: 124 58 237;
 
-        /* Thread depth colors */
+        /* Thread depth colors (violet-pink warm family) */
         --color-thread-0: 124 58 237;
-        --color-thread-1: 99 102 241;
-        --color-thread-2: 59 130 246;
-        --color-thread-3: 6 182 212;
-        --color-thread-4: 20 184 166;
+        --color-thread-1: 168 85 247;
+        --color-thread-2: 192 132 252;
+        --color-thread-3: 232 121 168;
+        --color-thread-4: 240 171 171;
 
         /* Nav height for sticky calculations */
         --nav-height: 56px;

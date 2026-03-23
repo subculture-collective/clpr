@@ -78,16 +78,16 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-zinc-900 rounded-lg max-w-2xl w-full border border-zinc-800 shadow-xl">
+            <div className="bg-surface rounded-lg max-w-2xl w-full border border-border shadow-xl">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+                <div className="flex items-center justify-between p-6 border-b border-border">
                     <div className="flex items-center gap-2">
                         <Share2 className="h-5 w-5 text-purple-400" />
                         <h2 className="text-xl font-bold text-white">Share Playlist</h2>
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-zinc-400 hover:text-white transition-colors"
+                        className="text-muted-foreground hover:text-white transition-colors"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -98,7 +98,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                     {loading && (
                         <div className="text-center py-8">
                             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
-                            <p className="mt-4 text-zinc-400">Generating share link...</p>
+                            <p className="mt-4 text-muted-foreground">Generating share link...</p>
                         </div>
                     )}
 
@@ -112,7 +112,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                         <>
                             {/* Share Link */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-zinc-400">
+                                <label className="block text-sm font-medium text-muted-foreground">
                                     Share Link
                                 </label>
                                 <div className="flex gap-2">
@@ -120,7 +120,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                                         type="text"
                                         value={shareData.share_url}
                                         readOnly
-                                        className="flex-1 bg-zinc-800 text-white px-4 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:border-purple-500 text-sm"
+                                        className="flex-1 bg-surface-raised text-white px-4 py-2 rounded-lg border border-border focus:outline-none focus:border-purple-500 text-sm"
                                         onClick={(e) => (e.target as HTMLInputElement).select()}
                                     />
                                     <button
@@ -147,7 +147,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
 
                             {/* Social Share Buttons */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-zinc-400">
+                                <label className="block text-sm font-medium text-muted-foreground">
                                     Share on Social Media
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
@@ -170,14 +170,14 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                                         Discord
                                     </button>
                                 </div>
-                                <p className="text-xs text-zinc-500 mt-2">
+                                <p className="text-xs text-text-secondary mt-2">
                                     Click Discord to copy the link for pasting into Discord
                                 </p>
                             </div>
 
                             {/* Embed Code */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-zinc-400">
+                                <label className="block text-sm font-medium text-muted-foreground">
                                     Embed Code
                                 </label>
                                 <div className="space-y-2">
@@ -185,7 +185,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                                         value={shareData.embed_code}
                                         readOnly
                                         rows={3}
-                                        className="w-full bg-zinc-800 text-white px-4 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:border-purple-500 text-xs font-mono resize-none"
+                                        className="w-full bg-surface-raised text-white px-4 py-2 rounded-lg border border-border focus:outline-none focus:border-purple-500 text-xs font-mono resize-none"
                                         onClick={(e) => (e.target as HTMLTextAreaElement).select()}
                                     />
                                     <button
@@ -193,7 +193,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                                             copyToClipboard(shareData.embed_code, 'embed');
                                             trackShare('embed');
                                         }}
-                                        className="w-full px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        className="w-full px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                                     >
                                         {copied === 'embed' ? (
                                             <>
@@ -214,10 +214,10 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-zinc-800">
+                <div className="p-6 border-t border-border">
                     <button
                         onClick={onClose}
-                        className="w-full px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                        className="w-full px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg transition-colors"
                     >
                         Close
                     </button>

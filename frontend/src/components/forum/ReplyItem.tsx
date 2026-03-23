@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Flag } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { formatTimestamp, cn } from '@/lib/utils';
-import { Avatar } from '@/components/ui';
+import { Avatar, Modal } from '@/components/ui';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ReputationBadge } from './ReputationBadge';
 import { VoteButtons } from './VoteButtons';
-import type { ForumReply, VoteStats } from '@/types/forum';
+import { forumApi } from '@/lib/forum-api';
+import { useToast } from '@/context/ToastContext';
+import type { ForumReply, VoteStats, FlagContentRequest } from '@/types/forum';
 
 interface ReplyItemProps {
   reply: ForumReply;
@@ -26,12 +31,38 @@ export function ReplyItem({
   onDelete,
   className,
 }: ReplyItemProps) {
+  const { showToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState<FlagContentRequest['reason']>('spam');
+  const [reportDetails, setReportDetails] = useState('');
   const [voteStats, setVoteStats] = useState<VoteStats | null>(reply.vote_stats || null);
   const [isLoadingVotes, setIsLoadingVotes] = useState(!reply.vote_stats);
   const [hasFetchedStats, setHasFetchedStats] = useState(!!reply.vote_stats);
+
+  const flagContentMutation = useMutation({
+    mutationFn: (data: FlagContentRequest) => forumApi.flagContent(data),
+    onSuccess: () => {
+      showToast('Reply has been flagged for review', 'success');
+      setShowReportModal(false);
+      setReportReason('spam');
+      setReportDetails('');
+    },
+    onError: () => {
+      showToast('Failed to flag reply', 'error');
+    },
+  });
+
+  const handleReportReply = () => {
+    flagContentMutation.mutate({
+      target_type: 'reply',
+      target_id: reply.id,
+      reason: reportReason,
+      details: reportDetails || undefined,
+    });
+  };
 
   const timestamp = formatTimestamp(reply.created_at);
   const isAuthor = currentUserId === reply.user_id;
@@ -75,8 +106,8 @@ export function ReplyItem({
     return (
       <div
         className={cn(
-          'p-3 bg-gray-800 rounded border border-gray-700',
-          'text-sm text-gray-500 italic',
+          'p-3 bg-surface-raised rounded border border-border',
+          'text-sm text-muted-foreground italic',
           className
         )}
       >
@@ -100,7 +131,7 @@ export function ReplyItem({
   return (
     <div
       className={cn(
-        'bg-gray-900 rounded-lg border border-gray-700 p-4',
+        'bg-surface rounded-lg border border-border p-4',
         className
       )}
     >
@@ -119,8 +150,13 @@ export function ReplyItem({
           {/* Header */}
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="font-semibold text-white">{reply.username}</p>
-              <p className="text-xs text-gray-500" title={timestamp.title}>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-white">{reply.username}</p>
+                {reply.reputation && (
+                  <ReputationBadge score={reply.reputation.score} badge={reply.reputation.badge} />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground" title={timestamp.title}>
                 {timestamp.display}
               </p>
             </div>
@@ -130,13 +166,13 @@ export function ReplyItem({
               <div className="flex gap-2 text-xs">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-white transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  className="text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   Delete
                 </button>
@@ -151,8 +187,8 @@ export function ReplyItem({
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 className={cn(
-                  'w-full bg-gray-800 text-white rounded-lg p-3',
-                  'border border-gray-700 focus:border-blue-500 focus:outline-none',
+                  'w-full bg-surface-raised text-white rounded-lg p-3',
+                  'border border-border focus:border-primary-500 focus:outline-none',
                   'resize-none'
                 )}
                 rows={4}
@@ -161,14 +197,14 @@ export function ReplyItem({
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-sm bg-surface-raised hover:bg-surface-hover text-white rounded transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={!editContent.trim()}
-                  className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
                 >
                   Save
                 </button>
@@ -176,7 +212,7 @@ export function ReplyItem({
             </div>
           ) : (
             <>
-              <div className="prose prose-invert prose-sm max-w-none">
+              <div className="forum-body max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {reply.content}
                 </ReactMarkdown>
@@ -198,9 +234,20 @@ export function ReplyItem({
                 {depth < maxDepth && (
                   <button
                     onClick={() => onReply(reply.id)}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
                   >
                     Reply
+                  </button>
+                )}
+
+                {/* Report button */}
+                {currentUserId && !isAuthor && (
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-red-400 transition-colors"
+                  >
+                    <Flag className="w-3.5 h-3.5" />
+                    Report
                   </button>
                 )}
               </div>
@@ -220,6 +267,58 @@ export function ReplyItem({
         cancelLabel="Cancel"
         variant="danger"
       />
+
+      {/* Report modal */}
+      <Modal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title="Report Reply"
+        size="sm"
+      >
+        <div className="p-6">
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Reason
+          </label>
+          <select
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value as FlagContentRequest['reason'])}
+            className="w-full bg-surface-raised text-white rounded-lg p-2.5 border border-border focus:border-primary-500 focus:outline-none mb-4"
+          >
+            <option value="spam">Spam</option>
+            <option value="harassment">Harassment</option>
+            <option value="off-topic">Off-topic</option>
+            <option value="misinformation">Misinformation</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Additional details (optional)
+          </label>
+          <textarea
+            value={reportDetails}
+            onChange={(e) => setReportDetails(e.target.value)}
+            className="w-full bg-surface-raised text-white rounded-lg p-3 border border-border focus:border-primary-500 focus:outline-none resize-none mb-4"
+            rows={3}
+            placeholder="Provide any additional context..."
+          />
+
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setShowReportModal(false)}
+              className="px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleReportReply}
+              disabled={flagContentMutation.isPending}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              {flagContentMutation.isPending ? 'Submitting...' : 'Submit Report'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

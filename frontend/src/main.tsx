@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PlaybackProvider } from './context/PlaybackContext'
 import { Buffer } from 'buffer'
 import './index.css'
 import './i18n' // Initialize i18n
@@ -59,7 +60,9 @@ try {
     <StrictMode>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <PlaybackProvider>
+            <App />
+          </PlaybackProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </StrictMode>,

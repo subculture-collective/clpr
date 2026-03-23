@@ -1,17 +1,36 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Button } from '../ui';
 import { NotificationBell } from './NotificationBell';
 import { UserMenu } from './UserMenu';
+import {
+    Home,
+    Search,
+    MessageSquare,
+    Trophy,
+    ListMusic,
+    Sparkles,
+    Star,
+    ClipboardList,
+    Clock,
+    User,
+    Settings,
+    LogOut,
+    Menu,
+    X,
+    MoreHorizontal,
+    ChevronDown,
+} from 'lucide-react';
 
 export function Header() {
     const { t } = useTranslation();
     const { isAuthenticated, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [moreMenuOpen, setMoreMenuOpen] = useState(false);
     const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -45,11 +64,16 @@ export function Header() {
                     <Link
                         to='/'
                         className='flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md'
-                        aria-label='clpr home'
+                        aria-label='clpr.tv home'
                     >
-                        <div className='text-2xl font-bold text-gradient'>
-                            clpr
-                        </div>
+                        <svg width='20' height='20' viewBox='0 0 20 20' fill='none' aria-hidden='true'>
+                            <path
+                                d='M5 3.87a1 1 0 011.53-.85l9.94 6.13a1 1 0 010 1.7l-9.94 6.13A1 1 0 015 16.13V3.87z'
+                                fill='rgb(var(--color-brand))'
+                            />
+                        </svg>
+                        <span className='font-heading text-[22px] font-bold text-gradient'>clpr</span>
+                        <span className='font-heading text-sm font-medium text-text-secondary'>.tv</span>
                     </Link>
 
                     {/* Navigation (desktop) */}
@@ -58,14 +82,19 @@ export function Header() {
                         aria-label='Main navigation'
                         data-testid='main-nav'
                     >
-                        <Link to='/'>
+                        <Link to='/' className={`relative ${location.pathname === '/' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
                             <Button variant='ghost' size='sm'>
-                                🏠 Feed
+                                <Home size={16} strokeWidth={1.75} className='mr-1.5' /> Feed
                             </Button>
                         </Link>
-                        <Link to='/discover'>
+                        <Link to='/discover' className={`relative ${location.pathname === '/discover' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
                             <Button variant='ghost' size='sm'>
-                                🔍 Discover
+                                <Search size={16} strokeWidth={1.75} className='mr-1.5' /> Discover
+                            </Button>
+                        </Link>
+                        <Link to='/forum' className={`relative ${location.pathname.startsWith('/forum') ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
+                            <Button variant='ghost' size='sm'>
+                                <MessageSquare size={16} strokeWidth={1.75} className='mr-1.5' /> Forum
                             </Button>
                         </Link>
 
@@ -78,20 +107,12 @@ export function Header() {
                                 aria-expanded={moreMenuOpen}
                                 aria-haspopup='true'
                             >
-                                ⋯ More
-                                <svg
-                                    className={`w-4 h-4 ml-1 transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`}
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                >
-                                    <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M19 9l-7 7-7-7'
-                                    />
-                                </svg>
+                                <MoreHorizontal size={16} strokeWidth={1.75} className='mr-1.5' /> More
+                                <ChevronDown
+                                    size={16}
+                                    strokeWidth={1.75}
+                                    className={`ml-1 transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`}
+                                />
                             </Button>
 
                             {moreMenuOpen && (
@@ -101,19 +122,19 @@ export function Header() {
                                 >
                                     <Link
                                         to='/leaderboards'
-                                        className='block px-4 py-2 text-sm hover:bg-muted transition-colors'
+                                        className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors'
                                         onClick={() => setMoreMenuOpen(false)}
                                         role='menuitem'
                                     >
-                                        🏆 {t('nav.leaderboards')}
+                                        <Trophy size={16} strokeWidth={1.75} /> {t('nav.leaderboards')}
                                     </Link>
                                     <Link
                                         to='/playlists/discover'
-                                        className='block px-4 py-2 text-sm hover:bg-muted transition-colors'
+                                        className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors'
                                         onClick={() => setMoreMenuOpen(false)}
                                         role='menuitem'
                                     >
-                                        🎵 Playlists
+                                        <ListMusic size={16} strokeWidth={1.75} /> Playlists
                                     </Link>
                                     {/* Watch Parties - Hidden until after launch */}
                                     {/* <Link
@@ -179,7 +200,7 @@ export function Header() {
                             aria-expanded={mobileMenuOpen}
                             data-testid='mobile-menu-toggle'
                         >
-                            {mobileMenuOpen ? '✕' : '☰'}
+                            {mobileMenuOpen ? <X size={20} strokeWidth={1.75} /> : <Menu size={20} strokeWidth={1.75} />}
                         </Button>
                     </div>
                 </div>
@@ -202,7 +223,7 @@ export function Header() {
                                     className='w-full justify-start'
                                     data-testid='mobile-nav-home'
                                 >
-                                    🏠 Feed
+                                    <Home size={16} strokeWidth={1.75} className='mr-2' /> Feed
                                 </Button>
                             </Link>
                             <Link
@@ -214,7 +235,19 @@ export function Header() {
                                     size='sm'
                                     className='w-full justify-start'
                                 >
-                                    🔍 Discover
+                                    <Search size={16} strokeWidth={1.75} className='mr-2' /> Discover
+                                </Button>
+                            </Link>
+                            <Link
+                                to='/forum'
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    className='w-full justify-start'
+                                >
+                                    <MessageSquare size={16} strokeWidth={1.75} className='mr-2' /> Forum
                                 </Button>
                             </Link>
 
@@ -232,7 +265,7 @@ export function Header() {
                                     size='sm'
                                     className='w-full justify-start'
                                 >
-                                    🏆 {t('nav.leaderboards')}
+                                    <Trophy size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.leaderboards')}
                                 </Button>
                             </Link>
                             <Link
@@ -244,7 +277,7 @@ export function Header() {
                                     size='sm'
                                     className='w-full justify-start'
                                 >
-                                    🎵 Playlists
+                                    <ListMusic size={16} strokeWidth={1.75} className='mr-2' /> Playlists
                                 </Button>
                             </Link>
                             {/* Watch Parties - Hidden until after launch */}
@@ -293,7 +326,7 @@ export function Header() {
                                         size='sm'
                                         className='w-full'
                                     >
-                                        ✨ {t('nav.submit')}
+                                        <Sparkles size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.submit')}
                                     </Button>
                                 </Link>
                                 <Link
@@ -305,7 +338,7 @@ export function Header() {
                                         size='sm'
                                         className='w-full justify-start'
                                     >
-                                        ⭐ {t('nav.favorites')}
+                                        <Star size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.favorites')}
                                     </Button>
                                 </Link>
                                 <Link
@@ -317,7 +350,7 @@ export function Header() {
                                         size='sm'
                                         className='w-full justify-start'
                                     >
-                                        📋 My Playlists
+                                        <ClipboardList size={16} strokeWidth={1.75} className='mr-2' /> My Playlists
                                     </Button>
                                 </Link>
                                 <Link
@@ -329,7 +362,7 @@ export function Header() {
                                         size='sm'
                                         className='w-full justify-start'
                                     >
-                                        🕒 Watch History
+                                        <Clock size={16} strokeWidth={1.75} className='mr-2' /> Watch History
                                     </Button>
                                 </Link>
 
@@ -347,7 +380,7 @@ export function Header() {
                                         size='sm'
                                         className='w-full justify-start'
                                     >
-                                        👤 {t('nav.profile')}
+                                        <User size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.profile')}
                                     </Button>
                                 </Link>
                                 <Link
@@ -359,7 +392,7 @@ export function Header() {
                                         size='sm'
                                         className='w-full justify-start'
                                     >
-                                        ⚙️ {t('nav.settings')}
+                                        <Settings size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.settings')}
                                     </Button>
                                 </Link>
                                 <Button
@@ -368,7 +401,7 @@ export function Header() {
                                     className='w-full justify-start text-error-600'
                                     onClick={handleLogout}
                                 >
-                                    🚪 {t('nav.logout')}
+                                    <LogOut size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.logout')}
                                 </Button>
                             </div>
                         :   <Link

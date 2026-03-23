@@ -127,7 +127,7 @@ export function DiscoveryPage() {
                 relative inline-flex h-6 w-11 items-center rounded-full transition-colors
                 ${
                     top10kEnabled ? 'bg-primary-500' : (
-                        'bg-gray-300 dark:bg-gray-600'
+                        'bg-muted'
                     )
                 }
               `}

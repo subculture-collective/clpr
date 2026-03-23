@@ -36,7 +36,7 @@ export function PlaylistCreatePage() {
                 <div className='max-w-3xl mx-auto'>
                     <Link
                         to='/playlists'
-                        className='inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors'
+                        className='inline-flex items-center gap-2 text-muted-foreground hover:text-white mb-6 transition-colors'
                     >
                         <ArrowLeft className='w-4 h-4' />
                         <span>Back to Playlists</span>
@@ -46,7 +46,7 @@ export function PlaylistCreatePage() {
                         Create a new playlist
                     </h1>
 
-                    <div className='bg-zinc-950 border border-zinc-800 rounded-xl p-6'>
+                    <div className='bg-background border border-border rounded-xl p-6'>
                         <PlaylistForm
                             onSubmit={handleSubmit}
                             isSubmitting={createMutation.isPending}

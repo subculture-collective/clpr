@@ -97,12 +97,12 @@ export function QueuePanel() {
 
     if (isLoading) {
         return (
-            <div className="w-80 bg-zinc-900 border-l border-zinc-800 flex flex-col h-screen">
-                <div className="p-4 border-b border-zinc-800">
-                    <h2 className="text-lg font-bold text-zinc-100">Queue</h2>
+            <div className="w-80 bg-surface border-l border-border flex flex-col h-screen">
+                <div className="p-4 border-b border-border">
+                    <h2 className="text-lg font-bold text-foreground">Queue</h2>
                 </div>
                 <div className="flex-1 flex items-center justify-center">
-                    <div className="text-zinc-500">Loading...</div>
+                    <div className="text-text-secondary">Loading...</div>
                 </div>
             </div>
         );
@@ -112,10 +112,10 @@ export function QueuePanel() {
     const total = queue?.total || 0;
 
     return (
-        <div className="w-80 bg-zinc-900 border-l border-zinc-800 flex flex-col h-screen">
+        <div className="w-80 bg-surface border-l border-border flex flex-col h-screen">
             {/* Header */}
-            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-zinc-100">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+                <h2 className="text-lg font-bold text-foreground">
                     Queue ({total})
                 </h2>
                 {total > 0 && (
@@ -133,11 +133,11 @@ export function QueuePanel() {
             {/* Queue Items */}
             <div className="flex-1 overflow-y-auto">
                 {queueItems.length === 0 ? (
-                    <div className="p-4 text-zinc-500 text-center">
+                    <div className="p-4 text-text-secondary text-center">
                         Queue is empty
                     </div>
                 ) : (
-                    <div className="divide-y divide-zinc-800" role="list" aria-label="Queue items">
+                    <div className="divide-y divide-border" role="list" aria-label="Queue items">
                         {queueItems.map((item, idx) => (
                             <div
                                 key={item.id}
@@ -149,8 +149,8 @@ export function QueuePanel() {
                                 onDrop={(e) => handleDrop(e, item.id)}
                                 onDragEnd={handleDragEnd}
                                 onKeyDown={(e) => handleKeyDown(e, item.id, idx)}
-                                className={`p-3 hover:bg-zinc-800/50 cursor-move transition-colors ${
-                                    draggedId === item.id ? 'opacity-50 bg-zinc-800' : ''
+                                className={`p-3 hover:bg-surface-hover cursor-move transition-colors ${
+                                    draggedId === item.id ? 'opacity-50 bg-surface-raised' : ''
                                 } ${
                                     dragOverId === item.id ? 'border-t-2 border-primary' : ''
                                 }`}
@@ -159,7 +159,7 @@ export function QueuePanel() {
                             >
                                 <div className="flex gap-3">
                                     {/* Position Number */}
-                                    <span className="text-zinc-500 text-sm font-mono w-6 flex-shrink-0">
+                                    <span className="text-text-secondary text-sm font-mono w-6 flex-shrink-0">
                                         {idx + 1}.
                                     </span>
 
@@ -176,10 +176,10 @@ export function QueuePanel() {
 
                                     {/* Clip Info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-zinc-100 truncate">
+                                        <p className="text-sm font-medium text-foreground truncate">
                                             {item.clip?.title || 'Unknown Clip'}
                                         </p>
-                                        <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
+                                        <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
                                             <span>{item.clip?.broadcaster_name}</span>
                                             {item.clip?.duration && (
                                                 <>
@@ -193,7 +193,7 @@ export function QueuePanel() {
                                     {/* Remove Button */}
                                     <button
                                         onClick={() => handleRemove(item.id)}
-                                        className="text-zinc-500 hover:text-red-400 transition-colors flex-shrink-0"
+                                        className="text-text-secondary hover:text-red-400 transition-colors flex-shrink-0"
                                         aria-label="Remove from queue"
                                     >
                                         <X className="h-4 w-4" />
@@ -207,12 +207,12 @@ export function QueuePanel() {
 
             {/* Next Up Preview (if available) */}
             {queue?.next_clip && (
-                <div className="p-4 border-t border-zinc-800 bg-zinc-800/50">
-                    <div className="text-xs text-zinc-400 mb-2">Up Next</div>
-                    <div className="text-sm font-medium text-zinc-100 truncate">
+                <div className="p-4 border-t border-border bg-surface-raised/50">
+                    <div className="text-xs text-muted-foreground mb-2">Up Next</div>
+                    <div className="text-sm font-medium text-foreground truncate">
                         {queue.next_clip.title}
                     </div>
-                    <div className="text-xs text-zinc-500 mt-1">
+                    <div className="text-xs text-text-secondary mt-1">
                         {queue.next_clip.broadcaster_name}
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import type { PlaylistClipRef } from '@/types/playlist';
+import { ListMusic } from 'lucide-react';
 
 interface PlaylistThumbnailProps {
     clips?: PlaylistClipRef[];
@@ -20,7 +21,7 @@ export function PlaylistThumbnail({
             <div
                 className={`bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center ${className}`}
             >
-                <div className='text-zinc-600 text-6xl'>🎵</div>
+                <div className='text-text-tertiary'><ListMusic size={48} strokeWidth={1.5} /></div>
             </div>
         );
     }

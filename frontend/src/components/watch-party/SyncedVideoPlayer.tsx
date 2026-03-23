@@ -93,6 +93,7 @@ export function SyncedVideoPlayer({
         clipId={clip.id}
         title={clip.title}
         embedUrl={clip.embed_url}
+        twitchClipId={clip.twitch_clip_id}
       />
     </div>
   );

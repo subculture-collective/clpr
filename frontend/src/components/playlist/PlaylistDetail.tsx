@@ -18,7 +18,6 @@ import {
     Lock,
     Globe,
     Users,
-    Maximize2,
     Copy,
     Bookmark,
 } from 'lucide-react';
@@ -156,8 +155,15 @@ export function PlaylistDetail() {
         try {
             if (data?.data?.is_bookmarked) {
                 await unbookmarkMutation.mutateAsync(id);
+                toast.success('Bookmark removed', {
+                    action: {
+                        label: 'Undo',
+                        onClick: () => bookmarkMutation.mutate(id),
+                    },
+                });
             } else {
                 await bookmarkMutation.mutateAsync(id);
+                toast.success('Playlist bookmarked');
             }
         } catch {
             toast.error('Failed to update bookmark');
@@ -444,29 +450,18 @@ export function PlaylistDetail() {
                             />
                         )}
 
-                        {/* Copy */}
+                        {/* Copy Playlist */}
                         {canCopy && (
                             <button
                                 type='button'
                                 onClick={() => setShowCopyModal(true)}
-                                className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500'
+                                className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer'
                                 title='Copy playlist'
                             >
                                 <Copy className='h-3.5 w-3.5' />
+                                <span>Copy Playlist</span>
                             </button>
                         )}
-
-                        {/* Full Screen */}
-                        <button
-                            type='button'
-                            onClick={() =>
-                                navigate(`/playlists/${id}/theatre`)
-                            }
-                            className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500'
-                            title='Full screen theatre mode'
-                        >
-                            <Maximize2 className='h-3.5 w-3.5' />
-                        </button>
                     </div>
 
                     {/* Right side: creator + timestamp */}

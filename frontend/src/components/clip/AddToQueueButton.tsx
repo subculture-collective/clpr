@@ -1,6 +1,8 @@
-import { useAddToQueue } from '@/hooks/useQueue';
+import { useAddToQueue, useQueue } from '@/hooks/useQueue';
 import { useIsAuthenticated, useToast } from '@/hooks';
+import { useAuth } from '@/context/AuthContext';
 import { AxiosError } from 'axios';
+import { ListPlus, Check } from 'lucide-react';
 
 interface AddToQueueButtonProps {
     clipId: string;
@@ -8,12 +10,22 @@ interface AddToQueueButtonProps {
 
 export function AddToQueueButton({ clipId }: AddToQueueButtonProps) {
     const isAuthenticated = useIsAuthenticated();
+    const { user } = useAuth();
     const addToQueue = useAddToQueue();
+    const { data: queue } = useQueue(100, !!user);
     const toast = useToast();
+
+    // Check if clip is already in queue
+    const isInQueue = queue?.items?.some(item => item.clip_id === clipId) ?? false;
 
     const handleAddToQueue = async () => {
         if (!isAuthenticated) {
             toast.info('Please log in to add clips to queue');
+            return;
+        }
+
+        if (isInQueue) {
+            toast.info('This clip is already in your queue');
             return;
         }
 
@@ -40,38 +52,34 @@ export function AddToQueueButton({ clipId }: AddToQueueButtonProps) {
     return (
         <button
             onClick={handleAddToQueue}
-            disabled={!isAuthenticated || addToQueue.isPending}
-            className={`text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors touch-target min-h-11 ${
-                !isAuthenticated ?
-                    'opacity-50 cursor-not-allowed hover:bg-transparent'
-                :   'cursor-pointer'
+            disabled={!isAuthenticated || addToQueue.isPending || isInQueue}
+            className={`flex items-center gap-1.5 transition-colors touch-target min-h-11 ${
+                isInQueue ?
+                    'text-brand cursor-default'
+                : !isAuthenticated ?
+                    'text-muted-foreground opacity-50 cursor-not-allowed hover:bg-transparent'
+                :   'text-muted-foreground hover:text-foreground cursor-pointer'
             }`}
             aria-label={
-                !isAuthenticated ? 'Log in to add to queue' : 'Add to queue'
+                isInQueue ? 'Already in queue'
+                : !isAuthenticated ? 'Log in to add to queue'
+                : 'Add to queue'
             }
-            aria-disabled={!isAuthenticated}
-            title={!isAuthenticated ? 'Log in to add to queue' : 'Add to queue'}
+            aria-disabled={!isAuthenticated || isInQueue}
+            title={
+                isInQueue ? 'Already in queue'
+                : !isAuthenticated ? 'Log in to add to queue'
+                : 'Add to queue'
+            }
         >
-            <svg
-                className='w-5 h-5 shrink-0'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-            >
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 4v16m8-8H4'
-                />
-                <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h2M15 5h2a2 2 0 012 2v10a2 2 0 01-2 2h-2'
-                />
-            </svg>
-            <span className='hidden sm:inline'>Add to Queue</span>
+            {isInQueue ? (
+                <Check size={18} className='shrink-0' strokeWidth={1.75} />
+            ) : (
+                <ListPlus size={18} className='shrink-0' strokeWidth={1.75} />
+            )}
+            <span className='hidden sm:inline'>
+                {isInQueue ? 'In Queue' : 'Queue'}
+            </span>
         </button>
     );
 }

@@ -43,7 +43,7 @@ export function ReplyComposer({
     <form
       onSubmit={handleSubmit}
       className={cn(
-        'bg-gray-900 rounded-lg border border-gray-700 p-4',
+        'bg-surface rounded-lg border border-border p-4',
         isMobile && 'rounded-t-lg border-x-0 border-b-0',
         className
       )}
@@ -53,16 +53,16 @@ export function ReplyComposer({
         onChange={(e) => setContent(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          'w-full bg-gray-800 text-white rounded-lg p-3 mb-3',
-          'border border-gray-700 focus:border-blue-500 focus:outline-none',
-          'resize-none placeholder-gray-400'
+          'w-full bg-surface-raised text-white rounded-lg p-3 mb-3',
+          'border border-border focus:border-primary-500 focus:outline-none',
+          'resize-none placeholder-muted-foreground'
         )}
         rows={isMobile ? 6 : 4}
         disabled={isSubmitting}
       />
 
       <div className="flex justify-between items-center">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Markdown formatting is supported
         </p>
         <div className="flex gap-2">
@@ -72,7 +72,7 @@ export function ReplyComposer({
               onClick={onCancel}
               disabled={isSubmitting}
               className={cn(
-                'px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg',
+                'px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg',
                 'transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               )}
             >
@@ -83,7 +83,7 @@ export function ReplyComposer({
             type="submit"
             disabled={!content.trim() || isSubmitting}
             className={cn(
-              'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg',
+              'px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg',
               'transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >

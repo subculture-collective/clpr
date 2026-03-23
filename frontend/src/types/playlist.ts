@@ -27,6 +27,13 @@ export interface Playlist {
     is_liked?: boolean;
     is_bookmarked?: boolean;
     current_user_permission?: 'view' | 'edit' | 'admin';
+    comment_count?: number;
+    top_comment?: {
+        id: string;
+        username: string;
+        content: string;
+        vote_score: number;
+    };
 }
 
 export interface PlaylistItem {

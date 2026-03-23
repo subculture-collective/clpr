@@ -490,6 +490,134 @@ func (r *PlaylistRepository) ListPublic(ctx context.Context, currentUserID *uuid
 	return playlists, total, nil
 }
 
+// ListBookmarkedByUser retrieves playlists bookmarked by a user
+func (r *PlaylistRepository) ListBookmarkedByUser(ctx context.Context, userID uuid.UUID, currentUserID *uuid.UUID, limit, offset int) ([]*models.PlaylistListItem, int, error) {
+	// Get total count
+	countQuery := `
+		SELECT COUNT(*)
+		FROM playlist_bookmarks pb
+		JOIN playlists p ON pb.playlist_id = p.id
+		WHERE pb.user_id = $1 AND p.deleted_at IS NULL
+	`
+
+	var total int
+	err := r.pool.QueryRow(ctx, countQuery, userID).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count bookmarked playlists: %w", err)
+	}
+
+	// Get playlists with clip count
+	query := `
+		SELECT
+			p.id, p.user_id, p.title, p.description, p.cover_url, p.visibility, p.share_token,
+			p.view_count, p.share_count, p.like_count, p.follower_count, p.bookmark_count,
+			p.is_curated, p.is_featured, p.display_order, p.script_id, p.slug,
+			p.created_at, p.updated_at, p.deleted_at,
+			COALESCE(COUNT(pi.id), 0) AS clip_count,
+			EXISTS (
+				SELECT 1
+				FROM playlist_items pi2
+				JOIN clips c2 ON pi2.clip_id = c2.id
+				WHERE pi2.playlist_id = p.id
+				  AND (c2.status = 'processing' OR (c2.stream_source = 'stream' AND c2.video_url IS NULL))
+			) AS has_processing_clips
+		FROM playlists p
+		INNER JOIN playlist_bookmarks pb ON p.id = pb.playlist_id
+		LEFT JOIN playlist_items pi ON p.id = pi.playlist_id
+		WHERE pb.user_id = $1 AND p.deleted_at IS NULL
+		GROUP BY p.id, p.user_id, p.title, p.description, p.cover_url, p.visibility, p.share_token,
+		         p.view_count, p.share_count, p.like_count, p.follower_count, p.bookmark_count,
+		         p.is_curated, p.is_featured, p.display_order, p.script_id, p.slug,
+		         p.created_at, p.updated_at, p.deleted_at, pb.bookmarked_at
+		ORDER BY pb.bookmarked_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list bookmarked playlists: %w", err)
+	}
+	defer rows.Close()
+
+	var playlists []*models.PlaylistListItem
+	for rows.Next() {
+		var item models.PlaylistListItem
+		err := rows.Scan(
+			&item.ID,
+			&item.UserID,
+			&item.Title,
+			&item.Description,
+			&item.CoverURL,
+			&item.Visibility,
+			&item.ShareToken,
+			&item.ViewCount,
+			&item.ShareCount,
+			&item.LikeCount,
+			&item.FollowerCount,
+			&item.BookmarkCount,
+			&item.IsCurated,
+			&item.IsFeatured,
+			&item.DisplayOrder,
+			&item.ScriptID,
+			&item.Slug,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+			&item.DeletedAt,
+			&item.ClipCount,
+			&item.HasProcessingClips,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan playlist: %w", err)
+		}
+		playlists = append(playlists, &item)
+	}
+
+	if currentUserID != nil {
+		if err := r.enrichPlaylistInteractionStates(ctx, *currentUserID, playlists); err != nil {
+			return nil, 0, err
+		}
+	}
+
+	// Fetch preview clips for each playlist (first 4)
+	for _, playlist := range playlists {
+		previewQuery := `
+			SELECT c.id, c.twitch_clip_id, c.title, c.broadcaster_name, c.thumbnail_url,
+			       c.duration, c.view_count, c.created_at
+			FROM clips c
+			INNER JOIN playlist_items pi ON c.id = pi.clip_id
+			WHERE pi.playlist_id = $1
+			ORDER BY pi.order_index ASC
+			LIMIT 4
+		`
+		previewRows, err := r.pool.Query(ctx, previewQuery, playlist.ID)
+		if err != nil {
+			continue // Skip preview clips on error
+		}
+
+		var previewClips []models.Clip
+		for previewRows.Next() {
+			var clip models.Clip
+			err := previewRows.Scan(
+				&clip.ID,
+				&clip.TwitchClipID,
+				&clip.Title,
+				&clip.BroadcasterName,
+				&clip.ThumbnailURL,
+				&clip.Duration,
+				&clip.ViewCount,
+				&clip.CreatedAt,
+			)
+			if err == nil {
+				previewClips = append(previewClips, clip)
+			}
+		}
+		previewRows.Close()
+		playlist.PreviewClips = previewClips
+	}
+
+	return playlists, total, nil
+}
+
 // AddClip adds a clip to a playlist
 func (r *PlaylistRepository) AddClip(ctx context.Context, playlistID, clipID uuid.UUID, orderIndex int) error {
 	query := `

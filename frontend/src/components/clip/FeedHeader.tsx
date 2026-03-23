@@ -2,10 +2,22 @@ import type { FormEvent } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Clock, Crown, Eye, Flame, MessageSquare, Star, TrendingUp } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { cn } from '@/lib/utils';
 import type { SortOption, TimeFrame } from '@/types/clip';
+
+const sortIcons: Record<SortOption, React.ReactNode> = {
+    trending: <Flame size={16} strokeWidth={1.75} />,
+    popular: <Star size={16} strokeWidth={1.75} />,
+    top: <Crown size={16} strokeWidth={1.75} />,
+    rising: <TrendingUp size={16} strokeWidth={1.75} />,
+    new: <Clock size={16} strokeWidth={1.75} />,
+    discussed: <MessageSquare size={16} strokeWidth={1.75} />,
+    hot: <Flame size={16} strokeWidth={1.75} />,
+    views: <Eye size={16} strokeWidth={1.75} />,
+};
 
 interface FeedHeaderProps {
     title: string;
@@ -19,12 +31,12 @@ interface FeedHeaderProps {
 }
 
 const sortOptions: { value: SortOption; label: string }[] = [
-    { value: 'trending', label: 'Trending 🔥' },
-    { value: 'popular', label: 'Most Popular ⭐' },
-    { value: 'top', label: 'Top Rated 👑' },
-    { value: 'rising', label: 'Rising 📈' },
-    { value: 'new', label: 'Newest 🆕' },
-    { value: 'discussed', label: 'Most Discussed 💬' },
+    { value: 'trending', label: 'Trending' },
+    { value: 'popular', label: 'Most Popular' },
+    { value: 'top', label: 'Top Rated' },
+    { value: 'rising', label: 'Rising' },
+    { value: 'new', label: 'Newest' },
+    { value: 'discussed', label: 'Most Discussed' },
 ];
 
 const timeframeOptions: { value: TimeFrame; label: string }[] = [
@@ -96,26 +108,31 @@ export function FeedHeader({
                 <div className='flex flex-col sm:flex-row gap-2 sm:items-center'>
                     {/* Sort dropdown */}
                     {showFilters && (
-                        <select
-                            id='sort-select'
-                            value={sort}
-                            onChange={e =>
-                                onSortChange(e.target.value as SortOption)
-                            }
-                            className={cn(
-                                'w-full sm:w-auto px-3 py-2 rounded-lg border text-sm transition-colors',
-                                'bg-background text-foreground',
-                                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-                                'border-border hover:border-primary-300',
-                            )}
-                            aria-label='Sort clips by'
-                        >
-                            {sortOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                        <div className='relative flex items-center'>
+                            <span className='absolute left-2.5 pointer-events-none text-muted-foreground'>
+                                {sort && sortIcons[sort]}
+                            </span>
+                            <select
+                                id='sort-select'
+                                value={sort}
+                                onChange={e =>
+                                    onSortChange(e.target.value as SortOption)
+                                }
+                                className={cn(
+                                    'w-full sm:w-auto pl-8 pr-3 py-2 rounded-lg border text-sm transition-colors',
+                                    'bg-background text-foreground',
+                                    'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+                                    'border-border hover:border-primary-300',
+                                )}
+                                aria-label='Sort clips by'
+                            >
+                                {sortOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     )}
 
                     {showSearch && (

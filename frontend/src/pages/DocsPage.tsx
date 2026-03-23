@@ -17,6 +17,7 @@ import {
     extractTextFromChildren,
 } from '../lib/markdown-utils';
 import type { ProcessedMarkdown } from '../lib/markdown-utils';
+import { PenLine } from 'lucide-react';
 import axios from 'axios';
 
 interface DocNode {
@@ -370,7 +371,7 @@ export function DocsPage() {
                                         rel='noopener noreferrer'
                                         className='text-sm text-primary hover:underline flex items-center gap-1'
                                     >
-                                        ✏️ Edit on GitHub
+                                        <PenLine size={14} strokeWidth={1.75} className='inline mr-1' /> Edit on GitHub
                                     </a>
                                 )}
                             </div>

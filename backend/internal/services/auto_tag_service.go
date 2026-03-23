@@ -138,11 +138,20 @@ func (s *AutoTagService) GenerateTagsForClip(ctx context.Context, clip *models.C
 	for _, pattern := range tagPatterns {
 		if pattern.Pattern.MatchString(title) {
 			if !seenTags[pattern.TagSlug] {
+				// Check blacklist before creating tag
+				blacklisted, err := s.tagRepo.IsBlacklisted(ctx, pattern.TagSlug)
+				if err != nil {
+					log.Printf("Warning: failed to check blacklist for tag %q: %v", pattern.TagSlug, err)
+				}
+				if blacklisted {
+					continue
+				}
+
 				tagSlugs = append(tagSlugs, pattern.TagSlug)
 				seenTags[pattern.TagSlug] = true
 
 				// Ensure tag exists in database
-				_, err := s.tagRepo.GetOrCreateTag(ctx, pattern.TagName, pattern.TagSlug, pattern.Color)
+				_, err = s.tagRepo.GetOrCreateTag(ctx, pattern.TagName, pattern.TagSlug, pattern.Color)
 				if err != nil {
 					// Log error but continue with other tags
 					continue
@@ -155,15 +164,22 @@ func (s *AutoTagService) GenerateTagsForClip(ctx context.Context, clip *models.C
 	if clip.GameName != nil && *clip.GameName != "" {
 		gameSlug := slugify(*clip.GameName)
 		if !seenTags[gameSlug] && len(gameSlug) > 0 {
-			tagSlugs = append(tagSlugs, gameSlug)
-			seenTags[gameSlug] = true
-
-			// Create game tag
-			color := stringPtr("#4169E1")
-			_, err := s.tagRepo.GetOrCreateTag(ctx, *clip.GameName, gameSlug, color)
+			// Check blacklist before creating tag
+			blacklisted, err := s.tagRepo.IsBlacklisted(ctx, gameSlug)
 			if err != nil {
-				// Log error but continue
-				log.Printf("failed to create game tag %s: %v", gameSlug, err)
+				log.Printf("Warning: failed to check blacklist for tag %q: %v", gameSlug, err)
+			}
+			if !blacklisted {
+				tagSlugs = append(tagSlugs, gameSlug)
+				seenTags[gameSlug] = true
+
+				// Create game tag
+				color := stringPtr("#4169E1")
+				_, err := s.tagRepo.GetOrCreateTag(ctx, *clip.GameName, gameSlug, color)
+				if err != nil {
+					// Log error but continue
+					log.Printf("failed to create game tag %s: %v", gameSlug, err)
+				}
 			}
 		}
 	}
@@ -172,15 +188,22 @@ func (s *AutoTagService) GenerateTagsForClip(ctx context.Context, clip *models.C
 	if clip.BroadcasterName != "" {
 		broadcasterSlug := slugify(clip.BroadcasterName)
 		if !seenTags[broadcasterSlug] && len(broadcasterSlug) > 0 {
-			tagSlugs = append(tagSlugs, broadcasterSlug)
-			seenTags[broadcasterSlug] = true
-
-			// Create broadcaster tag
-			color := stringPtr("#9146FF")
-			_, err := s.tagRepo.GetOrCreateTag(ctx, clip.BroadcasterName, broadcasterSlug, color)
+			// Check blacklist before creating tag
+			blacklisted, err := s.tagRepo.IsBlacklisted(ctx, broadcasterSlug)
 			if err != nil {
-				// Log error but continue
-				log.Printf("failed to create broadcaster tag %s: %v", broadcasterSlug, err)
+				log.Printf("Warning: failed to check blacklist for tag %q: %v", broadcasterSlug, err)
+			}
+			if !blacklisted {
+				tagSlugs = append(tagSlugs, broadcasterSlug)
+				seenTags[broadcasterSlug] = true
+
+				// Create broadcaster tag
+				color := stringPtr("#9146FF")
+				_, err := s.tagRepo.GetOrCreateTag(ctx, clip.BroadcasterName, broadcasterSlug, color)
+				if err != nil {
+					// Log error but continue
+					log.Printf("failed to create broadcaster tag %s: %v", broadcasterSlug, err)
+				}
 			}
 		}
 	}
@@ -189,17 +212,29 @@ func (s *AutoTagService) GenerateTagsForClip(ctx context.Context, clip *models.C
 	if clip.Duration != nil {
 		if *clip.Duration < 15 {
 			if !seenTags["short"] {
-				tagSlugs = append(tagSlugs, "short")
-				seenTags["short"] = true
-				color := stringPtr("#20B2AA")
-				_, _ = s.tagRepo.GetOrCreateTag(ctx, "Short", "short", color)
+				blacklisted, err := s.tagRepo.IsBlacklisted(ctx, "short")
+				if err != nil {
+					log.Printf("Warning: failed to check blacklist for tag %q: %v", "short", err)
+				}
+				if !blacklisted {
+					tagSlugs = append(tagSlugs, "short")
+					seenTags["short"] = true
+					color := stringPtr("#20B2AA")
+					_, _ = s.tagRepo.GetOrCreateTag(ctx, "Short", "short", color)
+				}
 			}
 		} else if *clip.Duration > 120 {
 			if !seenTags["long"] {
-				tagSlugs = append(tagSlugs, "long")
-				seenTags["long"] = true
-				color := stringPtr("#8B4513")
-				_, _ = s.tagRepo.GetOrCreateTag(ctx, "Long", "long", color)
+				blacklisted, err := s.tagRepo.IsBlacklisted(ctx, "long")
+				if err != nil {
+					log.Printf("Warning: failed to check blacklist for tag %q: %v", "long", err)
+				}
+				if !blacklisted {
+					tagSlugs = append(tagSlugs, "long")
+					seenTags["long"] = true
+					color := stringPtr("#8B4513")
+					_, _ = s.tagRepo.GetOrCreateTag(ctx, "Long", "long", color)
+				}
 			}
 		}
 	}
@@ -208,12 +243,19 @@ func (s *AutoTagService) GenerateTagsForClip(ctx context.Context, clip *models.C
 	if clip.Language != nil && *clip.Language != "" {
 		langTag := getLanguageTag(*clip.Language)
 		if langTag != "" && !seenTags[langTag] {
-			tagSlugs = append(tagSlugs, langTag)
-			seenTags[langTag] = true
+			// Check blacklist before creating tag
+			blacklisted, err := s.tagRepo.IsBlacklisted(ctx, langTag)
+			if err != nil {
+				log.Printf("Warning: failed to check blacklist for tag %q: %v", langTag, err)
+			}
+			if !blacklisted {
+				tagSlugs = append(tagSlugs, langTag)
+				seenTags[langTag] = true
 
-			langName := getLanguageName(*clip.Language)
-			color := stringPtr("#708090")
-			_, _ = s.tagRepo.GetOrCreateTag(ctx, langName, langTag, color)
+				langName := getLanguageName(*clip.Language)
+				color := stringPtr("#708090")
+				_, _ = s.tagRepo.GetOrCreateTag(ctx, langName, langTag, color)
+			}
 		}
 	}
 

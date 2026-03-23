@@ -265,6 +265,20 @@ export function AdminDashboard() {
                     </Card>
                 </Link>
 
+                <Link to='/admin/tags' className='touch-target'>
+                    <Card hover clickable>
+                        <CardHeader>
+                            <h3 className='text-lg xs:text-xl font-semibold'>
+                                Tag Management
+                            </h3>
+                        </CardHeader>
+                        <CardBody>
+                            <p className='text-sm xs:text-base text-muted-foreground'>
+                                Manage blacklisted tag patterns and filters
+                            </p>
+                        </CardBody>
+                    </Card>
+                </Link>
 
             </Grid>
         </Container>

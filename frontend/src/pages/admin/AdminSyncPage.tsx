@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Card, CardHeader, CardBody, Button } from '../../components';
-import { RefreshCw, Clock, CheckCircle, AlertCircle, XCircle, PlayCircle } from 'lucide-react';
+import { RefreshCw, Clock, CheckCircle, AlertCircle, XCircle, PlayCircle, Info } from 'lucide-react';
 import axios from 'axios';
 
 interface SyncStatus {
@@ -267,7 +267,7 @@ export function AdminSyncPage() {
           </div>
 
           <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-sm">
-            <p className="font-medium mb-1">ℹ️ Note</p>
+            <p className="font-medium mb-1 flex items-center gap-1.5"><Info size={16} strokeWidth={1.75} /> Note</p>
             <p>
               Automatic synchronization runs on a schedule defined in the backend configuration.
               Manual triggers are useful for testing or forcing an immediate sync.

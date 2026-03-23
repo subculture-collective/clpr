@@ -27,10 +27,10 @@ export function PublicPlaylistsPage() {
                     {/* Header */}
                     <div className='mb-8 flex items-center justify-between'>
                         <div className='flex-1'>
-                            <h1 className='text-3xl font-bold text-zinc-100 mb-2'>
+                            <h1 className='text-3xl font-bold text-foreground mb-2'>
                                 Discover Playlists
                             </h1>
-                            <p className='text-zinc-400'>
+                            <p className='text-muted-foreground'>
                                 Browse public playlists created by the community
                             </p>
                         </div>
@@ -45,11 +45,11 @@ export function PublicPlaylistsPage() {
 
                     {/* Playlists Grid */}
                     {isLoading ?
-                        <div className='text-center py-12 text-zinc-500'>
+                        <div className='text-center py-12 text-muted-foreground'>
                             Loading...
                         </div>
                     : playlists.length === 0 ?
-                        <div className='text-center py-12 text-zinc-500'>
+                        <div className='text-center py-12 text-muted-foreground'>
                             <p>No public playlists found.</p>
                             <p className='text-sm mt-2'>
                                 Check back later for community playlists!
@@ -77,7 +77,7 @@ export function PublicPlaylistsPage() {
                                     >
                                         Previous
                                     </Button>
-                                    <span className='text-zinc-400'>
+                                    <span className='text-muted-foreground'>
                                         Page {meta.page} of {meta.total_pages}
                                     </span>
                                     <Button

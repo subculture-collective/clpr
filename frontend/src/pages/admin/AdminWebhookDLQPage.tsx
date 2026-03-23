@@ -8,6 +8,7 @@ import {
     Alert,
     Modal,
 } from '../../components';
+import { CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -219,7 +220,8 @@ export function AdminWebhookDLQPage() {
                     <div className='p-8 text-center'>
                         <p className='text-muted-foreground'>
                             No failed webhook deliveries found. All deliveries
-                            are being processed successfully! 🎉
+                            are being processed successfully!{' '}
+                            <CheckCircle className="inline" size={16} strokeWidth={1.75} />
                         </p>
                     </div>
                 </Card>

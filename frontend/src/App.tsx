@@ -228,6 +228,11 @@ const AdminPlaylistScriptsPage = lazy(() =>
         default: m.AdminPlaylistScriptsPage,
     })),
 );
+const AdminTagsPage = lazy(() =>
+    import('./pages/admin/AdminTagsPage').then(m => ({
+        default: m.AdminTagsPage,
+    })),
+);
 const AdminAPIDocsPage = lazy(() =>
     import('./pages/admin/AdminAPIDocsPage').then(m => ({
         default: m.AdminAPIDocsPage,
@@ -276,6 +281,11 @@ const PlaylistTheatrePage = lazy(() =>
 const PublicPlaylistsPage = lazy(() =>
     import('./pages/PublicPlaylistsPage').then(m => ({
         default: m.PublicPlaylistsPage,
+    })),
+);
+const BookmarkedPlaylistsPage = lazy(() =>
+    import('./pages/BookmarkedPlaylistsPage').then(m => ({
+        default: m.BookmarkedPlaylistsPage,
     })),
 );
 const SmartPlaylistsPage = lazy(() =>
@@ -636,6 +646,14 @@ function App() {
                                             }
                                         />
                                         <Route
+                                            path='/playlists/bookmarks'
+                                            element={
+                                                <ProtectedRoute>
+                                                    <BookmarkedPlaylistsPage />
+                                                </ProtectedRoute>
+                                            }
+                                        />
+                                        <Route
                                             path='/playlists/:id'
                                             element={<PlaylistDetailPage />}
                                         />
@@ -928,6 +946,14 @@ function App() {
                                             element={
                                                 <AdminRoute>
                                                     <AdminPlaylistScriptsPage />
+                                                </AdminRoute>
+                                            }
+                                        />
+                                        <Route
+                                            path='/admin/tags'
+                                            element={
+                                                <AdminRoute>
+                                                    <AdminTagsPage />
                                                 </AdminRoute>
                                             }
                                         />

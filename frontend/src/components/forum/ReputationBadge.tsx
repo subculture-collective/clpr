@@ -10,7 +10,7 @@ interface ReputationBadgeProps {
 
 const badgeConfig = {
   new: {
-    color: 'bg-gray-500',
+    color: 'bg-muted',
     label: 'New Member',
     textColor: 'text-white',
   },
@@ -22,7 +22,7 @@ const badgeConfig = {
   expert: {
     color: 'bg-yellow-500',
     label: 'Expert',
-    textColor: 'text-gray-900',
+    textColor: 'text-background',
   },
   moderator: {
     color: 'bg-red-500',
@@ -61,7 +61,7 @@ export function ReputationBadge({
         {config.label}
       </span>
       {showScore && score !== undefined && (
-        <span className="text-xs text-gray-400">{score} rep</span>
+        <span className="text-xs text-muted-foreground">{score} rep</span>
       )}
     </div>
   );
@@ -97,13 +97,13 @@ export function ReputationProgressBar({
 
   return (
     <div className={cn('space-y-2', className)}>
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs text-muted-foreground">
         <span>{score} reputation</span>
         {pointsToNext > 0 && (
           <span>{pointsToNext} to {nextTier}</span>
         )}
       </div>
-      <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-surface-raised rounded-full h-2 overflow-hidden">
         <div
           className={cn(
             'h-full transition-all duration-500',

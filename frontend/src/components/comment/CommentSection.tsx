@@ -10,6 +10,7 @@ interface CommentSectionProps {
     clipId: string;
     currentUserId?: string;
     isAdmin?: boolean;
+    variant?: 'expanded' | 'compact';
     className?: string;
     isBanned?: boolean;
     banReason?: string;
@@ -19,12 +20,14 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     clipId,
     currentUserId,
     isAdmin = false,
+    variant = 'expanded',
     className,
     isBanned = false,
     banReason,
 }) => {
     const [sort, setSort] = React.useState<CommentSortOption>('best');
     const isAuthenticated = useIsAuthenticated();
+    const isCompact = variant === 'compact';
 
     const {
         data,
@@ -56,6 +59,83 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         );
     }
 
+    if (isCompact) {
+        return (
+            <div className={cn('flex flex-col', className)}>
+                {/* Header */}
+                <div className='flex items-center justify-between mb-3'>
+                    <h2 className='text-[14px] font-semibold'>
+                        Comments ({totalComments.toLocaleString()})
+                    </h2>
+                </div>
+
+                {isBanned && (
+                    <div
+                        role='alert'
+                        className='rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-3 text-sm text-red-800 mb-3'
+                    >
+                        You are banned and cannot comment
+                        {banReason ? `: ${banReason}` : ''}.
+                    </div>
+                )}
+
+                {/* Scrollable comments area */}
+                <div className='flex-1 overflow-y-auto'>
+                    {isLoading ?
+                        <div className='flex justify-center py-8'>
+                            <Spinner size='lg' />
+                        </div>
+                    : allComments.length === 0 ?
+                        <div className='text-center py-8'>
+                            <p className='text-sm font-semibold mb-1'>
+                                No comments yet
+                            </p>
+                            <p className='text-xs text-muted-foreground'>
+                                Be the first to comment!
+                            </p>
+                        </div>
+                    :   <>
+                            <CommentTree
+                                comments={allComments}
+                                clipId={clipId}
+                                currentUserId={currentUserId}
+                                isAdmin={isAdmin}
+                                depth={0}
+                                maxDepth={2}
+                                variant='compact'
+                            />
+
+                            {hasNextPage && (
+                                <div className='flex justify-center pt-3'>
+                                    <Button
+                                        onClick={() => fetchNextPage()}
+                                        disabled={isFetchingNextPage}
+                                        loading={isFetchingNextPage}
+                                        variant='outline'
+                                    >
+                                        {isFetchingNextPage ?
+                                            'Loading...'
+                                        :   'Load More'}
+                                    </Button>
+                                </div>
+                            )}
+                        </>
+                    }
+                </div>
+
+                {/* Sticky comment form at bottom */}
+                {isAuthenticated && !isBanned && (
+                    <div className='sticky bottom-0 pt-3'>
+                        <CommentForm
+                            clipId={clipId}
+                            placeholder='Add a comment...'
+                        />
+                    </div>
+                )}
+            </div>
+        );
+    }
+
     return (
         <div className={cn('space-y-6', className)}>
             {/* Header */}
@@ -78,7 +158,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                         onChange={e =>
                             setSort(e.target.value as CommentSortOption)
                         }
-                        className='px-3 py-1.5 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                        className='px-3 py-1.5 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer'
                     >
                         <option value='best'>Best</option>
                         <option value='top'>Top</option>

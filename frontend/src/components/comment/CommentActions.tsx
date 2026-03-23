@@ -18,6 +18,7 @@ interface CommentActionsProps {
     onEdit?: () => void;
     depth?: number;
     maxDepth?: number;
+    variant?: 'expanded' | 'compact';
     className?: string;
 }
 
@@ -33,6 +34,7 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
     onEdit,
     depth = 0,
     maxDepth = 10,
+    variant = 'expanded',
     className,
 }) => {
     const isAuthenticated = useIsAuthenticated();
@@ -44,6 +46,8 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
     const [showReportDialog, setShowReportDialog] = React.useState(false);
     const [reportReason, setReportReason] = React.useState<string>('spam');
     const [reportDescription, setReportDescription] = React.useState('');
+
+    const isCompact = variant === 'compact';
 
     const computeWithinEditWindow = React.useCallback(() => {
         const createdTime = new Date(createdAt).getTime();
@@ -110,45 +114,47 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
 
     return (
         <>
-            <div className={cn('flex items-center gap-3 text-sm', className)}>
+            <div className={cn('flex items-center gap-3 text-[12px]', className)}>
                 {canReply && (
                     <button
                         onClick={onReply}
-                        className='text-muted-foreground hover:text-foreground transition-colors font-medium'
+                        className='text-muted-foreground hover:text-cta transition-colors font-medium cursor-pointer'
                     >
                         Reply
                     </button>
                 )}
 
-                {canEdit && (
+                {!isCompact && canEdit && (
                     <button
                         onClick={onEdit}
-                        className='text-muted-foreground hover:text-foreground transition-colors font-medium'
+                        className='text-muted-foreground hover:text-cta transition-colors font-medium cursor-pointer'
                     >
                         Edit
                     </button>
                 )}
 
-                {canDelete && (
+                {!isCompact && canDelete && (
                     <button
                         onClick={() => setShowDeleteDialog(true)}
-                        className='text-muted-foreground hover:text-error-500 transition-colors font-medium'
+                        className='text-muted-foreground hover:text-error-500 transition-colors font-medium cursor-pointer'
                     >
                         Delete
                     </button>
                 )}
 
-                <button
-                    onClick={handleShare}
-                    className='text-muted-foreground hover:text-foreground transition-colors font-medium'
-                >
-                    Share
-                </button>
+                {!isCompact && (
+                    <button
+                        onClick={handleShare}
+                        className='text-muted-foreground hover:text-cta transition-colors font-medium cursor-pointer'
+                    >
+                        Share
+                    </button>
+                )}
 
-                {isAuthenticated && !isAuthor && (
+                {!isCompact && isAuthenticated && !isAuthor && (
                     <button
                         onClick={() => setShowReportDialog(true)}
-                        className='text-muted-foreground hover:text-error-500 transition-colors font-medium'
+                        className='text-muted-foreground hover:text-error-500 transition-colors font-medium cursor-pointer'
                     >
                         Report
                     </button>
@@ -170,13 +176,13 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                         <div className='flex justify-end gap-2'>
                             <button
                                 onClick={() => setShowDeleteDialog(false)}
-                                className='px-4 py-2 rounded-md border border-border hover:bg-muted transition-colors'
+                                className='px-4 py-2 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer'
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDelete}
-                                className='px-4 py-2 rounded-md bg-error-500 text-white hover:bg-error-600 transition-colors'
+                                className='px-4 py-2 rounded-md bg-error-500 text-white hover:bg-error-600 transition-colors cursor-pointer'
                             >
                                 Delete
                             </button>
@@ -200,7 +206,7 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                             <select
                                 value={reportReason}
                                 onChange={e => setReportReason(e.target.value)}
-                                className='w-full px-3 py-2 rounded-md border border-border bg-background'
+                                className='w-full px-3 py-2 rounded-md border border-border bg-background cursor-pointer'
                             >
                                 <option value='spam'>Spam</option>
                                 <option value='harassment'>Harassment</option>
@@ -229,13 +235,13 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                         <div className='flex justify-end gap-2'>
                             <button
                                 onClick={() => setShowReportDialog(false)}
-                                className='px-4 py-2 rounded-md border border-border hover:bg-muted transition-colors'
+                                className='px-4 py-2 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer'
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleReport}
-                                className='px-4 py-2 rounded-md bg-primary-500 text-white hover:bg-primary-600 transition-colors'
+                                className='px-4 py-2 rounded-md bg-primary-500 text-white hover:bg-primary-600 transition-colors cursor-pointer'
                             >
                                 Submit Report
                             </button>

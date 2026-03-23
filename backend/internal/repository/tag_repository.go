@@ -99,6 +99,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, description, color, usage_count, created_at
 		FROM tags
+		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY name ASC
 		LIMIT $1 OFFSET $2
 		`
@@ -106,6 +107,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, description, color, usage_count, created_at
 		FROM tags
+		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 		`
@@ -115,6 +117,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, description, color, usage_count, created_at
 		FROM tags
+		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY usage_count DESC
 		LIMIT $1 OFFSET $2
 		`
@@ -162,7 +165,8 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 	searchQuery := `
 		SELECT id, name, slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE name ILIKE $1 OR slug ILIKE $1
+		WHERE (name ILIKE $1 OR slug ILIKE $1)
+		AND slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY usage_count DESC
 		LIMIT $2
 	`
@@ -396,4 +400,55 @@ func (r *TagRepository) GetClipTagCount(ctx context.Context, clipID uuid.UUID) (
 		return 0, fmt.Errorf("failed to count clip tags: %w", err)
 	}
 	return count, nil
+}
+
+// IsBlacklisted checks if a tag slug matches any blacklisted pattern
+func (r *TagRepository) IsBlacklisted(ctx context.Context, slug string) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM blacklisted_tags WHERE LOWER(pattern) = LOWER($1))`
+	var exists bool
+	err := r.pool.QueryRow(ctx, query, slug).Scan(&exists)
+	return exists, err
+}
+
+// GetBlacklistedTags returns all blacklisted tag patterns
+func (r *TagRepository) GetBlacklistedTags(ctx context.Context) ([]models.BlacklistedTag, error) {
+	query := `SELECT id, pattern, reason, created_by, created_at FROM blacklisted_tags ORDER BY pattern ASC`
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get blacklisted tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []models.BlacklistedTag
+	for rows.Next() {
+		var t models.BlacklistedTag
+		if err := rows.Scan(&t.ID, &t.Pattern, &t.Reason, &t.CreatedBy, &t.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan blacklisted tag: %w", err)
+		}
+		tags = append(tags, t)
+	}
+	return tags, nil
+}
+
+// AddBlacklistedTag adds a pattern to the blacklist
+func (r *TagRepository) AddBlacklistedTag(ctx context.Context, pattern string, reason *string, createdBy *uuid.UUID) error {
+	query := `INSERT INTO blacklisted_tags (pattern, reason, created_by) VALUES ($1, $2, $3) ON CONFLICT (pattern) DO NOTHING`
+	_, err := r.pool.Exec(ctx, query, pattern, reason, createdBy)
+	if err != nil {
+		return fmt.Errorf("failed to add blacklisted tag: %w", err)
+	}
+	return nil
+}
+
+// RemoveBlacklistedTag removes a pattern from the blacklist
+func (r *TagRepository) RemoveBlacklistedTag(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM blacklisted_tags WHERE id = $1`
+	result, err := r.pool.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to remove blacklisted tag: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("blacklisted tag not found")
+	}
+	return nil
 }

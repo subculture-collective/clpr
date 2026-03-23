@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { User } from 'lucide-react';
 import { searchApi } from '../../lib/search-api';
 import type { SearchSuggestion } from '../../types/search';
 import { Input } from './Input';
@@ -187,7 +188,7 @@ export function StreamerInput({
                                                     : ''
                                             }`}
                                         >
-                                            <span className='text-lg'>👤</span>
+                                            <span className='flex-shrink-0'><User size={16} strokeWidth={1.75} /></span>
                                             <div className='flex-1 min-w-0'>
                                                 <div className='font-medium truncate'>
                                                     {suggestion.text}

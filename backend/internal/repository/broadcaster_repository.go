@@ -537,6 +537,78 @@ func (r *BroadcasterRepository) ListBroadcasterGames(ctx context.Context, broadc
 	return games, nil
 }
 
+// GetRankedBroadcasters returns broadcasters ordered by engagement score
+func (r *BroadcasterRepository) GetRankedBroadcasters(ctx context.Context, limit, offset int) ([]models.BroadcasterRanking, int, error) {
+	countQuery := `SELECT COUNT(*) FROM broadcaster_rankings`
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count broadcaster rankings: %w", err)
+	}
+
+	query := `
+		SELECT broadcaster_id, broadcaster_name, total_clips, human_submitted_clips,
+		       total_vote_score, total_views, total_comments, unique_commenters,
+		       engagement_score, follower_count, last_calculated
+		FROM broadcaster_rankings
+		ORDER BY engagement_score DESC
+		LIMIT $1 OFFSET $2
+	`
+	rows, err := r.pool.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get ranked broadcasters: %w", err)
+	}
+	defer rows.Close()
+
+	var rankings []models.BroadcasterRanking
+	for rows.Next() {
+		var br models.BroadcasterRanking
+		if err := rows.Scan(
+			&br.BroadcasterID, &br.BroadcasterName, &br.TotalClips, &br.HumanSubmittedClips,
+			&br.TotalVoteScore, &br.TotalViews, &br.TotalComments, &br.UniqueCommenters,
+			&br.EngagementScore, &br.FollowerCount, &br.LastCalculated,
+		); err != nil {
+			return nil, 0, fmt.Errorf("failed to scan broadcaster ranking: %w", err)
+		}
+		rankings = append(rankings, br)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating broadcaster rankings: %w", err)
+	}
+
+	return rankings, total, nil
+}
+
+// GetBroadcasterRank returns the ranking for a specific broadcaster
+func (r *BroadcasterRepository) GetBroadcasterRank(ctx context.Context, broadcasterID string) (*models.BroadcasterRanking, error) {
+	query := `
+		SELECT broadcaster_id, broadcaster_name, total_clips, human_submitted_clips,
+		       total_vote_score, total_views, total_comments, unique_commenters,
+		       engagement_score, follower_count, last_calculated
+		FROM broadcaster_rankings
+		WHERE broadcaster_id = $1
+	`
+	var rank models.BroadcasterRanking
+	err := r.pool.QueryRow(ctx, query, broadcasterID).Scan(
+		&rank.BroadcasterID, &rank.BroadcasterName, &rank.TotalClips, &rank.HumanSubmittedClips,
+		&rank.TotalVoteScore, &rank.TotalViews, &rank.TotalComments, &rank.UniqueCommenters,
+		&rank.EngagementScore, &rank.FollowerCount, &rank.LastCalculated,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get broadcaster rank: %w", err)
+	}
+	return &rank, nil
+}
+
+// RefreshRankings refreshes the broadcaster_rankings materialized view
+func (r *BroadcasterRepository) RefreshRankings(ctx context.Context) error {
+	_, err := r.pool.Exec(ctx, "SELECT refresh_broadcaster_rankings()")
+	if err != nil {
+		return fmt.Errorf("failed to refresh broadcaster rankings: %w", err)
+	}
+	return nil
+}
+
 // ListPopularBroadcasters returns broadcasters ordered by clip count
 func (r *BroadcasterRepository) ListPopularBroadcasters(ctx context.Context, limit int) ([]models.PopularBroadcaster, error) {
 	if limit < 1 || limit > 50 {

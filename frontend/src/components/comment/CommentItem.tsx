@@ -16,6 +16,7 @@ interface CommentItemProps {
   isAdmin?: boolean;
   depth?: number;
   maxDepth?: number;
+  variant?: 'expanded' | 'compact';
   className?: string;
 }
 
@@ -26,6 +27,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   isAdmin = false,
   depth = 0,
   maxDepth = 10,
+  variant = 'expanded',
   className,
 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -35,6 +37,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const isAuthor = currentUserId === comment.user_id;
   const hasReplies = comment.replies && comment.replies.length > 0;
   const shouldShowContinueThread = depth >= maxDepth && hasReplies;
+  const isCompact = variant === 'compact';
 
   const handleReply = () => {
     setShowReplyForm(true);
@@ -64,11 +67,11 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   // Render deleted/removed state
   if (comment.is_deleted || comment.is_removed) {
     return (
-      <div className={cn('flex gap-3', className)} id={`comment-${comment.id}`}>
+      <div className={cn('flex gap-3', isCompact && 'py-2', className)} id={`comment-${comment.id}`}>
         {/* Spacer for alignment with collapse badge */}
         <div className="flex-shrink-0 flex flex-col items-center gap-2">
           <div className="w-12" /> {/* Spacer for vote buttons */}
-          
+
           {/* Collapse/Expand badge */}
           {comment.child_count > 0 && !shouldShowContinueThread && (
             <button
@@ -82,7 +85,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             </button>
           )}
         </div>
-        
+
         <div className="flex-1">
           <div className="text-sm text-muted-foreground italic py-2">
             {comment.is_deleted ? '[deleted by user]' : '[removed by moderator]'}
@@ -98,15 +101,16 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 isAdmin={isAdmin}
                 depth={depth + 1}
                 maxDepth={maxDepth}
+                variant={variant}
               />
             </div>
           )}
-          
+
           {/* Continue thread link for max depth */}
           {shouldShowContinueThread && (
             <a
               href={`/clips/${clipId}/comments/${comment.id}`}
-              className="mt-4 inline-block text-sm text-primary-500 hover:text-primary-600 transition-colors cursor-pointer"
+              className="mt-4 inline-block text-sm text-brand hover:text-brand-hover transition-colors cursor-pointer"
             >
               View {comment.child_count} more {comment.child_count === 1 ? 'reply' : 'replies'} in thread →
             </a>
@@ -117,15 +121,16 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   }
 
   return (
-    <div className={cn('flex gap-3', className)} id={`comment-${comment.id}`}>
+    <div className={cn('flex gap-3', isCompact && 'py-2', className)} id={`comment-${comment.id}`}>
       {/* Vote buttons and collapse badge */}
       <div className="flex-shrink-0 flex flex-col items-center gap-2">
         <CommentVoteButtons
           commentId={comment.id}
           score={comment.vote_score}
           userVote={comment.user_vote}
+          variant={variant}
         />
-        
+
         {/* Collapse/Expand badge */}
         {comment.child_count > 0 && !shouldShowContinueThread && (
           <button
@@ -150,7 +155,16 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             size="sm"
             className="flex-shrink-0"
           />
-          <span className="font-medium text-foreground">{comment.username}</span>
+          <span
+            className={cn(
+              'text-brand',
+              isCompact
+                ? 'font-medium text-[12px]'
+                : 'font-heading text-[13px] font-semibold'
+            )}
+          >
+            {comment.username}
+          </span>
 
           {comment.user_verified && (
             <VerifiedBadge size="sm" />
@@ -198,7 +212,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 className="mb-3"
               />
             ) : (
-              <div className="prose prose-sm dark:prose-invert max-w-none mb-3">
+              <div className={cn('comment-body max-w-none mb-3', isCompact && 'line-clamp-2')}>
                 <ReactMarkdown
                   components={{
                     // Open external links in new tab
@@ -207,15 +221,15 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                         {...props}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-500 hover:text-primary-600 underline"
+                        className="text-brand hover:text-brand-hover underline"
                       />
                     ),
                     // Code blocks
-                    code: ({ className, children, ...props }) => {
-                      const isInline = !className;
+                    code: ({ className: codeClassName, children, ...props }) => {
+                      const isInline = !codeClassName;
                       return isInline ? (
                         <code
-                          className="px-1 py-0.5 rounded bg-muted text-sm font-mono"
+                          className="px-1 py-0.5 rounded bg-surface-raised text-sm font-mono"
                           {...props}
                         >
                           {children}
@@ -223,8 +237,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                       ) : (
                         <code
                           className={cn(
-                            'block p-3 rounded bg-muted text-sm font-mono overflow-x-auto',
-                            className
+                            'block p-3 rounded bg-surface-raised text-sm font-mono overflow-x-auto',
+                            codeClassName
                           )}
                           {...props}
                         >
@@ -251,6 +265,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 onEdit={handleEdit}
                 depth={depth}
                 maxDepth={maxDepth}
+                variant={variant}
                 className="mb-3"
               />
             )}
@@ -277,6 +292,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                   isAdmin={isAdmin}
                   depth={depth + 1}
                   maxDepth={maxDepth}
+                  variant={variant}
                 />
               </div>
             )}
@@ -285,7 +301,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             {shouldShowContinueThread && (
               <a
                 href={`/clips/${clipId}/comments/${comment.id}`}
-                className="mt-4 inline-block text-sm text-primary-500 hover:text-primary-600 transition-colors cursor-pointer"
+                className="mt-4 inline-block text-sm text-brand hover:text-brand-hover transition-colors cursor-pointer"
               >
                 View {comment.child_count} more {comment.child_count === 1 ? 'reply' : 'replies'} in thread →
               </a>

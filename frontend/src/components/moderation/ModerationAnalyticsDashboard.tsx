@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { subDays } from 'date-fns';
+import { Gavel, Clock, Users, BarChart3 } from 'lucide-react';
 import {
     getModerationAnalytics,
     type ModerationAnalytics,
@@ -115,22 +116,22 @@ export function ModerationAnalyticsDashboard() {
                 <MetricCard
                     title="Total Actions"
                     value={analytics.total_actions}
-                    icon={<span className="text-2xl">🔨</span>}
+                    icon={<Gavel size={20} />}
                 />
                 <MetricCard
                     title="Avg Response Time"
                     value={avgResponseTime}
-                    icon={<span className="text-2xl">⏱️</span>}
+                    icon={<Clock size={20} />}
                 />
                 <MetricCard
                     title="Active Moderators"
                     value={activeModerators}
-                    icon={<span className="text-2xl">👥</span>}
+                    icon={<Users size={20} />}
                 />
                 <MetricCard
                     title="False Positive Rate"
                     value={falsePositiveRate}
-                    icon={<span className="text-2xl">📊</span>}
+                    icon={<BarChart3 size={20} />}
                 />
             </div>
 

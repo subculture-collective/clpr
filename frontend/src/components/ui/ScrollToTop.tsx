@@ -31,7 +31,7 @@ export function ScrollToTop({ threshold = 500, className = '' }: ScrollToTopProp
     <button
       onClick={scrollToTop}
       className={`
-        fixed bottom-4 right-4 xs:bottom-8 xs:right-8 
+        fixed bottom-24 right-4 xs:bottom-28 xs:right-8
         w-12 h-12 xs:w-14 xs:h-14 
         bg-primary-500 hover:bg-primary-600 
         dark:bg-primary-600 dark:hover:bg-primary-500

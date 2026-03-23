@@ -74,7 +74,7 @@ export interface LeaderboardEntry {
   total_clips_submitted?: number;
 }
 
-export type LeaderboardType = 'karma' | 'engagement';
+export type LeaderboardType = 'karma' | 'engagement' | 'streamers';
 
 export interface LeaderboardResponse {
   type: LeaderboardType;

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { XCircle } from 'lucide-react';
 import { Container, Spinner } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { handleOAuthCallback } from '../lib/auth-api';
@@ -120,7 +121,7 @@ export function AuthCallbackPage() {
       <div className="text-center">
         {error ? (
           <>
-            <div className="text-4xl mb-4">❌</div>
+            <div className="mb-4 flex justify-center"><XCircle size={16} strokeWidth={1.75} /></div>
             <h1 className="text-2xl font-bold mb-2">Authentication Failed</h1>
             <p className="text-muted-foreground mb-4">{error}</p>
             <p className="text-sm text-muted-foreground">Redirecting...</p>

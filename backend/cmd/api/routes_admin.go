@@ -28,6 +28,11 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminTags.POST("", h.Tag.CreateTag)
 			adminTags.PUT("/:id", h.Tag.UpdateTag)
 			adminTags.DELETE("/:id", h.Tag.DeleteTag)
+
+			// Tag blacklist management
+			adminTags.GET("/blacklist", h.Tag.ListBlacklistedTags)
+			adminTags.POST("/blacklist", h.Tag.AddBlacklistedTag)
+			adminTags.DELETE("/blacklist/:id", h.Tag.RemoveBlacklistedTag)
 		}
 
 		// Submission moderation (if available)
@@ -238,6 +243,12 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminForum.POST("/users/:id/ban", h.ForumModeration.BanUser)
 			adminForum.GET("/moderation-log", h.ForumModeration.GetModerationLog)
 			adminForum.GET("/bans", h.ForumModeration.GetUserBans)
+		}
+
+		// Broadcaster ranking management (admin only)
+		adminBroadcasters := admin.Group("/broadcasters")
+		{
+			adminBroadcasters.POST("/refresh-rankings", h.Broadcaster.RefreshBroadcasterRankings)
 		}
 
 		// Webhook dead-letter queue management (admin only)

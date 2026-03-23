@@ -5,6 +5,18 @@ import { useClickOutside } from '../../hooks/useClickOutside';
 import { useMenuKeyboard } from '../../hooks/useMenuKeyboard';
 import { UserRoleBadge } from '../user';
 import type { UserRole } from '../../lib/roles';
+import {
+    User,
+    Settings,
+    Star,
+    ListMusic,
+    Clock,
+    ClipboardList,
+    Upload,
+    Shield,
+    LogOut,
+    ChevronDown,
+} from 'lucide-react';
 
 export function UserMenu() {
     const { user, logout, isModeratorOrAdmin } = useAuth();
@@ -66,19 +78,11 @@ export function UserMenu() {
                 <span className='hidden md:inline text-sm font-medium'>
                     {user.username}
                 </span>
-                <svg
-                    className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                >
-                    <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M19 9l-7 7-7-7'
-                    />
-                </svg>
+                <ChevronDown
+                    size={16}
+                    strokeWidth={1.75}
+                    className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                />
             </button>
 
             {/* Dropdown Menu */}
@@ -113,66 +117,66 @@ export function UserMenu() {
                     <div className='py-1'>
                         <Link
                             to='/profile'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            👤 Profile
+                            <User size={16} strokeWidth={1.75} /> Profile
                         </Link>
                         <Link
                             to='/settings'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            ⚙️ Settings
+                            <Settings size={16} strokeWidth={1.75} /> Settings
                         </Link>
                         <Link
                             to='/favorites'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            ⭐ Favorites
+                            <Star size={16} strokeWidth={1.75} /> Favorites
                         </Link>
                         <Link
                             to='/playlists'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            � Playlists
+                            <ListMusic size={16} strokeWidth={1.75} /> Playlists
                         </Link>
                         <Link
                             to='/watch-history'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            🕒 Watch History
+                            <Clock size={16} strokeWidth={1.75} /> Watch History
                         </Link>
                         <Link
                             to='/queue'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            📋 My Queue
+                            <ClipboardList size={16} strokeWidth={1.75} /> My Queue
                         </Link>
                         <Link
                             to='/submissions'
-                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             onClick={() => setIsOpen(false)}
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            📤 My Submissions
+                            <Upload size={16} strokeWidth={1.75} /> My Submissions
                         </Link>
 
                         {isModeratorOrAdmin && (
@@ -180,12 +184,12 @@ export function UserMenu() {
                                 <div className='border-t border-border my-1'></div>
                                 <Link
                                     to='/admin/dashboard'
-                                    className='block px-4 py-2 text-sm hover:bg-muted transition-colors text-primary-600 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                                    className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors text-primary-600 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                                     onClick={() => setIsOpen(false)}
                                     role='menuitem'
                                     tabIndex={-1}
                                 >
-                                    🛡️ Admin Panel
+                                    <Shield size={16} strokeWidth={1.75} /> Admin Panel
                                 </Link>
                             </>
                         )}
@@ -194,11 +198,11 @@ export function UserMenu() {
 
                         <button
                             onClick={handleLogout}
-                            className='block w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-error-600 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-error-600 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             role='menuitem'
                             tabIndex={-1}
                         >
-                            🚪 Logout
+                            <LogOut size={16} strokeWidth={1.75} /> Logout
                         </button>
                     </div>
                 </div>

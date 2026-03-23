@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Lock, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Flag, Lock, MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Container, SEO } from '@/components';
-import { Avatar } from '@/components/ui';
+import { Avatar, Modal } from '@/components/ui';
 import { ReplyTree, ReplyComposer } from '@/components/forum';
 import { forumApi } from '@/lib/forum-api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { formatTimestamp } from '@/lib/utils';
+import type { FlagContentRequest } from '@/types/forum';
 
 export function ThreadDetail() {
   const { threadId } = useParams<{ threadId: string }>();
@@ -23,6 +24,9 @@ export function ThreadDetail() {
 
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [showMobileComposer, setShowMobileComposer] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState<FlagContentRequest['reason']>('spam');
+  const [reportDetails, setReportDetails] = useState('');
 
   // Handle mobile drawer keyboard and scroll
   useEffect(() => {
@@ -94,6 +98,30 @@ export function ThreadDetail() {
     },
   });
 
+  // Flag content mutation
+  const flagContentMutation = useMutation({
+    mutationFn: (data: FlagContentRequest) => forumApi.flagContent(data),
+    onSuccess: () => {
+      showToast('Content has been flagged for review', 'success');
+      setShowReportModal(false);
+      setReportReason('spam');
+      setReportDetails('');
+    },
+    onError: () => {
+      showToast('Failed to flag content', 'error');
+    },
+  });
+
+  const handleReportThread = () => {
+    if (!threadId) return;
+    flagContentMutation.mutate({
+      target_type: 'thread',
+      target_id: threadId,
+      reason: reportReason,
+      details: reportDetails || undefined,
+    });
+  };
+
   const handleReply = (replyId: string | null = null) => {
     if (!user) {
       navigate('/login');
@@ -122,9 +150,9 @@ export function ThreadDetail() {
       <Container className="py-6">
         <div className="max-w-3xl mx-auto">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-700 rounded w-3/4" />
-            <div className="h-4 bg-gray-700 rounded w-1/2" />
-            <div className="h-32 bg-gray-700 rounded" />
+            <div className="h-8 bg-surface rounded w-3/4" />
+            <div className="h-4 bg-surface rounded w-1/2" />
+            <div className="h-32 bg-surface rounded" />
           </div>
         </div>
       </Container>
@@ -154,23 +182,31 @@ export function ThreadDetail() {
           {/* Back button */}
           <Link
             to="/forum"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Forum</span>
           </Link>
 
+          {/* Locked thread banner */}
+          {thread.locked && (
+            <div className="bg-warning-500/10 border border-warning-500/30 rounded-lg p-3 mb-4 text-sm text-warning-600 flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              This thread is locked. No new replies can be posted.
+            </div>
+          )}
+
           {/* Thread Header */}
-          <div className="bg-gray-900 rounded-lg border border-gray-700 p-6 mb-6">
+          <div className="bg-background rounded-lg border border-border p-6 mb-6">
             {/* Status badges */}
             <div className="flex items-center gap-2 mb-3">
               {thread.pinned && (
-                <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded">
+                <span className="px-2 py-0.5 bg-primary-600 text-white text-xs font-semibold rounded">
                   Pinned
                 </span>
               )}
               {thread.locked && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-600 text-gray-300 text-xs font-semibold rounded">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface text-foreground text-xs font-semibold rounded">
                   <Lock className="w-3 h-3" />
                   Locked
                 </span>
@@ -188,14 +224,14 @@ export function ThreadDetail() {
               />
               <div>
                 <p className="font-semibold text-white">{thread.username}</p>
-                <p className="text-sm text-gray-500" title={timestamp.title}>
+                <p className="text-sm text-muted-foreground" title={timestamp.title}>
                   {timestamp.display}
                 </p>
               </div>
             </div>
 
             {/* Content */}
-            <div className="prose prose-invert prose-sm max-w-none mb-4">
+            <div className="forum-body max-w-none mb-4">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {thread.content}
               </ReactMarkdown>
@@ -207,7 +243,7 @@ export function ThreadDetail() {
                 {thread.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
+                    className="px-2 py-1 bg-surface text-foreground rounded text-xs"
                   >
                     {tag}
                   </span>
@@ -216,7 +252,7 @@ export function ThreadDetail() {
             )}
 
             {/* Stats */}
-            <div className="flex items-center gap-4 text-sm text-gray-400 pt-4 border-t border-gray-700">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground pt-4 border-t border-border">
               <div className="flex items-center gap-1">
                 <MessageSquare className="w-4 h-4" />
                 <span>{thread.reply_count} replies</span>
@@ -224,6 +260,15 @@ export function ThreadDetail() {
               <div>
                 <span>{thread.view_count} views</span>
               </div>
+              {user && user.id !== thread.user_id && (
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  <Flag className="w-4 h-4" />
+                  <span>Report</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -232,7 +277,7 @@ export function ThreadDetail() {
             <div className="mb-6">
               <button
                 onClick={() => handleReply(null)}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
               >
                 Reply to Thread
               </button>
@@ -268,10 +313,10 @@ export function ThreadDetail() {
 
           {/* Empty state */}
           {(!replies || replies.length === 0) && (
-            <div className="text-center py-12 bg-gray-900 rounded-lg border border-gray-700">
-              <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400 text-lg mb-2">No replies yet</p>
-              <p className="text-gray-500 text-sm">
+            <div className="text-center py-12 bg-background rounded-lg border border-border">
+              <MessageSquare className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+              <p className="text-muted-foreground text-lg mb-2">No replies yet</p>
+              <p className="text-muted-foreground text-sm">
                 Be the first to respond to this thread!
               </p>
             </div>
@@ -279,9 +324,9 @@ export function ThreadDetail() {
 
           {/* Locked message */}
           {thread.locked && (
-            <div className="p-4 bg-gray-800 border border-gray-700 rounded-lg text-center">
-              <Lock className="w-6 h-6 text-gray-500 mx-auto mb-2" />
-              <p className="text-gray-400">This thread is locked and cannot receive new replies.</p>
+            <div className="p-4 bg-surface border border-border rounded-lg text-center">
+              <Lock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground">This thread is locked and cannot receive new replies.</p>
             </div>
           )}
         </div>
@@ -294,7 +339,7 @@ export function ThreadDetail() {
           onClick={() => setShowMobileComposer(false)}
         >
           <div
-            className="bg-gray-900 w-full max-h-[90vh] overflow-y-auto"
+            className="bg-background w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <ReplyComposer
@@ -305,6 +350,58 @@ export function ThreadDetail() {
           </div>
         </div>
       )}
+
+      {/* Report modal */}
+      <Modal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title="Report Thread"
+        size="sm"
+      >
+        <div className="p-6">
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Reason
+          </label>
+          <select
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value as FlagContentRequest['reason'])}
+            className="w-full bg-surface text-white rounded-lg p-2.5 border border-border focus:border-primary-500 focus:outline-none mb-4"
+          >
+            <option value="spam">Spam</option>
+            <option value="harassment">Harassment</option>
+            <option value="off-topic">Off-topic</option>
+            <option value="misinformation">Misinformation</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Additional details (optional)
+          </label>
+          <textarea
+            value={reportDetails}
+            onChange={(e) => setReportDetails(e.target.value)}
+            className="w-full bg-surface text-white rounded-lg p-3 border border-border focus:border-primary-500 focus:outline-none resize-none mb-4"
+            rows={3}
+            placeholder="Provide any additional context..."
+          />
+
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setShowReportModal(false)}
+              className="px-4 py-2 bg-surface hover:bg-surface-hover text-white rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleReportThread}
+              disabled={flagContentMutation.isPending}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              {flagContentMutation.isPending ? 'Submitting...' : 'Submit Report'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

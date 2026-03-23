@@ -25,7 +25,7 @@ export const TagChip: React.FC<TagChipProps> = ({
   const baseClasses = `inline-flex items-center gap-1 rounded-full font-medium transition-all hover:opacity-80 cursor-pointer ${sizeClasses[size]}`;
 
   const style: React.CSSProperties = {
-    backgroundColor: tag.color || "#4169E1",
+    backgroundColor: tag.color || "#7C3AED",
     color: "#ffffff",
   };
 

@@ -18,6 +18,8 @@ export type {
     CardProps,
 } from './Card';
 
+export { CategoryIcon } from './CategoryIcon';
+
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
 

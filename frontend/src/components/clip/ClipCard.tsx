@@ -10,6 +10,14 @@ import { TwitchEmbed } from './TwitchEmbed';
 import { AddToPlaylistButton } from './AddToPlaylistButton';
 import { AddToQueueButton } from './AddToQueueButton';
 import { ShareButton } from './ShareButton';
+import {
+    ArrowBigUp,
+    ArrowBigDown,
+    MessageSquare,
+    Heart,
+    Eye,
+    Check,
+} from 'lucide-react';
 
 interface ClipCardProps {
     clip: Clip;
@@ -58,8 +66,8 @@ export function ClipCard({ clip }: ClipCardProps) {
     };
 
     const voteColor =
-        clip.vote_score > 0 ? 'text-green-600 dark:text-green-400'
-        : clip.vote_score < 0 ? 'text-red-600 dark:text-red-400'
+        clip.vote_score > 0 ? 'text-upvote'
+        : clip.vote_score < 0 ? 'text-downvote'
         : 'text-muted-foreground';
 
     const timestamp = formatTimestamp(clip.created_at);
@@ -76,9 +84,9 @@ export function ClipCard({ clip }: ClipCardProps) {
                         onClick={() => handleVote(1)}
                         disabled={!isAuthenticated || isVoting}
                         className={cn(
-                            'w-11 h-11 xs:w-10 xs:h-10 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center transition-colors touch-target',
+                            'w-11 h-11 xs:w-10 xs:h-10 rounded hover:bg-surface-hover flex items-center justify-center transition-colors touch-target',
                             clip.user_vote === 1 &&
-                                'text-purple-600 dark:text-purple-400',
+                                'text-upvote',
                             !isAuthenticated || isVoting ?
                                 'opacity-50 cursor-not-allowed hover:bg-transparent'
                             :   'cursor-pointer',
@@ -89,22 +97,16 @@ export function ClipCard({ clip }: ClipCardProps) {
                         aria-disabled={!isAuthenticated || isVoting}
                         title={isAuthenticated ? 'Upvote' : 'Log in to vote'}
                     >
-                        <svg
-                            className='w-6 h-6'
-                            fill={
-                                clip.user_vote === 1 ? 'currentColor' : 'none'
-                            }
-                            stroke='currentColor'
-                            strokeWidth={clip.user_vote === 1 ? 0 : 2}
-                            viewBox='0 0 24 24'
-                        >
-                            <path d='M12 4l8 8h-6v8h-4v-8H4z' />
-                        </svg>
+                        <ArrowBigUp
+                            size={22}
+                            fill={clip.user_vote === 1 ? 'currentColor' : 'none'}
+                            strokeWidth={1.75}
+                        />
                     </button>
 
                     <span
                         className={cn(
-                            'text-sm font-bold min-w-8 text-center',
+                            'text-xs font-bold min-w-8 text-center',
                             voteColor,
                         )}
                     >
@@ -115,9 +117,9 @@ export function ClipCard({ clip }: ClipCardProps) {
                         onClick={() => handleVote(-1)}
                         disabled={!isAuthenticated || isVoting}
                         className={cn(
-                            'w-11 h-11 xs:w-10 xs:h-10 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center transition-colors touch-target',
+                            'w-11 h-11 xs:w-10 xs:h-10 rounded hover:bg-surface-hover flex items-center justify-center transition-colors touch-target',
                             clip.user_vote === -1 &&
-                                'text-orange-600 dark:text-orange-400',
+                                'text-downvote',
                             !isAuthenticated || isVoting ?
                                 'opacity-50 cursor-not-allowed hover:bg-transparent'
                             :   'cursor-pointer',
@@ -128,17 +130,11 @@ export function ClipCard({ clip }: ClipCardProps) {
                         aria-disabled={!isAuthenticated || isVoting}
                         title={isAuthenticated ? 'Downvote' : 'Log in to vote'}
                     >
-                        <svg
-                            className='w-6 h-6'
-                            fill={
-                                clip.user_vote === -1 ? 'currentColor' : 'none'
-                            }
-                            stroke='currentColor'
-                            strokeWidth={clip.user_vote === -1 ? 0 : 2}
-                            viewBox='0 0 24 24'
-                        >
-                            <path d='M12 20l-8-8h6V4h4v8h6z' />
-                        </svg>
+                        <ArrowBigDown
+                            size={22}
+                            fill={clip.user_vote === -1 ? 'currentColor' : 'none'}
+                            strokeWidth={1.75}
+                        />
                     </button>
                 </div>
 
@@ -147,14 +143,14 @@ export function ClipCard({ clip }: ClipCardProps) {
                     {/* Title */}
                     <Link
                         to={`/clip/${clip.id}`}
-                        className='hover:text-primary-600 dark:hover:text-primary-400 block mb-2 transition-colors touch-target cursor-pointer'
+                        className='hover:text-primary-500 block mb-2 transition-colors touch-target cursor-pointer'
                     >
-                        <h3 className='line-clamp-2 text-base xs:text-lg font-semibold leading-snug'>
+                        <h3 className='line-clamp-2 text-base xs:text-xl font-semibold leading-snug'>
                             {clip.title}
                         </h3>
                     </Link>
                     {/* Metadata */}
-                    <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 xs:gap-2 mb-3 text-xs xs:text-sm leading-tight'>
+                    <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 xs:gap-2 mb-3 text-xs leading-tight'>
                         <span className='flex items-center gap-1 font-medium'>
                             <Link
                                 to={`/broadcaster/${
@@ -257,7 +253,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                         {clip.watch_progress && (
                             <>
                                 <div
-                                    className='bottom-0 left-0 right-0 absolute h-1 bg-gray-700'
+                                    className='bottom-0 left-0 right-0 absolute h-1 bg-surface-raised'
                                     role='progressbar'
                                     aria-valuenow={Math.round(
                                         Math.min(
@@ -283,26 +279,15 @@ export function ClipCard({ clip }: ClipCardProps) {
                                     )}% watched`}
                                 >
                                     <div
-                                        className='h-full bg-purple-600'
+                                        className='h-full bg-primary-600'
                                         style={{
                                             width: `${Math.min(100, Math.max(0, clip.watch_progress.progress_percent))}%`,
                                         }}
                                     />
                                 </div>
                                 {clip.watch_progress.completed && (
-                                    <div className='bottom-2 left-2 absolute px-2 py-1 text-xs font-medium text-white bg-green-600 bg-opacity-90 rounded flex items-center gap-1'>
-                                        <svg
-                                            className='w-3 h-3'
-                                            fill='currentColor'
-                                            viewBox='0 0 20 20'
-                                            aria-hidden='true'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
-                                                clipRule='evenodd'
-                                            />
-                                        </svg>
+                                    <div className='bottom-2 left-2 absolute px-2 py-1 text-xs font-medium text-white bg-success-600 bg-opacity-90 rounded flex items-center gap-1'>
+                                        <Check className='w-3 h-3' />
                                         Watched
                                     </div>
                                 )}
@@ -316,24 +301,12 @@ export function ClipCard({ clip }: ClipCardProps) {
                     </div>
 
                     {/* Action bar */}
-                    <div className='flex flex-wrap items-center gap-3 xs:gap-4 text-xs xs:text-sm'>
+                    <div className='flex flex-wrap items-center gap-3 xs:gap-4 text-xs'>
                         <Link
                             to={`/clip/${clip.id}#comments`}
                             className='text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors touch-target min-h-11 cursor-pointer'
                         >
-                            <svg
-                                className='w-5 h-5 shrink-0'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z'
-                                />
-                            </svg>
+                            <MessageSquare size={18} className='shrink-0' strokeWidth={1.75} />
                             <span className='hidden xs:inline'>
                                 {formatNumber(clip.comment_count)} comments
                             </span>
@@ -348,7 +321,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                             className={cn(
                                 'flex items-center gap-1.5 transition-colors touch-target min-h-11',
                                 clip.is_favorited ?
-                                    'text-red-500 hover:text-red-400'
+                                    'text-primary-500'
                                 :   'text-muted-foreground hover:text-foreground',
                                 !isAuthenticated ?
                                     'opacity-50 cursor-not-allowed hover:bg-transparent'
@@ -367,21 +340,12 @@ export function ClipCard({ clip }: ClipCardProps) {
                                 )
                             }
                         >
-                            <svg
-                                className='w-5 h-5 shrink-0'
-                                fill={
-                                    clip.is_favorited ? 'currentColor' : 'none'
-                                }
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
-                                />
-                            </svg>
+                            <Heart
+                                size={18}
+                                className='shrink-0'
+                                fill={clip.is_favorited ? 'currentColor' : 'none'}
+                                strokeWidth={1.75}
+                            />
                             <span>{formatNumber(clip.favorite_count)}</span>
                         </button>
 
@@ -392,25 +356,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                         <ShareButton clipId={clip.id} clipTitle={clip.title} />
 
                         <span className='text-muted-foreground flex items-center gap-1'>
-                            <svg
-                                className='w-5 h-5'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                                />
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth={2}
-                                    d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                                />
-                            </svg>
+                            <Eye size={18} strokeWidth={1.75} />
                             <span>{formatNumber(clip.view_count)}</span>
                         </span>
                     </div>

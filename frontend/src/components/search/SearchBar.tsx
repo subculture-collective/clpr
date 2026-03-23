@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Gamepad2, User, Tag, Search } from 'lucide-react';
 import { searchApi } from '../../lib/search-api';
 import type { SearchSuggestion } from '../../types/search';
 import { Input } from '../ui/Input';
@@ -141,13 +142,13 @@ export function SearchBar({
     const getSuggestionIcon = (type: string) => {
         switch (type) {
             case 'game':
-                return '🎮';
+                return <Gamepad2 size={16} strokeWidth={1.75} />;
             case 'creator':
-                return '👤';
+                return <User size={16} strokeWidth={1.75} />;
             case 'tag':
-                return '🏷️';
+                return <Tag size={16} strokeWidth={1.75} />;
             default:
-                return '🔍';
+                return <Search size={16} strokeWidth={1.75} />;
         }
     };
 
@@ -251,7 +252,7 @@ export function SearchBar({
                                                 : ''
                                         }`}
                                     >
-                                        <span className='text-lg'>
+                                        <span className='flex-shrink-0'>
                                             {getSuggestionIcon(suggestion.type)}
                                         </span>
                                         <div className='flex-1 min-w-0'>

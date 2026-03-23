@@ -1,6 +1,8 @@
-import { Container, SEO } from '../components';
+import { SEO } from '../components';
 import { ClipFeed } from '../components/clip';
 import { PlaylistCard } from '../components/playlist/PlaylistCard';
+import { FeedLayout } from '../components/layout/FeedLayout';
+import { FeedSidebar } from '../components/layout/FeedSidebar';
 import { useFeaturedPlaylists } from '../hooks/usePlaylist';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -60,7 +62,7 @@ export function HomePage() {
                 description='Discover and share the best Twitch clips curated by the community. Vote on your favorite moments, explore trending clips, and join the conversation.'
                 canonicalUrl='/'
             />
-            <Container className='py-4 xs:py-6 md:py-8'>
+            <FeedLayout sidebar={<FeedSidebar />}>
                 {/* Curated Collections Section */}
                 {!isLoading && featuredPlaylists.length > 0 && (
                     <div className='mb-8 overflow-hidden'>
@@ -82,12 +84,11 @@ export function HomePage() {
                             </Link>
                         </div>
                         <div className='relative'>
-                            <div className='absolute inset-y-0 left-0 w-10 bg-linear-to-r from-background to-transparent pointer-events-none' />
-                            <div className='absolute inset-y-0 right-0 w-10 bg-linear-to-l from-background to-transparent pointer-events-none' />
+                            <div className='absolute inset-y-0 right-0 w-10 bg-linear-to-l from-background to-transparent pointer-events-none z-10' />
 
                             <div
                                 ref={carouselRef}
-                                className='flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 scrollbar-hide scrolling-touch touch-pan-x overscroll-x-contain'
+                                className='flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 scrollbar-hide scrolling-touch touch-pan-x overscroll-x-contain'
                                 aria-label='Curated collections carousel'
                             >
                                 {featuredPlaylists.map(playlist => (
@@ -105,7 +106,7 @@ export function HomePage() {
                                     <button
                                         type='button'
                                         onClick={() => scrollCarousel('left')}
-                                        className='h-9 w-9 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center'
+                                        className='h-9 w-9 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center cursor-pointer'
                                         aria-label='Scroll curated collections left'
                                     >
                                         <ChevronLeft className='h-4 w-4' />
@@ -117,7 +118,7 @@ export function HomePage() {
                                     <button
                                         type='button'
                                         onClick={() => scrollCarousel('right')}
-                                        className='h-9 w-9 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center'
+                                        className='h-9 w-9 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center cursor-pointer'
                                         aria-label='Scroll curated collections right'
                                     >
                                         <ChevronRight className='h-4 w-4' />
@@ -135,7 +136,7 @@ export function HomePage() {
                     defaultSort='trending'
                     showSearch
                 />
-            </Container>
+            </FeedLayout>
         </>
     );
 }

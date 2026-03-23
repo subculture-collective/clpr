@@ -7,6 +7,7 @@ interface CommentVoteButtonsProps {
   commentId: string;
   score: number;
   userVote?: 1 | -1 | null;
+  variant?: 'expanded' | 'compact';
   className?: string;
 }
 
@@ -14,6 +15,7 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
   commentId,
   score,
   userVote,
+  variant = 'expanded',
   className,
 }) => {
   const isAuthenticated = useIsAuthenticated();
@@ -43,15 +45,25 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
   const isUpvoted = userVote === 1;
   const isDownvoted = userVote === -1;
 
+  const isCompact = variant === 'compact';
+
   return (
-    <div className={cn('flex flex-col items-center gap-1', className)}>
+    <div
+      className={cn(
+        isCompact
+          ? 'flex flex-row items-center gap-1'
+          : 'flex flex-col items-center gap-1',
+        className
+      )}
+    >
       <button
         onClick={() => handleVote(1)}
         disabled={isPending || isVoting}
         className={cn(
-          'p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors',
+          'rounded hover:bg-surface-hover transition-colors cursor-pointer',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          isUpvoted && 'text-orange-500'
+          isCompact ? 'p-0.5' : 'min-w-8 min-h-8 p-1.5',
+          isUpvoted ? 'text-upvote' : 'text-text-tertiary'
         )}
         aria-label="Upvote"
         title="Upvote"
@@ -62,7 +74,7 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
           fill={isUpvoted ? 'currentColor' : 'none'}
           stroke="currentColor"
           strokeWidth="2"
-          className="w-5 h-5"
+          className={isCompact ? 'w-4 h-4' : 'w-5 h-5'}
         >
           <path
             strokeLinecap="round"
@@ -73,11 +85,14 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
       </button>
 
       <span
+        aria-live="polite"
         className={cn(
-          'text-sm font-medium min-w-[2rem] text-center',
-          isUpvoted && 'text-orange-500',
-          isDownvoted && 'text-blue-500',
-          !userVote && 'text-muted-foreground'
+          isCompact
+            ? 'text-xs font-medium min-w-[1.5rem] text-center'
+            : 'text-sm font-medium min-w-[2rem] text-center',
+          isUpvoted && 'text-upvote',
+          isDownvoted && 'text-downvote',
+          !userVote && 'text-text-tertiary'
         )}
       >
         {score}
@@ -87,9 +102,10 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
         onClick={() => handleVote(-1)}
         disabled={isPending || isVoting}
         className={cn(
-          'p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors',
+          'rounded hover:bg-surface-hover transition-colors cursor-pointer',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          isDownvoted && 'text-blue-500'
+          isCompact ? 'p-0.5' : 'min-w-8 min-h-8 p-1.5',
+          isDownvoted ? 'text-downvote' : 'text-text-tertiary'
         )}
         aria-label="Downvote"
         title="Downvote"
@@ -100,7 +116,7 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
           fill={isDownvoted ? 'currentColor' : 'none'}
           stroke="currentColor"
           strokeWidth="2"
-          className="w-5 h-5"
+          className={isCompact ? 'w-4 h-4' : 'w-5 h-5'}
         >
           <path
             strokeLinecap="round"

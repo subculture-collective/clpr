@@ -1,6 +1,18 @@
+import { Clock, Crown, Eye, Flame, MessageSquare, Star, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import type { SortOption, TimeFrame } from '@/types/clip';
+
+const sortIcons: Record<SortOption, React.ReactNode> = {
+    trending: <Flame size={16} strokeWidth={1.75} />,
+    popular: <Star size={16} strokeWidth={1.75} />,
+    top: <Crown size={16} strokeWidth={1.75} />,
+    rising: <TrendingUp size={16} strokeWidth={1.75} />,
+    new: <Clock size={16} strokeWidth={1.75} />,
+    discussed: <MessageSquare size={16} strokeWidth={1.75} />,
+    hot: <Flame size={16} strokeWidth={1.75} />,
+    views: <Eye size={16} strokeWidth={1.75} />,
+};
 
 interface FeedFiltersProps {
     sort: SortOption;
@@ -16,12 +28,12 @@ export function FeedFilters({
     onTimeframeChange,
 }: FeedFiltersProps) {
     const sortOptions: { value: SortOption; label: string }[] = [
-        { value: 'trending', label: 'Trending 🔥' },
-        { value: 'popular', label: 'Most Popular ⭐' },
-        { value: 'top', label: 'Top Rated 👑' },
-        { value: 'rising', label: 'Rising 📈' },
-        { value: 'new', label: 'Newest 🆕' },
-        { value: 'discussed', label: 'Most Discussed 💬' },
+        { value: 'trending', label: 'Trending' },
+        { value: 'popular', label: 'Most Popular' },
+        { value: 'top', label: 'Top Rated' },
+        { value: 'rising', label: 'Rising' },
+        { value: 'new', label: 'Newest' },
+        { value: 'discussed', label: 'Most Discussed' },
     ];
 
     const timeframeOptions: { value: TimeFrame; label: string }[] = [
@@ -43,23 +55,28 @@ export function FeedFilters({
                 >
                     Sort by
                 </label>
-                <select
-                    id='sort-select'
-                    value={sort}
-                    onChange={e => onSortChange(e.target.value as SortOption)}
-                    className={cn(
-                        'w-full sm:w-44 px-2.5 py-2 rounded-lg border text-sm transition-colors min-h-10',
-                        'bg-background text-foreground',
-                        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-                        'border-border hover:border-primary-300'
-                    )}
-                >
-                    {sortOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
+                <div className='relative flex items-center'>
+                    <span className='absolute left-2.5 pointer-events-none text-muted-foreground'>
+                        {sortIcons[sort]}
+                    </span>
+                    <select
+                        id='sort-select'
+                        value={sort}
+                        onChange={e => onSortChange(e.target.value as SortOption)}
+                        className={cn(
+                            'w-full sm:w-48 pl-8 pr-2.5 py-2 rounded-lg border text-sm transition-colors min-h-10',
+                            'bg-background text-foreground',
+                            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+                            'border-border hover:border-primary-300'
+                        )}
+                    >
+                        {sortOptions.map(option => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* Timeframe selector (shown when Top or Trending is selected) */}

@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react';
 import { Container, Card, CardBody, SEO } from '../components';
 
 export function DMCAPage() {
@@ -237,7 +238,7 @@ export function DMCAPage() {
             <CardBody>
               <h2 className="text-2xl font-semibold mb-4">False Claims and Misrepresentation</h2>
               <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
-                <p className="text-foreground font-semibold mb-2">⚠️ Warning</p>
+                <p className="text-foreground font-semibold mb-2 flex items-center gap-1"><AlertTriangle size={16} strokeWidth={1.75} /> Warning</p>
                 <p className="text-muted-foreground text-sm">
                   Making false claims in a DMCA notice or counter-notice can result in serious legal consequences 
                   under 17 U.S.C. § 512(f), including damages, costs, attorneys' fees, and potential criminal 

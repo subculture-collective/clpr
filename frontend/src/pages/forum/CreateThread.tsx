@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { ArrowLeft } from 'lucide-react';
 import { Container, SEO } from '@/components';
 import { forumApi } from '@/lib/forum-api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { cn } from '@/lib/utils';
+
+export const FORUM_TOPICS = [
+  { value: 'discussion', label: 'Discussion', color: '#818CF8' },
+  { value: 'help', label: 'Help', color: '#22C55E' },
+  { value: 'suggestion', label: 'Suggestion', color: '#F59E0B' },
+  { value: 'bug-report', label: 'Bug Report', color: '#EF4444' },
+  { value: 'feature-request', label: 'Feature Request', color: '#A855F7' },
+  { value: 'news', label: 'News', color: '#6366F1' },
+  { value: 'clip-highlight', label: 'Clip Highlight', color: '#F97316' },
+  { value: 'meta', label: 'Meta', color: '#C084FC' },
+] as const;
 
 export function CreateThread() {
   const { user } = useAuth();
@@ -15,8 +27,8 @@ export function CreateThread() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
+  const [topic, setTopic] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -35,25 +47,6 @@ export function CreateThread() {
       showToast('Failed to create thread', 'error');
     },
   });
-
-  const handleAddTag = () => {
-    const trimmedTag = tagInput.trim().toLowerCase();
-    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
-      setTags([...tags, trimmedTag]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
-
-  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddTag();
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +69,7 @@ export function CreateThread() {
     await createThreadMutation.mutateAsync({
       title: title.trim(),
       content: content.trim(),
-      tags: tags.length > 0 ? tags : undefined,
+      tags: topic ? [topic] : undefined,
     });
   };
 
@@ -91,26 +84,56 @@ export function CreateThread() {
           {/* Back button */}
           <Link
             to="/forum"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Forum</span>
           </Link>
 
           {/* Header */}
-          <h1 className="text-3xl font-bold text-white mb-6">
+          <h1 className="text-3xl font-bold text-text-primary mb-6">
             Start a New Discussion
           </h1>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Topic */}
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Topic <span className="text-error-500">*</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {FORUM_TOPICS.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTopic(topic === t.value ? '' : t.value)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer',
+                      topic === t.value
+                        ? 'text-white border-transparent'
+                        : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
+                    )}
+                    style={topic === t.value ? { backgroundColor: t.color } : undefined}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {!topic && (
+                <p className="mt-1.5 text-xs text-text-tertiary">
+                  Select a topic to categorize your thread
+                </p>
+              )}
+            </div>
+
             {/* Title */}
             <div>
               <label
                 htmlFor="title"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Title <span className="text-red-500">*</span>
+                Title <span className="text-error-500">*</span>
               </label>
               <input
                 id="title"
@@ -120,102 +143,82 @@ export function CreateThread() {
                 placeholder="What's your discussion about?"
                 maxLength={200}
                 className={cn(
-                  'w-full px-4 py-3 bg-gray-800 border border-gray-700',
-                  'text-white placeholder-gray-400 rounded-lg',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                  'w-full px-4 py-3 border border-border rounded-lg',
+                  'bg-surface-raised text-text-primary placeholder-text-tertiary',
+                  'focus:outline-none focus:ring-2 focus:ring-brand'
                 )}
                 required
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-text-tertiary">
                 {title.length}/200 characters
               </p>
             </div>
 
             {/* Content */}
             <div>
-              <label
-                htmlFor="content"
-                className="block text-sm font-medium text-gray-300 mb-2"
-              >
-                Content <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Share your thoughts... (Markdown supported)"
-                rows={10}
-                maxLength={5000}
-                className={cn(
-                  'w-full px-4 py-3 bg-gray-800 border border-gray-700',
-                  'text-white placeholder-gray-400 rounded-lg resize-none',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                )}
-                required
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                {content.length}/5000 characters • Markdown formatting is supported
-              </p>
-            </div>
-
-            {/* Tags */}
-            <div>
-              <label
-                htmlFor="tags"
-                className="block text-sm font-medium text-gray-300 mb-2"
-              >
-                Tags (optional)
-              </label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  id="tags"
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKeyDown}
-                  placeholder="Add a tag (max 5)"
-                  maxLength={50}
-                  disabled={tags.length >= 5}
-                  className={cn(
-                    'flex-1 px-4 py-2 bg-gray-800 border border-gray-700',
-                    'text-white placeholder-gray-400 rounded-lg',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddTag}
-                  disabled={!tagInput.trim() || tags.length >= 5}
-                  className={cn(
-                    'px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg',
-                    'transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="content"
+                  className="block text-sm font-medium text-text-secondary"
                 >
-                  Add
-                </button>
-              </div>
-              {tags.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-gray-700 text-gray-300 rounded-lg text-sm"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-red-400 transition-colors"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                  Content <span className="text-error-500">*</span>
+                </label>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(false)}
+                    className={cn(
+                      'px-3 py-1 text-sm rounded transition-colors cursor-pointer',
+                      !showPreview
+                        ? 'bg-surface-raised text-text-primary'
+                        : 'text-text-tertiary hover:text-text-primary',
+                    )}
+                  >
+                    Write
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(true)}
+                    className={cn(
+                      'px-3 py-1 text-sm rounded transition-colors cursor-pointer',
+                      showPreview
+                        ? 'bg-surface-raised text-text-primary'
+                        : 'text-text-tertiary hover:text-text-primary',
+                    )}
+                  >
+                    Preview
+                  </button>
                 </div>
+              </div>
+
+              {showPreview ? (
+                <div className="w-full min-h-[260px] px-4 py-3 border border-border rounded-lg bg-surface-raised">
+                  {content.trim() ? (
+                    <div className="comment-body">
+                      <ReactMarkdown>{content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-text-tertiary text-sm italic">Nothing to preview</p>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Share your thoughts... (Markdown supported)"
+                  rows={10}
+                  maxLength={5000}
+                  className={cn(
+                    'w-full px-4 py-3 border border-border rounded-lg resize-none',
+                    'bg-surface-raised text-text-primary placeholder-text-tertiary',
+                    'focus:outline-none focus:ring-2 focus:ring-brand'
+                  )}
+                  required
+                />
               )}
-              <p className="mt-1 text-xs text-gray-500">
-                Tags help others find your discussion
+              <p className="mt-1 text-xs text-text-tertiary">
+                {content.length}/5000 characters • Markdown formatting is supported
               </p>
             </div>
 
@@ -224,7 +227,7 @@ export function CreateThread() {
               <button
                 type="button"
                 onClick={() => navigate('/forum')}
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-surface-raised hover:bg-surface-hover text-text-primary font-medium rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -233,11 +236,12 @@ export function CreateThread() {
                 disabled={
                   !title.trim() ||
                   !content.trim() ||
+                  !topic ||
                   createThreadMutation.isPending
                 }
                 className={cn(
-                  'px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg',
-                  'transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                  'px-6 py-3 bg-brand hover:bg-brand-hover text-white font-medium rounded-lg',
+                  'transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 )}
               >
                 {createThreadMutation.isPending

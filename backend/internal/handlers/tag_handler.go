@@ -519,6 +519,61 @@ func (h *TagHandler) GetClipTags(c *gin.Context) {
 	})
 }
 
+// ListBlacklistedTags returns all blacklisted tag patterns (admin only)
+func (h *TagHandler) ListBlacklistedTags(c *gin.Context) {
+	tags, err := h.tagRepo.GetBlacklistedTags(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get blacklisted tags"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": tags})
+}
+
+// AddBlacklistedTag adds a pattern to the tag blacklist (admin only)
+func (h *TagHandler) AddBlacklistedTag(c *gin.Context) {
+	var req struct {
+		Pattern string  `json:"pattern" binding:"required"`
+		Reason  *string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Pattern is required"})
+		return
+	}
+
+	// Get admin user ID from context
+	var createdBy *uuid.UUID
+	if userIDValue, exists := c.Get("user_id"); exists {
+		if uid, ok := userIDValue.(uuid.UUID); ok {
+			createdBy = &uid
+		}
+	}
+
+	if err := h.tagRepo.AddBlacklistedTag(c.Request.Context(), req.Pattern, req.Reason, createdBy); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add blacklisted tag"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+// RemoveBlacklistedTag removes a pattern from the tag blacklist (admin only)
+func (h *TagHandler) RemoveBlacklistedTag(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	if err := h.tagRepo.RemoveBlacklistedTag(c.Request.Context(), id); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Blacklisted tag not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove blacklisted tag"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
 // isValidHexColor validates hex color format
 func isValidHexColor(color string) bool {
 	if len(color) != 7 {

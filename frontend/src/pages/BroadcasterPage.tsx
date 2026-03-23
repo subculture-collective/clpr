@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Container, SEO } from '../components';
-import { ClipCard } from '../components/clip';
+import { ClipGridCard } from '../components/clip';
 import { Button } from '../components/ui';
 import { Spinner } from '../components';
 import { LiveBadge } from '../components/broadcaster';
@@ -13,6 +13,7 @@ import {
     unfollowBroadcaster,
     fetchBroadcasterLiveStatus,
 } from '../lib/broadcaster-api';
+import { apiClient } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -54,6 +55,32 @@ export function BroadcasterPage() {
                 limit: 20,
                 sort: sortBy,
             }),
+        enabled: !!broadcasterId,
+    });
+
+    // Fetch broadcaster ranking data
+    const { data: rankingData } = useQuery({
+        queryKey: ['broadcaster-ranking', broadcasterId],
+        queryFn: async () => {
+            const res = await apiClient.get<{
+                success: boolean;
+                data: Array<{
+                    broadcaster_id: string;
+                    engagement_score: number;
+                }>;
+            }>('/broadcasters/rankings?limit=100');
+            const rankings = res.data?.data || [];
+            const idx = rankings.findIndex(
+                r => r.broadcaster_id === broadcasterId,
+            );
+            if (idx >= 0) {
+                return {
+                    rank: idx + 1,
+                    engagement_score: rankings[idx].engagement_score,
+                };
+            }
+            return null;
+        },
         enabled: !!broadcasterId,
     });
 
@@ -204,6 +231,26 @@ export function BroadcasterPage() {
                                         Avg Score
                                     </span>
                                 </div>
+                                {rankingData && (
+                                    <>
+                                        <div>
+                                            <span className='font-semibold'>
+                                                {rankingData.engagement_score.toLocaleString()}
+                                            </span>
+                                            <span className='text-muted-foreground ml-1'>
+                                                Engagement Score
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className='font-semibold'>
+                                                #{rankingData.rank}
+                                            </span>
+                                            <span className='text-muted-foreground ml-1'>
+                                                Rank
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -299,7 +346,7 @@ export function BroadcasterPage() {
                     <>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8'>
                             {(clipsData.data ?? []).map(clip => (
-                                <ClipCard key={clip.id} clip={clip} />
+                                <ClipGridCard key={clip.id} clip={clip} />
                             ))}
                         </div>
 

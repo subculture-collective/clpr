@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { getUserWatchPartyStats } from '@/lib/watch-party-api';
 import type { HostStats } from '@/types/watchParty';
+import { PartyPopper, Users, BarChart3, MessageSquare, Heart, AlertTriangle } from 'lucide-react';
 
 interface Props {
   userId: string;
@@ -9,7 +10,7 @@ interface Props {
 interface StatItemProps {
   label: string;
   value: string | number;
-  icon: string;
+  icon: ReactNode;
 }
 
 function StatItem({ label, value, icon }: StatItemProps) {
@@ -19,7 +20,7 @@ function StatItem({ label, value, icon }: StatItemProps) {
         <div className="text-gray-400 text-sm mb-1">{label}</div>
         <div className="text-2xl font-bold text-white">{value}</div>
       </div>
-      <div className="text-3xl">{icon}</div>
+      <div className="text-gray-400">{icon}</div>
     </div>
   );
 }
@@ -66,7 +67,7 @@ export default function HostStatsPanel({ userId }: Props) {
     return (
       <div className="p-6 bg-gray-900 rounded-lg">
         <div className="text-red-500 text-center">
-          <p className="text-xl mb-2">⚠️</p>
+          <p className="text-xl mb-2"><AlertTriangle size={20} strokeWidth={1.75} className="inline" /></p>
           <p>{error}</p>
           <button
             onClick={loadStats}
@@ -91,27 +92,27 @@ export default function HostStatsPanel({ userId }: Props) {
         <StatItem
           label="Parties Hosted"
           value={stats.total_parties_hosted}
-          icon="🎉"
+          icon={<PartyPopper size={20} strokeWidth={1.75} />}
         />
         <StatItem
           label="Total Viewers"
           value={stats.total_viewers}
-          icon="👥"
+          icon={<Users size={20} strokeWidth={1.75} />}
         />
         <StatItem
           label="Avg Viewers per Party"
           value={stats.avg_viewers_per_party.toFixed(1)}
-          icon="📊"
+          icon={<BarChart3 size={20} strokeWidth={1.75} />}
         />
         <StatItem
           label="Total Chat Messages"
           value={stats.total_chat_messages}
-          icon="💬"
+          icon={<MessageSquare size={20} strokeWidth={1.75} />}
         />
         <StatItem
           label="Total Reactions"
           value={stats.total_reactions}
-          icon="❤️"
+          icon={<Heart size={20} strokeWidth={1.75} />}
         />
       </div>
 

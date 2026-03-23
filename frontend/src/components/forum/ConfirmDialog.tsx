@@ -30,11 +30,11 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <div className="p-6">
-        <p className="text-gray-300 mb-6">{message}</p>
+        <p className="text-foreground mb-6">{message}</p>
         <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg transition-colors"
           >
             {cancelLabel}
           </button>
@@ -44,7 +44,7 @@ export function ConfirmDialog({
               'px-4 py-2 text-white rounded-lg transition-colors',
               variant === 'danger'
                 ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-primary-600 hover:bg-primary-700'
             )}
           >
             {confirmLabel}

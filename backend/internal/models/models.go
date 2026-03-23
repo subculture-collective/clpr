@@ -269,6 +269,15 @@ type ClipTag struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
 
+// BlacklistedTag represents a tag pattern that should be excluded from listings
+type BlacklistedTag struct {
+	ID        uuid.UUID  `json:"id" db:"id"`
+	Pattern   string     `json:"pattern" db:"pattern"`
+	Reason    *string    `json:"reason,omitempty" db:"reason"`
+	CreatedBy *uuid.UUID `json:"created_by,omitempty" db:"created_by"`
+	CreatedAt time.Time  `json:"created_at" db:"created_at"`
+}
+
 // Report represents a user report for moderation
 type Report struct {
 	ID             uuid.UUID  `json:"id" db:"id"`
@@ -1824,6 +1833,21 @@ type PopularBroadcaster struct {
 	BroadcasterID   string `json:"broadcaster_id"`
 	BroadcasterName string `json:"broadcaster_name"`
 	ClipCount       int    `json:"clip_count"`
+}
+
+// BroadcasterRanking represents a broadcaster's engagement-weighted rank
+type BroadcasterRanking struct {
+	BroadcasterID       string    `json:"broadcaster_id" db:"broadcaster_id"`
+	BroadcasterName     string    `json:"broadcaster_name" db:"broadcaster_name"`
+	TotalClips          int       `json:"total_clips" db:"total_clips"`
+	HumanSubmittedClips int       `json:"human_submitted_clips" db:"human_submitted_clips"`
+	TotalVoteScore      int64     `json:"total_vote_score" db:"total_vote_score"`
+	TotalViews          int64     `json:"total_views" db:"total_views"`
+	TotalComments       int64     `json:"total_comments" db:"total_comments"`
+	UniqueCommenters    int64     `json:"unique_commenters" db:"unique_commenters"`
+	EngagementScore     float64   `json:"engagement_score" db:"engagement_score"`
+	FollowerCount       int       `json:"follower_count" db:"follower_count"`
+	LastCalculated      time.Time `json:"last_calculated" db:"last_calculated"`
 }
 
 // EmailLog represents a comprehensive email event log from SendGrid webhooks

@@ -44,10 +44,10 @@ export function TwitchChatEmbed({ channel, position = 'side' }: TwitchChatEmbedP
     : 'w-full h-full min-h-[600px]';
 
   return (
-    <div className={`border rounded-lg overflow-hidden bg-white dark:bg-gray-800 ${containerClasses}`}>
+    <div className={`border rounded-lg overflow-hidden bg-surface-raised ${containerClasses}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-        <h3 className="font-bold text-gray-900 dark:text-white">Twitch Chat</h3>
+      <div className="flex items-center justify-between p-3 border-b border-border bg-surface">
+        <h3 className="font-bold text-white">Twitch Chat</h3>
 
         {isUserLoggedIn && !isCheckingAuth && !isAuthenticated && (
           <button

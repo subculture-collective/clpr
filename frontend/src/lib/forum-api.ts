@@ -17,6 +17,7 @@ import type {
   ForumAnalyticsResponse,
   PopularDiscussionsResponse,
   HelpfulRepliesResponse,
+  FlagContentRequest,
 } from '@/types/forum';
 
 interface ListThreadsParams {
@@ -50,28 +51,44 @@ export const forumApi = {
       params.tags.forEach(tag => queryParams.append('tags', tag));
     }
 
-    const response = await apiClient.get<ForumThreadsResponse>(
+    const response = await apiClient.get(
       `/forum/threads?${queryParams.toString()}`
     );
-    return response.data;
+    const body = response.data;
+    // Backend returns { data: Thread[], meta: {...}, success } — map to our type
+    return {
+      threads: body.data ?? body.threads ?? [],
+      total: body.meta?.count ?? body.total ?? 0,
+      page: body.meta?.page ?? body.page ?? 1,
+      limit: body.meta?.limit ?? body.limit ?? 20,
+    };
   },
 
   /**
    * Get a single thread with its replies
    */
   async getThread(threadId: string): Promise<ForumThreadDetailResponse> {
-    const response = await apiClient.get<ForumThreadDetailResponse>(
+    const response = await apiClient.get(
       `/forum/threads/${threadId}`
     );
-    return response.data;
+    const body = response.data;
+    // Backend may return { data: { thread, replies }, success } or { thread, replies }
+    if (body.data?.thread) {
+      return body.data;
+    }
+    if (body.thread) {
+      return body;
+    }
+    // Fallback: body IS the thread detail
+    return { thread: body.data ?? body, replies: body.replies ?? [] };
   },
 
   /**
    * Create a new forum thread
    */
   async createThread(data: CreateThreadRequest): Promise<ForumThread> {
-    const response = await apiClient.post<ForumThread>('/forum/threads', data);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; data: ForumThread }>('/forum/threads', data);
+    return response.data.data ?? response.data as unknown as ForumThread;
   },
 
   /**
@@ -147,8 +164,16 @@ export const forumApi = {
     const params = new URLSearchParams();
     params.append('timeframe', timeframe);
     params.append('limit', limit.toString());
-    
+
     const response = await apiClient.get<HelpfulRepliesResponse>(`/forum/helpful-replies?${params.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * Flag content (thread or reply) for moderation review
+   */
+  async flagContent(data: FlagContentRequest) {
+    const response = await apiClient.post('/forum/flag', data);
     return response.data;
   },
 };

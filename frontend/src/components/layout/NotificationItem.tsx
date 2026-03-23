@@ -1,58 +1,60 @@
 import { Link } from 'react-router-dom';
 import { formatTimestamp } from '@/lib/utils';
 import type { Notification } from '../../types/notification';
+import {
+    MessageSquare,
+    AtSign,
+    TrendingUp,
+    Award,
+    ArrowUpCircle,
+    Star,
+    Trash2,
+    AlertTriangle,
+    Ban,
+    CheckCircle,
+    XCircle,
+    Bell,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface NotificationItemProps {
     notification: Notification;
     onClick?: () => void;
 }
 
+const notificationIconMap: Record<string, LucideIcon> = {
+    reply: MessageSquare,
+    mention: AtSign,
+    vote_milestone: TrendingUp,
+    badge_earned: Award,
+    rank_up: ArrowUpCircle,
+    favorited_clip_comment: Star,
+    content_removed: Trash2,
+    warning: AlertTriangle,
+    ban: Ban,
+    submission_approved: CheckCircle,
+    submission_rejected: XCircle,
+};
+
 export function NotificationItem({
     notification,
     onClick,
 }: NotificationItemProps) {
-    const getNotificationIcon = (type: string) => {
-        switch (type) {
-            case 'reply':
-                return '💬';
-            case 'mention':
-                return '@';
-            case 'vote_milestone':
-                return '🎉';
-            case 'badge_earned':
-                return '🏅';
-            case 'rank_up':
-                return '⬆️';
-            case 'favorited_clip_comment':
-                return '⭐';
-            case 'content_removed':
-                return '🚫';
-            case 'warning':
-                return '⚠️';
-            case 'ban':
-                return '🔨';
-            case 'submission_approved':
-                return '✅';
-            case 'submission_rejected':
-                return '❌';
-            default:
-                return '🔔';
-        }
-    };
+    const IconComponent = notificationIconMap[notification.type] || Bell;
 
     const content = (
         <div
-            className={`p-4 border-b border-border hover:bg-muted transition-colors cursor-pointer ${
-                !notification.is_read ?
-                    'bg-primary-50 dark:bg-primary-900/10'
-                :   ''
+            className={`p-4 border-b border-border transition-colors cursor-pointer ${
+                !notification.is_read
+                    ? 'bg-brand-tint hover:bg-brand-tint-hover border-l-[3px] border-l-[rgb(var(--color-brand))]'
+                    : 'hover:bg-surface-hover'
             }`}
             onClick={onClick}
         >
             <div className='flex gap-3'>
                 {/* Icon */}
-                <div className='flex-shrink-0 text-2xl' aria-hidden='true'>
-                    {getNotificationIcon(notification.type)}
+                <div className='flex-shrink-0 text-text-secondary' aria-hidden='true'>
+                    <IconComponent size={20} strokeWidth={1.75} />
                 </div>
 
                 {/* Content */}

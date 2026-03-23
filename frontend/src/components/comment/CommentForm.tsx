@@ -7,7 +7,7 @@ import { MarkdownHelpModal } from '@/components/ui/MarkdownHelpModal';
 import { LinkInputModal } from '@/components/ui/LinkInputModal';
 import { useCreateComment, useUpdateComment, useToast } from '@/hooks';
 import { useAutoSave, useDraftStorage } from '@/hooks/useAutoSave';
-import { HelpCircle, Smile, Save } from 'lucide-react';
+import { HelpCircle, Smile, Save, Link2, Quote } from 'lucide-react';
 
 interface CommentFormProps {
     clipId: string;
@@ -224,7 +224,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     <button
                         type='button'
                         onClick={() => insertMarkdown('**', '**')}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer'
                         title='Bold (Ctrl+B)'
                     >
                         <strong className='text-sm'>B</strong>
@@ -232,7 +232,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     <button
                         type='button'
                         onClick={() => insertMarkdown('*', '*')}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer'
                         title='Italic (Ctrl+I)'
                     >
                         <em className='text-sm'>I</em>
@@ -240,7 +240,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     <button
                         type='button'
                         onClick={() => insertMarkdown('~~', '~~')}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer'
                         title='Strikethrough'
                     >
                         <s className='text-sm'>S</s>
@@ -249,23 +249,23 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     <button
                         type='button'
                         onClick={() => setShowLinkModal(true)}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm cursor-pointer'
                         title='Insert Link'
                     >
-                        🔗
+                        <Link2 size={16} strokeWidth={1.75} />
                     </button>
                     <button
                         type='button'
                         onClick={() => insertMarkdown('> ', '')}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm cursor-pointer'
                         title='Quote'
                     >
-                        ❝
+                        <Quote size={16} strokeWidth={1.75} />
                     </button>
                     <button
                         type='button'
                         onClick={() => insertMarkdown('`', '`')}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm cursor-pointer'
                         title='Code'
                     >
                         {'</>'}
@@ -278,7 +278,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                         <button
                             type='button'
                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                            className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors'
+                            className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer'
                             title='Insert Emoji'
                             aria-label='Emoji picker'
                         >
@@ -297,7 +297,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     <button
                         type='button'
                         onClick={() => setShowMarkdownHelp(true)}
-                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors'
+                        className='p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer'
                         title='Markdown Help'
                         aria-label='Markdown formatting guide'
                     >
@@ -322,7 +322,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                             type='button'
                             onClick={() => setShowPreview(false)}
                             className={cn(
-                                'px-3 py-1 text-sm rounded transition-colors',
+                                'px-3 py-1 text-sm rounded transition-colors cursor-pointer',
                                 !showPreview ?
                                     'bg-background text-foreground'
                                 :   'text-muted-foreground hover:text-foreground',
@@ -334,7 +334,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                             type='button'
                             onClick={() => setShowPreview(true)}
                             className={cn(
-                                'px-3 py-1 text-sm rounded transition-colors',
+                                'px-3 py-1 text-sm rounded transition-colors cursor-pointer',
                                 showPreview ?
                                     'bg-background text-foreground'
                                 :   'text-muted-foreground hover:text-foreground',

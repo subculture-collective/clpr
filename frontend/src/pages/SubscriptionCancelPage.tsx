@@ -19,11 +19,11 @@ export default function SubscriptionCancelPage() {
     }, [user?.id]);
 
     return (
-        <div className='min-h-screen bg-gray-900 flex items-center justify-center px-4'>
+        <div className='min-h-screen bg-background flex items-center justify-center px-4'>
             <div className='max-w-md w-full text-center'>
                 <div className='mb-8'>
                     <svg
-                        className='h-20 w-20 text-gray-500 mx-auto'
+                        className='h-20 w-20 text-muted-foreground mx-auto'
                         fill='none'
                         stroke='currentColor'
                         viewBox='0 0 24 24'
@@ -41,7 +41,7 @@ export default function SubscriptionCancelPage() {
                     Subscription Canceled
                 </h1>
 
-                <p className='text-gray-400 mb-8'>
+                <p className='text-muted-foreground mb-8'>
                     You've canceled the checkout process. No charges have been
                     made to your account. You can subscribe anytime you're
                     ready.
@@ -57,13 +57,13 @@ export default function SubscriptionCancelPage() {
 
                     <button
                         onClick={() => navigate('/')}
-                        className='w-full py-3 px-6 rounded-md bg-gray-800 text-gray-300 font-medium hover:bg-gray-700 transition-colors'
+                        className='w-full py-3 px-6 rounded-md bg-surface text-foreground font-medium hover:bg-surface-hover transition-colors'
                     >
                         Back to Home
                     </button>
                 </div>
 
-                <p className='text-sm text-gray-500 mt-8'>
+                <p className='text-sm text-muted-foreground mt-8'>
                     Have questions?{' '}
                     <Link
                         to='/support'

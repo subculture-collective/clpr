@@ -180,3 +180,10 @@ export interface HelpfulRepliesResponse {
     limit: number;
   };
 }
+
+export interface FlagContentRequest {
+  target_type: 'thread' | 'reply';
+  target_id: string;
+  reason: 'spam' | 'harassment' | 'off-topic' | 'misinformation' | 'other';
+  details?: string;
+}

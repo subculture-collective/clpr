@@ -636,6 +636,84 @@ func (h *ForumModerationHandler) GetModerationLog(c *gin.Context) {
 	})
 }
 
+// FlagContentRequest represents the request to flag content
+type FlagContentRequest struct {
+	TargetType string  `json:"target_type" binding:"required"`
+	TargetID   string  `json:"target_id" binding:"required"`
+	Reason     string  `json:"reason" binding:"required"`
+	Details    *string `json:"details"`
+}
+
+// FlagContent allows authenticated users to flag a thread or reply
+// POST /api/v1/forum/flag
+func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "User not authenticated",
+		})
+		return
+	}
+
+	var req FlagContentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	// Validate target_type
+	if req.TargetType != "thread" && req.TargetType != "reply" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "target_type must be 'thread' or 'reply'",
+		})
+		return
+	}
+
+	// Validate reason
+	validReasons := map[string]bool{
+		"spam":            true,
+		"harassment":      true,
+		"off-topic":       true,
+		"misinformation":  true,
+		"other":           true,
+	}
+	if !validReasons[req.Reason] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "reason must be one of: spam, harassment, off-topic, misinformation, other",
+		})
+		return
+	}
+
+	// Validate target_id as UUID
+	targetID, err := uuid.Parse(req.TargetID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid target_id",
+		})
+		return
+	}
+
+	// Insert flag, handling duplicates gracefully
+	_, err = h.db.Exec(c.Request.Context(),
+		`INSERT INTO content_flags (user_id, target_type, target_id, reason, details, status)
+		VALUES ($1, $2, $3, $4, $5, 'pending')
+		ON CONFLICT (user_id, target_type, target_id) DO NOTHING`,
+		userID, req.TargetType, targetID, req.Reason, req.Details)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to flag content",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Content has been flagged for review",
+	})
+}
+
 // GetUserBans retrieves active user bans
 // GET /api/admin/forum/bans
 func (h *ForumModerationHandler) GetUserBans(c *gin.Context) {

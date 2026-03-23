@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -6,11 +6,12 @@ import { Container, SEO } from '@/components';
 import {
   ThreadList,
   ForumSearch,
-  ForumFilters,
   SortSelector,
 } from '@/components/forum';
 import { forumApi } from '@/lib/forum-api';
 import { useAuth } from '@/context/AuthContext';
+import { FORUM_TOPICS } from './CreateThread';
+import { cn } from '@/lib/utils';
 import type { ForumSort, ForumFilters as ForumFiltersType } from '@/types/forum';
 
 export function ForumIndex() {
@@ -70,11 +71,16 @@ export function ForumIndex() {
     setSort(newSort);
   };
 
-  const handleFilterChange = (newFilters: ForumFiltersType) => {
-    setFilters(newFilters);
-  };
-
   const threads = data?.threads || [];
+
+  const sortedThreads = useMemo(() => {
+    if (!threads) return [];
+    return [...threads].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0;
+    });
+  }, [threads]);
 
   return (
     <>
@@ -109,9 +115,44 @@ export function ForumIndex() {
           {/* Search */}
           <ForumSearch onSearch={handleSearch} className="mb-4" />
 
-          {/* Filters and Sort */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-            <ForumFilters filters={filters} onFilterChange={handleFilterChange} />
+          {/* Topic filter buttons */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => setFilters({ ...filters, tags: [] })}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer',
+                (!filters.tags || filters.tags.length === 0)
+                  ? 'bg-brand text-white border-transparent'
+                  : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
+              )}
+            >
+              All
+            </button>
+            {FORUM_TOPICS.map((t) => {
+              const isActive = filters.tags?.includes(t.value);
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => setFilters({
+                    ...filters,
+                    tags: isActive ? [] : [t.value],
+                  })}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer',
+                    isActive
+                      ? 'text-white border-transparent'
+                      : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
+                  )}
+                  style={isActive ? { backgroundColor: t.color } : undefined}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Sort */}
+          <div className="flex justify-end mb-6">
             <SortSelector value={sort} onChange={handleSortChange} />
           </div>
 
@@ -125,7 +166,7 @@ export function ForumIndex() {
           )}
 
           {/* Thread List */}
-          <ThreadList threads={threads} loading={isLoading} />
+          <ThreadList threads={sortedThreads} loading={isLoading} />
 
           {/* Empty state for unauthenticated users */}
           {!user && threads.length === 0 && !isLoading && (

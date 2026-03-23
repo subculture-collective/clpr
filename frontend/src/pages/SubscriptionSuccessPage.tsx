@@ -1,36 +1,56 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import {
+    Ban,
+    Star,
+    Folder,
+    Search,
+    RefreshCw,
+    Mail,
+    PartyPopper,
+    Sparkles,
+    Rocket,
+} from 'lucide-react';
 import { trackConversion } from '../lib/paywall-analytics';
 import { useAuth } from '../hooks/useAuth';
 
+const ICON_MAP: Record<string, React.ReactNode> = {
+    ban: <Ban size={20} strokeWidth={1.75} />,
+    star: <Star size={20} strokeWidth={1.75} />,
+    folder: <Folder size={20} strokeWidth={1.75} />,
+    search: <Search size={20} strokeWidth={1.75} />,
+    'refresh-cw': <RefreshCw size={20} strokeWidth={1.75} />,
+    mail: <Mail size={20} strokeWidth={1.75} />,
+};
+
 const PRO_FEATURES = [
     {
-        icon: '🚫',
+        icon: 'ban',
         title: 'Ad-Free Experience',
         description: 'Enjoy clpr without any advertisements',
     },
     {
-        icon: '⭐',
+        icon: 'star',
         title: 'Unlimited Favorites',
         description: 'Save as many clips as you want without limits',
     },
     {
-        icon: '📁',
+        icon: 'folder',
         title: 'Custom Collections',
         description: 'Organize your clips into custom playlists',
     },
     {
-        icon: '🔍',
+        icon: 'search',
         title: 'Advanced Search',
         description: 'Use powerful filters to find exactly what you need',
     },
     {
-        icon: '🔄',
+        icon: 'refresh-cw',
         title: 'Cross-Device Sync',
         description: 'Access your favorites and collections anywhere',
     },
     {
-        icon: '✉️',
+        icon: 'mail',
         title: 'Priority Support',
         description: 'Get help faster with our priority support queue',
     },
@@ -55,7 +75,7 @@ export default function SubscriptionSuccessPage() {
     }, [sessionId, user?.id]);
 
     return (
-        <div className='min-h-screen bg-gray-900 flex items-center justify-center px-4 py-12'>
+        <div className='min-h-screen bg-background flex items-center justify-center px-4 py-12'>
             <div className='max-w-3xl w-full'>
                 {/* Success header */}
                 <div className='text-center mb-8'>
@@ -75,40 +95,40 @@ export default function SubscriptionSuccessPage() {
                         </svg>
                     </div>
 
-                    <h1 className='text-4xl font-bold text-white mb-4'>
-                        🎉 Welcome to clpr Pro!
+                    <h1 className='text-4xl font-bold text-white mb-4 flex items-center justify-center gap-3'>
+                        <PartyPopper size={24} /> Welcome to clpr Pro!
                     </h1>
 
-                    <p className='text-xl text-gray-400 mb-2'>
+                    <p className='text-xl text-muted-foreground mb-2'>
                         Your subscription is now active
                     </p>
 
-                    <p className='text-gray-500 text-sm'>
+                    <p className='text-muted-foreground text-sm'>
                         You'll receive a confirmation email shortly with your
                         receipt
                     </p>
                 </div>
 
                 {/* Features unlocked */}
-                <div className='bg-gray-800 rounded-lg p-6 mb-8 border border-gray-700'>
-                    <h2 className='text-xl font-semibold text-white mb-4 text-center'>
-                        ✨ Features Now Unlocked
+                <div className='bg-surface rounded-lg p-6 mb-8 border border-border'>
+                    <h2 className='text-xl font-semibold text-white mb-4 text-center flex items-center justify-center gap-2'>
+                        <Sparkles size={20} /> Features Now Unlocked
                     </h2>
 
                     <div className='grid md:grid-cols-2 gap-4'>
                         {PRO_FEATURES.map((feature, index) => (
                             <div
                                 key={index}
-                                className='flex items-start gap-3 p-3 bg-gray-900 rounded-lg border border-gray-700'
+                                className='flex items-start gap-3 p-3 bg-background rounded-lg border border-border'
                             >
-                                <span className='text-2xl shrink-0'>
-                                    {feature.icon}
+                                <span className='text-purple-400 shrink-0'>
+                                    {ICON_MAP[feature.icon]}
                                 </span>
                                 <div>
                                     <h3 className='text-white font-medium mb-1'>
                                         {feature.title}
                                     </h3>
-                                    <p className='text-sm text-gray-400'>
+                                    <p className='text-sm text-muted-foreground'>
                                         {feature.description}
                                     </p>
                                 </div>
@@ -119,11 +139,11 @@ export default function SubscriptionSuccessPage() {
 
                 {/* Next steps */}
                 <div className='bg-linear-to-br from-purple-900/30 to-blue-900/30 rounded-lg p-6 mb-8 border border-purple-800'>
-                    <h2 className='text-lg font-semibold text-white mb-4'>
-                        🚀 Getting Started
+                    <h2 className='text-lg font-semibold text-white mb-4 flex items-center gap-2'>
+                        <Rocket size={20} /> Getting Started
                     </h2>
 
-                    <ul className='space-y-3 text-gray-300'>
+                    <ul className='space-y-3 text-foreground'>
                         <li className='flex items-start gap-2'>
                             <span className='text-purple-400 mt-1'>→</span>
                             <span>
@@ -177,14 +197,14 @@ export default function SubscriptionSuccessPage() {
                     <div className='grid grid-cols-2 gap-3'>
                         <button
                             onClick={() => navigate('/settings')}
-                            className='py-3 px-6 rounded-lg bg-gray-800 text-gray-300 font-medium hover:bg-gray-700 transition-colors'
+                            className='py-3 px-6 rounded-lg bg-surface text-foreground font-medium hover:bg-surface-hover transition-colors'
                         >
                             Manage Subscription
                         </button>
 
                         <button
                             onClick={() => navigate('/search')}
-                            className='py-3 px-6 rounded-lg bg-gray-800 text-gray-300 font-medium hover:bg-gray-700 transition-colors'
+                            className='py-3 px-6 rounded-lg bg-surface text-foreground font-medium hover:bg-surface-hover transition-colors'
                         >
                             Try Advanced Search
                         </button>
@@ -193,7 +213,7 @@ export default function SubscriptionSuccessPage() {
 
                 {/* Support */}
                 <div className='text-center mt-8'>
-                    <p className='text-sm text-gray-500'>
+                    <p className='text-sm text-muted-foreground'>
                         Need help?{' '}
                         <Link
                             to='/support'

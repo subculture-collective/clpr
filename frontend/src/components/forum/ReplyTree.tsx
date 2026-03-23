@@ -31,7 +31,7 @@ export function ReplyTree({
     <div
       className={cn(
         'space-y-4',
-        depth > 0 && 'ml-6 pl-4 border-l-2 border-gray-700',
+        depth > 0 && 'ml-6 pl-4 border-l-2 border-border',
         className
       )}
     >

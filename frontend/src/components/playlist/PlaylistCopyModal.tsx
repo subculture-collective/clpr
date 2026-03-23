@@ -16,19 +16,19 @@ export function PlaylistCopyModal({
 }: PlaylistCopyModalProps) {
     return (
         <div className='fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4'>
-            <div className='bg-zinc-900 rounded-xl max-w-2xl w-full border border-zinc-800 shadow-xl'>
-                <div className='flex items-center justify-between p-6 border-b border-zinc-800'>
+            <div className='bg-surface rounded-xl max-w-2xl w-full border border-border shadow-xl'>
+                <div className='flex items-center justify-between p-6 border-b border-border'>
                     <div>
                         <h2 className='text-xl font-bold text-white'>
                             Copy playlist
                         </h2>
-                        <p className='text-sm text-zinc-400'>
+                        <p className='text-sm text-muted-foreground'>
                             Customize your new playlist before saving.
                         </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className='text-zinc-400 hover:text-white transition-colors'
+                        className='text-muted-foreground hover:text-white transition-colors'
                         aria-label='Close copy modal'
                     >
                         <X className='h-5 w-5' />

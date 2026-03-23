@@ -1,10 +1,11 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, useId } from 'react';
 import { cn } from '@/lib/utils';
 import {
     useTheatreMode,
     useQualityPreference,
     useKeyboardControls,
 } from '@/hooks';
+import { usePlaybackControl } from '@/context/PlaybackContext';
 import type { VideoQuality } from '@/lib/adaptive-bitrate';
 import { HlsPlayer } from './HlsPlayer';
 import { QualitySelector } from './QualitySelector';
@@ -62,6 +63,17 @@ export function TheatreMode({
         togglePictureInPicture,
     } = useTheatreMode();
 
+    // Global playback control — only one video plays at a time
+    const theatrePlayerId = useId();
+    const { requestPlayback, registerPlayer } = usePlaybackControl(`theatre-${theatrePlayerId}`);
+
+    useEffect(() => {
+        const unregister = registerPlayer(() => {
+            videoRef.current?.pause();
+        });
+        return unregister;
+    }, [registerPlayer, videoRef]);
+
     const { quality, setQuality } = useQualityPreference();
     const [bandwidth, setBandwidth] = useState<number>();
     const [bufferHealth, setBufferHealth] = useState(100);
@@ -116,11 +128,12 @@ export function TheatreMode({
         if (!video) return;
 
         if (video.paused) {
+            requestPlayback();
             video.play();
         } else {
             video.pause();
         }
-    }, [videoRef]);
+    }, [videoRef, requestPlayback]);
 
     // Handle mute toggle
     const handleMute = useCallback(() => {
@@ -211,6 +224,21 @@ export function TheatreMode({
             video.removeEventListener('timeupdate', handleTimeUpdate);
         };
     }, [videoRef]);
+
+    // Play tracking — notify global playback control when this video starts
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handlePlayEvent = () => {
+            requestPlayback();
+        };
+
+        video.addEventListener('playing', handlePlayEvent);
+        return () => {
+            video.removeEventListener('playing', handlePlayEvent);
+        };
+    }, [videoRef, requestPlayback]);
 
     // Pause tracking
     useEffect(() => {

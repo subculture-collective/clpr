@@ -76,9 +76,9 @@ export function getRoleDisplayName(role: UserRole): string {
 export function getRoleBadgeColor(role: UserRole): string {
   switch (role) {
     case USER_ROLES.ADMIN:
-      return 'bg-error-500 text-white';
+      return 'bg-error-600 text-white ring-1 ring-error-500/30 font-heading text-[11px] uppercase tracking-wide';
     case USER_ROLES.MODERATOR:
-      return 'bg-warning-500 text-white';
+      return 'bg-warning-600 text-neutral-900 ring-1 ring-warning-500/30 font-heading text-[11px] uppercase tracking-wide';
     case USER_ROLES.USER:
       return 'bg-muted text-muted-foreground';
     default:

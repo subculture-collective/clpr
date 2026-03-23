@@ -101,6 +101,7 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 		playlists.GET("/featured", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.ListFeaturedPlaylists)
 		playlists.GET("/today", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.GetPlaylistOfTheDay)
 		playlists.GET("/share/:token", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.GetPlaylistByShareToken)
+		playlists.GET("/bookmarks", middleware.AuthMiddleware(svcs.Auth), h.Playlist.ListBookmarkedPlaylists)
 		playlists.GET("/:id", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.GetPlaylist)
 
 		// Protected playlist endpoints (require authentication)
@@ -160,6 +161,7 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 		forum.PATCH("/replies/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Forum.UpdateReply)
 		forum.DELETE("/replies/:id", middleware.AuthMiddleware(svcs.Auth), h.Forum.DeleteReply)
 		forum.POST("/replies/:id/vote", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 50, time.Minute), h.Forum.VoteOnReply)
+		forum.POST("/flag", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.ForumModeration.FlagContent)
 	}
 
 	// Watch party routes

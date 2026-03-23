@@ -28,16 +28,16 @@ export function ForumSearch({
   return (
     <form onSubmit={handleSubmit} className={cn('relative', className)}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            'w-full pl-10 pr-10 py-2.5 bg-gray-800 border border-gray-700',
-            'text-white placeholder-gray-400 rounded-lg',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'w-full pl-10 pr-10 py-2.5 bg-surface border border-border',
+            'text-white placeholder-muted-foreground rounded-lg',
+            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
             'transition-all duration-200'
           )}
         />
@@ -45,7 +45,7 @@ export function ForumSearch({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
             aria-label="Clear search"
           >
             <X className="w-5 h-5" />
