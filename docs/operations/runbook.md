@@ -112,89 +112,6 @@ kubectl rollout undo deployment/backend -n clpr
 
 ## Deployment Testing & Validation
 
-### Deployment Scripts Testing Harness
-
-The deployment testing harness validates deployment scripts (deploy, rollback, blue-green) in safe DRY_RUN and MOCK modes before production use.
-
-#### Running the Harness
-
-**Basic Usage:**
-
-```bash
-# Run in MOCK mode (no actual Docker commands)
-cd scripts
-./test-deployment-harness.sh
-
-# Run with verbose logging
-VERBOSE=true ./test-deployment-harness.sh
-
-# Custom test results directory
-TEST_RESULTS_DIR=/tmp/my-tests ./test-deployment-harness.sh
-```
-
-**Environment Variables:**
-
-- `DRY_RUN` (default: `true`) - Enable dry-run mode
-- `MOCK` (default: `true`) - Use mock Docker/curl commands
-- `VERBOSE` (default: `false`) - Enable detailed logging
-- `TEST_RESULTS_DIR` (default: `/tmp/deployment-harness-results`) - Output directory
-
-#### What the Harness Tests
-
-The harness validates:
-
-1. **Validation Checks** - Scripts verify prerequisites (Docker, docker-compose, directories)
-2. **Backup Mechanisms** - Deployment creates proper backups before changes
-3. **Rollback Logic** - Rollback scripts can restore from backups
-4. **Environment Detection** - Blue-green deployment detects active environment
-5. **Error Handling** - Scripts use `set -e` and proper exit codes
-6. **Health Checks** - Deployments verify service health post-deployment
-7. **DRY_RUN Support** - Rotation scripts support safe dry-run mode
-
-#### Interpreting Test Results
-
-**Success Output:**
-
-```
-=== Test Summary ===
-Tests Run: 10
-Tests Passed: 10
-Tests Failed: 0
-
-Test results saved to: /tmp/deployment-harness-results
-=== All Tests Passed ===
-```
-
-**Failure Output:**
-
-```
-[FAIL] deploy.sh backup mechanism
-
-Failed Tests:
-  - deploy.sh backup mechanism
-
-Tests Run: 10
-Tests Passed: 9
-Tests Failed: 1
-```
-
-**Test Artifacts:**
-
-All test results are saved to `TEST_RESULTS_DIR`:
-- `mock-commands.log` - Log of all mocked Docker/curl commands (if `VERBOSE=true`)
-- `deploy-dry-run.log` - Output from deploy script test
-- `mock-deploy/` - Mock deployment directory with docker-compose files
-
-#### Troubleshooting Test Failures
-
-| Failure | Cause | Resolution |
-|---------|-------|------------|
-| "missing docker validation" | Script doesn't check for Docker | Add `command_exists docker` check |
-| "missing backup mechanism" | No backup creation before deploy | Add `BACKUP_TAG` and `docker tag` logic |
-| "missing confirmation prompt" | Rollback has no safety prompt | Add `read -p` confirmation |
-| "missing 'set -e'" | Script doesn't exit on errors | Add `set -e` at script top |
-| "missing exit codes" | No explicit exit statements | Add `exit 0` (success) and `exit 1` (failure) |
-
 ### Rollback Drills
 
 Periodic rollback drills ensure deployment reversibility and validate disaster recovery procedures.
@@ -296,93 +213,38 @@ Recommendation: Investigate failures before production rollback.
 | Clean State Verification | Orphaned containers | Check for container cleanup logic |
 | Data Integrity | Config files missing | Verify state file preservation |
 
-### CI/CD Integration
-
-The deployment tests run automatically in GitHub Actions:
-
-#### Workflow Triggers
-
-- **Harness Tests:** Push/PR to main/develop with deployment script changes
-- **Rollback Drills:** 
-  - Weekly schedule (Monday 2 AM UTC)
-  - Manual via workflow_dispatch
-  - Commit message containing `[rollback-drill]`
-
-#### Viewing CI Results
-
-1. **GitHub Actions Tab:** View workflow runs
-2. **Artifacts:** Download test results (retained 30 days)
-   - `deployment-harness-results` - Harness test logs
-   - `rollback-drill-results` - Drill reports and state files
-3. **Summary:** Check workflow summary for quick overview
-
-#### CI Failure Response
-
-When deployment tests fail in CI:
-
-1. **Check Workflow Logs:** Identify which job failed
-2. **Download Artifacts:** Get detailed logs and reports
-3. **Reproduce Locally:** Run failing test locally
-4. **Fix Issues:** Update scripts based on failures
-5. **Re-run:** Push fix and verify tests pass
-
-**Example:**
-
-```bash
-# Download artifacts from failed CI run
-gh run download <run-id>
-
-# Review harness results
-cat deployment-harness-results/harness-output.log
-
-# Reproduce locally
-cd scripts
-MOCK=true ./test-deployment-harness.sh
-
-# Fix issues in scripts
-vim deploy.sh
-
-# Test again
-./test-deployment-harness.sh
-```
-
 ### Best Practices
 
 #### Before Production Deployment
 
-1. **Run Harness:** Verify all deployment scripts pass tests
-   ```bash
-   cd scripts && ./test-deployment-harness.sh
-   ```
-
-2. **Run Drill (DRY_RUN):** Validate rollback procedures
+1. **Run Drill (DRY_RUN):** Validate rollback procedures
    ```bash
    DRY_RUN=true ./rollback-drill.sh
    ```
 
-3. **Review Artifacts:** Check logs and reports for warnings
+2. **Review Artifacts:** Check logs and reports for warnings
 
-4. **Staging Rehearsal:** Use `staging-rehearsal.sh` for full end-to-end test
+3. **Staging Rehearsal:** Use `staging-rehearsal.sh` for full end-to-end test
    ```bash
    ./staging-rehearsal.sh
    ```
 
 #### Regular Maintenance
 
-- **Weekly:** Automated rollback drills via CI
+- **Weekly:** Rollback drills
 - **Monthly:** Manual full drill in staging environment
 - **Quarterly:** Review and update test scenarios
-- **After Changes:** Run harness when modifying deployment scripts
+- **After Changes:** Re-run rollback drills when modifying deployment automation
 
 #### Emergency Rollback
 
 If production deployment fails:
 
 1. **Don't Panic:** Rollback procedures are tested weekly
-2. **Use Backup Tag:** Check deployment logs for backup tag
-3. **Execute Rollback:** Run rollback script with backup tag
+2. **Identify Last Healthy Version:** Check deployment logs and release history
+3. **Execute Rollback:** Use platform rollback tooling
    ```bash
-   ./rollback.sh backup-20260129-120000
+   kubectl rollout undo deployment/backend -n clipper
    ```
 4. **Verify Health:** Check all services are healthy
 5. **Post-Mortem:** Analyze what went wrong and update tests

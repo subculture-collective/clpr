@@ -19,13 +19,13 @@ This document describes the automated documentation quality checks that run in C
 The documentation quality enforcement system includes six automated checks that run on every pull request:
 
 1. **Markdown Linting** - Ensures consistent markdown formatting
-2. **Spell Checking** - Catches typos while respecting Obsidian patterns
+2. **Spell Checking** - Catches typos while respecting repository documentation patterns
 3. **Link Validation** - Verifies all links are valid and reachable
 4. **Anchor Validation** - Ensures heading anchors exist
 5. **Orphan Detection** - Finds unreachable documentation pages
 6. **Asset Checking** - Detects unused assets
 
-All checks **exclude the `/vault/**` directory**, which is used for HashiCorp Vault configuration, not documentation.
+These checks run against repository documentation and intentionally skip dependency directories such as `node_modules`.
 
 ## Running Checks Locally
 
@@ -74,17 +74,15 @@ Validates markdown formatting including:
 - List formatting
 - Code block formatting
 
-**Obsidian-Friendly Settings:**
-- Line length checking is disabled (MD013 off) to allow flexible formatting for docs and Obsidian exports
-- Allows HTML (for complex tables and Obsidian features)
+**Documentation-Friendly Settings:**
+- Line length checking is disabled (MD013 off) to allow flexible formatting for docs
+- Allows HTML for complex tables and callouts
 - Allows frontmatter (YAML at top of files)
 - Flexible heading spacing
 - Mixed emphasis styles (bold/italic)
 - Flexible table pipe styles
 
 **Exclusions:**
-- `/vault/**` - HashiCorp Vault configuration
-- `/docs/.obsidian/**` - Obsidian configuration files
 - `/node_modules/**` - Dependencies
 
 **Common Fixes:**
@@ -104,7 +102,7 @@ npm run docs:lint
 **Config:** `.cspell.json`  
 **Command:** `npm run docs:spell`
 
-Checks spelling across all documentation while respecting Obsidian syntax.
+Checks spelling across all documentation while respecting repository documentation syntax.
 
 **Ignored Patterns:**
 - Wikilinks: `[[page]]`, `[[page|alias]]`
@@ -112,8 +110,6 @@ Checks spelling across all documentation while respecting Obsidian syntax.
 - Tags: `#tag`, `#tag/subtag`
 
 **Exclusions:**
-- `/vault/**` - HashiCorp Vault configuration
-- `/docs/.obsidian/**` - Obsidian configuration
 - Image files (`.png`, `.svg`, etc.)
 
 **Adding Words to Dictionary:**
@@ -154,8 +150,7 @@ Validates all HTTP(S) and file links in documentation.
 - `http://127.0.0.1` - Local development URLs
 - `clips.twitch.tv` - May be rate-limited
 
-**Exclusions:**
-- `/vault/**` - HashiCorp Vault configuration
+External link checks include repository documentation and skip ignored URLs from `.lycheeignore`.
 
 **Accepted Status Codes:**
 - `200` - OK
@@ -185,9 +180,7 @@ Ensures that all anchor links (e.g., `[text](#heading)`) point to existing headi
 2. Converts headings to GitHub-style anchors (lowercase, hyphens, no special chars)
 3. Validates that all `#anchor` references exist
 
-**Exclusions:**
-- `/vault/**` - HashiCorp Vault configuration
-- `/docs/archive/**` - Archived documentation (legacy issues expected)
+Anchor checks scan repository documentation for local heading references.
 
 **Common Fixes:**
 ```bash
@@ -221,10 +214,6 @@ Finds documentation pages that are not reachable from `/docs/index.md` using bre
 3. Recursively discovers reachable pages
 4. Reports pages that cannot be reached
 
-**Exclusions:**
-- `/vault/**` - HashiCorp Vault configuration
-- `/docs/.obsidian/**` - Obsidian configuration
-- `/docs/archive/**` - Archived documentation
 - `/docs/adr/**` - Architecture Decision Records (index tracked separately)
 
 **Allowlist:**
@@ -239,7 +228,7 @@ npm run docs:orphans
 
 # Fix by:
 # 1. Adding link from index.md or another page
-# 2. Moving to docs/archive/ if deprecated
+# 2. Removing deprecated content
 # 3. Adding to ALLOWLIST in check-orphans.js if intentional
 ```
 
@@ -260,9 +249,7 @@ Detects unreferenced assets in `/docs/_assets/` and warns about large files (>50
 - Documents: `.pdf`
 - Videos: `.mp4`, `.webm`
 
-**Exclusions:**
-- `/vault/**` - HashiCorp Vault configuration
-- `/docs/archive/**` - Archived documentation
+Asset checks scan documentation assets for unused files.
 
 **Common Fixes:**
 ```bash
@@ -321,7 +308,7 @@ While only the blocking checks are enforced by CI for merging, contributors are 
 
 ### `.markdownlint.jsonc`
 
-Markdownlint configuration with Obsidian-compatible settings.
+Markdownlint configuration for repository documentation.
 
 **Key Settings:**
 - `MD013`: Line length rule disabled (no enforced line length limit)
@@ -337,7 +324,7 @@ Spell checker configuration with custom dictionary.
 
 **Key Settings:**
 - `language`: "en" (English)
-- `ignorePaths`: Excludes vault, .obsidian, node_modules
+- `ignorePaths`: Excludes dependency and generated directories
 - `ignoreRegExpList`: Patterns for wikilinks, block refs, tags
 - `words`: Custom dictionary of technical terms
 
@@ -394,7 +381,6 @@ Link checker exclusion patterns.
 
 ## Related Documentation
 
-- [[obsidian-guide]] - Obsidian vault setup and conventions
 - [[contributing]] - General contribution guidelines
 - [markdownlint Rules](https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md)
 - [cspell Documentation](https://cspell.org/)

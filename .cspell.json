@@ -9,10 +9,7 @@
     "frontend/node_modules",
     "mobile/node_modules",
     "**/dist/**",
-    "**/.obsidian/**",
     ".git",
-    "vault/**",
-    "**/vault/**",
     "**/*.svg",
     "**/*.png"
   ],

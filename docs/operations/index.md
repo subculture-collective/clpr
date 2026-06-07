@@ -60,7 +60,6 @@ For deployment procedures, see the **[[../deployment/index|Deployment Hub]]**:
 - [Security Audit Checklist](./SECURITY_AUDIT_CHECKLIST.md) - Detailed security audit checklist (250 items)
 - [[break-glass-procedures|Break Glass Procedures]] - Emergency access procedures
 - [[credential-rotation-runbook|Credential Rotation]] - Regular credential rotation
-- [[vault-access-control|Vault Access Control]] - HashiCorp Vault access management
 
 ## On-Call Playbooks
 

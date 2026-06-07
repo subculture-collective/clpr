@@ -567,7 +567,6 @@ See: [DDoS Protection Documentation](../operations/ddos-protection.md)
 - AWS Secrets Manager (with IAM Roles for Service Accounts)
 - GCP Secret Manager (with Workload Identity)
 - Azure Key Vault (with Workload Identity)
-- HashiCorp Vault
 
 **Workflow:**
 
@@ -1314,7 +1313,7 @@ Rollback to previous infrastructure if:
 3. **Restart Old Infrastructure** (5 minutes):
    ```bash
    # Start Docker Compose services
-   docker-compose -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.yml up -d
    
    # Verify services healthy
    curl https://api.clpr.tv/health/ready
@@ -1497,7 +1496,6 @@ All documentation complete and linked in this RFC:
 
 - [[../product/roadmap-5.0|Roadmap 5.0]] - Current detailed roadmap
 - [[../product/feature-inventory|Feature Inventory]] - Platform feature audit
-- [[../archive/roadmap-5.0-issue-creation-summary|Roadmap 5.0 Issue Creation Summary]] (archived)
 
 ### External References
 

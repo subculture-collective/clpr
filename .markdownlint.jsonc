@@ -1,6 +1,6 @@
 {
     // markdownlint-cli2 configuration
-    // Obsidian-compatible settings with frontmatter, HTML, and table support
+    // Documentation settings with frontmatter, HTML, and table support
     // Very relaxed rules to support existing documentation
     "default": true,
     
@@ -22,7 +22,7 @@
     // MD014: Allow dollar signs before commands (common in documentation)
     "MD014": false,
     
-    // MD024: Allow duplicate headings (common in Obsidian vaults)
+    // MD024: Allow duplicate headings in long-form documentation
     "MD024": false,
     
     // MD025: Allow multiple top-level headings
@@ -43,7 +43,7 @@
     // MD032: Allow lists without surrounding blank lines
     "MD032": false,
     
-    // MD033: Allow HTML (required for Obsidian features and complex tables)
+    // MD033: Allow HTML for complex tables and callouts
     "MD033": false,
     
     // MD034: Allow bare URLs (common in documentation)
@@ -58,7 +58,7 @@
     // MD041: Allow first line not to be top-level heading (for frontmatter)
     "MD041": false,
     
-    // MD022: Allow headings without surrounding blank lines (Obsidian style)
+    // MD022: Allow headings without surrounding blank lines
     "MD022": false,
     
     // MD009: Allow trailing spaces (sometimes used intentionally)
@@ -67,7 +67,7 @@
     // MD050: Allow mixed strong/emphasis styles
     "MD050": false,
     
-    // MD051: Allow flexible link fragments (Obsidian wikilinks)
+    // MD051: Allow flexible link fragments
     "MD051": false,
     
     // MD055: Allow flexible table pipe styles

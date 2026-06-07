@@ -15,8 +15,7 @@ last_reviewed: 2026-01-29
 > **Sweep**: Feature Inventory & Verification Sweep II  
 > **Purpose**: Complete inventory of all features in the Clipper platform, documenting status, location, tests, typing, and documentation coverage.  
 > **Scope**: Covers Backend API, Frontend Web, Mobile App, Infrastructure, and Documentation features.  
-> **Exclusions**: `/vault/**` directory (secrets management)  
-> **Current Stats**: 61 Backend Handlers, 71 Backend Services, 80 Frontend Pages, 17 Mobile Screens, 15 CI/CD Workflows, 27 Deployment Scripts, 192 Backend Tests, 107 Frontend Tests
+> **Current Stats**: 61 Backend Handlers, 71 Backend Services, 80 Frontend Pages, 17 Mobile Screens, 15 CI/CD Workflows, 9 Deployment/Maintenance Scripts, 192 Backend Tests, 107 Frontend Tests
 
 ---
 
@@ -910,7 +909,6 @@ For each feature category (25 categories above), create a GitHub issue using the
 
 The following areas are explicitly excluded from this inventory as per requirements:
 
-- `/vault/**` - Secrets management (security-sensitive)
 - Third-party dependencies (npm packages, Go modules) - tracked separately
 - Generated code (protobuf, OpenAPI clients) - auto-generated
 - Build artifacts (`dist/`, `bin/`, `node_modules/`) - not source code

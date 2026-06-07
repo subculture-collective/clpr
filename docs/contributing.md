@@ -25,11 +25,10 @@ See the main [Contributing Guide](../CONTRIBUTING.md) in the repository root for
 To improve these docs:
 
 1. Edit markdown files in `/docs/`
-2. Add required frontmatter (see [[.obsidian/templates/frontmatter-template|Frontmatter Template]])
-3. Use approved tags from [[.obsidian/tag-taxonomy|Tag Taxonomy]]
-4. Follow [[index|documentation conventions]]
-5. Run validation: `npm run docs:check`
-6. Submit PR with `documentation` label
+2. Add required frontmatter using the fields listed below
+3. Follow [[index|documentation conventions]]
+4. Run validation: `npm run docs:check`
+5. Submit PR with `documentation` label
 
 ### Frontmatter Requirements
 
@@ -43,7 +42,7 @@ All documentation pages must include YAML frontmatter with:
 - `version` - Document version
 - `last_reviewed` - Last review date (YYYY-MM-DD)
 
-See [[.obsidian/templates/frontmatter-template|complete template]] for details.
+Keep frontmatter concise and aligned with nearby documentation pages.
 
 ## Quick Links
 

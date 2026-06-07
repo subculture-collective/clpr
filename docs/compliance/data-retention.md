@@ -338,7 +338,7 @@ DELETE FROM clips WHERE is_removed = true AND updated_at < NOW() - INTERVAL '30 
 **Encryption:**
 - Tokens encrypted with AES-256
 - Encryption keys rotated annually
-- Keys stored in secure vault (HashiCorp Vault)
+- Keys stored in a secure platform-managed secret store
 
 ---
 

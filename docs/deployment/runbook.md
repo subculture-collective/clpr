@@ -33,19 +33,14 @@ kubectl rollout undo deployment/backend -n clpr
 
 ### Pre-Deployment Checklist
 
-1. **Run Deployment Tests**: Verify all deployment scripts pass tests
-   ```bash
-   cd scripts && ./test-deployment-harness.sh
-   ```
-
-2. **Run Rollback Drill**: Validate rollback procedures
+1. **Run Rollback Drill**: Validate rollback procedures
    ```bash
    DRY_RUN=true ./rollback-drill.sh
    ```
 
-3. **Review Artifacts**: Check logs and reports for warnings
+2. **Review Artifacts**: Check logs and reports for warnings
 
-4. **Staging Rehearsal**: Full end-to-end test
+3. **Staging Rehearsal**: Full end-to-end test
    ```bash
    ./staging-rehearsal.sh
    ```

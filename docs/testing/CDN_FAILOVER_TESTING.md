@@ -261,7 +261,6 @@ curl http://localhost:8080/health
 
 - [CDN Failover Runbook](docs/operations/CDN_FAILOVER_RUNBOOK.md) - Operational procedures
 - [Testing Guide](docs/testing/TESTING.md) - Full testing documentation
-- [Backend HLS Implementation](docs/archive/BACKEND_HLS_IMPLEMENTATION.md) - HLS streaming details
 
 ## Support
 

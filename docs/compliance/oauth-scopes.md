@@ -287,7 +287,7 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 **Access Tokens:**
 - Stored in `twitch_auth` table
 - Encrypted with AES-256
-- Encryption keys in HashiCorp Vault
+- Encryption keys in a platform-managed secret store
 - Never logged or sent to client
 
 **Refresh Tokens:**

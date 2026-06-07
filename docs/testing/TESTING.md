@@ -1609,7 +1609,6 @@ This testing strategy supports the following Roadmap 5.0 initiatives:
 - [#914 - Validation Middleware Security Tests](https://git.subcult.tv/subculture-collective/clpr/issues/914) ✅
 
 ### Phase 2 - Infrastructure Reliability (P0/P1)
-- [#903 - Deployment Scripts Test Harness & Smoke Tests](https://git.subcult.tv/subculture-collective/clpr/issues/903)
 - [#902 - Database Migration Rollback Tests](https://git.subcult.tv/subculture-collective/clpr/issues/902)
 - [#913 - Backup & Restore Validation](https://git.subcult.tv/subculture-collective/clpr/issues/913)
 - [#907 - Monitoring Alert Rule Validation](https://git.subcult.tv/subculture-collective/clpr/issues/907)

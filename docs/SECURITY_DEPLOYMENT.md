@@ -64,8 +64,8 @@ connect-src 'self' https: wss: https://api.example.com
 ### 4. Enforce CSP (After 24-48h of Clean Monitoring)
 
 ```bash
-# Edit Caddyfile.vps (or Caddyfile)
-nano Caddyfile.vps
+# Edit Caddyfile
+nano Caddyfile
 
 # Comment out report-only line:
 # Content-Security-Policy-Report-Only "..."
@@ -146,7 +146,7 @@ If something breaks:
 
 ```bash
 # Edit Caddyfile
-nano Caddyfile.vps
+nano Caddyfile
 
 # Comment out the CSP line that's causing issues
 # Content-Security-Policy "..."
@@ -158,7 +158,7 @@ docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ### 2. Full Rollback (Revert All Changes)
 
 ```bash
-git checkout main -- Caddyfile Caddyfile.vps
+git checkout main -- Caddyfile
 docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
@@ -203,20 +203,8 @@ docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 
 ---
 
-## 📞 Need Help?
-
-See [docs/SECURITY_HEADERS_IMPLEMENTATION.md](docs/SECURITY_HEADERS_IMPLEMENTATION.md) for:
-
-- Detailed CSP configuration guide
-- Troubleshooting common issues
-- How to add third-party domains
-- MDN documentation links
-
----
-
 ## 🔗 Quick Links
 
-- **Full Documentation**: [docs/SECURITY_HEADERS_IMPLEMENTATION.md](docs/SECURITY_HEADERS_IMPLEMENTATION.md)
 - **CSP Evaluator**: https://csp-evaluator.withgoogle.com/
 - **Header Test**: https://securityheaders.com/?q=clpr.tv
 - **ZAP Baseline Tool**: https://www.zaproxy.org/docs/docker/baseline-scan/

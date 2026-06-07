@@ -423,7 +423,6 @@ curl -X POST http://localhost:8080/api/v1/admin/cdn/purge-all \
 
 ## Related Documentation
 
-- [Backend HLS Implementation](archive/BACKEND_HLS_IMPLEMENTATION.md)
 - [Testing Guide](testing/TESTING.md)
 - [Search Failover Tests](testing/TESTING.md#search-failover-tests)
 

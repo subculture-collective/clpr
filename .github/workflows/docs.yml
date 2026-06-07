@@ -11,7 +11,6 @@ name: Docs CI
 # - Orphan detection (BFS from /docs/index.md)
 # - Unused asset detection
 #
-# All checks exclude vault/** directory
 
 on:
   pull_request:
@@ -69,7 +68,7 @@ jobs:
 
       - name: Check links
         run: npm run docs:links
-        continue-on-error: true  # Temporarily allow failures in archive/ directory
+        continue-on-error: true  # Temporarily allow failures for external services and legacy URLs
 
       - name: Check anchors
         run: npm run docs:anchors
@@ -97,7 +96,7 @@ jobs:
             - **Spelling errors**: Fix typos or add words to .cspell.json
             - **Broken links**: Fix URLs or add to .lycheeignore
             - **Invalid anchors**: Fix heading references or create missing headings
-            - **Orphan pages**: Link pages from /docs/index.md or move to archive/
+            - **Orphan pages**: Link pages from /docs/index.md or remove deprecated content
             - **Unused assets**: Remove unused files or add references
             
             **Related Issues:** #803, #845, #846, #805`;

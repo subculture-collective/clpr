@@ -1,4 +1,4 @@
-.PHONY: help install dev build test test-help test-setup test-teardown test-unit test-integration clean docker-up docker-down backend-dev frontend-dev migrate-up migrate-down migrate-create migrate-seed migrate-status site-freshness-seed site-freshness-generate test-security test-idor k8s-provision k8s-setup k8s-verify k8s-deploy-prod k8s-deploy-staging openapi-validate openapi-serve openapi-build deploy-vps deploy-vps-status deploy-vps-logs deploy-vps-down
+.PHONY: help install dev build test test-help test-setup test-teardown test-unit test-integration clean docker-up docker-down backend-dev frontend-dev migrate-up migrate-down migrate-create migrate-seed migrate-status site-freshness-seed site-freshness-generate test-security test-idor k8s-provision k8s-setup k8s-verify k8s-deploy-prod k8s-deploy-staging openapi-validate openapi-serve openapi-build
 
 # Compose project + network names stay in sync across targets
 PROJECT_NAME := $(if $(COMPOSE_PROJECT_NAME),$(COMPOSE_PROJECT_NAME),$(notdir $(CURDIR)))
@@ -565,22 +565,22 @@ clean: ## Clean build artifacts
 
 docker-up: ## Start Docker services (PostgreSQL + Redis)
 	@echo "Starting Docker services..."
-	docker compose -f docker-compose.prod.yml up -d
+	docker compose -p $(PROJECT_NAME) -f docker-compose.yml up -d
 	@echo "✓ Docker services started"
 
 docker-build: ## Start Docker services (PostgreSQL + Redis)
 	@echo "Starting Docker build..."
-	docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+	docker compose -p $(PROJECT_NAME) -f docker-compose.yml up -d --build --remove-orphans
 	@echo "✓ Docker build complete, and services started"
 
 docker-down: ## Stop Docker services
 	@echo "Stopping Docker services..."
-	docker compose -f docker-compose.prod.yml down
+	docker compose -p $(PROJECT_NAME) -f docker-compose.yml down
 	@echo "✓ Docker services stopped"
 
 docker-logs: ## View Docker service logs
 	@echo "Tailing Docker service logs..."
-	docker compose -f docker-compose.prod.yml logs -f --tail 500
+	docker compose -p $(PROJECT_NAME) -f docker-compose.yml logs -f --tail 500
 	@echo "✓ Docker logs ended"
 
 docker-dev-up: ## Start Docker services for development (PostgreSQL + Redis)
@@ -640,9 +640,6 @@ docker-logs-postgres: ## Stream postgres container logs
 
 docker-logs-redis: ## Stream redis container logs
 	docker logs -f clpr-redis
-
-docker-logs-vault: ## Stream vault-agent container logs
-	docker logs -f clpr-vault-agent
 
 backend-dev: ## Run backend in development mode
 	@echo "Waiting for PostgreSQL on localhost:5436..."
@@ -886,25 +883,3 @@ openapi-preview: ## Preview OpenAPI docs with live reload
 openapi-stats: ## Show OpenAPI spec statistics
 	@echo "Analyzing OpenAPI specification..."
 	npm run openapi:stats
-
-# =============================================================================
-# VPS Deployment Targets
-# =============================================================================
-
-deploy-vps: ## Deploy to VPS (production) with Vault + Caddy
-	@echo "Starting VPS deployment..."
-	./scripts/deploy-vps.sh
-
-deploy-vps-status: ## Check VPS deployment status
-	@echo "Checking VPS deployment status..."
-	@docker compose -p $(PROJECT_NAME) -f docker-compose.vps.yml ps
-	@echo ""
-	@echo "Network connectivity (web):"
-	@docker network inspect web --format '{{range .Containers}}{{.Name}} {{end}}' || echo "Network 'web' not found"
-
-deploy-vps-logs: ## View VPS deployment logs
-	@docker compose -p $(PROJECT_NAME) -f docker-compose.vps.yml logs -f
-
-deploy-vps-down: ## Stop VPS deployment
-	@echo "Stopping VPS deployment..."
-	@docker compose -p $(PROJECT_NAME) -f docker-compose.vps.yml down

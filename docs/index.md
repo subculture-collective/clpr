@@ -189,19 +189,13 @@ In-depth documentation for major platform features:
 
 ## 💡 Using This Documentation
 
-This documentation is structured as an [Obsidian](https://obsidian.md/) vault for easy navigation and knowledge management.
-
-**New to Obsidian?** See the [[obsidian-guide|Obsidian Setup Guide]] for complete setup instructions, navigation tips, and best practices.
+This documentation is structured for repository-based browsing, code review, and CI validation.
 
 ### Navigation Tips
 
-- **Search**: Press `Ctrl/Cmd + O` to quickly find any page
-- **Quick Switcher**: Press `Ctrl/Cmd + P` to search content across all docs
-- **Backlinks**: See what pages link to the current document in the right sidebar
-- **Graph View**: Visualize the relationships between documentation pages
-- **Wikilinks**: Click `[[page-name]]` links to navigate between related pages
-- **Edit Mode**: Toggle between reading and editing with `Ctrl/Cmd + E`
-- **Tags**: Use the tag pane to browse by category (see [[.obsidian/tag-taxonomy|Tag Taxonomy]])
+- **Search**: Use your editor or repository search to find pages quickly
+- **Indexes**: Start from this page or section hubs to navigate docs
+- **Wikilinks**: Many docs still use `[[page-name]]` links for concise internal references
 
 ### Markdown Conventions
 
@@ -210,32 +204,29 @@ This documentation is structured as an [Obsidian](https://obsidian.md/) vault fo
 - **Code Blocks**: Triple backticks with language identifier
 - **Callouts**: Use `> [!note]`, `> [!warning]`, `> [!tip]` for emphasis
 - **Tables**: GitHub-flavored markdown tables for structured data
-- **Frontmatter**: All pages include YAML metadata (see [[.obsidian/templates/frontmatter-template|Frontmatter Template]])
+- **Frontmatter**: All pages include concise YAML metadata for title, summary, area, status, owner, and review date
 
 ### Contributing to Docs
 
 Found an error or want to improve the documentation?
 
 1. Check [[contributing|Contributing Guide]] for guidelines
-2. Follow the [[.obsidian/templates/frontmatter-template|frontmatter template]] for new pages
-3. Use approved tags from [[.obsidian/tag-taxonomy|Tag Taxonomy]]
-4. Run quality checks locally: `npm run docs:check`
-5. Submit a PR with your changes
-6. Tag with `documentation` label
-7. Documentation changes are validated via CI (see [[contributing/docs-quality-checks|Quality Checks]])
+2. Match frontmatter and formatting conventions from nearby pages
+3. Run quality checks locally: `npm run docs:check`
+4. Submit a PR with your changes
+5. Tag with `documentation` label
+6. Documentation changes are validated via CI (see [[contributing/docs-quality-checks|Quality Checks]])
 
 ## 📝 Documentation Validation
 
 All documentation is automatically validated on every commit:
 
 - **Markdown Linting**: Ensures consistent formatting
-- **Spell Checking**: Catches typos and errors (respects Obsidian patterns)
+- **Spell Checking**: Catches typos and errors
 - **Link Validation**: Verifies all links work (excludes localhost)
 - **Anchor Checking**: Confirms internal link targets exist
 - **Orphan Detection**: Finds unreachable documentation (BFS from index.md)
 - **Asset Hygiene**: Checks for unused or oversized images
-
-**All checks exclude `/vault/**` directory.**
 
 📚 **See [[contributing/docs-quality-checks|Documentation Quality Checks]]** for:
 - How to run checks locally

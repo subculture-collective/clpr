@@ -14,14 +14,8 @@ frontend/frontend.env
 mobile/.env
 mobile/.env.*
 
-# Secrets and Vault files - NEVER commit these!
+# Secrets - NEVER commit these!
 secrets/
-vault/approle/role_id
-vault/approle/secret_id
-vault/approle/frontend_role_id
-vault/approle/frontend_secret_id
-vault/rendered/
-vault/rendered/*
 *.pem
 *.key
 *_key
@@ -77,7 +71,6 @@ test-results/
 
 # k6 test results
 summary.json
-docs/.obsidian/plugins
 
 # Playwright
 /playwright-report/

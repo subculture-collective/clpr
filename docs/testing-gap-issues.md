@@ -30,7 +30,6 @@ Live Tracker Issue: [#900](https://git.subcult.tv/subculture-collective/clpr/iss
   - [ ] Issue: Validation Middleware Security Tests (P0, MVP) — [#914](https://git.subcult.tv/subculture-collective/clpr/issues/914)
 
 - Phase 2 — Infrastructure Reliability (P0/P1)
-  - [ ] Issue: Deployment Scripts Test Harness & Smoke Tests (P0, Beta) — [#903](https://git.subcult.tv/subculture-collective/clpr/issues/903)
   - [ ] Issue: Database Migration Rollback Tests (P0, Beta) — [#902](https://git.subcult.tv/subculture-collective/clpr/issues/902)
   - [ ] Issue: Backup & Restore Validation (P0, Beta) — [#913](https://git.subcult.tv/subculture-collective/clpr/issues/913)
   - [ ] Issue: Monitoring Alert Rule Validation (P1, Beta) — [#907](https://git.subcult.tv/subculture-collective/clpr/issues/907)
@@ -144,21 +143,7 @@ Notes:
 ## Phase 2 — Infrastructure Reliability (P0/P1)
 
 
-### 6) [Testing] Deployment Scripts Test Harness & Smoke Tests
-
-- Labels: `kind/chore`, `area/testing`, `area/infrastructure`, `priority/P0`, `milestone/Beta`
-- Summary: Create a test harness to validate deployment scripts (`scripts/*.sh`) with dry-run and sandbox modes.
-- Scope:
-  - Scripts: `scripts/*.sh` (deploy, rollback, infra ops)
-  - Tests: `scripts/tests/deployment_harness_test.sh`, CI job to run harness.
-- Acceptance Criteria:
-  - [ ] Harness supports DRY_RUN and MOCK mode to simulate external calls.
-  - [ ] Smoke test covers success/failure paths for deploy and rollback.
-  - [ ] CI job fails on non-zero exit; logs stored as artifact.
-  - [ ] Documentation in `docs/deployment/runbook.md` updated.
-
-
-### 7) [Testing] Database Migration Rollback Tests
+### 6) [Testing] Database Migration Rollback Tests
 
 - Labels: `kind/chore`, `area/testing`, `area/infrastructure`, `priority/P0`, `milestone/Beta`
 - Summary: Add tests to validate forward and rollback migrations with data integrity checks in a shadow database.

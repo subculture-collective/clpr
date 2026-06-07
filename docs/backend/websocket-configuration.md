@@ -280,4 +280,3 @@ WEBSOCKET_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,https://cl
 
 - [Backend API Documentation](./api.md)
 - [Security Guide](./security.md)
-- [Chat Channel Architecture](../archive/chat-channel-migration-consolidation.md)

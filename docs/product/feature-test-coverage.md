@@ -1028,7 +1028,7 @@ See section 4.2 for forum coverage.
 
 ### Infrastructure
 - **CI/CD Workflows**: 13 (all self-validating)
-- **Deployment Scripts**: 20+ (0% automated test coverage)
+- **Deployment/Maintenance Scripts**: 9
 - **Load Test Scenarios**: 10+ (K6)
 
 ---

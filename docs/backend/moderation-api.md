@@ -1951,7 +1951,7 @@ make dev
 
 ```bash
 # Using Docker Compose
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml up -d
 
 # Or using binary
 ./backend/bin/api
