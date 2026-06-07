@@ -17,9 +17,85 @@ type SubmissionRepository struct {
 	db *pgxpool.Pool
 }
 
+type sourceSubmissionQuerier interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
 // NewSubmissionRepository creates a new SubmissionRepository
 func NewSubmissionRepository(db *pgxpool.Pool) *SubmissionRepository {
 	return &SubmissionRepository{db: db}
+}
+
+func getSubmissionBySourceIdentity(ctx context.Context, querier sourceSubmissionQuerier, sourcePlatform, sourceID string) (*models.ClipSubmission, error) {
+	query := `
+		SELECT id, user_id, clip_id, twitch_clip_id, twitch_clip_url, title, custom_title,
+			tags, is_nsfw, submission_reason, status, rejection_reason,
+			reviewed_by, reviewed_at, created_at, updated_at,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			game_id, game_name, thumbnail_url, duration, view_count
+		FROM clip_submissions
+		WHERE source_platform = $1 AND source_id = $2
+		ORDER BY created_at DESC
+		LIMIT 1`
+
+	var submission models.ClipSubmission
+	err := querier.QueryRow(ctx, query, sourcePlatform, sourceID).Scan(
+		&submission.ID,
+		&submission.UserID,
+		&submission.ClipID,
+		&submission.TwitchClipID,
+		&submission.TwitchClipURL,
+		&submission.Title,
+		&submission.CustomTitle,
+		&submission.Tags,
+		&submission.IsNSFW,
+		&submission.SubmissionReason,
+		&submission.Status,
+		&submission.RejectionReason,
+		&submission.ReviewedBy,
+		&submission.ReviewedAt,
+		&submission.CreatedAt,
+		&submission.UpdatedAt,
+		&submission.SourceType,
+		&submission.SourcePlatform,
+		&submission.SourceURL,
+		&submission.SourceID,
+		&submission.SourceMetadata,
+		&submission.DurationSeconds,
+		&submission.DurationVerified,
+		&submission.StorageProvider,
+		&submission.StorageBucket,
+		&submission.StorageKey,
+		&submission.OriginalFilename,
+		&submission.MimeType,
+		&submission.FileSizeBytes,
+		&submission.UploadStatus,
+		&submission.DurationValidationError,
+		&submission.StorageVisibility,
+		&submission.CreatorName,
+		&submission.CreatorID,
+		&submission.CreatorAccountID,
+		&submission.BroadcasterName,
+		&submission.BroadcasterID,
+		&submission.BroadcasterNameOverride,
+		&submission.GameID,
+		&submission.GameName,
+		&submission.ThumbnailURL,
+		&submission.Duration,
+		&submission.ViewCount,
+	)
+
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &submission, nil
 }
 
 // Create creates a new clip submission
@@ -27,13 +103,18 @@ func (r *SubmissionRepository) Create(ctx context.Context, submission *models.Cl
 	query := `
 		INSERT INTO clip_submissions (
 			id, user_id, clip_id, twitch_clip_id, twitch_clip_url, title, custom_title,
-			tags, is_nsfw, submission_reason, status,
-			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
-			game_id, game_name, thumbnail_url, duration, view_count,
-			created_at, updated_at
+			tags, is_nsfw, submission_reason, status, rejection_reason,
+			reviewed_by, reviewed_at, created_at, updated_at,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			game_id, game_name, thumbnail_url, duration, view_count
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-			$12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+			$13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
+			$25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
+			$37, $38, $39, $40, $41, $42, $43
 		)`
 
 	_, err := r.db.Exec(ctx, query,
@@ -48,8 +129,30 @@ func (r *SubmissionRepository) Create(ctx context.Context, submission *models.Cl
 		submission.IsNSFW,
 		submission.SubmissionReason,
 		submission.Status,
+		submission.RejectionReason,
+		submission.ReviewedBy,
+		submission.ReviewedAt,
+		submission.CreatedAt,
+		submission.UpdatedAt,
+		submission.SourceType,
+		submission.SourcePlatform,
+		submission.SourceURL,
+		submission.SourceID,
+		submission.SourceMetadata,
+		submission.DurationSeconds,
+		submission.DurationVerified,
+		submission.StorageProvider,
+		submission.StorageBucket,
+		submission.StorageKey,
+		submission.OriginalFilename,
+		submission.MimeType,
+		submission.FileSizeBytes,
+		submission.UploadStatus,
+		submission.DurationValidationError,
+		submission.StorageVisibility,
 		submission.CreatorName,
 		submission.CreatorID,
+		submission.CreatorAccountID,
 		submission.BroadcasterName,
 		submission.BroadcasterID,
 		submission.BroadcasterNameOverride,
@@ -58,8 +161,6 @@ func (r *SubmissionRepository) Create(ctx context.Context, submission *models.Cl
 		submission.ThumbnailURL,
 		submission.Duration,
 		submission.ViewCount,
-		submission.CreatedAt,
-		submission.UpdatedAt,
 	)
 
 	return err
@@ -71,7 +172,10 @@ func (r *SubmissionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 		SELECT id, user_id, clip_id, twitch_clip_id, twitch_clip_url, title, custom_title,
 			tags, is_nsfw, submission_reason, status, rejection_reason,
 			reviewed_by, reviewed_at, created_at, updated_at,
-			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
 			game_id, game_name, thumbnail_url, duration, view_count
 		FROM clip_submissions
 		WHERE id = $1`
@@ -94,8 +198,25 @@ func (r *SubmissionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 		&submission.ReviewedAt,
 		&submission.CreatedAt,
 		&submission.UpdatedAt,
+		&submission.SourceType,
+		&submission.SourcePlatform,
+		&submission.SourceURL,
+		&submission.SourceID,
+		&submission.SourceMetadata,
+		&submission.DurationSeconds,
+		&submission.DurationVerified,
+		&submission.StorageProvider,
+		&submission.StorageBucket,
+		&submission.StorageKey,
+		&submission.OriginalFilename,
+		&submission.MimeType,
+		&submission.FileSizeBytes,
+		&submission.UploadStatus,
+		&submission.DurationValidationError,
+		&submission.StorageVisibility,
 		&submission.CreatorName,
 		&submission.CreatorID,
+		&submission.CreatorAccountID,
 		&submission.BroadcasterName,
 		&submission.BroadcasterID,
 		&submission.BroadcasterNameOverride,
@@ -122,7 +243,10 @@ func (r *SubmissionRepository) GetByTwitchClipID(ctx context.Context, twitchClip
 		SELECT id, user_id, clip_id, twitch_clip_id, twitch_clip_url, title, custom_title,
 			tags, is_nsfw, submission_reason, status, rejection_reason,
 			reviewed_by, reviewed_at, created_at, updated_at,
-			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
 			game_id, game_name, thumbnail_url, duration, view_count
 		FROM clip_submissions
 		WHERE twitch_clip_id = $1
@@ -147,6 +271,22 @@ func (r *SubmissionRepository) GetByTwitchClipID(ctx context.Context, twitchClip
 		&submission.ReviewedAt,
 		&submission.CreatedAt,
 		&submission.UpdatedAt,
+		&submission.SourceType,
+		&submission.SourcePlatform,
+		&submission.SourceURL,
+		&submission.SourceID,
+		&submission.SourceMetadata,
+		&submission.DurationSeconds,
+		&submission.DurationVerified,
+		&submission.StorageProvider,
+		&submission.StorageBucket,
+		&submission.StorageKey,
+		&submission.OriginalFilename,
+		&submission.MimeType,
+		&submission.FileSizeBytes,
+		&submission.UploadStatus,
+		&submission.DurationValidationError,
+		&submission.StorageVisibility,
 		&submission.CreatorName,
 		&submission.CreatorID,
 		&submission.BroadcasterName,
@@ -169,6 +309,11 @@ func (r *SubmissionRepository) GetByTwitchClipID(ctx context.Context, twitchClip
 	return &submission, nil
 }
 
+// GetBySourcePlatformAndID checks if a submission with the given source identity exists.
+func (r *SubmissionRepository) GetBySourcePlatformAndID(ctx context.Context, sourcePlatform, sourceID string) (*models.ClipSubmission, error) {
+	return getSubmissionBySourceIdentity(ctx, r.db, sourcePlatform, sourceID)
+}
+
 // ListByUser retrieves all submissions by a user
 func (r *SubmissionRepository) ListByUser(ctx context.Context, userID uuid.UUID, page, limit int) ([]*models.ClipSubmission, int, error) {
 	offset := (page - 1) * limit
@@ -185,6 +330,9 @@ func (r *SubmissionRepository) ListByUser(ctx context.Context, userID uuid.UUID,
 		SELECT id, user_id, clip_id, twitch_clip_id, twitch_clip_url, title, custom_title,
 			tags, is_nsfw, submission_reason, status, rejection_reason,
 			reviewed_by, reviewed_at, created_at, updated_at,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
 			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
 			game_id, game_name, thumbnail_url, duration, view_count
 		FROM clip_submissions
@@ -218,8 +366,25 @@ func (r *SubmissionRepository) ListByUser(ctx context.Context, userID uuid.UUID,
 			&submission.ReviewedAt,
 			&submission.CreatedAt,
 			&submission.UpdatedAt,
+			&submission.SourceType,
+			&submission.SourcePlatform,
+			&submission.SourceURL,
+			&submission.SourceID,
+			&submission.SourceMetadata,
+			&submission.DurationSeconds,
+			&submission.DurationVerified,
+			&submission.StorageProvider,
+			&submission.StorageBucket,
+			&submission.StorageKey,
+			&submission.OriginalFilename,
+			&submission.MimeType,
+			&submission.FileSizeBytes,
+			&submission.UploadStatus,
+			&submission.DurationValidationError,
+			&submission.StorageVisibility,
 			&submission.CreatorName,
 			&submission.CreatorID,
+			&submission.CreatorAccountID,
 			&submission.BroadcasterName,
 			&submission.BroadcasterID,
 			&submission.BroadcasterNameOverride,
@@ -311,6 +476,9 @@ func (r *SubmissionRepository) ListPendingWithFilters(ctx context.Context, filte
 			s.id, s.user_id, s.clip_id, s.twitch_clip_id, s.twitch_clip_url, s.title, s.custom_title,
 			s.tags, s.is_nsfw, s.submission_reason, s.status, s.rejection_reason,
 			s.reviewed_by, s.reviewed_at, s.created_at, s.updated_at,
+			s.source_type, s.source_platform, s.source_url, s.source_id, s.source_metadata,
+			s.duration_seconds, s.duration_verified, s.storage_provider, s.storage_bucket, s.storage_key,
+			s.original_filename, s.mime_type, s.file_size_bytes, s.upload_status, s.duration_validation_error, s.storage_visibility,
 			s.creator_name, s.creator_id, s.broadcaster_name, s.broadcaster_id, s.broadcaster_name_override,
 			s.game_id, s.game_name, s.thumbnail_url, s.duration, s.view_count,
 			u.id, u.twitch_id, u.username, u.display_name, u.email, u.avatar_url,
@@ -350,8 +518,25 @@ func (r *SubmissionRepository) ListPendingWithFilters(ctx context.Context, filte
 			&submission.ReviewedAt,
 			&submission.CreatedAt,
 			&submission.UpdatedAt,
+			&submission.SourceType,
+			&submission.SourcePlatform,
+			&submission.SourceURL,
+			&submission.SourceID,
+			&submission.SourceMetadata,
+			&submission.DurationSeconds,
+			&submission.DurationVerified,
+			&submission.StorageProvider,
+			&submission.StorageBucket,
+			&submission.StorageKey,
+			&submission.OriginalFilename,
+			&submission.MimeType,
+			&submission.FileSizeBytes,
+			&submission.UploadStatus,
+			&submission.DurationValidationError,
+			&submission.StorageVisibility,
 			&submission.CreatorName,
 			&submission.CreatorID,
+			&submission.CreatorAccountID,
 			&submission.BroadcasterName,
 			&submission.BroadcasterID,
 			&submission.BroadcasterNameOverride,
@@ -452,7 +637,10 @@ func (r *SubmissionRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([
 		SELECT id, user_id, twitch_clip_id, twitch_clip_url, title, custom_title,
 			tags, is_nsfw, submission_reason, status, rejection_reason,
 			reviewed_by, reviewed_at, created_at, updated_at,
-			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
 			game_id, game_name, thumbnail_url, duration, view_count
 		FROM clip_submissions
 		WHERE id = ANY($1)`
@@ -482,8 +670,25 @@ func (r *SubmissionRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([
 			&submission.ReviewedAt,
 			&submission.CreatedAt,
 			&submission.UpdatedAt,
+			&submission.SourceType,
+			&submission.SourcePlatform,
+			&submission.SourceURL,
+			&submission.SourceID,
+			&submission.SourceMetadata,
+			&submission.DurationSeconds,
+			&submission.DurationVerified,
+			&submission.StorageProvider,
+			&submission.StorageBucket,
+			&submission.StorageKey,
+			&submission.OriginalFilename,
+			&submission.MimeType,
+			&submission.FileSizeBytes,
+			&submission.UploadStatus,
+			&submission.DurationValidationError,
+			&submission.StorageVisibility,
 			&submission.CreatorName,
 			&submission.CreatorID,
+			&submission.CreatorAccountID,
 			&submission.BroadcasterName,
 			&submission.BroadcasterID,
 			&submission.BroadcasterNameOverride,

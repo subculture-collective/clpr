@@ -25,6 +25,7 @@ type Services struct {
 	NSFWDetector             *services.NSFWDetector
 	Comment                  *services.CommentService
 	Clip                     *services.ClipService
+	CreatorModeration        *services.CreatorModerationService
 	AutoTag                  *services.AutoTagService
 	Reputation               *services.ReputationService
 	Analytics                *services.AnalyticsService
@@ -117,8 +118,11 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		pool,
 	)
 
+	creatorModerationService := services.NewCreatorModerationService(repos.CreatorModeration)
 	commentService := services.NewCommentService(repos.Comment, repos.Clip, repos.User, notificationService, toxicityClassifier)
+	commentService.SetCreatorModerationService(creatorModerationService)
 	clipService := services.NewClipService(repos.Clip, repos.DiscoveryClip, repos.Vote, repos.Favorite, repos.User, repos.WatchHistory, infra.Redis, repos.AuditLog, notificationService)
+	clipService.SetCreatorModerationService(creatorModerationService)
 	autoTagService := services.NewAutoTagService(repos.Tag)
 	reputationService := services.NewReputationService(repos.Reputation, repos.User)
 	analyticsService := services.NewAnalyticsService(repos.Analytics, repos.Clip)
@@ -277,6 +281,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	if infra.TwitchClient != nil {
 		clipSyncService = services.NewClipSyncService(infra.TwitchClient, repos.Clip, repos.Tag, repos.User, infra.Redis)
 		submissionService = services.NewSubmissionService(repos.Submission, repos.Clip, repos.DiscoveryClip, repos.User, repos.Vote, repos.AuditLog, infra.TwitchClient, notificationService, infra.Redis, outboundWebhookService, cacheService, cfg)
+		submissionService.SetCreatorModerationService(creatorModerationService)
 		liveStatusService = services.NewLiveStatusService(repos.Broadcaster, repos.StreamFollow, infra.TwitchClient)
 		// Set notification service for live status notifications
 		liveStatusService.SetNotificationService(notificationService)
@@ -320,6 +325,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		NSFWDetector:             nsfwDetector,
 		Comment:                  commentService,
 		Clip:                     clipService,
+		CreatorModeration:        creatorModerationService,
 		AutoTag:                  autoTagService,
 		Reputation:               reputationService,
 		Analytics:                analyticsService,

@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -257,5 +260,28 @@ func TestKarmaValues(t *testing.T) {
 				t.Errorf("%s should not be zero", tt.name)
 			}
 		})
+	}
+}
+
+func TestMarkRestrictedComments_UsesExactHiddenMessage(t *testing.T) {
+	service := &CommentService{}
+	userID := uuid.New()
+	node := CommentTreeNode{
+		CommentWithAuthor: repository.CommentWithAuthor{Comment: models.Comment{UserID: userID}},
+		Replies: []CommentTreeNode{{
+			CommentWithAuthor: repository.CommentWithAuthor{Comment: models.Comment{UserID: uuid.New()}},
+		}},
+	}
+
+	service.markRestrictedComments(&node, userID)
+
+	if !node.IsHiddenByCreatorModeration {
+		t.Fatal("expected top-level comment to be hidden")
+	}
+	if node.CreatorModerationMessage != creatorModerationHiddenCommentMessage {
+		t.Fatalf("message = %q, want %q", node.CreatorModerationMessage, creatorModerationHiddenCommentMessage)
+	}
+	if node.Replies[0].IsHiddenByCreatorModeration {
+		t.Fatal("expected non-author reply to remain visible")
 	}
 }

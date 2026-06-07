@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
@@ -23,8 +25,48 @@ const (
 
 // ClipRepository handles database operations for clips
 type ClipRepository struct {
-	pool   *pgxpool.Pool
+	pool   clipDB
 	helper *RepositoryHelper
+}
+
+type clipDB interface {
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+const clipSelectColumns = `
+			id, twitch_clip_id, twitch_clip_url, embed_url, title,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id,
+			game_id, game_name, language, thumbnail_url, duration,
+			view_count, created_at, imported_at, vote_score, comment_count,
+			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
+			submitted_by_user_id, submitted_at,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes,
+			stream_source, status, video_url, processed_at, quality, start_time, end_time`
+
+const clipSelectColumnsWithTrending = clipSelectColumns + `,
+			trending_score, hot_score, popularity_index, engagement_count`
+
+func scanClip(scanner interface{ Scan(...any) error }, clip *models.Clip, includeTrending bool) error {
+	args := []any{
+		&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL, &clip.Title,
+		&clip.CreatorName, &clip.CreatorID, &clip.CreatorAccountID, &clip.BroadcasterName, &clip.BroadcasterID,
+		&clip.GameID, &clip.GameName, &clip.Language, &clip.ThumbnailURL, &clip.Duration,
+		&clip.ViewCount, &clip.CreatedAt, &clip.ImportedAt, &clip.VoteScore, &clip.CommentCount,
+		&clip.FavoriteCount, &clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
+		&clip.SubmittedByUserID, &clip.SubmittedAt,
+		&clip.SourceType, &clip.SourcePlatform, &clip.SourceURL, &clip.SourceID, &clip.SourceMetadata,
+		&clip.DurationSeconds, &clip.DurationVerified, &clip.StorageProvider, &clip.StorageBucket, &clip.StorageKey,
+		&clip.OriginalFilename, &clip.MimeType, &clip.FileSizeBytes,
+		&clip.StreamSource, &clip.Status, &clip.VideoURL, &clip.ProcessedAt, &clip.Quality, &clip.StartTime, &clip.EndTime,
+	}
+	if includeTrending {
+		args = append(args, &clip.TrendingScore, &clip.HotScore, &clip.PopularityIndex, &clip.EngagementCount)
+	}
+	return scanner.Scan(args...)
 }
 
 // NewClipRepository creates a new ClipRepository
@@ -40,25 +82,34 @@ func (r *ClipRepository) Create(ctx context.Context, clip *models.Clip) error {
 	query := `
 		INSERT INTO clips (
 			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id,
 			game_id, game_name, language, thumbnail_url, duration,
 			view_count, created_at, imported_at, vote_score, comment_count, favorite_count,
 			is_featured, is_nsfw, is_removed, is_hidden,
-			submitted_by_user_id, submitted_at
+			submitted_by_user_id, submitted_at,
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes,
+			stream_source, status, video_url, processed_at, quality, start_time, end_time
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-			$18, $19, $20, $21, $22, $23, $24, $25, $26
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+			$19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
+			$33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47
 		)
 	`
 
 	_, err := r.pool.Exec(ctx, query,
 		clip.ID, clip.TwitchClipID, clip.TwitchClipURL, clip.EmbedURL,
-		clip.Title, clip.CreatorName, clip.CreatorID, clip.BroadcasterName,
+		clip.Title, clip.CreatorName, clip.CreatorID, clip.CreatorAccountID, clip.BroadcasterName,
 		clip.BroadcasterID, clip.GameID, clip.GameName, clip.Language,
 		clip.ThumbnailURL, clip.Duration, clip.ViewCount, clip.CreatedAt,
 		clip.ImportedAt, clip.VoteScore, clip.CommentCount, clip.FavoriteCount,
 		clip.IsFeatured, clip.IsNSFW, clip.IsRemoved, clip.IsHidden,
 		clip.SubmittedByUserID, clip.SubmittedAt,
+		clip.SourceType, clip.SourcePlatform, clip.SourceURL, clip.SourceID, clip.SourceMetadata,
+		clip.DurationSeconds, clip.DurationVerified, clip.StorageProvider, clip.StorageBucket, clip.StorageKey,
+		clip.OriginalFilename, clip.MimeType, clip.FileSizeBytes,
+		clip.StreamSource, clip.Status, clip.VideoURL, clip.ProcessedAt, clip.Quality, clip.StartTime, clip.EndTime,
 	)
 
 	if err != nil {
@@ -73,31 +124,38 @@ func (r *ClipRepository) CreateStreamClip(ctx context.Context, clip *models.Clip
 	query := `
 		INSERT INTO clips (
 			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id,
 			game_id, game_name, language, thumbnail_url, duration,
 			view_count, created_at, imported_at, vote_score, comment_count, favorite_count,
 			is_featured, is_nsfw, is_removed, is_hidden,
 			submitted_by_user_id, submitted_at,
-			stream_source, status, quality, start_time, end_time
+			source_type, source_platform, source_url, source_id, source_metadata,
+			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
+			original_filename, mime_type, file_size_bytes,
+			stream_source, status, video_url, processed_at, quality, start_time, end_time
 		) VALUES (
 			$1, $2, $3, $4, $5,
-			$6, $7, $8, $9,
-			$10, $11, $12, $13, $14,
-			$15, $16, $17, $18, $19,
-			$20, $21, $22, $23,
-			$24, $25,
-			$26, $27, $28, $29, $30, $31
+			$6, $7, $8, $9, $10,
+			$11, $12, $13, $14, $15,
+			$16, $17, $18, $19, $20,
+			$21, $22, $23, $24,
+			$25, $26, $27,
+			$28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+			$41, $42, $43, $44, $45, $46, $47
 		)
 	`
 
 	_, err := r.pool.Exec(ctx, query,
 		clip.ID, clip.TwitchClipID, clip.TwitchClipURL, clip.EmbedURL, clip.Title,
-		clip.CreatorName, clip.CreatorID, clip.BroadcasterName, clip.BroadcasterID,
+		clip.CreatorName, clip.CreatorID, clip.CreatorAccountID, clip.BroadcasterName, clip.BroadcasterID,
 		clip.GameID, clip.GameName, clip.Language, clip.ThumbnailURL, clip.Duration,
 		clip.ViewCount, clip.CreatedAt, clip.ImportedAt, clip.VoteScore, clip.CommentCount, clip.FavoriteCount,
 		clip.IsFeatured, clip.IsNSFW, clip.IsRemoved, clip.IsHidden,
 		clip.SubmittedByUserID, clip.SubmittedAt,
-		clip.StreamSource, clip.Status, clip.Quality, clip.StartTime, clip.EndTime,
+		clip.SourceType, clip.SourcePlatform, clip.SourceURL, clip.SourceID, clip.SourceMetadata,
+		clip.DurationSeconds, clip.DurationVerified, clip.StorageProvider, clip.StorageBucket, clip.StorageKey,
+		clip.OriginalFilename, clip.MimeType, clip.FileSizeBytes,
+		clip.StreamSource, clip.Status, clip.VideoURL, clip.ProcessedAt, clip.Quality, clip.StartTime, clip.EndTime,
 	)
 
 	if err != nil {
@@ -109,30 +167,15 @@ func (r *ClipRepository) CreateStreamClip(ctx context.Context, clip *models.Clip
 
 // GetByTwitchClipID retrieves a clip by its Twitch clip ID
 func (r *ClipRepository) GetByTwitchClipID(ctx context.Context, twitchClipID string) (*models.Clip, error) {
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at,
-			stream_source, status, video_url, processed_at, quality, start_time, end_time
+			%s
 		FROM clips
 		WHERE twitch_clip_id = $1
-	`
+	`, clipSelectColumns)
 
 	var clip models.Clip
-	err := r.pool.QueryRow(ctx, query, twitchClipID).Scan(
-		&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-		&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-		&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-		&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-		&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-		&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-		&clip.SubmittedByUserID, &clip.SubmittedAt,
-		&clip.StreamSource, &clip.Status, &clip.VideoURL, &clip.ProcessedAt, &clip.Quality, &clip.StartTime, &clip.EndTime,
-	)
+	err := scanClip(r.pool.QueryRow(ctx, query, twitchClipID), &clip, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get clip by twitch ID: %w", err)
@@ -147,19 +190,13 @@ func (r *ClipRepository) GetByTwitchClipIDs(ctx context.Context, twitchClipIDs [
 		return nil, nil
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at,
-			stream_source, status, video_url, processed_at, quality, start_time, end_time
+			%s
 		FROM clips
 		WHERE twitch_clip_id = ANY($1)
 		  AND is_removed = false
-	`
+	`, clipSelectColumns)
 
 	rows, err := r.pool.Query(ctx, query, twitchClipIDs)
 	if err != nil {
@@ -171,16 +208,7 @@ func (r *ClipRepository) GetByTwitchClipIDs(ctx context.Context, twitchClipIDs [
 	clipMap := make(map[string]models.Clip, len(twitchClipIDs))
 	for rows.Next() {
 		var clip models.Clip
-		err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-			&clip.StreamSource, &clip.Status, &clip.VideoURL, &clip.ProcessedAt, &clip.Quality, &clip.StartTime, &clip.EndTime,
-		)
+		err := scanClip(rows, &clip, false)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan clip: %w", err)
 		}
@@ -290,30 +318,15 @@ func (r *ClipRepository) ClaimScrapedClip(ctx context.Context, clipID uuid.UUID,
 
 // GetByID retrieves a clip by its ID
 func (r *ClipRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Clip, error) {
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at,
-			stream_source, status, video_url, processed_at, quality, start_time, end_time
+			%s
 		FROM clips
 		WHERE id = $1 AND is_removed = false
-	`
+	`, clipSelectColumns)
 
 	var clip models.Clip
-	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-		&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-		&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-		&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-		&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-		&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-		&clip.SubmittedByUserID, &clip.SubmittedAt,
-		&clip.StreamSource, &clip.Status, &clip.VideoURL, &clip.ProcessedAt, &clip.Quality, &clip.StartTime, &clip.EndTime,
-	)
+	err := scanClip(r.pool.QueryRow(ctx, query, id), &clip, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get clip by ID: %w", err)
@@ -338,19 +351,14 @@ func (r *ClipRepository) List(ctx context.Context, limit, offset int) ([]models.
 
 // GetRecentClips gets clips from the last N hours
 func (r *ClipRepository) GetRecentClips(ctx context.Context, hours int, limit int) ([]models.Clip, error) {
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason,
-			submitted_by_user_id, submitted_at
+			%s
 		FROM clips
 		WHERE is_removed = false AND created_at > NOW() - INTERVAL '1 hour' * $1
 		ORDER BY view_count DESC, created_at DESC
 		LIMIT $2
-	`
+	`, clipSelectColumns)
 
 	rows, err := r.pool.Query(ctx, query, hours, limit)
 	if err != nil {
@@ -361,15 +369,7 @@ func (r *ClipRepository) GetRecentClips(ctx context.Context, hours int, limit in
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		)
+		err := scanClip(rows, &clip, false)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan clip: %w", err)
 		}
@@ -696,18 +696,12 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 	args = append(args, limit, offset)
 	query := fmt.Sprintf(`
 		SELECT
-			c.id, c.twitch_clip_id, c.twitch_clip_url, c.embed_url, c.title,
-			c.creator_name, c.creator_id, c.broadcaster_name, c.broadcaster_id,
-			c.game_id, c.game_name, c.language, c.thumbnail_url, c.duration,
-			c.view_count, c.created_at, c.imported_at, c.vote_score, c.comment_count,
-			c.favorite_count, c.is_featured, c.is_nsfw, c.is_removed, c.removed_reason, c.is_hidden,
-			c.submitted_by_user_id, c.submitted_at,
-			c.trending_score, c.hot_score, c.popularity_index, c.engagement_count
+			%s
 		FROM clips c
 		%s
 		%s
 		LIMIT %s OFFSET %s
-	`, whereClause, orderBy, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
+	`, clipSelectColumnsWithTrending, whereClause, orderBy, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
 
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -718,16 +712,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-			&clip.TrendingScore, &clip.HotScore, &clip.PopularityIndex, &clip.EngagementCount,
-		)
+		err := scanClip(rows, &clip, true)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan clip: %w", err)
 		}
@@ -861,17 +846,12 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 	args = append(args, limit, offset)
 	query := fmt.Sprintf(`
 		SELECT
-			c.id, c.twitch_clip_id, c.twitch_clip_url, c.embed_url, c.title,
-			c.creator_name, c.creator_id, c.broadcaster_name, c.broadcaster_id,
-			c.game_id, c.game_name, c.language, c.thumbnail_url, c.duration,
-			c.view_count, c.created_at, c.imported_at, c.vote_score, c.comment_count,
-			c.favorite_count, c.is_featured, c.is_nsfw, c.is_removed, c.removed_reason, c.is_hidden,
-			c.submitted_by_user_id, c.submitted_at
+			%s
 		FROM clips c
 		%s
 		%s
 		LIMIT %s OFFSET %s
-	`, whereClause, orderBy, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
+	`, clipSelectColumns, whereClause, orderBy, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
 
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -882,15 +862,7 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		)
+		err := scanClip(rows, &clip, false)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan scraped clip: %w", err)
 		}
@@ -1174,17 +1146,12 @@ func (r *ClipRepository) GetByIDs(ctx context.Context, clipIDs []uuid.UUID) ([]m
 		return []models.Clip{}, nil
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason,
-			submitted_by_user_id, submitted_at
+			%s
 		FROM clips
 		WHERE id = ANY($1)
-	`
+	`, clipSelectColumns)
 
 	rows, err := r.pool.Query(ctx, query, clipIDs)
 	if err != nil {
@@ -1196,15 +1163,7 @@ func (r *ClipRepository) GetByIDs(ctx context.Context, clipIDs []uuid.UUID) ([]m
 	clipMap := make(map[uuid.UUID]models.Clip)
 	for rows.Next() {
 		var clip models.Clip
-		if err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		); err != nil {
+		if err := scanClip(rows, &clip, false); err != nil {
 			return nil, fmt.Errorf("failed to scan clip: %w", err)
 		}
 		clipMap[clip.ID] = clip
@@ -1286,17 +1245,12 @@ func (r *ClipRepository) ListClipsByBroadcaster(ctx context.Context, broadcaster
 	// Get clips
 	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at
+			%s
 		FROM clips
 		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND submitted_by_user_id IS NOT NULL
 		ORDER BY %s
 		LIMIT $2 OFFSET $3
-	`, orderBy)
+	`, clipSelectColumns, orderBy)
 
 	rows, err := r.pool.Query(ctx, query, broadcasterID, limit, offset)
 	if err != nil {
@@ -1307,15 +1261,7 @@ func (r *ClipRepository) ListClipsByBroadcaster(ctx context.Context, broadcaster
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		if err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		); err != nil {
+		if err := scanClip(rows, &clip, false); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan clip: %w", err)
 		}
 		clips = append(clips, clip)
@@ -1529,18 +1475,13 @@ func (r *ClipRepository) GetClipsByIDs(ctx context.Context, clipIDs []uuid.UUID)
 		return []models.Clip{}, nil
 	}
 
-	query := `
-SELECT
-id, twitch_clip_id, twitch_clip_url, embed_url, title,
-creator_name, creator_id, broadcaster_name, broadcaster_id,
-game_id, game_name, language, thumbnail_url, duration,
-view_count, created_at, imported_at, vote_score, comment_count,
-favorite_count, is_featured, is_nsfw, is_removed, removed_reason,
-is_hidden, submitted_by_user_id, submitted_at
-FROM clips
-WHERE id = ANY($1)
-AND is_removed = false
-`
+	query := fmt.Sprintf(`
+		SELECT
+			%s
+		FROM clips
+		WHERE id = ANY($1)
+		AND is_removed = false
+	`, clipSelectColumns)
 
 	rows, err := r.pool.Query(ctx, query, clipIDs)
 	if err != nil {
@@ -1551,14 +1492,7 @@ AND is_removed = false
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL, &clip.Title,
-			&clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName, &clip.BroadcasterID,
-			&clip.GameID, &clip.GameName, &clip.Language, &clip.ThumbnailURL, &clip.Duration,
-			&clip.ViewCount, &clip.CreatedAt, &clip.ImportedAt, &clip.VoteScore, &clip.CommentCount,
-			&clip.FavoriteCount, &clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
-			&clip.IsHidden, &clip.SubmittedByUserID, &clip.SubmittedAt,
-		)
+		err := scanClip(rows, &clip, false)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan clip: %w", err)
 		}
@@ -1614,19 +1548,14 @@ func (r *ClipRepository) ListClipsForBestOf(ctx context.Context, startDate, endD
 		return nil, 0, fmt.Errorf("failed to count best-of clips: %w", err)
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at
+			%s
 		FROM clips
 		WHERE is_removed = false AND created_at >= $1 AND created_at < $2
 		ORDER BY vote_score DESC, view_count DESC
 		LIMIT $3 OFFSET $4
-	`
+	`, clipSelectColumns)
 	rows, err := r.pool.Query(ctx, query, startDate, endDate, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list best-of clips: %w", err)
@@ -1636,15 +1565,7 @@ func (r *ClipRepository) ListClipsForBestOf(ctx context.Context, startDate, endD
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		if err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		); err != nil {
+		if err := scanClip(rows, &clip, false); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan clip: %w", err)
 		}
 		clips = append(clips, clip)
@@ -1667,19 +1588,14 @@ func (r *ClipRepository) ListClipsByGame(ctx context.Context, gameID string, lim
 		return nil, 0, fmt.Errorf("failed to count game clips: %w", err)
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at
+			%s
 		FROM clips
 		WHERE game_id = $1 AND is_removed = false
 		ORDER BY vote_score DESC, view_count DESC
 		LIMIT $2 OFFSET $3
-	`
+	`, clipSelectColumns)
 	rows, err := r.pool.Query(ctx, query, gameID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list game clips: %w", err)
@@ -1689,15 +1605,7 @@ func (r *ClipRepository) ListClipsByGame(ctx context.Context, gameID string, lim
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		if err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		); err != nil {
+		if err := scanClip(rows, &clip, false); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan clip: %w", err)
 		}
 		clips = append(clips, clip)
@@ -1720,19 +1628,14 @@ func (r *ClipRepository) ListClipsForStreamerGame(ctx context.Context, broadcast
 		return nil, 0, fmt.Errorf("failed to count streamer+game clips: %w", err)
 	}
 
-	query := `
+	query := fmt.Sprintf(`
 		SELECT
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration,
-			view_count, created_at, imported_at, vote_score, comment_count,
-			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
-			submitted_by_user_id, submitted_at
+			%s
 		FROM clips
 		WHERE broadcaster_id = $1 AND game_id = $2 AND is_removed = false
 		ORDER BY vote_score DESC, view_count DESC
 		LIMIT $3 OFFSET $4
-	`
+	`, clipSelectColumns)
 	rows, err := r.pool.Query(ctx, query, broadcasterID, gameID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list streamer+game clips: %w", err)
@@ -1742,15 +1645,7 @@ func (r *ClipRepository) ListClipsForStreamerGame(ctx context.Context, broadcast
 	var clips []models.Clip
 	for rows.Next() {
 		var clip models.Clip
-		if err := rows.Scan(
-			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
-			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
-			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
-			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
-			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.IsHidden,
-			&clip.SubmittedByUserID, &clip.SubmittedAt,
-		); err != nil {
+		if err := scanClip(rows, &clip, false); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan clip: %w", err)
 		}
 		clips = append(clips, clip)

@@ -30,6 +30,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   variant = 'expanded',
   className,
 }) => {
+  const creatorRestrictionMessage =
+    'This comment is hidden because your account is restricted from interacting with this creator\'s content.';
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -38,6 +40,57 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const hasReplies = comment.replies && comment.replies.length > 0;
   const shouldShowContinueThread = depth >= maxDepth && hasReplies;
   const isCompact = variant === 'compact';
+
+  if (comment.is_hidden_by_creator_moderation) {
+    return (
+      <div className={cn('flex gap-3', isCompact && 'py-2', className)} id={`comment-${comment.id}`}>
+        <div className="flex-shrink-0 flex flex-col items-center gap-2">
+          <div className="w-12" />
+
+          {comment.child_count > 0 && !shouldShowContinueThread && (
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer py-1 px-2 rounded flex items-center gap-1"
+              title={`${isCollapsed ? 'Expand' : 'Collapse'} thread`}
+              aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${comment.child_count} ${comment.child_count === 1 ? 'reply' : 'replies'}`}
+            >
+              <span className="select-none">{isCollapsed ? '▶' : '▼'}</span>
+              <span>{comment.child_count}</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex-1">
+          <div className="text-sm text-muted-foreground italic py-2">
+            {creatorRestrictionMessage}
+          </div>
+
+          {hasReplies && !shouldShowContinueThread && !isCollapsed && (
+            <div className="mt-4">
+              <CommentTree
+                comments={comment.replies!}
+                clipId={clipId}
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                depth={depth + 1}
+                maxDepth={maxDepth}
+                variant={variant}
+              />
+            </div>
+          )}
+
+          {shouldShowContinueThread && (
+            <a
+              href={`/clips/${clipId}/comments/${comment.id}`}
+              className="mt-4 inline-block text-sm text-brand hover:text-brand-hover transition-colors cursor-pointer"
+            >
+              View {comment.child_count} more {comment.child_count === 1 ? 'reply' : 'replies'} in thread →
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const handleReply = () => {
     setShowReplyForm(true);

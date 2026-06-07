@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -271,6 +272,31 @@ func TestInputValidationMiddleware_RequestBodyValidation(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+}
+
+func TestInputValidationMiddleware_AllowsUploadRoutePastGlobalBodyLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	w := httptest.NewRecorder()
+	c, r := gin.CreateTestContext(w)
+
+	r.Use(InputValidationMiddleware())
+	r.POST("/api/v1/submissions/upload", func(c *gin.Context) {
+		_, err := io.Copy(io.Discard, c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	largeData := strings.Repeat("A", MaxRequestBodySize+1000)
+	req, _ := http.NewRequest("POST", "/api/v1/submissions/upload", bytes.NewBufferString(largeData))
+	req.Header.Set("Content-Type", "application/octet-stream")
+	c.Request = req
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code, "upload route should not be capped by global 10MB body limit")
 }
 
 // TestInputValidationMiddleware_MixedPayloads tests combinations of attack vectors

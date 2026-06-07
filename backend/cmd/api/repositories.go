@@ -16,6 +16,7 @@ type Repositories struct {
 	Comment               *repository.CommentRepository
 	Vote                  *repository.VoteRepository
 	Favorite              *repository.FavoriteRepository
+	CreatorModeration     *repository.CreatorModerationRepository
 	Tag                   *repository.TagRepository
 	Search                *repository.SearchRepository
 	Submission            *repository.SubmissionRepository
@@ -72,6 +73,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		Comment:               repository.NewCommentRepository(pool),
 		Vote:                  repository.NewVoteRepository(pool),
 		Favorite:              repository.NewFavoriteRepository(pool),
+		CreatorModeration:     repository.NewCreatorModerationRepository(pool),
 		Tag:                   repository.NewTagRepository(pool),
 		Search:                repository.NewSearchRepository(pool),
 		Submission:            repository.NewSubmissionRepository(pool),

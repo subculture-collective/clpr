@@ -27,6 +27,7 @@ type ClipService struct {
 	redisClient         *redispkg.Client
 	auditLogRepo        *repository.AuditLogRepository
 	notificationService *NotificationService
+	creatorModeration   CreatorModerationChecker
 }
 
 // NewClipService creates a new ClipService
@@ -52,6 +53,26 @@ func NewClipService(
 		auditLogRepo:        auditLogRepo,
 		notificationService: notificationService,
 	}
+}
+
+// SetCreatorModerationService configures creator-scoped moderation checks.
+func (s *ClipService) SetCreatorModerationService(creatorModeration CreatorModerationChecker) {
+	s.creatorModeration = creatorModeration
+}
+
+func (s *ClipService) requireCreatorInteractionPermission(ctx context.Context, creatorAccountID *uuid.UUID, userID uuid.UUID) error {
+	if s.creatorModeration == nil || creatorAccountID == nil || *creatorAccountID == uuid.Nil || userID == uuid.Nil {
+		return nil
+	}
+
+	allowed, message, err := s.creatorModeration.CanInteract(ctx, *creatorAccountID, userID)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return &CreatorModerationError{Message: message}
+	}
+	return nil
 }
 
 // ClipWithUserData represents a clip with user-specific data
@@ -462,8 +483,11 @@ func (s *ClipService) VoteOnClip(ctx context.Context, userID, clipID uuid.UUID, 
 	}
 
 	// Check if clip exists
-	_, err := s.clipRepo.GetByID(ctx, clipID)
+	clip, err := s.clipRepo.GetByID(ctx, clipID)
 	if err != nil {
+		return err
+	}
+	if err := s.requireCreatorInteractionPermission(ctx, clip.CreatorAccountID, userID); err != nil {
 		return err
 	}
 
@@ -539,8 +563,11 @@ func (s *ClipService) VoteOnClip(ctx context.Context, userID, clipID uuid.UUID, 
 // AddFavorite adds a clip to user's favorites
 func (s *ClipService) AddFavorite(ctx context.Context, userID, clipID uuid.UUID) error {
 	// Check if clip exists
-	_, err := s.clipRepo.GetByID(ctx, clipID)
+	clip, err := s.clipRepo.GetByID(ctx, clipID)
 	if err != nil {
+		return err
+	}
+	if err := s.requireCreatorInteractionPermission(ctx, clip.CreatorAccountID, userID); err != nil {
 		return err
 	}
 
@@ -549,6 +576,11 @@ func (s *ClipService) AddFavorite(ctx context.Context, userID, clipID uuid.UUID)
 
 // RemoveFavorite removes a clip from user's favorites
 func (s *ClipService) RemoveFavorite(ctx context.Context, userID, clipID uuid.UUID) error {
+	if clip, err := s.clipRepo.GetByID(ctx, clipID); err == nil {
+		if err := s.requireCreatorInteractionPermission(ctx, clip.CreatorAccountID, userID); err != nil {
+			return err
+		}
+	}
 	return s.favoriteRepo.Delete(ctx, userID, clipID)
 }
 

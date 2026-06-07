@@ -1,6 +1,36 @@
 import type { UserRole } from '../lib/roles';
 
-export interface ClipSubmission {
+export type ClipSourceType = 'twitch' | 'external' | 'upload';
+export type ClipSourcePlatform =
+  | 'twitch'
+  | 'kick'
+  | 'youtube'
+  | 'youtube_shorts'
+  | 'tiktok'
+  | 'upload';
+export type ClipUploadStatus = 'none' | 'pending' | 'uploaded' | 'validated' | 'rejected';
+export type ClipStorageVisibility = 'private' | 'public';
+
+export interface ClipSourceFields {
+  source_type?: ClipSourceType;
+  source_platform?: ClipSourcePlatform;
+  source_url?: string;
+  source_id?: string;
+  source_metadata?: Record<string, unknown>;
+  duration_seconds?: number;
+  duration_verified?: boolean;
+  storage_provider?: string;
+  storage_bucket?: string;
+  storage_key?: string;
+  original_filename?: string;
+  mime_type?: string;
+  file_size_bytes?: number;
+  upload_status?: ClipUploadStatus;
+  duration_validation_error?: string;
+  storage_visibility?: ClipStorageVisibility;
+}
+
+export interface ClipSubmission extends ClipSourceFields {
   id: string;
   user_id: string;
   clip_id?: string; // Set when submission is approved
@@ -41,7 +71,7 @@ export interface ClipSubmissionWithUser extends ClipSubmission {
   };
 }
 
-export interface SubmitClipRequest {
+export interface SubmitClipRequest extends Partial<ClipSourceFields> {
   clip_url: string;
   custom_title?: string;
   tags?: string[];

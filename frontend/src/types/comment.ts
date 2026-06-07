@@ -18,6 +18,8 @@ export interface Comment {
   is_deleted: boolean;
   is_removed: boolean;
   removed_reason?: string;
+  is_hidden_by_creator_moderation?: boolean;
+  creator_moderation_message?: string;
   depth: number;
   reply_count: number;
   child_count: number;

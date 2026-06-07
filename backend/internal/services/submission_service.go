@@ -2,44 +2,56 @@ package services
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/storage"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 	pkgutils "git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 // SubmissionService handles clip submission business logic
 type SubmissionService struct {
-	submissionRepo      *repository.SubmissionRepository
-	clipRepo            *repository.ClipRepository
-	discoveryClipRepo   *repository.DiscoveryClipRepository
-	userRepo            *repository.UserRepository
-	voteRepo            *repository.VoteRepository
-	auditLogRepo        *repository.AuditLogRepository
-	twitchClient        *twitch.Client
-	redisClient         *redispkg.Client
-	notificationService *NotificationService
-	abuseDetector       *SubmissionAbuseDetector
-	moderationEvents    *ModerationEventService
-	webhookService      *OutboundWebhookService
-	cacheService        *CacheService
-	cfg                 *config.Config
-	logger              *pkgutils.StructuredLogger
+	submissionRepo          *repository.SubmissionRepository
+	clipRepo                *repository.ClipRepository
+	discoveryClipRepo       *repository.DiscoveryClipRepository
+	userRepo                *repository.UserRepository
+	voteRepo                *repository.VoteRepository
+	auditLogRepo            *repository.AuditLogRepository
+	twitchClient            *twitch.Client
+	redisClient             *redispkg.Client
+	notificationService     *NotificationService
+	creatorModeration       CreatorModerationChecker
+	abuseDetector           *SubmissionAbuseDetector
+	moderationEvents        *ModerationEventService
+	externalMetadataFetcher ExternalMetadataFetcher
+	webhookService          *OutboundWebhookService
+	cacheService            *CacheService
+	clipStorage             storage.ClipStorage
+	cfg                     *config.Config
+	logger                  *pkgutils.StructuredLogger
 
 	// Test fixture controls
 	testFixturesEnabled      bool
 	bypassRateLimits         bool
 	allowDuplicateSubmission bool
+
+	userLookupFn               func(context.Context, uuid.UUID) (*models.User, error)
+	submissionCreateFn         func(context.Context, *models.ClipSubmission) error
+	submissionLookupBySourceFn func(context.Context, string, string) (*models.ClipSubmission, error)
+	clipCreateFn               func(context.Context, *models.Clip) error
 }
 
 // NewSubmissionService creates a new SubmissionService
@@ -80,6 +92,7 @@ func NewSubmissionService(
 		notificationService:      notificationService,
 		abuseDetector:            abuseDetector,
 		moderationEvents:         moderationEvents,
+		externalMetadataFetcher:  NewExternalMetadataFetcher(nil),
 		webhookService:           webhookService,
 		cacheService:             cacheService,
 		cfg:                      cfg,
@@ -100,6 +113,174 @@ func (s *SubmissionService) GetModerationEventService() *ModerationEventService 
 	return s.moderationEvents
 }
 
+// SetClipStorage configures the storage backend used for upload approvals.
+func (s *SubmissionService) SetClipStorage(clipStorage storage.ClipStorage) {
+	s.clipStorage = clipStorage
+}
+
+// SetCreatorModerationService configures creator-scoped moderation checks.
+func (s *SubmissionService) SetCreatorModerationService(creatorModeration CreatorModerationChecker) {
+	s.creatorModeration = creatorModeration
+}
+
+func (s *SubmissionService) requireCreatorSubmissionPermission(ctx context.Context, creatorAccountID *uuid.UUID, userID uuid.UUID) error {
+	if s.creatorModeration == nil || creatorAccountID == nil || *creatorAccountID == uuid.Nil || userID == uuid.Nil {
+		return nil
+	}
+
+	allowed, message, err := s.creatorModeration.CanSubmit(ctx, *creatorAccountID, userID)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return &CreatorModerationError{Message: message}
+	}
+	return nil
+}
+
+func (s *SubmissionService) shouldAutoUpvoteClaimedClip(ctx context.Context, creatorAccountID *uuid.UUID, userID uuid.UUID) bool {
+	if s.creatorModeration == nil || creatorAccountID == nil || *creatorAccountID == uuid.Nil || userID == uuid.Nil {
+		return true
+	}
+
+	allowed, _, err := s.creatorModeration.CanInteract(ctx, *creatorAccountID, userID)
+	if err != nil {
+		log.Printf("Warning: failed to check claimed clip interaction permission for user %s: %v\n", userID, err)
+		return false
+	}
+
+	return allowed
+}
+
+func (s *SubmissionService) getUserByID(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	if s.userLookupFn != nil {
+		return s.userLookupFn(ctx, userID)
+	}
+	if s.userRepo == nil {
+		return nil, fmt.Errorf("user repository is not configured")
+	}
+	return s.userRepo.GetByID(ctx, userID)
+}
+
+func (s *SubmissionService) createSubmissionRecord(ctx context.Context, submission *models.ClipSubmission) error {
+	if s.submissionCreateFn != nil {
+		return s.submissionCreateFn(ctx, submission)
+	}
+	if s.submissionRepo == nil {
+		return fmt.Errorf("submission repository is not configured")
+	}
+	return s.submissionRepo.Create(ctx, submission)
+}
+
+func (s *SubmissionService) createClipRecord(ctx context.Context, clip *models.Clip) error {
+	if s.clipCreateFn != nil {
+		return s.clipCreateFn(ctx, clip)
+	}
+	if s.clipRepo == nil {
+		return fmt.Errorf("clip repository is not configured")
+	}
+	return s.clipRepo.Create(ctx, clip)
+}
+
+func (s *SubmissionService) getSubmissionBySourceIdentity(ctx context.Context, sourcePlatform, sourceID string) (*models.ClipSubmission, error) {
+	if s.submissionLookupBySourceFn != nil {
+		return s.submissionLookupBySourceFn(ctx, sourcePlatform, sourceID)
+	}
+	if s.submissionRepo == nil {
+		return nil, nil
+	}
+	return s.submissionRepo.GetBySourcePlatformAndID(ctx, sourcePlatform, sourceID)
+}
+
+func (s *SubmissionService) trackDuplicateAttempt(ctx context.Context, userID uuid.UUID, ip string, clipID string) {
+	if s.abuseDetector != nil {
+		if err := s.abuseDetector.TrackDuplicateAttempt(ctx, userID, ip, clipID); err != nil {
+			log.Printf("Failed to track duplicate attempt: %v", err)
+		}
+	}
+}
+
+func (s *SubmissionService) emitDuplicateModerationEvent(ctx context.Context, userID uuid.UUID, ip string, metadata map[string]interface{}) {
+	if s.moderationEvents != nil {
+		if err := s.moderationEvents.EmitAbuseEvent(ctx, ModerationEventSubmissionDuplicate, userID, ip, metadata); err != nil {
+			log.Printf("Failed to emit duplicate event: %v", err)
+		}
+	}
+}
+
+func (s *SubmissionService) rejectDuplicateExternalSubmission(ctx context.Context, userID uuid.UUID, ip string, existing *models.ClipSubmission) error {
+	sourceID := ""
+	if existing.SourceID != nil {
+		sourceID = *existing.SourceID
+	}
+
+	s.trackDuplicateAttempt(ctx, userID, ip, sourceID)
+
+	switch existing.Status {
+	case "pending":
+		metadata := map[string]interface{}{
+			"source_platform": existing.SourcePlatform,
+			"source_id":       sourceID,
+			"reason":          "submission_pending",
+			"submission_id":   existing.ID.String(),
+		}
+		s.emitDuplicateModerationEvent(ctx, userID, ip, metadata)
+		return &ValidationError{
+			Field:   "clip_url",
+			Message: "This clip is already pending review. You'll be notified once it's been reviewed by our moderators.",
+		}
+	case "approved":
+		metadata := map[string]interface{}{
+			"source_platform": existing.SourcePlatform,
+			"source_id":       sourceID,
+			"reason":          "source_already_exists",
+			"submission_id":   existing.ID.String(),
+		}
+		if existing.ClipID != nil {
+			metadata["existing_clip_id"] = existing.ClipID.String()
+		}
+		s.emitDuplicateModerationEvent(ctx, userID, ip, metadata)
+
+		message := "This clip has already been approved and added to our database"
+		if existing.ClipID != nil {
+			message = fmt.Sprintf("%s (clip %s)", message, existing.ClipID.String())
+		}
+		return &ValidationError{
+			Field:   "clip_url",
+			Message: message,
+		}
+	case "rejected":
+		if time.Since(existing.CreatedAt) < 7*24*time.Hour {
+			hoursRemaining := 7*24 - int(time.Since(existing.CreatedAt).Hours())
+			if hoursRemaining < 24 {
+				return &ValidationError{
+					Field:   "clip_url",
+					Message: "This clip was recently rejected. You can resubmit it in less than 24 hours",
+				}
+			}
+			daysRemaining := hoursRemaining / 24
+			return &ValidationError{
+				Field:   "clip_url",
+				Message: fmt.Sprintf("This clip was recently rejected. You can resubmit it in %d days", daysRemaining),
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *SubmissionService) ensureSubmissionCanBeApproved(submission *models.ClipSubmission) error {
+	switch submission.SourceType {
+	case string(SourceTypeTwitch), string(SourceTypeExternal), "upload":
+		return nil
+	default:
+		if submission.SourceType == "" {
+			return fmt.Errorf("submission source type is required")
+		}
+		return fmt.Errorf("unsupported submission source type %q", submission.SourceType)
+	}
+}
+
 // SubmitClipRequest represents a clip submission request
 type SubmitClipRequest struct {
 	ClipURL                 string   `json:"clip_url" binding:"required"`
@@ -108,6 +289,22 @@ type SubmitClipRequest struct {
 	Tags                    []string `json:"tags,omitempty"`
 	IsNSFW                  bool     `json:"is_nsfw"`
 	SubmissionReason        *string  `json:"submission_reason,omitempty"`
+}
+
+// SubmitUploadRequest represents a hosted upload submission request.
+type SubmitUploadRequest struct {
+	SubmissionID     uuid.UUID
+	CustomTitle      *string
+	IsNSFW           bool
+	SubmissionReason *string
+	OriginalFilename string
+	MimeType         string
+	FileSizeBytes    int64
+	DurationSeconds  int64
+	DurationVerified bool
+	StorageProvider  string
+	StorageBucket    string
+	StorageKey       string
 }
 
 // ValidationError represents a validation error
@@ -133,8 +330,8 @@ func (e *TwitchAPIError) Error() string {
 type RateLimitError struct {
 	Message    string `json:"error"`
 	Limit      int    `json:"limit"`
-	Window     int    `json:"window"`       // Window in seconds
-	RetryAfter int64  `json:"retry_after"`  // Unix timestamp when user can retry
+	Window     int    `json:"window"`      // Window in seconds
+	RetryAfter int64  `json:"retry_after"` // Unix timestamp when user can retry
 }
 
 func (e *RateLimitError) Error() string {
@@ -258,7 +455,7 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 	}
 
 	// Check user permissions and rate limits
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.getUserByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -319,17 +516,92 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 		return nil, err
 	}
 
-	// Extract and normalize clip ID from URL
-	clipID, normalizedURL := s.normalizeClipURL(req.ClipURL)
-	if clipID == "" {
-		return nil, &ValidationError{
-			Field:   "clip_url",
-			Message: "Invalid Twitch clip URL. Please provide a valid URL like 'https://clips.twitch.tv/ClipID' or 'https://www.twitch.tv/username/clip/ClipID'",
+	clipInput := strings.TrimSpace(req.ClipURL)
+	detectedSource, err := s.resolveSubmissionClipInput(clipInput)
+	if err != nil {
+		return nil, err
+	}
+
+	if detectedSource.SourceType == SourceTypeExternal {
+		existingSubmission, err := s.getSubmissionBySourceIdentity(ctx, string(detectedSource.Platform), detectedSource.SourceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check external submission duplicates: %w", err)
 		}
+		if existingSubmission != nil {
+			if err := s.rejectDuplicateExternalSubmission(ctx, userID, ip, existingSubmission); err != nil {
+				return nil, err
+			}
+		}
+
+		metadata, err := s.fetchExternalMetadata(ctx, detectedSource)
+		if err != nil {
+			return nil, err
+		}
+
+		if metadata.DurationVerified && metadata.DurationSeconds != nil && *metadata.DurationSeconds > s.cfg.ClipSource.MaxDurationSeconds {
+			return nil, &ValidationError{Field: "clip_url", Message: fmt.Sprintf("External source duration exceeds the maximum of %d seconds", s.cfg.ClipSource.MaxDurationSeconds)}
+		}
+
+		submission, err := s.buildExternalSubmissionRecord(userID, req, detectedSource, metadata, time.Now())
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.createSubmissionRecord(ctx, submission); err != nil {
+			return nil, fmt.Errorf("failed to create external submission: %w", err)
+		}
+
+		if s.webhookService != nil {
+			webhookData := map[string]interface{}{
+				"submission_id":     submission.ID.String(),
+				"user_id":           userID.String(),
+				"source_type":       submission.SourceType,
+				"source_platform":   submission.SourcePlatform,
+				"clip_id":           submission.TwitchClipID,
+				"clip_url":          submission.TwitchClipURL,
+				"duration_verified": submission.DurationVerified,
+				"status":            submission.Status,
+				"is_nsfw":           submission.IsNSFW,
+				"created_at":        submission.CreatedAt,
+			}
+			if submission.CustomTitle != nil {
+				webhookData["custom_title"] = *submission.CustomTitle
+			}
+			if submission.SubmissionReason != nil {
+				webhookData["submission_reason"] = *submission.SubmissionReason
+			}
+			if err := s.webhookService.TriggerEvent(ctx, models.WebhookEventClipSubmitted, submission.ID, webhookData); err != nil {
+				log.Printf("Failed to trigger webhook event: %v", err)
+			}
+		}
+
+		if s.moderationEvents != nil {
+			metadata := map[string]interface{}{
+				"submission_id":     submission.ID.String(),
+				"clip_id":           submission.TwitchClipID,
+				"clip_url":          submission.TwitchClipURL,
+				"source_type":       submission.SourceType,
+				"source_platform":   submission.SourcePlatform,
+				"duration_verified": submission.DurationVerified,
+				"status":            submission.Status,
+				"is_nsfw":           submission.IsNSFW,
+			}
+			if submission.CustomTitle != nil {
+				metadata["custom_title"] = *submission.CustomTitle
+			}
+			if submission.SubmissionReason != nil {
+				metadata["submission_reason"] = *submission.SubmissionReason
+			}
+			if err := s.moderationEvents.EmitSubmissionEvent(ctx, ModerationEventSubmissionReceived, submission, ip, metadata); err != nil {
+				log.Printf("Failed to emit external submission event: %v", err)
+			}
+		}
+
+		return submission, nil
 	}
 
 	// Check if clip exists and whether it can be claimed
-	clipExistence, err := s.checkClipExistence(ctx, clipID)
+	clipExistence, err := s.checkClipExistence(ctx, detectedSource.SourceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check clip existence: %w", err)
 	}
@@ -341,13 +613,16 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 		broadcasterName := req.BroadcasterNameOverride
 
 		// Claim the discovery clip (atomically moves from discovery_clips to clips)
+		if err := s.requireCreatorSubmissionPermission(ctx, clipExistence.Clip.CreatorAccountID, userID); err != nil {
+			return nil, err
+		}
 		_, err := s.discoveryClipRepo.ClaimDiscoveryClip(ctx, clipExistence.Clip.TwitchClipID, userID, title, req.IsNSFW, broadcasterName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to claim discovery clip: %w", err)
 		}
 
-		// Auto-upvote the claimed clip
-		if s.voteRepo != nil {
+		// Auto-upvote the claimed clip when interaction is allowed
+		if s.voteRepo != nil && s.shouldAutoUpvoteClaimedClip(ctx, clipExistence.Clip.CreatorAccountID, userID) {
 			if err := s.voteRepo.UpsertVote(ctx, userID, clipExistence.Clip.ID, 1); err != nil {
 				// Log error but don't fail
 				log.Printf("Warning: failed to auto-upvote claimed clip for user %s: %v\n", userID, err)
@@ -375,18 +650,27 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 			Status:                  "approved", // Claimed clips are immediately approved
 			CreatedAt:               now,
 			UpdatedAt:               now,
+			SourceType:              "twitch",
+			SourcePlatform:          "twitch",
+			SourceURL:               &clipExistence.Clip.TwitchClipURL,
+			SourceID:                &clipExistence.Clip.TwitchClipID,
+			SourceMetadata:          []byte(`{}`),
+			DurationVerified:        true,
+			UploadStatus:            "none",
+			StorageVisibility:       "private",
 			ReviewedAt:              &now,
 			ReviewedBy:              &userID,
 			// Copy metadata from existing clip
-			CreatorName:     &clipExistence.Clip.CreatorName,
-			CreatorID:       clipExistence.Clip.CreatorID,
-			BroadcasterName: &clipExistence.Clip.BroadcasterName,
-			BroadcasterID:   clipExistence.Clip.BroadcasterID,
-			GameID:          clipExistence.Clip.GameID,
-			GameName:        clipExistence.Clip.GameName,
-			ThumbnailURL:    clipExistence.Clip.ThumbnailURL,
-			Duration:        clipExistence.Clip.Duration,
-			ViewCount:       clipExistence.Clip.ViewCount,
+			CreatorName:      &clipExistence.Clip.CreatorName,
+			CreatorID:        clipExistence.Clip.CreatorID,
+			CreatorAccountID: clipExistence.Clip.CreatorAccountID,
+			BroadcasterName:  &clipExistence.Clip.BroadcasterName,
+			BroadcasterID:    clipExistence.Clip.BroadcasterID,
+			GameID:           clipExistence.Clip.GameID,
+			GameName:         clipExistence.Clip.GameName,
+			ThumbnailURL:     clipExistence.Clip.ThumbnailURL,
+			Duration:         clipExistence.Clip.Duration,
+			ViewCount:        clipExistence.Clip.ViewCount,
 		}
 
 		// Save submission to database for audit trail
@@ -439,7 +723,7 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 	if clipExistence.Exists && !clipExistence.CanBeClaimed {
 		// Track duplicate attempt
 		if s.abuseDetector != nil {
-			if err := s.abuseDetector.TrackDuplicateAttempt(ctx, userID, ip, clipID); err != nil {
+			if err := s.abuseDetector.TrackDuplicateAttempt(ctx, userID, ip, detectedSource.SourceID); err != nil {
 				log.Printf("Failed to track duplicate attempt: %v", err)
 			}
 		}
@@ -451,12 +735,12 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 	}
 
 	// Check for duplicates in submissions table
-	if err := s.checkDuplicates(ctx, clipID, userID, ip); err != nil {
+	if err := s.checkDuplicates(ctx, detectedSource.SourceID, userID, ip); err != nil {
 		return nil, err
 	}
 
 	// Fetch clip metadata from Twitch
-	twitchClip, err := s.fetchClipFromTwitch(ctx, clipID)
+	twitchClip, err := s.fetchClipFromTwitch(ctx, detectedSource.SourceID)
 	if err != nil {
 		return nil, err
 	}
@@ -467,8 +751,8 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 	}
 
 	// Use normalized URL
-	if normalizedURL != "" {
-		twitchClip.URL = normalizedURL
+	if detectedSource.NormalizedURL != "" {
+		twitchClip.URL = detectedSource.NormalizedURL
 	}
 
 	// Create submission
@@ -486,15 +770,24 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 		Status:                  "pending",
 		CreatedAt:               time.Now(),
 		UpdatedAt:               time.Now(),
+		SourceType:              "twitch",
+		SourcePlatform:          "twitch",
+		SourceURL:               &twitchClip.URL,
+		SourceID:                &twitchClip.ID,
+		SourceMetadata:          []byte(`{}`),
+		DurationVerified:        true,
+		UploadStatus:            "none",
+		StorageVisibility:       "private",
 		// Metadata from Twitch
-		CreatorName:     &twitchClip.CreatorName,
-		CreatorID:       utils.StringPtr(twitchClip.CreatorID),
-		BroadcasterName: &twitchClip.BroadcasterName,
-		BroadcasterID:   utils.StringPtr(twitchClip.BroadcasterID),
-		GameID:          utils.StringPtr(twitchClip.GameID),
-		ThumbnailURL:    utils.StringPtr(twitchClip.ThumbnailURL),
-		Duration:        utils.Float64Ptr(twitchClip.Duration),
-		ViewCount:       twitchClip.ViewCount,
+		CreatorName:      &twitchClip.CreatorName,
+		CreatorID:        utils.StringPtr(twitchClip.CreatorID),
+		CreatorAccountID: nil,
+		BroadcasterName:  &twitchClip.BroadcasterName,
+		BroadcasterID:    utils.StringPtr(twitchClip.BroadcasterID),
+		GameID:           utils.StringPtr(twitchClip.GameID),
+		ThumbnailURL:     utils.StringPtr(twitchClip.ThumbnailURL),
+		Duration:         utils.Float64Ptr(twitchClip.Duration),
+		ViewCount:        twitchClip.ViewCount,
 	}
 
 	// Check for auto-approval
@@ -589,6 +882,277 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 	}
 
 	return submission, nil
+}
+
+// SubmitUpload handles hosted video submissions.
+func (s *SubmissionService) SubmitUpload(ctx context.Context, userID uuid.UUID, req *SubmitUploadRequest, ip string, deviceFingerprint string) (*models.ClipSubmission, error) {
+	if err := s.validateUploadSubmissionInput(req); err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	isAdmin := user.Role == models.RoleAdmin
+	if user.IsBanned {
+		return nil, &ValidationError{Field: "user", Message: "Your account has been banned and cannot submit clips. Please contact support if you believe this is an error."}
+	}
+
+	if s.cfg.Karma.RequireKarmaForSubmission && user.KarmaPoints < s.cfg.Karma.SubmissionKarmaRequired {
+		return nil, &ValidationError{Field: "karma", Message: fmt.Sprintf("You need at least %d karma points to submit clips. Earn karma by participating in the community through voting and commenting.", s.cfg.Karma.SubmissionKarmaRequired)}
+	}
+
+	if s.abuseDetector != nil && !isAdmin {
+		abuseCheck, err := s.abuseDetector.CheckSubmissionAbuse(ctx, userID, ip, deviceFingerprint)
+		if err != nil {
+			log.Printf("Error checking abuse: %v", err)
+		} else if !abuseCheck.Allowed {
+			if s.moderationEvents != nil {
+				metadata := map[string]interface{}{
+					"reason":         abuseCheck.Reason,
+					"severity":       abuseCheck.Severity,
+					"cooldown_until": abuseCheck.CooldownUntil,
+				}
+				_ = s.moderationEvents.EmitAbuseEvent(ctx, ModerationEventUserCooldownActivated, userID, ip, metadata)
+			}
+
+			return nil, &ValidationError{
+				Field:   "rate_limit",
+				Message: abuseCheck.Reason,
+			}
+		} else if abuseCheck.Severity == "warning" {
+			if s.moderationEvents != nil {
+				metadata := map[string]interface{}{
+					"warning": "IP sharing detected",
+				}
+				_ = s.moderationEvents.EmitAbuseEvent(ctx, ModerationEventIPShareSuspicious, userID, ip, metadata)
+			}
+		}
+	}
+
+	if s.bypassRateLimits {
+		log.Printf("SubmissionService: bypassing rate limits for test fixtures")
+	} else if err := s.checkRateLimits(ctx, userID); err != nil {
+		if s.moderationEvents != nil {
+			metadata := map[string]interface{}{"error": err.Error()}
+			_ = s.moderationEvents.EmitAbuseEvent(ctx, ModerationEventRateLimitExceeded, userID, ip, metadata)
+		}
+		return nil, err
+	}
+
+	now := time.Now()
+	baseName := strings.TrimSpace(req.OriginalFilename)
+	if baseName == "" {
+		baseName = "Uploaded clip"
+	}
+
+	customTitle := req.CustomTitle
+	if customTitle != nil {
+		title := strings.TrimSpace(*customTitle)
+		if title == "" {
+			customTitle = nil
+		} else {
+			*customTitle = title
+		}
+	}
+
+	reason := req.SubmissionReason
+	if reason != nil {
+		trimmed := strings.TrimSpace(*reason)
+		if trimmed == "" {
+			reason = nil
+		} else {
+			*reason = trimmed
+		}
+	}
+
+	title := customTitle
+	if title == nil {
+		title = &baseName
+	}
+
+	submissionID := req.SubmissionID
+	if submissionID == uuid.Nil {
+		submissionID = uuid.New()
+	}
+	submission, err := s.buildUploadSubmissionRecord(userID, submissionID, req, title, customTitle, reason, now)
+	if err != nil {
+		return nil, err
+	}
+	userIDStr := userID.String()
+
+	if err := s.submissionRepo.Create(ctx, submission); err != nil {
+		return nil, fmt.Errorf("failed to create upload submission: %w", err)
+	}
+
+	if s.moderationEvents != nil {
+		metadata := map[string]interface{}{
+			"submission_id":      submission.ID.String(),
+			"user_id":            userIDStr,
+			"source_type":        "upload",
+			"storage_key":        req.StorageKey,
+			"storage_visibility": "private",
+			"upload_status":      "validated",
+			"duration_seconds":   req.DurationSeconds,
+		}
+		if submission.CustomTitle != nil {
+			metadata["custom_title"] = *submission.CustomTitle
+		}
+		if submission.SubmissionReason != nil {
+			metadata["submission_reason"] = *submission.SubmissionReason
+		}
+		if err := s.moderationEvents.EmitSubmissionEvent(ctx, ModerationEventSubmissionReceived, submission, ip, metadata); err != nil {
+			log.Printf("Failed to emit upload submission event: %v", err)
+		}
+	}
+
+	return submission, nil
+}
+
+func (s *SubmissionService) buildUploadSubmissionRecord(userID, submissionID uuid.UUID, req *SubmitUploadRequest, title, customTitle, reason *string, now time.Time) (*models.ClipSubmission, error) {
+	fileSize := req.FileSizeBytes
+	sourceID := submissionID.String()
+	resolvedTitle := title
+	if resolvedTitle == nil {
+		fallback := strings.TrimSpace(req.OriginalFilename)
+		if fallback == "" {
+			fallback = "Uploaded clip"
+		}
+		resolvedTitle = &fallback
+	}
+	metadata := map[string]interface{}{
+		"original_filename": req.OriginalFilename,
+		"mime_type":         req.MimeType,
+		"duration_seconds":  req.DurationSeconds,
+		"duration_verified": req.DurationVerified,
+		"storage_provider":  req.StorageProvider,
+		"storage_bucket":    req.StorageBucket,
+		"storage_key":       req.StorageKey,
+		"file_size_bytes":   fileSize,
+	}
+	metadataBytes, err := json.Marshal(metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode upload metadata: %w", err)
+	}
+
+	fileSizePtr := fileSize
+	durationSeconds := int(req.DurationSeconds)
+	return &models.ClipSubmission{
+		ID:                      submissionID,
+		UserID:                  userID,
+		ClipID:                  nil,
+		TwitchClipID:            legacyUploadTwitchClipID(sourceID, req.StorageKey),
+		TwitchClipURL:           "",
+		Title:                   resolvedTitle,
+		CustomTitle:             customTitle,
+		IsNSFW:                  req.IsNSFW,
+		SubmissionReason:        reason,
+		Status:                  "pending",
+		CreatedAt:               now,
+		UpdatedAt:               now,
+		SourceType:              "upload",
+		SourcePlatform:          "upload",
+		SourceURL:               nil,
+		SourceID:                &sourceID,
+		SourceMetadata:          metadataBytes,
+		DurationSeconds:         &durationSeconds,
+		DurationVerified:        req.DurationVerified,
+		StorageProvider:         &req.StorageProvider,
+		StorageBucket:           &req.StorageBucket,
+		StorageKey:              &req.StorageKey,
+		OriginalFilename:        &req.OriginalFilename,
+		MimeType:                &req.MimeType,
+		FileSizeBytes:           &fileSizePtr,
+		UploadStatus:            "validated",
+		StorageVisibility:       "private",
+		DurationValidationError: nil,
+		CreatorAccountID:        nil,
+	}, nil
+}
+
+func (s *SubmissionService) fetchExternalMetadata(ctx context.Context, source DetectedSource) (ExternalMetadata, error) {
+	fetcher := s.externalMetadataFetcher
+	if fetcher == nil {
+		fetcher = NewExternalMetadataFetcher(nil)
+	}
+	return fetcher.Fetch(ctx, source)
+}
+
+func (s *SubmissionService) buildExternalSubmissionRecord(userID uuid.UUID, req *SubmitClipRequest, source DetectedSource, metadata ExternalMetadata, now time.Time) (*models.ClipSubmission, error) {
+	sourceID := source.SourceID
+	sourceURL := source.NormalizedURL
+	if sourceURL == "" {
+		sourceURL = source.RawURL
+	}
+
+	title := strings.TrimSpace(metadata.Title)
+	if title == "" {
+		title = sourceID
+	}
+
+	authorName := strings.TrimSpace(metadata.AuthorName)
+	resolvedThumbnail := strings.TrimSpace(metadata.ThumbnailURL)
+	metadataBytes, err := encodeExternalMetadata(source, metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	var durationSeconds *int
+	if metadata.DurationSeconds != nil {
+		duration := int(*metadata.DurationSeconds)
+		durationSeconds = &duration
+	}
+
+	return &models.ClipSubmission{
+		ID:                uuid.New(),
+		UserID:            userID,
+		ClipID:            nil,
+		TwitchClipID:      legacyExternalTwitchClipID(string(source.Platform), sourceID, sourceURL),
+		TwitchClipURL:     sourceURL,
+		Title:             &title,
+		CustomTitle:       req.CustomTitle,
+		Tags:              req.Tags,
+		IsNSFW:            req.IsNSFW,
+		SubmissionReason:  req.SubmissionReason,
+		Status:            "pending",
+		CreatedAt:         now,
+		UpdatedAt:         now,
+		SourceType:        string(SourceTypeExternal),
+		SourcePlatform:    string(source.Platform),
+		SourceURL:         &sourceURL,
+		SourceID:          &sourceID,
+		SourceMetadata:    metadataBytes,
+		DurationSeconds:   durationSeconds,
+		DurationVerified:  metadata.DurationVerified,
+		UploadStatus:      "none",
+		StorageVisibility: "private",
+		CreatorName: func() *string {
+			if authorName == "" {
+				return nil
+			}
+			return &authorName
+		}(),
+		CreatorID:       nil,
+		BroadcasterName: nil,
+		BroadcasterID:   nil,
+		GameID:          nil,
+		GameName:        nil,
+		ThumbnailURL: func() *string {
+			if resolvedThumbnail == "" {
+				return nil
+			}
+			return &resolvedThumbnail
+		}(),
+		ViewCount:               0,
+		DurationValidationError: nil,
+	}, nil
+}
+
+// BuildUploadStorageKey constructs the pending storage key for an uploaded clip.
+func BuildUploadStorageKey(userID, submissionID uuid.UUID, ext string) string {
+	return fmt.Sprintf("uploads/pending/%s/%s/original%s", userID.String(), submissionID.String(), ext)
 }
 
 // validateSubmissionInput validates and normalizes submission request fields
@@ -726,6 +1290,66 @@ func (s *SubmissionService) validateSubmissionInput(req *SubmitClipRequest) erro
 	return nil
 }
 
+// validateUploadSubmissionInput validates hosted upload submission metadata.
+func (s *SubmissionService) validateUploadSubmissionInput(req *SubmitUploadRequest) error {
+	if req == nil {
+		return &ValidationError{Field: "request", Message: "Upload request is required"}
+	}
+	if strings.TrimSpace(req.OriginalFilename) == "" {
+		return &ValidationError{Field: "file", Message: "Original filename is required"}
+	}
+	if strings.TrimSpace(req.MimeType) == "" {
+		return &ValidationError{Field: "mime_type", Message: "Mime type is required"}
+	}
+	if strings.TrimSpace(req.StorageProvider) == "" {
+		return &ValidationError{Field: "storage_provider", Message: "Storage provider is required"}
+	}
+	if strings.TrimSpace(req.StorageBucket) == "" {
+		return &ValidationError{Field: "storage_bucket", Message: "Storage bucket is required"}
+	}
+	if strings.TrimSpace(req.StorageKey) == "" {
+		return &ValidationError{Field: "storage_key", Message: "Storage key is required"}
+	}
+	if req.FileSizeBytes <= 0 {
+		return &ValidationError{Field: "file_size_bytes", Message: "File size must be greater than zero"}
+	}
+	if !req.DurationVerified {
+		return &ValidationError{Field: "duration_seconds", Message: "Upload duration must be verified"}
+	}
+	if req.DurationSeconds < 0 {
+		return &ValidationError{Field: "duration_seconds", Message: "Duration cannot be negative"}
+	}
+
+	if req.CustomTitle != nil {
+		title := strings.TrimSpace(*req.CustomTitle)
+		if title != "" {
+			if len(title) < 3 {
+				return &ValidationError{Field: "custom_title", Message: "Custom title must be at least 3 characters long"}
+			}
+			if len(title) > 200 {
+				return &ValidationError{Field: "custom_title", Message: "Custom title is too long (maximum 200 characters)"}
+			}
+			*req.CustomTitle = title
+		} else {
+			req.CustomTitle = nil
+		}
+	}
+
+	if req.SubmissionReason != nil {
+		reason := strings.TrimSpace(*req.SubmissionReason)
+		if reason != "" {
+			if len(reason) > 1000 {
+				return &ValidationError{Field: "submission_reason", Message: "Submission reason is too long (maximum 1000 characters)"}
+			}
+			*req.SubmissionReason = reason
+		} else {
+			req.SubmissionReason = nil
+		}
+	}
+
+	return nil
+}
+
 // isValidUsername checks if a username contains only valid characters
 func isValidUsername(username string) bool {
 	if username == "" {
@@ -763,6 +1387,33 @@ func (s *SubmissionService) normalizeClipURL(clipURLOrID string) (clipID string,
 	return clipID, normalizedURL
 }
 
+func (s *SubmissionService) resolveSubmissionClipInput(clipInput string) (DetectedSource, error) {
+	if strings.HasPrefix(strings.ToLower(clipInput), "http://") || strings.HasPrefix(strings.ToLower(clipInput), "https://") {
+		detectedSource, err := DetectClipSource(clipInput)
+		if err != nil {
+			return DetectedSource{}, &ValidationError{Field: "clip_url", Message: err.Error()}
+		}
+		return detectedSource, nil
+	}
+
+	// Preserve the existing direct-ID Twitch path.
+	clipID, normalizedURL := s.normalizeClipURL(clipInput)
+	if clipID == "" {
+		return DetectedSource{}, &ValidationError{
+			Field:   "clip_url",
+			Message: "Invalid Twitch clip URL. Please provide a valid URL like 'https://clips.twitch.tv/ClipID' or 'https://www.twitch.tv/username/clip/ClipID'",
+		}
+	}
+
+	return DetectedSource{
+		RawURL:        clipInput,
+		NormalizedURL: normalizedURL,
+		Platform:      SourcePlatformTwitch,
+		SourceType:    SourceTypeTwitch,
+		SourceID:      clipID,
+	}, nil
+}
+
 // checkRateLimits validates rate limits for submissions
 func (s *SubmissionService) checkRateLimits(ctx context.Context, userID uuid.UUID) error {
 	// Admins should not be rate limited for submissions
@@ -787,7 +1438,7 @@ func (s *SubmissionService) checkRateLimits(ctx context.Context, userID uuid.UUI
 		return &RateLimitError{
 			Message:    "rate_limit_exceeded",
 			Limit:      10,
-			Window:     3600,        // 1 hour in seconds
+			Window:     3600, // 1 hour in seconds
 			RetryAfter: retryAfter,
 		}
 	}
@@ -804,7 +1455,7 @@ func (s *SubmissionService) checkRateLimits(ctx context.Context, userID uuid.UUI
 		return &RateLimitError{
 			Message:    "rate_limit_exceeded",
 			Limit:      20,
-			Window:     86400,       // 24 hours in seconds
+			Window:     86400, // 24 hours in seconds
 			RetryAfter: retryAfter,
 		}
 	}
@@ -926,22 +1577,13 @@ func (s *SubmissionService) checkDuplicates(ctx context.Context, twitchClipID st
 	}
 	if exists {
 		// Track duplicate attempt
-		if s.abuseDetector != nil {
-			if err := s.abuseDetector.TrackDuplicateAttempt(ctx, userID, ip, twitchClipID); err != nil {
-				log.Printf("Failed to track duplicate attempt: %v", err)
-			}
-		}
+		s.trackDuplicateAttempt(ctx, userID, ip, twitchClipID)
 
 		// Emit moderation event
-		if s.moderationEvents != nil {
-			metadata := map[string]interface{}{
-				"clip_id": twitchClipID,
-				"reason":  "clip_already_exists",
-			}
-			if err := s.moderationEvents.EmitAbuseEvent(ctx, ModerationEventSubmissionDuplicate, userID, ip, metadata); err != nil {
-				log.Printf("Failed to emit duplicate event: %v", err)
-			}
-		}
+		s.emitDuplicateModerationEvent(ctx, userID, ip, map[string]interface{}{
+			"clip_id": twitchClipID,
+			"reason":  "clip_already_exists",
+		})
 
 		return &ValidationError{
 			Field:   "clip_url",
@@ -956,24 +1598,15 @@ func (s *SubmissionService) checkDuplicates(ctx context.Context, twitchClipID st
 	}
 	if submission != nil {
 		// Track duplicate attempt
-		if s.abuseDetector != nil {
-			if err := s.abuseDetector.TrackDuplicateAttempt(ctx, userID, ip, twitchClipID); err != nil {
-				log.Printf("Failed to track duplicate attempt: %v", err)
-			}
-		}
+		s.trackDuplicateAttempt(ctx, userID, ip, twitchClipID)
 
 		if submission.Status == "pending" {
 			// Emit moderation event for duplicate pending submission
-			if s.moderationEvents != nil {
-				metadata := map[string]interface{}{
-					"clip_id":       twitchClipID,
-					"reason":        "submission_pending",
-					"submission_id": submission.ID.String(),
-				}
-				if err := s.moderationEvents.EmitAbuseEvent(ctx, ModerationEventSubmissionDuplicate, userID, ip, metadata); err != nil {
-					log.Printf("Failed to emit duplicate event: %v", err)
-				}
-			}
+			s.emitDuplicateModerationEvent(ctx, userID, ip, map[string]interface{}{
+				"clip_id":       twitchClipID,
+				"reason":        "submission_pending",
+				"submission_id": submission.ID.String(),
+			})
 
 			return &ValidationError{
 				Field:   "clip_url",
@@ -1136,40 +1769,277 @@ func (s *SubmissionService) shouldAutoApprove(user *models.User) bool {
 	return false
 }
 
-// createClipFromSubmission creates a clip in the main clips table
-func (s *SubmissionService) createClipFromSubmission(ctx context.Context, submission *models.ClipSubmission) (uuid.UUID, error) {
+func clipSourceMetadata(submission *models.ClipSubmission) json.RawMessage {
+	if len(submission.SourceMetadata) == 0 {
+		return json.RawMessage(`{}`)
+	}
+	return submission.SourceMetadata
+}
+
+func clipSourceString(values ...any) string {
+	for _, value := range values {
+		switch v := value.(type) {
+		case string:
+			if trimmed := strings.TrimSpace(v); trimmed != "" {
+				return trimmed
+			}
+		case *string:
+			if v != nil && strings.TrimSpace(*v) != "" {
+				return strings.TrimSpace(*v)
+			}
+		}
+	}
+	return ""
+}
+
+func legacyTwitchClipIDHash(value string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(value)))
+	return hex.EncodeToString(sum[:])
+}
+
+func legacyExternalTwitchClipID(platform, sourceID, sourceURL string) string {
+	platform = strings.TrimSpace(platform)
+	if platform == "" {
+		platform = "unknown"
+	}
+	identity := strings.TrimSpace(sourceID)
+	if identity == "" {
+		identity = strings.TrimSpace(sourceURL)
+	}
+	return fmt.Sprintf("external:%s:%s", platform, legacyTwitchClipIDHash(identity))
+}
+
+func legacyUploadTwitchClipID(submissionID, storageKey string) string {
+	if id := strings.TrimSpace(submissionID); id != "" {
+		return "upload:" + id
+	}
+	return fmt.Sprintf("upload:%s", legacyTwitchClipIDHash(storageKey))
+}
+
+func clipDurationSeconds(submission *models.ClipSubmission) *int {
+	if submission.DurationSeconds != nil {
+		v := *submission.DurationSeconds
+		return &v
+	}
+	if submission.Duration != nil {
+		v := int(*submission.Duration)
+		return &v
+	}
+	return nil
+}
+
+func clipSourceFloat(duration *float64) *float64 {
+	if duration == nil {
+		return nil
+	}
+	v := *duration
+	return &v
+}
+
+func clipSourcePlatformValue(submission *models.ClipSubmission) string {
+	platform := strings.TrimSpace(submission.SourcePlatform)
+	if platform == "" {
+		return string(SourcePlatformTwitch)
+	}
+	return platform
+}
+
+func clipSourceURLFromSubmission(submission *models.ClipSubmission) *string {
+	if submission.SourceURL != nil && strings.TrimSpace(*submission.SourceURL) != "" {
+		url := strings.TrimSpace(*submission.SourceURL)
+		return &url
+	}
+	if strings.TrimSpace(submission.TwitchClipURL) != "" {
+		url := strings.TrimSpace(submission.TwitchClipURL)
+		return &url
+	}
+	return nil
+}
+
+func (s *SubmissionService) buildClipFromSubmission(ctx context.Context, submission *models.ClipSubmission) (*models.Clip, error) {
 	emptyStr := ""
 	title := utils.StringOrDefault(submission.CustomTitle, submission.Title)
 	creatorName := utils.StringOrDefault(submission.CreatorName, &emptyStr)
-	// Use BroadcasterNameOverride if provided, otherwise fall back to BroadcasterName
-	broadcasterNameFallback := utils.StringOrDefault(submission.BroadcasterName, &emptyStr)
+	broadcasterNameFallback := utils.StringOrDefault(submission.BroadcasterName, &creatorName)
 	broadcasterName := utils.StringOrDefault(submission.BroadcasterNameOverride, &broadcasterNameFallback)
-
+	metadata := clipSourceMetadata(submission)
 	now := time.Now()
-	clip := &models.Clip{
-		ID:                uuid.New(),
-		TwitchClipID:      submission.TwitchClipID,
-		TwitchClipURL:     submission.TwitchClipURL,
-		EmbedURL:          fmt.Sprintf("https://clips.twitch.tv/embed?clip=%s", submission.TwitchClipID),
-		Title:             title,
-		CreatorName:       creatorName,
-		CreatorID:         submission.CreatorID,
-		BroadcasterName:   broadcasterName,
-		BroadcasterID:     submission.BroadcasterID,
-		GameID:            submission.GameID,
-		GameName:          submission.GameName,
-		ThumbnailURL:      submission.ThumbnailURL,
-		Duration:          submission.Duration,
-		ViewCount:         submission.ViewCount,
-		CreatedAt:         now,
-		ImportedAt:        now,
-		IsNSFW:            submission.IsNSFW,
-		SubmittedByUserID: &submission.UserID,
-		SubmittedAt:       &submission.CreatedAt, // Use submission creation time as when it was submitted
+
+	buildCommon := func(sourceType string, sourcePlatform string, sourceID string, sourceURL *string) *models.Clip {
+		var clipSourceID *string
+		if strings.TrimSpace(sourceID) != "" {
+			clipSourceID = utils.StringPtr(strings.TrimSpace(sourceID))
+		}
+		return &models.Clip{
+			ID:                uuid.New(),
+			TwitchClipID:      submission.TwitchClipID,
+			TwitchClipURL:     submission.TwitchClipURL,
+			EmbedURL:          clipEmbedURL(sourceType, submission, sourceURL),
+			Title:             title,
+			CreatorName:       creatorName,
+			CreatorID:         submission.CreatorID,
+			BroadcasterName:   broadcasterName,
+			BroadcasterID:     submission.BroadcasterID,
+			GameID:            submission.GameID,
+			GameName:          submission.GameName,
+			Language:          nil,
+			ThumbnailURL:      submission.ThumbnailURL,
+			Duration:          clipSourceFloat(submission.Duration),
+			ViewCount:         submission.ViewCount,
+			CreatedAt:         now,
+			ImportedAt:        now,
+			IsNSFW:            submission.IsNSFW,
+			IsRemoved:         false,
+			SubmittedByUserID: &submission.UserID,
+			SubmittedAt:       &submission.CreatedAt,
+			SourceType:        sourceType,
+			SourcePlatform:    sourcePlatform,
+			SourceURL:         sourceURL,
+			SourceID:          clipSourceID,
+			SourceMetadata:    metadata,
+			DurationSeconds:   clipDurationSeconds(submission),
+			DurationVerified:  submission.DurationVerified,
+			StorageProvider:   submission.StorageProvider,
+			StorageBucket:     submission.StorageBucket,
+			StorageKey:        submission.StorageKey,
+			OriginalFilename:  submission.OriginalFilename,
+			MimeType:          submission.MimeType,
+			FileSizeBytes:     submission.FileSizeBytes,
+			StreamSource:      utils.StringPtr(sourceType),
+			Status:            utils.StringPtr("ready"),
+		}
 	}
 
-	// Create the clip
-	if err := s.clipRepo.Create(ctx, clip); err != nil {
+	switch strings.TrimSpace(submission.SourceType) {
+	case string(SourceTypeTwitch):
+		clip := buildCommon(string(SourceTypeTwitch), string(SourcePlatformTwitch), submission.TwitchClipID, clipSourceURLFromSubmission(submission))
+		clip.SourceID = utils.StringPtr(submission.TwitchClipID)
+		clip.EmbedURL = fmt.Sprintf("https://clips.twitch.tv/embed?clip=%s", submission.TwitchClipID)
+		clip.SourceURL = clipSourceURLFromSubmission(submission)
+		clip.StorageProvider = nil
+		clip.StorageBucket = nil
+		clip.StorageKey = nil
+		clip.OriginalFilename = nil
+		clip.MimeType = nil
+		clip.FileSizeBytes = nil
+		clip.VideoURL = nil
+		return clip, nil
+	case string(SourceTypeExternal):
+		clip := buildCommon(string(SourceTypeExternal), clipSourcePlatformValue(submission), clipSourceString(submission.SourceID, submission.TwitchClipID), clipSourceURLFromSubmission(submission))
+		clip.SourceURL = clipSourceURLFromSubmission(submission)
+		clip.SourceID = utils.StringPtr(clipSourceString(submission.SourceID, submission.TwitchClipID))
+		clip.TwitchClipURL = clipSourceString(clip.SourceURL, submission.TwitchClipURL)
+		clip.EmbedURL = clipMetadataEmbedURL(submission)
+		if clip.EmbedURL == "" {
+			if clip.SourceURL != nil {
+				clip.EmbedURL = *clip.SourceURL
+			} else {
+				clip.EmbedURL = clip.TwitchClipURL
+			}
+		}
+		clip.VideoURL = nil
+		clip.StorageProvider = nil
+		clip.StorageBucket = nil
+		clip.StorageKey = nil
+		clip.OriginalFilename = nil
+		clip.MimeType = nil
+		clip.FileSizeBytes = nil
+		return clip, nil
+	case "upload":
+		if s.clipStorage == nil {
+			return nil, fmt.Errorf("clip storage is not configured")
+		}
+		if submission.StorageKey == nil || strings.TrimSpace(*submission.StorageKey) == "" {
+			return nil, fmt.Errorf("upload submission is missing storage key")
+		}
+		storageKey := strings.TrimSpace(*submission.StorageKey)
+		if !storage.IsPublicClipStorageKey(storageKey) {
+			publicKey, ok := storage.PublicClipStorageKeyFromPendingKey(storageKey)
+			if !ok {
+				return nil, fmt.Errorf("upload submission storage key must use the pending prefix")
+			}
+			contentType := ""
+			if submission.MimeType != nil {
+				contentType = strings.TrimSpace(*submission.MimeType)
+			}
+			if _, err := s.clipStorage.CopyObject(ctx, storageKey, publicKey, contentType); err != nil {
+				return nil, fmt.Errorf("failed to promote uploaded clip: %w", err)
+			}
+			storageKey = publicKey
+		}
+		publicURL := strings.TrimSpace(s.clipStorage.PublicURL(storageKey))
+		if publicURL == "" {
+			return nil, fmt.Errorf("failed to resolve public url for upload")
+		}
+		clip := buildCommon("upload", "upload", clipSourceString(submission.SourceID, submission.TwitchClipID), utils.StringPtr(publicURL))
+		clip.TwitchClipURL = publicURL
+		clip.EmbedURL = publicURL
+		clip.VideoURL = utils.StringPtr(publicURL)
+		clip.SourceURL = utils.StringPtr(publicURL)
+		clip.StorageProvider = submission.StorageProvider
+		clip.StorageBucket = submission.StorageBucket
+		clip.StorageKey = utils.StringPtr(storageKey)
+		clip.OriginalFilename = submission.OriginalFilename
+		clip.MimeType = submission.MimeType
+		clip.FileSizeBytes = submission.FileSizeBytes
+		return clip, nil
+	default:
+		return nil, fmt.Errorf("unsupported submission source type %q", submission.SourceType)
+	}
+}
+
+func clipEmbedURL(sourceType string, submission *models.ClipSubmission, sourceURL *string) string {
+	switch sourceType {
+	case string(SourceTypeTwitch):
+		return fmt.Sprintf("https://clips.twitch.tv/embed?clip=%s", submission.TwitchClipID)
+	case string(SourceTypeExternal):
+		if embedURL := clipMetadataEmbedURL(submission); embedURL != "" {
+			return embedURL
+		}
+		if sourceURL != nil {
+			return *sourceURL
+		}
+		return submission.TwitchClipURL
+	case "upload":
+		if sourceURL != nil {
+			return *sourceURL
+		}
+		return submission.TwitchClipURL
+	default:
+		if sourceURL != nil {
+			return *sourceURL
+		}
+		return submission.TwitchClipURL
+	}
+}
+
+func clipMetadataEmbedURL(submission *models.ClipSubmission) string {
+	if len(submission.SourceMetadata) == 0 {
+		return ""
+	}
+	var metadata map[string]any
+	if err := json.Unmarshal(submission.SourceMetadata, &metadata); err != nil {
+		return ""
+	}
+	if raw, ok := metadata["embed_url"]; ok && raw != nil {
+		return strings.TrimSpace(fmt.Sprint(raw))
+	}
+	return ""
+}
+
+// createClipFromSubmission creates a clip in the main clips table
+func (s *SubmissionService) createClipFromSubmission(ctx context.Context, submission *models.ClipSubmission) (uuid.UUID, error) {
+	clip, err := s.buildClipFromSubmission(ctx, submission)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if clip.SourceType == string(SourceTypeTwitch) {
+		clip.StreamSource = utils.StringPtr(string(SourceTypeTwitch))
+		clip.Status = utils.StringPtr("ready")
+	}
+
+	if err := s.createClipRecord(ctx, clip); err != nil {
 		return uuid.Nil, err
 	}
 
@@ -1232,6 +2102,9 @@ func (s *SubmissionService) ApproveSubmission(ctx context.Context, submissionID,
 	if submission.Status != "pending" {
 		return fmt.Errorf("submission is not pending")
 	}
+	if err := s.ensureSubmissionCanBeApproved(submission); err != nil {
+		return err
+	}
 
 	// Create clip
 	clipID, err := s.createClipFromSubmission(ctx, submission)
@@ -1247,6 +2120,11 @@ func (s *SubmissionService) ApproveSubmission(ctx context.Context, submissionID,
 	// Update submission with clip ID
 	if err := s.submissionRepo.UpdateClipID(ctx, submissionID, clipID); err != nil {
 		return fmt.Errorf("failed to update submission clip ID: %w", err)
+	}
+	if s.clipStorage != nil && submission.StorageKey != nil {
+		if err := s.clipStorage.DeleteObject(ctx, strings.TrimSpace(*submission.StorageKey)); err != nil {
+			log.Printf("Failed to delete pending upload after approval: %v\n", err)
+		}
 	}
 
 	// Create audit log
@@ -1386,6 +2264,9 @@ func (s *SubmissionService) BulkApproveSubmissions(ctx context.Context, submissi
 		if submission.Status != "pending" {
 			return fmt.Errorf("submission %s is not pending", submission.ID)
 		}
+		if err := s.ensureSubmissionCanBeApproved(submission); err != nil {
+			return err
+		}
 	}
 
 	// Create clips for all submissions
@@ -1398,6 +2279,16 @@ func (s *SubmissionService) BulkApproveSubmissions(ctx context.Context, submissi
 	// Bulk update status
 	if err := s.submissionRepo.BulkUpdateStatus(ctx, submissionIDs, "approved", reviewerID, nil); err != nil {
 		return fmt.Errorf("failed to bulk update submission status: %w", err)
+	}
+	if s.clipStorage != nil {
+		for _, submission := range submissions {
+			if submission.StorageKey == nil {
+				continue
+			}
+			if err := s.clipStorage.DeleteObject(ctx, strings.TrimSpace(*submission.StorageKey)); err != nil {
+				log.Printf("Failed to delete pending upload after bulk approval for submission %s: %v\n", submission.ID, err)
+			}
+		}
 	}
 
 	// Create audit log

@@ -18,12 +18,15 @@ import {
     checkClipStatus,
     getUserSubmissions,
     submitClip,
+    submitClipUpload,
     getClipMetadata,
 } from '../lib/submission-api';
 import { getPublicConfig } from '../lib/config-api';
 import { trackEvent, SubmissionEvents } from '../lib/telemetry';
 import type {
     ClipSubmission,
+    ClipSourcePlatform,
+    ClipSourceType,
     SubmitClipRequest,
     RateLimitErrorResponse,
 } from '../types/submission';
@@ -99,20 +102,123 @@ function extractClipInfo(responseData: unknown): {
     return { clipId, clipSlug };
 }
 
+const SOURCE_SELECTOR_OPTIONS: Array<{
+    value: ClipSourceType;
+    label: string;
+    description: string;
+}> = [
+    {
+        value: 'twitch',
+        label: 'Twitch clip URL',
+        description: 'Metadata preview, duplicate checks, and claim flow stay enabled.',
+    },
+    {
+        value: 'external',
+        label: 'External URL',
+        description: 'Use supported Kick, TikTok, YouTube, or YouTube Shorts links.',
+    },
+    {
+        value: 'upload',
+        label: 'Upload video',
+        description: 'Upload a file for moderator review before publication.',
+    },
+];
+
+function createEmptyFormData(): SubmitClipRequest {
+    return {
+        clip_url: '',
+        source_type: 'twitch',
+        custom_title: '',
+        is_nsfw: false,
+        submission_reason: '',
+        broadcaster_name_override: '',
+    };
+}
+
+function formatFileSize(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+        return '0 B';
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / 1024 ** index;
+    return `${value >= 10 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
+}
+
+function normalizeUrl(value: string): string {
+    return value.trim();
+}
+
+function getExternalSourcePlatform(urlString: string): ClipSourcePlatform | null {
+    try {
+        const parsed = new URL(urlString);
+        const hostname = parsed.hostname.replace(/^www\./, '').toLowerCase();
+        const pathname = parsed.pathname.toLowerCase();
+
+        if (hostname === 'kick.com') {
+            return 'kick';
+        }
+
+        if (hostname === 'tiktok.com' || hostname.endsWith('.tiktok.com')) {
+            return 'tiktok';
+        }
+
+        if (
+            hostname === 'youtube.com' ||
+            hostname.endsWith('.youtube.com') ||
+            hostname === 'youtu.be'
+        ) {
+            return pathname.startsWith('/shorts/') ? 'youtube_shorts' : 'youtube';
+        }
+
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+function validateSourceUrl(sourceType: ClipSourceType, value: string): string | null {
+    const url = normalizeUrl(value);
+
+    if (!url) {
+        return null;
+    }
+
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            return 'Invalid URL format - please enter a valid URL';
+        }
+    } catch {
+        return 'Invalid URL format - please enter a valid URL';
+    }
+
+    if (sourceType === 'twitch') {
+        const twitchClipPattern = /^(https?:\/\/)?(clips\.twitch\.tv\/[a-zA-Z0-9_-]+|www\.twitch\.tv\/[^/]+\/clip\/[a-zA-Z0-9_-]+|twitch\.tv\/[^/]+\/clip\/[a-zA-Z0-9_-]+)$/;
+        return twitchClipPattern.test(url)
+            ? null
+            : 'Please enter a valid Twitch clip URL';
+    }
+
+    return getExternalSourcePlatform(url)
+        ? null
+        : 'Use a supported Kick, TikTok, YouTube, or YouTube Shorts URL';
+}
+
 export function SubmitClipPage() {
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
     const [fromDiscover, setFromDiscover] = useState(false);
-    const [formData, setFormData] = useState<SubmitClipRequest>({
-        clip_url: '',
-        custom_title: '',
-        is_nsfw: false,
-        submission_reason: '',
-        broadcaster_name_override: '',
-    });
+    const [formData, setFormData] = useState<SubmitClipRequest>(
+        createEmptyFormData(),
+    );
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [tagQueryLoading, setTagQueryLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -133,6 +239,11 @@ export function SubmitClipPage() {
     const [karmaRequired, setKarmaRequired] = useState(100);
     const [karmaRequirementEnabled, setKarmaRequirementEnabled] =
         useState(true);
+    const selectedSource = formData.source_type ?? 'twitch';
+    const selectedExternalPlatform =
+        selectedSource === 'external' && formData.clip_url ?
+            getExternalSourcePlatform(formData.clip_url)
+        :   null;
 
     // Draft management
     const draft = useSubmissionDraft();
@@ -187,17 +298,23 @@ export function SubmitClipPage() {
             setFormData(prev => ({
                 ...prev,
                 clip_url: state.clipUrl!,
+                source_type: 'twitch',
             }));
         } else if (urlFromQuery) {
             setFormData(prev => ({
                 ...prev,
                 clip_url: urlFromQuery,
+                source_type: 'twitch',
             }));
         } else {
             // Try to load draft if no state from navigation
             const savedDraft = draft.loadDraft();
             if (savedDraft) {
-                setFormData(savedDraft.formData);
+                setFormData({
+                    ...createEmptyFormData(),
+                    ...savedDraft.formData,
+                    source_type: savedDraft.formData.source_type ?? 'twitch',
+                });
                 setSelectedTags(savedDraft.selectedTags);
                 setShowDraftRestored(true);
                 // Auto-hide the restored message after 5 seconds
@@ -298,6 +415,11 @@ export function SubmitClipPage() {
     // Auto-set NSFW if clip already marked (best effort) when URL changes
     // Also check for duplicates and show error proactively
     useEffect(() => {
+        if (selectedSource !== 'twitch') {
+            setDuplicateError(null);
+            return;
+        }
+
         const clipID = extractClipIDFromURL(formData.clip_url);
 
         // Clear duplicate error when URL is empty or invalid
@@ -336,11 +458,11 @@ export function SubmitClipPage() {
         return () => {
             isActive = false;
         };
-    }, [formData.clip_url]);
+    }, [formData.clip_url, selectedSource]);
 
     // Auto-fill title and tags when clip URL is pasted
     useEffect(() => {
-        if (!formData.clip_url) return;
+        if (selectedSource !== 'twitch' || !formData.clip_url) return;
 
         let isActive = true;
         getClipMetadata(formData.clip_url)
@@ -379,6 +501,7 @@ export function SubmitClipPage() {
         formData.custom_title,
         selectedTags.length,
         slugify,
+        selectedSource,
     ]);
 
     // Auto-save draft every 30 seconds when form has content
@@ -413,25 +536,91 @@ export function SubmitClipPage() {
 
     const tagsToSubmit = selectedTags.map(tag => tag.slug || slugify(tag.name));
 
+    const handleSourceChange = (nextSource: ClipSourceType) => {
+        setFormData(prev => ({
+            ...prev,
+            source_type: nextSource,
+        }));
+        setError(null);
+        setUrlError(null);
+        setUploadError(null);
+        setDuplicateError(null);
+        setUploadProgress(null);
+        if (nextSource === 'upload') {
+            setSelectedTags([]);
+        } else {
+            setUploadFile(null);
+        }
+    };
+
+    const handleUrlChange = (value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            clip_url: value,
+        }));
+        setError(null);
+        setUrlError(null);
+        setDuplicateError(null);
+    };
+
+    const handleUrlBlur = (value: string) => {
+        if (!value) {
+            setUrlError(null);
+            return;
+        }
+
+        const validationError = validateSourceUrl(selectedSource, value);
+        setUrlError(validationError);
+    };
+
+    const handleUploadChange = (file: File | null) => {
+        setUploadFile(file);
+        setError(null);
+        setUploadError(null);
+        setUploadProgress(null);
+    };
+
+    const resetSubmissionForm = () => {
+        setFormData(createEmptyFormData());
+        setSelectedTags([]);
+        setUploadFile(null);
+        setUploadProgress(null);
+        setUploadError(null);
+        setUrlError(null);
+        setDuplicateError(null);
+        setError(null);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate URL format before submission using URL constructor
-        if (formData.clip_url) {
-            try {
-                const url = new URL(formData.clip_url);
-                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-                    setUrlError(
-                        'Invalid URL format - please enter a valid URL',
-                    );
-                    return;
-                }
-            } catch {
-                setUrlError('Invalid URL format - please enter a valid URL');
+        if (selectedSource === 'upload') {
+            if (!uploadFile) {
+                setUploadError('Please choose a video file to upload');
+                return;
+            }
+        } else {
+            const normalizedClipUrl = normalizeUrl(formData.clip_url);
+            if (!normalizedClipUrl) {
+                setUrlError(
+                    selectedSource === 'external' ?
+                        'Please enter an external URL'
+                    :   'Please enter a Twitch clip URL',
+                );
+                return;
+            }
+
+            const validationError = validateSourceUrl(
+                selectedSource,
+                normalizedClipUrl,
+            );
+            if (validationError) {
+                setUrlError(validationError);
                 return;
             }
         }
         setUrlError(null);
+        setUploadError(null);
 
         if (!canSubmit) {
             if (karmaRequirementEnabled) {
@@ -448,18 +637,56 @@ export function SubmitClipPage() {
         setSubmittedClip(null);
         setDuplicateError(null);
         setRateLimitError(null);
+        setUploadProgress(selectedSource === 'upload' ? 0 : null);
         setIsSubmitting(true);
 
         try {
-            const response = await submitClip({
-                ...formData,
-                tags: tagsToSubmit,
-                // omit broadcaster override if empty to let backend auto-detect
-                broadcaster_name_override:
-                    formData.broadcaster_name_override?.trim() ?
-                        formData.broadcaster_name_override
-                    :   undefined,
-            });
+            const response =
+                selectedSource === 'upload' && uploadFile ?
+                    await submitClipUpload(
+                        {
+                            file: uploadFile,
+                            custom_title: formData.custom_title?.trim() || '',
+                            is_nsfw: formData.is_nsfw,
+                            submission_reason:
+                                formData.submission_reason?.trim() || '',
+                        },
+                        event => {
+                            const progressFraction =
+                                typeof event.progress === 'number' ?
+                                    event.progress
+                                : event.total && event.total > 0 ?
+                                    event.loaded / event.total
+                                :   null;
+
+                            if (progressFraction !== null) {
+                                setUploadProgress(
+                                    Math.min(
+                                        100,
+                                        Math.round(progressFraction * 100),
+                                    ),
+                                );
+                            }
+                        },
+                    )
+                :   await submitClip({
+                        ...formData,
+                        clip_url: normalizeUrl(formData.clip_url),
+                        source_type: selectedSource,
+                        source_platform:
+                            selectedSource === 'twitch' ? 'twitch' : selectedExternalPlatform ?? undefined,
+                        source_url: normalizeUrl(formData.clip_url),
+                        source_id:
+                            selectedSource === 'twitch' ?
+                                extractClipIDFromURL(formData.clip_url) ?? undefined
+                            :   undefined,
+                        tags: tagsToSubmit,
+                        // omit broadcaster override if empty to let backend auto-detect
+                        broadcaster_name_override:
+                            formData.broadcaster_name_override?.trim() ?
+                                formData.broadcaster_name_override
+                            :   undefined,
+                    });
             // Set the submitted clip to show confirmation
             setSubmittedClip(response.submission);
 
@@ -478,14 +705,7 @@ export function SubmitClipPage() {
             queryClient.invalidateQueries({ queryKey: ['scraped-clips'] });
 
             // Reset form
-            setFormData({
-                clip_url: '',
-                custom_title: '',
-                is_nsfw: false,
-                submission_reason: '',
-                broadcaster_name_override: '',
-            });
-            setSelectedTags([]);
+            resetSubmissionForm();
         } catch (err: unknown) {
             const error = err as {
                 response?: {
@@ -568,6 +788,11 @@ export function SubmitClipPage() {
             } else {
                 setError(errorMessage);
                 setDuplicateError(null);
+            }
+
+            if (selectedSource === 'upload') {
+                setUploadError(errorMessage);
+                setUploadProgress(null);
             }
 
             // Track failed submission
@@ -755,14 +980,7 @@ export function SubmitClipPage() {
                             size='sm'
                             onClick={() => {
                                 draft.clearDraft();
-                                setFormData({
-                                    clip_url: '',
-                                    custom_title: '',
-                                    is_nsfw: false,
-                                    submission_reason: '',
-                                    broadcaster_name_override: '',
-                                });
-                                setSelectedTags([]);
+                                resetSubmissionForm();
                             }}
                             className='text-blue-400 hover:text-blue-300'
                         >
@@ -774,65 +992,172 @@ export function SubmitClipPage() {
                 <Card className='p-6 mb-8'>
                     <form onSubmit={handleSubmit} noValidate>
                         <div className='space-y-6'>
-                            {/* Clip URL Input */}
+                            {/* Source Selector */}
                             <div>
-                                <label
-                                    htmlFor='clip_url'
-                                    className='block text-sm font-medium mb-2'
-                                >
-                                    Twitch Clip URL{' '}
-                                    <span className='text-red-500'>*</span>
+                                <label className='block text-sm font-medium mb-3'>
+                                    Clip Source <span className='text-red-500'>*</span>
                                 </label>
-                                <Input
-                                    id='clip_url'
-                                    name='url'
-                                    type='url'
-                                    value={formData.clip_url}
-                                    onChange={e => {
-                                        setFormData({
-                                            ...formData,
-                                            clip_url: e.target.value,
-                                        });
-                                        // Clear URL error when user types
-                                        if (urlError) setUrlError(null);
-                                    }}
-                                    onBlur={e => {
-                                        // Validate URL on blur for better UX
-                                        if (e.target.value) {
-                                            try {
-                                                const url = new URL(
-                                                    e.target.value,
-                                                );
-                                                if (
-                                                    url.protocol !== 'http:' &&
-                                                    url.protocol !== 'https:'
-                                                ) {
-                                                    setUrlError(
-                                                        'Invalid URL format - please enter a valid URL',
-                                                    );
-                                                } else {
-                                                    setUrlError(null);
+                                <div
+                                    className='grid gap-3 md:grid-cols-3'
+                                    role='radiogroup'
+                                    aria-label='Clip source'
+                                >
+                                    {SOURCE_SELECTOR_OPTIONS.map(option => {
+                                        const selected =
+                                            selectedSource === option.value;
+
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type='button'
+                                                role='radio'
+                                                aria-checked={selected}
+                                                disabled={!canSubmit || isSubmitting}
+                                                onClick={() =>
+                                                    handleSourceChange(option.value)
                                                 }
-                                            } catch {
-                                                setUrlError(
-                                                    'Invalid URL format - please enter a valid URL',
-                                                );
-                                            }
-                                        }
-                                    }}
-                                    placeholder='https://clips.twitch.tv/...'
-                                    required
-                                    disabled={!canSubmit}
-                                />
-                                {urlError && (
-                                    <p className='text-xs text-red-500 mt-1'>
-                                        {urlError}
-                                    </p>
-                                )}
-                                <p className='text-xs text-muted-foreground mt-1'>
-                                    Paste the full URL of a Twitch clip
-                                </p>
+                                                className={`rounded-xl border p-4 text-left transition-all duration-200 ${
+                                                    selected ?
+                                                        'border-primary-500 bg-primary-500/10 shadow-sm'
+                                                    :   'border-border bg-background hover:border-primary-300 hover:bg-primary-50/40 dark:hover:bg-primary-950/20'
+                                                } ${!canSubmit || isSubmitting ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            >
+                                                <div className='flex items-start justify-between gap-3'>
+                                                    <div>
+                                                        <p className='font-medium'>
+                                                            {option.label}
+                                                        </p>
+                                                        <p className='mt-1 text-xs text-muted-foreground leading-relaxed'>
+                                                            {option.description}
+                                                        </p>
+                                                    </div>
+                                                    <span
+                                                        className={`mt-0.5 h-2.5 w-2.5 rounded-full border ${
+                                                            selected ?
+                                                                'border-primary-500 bg-primary-500'
+                                                            :   'border-muted-foreground/30'
+                                                        }`}
+                                                    />
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
+
+                            {/* Source-specific URL / Upload Control */}
+                            {selectedSource !== 'upload' ? (
+                                <div>
+                                    <label
+                                        htmlFor='clip_url'
+                                        className='block text-sm font-medium mb-2'
+                                    >
+                                        {selectedSource === 'external' ?
+                                            'External URL'
+                                        :   'Twitch Clip URL'}{' '}
+                                        <span className='text-red-500'>*</span>
+                                    </label>
+                                    <Input
+                                        id='clip_url'
+                                        name='url'
+                                        type='url'
+                                        value={formData.clip_url}
+                                        onChange={e => {
+                                            handleUrlChange(e.target.value);
+                                        }}
+                                        onBlur={e => {
+                                            handleUrlBlur(e.target.value);
+                                        }}
+                                        placeholder={
+                                            selectedSource === 'external' ?
+                                                'https://www.youtube.com/watch?v=...'
+                                            :   'https://clips.twitch.tv/...'
+                                        }
+                                        required
+                                        disabled={!canSubmit || isSubmitting}
+                                    />
+                                    {urlError && (
+                                        <p className='text-xs text-red-500 mt-1'>
+                                            {urlError}
+                                        </p>
+                                    )}
+                                    <p className='text-xs text-muted-foreground mt-1'>
+                                        {selectedSource === 'external' ?
+                                            'Supported platforms: Kick, TikTok, YouTube, and YouTube Shorts.'
+                                        :   'Paste the full URL of a Twitch clip.'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className='space-y-3'>
+                                    <div>
+                                        <label
+                                            htmlFor='clip_file'
+                                            className='block text-sm font-medium mb-2'
+                                        >
+                                            Video File <span className='text-red-500'>*</span>
+                                        </label>
+                                        <Input
+                                            id='clip_file'
+                                            type='file'
+                                            accept='video/*'
+                                            disabled={!canSubmit || isSubmitting}
+                                            onChange={e =>
+                                                handleUploadChange(
+                                                    e.currentTarget.files?.[0] ?? null,
+                                                )
+                                            }
+                                            className='cursor-pointer file:mr-4 file:rounded-md file:border-0 file:bg-primary-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-primary-600'
+                                        />
+                                    </div>
+                                    <div className='rounded-xl border border-border/70 bg-background-secondary/40 p-4 text-sm text-muted-foreground space-y-2'>
+                                        <p>
+                                            Maximum duration: 10 minutes. Recommended: 7 minutes or less.
+                                        </p>
+                                        <p>
+                                            Maximum upload size is configured by the server. 1080p60 is allowed if it fits within the duration and size limits.
+                                        </p>
+                                        <p>
+                                            Uploads require moderator approval before publication.
+                                        </p>
+                                    </div>
+                                    {uploadFile && (
+                                        <div className='rounded-xl border border-primary-500/20 bg-primary-500/5 p-4'>
+                                            <div className='flex items-start justify-between gap-4'>
+                                                <div className='min-w-0'>
+                                                    <p className='font-medium truncate'>
+                                                        {uploadFile.name}
+                                                    </p>
+                                                    <p className='text-xs text-muted-foreground mt-1'>
+                                                        {formatFileSize(uploadFile.size)}
+                                                        {uploadFile.type ? ` • ${uploadFile.type}` : ''}
+                                                    </p>
+                                                </div>
+                                                <span className='rounded-full border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-medium text-primary-500'>
+                                                    Ready to upload
+                                                </span>
+                                            </div>
+                                            {uploadProgress !== null && isSubmitting && (
+                                                <div className='mt-4'>
+                                                    <div className='h-2 overflow-hidden rounded-full bg-muted/80'>
+                                                        <div
+                                                            className='h-full rounded-full bg-primary-500 transition-all duration-200'
+                                                            style={{ width: `${uploadProgress}%` }}
+                                                        />
+                                                    </div>
+                                                    <p className='mt-2 text-xs text-muted-foreground'>
+                                                        {uploadProgress}% uploaded
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {uploadError && (
+                                        <p className='text-xs text-red-500'>
+                                            {uploadError}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Custom Title */}
                             <div>
@@ -853,33 +1178,39 @@ export function SubmitClipPage() {
                                         })
                                     }
                                     placeholder='Give your clip a catchy title (optional)'
-                                    disabled={!canSubmit}
+                                    disabled={!canSubmit || isSubmitting}
                                 />
                             </div>
 
                             {/* Tags */}
-                            <div>
-                                <label
-                                    htmlFor='tags'
-                                    className='block text-sm font-medium mb-2'
-                                >
-                                    Tags (Optional)
-                                </label>
-                                <TagSelector
-                                    selectedTags={selectedTags}
-                                    onTagsChange={handleTagsChange}
-                                    maxTags={10}
-                                    allowCreate
-                                    onCreateTag={handleCreateTag}
-                                    helperText='Search popular tags or add your own. New tags will be saved.'
-                                    placeholder='Search or add tags...'
-                                />
-                                {tagQueryLoading && (
-                                    <p className='text-xs text-muted-foreground mt-1'>
-                                        Creating tag...
-                                    </p>
-                                )}
-                            </div>
+                            {selectedSource !== 'upload' ? (
+                                <div>
+                                    <label
+                                        htmlFor='tags'
+                                        className='block text-sm font-medium mb-2'
+                                    >
+                                        Tags (Optional)
+                                    </label>
+                                    <TagSelector
+                                        selectedTags={selectedTags}
+                                        onTagsChange={handleTagsChange}
+                                        maxTags={10}
+                                        allowCreate
+                                        onCreateTag={handleCreateTag}
+                                        helperText='Search popular tags or add your own. New tags will be saved.'
+                                        placeholder='Search or add tags...'
+                                    />
+                                    {tagQueryLoading && (
+                                        <p className='text-xs text-muted-foreground mt-1'>
+                                            Creating tag...
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className='rounded-xl border border-border/70 bg-background-secondary/40 p-4 text-sm text-muted-foreground'>
+                                    Tags are available for URL submissions only.
+                                </div>
+                            )}
 
                             {/* NSFW Checkbox */}
                             <div className='flex items-center gap-2'>
@@ -892,7 +1223,7 @@ export function SubmitClipPage() {
                                             is_nsfw: e.target.checked,
                                         })
                                     }
-                                    disabled={!canSubmit}
+                                    disabled={!canSubmit || isSubmitting}
                                 />
                                 <label
                                     htmlFor='is_nsfw'
@@ -921,7 +1252,7 @@ export function SubmitClipPage() {
                                     }
                                     placeholder='Why is this clip noteworthy?'
                                     rows={3}
-                                    disabled={!canSubmit}
+                                    disabled={!canSubmit || isSubmitting}
                                 />
                             </div>
 
@@ -932,12 +1263,18 @@ export function SubmitClipPage() {
                                     disabled={
                                         !canSubmit ||
                                         isSubmitting ||
-                                        !formData.clip_url
+                                        (selectedSource === 'upload' ?
+                                            !uploadFile
+                                        :   !normalizeUrl(formData.clip_url))
                                     }
                                     className='flex-1'
                                 >
                                     {isSubmitting ?
-                                        'Submitting...'
+                                        selectedSource === 'upload' ?
+                                            'Uploading...'
+                                        :   'Submitting...'
+                                    :   selectedSource === 'upload' ?
+                                        'Upload Clip'
                                     :   'Submit Clip'}
                                 </Button>
                                 <Button

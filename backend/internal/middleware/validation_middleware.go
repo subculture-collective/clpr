@@ -133,7 +133,9 @@ func InputValidationMiddleware() gin.HandlerFunc {
 		}
 
 		// Limit request body size
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestBodySize)
+		if !isHostedUploadRoute(c) {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestBodySize)
+		}
 
 		c.Next()
 	}
@@ -251,6 +253,18 @@ func isStandardHeader(name string) bool {
 	}
 
 	return false
+}
+
+func isHostedUploadRoute(c *gin.Context) bool {
+	if c == nil || c.Request == nil {
+		return false
+	}
+
+	if fullPath := c.FullPath(); fullPath == "/api/v1/submissions/upload" || fullPath == "/submissions/upload" {
+		return true
+	}
+
+	return strings.HasSuffix(c.Request.URL.Path, "/submissions/upload")
 }
 
 // NewSanitizer creates a new input sanitizer

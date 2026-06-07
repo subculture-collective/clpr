@@ -267,6 +267,24 @@ describe('CommentItem - Collapse/Expand Badge', () => {
   });
 
   describe('Deleted/removed comments', () => {
+    it('should show creator restriction message for hidden comments', () => {
+      const comment = createMockComment({
+        is_hidden_by_creator_moderation: true,
+        creator_moderation_message: 'Backend supplied moderation message that must be ignored',
+        child_count: 0,
+        replies: [],
+      });
+
+      renderWithClient(<CommentItem comment={comment} clipId="clip-1" />);
+
+      expect(
+        screen.getByText(
+          "This comment is hidden because your account is restricted from interacting with this creator's content.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Test comment')).not.toBeInTheDocument();
+    });
+
     it('should show collapse badge for deleted comment with replies', () => {
       const comment = createMockComment({
         is_deleted: true,

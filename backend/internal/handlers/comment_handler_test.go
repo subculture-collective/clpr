@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -72,5 +73,26 @@ func TestGetReplies_InvalidCommentID(t *testing.T) {
 
 	if _, ok := response["error"]; !ok {
 		t.Error("expected error field in response")
+	}
+}
+
+func TestWriteCreatorModerationError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	httpRecorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(httpRecorder)
+
+	if handled := writeCreatorModerationError(c, &services.CreatorModerationError{Message: "restricted"}); !handled {
+		t.Fatal("expected moderation error to be handled")
+	}
+	if httpRecorder.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want %d", httpRecorder.Code, http.StatusForbidden)
+	}
+
+	var response map[string]any
+	if err := json.Unmarshal(httpRecorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("response is not valid JSON: %v", err)
+	}
+	if response["error"] != "restricted" {
+		t.Fatalf("error = %v, want restricted", response["error"])
 	}
 }

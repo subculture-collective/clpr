@@ -37,6 +37,8 @@ type Config struct {
 	Toxicity        ToxicityConfig
 	NSFW            NSFWConfig
 	Telemetry       TelemetryConfig
+	ClipSource      ClipSourceConfig
+	ClipStorage     ClipStorageConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -197,6 +199,27 @@ type RateLimitConfig struct {
 // SecurityConfig holds security-related configuration
 type SecurityConfig struct {
 	MFAEncryptionKey string // 32-byte key for AES-256 encryption of MFA secrets
+}
+
+// ClipSourceConfig holds clip source limits and upload moderation configuration
+type ClipSourceConfig struct {
+	MaxDurationSeconds         int64    `mapstructure:"max_duration_seconds"`
+	RecommendedDurationSeconds int64    `mapstructure:"recommended_duration_seconds"`
+	MaxUploadBytes             int64    `mapstructure:"max_upload_bytes"`
+	AllowedUploadMimeTypes     []string `mapstructure:"allowed_upload_mime_types"`
+	RequireModerationForUpload bool     `mapstructure:"require_moderation_for_upload"`
+}
+
+// ClipStorageConfig holds S3-compatible clip storage configuration
+type ClipStorageConfig struct {
+	Provider       string `mapstructure:"provider"`
+	Endpoint       string `mapstructure:"endpoint"`
+	Bucket         string `mapstructure:"bucket"`
+	Region         string `mapstructure:"region"`
+	AccessKey      string `mapstructure:"access_key"`
+	SecretKey      string `mapstructure:"secret_key"`
+	ForcePathStyle bool   `mapstructure:"force_path_style"`
+	PublicBaseURL  string `mapstructure:"public_base_url"`
 }
 
 // QueryLimitsConfig holds database query limits
@@ -577,6 +600,23 @@ func Load() (*Config, error) {
 			TracesSampleRate: clampFloat(getEnvFloat("TELEMETRY_TRACES_SAMPLE_RATE", 0.1), 0.0, 1.0),
 			Environment:      getEnv("TELEMETRY_ENVIRONMENT", getEnv("ENVIRONMENT", "development")),
 		},
+		ClipSource: ClipSourceConfig{
+			MaxDurationSeconds:         getEnvInt64("CLIP_MAX_DURATION_SECONDS", 600),
+			RecommendedDurationSeconds: getEnvInt64("CLIP_RECOMMENDED_DURATION_SECONDS", 420),
+			MaxUploadBytes:             getEnvInt64("CLIP_MAX_UPLOAD_BYTES", 1073741824),
+			AllowedUploadMimeTypes:     parseCommaSeparatedList(getEnv("CLIP_ALLOWED_UPLOAD_MIME_TYPES", "video/mp4,video/webm,video/quicktime")),
+			RequireModerationForUpload: getEnvBool("CLIP_REQUIRE_MODERATION_FOR_UPLOAD", true),
+		},
+		ClipStorage: ClipStorageConfig{
+			Provider:       getEnv("CLIP_STORAGE_PROVIDER", "s3"),
+			Endpoint:       getEnv("CLIP_STORAGE_ENDPOINT", ""),
+			Bucket:         getEnv("CLIP_STORAGE_BUCKET", ""),
+			Region:         getEnv("CLIP_STORAGE_REGION", "us-east-1"),
+			AccessKey:      getEnv("CLIP_STORAGE_ACCESS_KEY", ""),
+			SecretKey:      getEnv("CLIP_STORAGE_SECRET_KEY", ""),
+			ForcePathStyle: getEnvBool("CLIP_STORAGE_FORCE_PATH_STYLE", true),
+			PublicBaseURL:  getEnv("CLIP_STORAGE_PUBLIC_BASE_URL", ""),
+		},
 	}
 
 	return config, nil
@@ -617,6 +657,16 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
+}
+
+// getEnvInt64 gets an int64 environment variable with a fallback default value
+func getEnvInt64(key string, defaultValue int64) int64 {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
 			return intVal
 		}
 	}
