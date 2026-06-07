@@ -1266,7 +1266,7 @@ func (r *ClipRepository) ListClipsByBroadcaster(ctx context.Context, broadcaster
 	countQuery := `
 		SELECT COUNT(*)
 		FROM clips
-		WHERE broadcaster_id = $1 AND is_removed = false
+		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND submitted_by_user_id IS NOT NULL
 	`
 	var total int
 	if err := r.pool.QueryRow(ctx, countQuery, broadcasterID).Scan(&total); err != nil {
@@ -1293,7 +1293,7 @@ func (r *ClipRepository) ListClipsByBroadcaster(ctx context.Context, broadcaster
 			favorite_count, is_featured, is_nsfw, is_removed, removed_reason, is_hidden,
 			submitted_by_user_id, submitted_at
 		FROM clips
-		WHERE broadcaster_id = $1 AND is_removed = false
+		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND submitted_by_user_id IS NOT NULL
 		ORDER BY %s
 		LIMIT $2 OFFSET $3
 	`, orderBy)

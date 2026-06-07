@@ -217,7 +217,7 @@ func runScraper(ctx context.Context, db *pgxpool.Pool, twitchClient *twitch.Clie
 // getBroadcastersFromSubmissions queries the database for broadcasters with recent submissions
 func getBroadcastersFromSubmissions(ctx context.Context, db *pgxpool.Pool, lookbackDays int) ([]string, error) {
 	query := `
-		SELECT DISTINCT broadcaster_name
+		SELECT broadcaster_name
 		FROM clip_submissions
 		WHERE created_at > NOW() - $1 * INTERVAL '1 day'
 			AND broadcaster_name IS NOT NULL

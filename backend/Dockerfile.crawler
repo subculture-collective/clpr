@@ -1,0 +1,42 @@
+# Multi-stage Dockerfile for clip discovery crawler
+
+# Build stage
+FROM golang:1.24-alpine AS builder
+
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o /app/bin/scraper ./scripts/scrape_clips.go
+
+# Final stage
+FROM alpine:3.21
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=builder /app/bin/scraper .
+
+# Default: run every 30 minutes
+ENV SCRAPE_INTERVAL=1800
+ENV SCRAPE_MIN_VIEWS=50
+ENV SCRAPE_MAX_AGE_DAYS=7
+ENV SCRAPE_BATCH_SIZE=50
+ENV SCRAPE_BROADCASTERS=""
+
+CMD sh -c 'echo "Crawler starting — interval=${SCRAPE_INTERVAL}s"; while true; do \
+  echo "=== $(date -Iseconds) Starting scrape ==="; \
+  if [ -n "$SCRAPE_BROADCASTERS" ]; then \
+    ./scraper -min-views "$SCRAPE_MIN_VIEWS" -max-age-days "$SCRAPE_MAX_AGE_DAYS" -batch-size "$SCRAPE_BATCH_SIZE" -broadcasters "$SCRAPE_BROADCASTERS"; \
+  else \
+    ./scraper -min-views "$SCRAPE_MIN_VIEWS" -max-age-days "$SCRAPE_MAX_AGE_DAYS" -batch-size "$SCRAPE_BATCH_SIZE"; \
+  fi; \
+  echo "=== Sleeping ${SCRAPE_INTERVAL}s ==="; \
+  sleep "$SCRAPE_INTERVAL"; \
+done'

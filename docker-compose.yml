@@ -1,73 +1,65 @@
+networks:
+  projects:
+    name: projects
+    external: true
+  dev:
+    name: dev
+    external: true
+
 services:
-    postgres:
-        build:
-            context: .
-            dockerfile: Dockerfile.postgres
-        container_name: clipper-postgres
-        environment:
-            POSTGRES_USER: clipper
-            POSTGRES_PASSWORD: clipper_password
-            POSTGRES_DB: clipper_db
-        ports:
-            - '5436:5432'
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
-        healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U clipper -d clipper_db']
-            interval: 10s
-            timeout: 5s
-            retries: 5
+  clipper-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: clipper-backend
+    networks: [projects, dev]
+    env_file: .env
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ -n "$${JWT_PRIVATE_KEY_B64:-}" ]; then
+          export JWT_PRIVATE_KEY=$$(echo "$$JWT_PRIVATE_KEY_B64" | base64 -d)
+        fi
+        if [ -n "$${JWT_PUBLIC_KEY_B64:-}" ]; then
+          export JWT_PUBLIC_KEY=$$(echo "$$JWT_PUBLIC_KEY_B64" | base64 -d)
+        fi
+        exec ./api
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8080/api/v1/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+    restart: unless-stopped
 
-    redis:
-        image: redis:7-alpine
-        container_name: clipper-redis
-        ports:
-            - '6379:6379'
-        volumes:
-            - redis_data:/data
-        command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-        healthcheck:
-            test: ['CMD', 'redis-cli', 'ping']
-            interval: 10s
-            timeout: 5s
-            retries: 5
+  clipper-crawler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.crawler
+    container_name: clipper-crawler
+    networks: [projects]
+    env_file: .env
+    environment:
+      - SCRAPE_INTERVAL=1800
+      - SCRAPE_MIN_VIEWS=50
+      - SCRAPE_MAX_AGE_DAYS=7
+      - SCRAPE_BROADCASTERS=xQc,pokimane,caseoh_,Agent00,BotezLive,Maximilian_DOOD,ohnePixel,ExtraEmily,Zoil,Elajjaz,itmeJP,APPLESHAMPOO,Bonnie,Pamaj,ashswag,shindigwow
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+    restart: unless-stopped
 
-    opensearch:
-        image: opensearchproject/opensearch:2.11.1
-        container_name: clipper-opensearch
-        environment:
-            - discovery.type=single-node
-            - bootstrap.system_call_filter=false
-            - bootstrap.memory_lock=true
-            - 'OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m'
-            - 'JAVA_TOOL_OPTIONS='
-            # WARNING: Security is disabled for development. Enable for production!
-            # See docs/SEARCH.md for production security configuration
-            - 'DISABLE_SECURITY_PLUGIN=true'
-            - 'DISABLE_INSTALL_DEMO_CONFIG=true'
-        ulimits:
-            memlock:
-                soft: -1
-                hard: -1
-            nofile:
-                soft: 65536
-                hard: 65536
-        ports:
-            - '9200:9200'
-            - '9600:9600'
-        volumes:
-            - opensearch_data:/usr/share/opensearch/data
-        healthcheck:
-            test:
-                [
-                    'CMD-SHELL',
-                    'curl -f http://localhost:9200/_cluster/health || exit 1',
-                ]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-
-volumes:
-    postgres_data:
-    redis_data:
-    opensearch_data:
+  clipper-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: clipper-frontend
+    networks: [projects]
+    depends_on:
+      clipper-backend:
+        condition: service_healthy
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+    restart: unless-stopped

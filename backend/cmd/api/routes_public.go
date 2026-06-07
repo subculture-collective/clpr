@@ -124,6 +124,9 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 	// Webhook monitoring endpoint
 	r.GET("/health/webhooks", h.WebhookMonitoring.GetWebhookRetryStats)
 
+	// Prometheus metrics endpoint (unauthenticated, for internal scraping)
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	// Profiling and metrics endpoints (for debugging and monitoring)
 	// These should be protected in production (e.g., firewall rules or internal network only)
 	debug := r.Group("/debug")
