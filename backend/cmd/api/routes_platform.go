@@ -44,6 +44,24 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		}
 	}
 
+	if h.StreamerClipRoom != nil {
+		streamerClipRooms := v1.Group("/streamer-clip-rooms")
+		streamerClipRooms.Use(middleware.AuthMiddleware(svcs.Auth))
+		{
+			streamerClipRooms.GET("/:channel", h.StreamerClipRoom.GetRoom)
+			streamerClipRooms.POST("/:channel/start", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.StreamerClipRoom.StartRoom)
+			streamerClipRooms.POST("/:channel/stop", h.StreamerClipRoom.StopRoom)
+			// Gin requires sibling wildcard routes to use the same parameter name.
+			// These routes still expose the API contract shape `/:roomId/...`; the
+			// shared internal name avoids registration conflicts with `/:channel`.
+			streamerClipRooms.GET("/:channel/items", h.StreamerClipRoom.ListItems)
+			streamerClipRooms.POST("/:channel/items/:itemId/approve", middleware.RateLimitMiddleware(infra.Redis, 120, time.Minute), h.StreamerClipRoom.ApproveItem)
+			streamerClipRooms.POST("/:channel/items/:itemId/reject", middleware.RateLimitMiddleware(infra.Redis, 120, time.Minute), h.StreamerClipRoom.RejectItem)
+			streamerClipRooms.PUT("/:channel/items/order", h.StreamerClipRoom.ReorderItems)
+			streamerClipRooms.GET("/:channel/ws", h.StreamerClipRoom.WebSocket)
+		}
+	}
+
 	// Game routes
 	games := v1.Group("/games")
 	{

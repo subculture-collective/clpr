@@ -64,6 +64,18 @@ func (c *ChatClient) ReadPump() {
 		return nil
 	})
 
+	if c.ReadOnly {
+		for {
+			if _, _, err := c.Conn.ReadMessage(); err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("WebSocket error: user_id=%s, error=%v", c.UserID, err)
+				}
+				break
+			}
+		}
+		return
+	}
+
 	for {
 		var msg ClientMessage
 		err := c.Conn.ReadJSON(&msg)

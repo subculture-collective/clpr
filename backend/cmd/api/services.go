@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
+
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/internal/websocket"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
@@ -13,56 +17,58 @@ import (
 
 // Services holds all application service instances.
 type Services struct {
-	Auth                  *services.AuthService
-	Email                 *services.EmailService
-	MFA                   *services.MFAService
-	Notification          *services.NotificationService
-	ToxicityClassifier    *services.ToxicityClassifier
-	NSFWDetector          *services.NSFWDetector
-	Comment               *services.CommentService
-	Clip                  *services.ClipService
-	AutoTag               *services.AutoTagService
-	Reputation            *services.ReputationService
-	Analytics             *services.AnalyticsService
-	Engagement            *services.EngagementService
-	AuditLog              *services.AuditLogService
-	AccountMerge          *services.AccountMergeService
-	Dunning               *services.DunningService
-	Subscription          *services.SubscriptionService
-	WebhookRetry          *services.WebhookRetryService
-	UserSettings          *services.UserSettingsService
-	Revenue               *services.RevenueService
-	Ad                    *services.AdService
-	EmailMetrics          *services.EmailMetricsService
-	Cache                 *services.CacheService
-	Feed                  *services.FeedService
-	FilterPreset          *services.FilterPresetService
-	Community             *services.CommunityService
-	Moderation            *services.ModerationService
-	BanReasonTemplate     *services.BanReasonTemplateService
-	AccountType           *services.AccountTypeService
-	Recommendation        *services.RecommendationService
-	Playlist              *services.PlaylistService
-	PlaylistScript        *services.PlaylistScriptService
-	Queue                 *services.QueueService
-	ClipExtractionJob     *services.ClipExtractionJobService
-	WatchParty            *services.WatchPartyService
-	WatchPartyHubManager  *services.WatchPartyHubManager
-	EventTracker          *services.EventTracker
-	Export                *services.ExportService
-	SearchIndexer         *services.SearchIndexerService   // may be nil
-	OpenSearch            *services.OpenSearchService      // may be nil
-	HybridSearch          *services.HybridSearchService    // may be nil
-	Embedding             *services.EmbeddingService       // may be nil
-	ClipSync              *services.ClipSyncService        // may be nil
-	Submission            *services.SubmissionService      // may be nil
-	LiveStatus            *services.LiveStatusService      // may be nil
-	OutboundWebhook       *services.OutboundWebhookService
-	TwitchBanSync         *services.TwitchBanSyncService         // may be nil
-	TwitchModeration      *services.TwitchModerationService      // may be nil
-	WSServer              *websocket.Server
-	CancelEventTracker    context.CancelFunc
-	Logger                *utils.StructuredLogger
+	Auth                     *services.AuthService
+	Email                    *services.EmailService
+	MFA                      *services.MFAService
+	Notification             *services.NotificationService
+	ToxicityClassifier       *services.ToxicityClassifier
+	NSFWDetector             *services.NSFWDetector
+	Comment                  *services.CommentService
+	Clip                     *services.ClipService
+	AutoTag                  *services.AutoTagService
+	Reputation               *services.ReputationService
+	Analytics                *services.AnalyticsService
+	Engagement               *services.EngagementService
+	AuditLog                 *services.AuditLogService
+	AccountMerge             *services.AccountMergeService
+	Dunning                  *services.DunningService
+	Subscription             *services.SubscriptionService
+	WebhookRetry             *services.WebhookRetryService
+	UserSettings             *services.UserSettingsService
+	Revenue                  *services.RevenueService
+	Ad                       *services.AdService
+	EmailMetrics             *services.EmailMetricsService
+	Cache                    *services.CacheService
+	Feed                     *services.FeedService
+	FilterPreset             *services.FilterPresetService
+	Community                *services.CommunityService
+	Moderation               *services.ModerationService
+	BanReasonTemplate        *services.BanReasonTemplateService
+	AccountType              *services.AccountTypeService
+	Recommendation           *services.RecommendationService
+	Playlist                 *services.PlaylistService
+	PlaylistScript           *services.PlaylistScriptService
+	Queue                    *services.QueueService
+	ClipExtractionJob        *services.ClipExtractionJobService
+	StreamerClipRoom         *services.StreamerClipRoomService
+	StreamerClipRoomListener *services.TwitchChatListenerManager
+	WatchParty               *services.WatchPartyService
+	WatchPartyHubManager     *services.WatchPartyHubManager
+	EventTracker             *services.EventTracker
+	Export                   *services.ExportService
+	SearchIndexer            *services.SearchIndexerService // may be nil
+	OpenSearch               *services.OpenSearchService    // may be nil
+	HybridSearch             *services.HybridSearchService  // may be nil
+	Embedding                *services.EmbeddingService     // may be nil
+	ClipSync                 *services.ClipSyncService      // may be nil
+	Submission               *services.SubmissionService    // may be nil
+	LiveStatus               *services.LiveStatusService    // may be nil
+	OutboundWebhook          *services.OutboundWebhookService
+	TwitchBanSync            *services.TwitchBanSyncService    // may be nil
+	TwitchModeration         *services.TwitchModerationService // may be nil
+	WSServer                 *websocket.Server
+	CancelEventTracker       context.CancelFunc
+	Logger                   *utils.StructuredLogger
 }
 
 func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure, logger *utils.StructuredLogger) *Services {
@@ -187,6 +193,8 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 
 	// Initialize queue service
 	queueService := services.NewQueueService(repos.Queue, repos.Clip, playlistService)
+	streamerClipRoomService := services.NewStreamerClipRoomService(repos.StreamerClipRoom, repos.Clip)
+	streamerClipRoomChat := services.NewTwitchChatListenerManager(streamerClipRoomService)
 
 	// Initialize clip extraction job service for FFmpeg processing
 	clipExtractionJobService := services.NewClipExtractionJobService(infra.Redis)
@@ -286,57 +294,75 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 
 	// Initialize WebSocket server
 	wsServer := websocket.NewServer(pool, infra.Redis.GetClient(), &cfg.WebSocket)
+	streamerClipRoomService.SetEventBroadcaster(func(roomID uuid.UUID, eventType string, data map[string]interface{}) {
+		if wsServer == nil {
+			return
+		}
+
+		payload, err := json.Marshal(models.StreamerClipRoomEvent{Type: eventType, Data: data})
+		if err != nil {
+			return
+		}
+
+		hub := wsServer.GetOrCreateHub(roomID.String())
+		select {
+		case hub.Broadcast <- payload:
+		default:
+		}
+	})
 
 	return &Services{
-		Auth:                 authService,
-		Email:                emailService,
-		MFA:                  mfaService,
-		Notification:         notificationService,
-		ToxicityClassifier:   toxicityClassifier,
-		NSFWDetector:         nsfwDetector,
-		Comment:              commentService,
-		Clip:                 clipService,
-		AutoTag:              autoTagService,
-		Reputation:           reputationService,
-		Analytics:            analyticsService,
-		Engagement:           engagementService,
-		AuditLog:             auditLogService,
-		AccountMerge:         accountMergeService,
-		Dunning:              dunningService,
-		Subscription:         subscriptionService,
-		WebhookRetry:         webhookRetryService,
-		UserSettings:         userSettingsService,
-		Revenue:              revenueService,
-		Ad:                   adService,
-		EmailMetrics:         emailMetricsService,
-		Cache:                cacheService,
-		Feed:                 feedService,
-		FilterPreset:         filterPresetService,
-		Community:            communityService,
-		Moderation:           moderationService,
-		BanReasonTemplate:    banReasonTemplateService,
-		AccountType:          accountTypeService,
-		Recommendation:       recommendationService,
-		Playlist:             playlistService,
-		PlaylistScript:       playlistScriptService,
-		Queue:                queueService,
-		ClipExtractionJob:    clipExtractionJobService,
-		WatchParty:           watchPartyService,
-		WatchPartyHubManager: watchPartyHubManager,
-		EventTracker:         eventTracker,
-		Export:               exportService,
-		SearchIndexer:        searchIndexerService,
-		OpenSearch:           openSearchService,
-		HybridSearch:         hybridSearchService,
-		Embedding:            embeddingService,
-		ClipSync:             clipSyncService,
-		Submission:           submissionService,
-		LiveStatus:           liveStatusService,
-		OutboundWebhook:      outboundWebhookService,
-		TwitchBanSync:        twitchBanSyncService,
-		TwitchModeration:     twitchModerationService,
-		WSServer:             wsServer,
-		CancelEventTracker:   cancelEventTracker,
-		Logger:               logger,
+		Auth:                     authService,
+		Email:                    emailService,
+		MFA:                      mfaService,
+		Notification:             notificationService,
+		ToxicityClassifier:       toxicityClassifier,
+		NSFWDetector:             nsfwDetector,
+		Comment:                  commentService,
+		Clip:                     clipService,
+		AutoTag:                  autoTagService,
+		Reputation:               reputationService,
+		Analytics:                analyticsService,
+		Engagement:               engagementService,
+		AuditLog:                 auditLogService,
+		AccountMerge:             accountMergeService,
+		Dunning:                  dunningService,
+		Subscription:             subscriptionService,
+		WebhookRetry:             webhookRetryService,
+		UserSettings:             userSettingsService,
+		Revenue:                  revenueService,
+		Ad:                       adService,
+		EmailMetrics:             emailMetricsService,
+		Cache:                    cacheService,
+		Feed:                     feedService,
+		FilterPreset:             filterPresetService,
+		Community:                communityService,
+		Moderation:               moderationService,
+		BanReasonTemplate:        banReasonTemplateService,
+		AccountType:              accountTypeService,
+		Recommendation:           recommendationService,
+		Playlist:                 playlistService,
+		PlaylistScript:           playlistScriptService,
+		Queue:                    queueService,
+		ClipExtractionJob:        clipExtractionJobService,
+		StreamerClipRoom:         streamerClipRoomService,
+		StreamerClipRoomListener: streamerClipRoomChat,
+		WatchParty:               watchPartyService,
+		WatchPartyHubManager:     watchPartyHubManager,
+		EventTracker:             eventTracker,
+		Export:                   exportService,
+		SearchIndexer:            searchIndexerService,
+		OpenSearch:               openSearchService,
+		HybridSearch:             hybridSearchService,
+		Embedding:                embeddingService,
+		ClipSync:                 clipSyncService,
+		Submission:               submissionService,
+		LiveStatus:               liveStatusService,
+		OutboundWebhook:          outboundWebhookService,
+		TwitchBanSync:            twitchBanSyncService,
+		TwitchModeration:         twitchModerationService,
+		WSServer:                 wsServer,
+		CancelEventTracker:       cancelEventTracker,
+		Logger:                   logger,
 	}
 }

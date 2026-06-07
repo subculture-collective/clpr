@@ -49,6 +49,7 @@ type Repositories struct {
 	PlaylistCuration      *repository.PlaylistCurationRepository
 	Queue                 *repository.QueueRepository
 	WatchHistory          *repository.WatchHistoryRepository
+	StreamerClipRoom      *repository.StreamerClipRoomRepository
 	Stream                *repository.StreamRepository
 	StreamFollow          *repository.StreamFollowRepository
 	WatchParty            *repository.WatchPartyRepository
@@ -104,6 +105,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		PlaylistCuration:      repository.NewPlaylistCurationRepository(pool),
 		Queue:                 repository.NewQueueRepository(pool),
 		WatchHistory:          repository.NewWatchHistoryRepository(pool),
+		StreamerClipRoom:      repository.NewStreamerClipRoomRepository(pool),
 		Stream:                repository.NewStreamRepository(pool),
 		StreamFollow:          repository.NewStreamFollowRepository(pool),
 		WatchParty:            repository.NewWatchPartyRepository(pool),

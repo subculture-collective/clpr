@@ -357,15 +357,15 @@ func (s *PlaylistScriptService) GeneratePlaylist(ctx context.Context, scriptID u
 	title := buildPlaylistTitle(script)
 	presentation := generatedPlaylistPresentationForScript(script, ownerID)
 	playlist := &models.Playlist{
-		ID:          uuid.New(),
-		UserID:      ownerID,
-		Title:       title,
-		Description: script.Description,
-		Visibility:  script.Visibility,
-		IsCurated:   presentation.isCurated,
-		IsFeatured:  presentation.isFeatured,
+		ID:           uuid.New(),
+		UserID:       ownerID,
+		Title:        title,
+		Description:  script.Description,
+		Visibility:   script.Visibility,
+		IsCurated:    presentation.isCurated,
+		IsFeatured:   presentation.isFeatured,
 		DisplayOrder: presentation.displayOrder,
-		ScriptID:    &script.ID,
+		ScriptID:     &script.ID,
 	}
 
 	if err := s.playlistRepo.Create(ctx, playlist); err != nil {
@@ -400,6 +400,10 @@ func generatedPlaylistPresentationForScript(script *models.PlaylistScript, owner
 	}
 
 	return presentation
+}
+
+func shouldAutoCurateGeneratedPlaylist(script *models.PlaylistScript, ownerID uuid.UUID) bool {
+	return generatedPlaylistPresentationForScript(script, ownerID).isCurated
 }
 
 // ListDueForExecution returns scripts that are due for scheduled execution.

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Container, SEO } from '../components';
 import { TwitchPlayer, ClipCreator, StreamFollowButton, TwitchChatEmbed } from '../components/stream';
@@ -83,32 +83,40 @@ export function StreamPage() {
                   LIVE
                 </span>
               )}
-              {/* Follow Button */}
-              <StreamFollowButton streamerUsername={streamer} />
-              
-              {/* Chat Controls */}
-              <div className="ml-auto flex items-center gap-2">
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className="px-3 py-1 text-sm rounded border border-border hover:bg-surface-hover text-foreground"
-                >
-                  {showChat ? 'Hide Chat' : 'Show Chat'}
-                </button>
-                {showChat && (
-                  <select
-                    value={chatPosition}
-                    onChange={(e) => setChatPosition(e.target.value as 'side' | 'bottom')}
-                    className="px-3 py-1 text-sm rounded border border-border bg-surface text-foreground"
+                {/* Follow Button */}
+                <StreamFollowButton streamerUsername={streamer} />
+
+                {/* Chat Controls */}
+                <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+                  {isAuthenticated && (
+                    <Link
+                      to={`/streamer-tools/${encodeURIComponent(streamer)}/clips`}
+                      className="px-3 py-1 text-sm rounded border border-purple-500 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                    >
+                      Clip Room
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => setShowChat(!showChat)}
+                    className="px-3 py-1 text-sm rounded border border-border hover:bg-surface-hover text-foreground"
                   >
-                    <option value="side">Side</option>
-                    <option value="bottom">Bottom</option>
-                  </select>
-                )}
-                {/* Create Clip Button - only show if stream is live and user is authenticated */}
-                {streamInfo?.is_live && isAuthenticated && (
-                  <ClipCreator streamer={streamer} />
-                )}
-              </div>
+                    {showChat ? 'Hide Chat' : 'Show Chat'}
+                  </button>
+                  {showChat && (
+                    <select
+                      value={chatPosition}
+                      onChange={(e) => setChatPosition(e.target.value as 'side' | 'bottom')}
+                      className="px-3 py-1 text-sm rounded border border-border bg-surface text-foreground"
+                    >
+                      <option value="side">Side</option>
+                      <option value="bottom">Bottom</option>
+                    </select>
+                  )}
+                  {/* Create Clip Button - only show if stream is live and user is authenticated */}
+                  {streamInfo?.is_live && isAuthenticated && (
+                    <ClipCreator streamer={streamer} />
+                  )}
+                </div>
             </div>
 
             {streamInfo?.is_live && streamInfo.title && (

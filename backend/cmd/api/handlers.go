@@ -57,15 +57,16 @@ type Handlers struct {
 	Playlist            *handlers.PlaylistHandler
 	PlaylistScript      *handlers.PlaylistScriptHandler
 	Queue               *handlers.QueueHandler
+	StreamerClipRoom    *handlers.StreamerClipRoomHandler
 	WatchHistory        *handlers.WatchHistoryHandler
 	WatchParty          *handlers.WatchPartyHandler
 	Event               *handlers.EventHandler
-	ClipSync            *handlers.ClipSyncHandler       // may be nil
-	Submission          *handlers.SubmissionHandler      // may be nil
-	Moderation          *handlers.ModerationHandler      // may be nil
-	LiveStatus          *handlers.LiveStatusHandler      // may be nil
-	Stream              *handlers.StreamHandler          // may be nil
-	TwitchOAuth         *handlers.TwitchOAuthHandler     // may be nil
+	ClipSync            *handlers.ClipSyncHandler    // may be nil
+	Submission          *handlers.SubmissionHandler  // may be nil
+	Moderation          *handlers.ModerationHandler  // may be nil
+	LiveStatus          *handlers.LiveStatusHandler  // may be nil
+	Stream              *handlers.StreamHandler      // may be nil
+	TwitchOAuth         *handlers.TwitchOAuthHandler // may be nil
 	Forum               *handlers.ForumHandler
 	ForumModeration     *handlers.ForumModerationHandler
 	NSFW                *handlers.NSFWHandler
@@ -142,6 +143,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	playlistHandler := handlers.NewPlaylistHandler(svcs.Playlist)
 	playlistScriptHandler := handlers.NewPlaylistScriptHandler(svcs.PlaylistScript)
 	queueHandler := handlers.NewQueueHandler(svcs.Queue)
+	streamerClipRoomHandler := handlers.NewStreamerClipRoomHandler(svcs.StreamerClipRoom, svcs.StreamerClipRoomListener, repos.TwitchAuth, svcs.WSServer)
 	watchHistoryHandler := handlers.NewWatchHistoryHandler(repos.WatchHistory)
 	watchPartyHandler := handlers.NewWatchPartyHandler(svcs.WatchParty, svcs.WatchPartyHubManager, repos.WatchParty, repos.Analytics, cfg)
 	eventHandler := handlers.NewEventHandler(svcs.EventTracker)
@@ -238,6 +240,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Playlist:            playlistHandler,
 		PlaylistScript:      playlistScriptHandler,
 		Queue:               queueHandler,
+		StreamerClipRoom:    streamerClipRoomHandler,
 		WatchHistory:        watchHistoryHandler,
 		WatchParty:          watchPartyHandler,
 		Event:               eventHandler,

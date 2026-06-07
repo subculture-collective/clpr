@@ -40,6 +40,7 @@ type ChatClient struct {
 	Username  string
 	Send      chan []byte
 	RateLimit *rate.Limiter
+	ReadOnly  bool
 }
 
 // MessageType constants
