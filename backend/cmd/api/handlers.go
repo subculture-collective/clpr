@@ -85,6 +85,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		svcs.Clip,
 		svcs.Auth,
 		handlers.WithClipExtractionJobService(svcs.ClipExtractionJob),
+		handlers.WithClipConfig(&cfg.Clip),
 	)
 	favoriteHandler := handlers.NewFavoriteHandler(repos.Favorite, repos.Vote, svcs.Clip)
 	tagHandler := handlers.NewTagHandler(repos.Tag, repos.Clip, svcs.AutoTag)

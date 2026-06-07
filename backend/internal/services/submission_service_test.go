@@ -3,9 +3,10 @@ package services
 import (
 	"testing"
 
-	"github.com/google/uuid"
+	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
 )
 
 func TestSubmissionService_ShouldAutoApprove(t *testing.T) {
@@ -55,6 +56,33 @@ func TestSubmissionService_ShouldAutoApprove(t *testing.T) {
 			t.Error("Regular user should not be auto-approved")
 		}
 	})
+}
+
+func TestSubmissionService_ShouldAutoApprove_RequiresModerationForUpload(t *testing.T) {
+	service := &SubmissionService{
+		cfg: &config.Config{
+			Clip: config.ClipConfig{
+				RequireModerationForUpload: true,
+			},
+		},
+	}
+
+	users := []struct {
+		name string
+		user *models.User
+	}{
+		{name: "admin", user: &models.User{ID: uuid.New(), Role: "admin", KarmaPoints: 0}},
+		{name: "moderator", user: &models.User{ID: uuid.New(), Role: "moderator", KarmaPoints: 0}},
+		{name: "high karma", user: &models.User{ID: uuid.New(), Role: "user", KarmaPoints: 1000}},
+	}
+
+	for _, tt := range users {
+		t.Run(tt.name, func(t *testing.T) {
+			if service.shouldAutoApprove(tt.user) {
+				t.Fatalf("shouldAutoApprove() = true, want false when moderation is required")
+			}
+		})
+	}
 }
 
 func TestExtractClipIDFromURL(t *testing.T) {

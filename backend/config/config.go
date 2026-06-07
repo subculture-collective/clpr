@@ -16,6 +16,7 @@ type Config struct {
 	Redis           RedisConfig
 	JWT             JWTConfig
 	Twitch          TwitchConfig
+	Clip            ClipConfig
 	CORS            CORSConfig
 	WebSocket       WebSocketConfig
 	OpenSearch      OpenSearchConfig
@@ -78,6 +79,24 @@ type TwitchConfig struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURI  string
+}
+
+// ClipConfig holds clip upload/storage configuration
+type ClipConfig struct {
+	MaxDurationSeconds         int
+	RecommendedDurationSeconds int
+	MaxUploadBytes             int64
+	AllowedUploadMimeTypes     []string
+	RequireModerationForUpload bool
+	StorageProvider            string
+	StorageEndpoint            string
+	StorageBucket              string
+	StorageRegion              string
+	StorageAccessKey           string
+	StorageSecretKey           string
+	StorageForcePathStyle      bool
+	StoragePublicBaseURL       string
+	MediaPublicBaseURL         string
 }
 
 // CORSConfig holds CORS configuration
@@ -383,6 +402,22 @@ func Load() (*Config, error) {
 			ClientSecret: getEnv("TWITCH_CLIENT_SECRET", ""),
 			RedirectURI:  getEnv("TWITCH_REDIRECT_URI", "http://localhost:8080/api/v1/auth/twitch/callback"),
 		},
+		Clip: ClipConfig{
+			MaxDurationSeconds:         getEnvInt("CLIP_MAX_DURATION_SECONDS", 60),
+			RecommendedDurationSeconds: getEnvInt("CLIP_RECOMMENDED_DURATION_SECONDS", 60),
+			MaxUploadBytes:             getEnvInt64("CLIP_MAX_UPLOAD_BYTES", 104857600),
+			AllowedUploadMimeTypes:     parseCommaSeparatedList(getEnv("CLIP_ALLOWED_UPLOAD_MIME_TYPES", "video/mp4,video/webm,video/quicktime")),
+			RequireModerationForUpload: getEnvBool("CLIP_REQUIRE_MODERATION_FOR_UPLOAD", false),
+			StorageProvider:            getEnv("CLIP_STORAGE_PROVIDER", "local"),
+			StorageEndpoint:            getEnv("CLIP_STORAGE_ENDPOINT", ""),
+			StorageBucket:              getEnv("CLIP_STORAGE_BUCKET", ""),
+			StorageRegion:              getEnv("CLIP_STORAGE_REGION", "us-east-1"),
+			StorageAccessKey:           getEnv("CLIP_STORAGE_ACCESS_KEY", ""),
+			StorageSecretKey:           getEnv("CLIP_STORAGE_SECRET_KEY", ""),
+			StorageForcePathStyle:      getEnvBool("CLIP_STORAGE_FORCE_PATH_STYLE", false),
+			StoragePublicBaseURL:       getEnv("CLIP_STORAGE_PUBLIC_BASE_URL", ""),
+			MediaPublicBaseURL:         getEnv("CLIP_MEDIA_PUBLIC_BASE_URL", ""),
+		},
 		CORS: CORSConfig{
 			AllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"),
 		},
@@ -617,6 +652,16 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
+	}
+	return defaultValue
+}
+
+// getEnvInt64 gets an int64 environment variable with a fallback default value
+func getEnvInt64(key string, defaultValue int64) int64 {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
 			return intVal
 		}
 	}

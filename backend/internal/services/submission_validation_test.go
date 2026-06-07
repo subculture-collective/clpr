@@ -3,6 +3,10 @@ package services
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 )
 
 // TestValidateSubmissionInput tests the comprehensive input validation
@@ -453,6 +457,38 @@ func TestNormalizeClipURL(t *testing.T) {
 				t.Errorf("Expected normalizedURL '%s', got '%s'. %s", tt.expectedURL, normalizedURL, tt.description)
 			}
 		})
+	}
+}
+
+func TestValidateClipQuality_UsesConfiguredMaxDuration(t *testing.T) {
+	service := &SubmissionService{
+		cfg: &config.Config{Clip: config.ClipConfig{MaxDurationSeconds: 30}},
+	}
+	clip := &twitch.Clip{
+		CreatedAt:       time.Now().Add(-24 * time.Hour),
+		Duration:        31,
+		Title:           "Clip title",
+		BroadcasterName: "StreamerName",
+	}
+
+	err := service.validateClipQuality(clip)
+	if err == nil {
+		t.Fatal("expected error for clip longer than configured maximum")
+	}
+	valErr, ok := err.(*ValidationError)
+	if !ok {
+		t.Fatalf("expected ValidationError, got %T", err)
+	}
+	if valErr.Field != "clip" {
+		t.Fatalf("Field = %q, want clip", valErr.Field)
+	}
+	if !strings.Contains(valErr.Message, "at most 30 seconds") {
+		t.Fatalf("Message = %q, want configured max duration", valErr.Message)
+	}
+
+	clip.Duration = 30
+	if err := service.validateClipQuality(clip); err != nil {
+		t.Fatalf("expected clip at configured max duration to pass, got %v", err)
 	}
 }
 

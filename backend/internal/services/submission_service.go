@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
@@ -16,6 +15,7 @@ import (
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 	pkgutils "git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 // SubmissionService handles clip submission business logic
@@ -133,8 +133,8 @@ func (e *TwitchAPIError) Error() string {
 type RateLimitError struct {
 	Message    string `json:"error"`
 	Limit      int    `json:"limit"`
-	Window     int    `json:"window"`       // Window in seconds
-	RetryAfter int64  `json:"retry_after"`  // Unix timestamp when user can retry
+	Window     int    `json:"window"`      // Window in seconds
+	RetryAfter int64  `json:"retry_after"` // Unix timestamp when user can retry
 }
 
 func (e *RateLimitError) Error() string {
@@ -787,7 +787,7 @@ func (s *SubmissionService) checkRateLimits(ctx context.Context, userID uuid.UUI
 		return &RateLimitError{
 			Message:    "rate_limit_exceeded",
 			Limit:      10,
-			Window:     3600,        // 1 hour in seconds
+			Window:     3600, // 1 hour in seconds
 			RetryAfter: retryAfter,
 		}
 	}
@@ -804,7 +804,7 @@ func (s *SubmissionService) checkRateLimits(ctx context.Context, userID uuid.UUI
 		return &RateLimitError{
 			Message:    "rate_limit_exceeded",
 			Limit:      20,
-			Window:     86400,       // 24 hours in seconds
+			Window:     86400, // 24 hours in seconds
 			RetryAfter: retryAfter,
 		}
 	}
@@ -1087,6 +1087,11 @@ func (s *SubmissionService) fetchClipFromTwitch(ctx context.Context, clipID stri
 
 // validateClipQuality validates clip meets quality requirements
 func (s *SubmissionService) validateClipQuality(clip *twitch.Clip) error {
+	maxDurationSeconds := 60
+	if s != nil && s.cfg != nil && s.cfg.Clip.MaxDurationSeconds > 0 {
+		maxDurationSeconds = s.cfg.Clip.MaxDurationSeconds
+	}
+
 	// Check if clip is too old (>6 months)
 	if time.Since(clip.CreatedAt) > 6*30*24*time.Hour {
 		now := time.Now()
@@ -1110,6 +1115,14 @@ func (s *SubmissionService) validateClipQuality(clip *twitch.Clip) error {
 		}
 	}
 
+	// Check if clip is too long
+	if clip.Duration > float64(maxDurationSeconds) {
+		return &ValidationError{
+			Field:   "clip",
+			Message: fmt.Sprintf("This clip is too long (%.1f seconds). Clips must be at most %d seconds long.", clip.Duration, maxDurationSeconds),
+		}
+	}
+
 	// Check if clip has valid metadata
 	if clip.Title == "" || clip.BroadcasterName == "" {
 		return &ValidationError{
@@ -1123,6 +1136,10 @@ func (s *SubmissionService) validateClipQuality(clip *twitch.Clip) error {
 
 // shouldAutoApprove determines if a submission should be auto-approved
 func (s *SubmissionService) shouldAutoApprove(user *models.User) bool {
+	if s != nil && s.cfg != nil && s.cfg.Clip.RequireModerationForUpload {
+		return false
+	}
+
 	// Admins and moderators are auto-approved
 	if user.Role == "admin" || user.Role == "moderator" {
 		return true

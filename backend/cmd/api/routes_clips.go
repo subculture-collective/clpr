@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
@@ -13,6 +13,7 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	{
 		// Public clip endpoints
 		clips.GET("", h.Clip.ListClips)
+		clips.GET("/:id/media", h.Clip.GetClipMedia)
 		clips.GET("/:id", h.Clip.GetClip)
 		clips.GET("/:id/related", h.Clip.GetRelatedClips)
 		clips.GET("/:id/processing-status", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Clip.GetClipProcessingStatus)

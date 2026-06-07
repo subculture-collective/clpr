@@ -356,7 +356,7 @@ func TestParseECDSAPublicKey_InvalidPEM(t *testing.T) {
 	publicKey, err := parseECDSAPublicKey("not-a-pem-key")
 	assert.Error(t, err)
 	assert.Nil(t, publicKey)
-	assert.Contains(t, err.Error(), "failed to parse PEM block")
+	assert.Contains(t, err.Error(), "failed to parse as PEM or base64 DER")
 }
 
 func TestParseECDSAPublicKey_WrongKeyType(t *testing.T) {

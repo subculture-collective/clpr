@@ -5,16 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // ClipSyncHandler handles clip sync operations
@@ -166,6 +168,7 @@ type ClipHandler struct {
 	authService *services.AuthService
 	cdnProvider services.CDNProvider
 	jobService  *services.ClipExtractionJobService
+	clipConfig  *config.ClipConfig
 }
 
 // NewClipHandler creates a new ClipHandler
@@ -198,6 +201,13 @@ func WithCDNProvider(provider services.CDNProvider) ClipHandlerOption {
 func WithClipExtractionJobService(service *services.ClipExtractionJobService) ClipHandlerOption {
 	return func(h *ClipHandler) {
 		h.jobService = service
+	}
+}
+
+// WithClipConfig enables app-owned media URLs for direct clip media.
+func WithClipConfig(cfg *config.ClipConfig) ClipHandlerOption {
+	return func(h *ClipHandler) {
+		h.clipConfig = cfg
 	}
 }
 
@@ -331,6 +341,7 @@ func (h *ClipHandler) ListClips(c *gin.Context) {
 		})
 		return
 	}
+	h.applyAppMediaURLsToClips(clips)
 
 	// Build pagination metadata
 	totalPages := (total + limit - 1) / limit
@@ -436,6 +447,7 @@ func (h *ClipHandler) ListScrapedClips(c *gin.Context) {
 		})
 		return
 	}
+	h.applyAppMediaURLsToClips(clips)
 
 	// Build pagination metadata
 	totalPages := (total + limit - 1) / limit
@@ -505,11 +517,136 @@ func (h *ClipHandler) GetClip(c *gin.Context) {
 			h.applyCDNCacheHeaders(c)
 		}
 	}
+	h.applyAppMediaURL(clip)
 
 	c.JSON(http.StatusOK, StandardResponse{
 		Success: true,
 		Data:    clip,
 	})
+}
+
+// GetClipMedia handles GET /clips/:id/media.
+// It redirects to the resolved direct media object URL instead of proxying bytes through Go.
+func (h *ClipHandler) GetClipMedia(c *gin.Context) {
+	clipIDParam := c.Param("id")
+
+	var clip *services.ClipWithUserData
+	var err error
+
+	if clipID, parseErr := uuid.Parse(clipIDParam); parseErr == nil {
+		clip, err = h.clipService.GetClip(c.Request.Context(), clipID, nil)
+	} else {
+		clip, err = h.clipService.GetClipByTwitchID(c.Request.Context(), clipIDParam, nil)
+	}
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "CLIP_NOT_FOUND", Message: "Clip not found or has been removed"},
+		})
+		return
+	}
+
+	mediaURL := h.originMediaURL(clip)
+	if mediaURL == "" {
+		c.JSON(http.StatusNotFound, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "MEDIA_NOT_AVAILABLE", Message: "Direct clip media is not available"},
+		})
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, mediaURL)
+}
+
+func (h *ClipHandler) applyAppMediaURLsToClips(clips []services.ClipWithUserData) {
+	for i := range clips {
+		h.applyAppMediaURL(&clips[i])
+	}
+}
+
+func (h *ClipHandler) applyAppMediaURL(clip *services.ClipWithUserData) {
+	if clip == nil || h.originMediaURL(clip) == "" {
+		return
+	}
+
+	mediaURL := h.appMediaURL(clip.ID)
+	clip.VideoURL = &mediaURL
+}
+
+func (h *ClipHandler) appMediaURL(clipID uuid.UUID) string {
+	base := ""
+	if h.clipConfig != nil {
+		base = strings.TrimRight(strings.TrimSpace(h.clipConfig.MediaPublicBaseURL), "/")
+	}
+	if base == "" {
+		return "/api/v1/clips/" + clipID.String() + "/media"
+	}
+	return base + "/" + clipID.String() + "/media"
+}
+
+func (h *ClipHandler) originMediaURL(clip *services.ClipWithUserData) string {
+	if clip == nil || clip.VideoURL == nil {
+		return ""
+	}
+	videoURL := strings.TrimSpace(*clip.VideoURL)
+	if videoURL == "" {
+		return ""
+	}
+
+	if h.clipConfig == nil || strings.TrimSpace(h.clipConfig.StoragePublicBaseURL) == "" {
+		return videoURL
+	}
+
+	key := storageObjectKey(videoURL, h.clipConfig.StoragePublicBaseURL)
+	if key == "" {
+		return videoURL
+	}
+
+	return strings.TrimRight(h.clipConfig.StoragePublicBaseURL, "/") + "/" + key
+}
+
+func storageObjectKey(mediaURL, storageBaseURL string) string {
+	mediaURL = strings.TrimSpace(mediaURL)
+	storageBaseURL = strings.TrimRight(strings.TrimSpace(storageBaseURL), "/")
+	if mediaURL == "" || storageBaseURL == "" {
+		return ""
+	}
+
+	if strings.HasPrefix(mediaURL, storageBaseURL+"/") {
+		return cleanStorageObjectKey(strings.TrimPrefix(mediaURL, storageBaseURL+"/"))
+	}
+
+	parsedMedia, mediaErr := url.Parse(mediaURL)
+	parsedBase, baseErr := url.Parse(storageBaseURL)
+	if mediaErr != nil || baseErr != nil || parsedMedia.Host == "" || parsedBase.Host == "" {
+		return ""
+	}
+	if !strings.EqualFold(parsedMedia.Host, parsedBase.Host) {
+		return ""
+	}
+
+	basePath := strings.TrimRight(parsedBase.EscapedPath(), "/")
+	mediaPath := parsedMedia.EscapedPath()
+	if basePath == "" || basePath == "/" {
+		return strings.TrimLeft(mediaPath, "/")
+	}
+	if !strings.HasPrefix(mediaPath, basePath+"/") {
+		return ""
+	}
+	key, err := url.PathUnescape(strings.TrimPrefix(mediaPath, basePath+"/"))
+	if err != nil {
+		return cleanStorageObjectKey(strings.TrimPrefix(mediaPath, basePath+"/"))
+	}
+	return cleanStorageObjectKey(key)
+}
+
+func cleanStorageObjectKey(key string) string {
+	unescaped, err := url.PathUnescape(key)
+	if err == nil {
+		key = unescaped
+	}
+	return strings.TrimLeft(path.Clean("/"+key), "/")
 }
 
 // GetHLSMasterPlaylist handles GET /video/:clipId/master.m3u8
@@ -659,7 +796,7 @@ func (h *ClipHandler) RequestClipBackfill(c *gin.Context) {
 	if h.jobService == nil {
 		c.JSON(http.StatusServiceUnavailable, StandardResponse{
 			Success: false,
-			Error: &ErrorInfo{Code: "PROCESSING_UNAVAILABLE", Message: "Clip processing is not configured"},
+			Error:   &ErrorInfo{Code: "PROCESSING_UNAVAILABLE", Message: "Clip processing is not configured"},
 		})
 		return
 	}

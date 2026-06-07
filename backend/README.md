@@ -328,6 +328,7 @@ See `.env.example` for all available configuration options:
 - **Redis**: Host, port, password
 - **JWT**: Private/public keys for authentication
 - **Twitch**: OAuth credentials
+- **Clip**: Submission quality and storage settings (`CLIP_*` env vars)
 - **Stripe**: Payment integration
 - **Email**: SendGrid integration
 - **OpenSearch**: Search service connection
@@ -357,6 +358,35 @@ REC_CACHE_TTL_HOURS=24          # Cache TTL in hours (default: 24)
 ```
 
 For optimization guidance, see `../docs/CF-OPTIMIZATION-RESULTS.md`.
+
+### Clip Submission Storage Configuration
+
+These settings are wired for backend configuration and validation; the app does not ship a direct upload flow here.
+
+```bash
+CLIP_MAX_DURATION_SECONDS=60
+CLIP_RECOMMENDED_DURATION_SECONDS=60
+CLIP_MAX_UPLOAD_BYTES=104857600
+CLIP_ALLOWED_UPLOAD_MIME_TYPES=video/mp4,video/webm,video/quicktime
+CLIP_REQUIRE_MODERATION_FOR_UPLOAD=false
+CLIP_STORAGE_PROVIDER=local
+CLIP_STORAGE_ENDPOINT=
+CLIP_STORAGE_BUCKET=
+CLIP_STORAGE_REGION=us-east-1
+CLIP_STORAGE_ACCESS_KEY=
+CLIP_STORAGE_SECRET_KEY=
+CLIP_STORAGE_FORCE_PATH_STYLE=false
+CLIP_STORAGE_PUBLIC_BASE_URL=
+CLIP_MEDIA_PUBLIC_BASE_URL=
+```
+
+Direct clip media is exposed through the app-owned redirect endpoint
+`/api/v1/clips/{id}/media`. When `video_url` points at object storage, clip API
+responses rewrite it to that endpoint, and the endpoint redirects to the resolved
+storage URL without proxying video bytes through the backend. Set
+`CLIP_MEDIA_PUBLIC_BASE_URL` (for example, `https://clpr.tv/api/v1/clips`) when
+clients need absolute app-owned media URLs; otherwise responses use a relative
+API path.
 
 - **Redis**: Host, port, password
 - **JWT**: Secret key, token expiration
