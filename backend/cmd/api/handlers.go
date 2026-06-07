@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/subculture-collective/clipper/internal/handlers"
+	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
 )
 
 // Handlers holds all HTTP handler instances.
@@ -113,7 +113,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	contactHandler := handlers.NewContactHandler(repos.Contact, svcs.Auth)
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
-	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clipper", "main")
+	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
 	revenueHandler := handlers.NewRevenueHandler(svcs.Revenue)
 	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, svcs.Auth, repos.User)

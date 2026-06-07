@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // ==============================================================================
@@ -15,7 +15,7 @@ import (
 
 func TestValidateTakedownNotice_RequiredFields(t *testing.T) {
 	service := &DMCAService{
-		baseURL: "https://clipper.example.com",
+		baseURL: "https://clpr.example.com",
 	}
 
 	tests := []struct {
@@ -32,7 +32,7 @@ func TestValidateTakedownNotice_RequiredFields(t *testing.T) {
 				ComplainantAddress:         "123 Main St, City, State 12345",
 				Relationship:               "owner",
 				CopyrightedWorkDescription: "Original video content created by me",
-				InfringingURLs:             []string{"https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
+				InfringingURLs:             []string{"https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
 				GoodFaithStatement:         true,
 				AccuracyStatement:          true,
 				Signature:                  "John Doe",
@@ -79,7 +79,7 @@ func TestValidateTakedownNotice_RequiredFields(t *testing.T) {
 				ComplainantAddress:         "123 Main St, City, State 12345",
 				Relationship:               "owner",
 				CopyrightedWorkDescription: "Original video content",
-				InfringingURLs:             []string{"https://clipper.example.com/clip/" + generateLongString(600)},
+				InfringingURLs:             []string{"https://clpr.example.com/clip/" + generateLongString(600)},
 				GoodFaithStatement:         true,
 				AccuracyStatement:          true,
 				Signature:                  "John Doe",
@@ -95,7 +95,7 @@ func TestValidateTakedownNotice_RequiredFields(t *testing.T) {
 				ComplainantAddress:         "123 Main St, City, State 12345",
 				Relationship:               "owner",
 				CopyrightedWorkDescription: "Original video content",
-				InfringingURLs:             []string{"https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
+				InfringingURLs:             []string{"https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
 				GoodFaithStatement:         false,
 				AccuracyStatement:          true,
 				Signature:                  "John Doe",
@@ -111,7 +111,7 @@ func TestValidateTakedownNotice_RequiredFields(t *testing.T) {
 				ComplainantAddress:         "123 Main St, City, State 12345",
 				Relationship:               "owner",
 				CopyrightedWorkDescription: "Original video content",
-				InfringingURLs:             []string{"https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
+				InfringingURLs:             []string{"https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
 				GoodFaithStatement:         true,
 				AccuracyStatement:          false,
 				Signature:                  "John Doe",
@@ -127,7 +127,7 @@ func TestValidateTakedownNotice_RequiredFields(t *testing.T) {
 				ComplainantAddress:         "123 Main St, City, State 12345",
 				Relationship:               "owner",
 				CopyrightedWorkDescription: "Original video content",
-				InfringingURLs:             []string{"https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
+				InfringingURLs:             []string{"https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000"},
 				GoodFaithStatement:         true,
 				AccuracyStatement:          true,
 				Signature:                  "Jane Smith",
@@ -224,7 +224,7 @@ func TestFuzzyMatchSignature(t *testing.T) {
 
 func TestValidateCounterNotice(t *testing.T) {
 	service := &DMCAService{
-		baseURL: "https://clipper.example.com",
+		baseURL: "https://clpr.example.com",
 	}
 
 	validNoticeID := uuid.New()
@@ -242,7 +242,7 @@ func TestValidateCounterNotice(t *testing.T) {
 				UserName:              "John Doe",
 				UserEmail:             "john@example.com",
 				UserAddress:           "123 Main St, City, State 12345",
-				RemovedMaterialURL:    "https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
+				RemovedMaterialURL:    "https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
 				GoodFaithStatement:    true,
 				ConsentToJurisdiction: true,
 				ConsentToService:      true,
@@ -272,7 +272,7 @@ func TestValidateCounterNotice(t *testing.T) {
 				UserName:              "John Doe",
 				UserEmail:             "john@example.com",
 				UserAddress:           "123 Main St, City, State 12345",
-				RemovedMaterialURL:    "https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
+				RemovedMaterialURL:    "https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
 				GoodFaithStatement:    false,
 				ConsentToJurisdiction: true,
 				ConsentToService:      true,
@@ -288,7 +288,7 @@ func TestValidateCounterNotice(t *testing.T) {
 				UserName:              "John Doe",
 				UserEmail:             "john@example.com",
 				UserAddress:           "123 Main St, City, State 12345",
-				RemovedMaterialURL:    "https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
+				RemovedMaterialURL:    "https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
 				GoodFaithStatement:    true,
 				ConsentToJurisdiction: false,
 				ConsentToService:      true,
@@ -304,7 +304,7 @@ func TestValidateCounterNotice(t *testing.T) {
 				UserName:              "John Doe",
 				UserEmail:             "john@example.com",
 				UserAddress:           "123 Main St, City, State 12345",
-				RemovedMaterialURL:    "https://clipper.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
+				RemovedMaterialURL:    "https://clpr.example.com/clip/123e4567-e89b-12d3-a456-426614174000",
 				GoodFaithStatement:    true,
 				ConsentToJurisdiction: true,
 				ConsentToService:      true,
@@ -333,7 +333,7 @@ func TestValidateCounterNotice(t *testing.T) {
 
 func TestDMCAExtractClipIDFromURL(t *testing.T) {
 	service := &DMCAService{
-		baseURL: "https://clipper.example.com",
+		baseURL: "https://clpr.example.com",
 	}
 
 	validClipID := uuid.New()
@@ -346,43 +346,43 @@ func TestDMCAExtractClipIDFromURL(t *testing.T) {
 	}{
 		{
 			name:    "Valid clip URL",
-			url:     "https://clipper.example.com/clip/" + validClipID.String(),
+			url:     "https://clpr.example.com/clip/" + validClipID.String(),
 			wantID:  validClipID,
 			wantErr: false,
 		},
 		{
 			name:    "Valid clip URL with query params",
-			url:     "https://clipper.example.com/clip/" + validClipID.String() + "?foo=bar",
+			url:     "https://clpr.example.com/clip/" + validClipID.String() + "?foo=bar",
 			wantID:  validClipID,
 			wantErr: false,
 		},
 		{
 			name:    "Valid clip URL with fragment",
-			url:     "https://clipper.example.com/clip/" + validClipID.String() + "#section",
+			url:     "https://clpr.example.com/clip/" + validClipID.String() + "#section",
 			wantID:  validClipID,
 			wantErr: false,
 		},
 		{
 			name:    "Invalid URL - wrong path",
-			url:     "https://clipper.example.com/video/" + validClipID.String(),
+			url:     "https://clpr.example.com/video/" + validClipID.String(),
 			wantID:  uuid.Nil,
 			wantErr: true,
 		},
 		{
 			name:    "Invalid URL - too many path segments",
-			url:     "https://clipper.example.com/clip/" + validClipID.String() + "/extra",
+			url:     "https://clpr.example.com/clip/" + validClipID.String() + "/extra",
 			wantID:  uuid.Nil,
 			wantErr: true,
 		},
 		{
 			name:    "Invalid URL - missing clip ID",
-			url:     "https://clipper.example.com/clip/",
+			url:     "https://clpr.example.com/clip/",
 			wantID:  uuid.Nil,
 			wantErr: true,
 		},
 		{
 			name:    "Invalid UUID format",
-			url:     "https://clipper.example.com/clip/not-a-uuid",
+			url:     "https://clpr.example.com/clip/not-a-uuid",
 			wantID:  uuid.Nil,
 			wantErr: true,
 		},

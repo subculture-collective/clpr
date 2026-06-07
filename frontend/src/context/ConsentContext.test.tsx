@@ -162,7 +162,7 @@ describe('ConsentContext', () => {
             fireEvent.click(screen.getByTestId('accept-all'));
         });
 
-        const stored = localStorage.getItem('clipper_consent_preferences');
+        const stored = localStorage.getItem('clpr_consent_preferences');
         expect(stored).toBeTruthy();
 
         const parsed = JSON.parse(stored!);
@@ -177,7 +177,7 @@ describe('ConsentContext', () => {
         expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 1 year from now
 
         localStorage.setItem(
-            'clipper_consent_preferences',
+            'clpr_consent_preferences',
             JSON.stringify({
                 version: '1.0',
                 preferences: {
@@ -207,7 +207,7 @@ describe('ConsentContext', () => {
     it('should reset consent and show banner again', () => {
         // Pre-set consent
         localStorage.setItem(
-            'clipper_consent_preferences',
+            'clpr_consent_preferences',
             JSON.stringify({
                 version: '1.0',
                 preferences: {
@@ -232,7 +232,7 @@ describe('ConsentContext', () => {
 
         expect(screen.getByTestId('has-consented')).toHaveTextContent('false');
         expect(screen.getByTestId('show-banner')).toHaveTextContent('true');
-        expect(localStorage.getItem('clipper_consent_preferences')).toBeNull();
+        expect(localStorage.getItem('clpr_consent_preferences')).toBeNull();
     });
 
     it('should detect Do Not Track signal', () => {
@@ -312,7 +312,7 @@ describe('ConsentContext', () => {
     it('should invalidate old consent versions', () => {
         // Pre-set consent with old version
         localStorage.setItem(
-            'clipper_consent_preferences',
+            'clpr_consent_preferences',
             JSON.stringify({
                 version: '0.9',
                 preferences: {

@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/services"
-	"github.com/subculture-collective/clipper/pkg/database"
-	opensearchpkg "github.com/subculture-collective/clipper/pkg/opensearch"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	opensearchpkg "git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
 )
 
 const usage = `Search Index Manager - Manage versioned search indices

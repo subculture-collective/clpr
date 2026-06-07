@@ -36,7 +36,7 @@ Welcome to Clipper! These Terms of Service ("Terms") govern your access to and u
 
 <!-- ATTORNEY NOTE: Verify company legal entity information below -->
 
-Clipper is operated by Subculture Collective ("Clipper," "we," "us," or "our"). If you have questions about these Terms, please contact us at [LEGAL_EMAIL@clipper.com].
+Clipper is operated by Subculture Collective ("Clipper," "we," "us," or "our"). If you have questions about these Terms, please contact us at [LEGAL_EMAIL@clpr.com].
 
 ## 1. Acceptance of Terms
 
@@ -76,7 +76,7 @@ You are responsible for maintaining the confidentiality of your account credenti
 
 ### 2.4 Account Termination
 
-We reserve the right to suspend or terminate your account at any time, with or without notice, for any reason, including if we believe you have violated these Terms. You may also terminate your account at any time by contacting us at [SUPPORT_EMAIL@clipper.com].
+We reserve the right to suspend or terminate your account at any time, with or without notice, for any reason, including if we believe you have violated these Terms. You may also terminate your account at any time by contacting us at [SUPPORT_EMAIL@clpr.com].
 
 ## 3. User Content
 
@@ -212,7 +212,7 @@ All payments are processed through Stripe, our third-party payment processor. Yo
 
 ### 6.4 Cancellation
 
-You may cancel your Premium Subscription at any time through your account settings or by contacting us at [SUPPORT_EMAIL@clipper.com]. If you cancel:
+You may cancel your Premium Subscription at any time through your account settings or by contacting us at [SUPPORT_EMAIL@clpr.com]. If you cancel:
 
 - Your cancellation will take effect at the end of your current billing period
 - You will retain access to Premium features until the end of your current billing period
@@ -337,7 +337,7 @@ These Terms and any disputes arising out of or related to these Terms or the Ser
 
 ### 15.2 Informal Resolution
 
-Before filing a claim, you agree to contact us at [LEGAL_EMAIL@clipper.com] and attempt to resolve the dispute informally. We will attempt to resolve the dispute informally by contacting you via email. If a dispute is not resolved within 30 days of submission, either party may bring a formal proceeding.
+Before filing a claim, you agree to contact us at [LEGAL_EMAIL@clpr.com] and attempt to resolve the dispute informally. We will attempt to resolve the dispute informally by contacting you via email. If a dispute is not resolved within 30 days of submission, either party may bring a formal proceeding.
 
 ### 15.3 Arbitration Agreement
 
@@ -367,7 +367,7 @@ Notwithstanding the arbitration agreement:
 
 ### 12.6 Opt-Out
 
-You have the right to opt out of this arbitration agreement by sending written notice of your decision to opt out to [LEGAL_EMAIL@clipper.com] within 30 days of first accepting these Terms. If you opt out, you and Clipper agree to resolve disputes in accordance with Section 11.7 below.
+You have the right to opt out of this arbitration agreement by sending written notice of your decision to opt out to [LEGAL_EMAIL@clpr.com] within 30 days of first accepting these Terms. If you opt out, you and Clipper agree to resolve disputes in accordance with Section 11.7 below.
 
 ### 12.7 Jurisdiction and Venue
 
@@ -457,7 +457,7 @@ These Terms do not create any agency, partnership, joint venture, employment, or
 
 ### 15.7 Notices
 
-We may provide notices to you via email to the address associated with your account or through the Service. You agree that electronic notices satisfy any legal requirement that notices be in writing. Notices to us should be sent to [LEGAL_EMAIL@clipper.com].
+We may provide notices to you via email to the address associated with your account or through the Service. You agree that electronic notices satisfy any legal requirement that notices be in writing. Notices to us should be sent to [LEGAL_EMAIL@clpr.com].
 
 ### 15.8 Export Control
 
@@ -473,10 +473,10 @@ If you have questions, concerns, or feedback about these Terms or the Service, p
 
 **Subculture Collective**
 
-- **Email:** [LEGAL_EMAIL@clipper.com]
-- **Support:** [SUPPORT_EMAIL@clipper.com]
+- **Email:** [LEGAL_EMAIL@clpr.com]
+- **Support:** [SUPPORT_EMAIL@clpr.com]
 - **Address:** [COMPANY_ADDRESS]
-- **Website:** [https://clipper.example.com](https://clipper.example.com)
+- **Website:** [https://clpr.example.com](https://clpr.example.com)
 
 <!-- ATTORNEY NOTE: Verify all contact information and company address are correct -->
 
@@ -490,8 +490,8 @@ If you have questions, concerns, or feedback about these Terms or the Service, p
 
 3. **Placeholders:** All content in [BRACKETS] are placeholders that must be replaced with actual information before publication:
    - [DATE TO BE ADDED] - Last updated date
-   - [LEGAL_EMAIL@clipper.com] - Legal contact email
-   - [SUPPORT_EMAIL@clipper.com] - Support contact email
+   - [LEGAL_EMAIL@clpr.com] - Legal contact email
+   - [SUPPORT_EMAIL@clpr.com] - Support contact email
    - [DELAWARE/CALIFORNIA] - Chosen governing law state
    - [LOCATION] - Arbitration location
    - [COUNTY, STATE] - Jurisdiction for legal proceedings

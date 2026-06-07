@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "TEAM_ID.com.subculture.clipper",
+        "appID": "TEAM_ID.com.subculture.clpr",
         "paths": [
           "/clip/*",
           "/profile",
@@ -24,7 +24,7 @@
   },
   "webcredentials": {
     "apps": [
-      "TEAM_ID.com.subculture.clipper"
+      "TEAM_ID.com.subculture.clpr"
     ]
   }
 }

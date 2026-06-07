@@ -143,7 +143,7 @@ make test-integration-api
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Run specific test suite
 cd backend
@@ -329,17 +329,17 @@ docker compose -f docker-compose.test.yml ps
 docker compose -f docker-compose.test.yml logs postgres
 
 # Test connection manually
-psql -h localhost -p 5437 -U clipper -d clipper_test
+psql -h localhost -p 5437 -U clpr -d clpr_test
 ```
 
 #### Migration Errors
 
 ```bash
 # Check migration status
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" version
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" version
 
 # Force migration to specific version
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" force VERSION
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" force VERSION
 ```
 
 #### Redis Connection Errors

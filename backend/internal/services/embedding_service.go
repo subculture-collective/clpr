@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/pkg/metrics"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 )
 
 const (

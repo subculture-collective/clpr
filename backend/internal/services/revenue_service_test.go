@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"github.com/subculture-collective/clipper/config"
+	"git.subcult.tv/subculture-collective/clpr/config"
 )
 
 func TestNewRevenueService(t *testing.T) {

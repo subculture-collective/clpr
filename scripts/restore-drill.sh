@@ -13,16 +13,16 @@ NC='\033[0m' # No Color
 
 # Configuration
 CLOUD_PROVIDER="${CLOUD_PROVIDER:-gcp}"
-BACKUP_BUCKET="${BACKUP_BUCKET:-clipper-backups-prod}"
+BACKUP_BUCKET="${BACKUP_BUCKET:-clpr-backups-prod}"
 AZURE_STORAGE_ACCOUNT="${AZURE_STORAGE_ACCOUNT:-}"
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_USER="${POSTGRES_USER:-clipper}"
-POSTGRES_DB="${POSTGRES_DB:-clipper}"
+POSTGRES_USER="${POSTGRES_USER:-clpr}"
+POSTGRES_DB="${POSTGRES_DB:-clpr}"
 TEST_DB_PREFIX="${TEST_DB_PREFIX:-restore_drill_test}"
 RTO_TARGET_SECONDS="${RTO_TARGET_SECONDS:-3600}"  # 1 hour
 RPO_TARGET_SECONDS="${RPO_TARGET_SECONDS:-900}"   # 15 minutes
-DRILL_LOG="${DRILL_LOG:-/var/log/clipper/restore-drill.log}"
+DRILL_LOG="${DRILL_LOG:-/var/log/clpr/restore-drill.log}"
 
 # Metrics
 DRILL_SUCCESS=0

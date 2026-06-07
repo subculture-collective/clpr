@@ -185,13 +185,13 @@ Required in `.env` file:
 # Database
 DB_HOST=localhost
 DB_PORT=5436
-DB_USER=clipper
+DB_USER=clpr
 DB_PASSWORD=secure_password
-DB_NAME=clipper_db
+DB_NAME=clpr_db
 DB_SSLMODE=require  # For production/staging; use 'disable' only for local development
 
 # Optional
-BACKUP_DIR=/var/backups/clipper
+BACKUP_DIR=/var/backups/clpr
 ```
 
 ## Exit Codes

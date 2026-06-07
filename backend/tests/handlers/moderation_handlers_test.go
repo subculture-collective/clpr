@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/subculture-collective/clipper/internal/handlers"
+	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
 )
 
 // TestSyncBans_Unauthorized tests that syncing bans requires authentication

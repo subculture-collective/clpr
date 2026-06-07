@@ -324,13 +324,13 @@ last_updated: 2026-02-01
 
 ## Child Issues
 
-1. [#1143 - Premium Subscription Checkout Implementation](https://github.com/subculture-collective/clipper/issues/1143)
-2. [#1149 - Subscription Management Features](https://github.com/subculture-collective/clipper/issues/1149)
-3. [#1147 - Stripe Webhook Integration](https://github.com/subculture-collective/clipper/issues/1147)
-4. [#1144 - CDN Failover Configuration](https://github.com/subculture-collective/clipper/issues/1144)
-5. [#1145 - Channel Management Features](https://github.com/subculture-collective/clipper/issues/1145)
-6. [#1148 - Advanced Search Discovery Features](https://github.com/subculture-collective/clipper/issues/1148)
-7. [#1146 - Moderation Workflow System](https://github.com/subculture-collective/clipper/issues/1146)
+1. [#1143 - Premium Subscription Checkout Implementation](https://git.subcult.tv/subculture-collective/clpr/issues/1143)
+2. [#1149 - Subscription Management Features](https://git.subcult.tv/subculture-collective/clpr/issues/1149)
+3. [#1147 - Stripe Webhook Integration](https://git.subcult.tv/subculture-collective/clpr/issues/1147)
+4. [#1144 - CDN Failover Configuration](https://git.subcult.tv/subculture-collective/clpr/issues/1144)
+5. [#1145 - Channel Management Features](https://git.subcult.tv/subculture-collective/clpr/issues/1145)
+6. [#1148 - Advanced Search Discovery Features](https://git.subcult.tv/subculture-collective/clpr/issues/1148)
+7. [#1146 - Moderation Workflow System](https://git.subcult.tv/subculture-collective/clpr/issues/1146)
 
 ## Next Actions
 

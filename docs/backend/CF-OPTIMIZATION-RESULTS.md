@@ -13,7 +13,7 @@ last_reviewed: 2026-01-29
 
 **Date**: 2024-12-30  
 **Roadmap**: 5.0 Phase 3.2  
-**Issue**: [#840](https://github.com/subculture-collective/clipper/issues/840)
+**Issue**: [#840](https://git.subcult.tv/subculture-collective/clpr/issues/840)
 
 ## Executive Summary
 
@@ -23,7 +23,7 @@ This document details the collaborative filtering optimization work including ba
 
 ### Current Performance (Version 1.0)
 
-Baseline established using the evaluation framework from [issue #839](https://github.com/subculture-collective/clipper/issues/839).
+Baseline established using the evaluation framework from [issue #839](https://git.subcult.tv/subculture-collective/clpr/issues/839).
 
 **Dataset**: recommendation_evaluation_dataset.yaml v1.0  
 **Date**: 2024-12-30  

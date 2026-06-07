@@ -8,7 +8,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/config"
+	"git.subcult.tv/subculture-collective/clpr/config"
 )
 
 // Init initializes Sentry SDK with the given configuration

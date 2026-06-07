@@ -262,8 +262,8 @@ Rollback if any of the following occur:
 ## Dependencies
 
 ### Related Issues
-- [#837](https://github.com/subculture-collective/clipper/issues/837) - Search Relevance Evaluation Framework (completed)
-- [#805](https://github.com/subculture-collective/clipper/issues/805) - Related search improvements
+- [#837](https://git.subcult.tv/subculture-collective/clpr/issues/837) - Search Relevance Evaluation Framework (completed)
+- [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805) - Related search improvements
 
 ### Technical Dependencies
 - Evaluation dataset: `backend/testdata/search_evaluation_dataset.yaml`

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // MockApplicationLogRepository is a mock implementation of the repository for testing
@@ -55,8 +55,8 @@ func TestCreateLog_Success(t *testing.T) {
 			if log.Message != "Test error message" {
 				t.Errorf("expected message 'Test error message', got '%s'", log.Message)
 			}
-			if log.Service != "clipper-frontend" {
-				t.Errorf("expected service 'clipper-frontend', got '%s'", log.Service)
+			if log.Service != "clpr-frontend" {
+				t.Errorf("expected service 'clpr-frontend', got '%s'", log.Service)
 			}
 			return nil
 		},

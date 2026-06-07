@@ -11,13 +11,13 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
-	"github.com/subculture-collective/clipper/internal/services"
-	"github.com/subculture-collective/clipper/pkg/database"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
-	"github.com/subculture-collective/clipper/pkg/twitch"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 )
 
 type siteFreshnessPreset struct {

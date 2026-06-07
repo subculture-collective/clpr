@@ -34,11 +34,11 @@ info:
   version: 1.0.0
   contact:
     name: Clipper API Support
-    url: https://github.com/subculture-collective/clipper
+    url: https://git.subcult.tv/subculture-collective/clpr
     email: support@clpr.tv
   license:
     name: MIT
-    url: https://github.com/subculture-collective/clipper/blob/main/LICENSE
+    url: https://git.subcult.tv/subculture-collective/clpr/blob/main/LICENSE
 servers:
   - url: http://localhost:8080
     description: Local development server

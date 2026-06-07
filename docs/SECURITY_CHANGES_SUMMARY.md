@@ -141,7 +141,7 @@ Cross-Origin-Resource-Policy: same-origin
 ### Pre-Deployment Check
 ```bash
 # Syntax check Caddyfile
-docker exec clipper-caddy caddy validate --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy validate --config /etc/caddy/Caddyfile
 ```
 
 ### Post-Deployment Verification
@@ -215,13 +215,13 @@ INFO: Multiple
 # Edit Caddyfile, comment out CSP line
 nano Caddyfile.vps
 # Comment: # Content-Security-Policy-Report-Only "..."
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ### Full Rollback
 ```bash
 git checkout main -- Caddyfile Caddyfile.vps frontend/nginx.conf
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ## Timeline

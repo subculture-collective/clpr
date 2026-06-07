@@ -1,6 +1,6 @@
 # Moderation System Monitoring Runbook
 
-**Related Issue:** [#1021 - Set Up Monitoring & Alerts](https://github.com/subculture-collective/clipper/issues/1021)
+**Related Issue:** [#1021 - Set Up Monitoring & Alerts](https://git.subcult.tv/subculture-collective/clpr/issues/1021)
 
 ## Overview
 
@@ -122,12 +122,12 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 3. Check recent errors in logs:
    ```bash
-   kubectl logs -l app=clipper-backend --tail=100 | grep -i "ban.*error"
+   kubectl logs -l app=clpr-backend --tail=100 | grep -i "ban.*error"
    ```
 
 4. Verify database connectivity:
    ```bash
-   kubectl exec -it deployment/clipper-backend -- psql -U clipper -c "SELECT 1"
+   kubectl exec -it deployment/clpr-backend -- psql -U clpr -c "SELECT 1"
    ```
 
 **Common Causes & Solutions:**
@@ -158,23 +158,23 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 1. **Alert stakeholders** in #incidents channel
 2. **Check service health:**
    ```bash
-   kubectl get pods -l app=clipper-backend
-   kubectl top pods -l app=clipper-backend
+   kubectl get pods -l app=clpr-backend
+   kubectl top pods -l app=clpr-backend
    ```
 
 3. **Review recent deployments:**
    ```bash
-   kubectl rollout history deployment/clipper-backend
+   kubectl rollout history deployment/clpr-backend
    ```
 
 4. **Consider rollback** if related to recent deployment:
    ```bash
-   kubectl rollout undo deployment/clipper-backend
+   kubectl rollout undo deployment/clpr-backend
    ```
 
 5. **Enable maintenance mode** if issue persists:
    ```bash
-   kubectl patch deployment clipper-backend -p '{"spec":{"replicas":0}}'
+   kubectl patch deployment clpr-backend -p '{"spec":{"replicas":0}}'
    ```
 
 **Recovery Steps:**
@@ -206,14 +206,14 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 3. Check authentication tokens:
    ```bash
-   kubectl exec -it deployment/clipper-backend -- \
-     psql -U clipper -d clipper -c \
+   kubectl exec -it deployment/clpr-backend -- \
+     psql -U clpr -d clpr -c \
      "SELECT user_id, expires_at FROM twitch_auth WHERE expires_at < NOW() LIMIT 5"
    ```
 
 4. Review sync job logs:
    ```bash
-   kubectl logs -l app=clipper-backend --tail=200 | grep -i "sync"
+   kubectl logs -l app=clpr-backend --tail=200 | grep -i "sync"
    ```
 
 **Common Issues:**
@@ -240,7 +240,7 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 1. Disable automatic sync temporarily:
    ```bash
-   kubectl set env deployment/clipper-backend SYNC_ENABLED=false
+   kubectl set env deployment/clpr-backend SYNC_ENABLED=false
    ```
 
 2. Check Twitch API status:
@@ -253,7 +253,7 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 4. Manual sync attempt:
    ```bash
-   kubectl exec -it deployment/clipper-backend -- \
+   kubectl exec -it deployment/clpr-backend -- \
      curl -X POST http://localhost:8080/api/v1/moderation/sync
    ```
 
@@ -285,8 +285,8 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 3. Review recent user activity:
    ```bash
-   kubectl exec -it deployment/clipper-backend -- \
-     psql -U clipper -d clipper -c \
+   kubectl exec -it deployment/clpr-backend -- \
+     psql -U clpr -d clpr -c \
      "SELECT user_id, action, COUNT(*) FROM moderation_audit_logs 
       WHERE created_at > NOW() - INTERVAL '1 hour' 
       GROUP BY user_id, action ORDER BY COUNT DESC LIMIT 10"
@@ -320,8 +320,8 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 2. **Check role configuration:**
    ```bash
-   kubectl exec -it deployment/clipper-backend -- \
-     psql -U clipper -d clipper -c \
+   kubectl exec -it deployment/clpr-backend -- \
+     psql -U clpr -d clpr -c \
      "SELECT role, COUNT(*) FROM users GROUP BY role"
    ```
 
@@ -333,7 +333,7 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 4. **Rollback recent changes:**
    ```bash
-   kubectl rollout undo deployment/clipper-backend
+   kubectl rollout undo deployment/clpr-backend
    ```
 
 ---
@@ -355,7 +355,7 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 2. Check database performance:
    ```bash
    kubectl exec -it postgres-0 -- \
-     psql -U clipper -d clipper -c \
+     psql -U clpr -d clpr -c \
      "SELECT query, calls, mean_exec_time FROM pg_stat_statements 
       WHERE query LIKE '%moderation%' 
       ORDER BY mean_exec_time DESC LIMIT 10"
@@ -443,12 +443,12 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 2. Review application logs:
    ```bash
-   kubectl logs -l app=clipper-backend --tail=500 | grep -E "ERROR|FATAL"
+   kubectl logs -l app=clpr-backend --tail=500 | grep -E "ERROR|FATAL"
    ```
 
 3. Test endpoints manually:
    ```bash
-   curl -X POST http://clipper-backend:8080/api/v1/moderation/ban \
+   curl -X POST http://clpr-backend:8080/api/v1/moderation/ban \
      -H "Authorization: Bearer $TOKEN" \
      -d '{"user_id": "test", "reason": "test"}'
    ```
@@ -474,28 +474,28 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 
 1. Check pod health:
    ```bash
-   kubectl get pods -l app=clipper-backend
+   kubectl get pods -l app=clpr-backend
    kubectl describe pod <pod-name>
    ```
 
 2. Review recent deployments:
    ```bash
-   kubectl rollout status deployment/clipper-backend
+   kubectl rollout status deployment/clpr-backend
    ```
 
 3. Check resource usage:
    ```bash
-   kubectl top pods -l app=clipper-backend
+   kubectl top pods -l app=clpr-backend
    ```
 
 4. Scale up if needed:
    ```bash
-   kubectl scale deployment clipper-backend --replicas=6
+   kubectl scale deployment clpr-backend --replicas=6
    ```
 
 5. Consider rollback:
    ```bash
-   kubectl rollout undo deployment/clipper-backend
+   kubectl rollout undo deployment/clpr-backend
    ```
 
 ---
@@ -608,7 +608,7 @@ Verify metrics are being exported:
 
 ```bash
 # Check Prometheus targets
-curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="clipper-backend")'
+curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="clpr-backend")'
 
 # Verify specific metrics exist
 curl 'http://localhost:9090/api/v1/query?query=moderation_ban_operations_total' | jq '.data.result'
@@ -621,7 +621,7 @@ Test alerts fire correctly:
 ```bash
 # Generate test ban operations
 for i in {1..100}; do
-  curl -X POST http://clipper-backend:8080/api/v1/moderation/ban \
+  curl -X POST http://clpr-backend:8080/api/v1/moderation/ban \
     -H "Authorization: Bearer $TOKEN" \
     -d "{\"user_id\": \"test_$i\", \"reason\": \"test\"}"
 done

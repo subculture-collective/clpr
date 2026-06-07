@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/internal/middleware"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {

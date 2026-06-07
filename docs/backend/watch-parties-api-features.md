@@ -81,7 +81,7 @@ The system is designed with a **±2 second sync tolerance** for video playback s
 ```json
 {
   "party_id": "party-uuid",
-  "ws_url": "wss://api.clipper.com/api/v1/watch-parties/:id/ws"
+  "ws_url": "wss://api.clpr.com/api/v1/watch-parties/:id/ws"
 }
 ```
 
@@ -470,7 +470,7 @@ The system handles various network conditions:
 const partyId = 'party-uuid';
 // Authentication is handled via Authorization header during WebSocket upgrade
 // The server checks for a valid JWT in the Authorization header
-const wsUrl = `wss://api.clipper.com/api/v1/watch-parties/${partyId}/ws`;
+const wsUrl = `wss://api.clpr.com/api/v1/watch-parties/${partyId}/ws`;
 
 // Note: WebSocket API doesn't directly support custom headers in browser environments
 // For browser clients, use an existing authenticated session (HttpOnly cookies)

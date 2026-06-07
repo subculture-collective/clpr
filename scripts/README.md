@@ -43,7 +43,7 @@ This directory contains automation scripts for deploying, managing, and maintain
 
 ```bash
 # Standard deployment
-cd /opt/clipper
+cd /opt/clpr
 ./scripts/blue-green-deploy.sh
 
 # Deploy specific version
@@ -53,20 +53,20 @@ IMAGE_TAG=v1.2.3 ./scripts/blue-green-deploy.sh
 MONITORING_ENABLED=true WEBHOOK_URL="https://hooks.slack.com/..." ./scripts/blue-green-deploy.sh
 
 # Custom configuration
-DEPLOY_DIR=/opt/clipper \
+DEPLOY_DIR=/opt/clpr \
 HEALTH_CHECK_RETRIES=60 \
 HEALTH_CHECK_INTERVAL=5 \
 ./scripts/blue-green-deploy.sh
 ```
 
 **Environment Variables**:
-- `DEPLOY_DIR`: Deployment directory (default: `/opt/clipper`)
+- `DEPLOY_DIR`: Deployment directory (default: `/opt/clpr`)
 - `COMPOSE_FILE`: Compose file name (default: `docker-compose.blue-green.yml`)
-- `REGISTRY`: Container registry (default: `ghcr.io/subculture-collective/clipper`)
+- `REGISTRY`: Container registry (default: `ghcr.io/subculture-collective/clpr`)
 - `IMAGE_TAG`: Image tag to deploy (default: `latest`)
 - `HEALTH_CHECK_RETRIES`: Max health check attempts (default: `30`)
 - `HEALTH_CHECK_INTERVAL`: Seconds between checks (default: `10`)
-- `BACKUP_DIR`: Backup directory (default: `/opt/clipper/backups`)
+- `BACKUP_DIR`: Backup directory (default: `/opt/clpr/backups`)
 - `MONITORING_ENABLED`: Enable notifications (default: `false`)
 - `WEBHOOK_URL`: Webhook for notifications (if monitoring enabled)
 
@@ -84,7 +84,7 @@ HEALTH_CHECK_INTERVAL=5 \
 [INFO] Target environment: green
 
 [STEP] Creating backup...
-[SUCCESS] Backup created: /opt/clipper/backups/deployment-20250116-120000.tar.gz
+[SUCCESS] Backup created: /opt/clpr/backups/deployment-20250116-120000.tar.gz
 
 [STEP] Pulling latest images for green environment...
 [SUCCESS] Images pulled successfully
@@ -118,7 +118,7 @@ HEALTH_CHECK_INTERVAL=5 \
 [SUCCESS] Blue-Green deployment completed successfully
 [INFO] Previous environment: blue (stopped)
 [INFO] Current environment: green (active)
-[INFO] Backup: /opt/clipper/backups/deployment-20250116-120000.tar.gz
+[INFO] Backup: /opt/clpr/backups/deployment-20250116-120000.tar.gz
 ```
 
 ### rollback-blue-green.sh
@@ -144,7 +144,7 @@ HEALTH_CHECK_INTERVAL=5 \
 ./scripts/rollback-blue-green.sh --yes
 
 # Custom deployment directory
-DEPLOY_DIR=/opt/clipper ./scripts/rollback-blue-green.sh -y
+DEPLOY_DIR=/opt/clpr ./scripts/rollback-blue-green.sh -y
 ```
 
 **Options**:
@@ -296,7 +296,7 @@ MIGRATIONS_DIR=/path/to/migrations ./scripts/check-migration-compatibility.sh
 ./scripts/test-blue-green-deployment.sh
 
 # Test in specific directory
-DEPLOY_DIR=/opt/clipper-staging ./scripts/test-blue-green-deployment.sh
+DEPLOY_DIR=/opt/clpr-staging ./scripts/test-blue-green-deployment.sh
 
 # Custom environment name
 TEST_ENV=staging ./scripts/test-blue-green-deployment.sh
@@ -479,17 +479,17 @@ Deploys the application with automated backup, migration, and health checks.
 
 ```bash
 # Deploy to production
-cd /opt/clipper
+cd /opt/clpr
 ./scripts/deploy.sh
 
 # Deploy with custom settings
-DEPLOY_DIR=/opt/clipper ENVIRONMENT=production ./scripts/deploy.sh
+DEPLOY_DIR=/opt/clpr ENVIRONMENT=production ./scripts/deploy.sh
 ```
 
 **Environment Variables**:
 
-- `DEPLOY_DIR`: Deployment directory (default: `/opt/clipper`)
-- `REGISTRY`: Container registry (default: `ghcr.io/subculture-collective/clipper`)
+- `DEPLOY_DIR`: Deployment directory (default: `/opt/clpr`)
+- `REGISTRY`: Container registry (default: `ghcr.io/subculture-collective/clpr`)
 - `ENVIRONMENT`: Environment name (default: `production`)
 
 **Example Output**:
@@ -497,11 +497,11 @@ DEPLOY_DIR=/opt/clipper ENVIRONMENT=production ./scripts/deploy.sh
 ```
 === Clipper Deployment Script ===
 Environment: production
-Deploy Directory: /opt/clipper
+Deploy Directory: /opt/clpr
 
 [INFO] Running pre-deployment checks...
 [INFO] Creating backup of current deployment...
-[INFO] Backed up clipper-backend:latest -> clipper-backend:backup-20240101-120000
+[INFO] Backed up clpr-backend:latest -> clpr-backend:backup-20240101-120000
 [INFO] Pulling latest images from registry...
 [INFO] Deploying new version...
 [INFO] Waiting for services to start...
@@ -532,24 +532,24 @@ Rollback to a previous version using backup tags.
 ./scripts/rollback.sh backup-20240101-120000
 
 # Rollback with custom deployment directory
-DEPLOY_DIR=/opt/clipper ./scripts/rollback.sh backup-20240101-120000
+DEPLOY_DIR=/opt/clpr ./scripts/rollback.sh backup-20240101-120000
 ```
 
 **Environment Variables**:
 
-- `DEPLOY_DIR`: Deployment directory (default: `/opt/clipper`)
+- `DEPLOY_DIR`: Deployment directory (default: `/opt/clpr`)
 
 **Example Output**:
 
 ```
 === Clipper Rollback Script ===
-Deploy Directory: /opt/clipper
+Deploy Directory: /opt/clpr
 Backup Tag: backup-20240101-120000
 
 WARNING: This will rollback to the backup version.
 Images to restore:
-  - clipper-backend:backup-20240101-120000
-  - clipper-frontend:backup-20240101-120000
+  - clpr-backend:backup-20240101-120000
+  - clpr-frontend:backup-20240101-120000
 
 Are you sure you want to continue? (yes/no): yes
 [INFO] Stopping current containers...
@@ -631,13 +631,13 @@ Backup database, Redis data, and configuration files.
 ./scripts/backup.sh
 
 # Custom configuration
-DEPLOY_DIR=/opt/clipper BACKUP_DIR=/var/backups/clipper RETENTION_DAYS=30 ./scripts/backup.sh
+DEPLOY_DIR=/opt/clpr BACKUP_DIR=/var/backups/clpr RETENTION_DAYS=30 ./scripts/backup.sh
 ```
 
 **Environment Variables**:
 
-- `DEPLOY_DIR`: Deployment directory (default: `/opt/clipper`)
-- `BACKUP_DIR`: Backup directory (default: `/var/backups/clipper`)
+- `DEPLOY_DIR`: Deployment directory (default: `/opt/clpr`)
+- `BACKUP_DIR`: Backup directory (default: `/var/backups/clpr`)
 - `RETENTION_DAYS`: Backup retention in days (default: `30`)
 
 **Scheduled Backups**:
@@ -647,13 +647,13 @@ DEPLOY_DIR=/opt/clipper BACKUP_DIR=/var/backups/clipper RETENTION_DAYS=30 ./scri
 sudo crontab -e
 
 # Add this line:
-0 2 * * * /opt/clipper/scripts/backup.sh
+0 2 * * * /opt/clpr/scripts/backup.sh
 ```
 
 **Backup Structure**:
 
 ```
-/var/backups/clipper/
+/var/backups/clpr/
 ├── db-20240101-120000.sql.gz         # Database backup
 ├── redis-20240101-120000/
 │   └── dump.rdb                       # Redis data
@@ -668,15 +668,15 @@ sudo crontab -e
 
 ```
 === Clipper Backup Script ===
-Deploy Directory: /opt/clipper
-Backup Directory: /var/backups/clipper
+Deploy Directory: /opt/clpr
+Backup Directory: /var/backups/clpr
 Retention: 30 days
 
 [INFO] Backing up PostgreSQL database...
-[INFO] Database backup saved: /var/backups/clipper/db-20240101-120000.sql.gz
+[INFO] Database backup saved: /var/backups/clpr/db-20240101-120000.sql.gz
 [INFO] Size: 15M
 [INFO] Backing up Redis data...
-[INFO] Redis backup saved: /var/backups/clipper/redis-20240101-120000/dump.rdb
+[INFO] Redis backup saved: /var/backups/clpr/redis-20240101-120000/dump.rdb
 [INFO] Size: 2.3M
 [INFO] Backing up configuration files...
 [INFO] Backup Summary:
@@ -774,7 +774,7 @@ These scripts are used by GitHub Actions workflows but can also be run manually 
     username: deploy
     key: ${{ secrets.DEPLOY_SSH_KEY }}
     script: |
-      cd /opt/clipper
+      cd /opt/clpr
       ./scripts/deploy.sh
 ```
 
@@ -886,7 +886,7 @@ sudo certbot certonly --dry-run --nginx -d clpr.tv
 
    ```bash
    # Note the backup tag before deployment
-   docker images | grep clipper
+   docker images | grep clpr
    
    # If needed, rollback
    ./scripts/rollback.sh backup-20240101-120000
@@ -1153,7 +1153,7 @@ See [Migration Plan](../docs/MIGRATION_PLAN.md) for detailed procedures.
 ```bash
 # Run backup validation
 export CLOUD_PROVIDER="gcp"  # or "aws", "azure"
-export BACKUP_BUCKET="clipper-backups-prod"
+export BACKUP_BUCKET="clpr-backups-prod"
 ./scripts/validate-backup.sh
 
 # With custom settings
@@ -1170,7 +1170,7 @@ export PROMETHEUS_PUSHGATEWAY="http://prometheus-pushgateway:9091"
 - `MAX_BACKUP_AGE_HOURS`: Maximum acceptable backup age (default: 24)
 - `MIN_BACKUP_SIZE_MB`: Minimum backup size in MB (default: 1)
 - `PROMETHEUS_PUSHGATEWAY`: Pushgateway URL for metrics (optional)
-- `VALIDATION_LOG`: Log file path (default: /var/log/clipper/backup-validation.log)
+- `VALIDATION_LOG`: Log file path (default: /var/log/clpr/backup-validation.log)
 
 **Validation Checks**:
 1. Backup exists in cloud storage
@@ -1189,11 +1189,11 @@ export PROMETHEUS_PUSHGATEWAY="http://prometheus-pushgateway:9091"
 === Backup Validation Started at 2026-01-29 03:00:00 ===
 [INFO] Configuration:
 [INFO]   Cloud Provider: gcp
-[INFO]   Backup Bucket: clipper-backups-prod
+[INFO]   Backup Bucket: clpr-backups-prod
 [INFO]   Max Backup Age: 24h
 [INFO]   Min Backup Size: 1MB
-[INFO] Checking GCS bucket: gs://clipper-backups-prod/database/
-[INFO] Latest backup: gs://clipper-backups-prod/database/postgres-backup-20260129-020000.sql.gz
+[INFO] Checking GCS bucket: gs://clpr-backups-prod/database/
+[INFO] Latest backup: gs://clpr-backups-prod/database/postgres-backup-20260129-020000.sql.gz
 [INFO] Backup size: 147MB
 [INFO] Backup timestamp: 2026-01-29 02:00:00
 [INFO] Backup age: 1 hours
@@ -1233,7 +1233,7 @@ Automated via GitHub Actions workflow `.github/workflows/backup-validation.yml` 
 ```bash
 # Run restore drill
 export CLOUD_PROVIDER="gcp"
-export BACKUP_BUCKET="clipper-backups-prod"
+export BACKUP_BUCKET="clpr-backups-prod"
 export POSTGRES_HOST="localhost"
 export POSTGRES_PASSWORD="your_password"
 ./scripts/restore-drill.sh
@@ -1250,13 +1250,13 @@ export RPO_TARGET_SECONDS="900"   # 15 minutes
 - `AZURE_STORAGE_ACCOUNT`: Azure storage account (Azure only)
 - `POSTGRES_HOST`: PostgreSQL host (default: localhost)
 - `POSTGRES_PORT`: PostgreSQL port (default: 5432)
-- `POSTGRES_USER`: PostgreSQL user (default: clipper)
+- `POSTGRES_USER`: PostgreSQL user (default: clpr)
 - `POSTGRES_PASSWORD`: PostgreSQL password (required)
-- `POSTGRES_DB`: PostgreSQL database (default: clipper)
+- `POSTGRES_DB`: PostgreSQL database (default: clpr)
 - `RTO_TARGET_SECONDS`: RTO target in seconds (default: 3600)
 - `RPO_TARGET_SECONDS`: RPO target in seconds (default: 900)
 - `PROMETHEUS_PUSHGATEWAY`: Pushgateway URL for metrics (optional)
-- `DRILL_LOG`: Log file path (default: /var/log/clipper/restore-drill.log)
+- `DRILL_LOG`: Log file path (default: /var/log/clpr/restore-drill.log)
 
 **Drill Operations**:
 1. Download latest backup
@@ -1277,7 +1277,7 @@ export RPO_TARGET_SECONDS="900"   # 15 minutes
 === Restore Drill Started at 2026-02-01 04:00:00 ===
 [INFO] Configuration:
 [INFO]   Cloud Provider: gcp
-[INFO]   Backup Bucket: clipper-backups-prod
+[INFO]   Backup Bucket: clpr-backups-prod
 [INFO]   PostgreSQL Host: localhost:5432
 [INFO]   RTO Target: 3600s (60 minutes)
 [INFO]   RPO Target: 900s (15 minutes)

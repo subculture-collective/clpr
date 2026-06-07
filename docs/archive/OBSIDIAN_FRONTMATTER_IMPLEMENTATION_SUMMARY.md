@@ -12,7 +12,7 @@ aliases: ["obsidian implementation", "frontmatter summary"]
 
 # Obsidian Frontmatter & Metadata Implementation Summary
 
-**Issue**: [#846](https://github.com/subculture-collective/clipper/issues/846) - Obsidian Frontmatter & Metadata  
+**Issue**: [#846](https://git.subcult.tv/subculture-collective/clpr/issues/846) - Obsidian Frontmatter & Metadata
 **Date Completed**: 2026-01-29  
 **Status**: ✅ Complete  
 **Roadmap**: Roadmap 5.0 Phase 4.1 - Obsidian Documentation Vault

@@ -36,7 +36,7 @@ All logs follow a consistent JSON structure:
   "timestamp": "2024-12-15T19:00:00Z",
   "level": "info",
   "message": "HTTP Request",
-  "service": "clipper-backend",
+  "service": "clpr-backend",
   "trace_id": "abc123-def456",
   "user_id": "hashed_user_id",
   "method": "GET",
@@ -54,7 +54,7 @@ All logs follow a consistent JSON structure:
 - `timestamp`: ISO 8601 timestamp in UTC
 - `level`: Log level (debug, info, warn, error, fatal)
 - `message`: Human-readable log message
-- `service`: Service name (clipper-backend, clipper-frontend, clipper-mobile)
+- `service`: Service name (clpr-backend, clpr-frontend, clpr-mobile)
 - `trace_id`: Request/trace ID for correlation
 - `user_id`: Hashed user ID (for privacy)
 - `error`: Error message (if applicable)
@@ -66,7 +66,7 @@ All logs follow a consistent JSON structure:
 ### Using the Logger
 
 ```go
-import "github.com/subculture-collective/clipper/pkg/utils"
+import "git.subcult.tv/subculture-collective/clpr/pkg/utils"
 
 // Initialize logger (done in main.go)
 utils.InitLogger(utils.LogLevelInfo)
@@ -213,7 +213,7 @@ Query examples:
 {level="error"}
 
 # Backend errors in the last hour
-{service="clipper-backend", level="error"} [1h]
+{service="clpr-backend", level="error"} [1h]
 
 # Logs for a specific trace ID
 {trace_id="abc123"}
@@ -222,7 +222,7 @@ Query examples:
 {message=~".*authentication failed.*"}
 
 # High latency requests
-{service="clipper-backend"} | json | latency > 1s
+{service="clpr-backend"} | json | latency > 1s
 ```
 
 ## Log Retention
@@ -320,9 +320,9 @@ for _, clip := range clips {
 ### By Time Range
 
 ```logql
-{service="clipper-backend"} [5m]  # Last 5 minutes
-{service="clipper-backend"} [1h]  # Last hour
-{service="clipper-backend"} [24h] # Last day
+{service="clpr-backend"} [5m]  # Last 5 minutes
+{service="clpr-backend"} [1h]  # Last hour
+{service="clpr-backend"} [24h] # Last day
 ```
 
 ### By Log Level
@@ -336,10 +336,10 @@ for _, clip := range clips {
 ### By Service
 
 ```logql
-{service="clipper-backend"}
-{service="clipper-frontend"}
-{service="clipper-mobile"}
-{service=~"clipper-.*"}            # All services
+{service="clpr-backend"}
+{service="clpr-frontend"}
+{service="clpr-mobile"}
+{service=~"clpr-.*"}            # All services
 ```
 
 ### By Message Content
@@ -354,23 +354,23 @@ for _, clip := range clips {
 
 ```logql
 # Parse JSON and filter
-{service="clipper-backend"} | json | status_code >= 500
+{service="clpr-backend"} | json | status_code >= 500
 
 # Filter by user
-{service="clipper-backend"} | json | user_id="abc123"
+{service="clpr-backend"} | json | user_id="abc123"
 
 # Filter by latency
-{service="clipper-backend"} | json | latency > 100ms
+{service="clpr-backend"} | json | latency > 100ms
 ```
 
 ### Aggregations
 
 ```logql
 # Count logs by level
-sum(count_over_time({service="clipper-backend"}[5m])) by (level)
+sum(count_over_time({service="clpr-backend"}[5m])) by (level)
 
 # Average latency
-avg_over_time({service="clipper-backend"} | json | unwrap latency [5m])
+avg_over_time({service="clpr-backend"} | json | unwrap latency [5m])
 
 # Error rate
 sum(rate({level="error"}[5m])) by (service)

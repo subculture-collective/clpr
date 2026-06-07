@@ -80,7 +80,7 @@ docker-compose -f docker-compose.test.yml up -d
 
 # Run migrations
 cd backend
-migrate -path migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 ```
 
 ### Frontend E2E Tests
@@ -561,7 +561,7 @@ docker ps | grep postgres
 docker-compose -f docker-compose.test.yml up -d
 
 # Verify connection
-psql -h localhost -p 5437 -U clipper -d clipper_test
+psql -h localhost -p 5437 -U clpr -d clpr_test
 ```
 
 #### Redis Connection Failed
@@ -629,7 +629,7 @@ Tests should clean up after themselves, but if data persists:
 docker-compose -f docker-compose.test.yml down -v
 docker-compose -f docker-compose.test.yml up -d
 cd backend
-migrate -path migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 ```
 
 ### Debug Mode

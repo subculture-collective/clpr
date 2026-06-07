@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // newTestSubscriptionService creates a subscription service with mock dependencies for testing

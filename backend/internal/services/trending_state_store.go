@@ -6,7 +6,7 @@ import (
 	"time"
 
 	redisv9 "github.com/redis/go-redis/v9"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 const (

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/config"
-	sentrypkg "github.com/subculture-collective/clipper/pkg/sentry"
-	telemetrypkg "github.com/subculture-collective/clipper/pkg/telemetry"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
+	telemetrypkg "git.subcult.tv/subculture-collective/clpr/pkg/telemetry"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 func main() {

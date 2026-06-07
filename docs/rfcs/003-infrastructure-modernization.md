@@ -182,17 +182,17 @@ We have adopted a **Kubernetes-native, cloud-agnostic infrastructure stack** wit
 ### Kubernetes Namespaces
 
 ```
-clipper-production/     # Production workloads
+clpr-production/     # Production workloads
 ├── backend (Deployment + HPA + Service)
 ├── frontend (Deployment + HPA + Service)
 ├── postgres (StatefulSet + Service)
 ├── redis (StatefulSet + Service)
 └── opensearch (StatefulSet + Service)
 
-clipper-staging/        # Staging environment
+clpr-staging/        # Staging environment
 ├── (same structure as production)
 
-clipper-monitoring/     # Observability stack
+clpr-monitoring/     # Observability stack
 ├── prometheus
 ├── grafana
 ├── loki
@@ -213,12 +213,12 @@ external-secrets-system/ # Secrets operator
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: clipper-backend
+  name: clpr-backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: clipper-backend
+    name: clpr-backend
   minReplicas: 3  # production
   maxReplicas: 20 # production
   metrics:
@@ -251,12 +251,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: clipper-backend
+  name: clpr-backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: clipper-backend
+    name: clpr-backend
   minReplicas: 2  # staging
   maxReplicas: 5  # staging
   metrics:
@@ -289,12 +289,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: clipper-frontend
+  name: clpr-frontend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: clipper-frontend
+    name: clpr-frontend
   minReplicas: 2  # production
   maxReplicas: 8  # production
   metrics:
@@ -588,7 +588,7 @@ apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: backend-secrets
-  namespace: clipper-production
+  namespace: clpr-production
 spec:
   refreshInterval: 5m
   secretStoreRef:
@@ -600,11 +600,11 @@ spec:
   data:
   - secretKey: DATABASE_PASSWORD
     remoteRef:
-      key: clipper/production/database
+      key: clpr/production/database
       property: password
   - secretKey: JWT_SECRET
     remoteRef:
-      key: clipper/production/jwt
+      key: clpr/production/jwt
       property: secret
 ```
 
@@ -616,15 +616,15 @@ See: [Secrets Management Documentation](../operations/secrets-management.md)
 
 **Service Accounts:**
 
-1. **clipper-backend** (Application pods):
+1. **clpr-backend** (Application pods):
    - Read ConfigMaps and Secrets in namespace
    - No cluster-level permissions
 
-2. **clipper-deployer** (CI/CD):
-   - Deploy, update, delete resources in clipper-* namespaces
+2. **clpr-deployer** (CI/CD):
+   - Deploy, update, delete resources in clpr-* namespaces
    - Read-only access to monitoring namespace
 
-3. **clipper-monitor** (Monitoring):
+3. **clpr-monitor** (Monitoring):
    - Read-only access to all namespaces for metrics scraping
 
 **Example RBAC:**
@@ -633,7 +633,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: backend-role
-  namespace: clipper-production
+  namespace: clpr-production
 rules:
 - apiGroups: [""]
   resources: ["configmaps", "secrets"]
@@ -643,11 +643,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: backend-rolebinding
-  namespace: clipper-production
+  namespace: clpr-production
 subjects:
 - kind: ServiceAccount
-  name: clipper-backend
-  namespace: clipper-production
+  name: clpr-backend
+  namespace: clpr-production
 roleRef:
   kind: Role
   name: backend-role
@@ -672,11 +672,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: backend-allow-ingress
-  namespace: clipper-production
+  namespace: clpr-production
 spec:
   podSelector:
     matchLabels:
-      app: clipper-backend
+      app: clpr-backend
   policyTypes:
   - Ingress
   - Egress
@@ -780,9 +780,9 @@ See: [Monitoring Documentation](../operations/monitoring.md)
 
 **Example Query:**
 ```logql
-{namespace="clipper-production", app="clipper-backend"} 
-  |= "error" 
-  | json 
+{namespace="clpr-production", app="clpr-backend"}
+  |= "error"
+  | json
   | status_code >= 500
 ```
 
@@ -877,7 +877,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
-  namespace: clipper-production
+  namespace: clpr-production
 spec:
   schedule: "0 2 * * *"  # Daily at 2 AM UTC
   jobTemplate:
@@ -893,7 +893,7 @@ spec:
             - |
               pg_dump $DATABASE_URL | \
               gzip | \
-              aws s3 cp - s3://clipper-backups/postgres/$(date +%Y%m%d).sql.gz
+              aws s3 cp - s3://clpr-backups/postgres/$(date +%Y%m%d).sql.gz
             env:
             - name: DATABASE_URL
               valueFrom:
@@ -916,7 +916,7 @@ See: [Backup Setup Documentation](../infrastructure/k8s/base/BACKUP_SETUP.md)
 -- postgresql.conf
 wal_level = replica
 archive_mode = on
-archive_command = 'aws s3 cp %p s3://clipper-wal-archive/%f'
+archive_command = 'aws s3 cp %p s3://clpr-wal-archive/%f'
 archive_timeout = 300  # 5 minutes
 ```
 
@@ -1299,8 +1299,8 @@ Rollback to previous infrastructure if:
 1. **Initiate Rollback** (2 minutes):
    ```bash
    # Stop traffic to Kubernetes
-   kubectl scale deployment clipper-backend --replicas=0 -n clipper-production
-   kubectl scale deployment clipper-frontend --replicas=0 -n clipper-production
+   kubectl scale deployment clpr-backend --replicas=0 -n clpr-production
+   kubectl scale deployment clpr-frontend --replicas=0 -n clpr-production
    ```
 
 2. **Restore DNS** (5 minutes):
@@ -1478,20 +1478,20 @@ All documentation complete and linked in this RFC:
 
 ### Roadmap 5.0 Phase 5 Issues
 
-- [#836 - Infrastructure Modernization RFC](https://github.com/subculture-collective/clipper/issues/836) - This RFC
-- [#805 - Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805) - Overall roadmap
-- [#852 - Kubernetes Cluster Setup](https://github.com/subculture-collective/clipper/issues/852)
-- [#853 - Application Helm Charts](https://github.com/subculture-collective/clipper/issues/853)
-- [#854 - Kubernetes Documentation](https://github.com/subculture-collective/clipper/issues/854)
-- [#855 - Horizontal Pod Autoscaling (HPA)](https://github.com/subculture-collective/clipper/issues/855)
-- [#856 - Database Connection Pooling Optimization](https://github.com/subculture-collective/clipper/issues/856)
-- [#857 - Resource Quota & Limits](https://github.com/subculture-collective/clipper/issues/857)
-- [#858 - Grafana Dashboards](https://github.com/subculture-collective/clipper/issues/858)
-- [#859 - Alerting Configuration](https://github.com/subculture-collective/clipper/issues/859)
-- [#860 - Distributed Tracing](https://github.com/subculture-collective/clipper/issues/860)
-- [#861 - Web Application Firewall (WAF)](https://github.com/subculture-collective/clipper/issues/861)
-- [#862 - DDoS Protection](https://github.com/subculture-collective/clipper/issues/862)
-- [#863 - Automated Backup & Recovery](https://github.com/subculture-collective/clipper/issues/863)
+- [#836 - Infrastructure Modernization RFC](https://git.subcult.tv/subculture-collective/clpr/issues/836) - This RFC
+- [#805 - Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805) - Overall roadmap
+- [#852 - Kubernetes Cluster Setup](https://git.subcult.tv/subculture-collective/clpr/issues/852)
+- [#853 - Application Helm Charts](https://git.subcult.tv/subculture-collective/clpr/issues/853)
+- [#854 - Kubernetes Documentation](https://git.subcult.tv/subculture-collective/clpr/issues/854)
+- [#855 - Horizontal Pod Autoscaling (HPA)](https://git.subcult.tv/subculture-collective/clpr/issues/855)
+- [#856 - Database Connection Pooling Optimization](https://git.subcult.tv/subculture-collective/clpr/issues/856)
+- [#857 - Resource Quota & Limits](https://git.subcult.tv/subculture-collective/clpr/issues/857)
+- [#858 - Grafana Dashboards](https://git.subcult.tv/subculture-collective/clpr/issues/858)
+- [#859 - Alerting Configuration](https://git.subcult.tv/subculture-collective/clpr/issues/859)
+- [#860 - Distributed Tracing](https://git.subcult.tv/subculture-collective/clpr/issues/860)
+- [#861 - Web Application Firewall (WAF)](https://git.subcult.tv/subculture-collective/clpr/issues/861)
+- [#862 - DDoS Protection](https://git.subcult.tv/subculture-collective/clpr/issues/862)
+- [#863 - Automated Backup & Recovery](https://git.subcult.tv/subculture-collective/clpr/issues/863)
 
 ### Related Documentation
 

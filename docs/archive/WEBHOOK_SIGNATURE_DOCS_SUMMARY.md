@@ -178,7 +178,7 @@ Developers can now:
 ## File Structure
 
 ```
-clipper/
+clpr/
 ├── docs/
 │   ├── WEBHOOK_SIGNATURE_VERIFICATION.md (NEW - 800+ lines)
 │   └── WEBHOOK_SUBSCRIPTION_MANAGEMENT.md (UPDATED)

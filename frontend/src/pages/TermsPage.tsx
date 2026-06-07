@@ -393,7 +393,7 @@ export function TermsPage() {
               <li>
                 <strong className="text-foreground">GitHub:</strong>{' '}
                 <a
-                  href="https://github.com/subculture-collective/clipper/issues"
+                  href="https://git.subcult.tv/subculture-collective/clpr/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
@@ -402,7 +402,7 @@ export function TermsPage() {
                 </a>
               </li>
               <li>
-                <strong className="text-foreground">Email:</strong> legal@clipper.com (for legal inquiries)
+                <strong className="text-foreground">Email:</strong> legal@clpr.com (for legal inquiries)
               </li>
             </ul>
             <p className="text-muted-foreground mt-4">

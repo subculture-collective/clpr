@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/subculture-collective/clipper/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // Test helper: creates a pointer to float64 (including zero values, unlike the production helper)

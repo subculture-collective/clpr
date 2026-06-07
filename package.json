@@ -1,5 +1,5 @@
 {
-  "name": "clipper-docs",
+  "name": "clpr-docs",
   "private": true,
   "scripts": {
     "docs:toc": "doctoc --notitle --maxlevel 3 README.md",

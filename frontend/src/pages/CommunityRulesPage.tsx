@@ -163,7 +163,7 @@ export function CommunityRulesPage() {
               If you have questions about these rules or want to report a concern, you can:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-              <li>Open an issue on our <a href="https://github.com/subculture-collective/clipper" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub repository</a></li>
+              <li>Open an issue on our <a href="https://git.subcult.tv/subculture-collective/clpr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub repository</a></li>
               <li>Contact the moderation team through the platform's report feature</li>
               <li>Join our community Discord for general questions</li>
             </ul>

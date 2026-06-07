@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/subculture-collective/clipper/config"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 func setupTestRedis(t *testing.T) *redispkg.Client {

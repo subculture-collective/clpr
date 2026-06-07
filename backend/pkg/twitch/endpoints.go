@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // GetClips fetches clips from Twitch API

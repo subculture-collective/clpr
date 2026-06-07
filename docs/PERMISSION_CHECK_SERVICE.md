@@ -15,8 +15,8 @@ The `PermissionCheckService` provides centralized permission checking and valida
 ### Initialization
 ```go
 import (
-    "github.com/subculture-collective/clipper/internal/services"
-    "github.com/subculture-collective/clipper/internal/repository"
+    "git.subcult.tv/subculture-collective/clpr/internal/services"
+    "git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // Initialize repositories and Redis client

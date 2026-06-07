@@ -160,6 +160,6 @@ GROUP BY DATE(tp.created_at)
 ORDER BY date DESC;
 
 -- Grant permissions
-GRANT SELECT ON toxicity_predictions TO clipper;
-GRANT SELECT ON toxicity_review_feedback TO clipper;
-GRANT SELECT ON toxicity_metrics TO clipper;
+GRANT SELECT ON toxicity_predictions TO clpr;
+GRANT SELECT ON toxicity_review_feedback TO clpr;
+GRANT SELECT ON toxicity_metrics TO clpr;

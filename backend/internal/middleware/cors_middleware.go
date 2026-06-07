@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/config"
+	"git.subcult.tv/subculture-collective/clpr/config"
 )
 
 // CORSMiddleware creates CORS middleware

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // MirrorRepositoryContract captures repository calls ClipMirrorService relies on.
@@ -284,7 +284,7 @@ func (s *ClipMirrorService) generateMirrorURL(clip *models.Clip, region string) 
 	// In a real implementation, this would generate actual storage URLs
 	// For now, we'll use a placeholder format
 	provider := s.determineStorageProvider(region)
-	return fmt.Sprintf("https://%s.%s.clipper.cdn/%s/%s.mp4",
+	return fmt.Sprintf("https://%s.%s.clpr.cdn/%s/%s.mp4",
 		provider, region, clip.TwitchClipID, clip.TwitchClipID)
 }
 

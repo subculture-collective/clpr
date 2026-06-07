@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 func setupTwitchAuthTestDB(t *testing.T) (*pgxpool.Pool, func()) {
@@ -18,7 +18,7 @@ func setupTwitchAuthTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 	// Build connection string from environment or defaults
 	connString := os.Getenv("TEST_DATABASE_URL")
 	if connString == "" {
-		connString = "postgres://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable"
+		connString = "postgres://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable"
 	}
 
 	pool, err := pgxpool.New(context.Background(), connString)

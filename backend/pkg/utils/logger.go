@@ -225,7 +225,7 @@ func (l *StructuredLogger) Debug(message string, fields ...map[string]interface{
 	entry := LogEntry{
 		Level:   string(LogLevelDebug),
 		Message: message,
-		Service: "clipper-backend",
+		Service: "clpr-backend",
 	}
 	if len(fields) > 0 {
 		entry.Fields = fields[0]
@@ -238,7 +238,7 @@ func (l *StructuredLogger) Info(message string, fields ...map[string]interface{}
 	entry := LogEntry{
 		Level:   string(LogLevelInfo),
 		Message: message,
-		Service: "clipper-backend",
+		Service: "clpr-backend",
 	}
 	if len(fields) > 0 {
 		entry.Fields = fields[0]
@@ -251,7 +251,7 @@ func (l *StructuredLogger) Warn(message string, fields ...map[string]interface{}
 	entry := LogEntry{
 		Level:   string(LogLevelWarn),
 		Message: message,
-		Service: "clipper-backend",
+		Service: "clpr-backend",
 	}
 	if len(fields) > 0 {
 		entry.Fields = fields[0]
@@ -264,7 +264,7 @@ func (l *StructuredLogger) Error(message string, err error, fields ...map[string
 	entry := LogEntry{
 		Level:   string(LogLevelError),
 		Message: message,
-		Service: "clipper-backend",
+		Service: "clpr-backend",
 	}
 	if err != nil {
 		entry.Error = err.Error()
@@ -303,7 +303,7 @@ func (l *StructuredLogger) GinLogger() gin.HandlerFunc {
 		entry := &LogEntry{
 			Level:      string(LogLevelInfo),
 			Message:    "HTTP Request",
-			Service:    "clipper-backend",
+			Service:    "clpr-backend",
 			TraceID:    traceID,
 			UserID:     userID,
 			Method:     c.Request.Method,
@@ -373,7 +373,7 @@ func (l *StructuredLogger) Fatal(message string, err error, fields ...map[string
 	entry := LogEntry{
 		Level:   string(LogLevelFatal),
 		Message: message,
-		Service: "clipper-backend",
+		Service: "clpr-backend",
 	}
 	if err != nil {
 		entry.Error = err.Error()

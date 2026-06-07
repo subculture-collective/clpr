@@ -11,9 +11,9 @@ import (
 
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/middleware"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 func applyGlobalMiddleware(r *gin.Engine, cfg *config.Config, infra *Infrastructure, svcs *Services, logger *utils.StructuredLogger) {

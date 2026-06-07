@@ -136,7 +136,7 @@ export function AboutPage() {
             </p>
             <div className="flex flex-wrap gap-4">
               <a
-                href="https://github.com/subculture-collective/clipper"
+                href="https://git.subcult.tv/subculture-collective/clpr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
@@ -144,7 +144,7 @@ export function AboutPage() {
                 View on GitHub
               </a>
               <a
-                href="https://github.com/subculture-collective/clipper/issues"
+                href="https://git.subcult.tv/subculture-collective/clpr/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 border border-border rounded-md hover:bg-accent transition-colors"
@@ -152,7 +152,7 @@ export function AboutPage() {
                 Report Issues
               </a>
               <a
-                href="https://github.com/subculture-collective/clipper/blob/main/CONTRIBUTING.md"
+                href="https://git.subcult.tv/subculture-collective/clpr/blob/main/CONTRIBUTING.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 border border-border rounded-md hover:bg-accent transition-colors"
@@ -213,7 +213,7 @@ export function AboutPage() {
               <p>
                 <strong className="text-foreground">Development:</strong> Contribute on{' '}
                 <a
-                  href="https://github.com/subculture-collective/clipper"
+                  href="https://git.subcult.tv/subculture-collective/clpr"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"

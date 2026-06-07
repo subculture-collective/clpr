@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/subculture-collective/clipper/config"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // TestDistributedRateLimiter tests the Redis-backed distributed rate limiter

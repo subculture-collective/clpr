@@ -159,7 +159,7 @@ npx @openapitools/openapi-generator-cli generate \
   -i docs/openapi/openapi.yaml \
   -g typescript-axios \
   -o generated/typescript-client \
-  --additional-properties=npmName=@clipper/api-client,npmVersion=1.0.0
+  --additional-properties=npmName=@clpr/api-client,npmVersion=1.0.0
 ```
 
 ### TypeScript/JavaScript (Fetch)
@@ -178,7 +178,7 @@ npx @openapitools/openapi-generator-cli generate \
   -i docs/openapi/openapi.yaml \
   -g python \
   -o generated/python-client \
-  --additional-properties=packageName=clipper_api,packageVersion=1.0.0
+  --additional-properties=packageName=clpr_api,packageVersion=1.0.0
 ```
 
 ### Go
@@ -188,7 +188,7 @@ npx @openapitools/openapi-generator-cli generate \
   -i docs/openapi/openapi.yaml \
   -g go \
   -o generated/go-client \
-  --additional-properties=packageName=clipper
+  --additional-properties=packageName=clpr
 ```
 
 ### Other Languages
@@ -365,8 +365,8 @@ The spec documents all 474+ endpoints. If an endpoint is missing or incorrect:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/subculture-collective/clipper/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/subculture-collective/clipper/discussions)
+- **Issues**: [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)
+- **Discussions**: [GitHub Discussions](https://git.subcult.tv/subculture-collective/clpr/discussions)
 - **Email**: support@clpr.tv
 
 ## 📜 License

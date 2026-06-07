@@ -194,7 +194,7 @@ backup_moderation_data() {
         return
     fi
     
-    BACKUP_DIR="${BACKUP_DIR:-/tmp/clipper-backups}"
+    BACKUP_DIR="${BACKUP_DIR:-/tmp/clpr-backups}"
     mkdir -p "$BACKUP_DIR"
     BACKUP_FILE="$BACKUP_DIR/moderation-rollback-$(date +%Y%m%d-%H%M%S).sql"
     

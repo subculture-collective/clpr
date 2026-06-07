@@ -13,7 +13,7 @@ type ApplicationLog struct {
 	Level      string          `json:"level" db:"level"` // debug, info, warn, error
 	Message    string          `json:"message" db:"message"`
 	Timestamp  time.Time       `json:"timestamp" db:"timestamp"`
-	Service    string          `json:"service" db:"service"`             // clipper-frontend, clipper-mobile
+	Service    string          `json:"service" db:"service"`             // clpr-frontend, clpr-mobile
 	Platform   *string         `json:"platform,omitempty" db:"platform"` // web, ios, android
 	UserID     *uuid.UUID      `json:"user_id,omitempty" db:"user_id"`
 	SessionID  *string         `json:"session_id,omitempty" db:"session_id"`

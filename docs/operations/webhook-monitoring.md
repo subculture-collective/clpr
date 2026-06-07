@@ -25,7 +25,7 @@ This guide covers the webhook monitoring infrastructure, metrics, alerts, and tr
 
 ### Dashboard Access
 
-- **Webhook Monitoring Dashboard**: `https://grafana.clipper.com/d/webhook-monitoring/webhook-monitoring-dashboard`
+- **Webhook Monitoring Dashboard**: `https://grafana.clpr.com/d/webhook-monitoring/webhook-monitoring-dashboard`
 - **System Health**: Available via Grafana → Dashboards → "System Health Dashboard"
 
 ## Key Metrics

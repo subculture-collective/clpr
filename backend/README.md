@@ -96,7 +96,7 @@ backend/
 
    # Or from backend directory
    cd backend
-   migrate -path migrations -database "postgresql://clipper:clipper_password@localhost:5436/clipper_db?sslmode=disable" up
+   migrate -path migrations -database "postgresql://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable" up
    ```
 
 7. (Optional) Seed database with sample data:

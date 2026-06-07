@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // MonitoringHandler handles monitoring and health check endpoints

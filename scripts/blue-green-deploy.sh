@@ -12,12 +12,12 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-DEPLOY_DIR="${DEPLOY_DIR:-/opt/clipper}"
+DEPLOY_DIR="${DEPLOY_DIR:-/opt/clpr}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.blue-green.yml}"
-REGISTRY="${REGISTRY:-ghcr.io/subculture-collective/clipper}"
+REGISTRY="${REGISTRY:-ghcr.io/subculture-collective/clpr}"
 HEALTH_CHECK_RETRIES="${HEALTH_CHECK_RETRIES:-30}"
 HEALTH_CHECK_INTERVAL="${HEALTH_CHECK_INTERVAL:-10}"
-BACKUP_DIR="${BACKUP_DIR:-/opt/clipper/backups}"
+BACKUP_DIR="${BACKUP_DIR:-/opt/clpr/backups}"
 MONITORING_ENABLED="${MONITORING_ENABLED:-false}"
 
 # Log functions
@@ -73,14 +73,14 @@ detect_active_env() {
     log_step "Detecting active environment..."
     
     # Check which backend is currently running
-    if docker ps --format '{{.Names}}' | grep -q "clipper-backend-blue"; then
-        if docker ps --format '{{.Names}}' | grep -q "clipper-backend-green"; then
+    if docker ps --format '{{.Names}}' | grep -q "clpr-backend-blue"; then
+        if docker ps --format '{{.Names}}' | grep -q "clpr-backend-green"; then
             log_warn "Both environments are running, assuming blue is active"
             echo "blue"
         else
             echo "blue"
         fi
-    elif docker ps --format '{{.Names}}' | grep -q "clipper-backend-green"; then
+    elif docker ps --format '{{.Names}}' | grep -q "clpr-backend-green"; then
         echo "green"
     else
         log_warn "No active environment detected, defaulting to blue"
@@ -147,11 +147,11 @@ health_check() {
         retries=$((retries + 1))
         
         # Check backend health
-        if docker exec clipper-backend-$env wget --spider -q http://localhost:$backend_port/health 2>/dev/null; then
+        if docker exec clpr-backend-$env wget --spider -q http://localhost:$backend_port/health 2>/dev/null; then
             log_info "Backend health check passed (attempt $retries/$HEALTH_CHECK_RETRIES)"
             
             # Check frontend health
-            if docker exec clipper-frontend-$env wget --spider -q http://localhost:$frontend_port/health.html 2>/dev/null; then
+            if docker exec clpr-frontend-$env wget --spider -q http://localhost:$frontend_port/health.html 2>/dev/null; then
                 log_success "$env environment is healthy"
                 return 0
             else
@@ -180,7 +180,7 @@ run_migrations() {
         
         # Pre-flight validation: Check database connectivity
         log_info "Validating database connectivity..."
-        if ! docker exec clipper-postgres pg_isready -U "${POSTGRES_USER:-clipper}" -d "${POSTGRES_DB:-clipper_db}" > /dev/null 2>&1; then
+        if ! docker exec clpr-postgres pg_isready -U "${POSTGRES_USER:-clpr}" -d "${POSTGRES_DB:-clpr_db}" > /dev/null 2>&1; then
             log_error "Database is not ready for migrations"
             return 1
         fi
@@ -191,14 +191,14 @@ run_migrations() {
         # The connection is network-isolated and doesn't traverse untrusted networks
         # For external database connections, enable SSL by changing sslmode=require
         # Password is passed via environment variable to avoid exposure in process list
-        DB_URL="postgresql://${POSTGRES_USER:-clipper}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clipper_db}?sslmode=disable"
+        DB_URL="postgresql://${POSTGRES_USER:-clpr}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clpr_db}?sslmode=disable"
         
         # Run migrations using golang-migrate in a temporary container
         # Pin to specific image digest for supply chain security
         # Current digest is for v4.17.0 (sha256:4d017c6fb5997127093648cab09e63d377997125c3d3dcca18e5d1c847da49fa)
         log_info "Executing database migrations..."
         if docker run --rm \
-            --network clipper-network \
+            --network clpr-network \
             -v "$DEPLOY_DIR/backend/migrations:/migrations:ro" \
             -e DATABASE_URL="$DB_URL" \
             migrate/migrate@sha256:4d017c6fb5997127093648cab09e63d377997125c3d3dcca18e5d1c847da49fa \
@@ -215,7 +215,7 @@ run_migrations() {
         # Verify migrations were applied
         log_info "Verifying migration status..."
         MIGRATION_OUTPUT=$(docker run --rm \
-            --network clipper-network \
+            --network clpr-network \
             -e DATABASE_URL="$DB_URL" \
             migrate/migrate@sha256:4d017c6fb5997127093648cab09e63d377997125c3d3dcca18e5d1c847da49fa \
             -path /migrations \
@@ -253,20 +253,20 @@ switch_traffic() {
         # Determine which environment to point to
         if [ "$target_env" = "blue" ]; then
             # Switch from green to blue
-            sed -i 's/clipper-backend-green:8080/clipper-backend-blue:8080/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
-            sed -i.bak 's/clipper-backend-green:8080/clipper-backend-blue:8080/g' "$DEPLOY_DIR/Caddyfile"
-            sed -i 's/clipper-frontend-green:80/clipper-frontend-blue:80/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
-            sed -i.bak 's/clipper-frontend-green:80/clipper-frontend-blue:80/g' "$DEPLOY_DIR/Caddyfile"
+            sed -i 's/clpr-backend-green:8080/clpr-backend-blue:8080/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
+            sed -i.bak 's/clpr-backend-green:8080/clpr-backend-blue:8080/g' "$DEPLOY_DIR/Caddyfile"
+            sed -i 's/clpr-frontend-green:80/clpr-frontend-blue:80/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
+            sed -i.bak 's/clpr-frontend-green:80/clpr-frontend-blue:80/g' "$DEPLOY_DIR/Caddyfile"
         else
             # Switch from blue to green
-            sed -i 's/clipper-backend-blue:8080/clipper-backend-green:8080/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
-            sed -i.bak 's/clipper-backend-blue:8080/clipper-backend-green:8080/g' "$DEPLOY_DIR/Caddyfile"
-            sed -i 's/clipper-frontend-blue:80/clipper-frontend-green:80/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
-            sed -i.bak 's/clipper-frontend-blue:80/clipper-frontend-green:80/g' "$DEPLOY_DIR/Caddyfile"
+            sed -i 's/clpr-backend-blue:8080/clpr-backend-green:8080/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
+            sed -i.bak 's/clpr-backend-blue:8080/clpr-backend-green:8080/g' "$DEPLOY_DIR/Caddyfile"
+            sed -i 's/clpr-frontend-blue:80/clpr-frontend-green:80/g' "$DEPLOY_DIR/Caddyfile" 2>/dev/null || \
+            sed -i.bak 's/clpr-frontend-blue:80/clpr-frontend-green:80/g' "$DEPLOY_DIR/Caddyfile"
         fi
         
         # Reload Caddy configuration
-        if docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null; then
+        if docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null; then
             log_success "Traffic switched to $target_env environment"
             return 0
         else
@@ -311,7 +311,7 @@ rollback() {
     stop_old_environment "$failed_env"
     
     # Ensure active environment is running
-    if ! docker ps --format '{{.Names}}' | grep -q "clipper-backend-$active_env"; then
+    if ! docker ps --format '{{.Names}}' | grep -q "clpr-backend-$active_env"; then
         log_warn "Active environment not running, attempting to start..."
         start_environment "$active_env"
     fi

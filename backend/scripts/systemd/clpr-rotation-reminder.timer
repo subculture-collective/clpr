@@ -1,10 +1,10 @@
 # Systemd timer for credential rotation reminder
-# Install to /etc/systemd/system/clipper-rotation-reminder.timer
+# Install to /etc/systemd/system/clpr-rotation-reminder.timer
 
 [Unit]
 Description=Check credential rotation status weekly
-Documentation=https://github.com/subculture-collective/clipper/docs/operations/credential-rotation-runbook.md
-Requires=clipper-rotation-reminder.service
+Documentation=https://git.subcult.tv/subculture-collective/clpr/docs/operations/credential-rotation-runbook.md
+Requires=clpr-rotation-reminder.service
 
 [Timer]
 # Run every Monday at 9:00 AM

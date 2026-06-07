@@ -12,7 +12,7 @@ last_reviewed: 2026-01-29
 
 This document describes the automated documentation quality checks that run in CI to ensure high-quality, consistent documentation throughout the Clipper project.
 
-**Related Issues:** [#803](https://github.com/subculture-collective/clipper/issues/803), [#845](https://github.com/subculture-collective/clipper/issues/845), [#846](https://github.com/subculture-collective/clipper/issues/846), [#805](https://github.com/subculture-collective/clipper/issues/805)
+**Related Issues:** [#803](https://git.subcult.tv/subculture-collective/clpr/issues/803), [#845](https://git.subcult.tv/subculture-collective/clpr/issues/845), [#846](https://git.subcult.tv/subculture-collective/clpr/issues/846), [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 
 ## Overview
 

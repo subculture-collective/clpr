@@ -20,33 +20,33 @@ to group issues by phase and priority.
 
 ## Master Tracker: Testing Coverage Gaps ✅
 
-Live Tracker Issue: [#900](https://github.com/subculture-collective/clipper/issues/900)
+Live Tracker Issue: [#900](https://git.subcult.tv/subculture-collective/clpr/issues/900)
 
 - Phase 1 — Critical Security & Compliance (P0)
-  - [ ] Issue: DMCA Handler Test Suite (P0, MVP) — [#917](https://github.com/subculture-collective/clipper/issues/917)
-  - [ ] Issue: GDPR Account Deletion Lifecycle Tests (P0, MVP) — [#904](https://github.com/subculture-collective/clipper/issues/904)
-  - [ ] Issue: Admin User Management Authorization Tests (P0, MVP) — [#912](https://github.com/subculture-collective/clipper/issues/912)
-  - [ ] Issue: Authorization Test Suite (RBAC Endpoints) (P0, MVP) — [#901](https://github.com/subculture-collective/clipper/issues/901)
-  - [ ] Issue: Validation Middleware Security Tests (P0, MVP) — [#914](https://github.com/subculture-collective/clipper/issues/914)
+  - [ ] Issue: DMCA Handler Test Suite (P0, MVP) — [#917](https://git.subcult.tv/subculture-collective/clpr/issues/917)
+  - [ ] Issue: GDPR Account Deletion Lifecycle Tests (P0, MVP) — [#904](https://git.subcult.tv/subculture-collective/clpr/issues/904)
+  - [ ] Issue: Admin User Management Authorization Tests (P0, MVP) — [#912](https://git.subcult.tv/subculture-collective/clpr/issues/912)
+  - [ ] Issue: Authorization Test Suite (RBAC Endpoints) (P0, MVP) — [#901](https://git.subcult.tv/subculture-collective/clpr/issues/901)
+  - [ ] Issue: Validation Middleware Security Tests (P0, MVP) — [#914](https://git.subcult.tv/subculture-collective/clpr/issues/914)
 
 - Phase 2 — Infrastructure Reliability (P0/P1)
-  - [ ] Issue: Deployment Scripts Test Harness & Smoke Tests (P0, Beta) — [#903](https://github.com/subculture-collective/clipper/issues/903)
-  - [ ] Issue: Database Migration Rollback Tests (P0, Beta) — [#902](https://github.com/subculture-collective/clipper/issues/902)
-  - [ ] Issue: Backup & Restore Validation (P0, Beta) — [#913](https://github.com/subculture-collective/clipper/issues/913)
-  - [ ] Issue: Monitoring Alert Rule Validation (P1, Beta) — [#907](https://github.com/subculture-collective/clipper/issues/907)
+  - [ ] Issue: Deployment Scripts Test Harness & Smoke Tests (P0, Beta) — [#903](https://git.subcult.tv/subculture-collective/clpr/issues/903)
+  - [ ] Issue: Database Migration Rollback Tests (P0, Beta) — [#902](https://git.subcult.tv/subculture-collective/clpr/issues/902)
+  - [ ] Issue: Backup & Restore Validation (P0, Beta) — [#913](https://git.subcult.tv/subculture-collective/clpr/issues/913)
+  - [ ] Issue: Monitoring Alert Rule Validation (P1, Beta) — [#907](https://git.subcult.tv/subculture-collective/clpr/issues/907)
 
 - Phase 3 — Feature Completeness (P1)
-  - [ ] Issue: Mobile E2E Test Suite — Core Flows (P1, Beta) — [#910](https://github.com/subculture-collective/clipper/issues/910)
-  - [ ] Issue: Discovery Lists — Unit + Integration + E2E Coverage (P1, Beta) — [#906](https://github.com/subculture-collective/clipper/issues/906)
-  - [ ] Issue: Live Status Tracking — Integration Tests (P1, Beta) — [#911](https://github.com/subculture-collective/clipper/issues/911)
-  - [ ] Issue: Moderation Workflow — E2E Coverage (P1, Beta) — [#915](https://github.com/subculture-collective/clipper/issues/915)
-  - [ ] Issue: Watch Party Real-time Sync Tests (P1, Beta) — [#905](https://github.com/subculture-collective/clipper/issues/905)
+  - [ ] Issue: Mobile E2E Test Suite — Core Flows (P1, Beta) — [#910](https://git.subcult.tv/subculture-collective/clpr/issues/910)
+  - [ ] Issue: Discovery Lists — Unit + Integration + E2E Coverage (P1, Beta) — [#906](https://git.subcult.tv/subculture-collective/clpr/issues/906)
+  - [ ] Issue: Live Status Tracking — Integration Tests (P1, Beta) — [#911](https://git.subcult.tv/subculture-collective/clpr/issues/911)
+  - [ ] Issue: Moderation Workflow — E2E Coverage (P1, Beta) — [#915](https://git.subcult.tv/subculture-collective/clpr/issues/915)
+  - [ ] Issue: Watch Party Real-time Sync Tests (P1, Beta) — [#905](https://git.subcult.tv/subculture-collective/clpr/issues/905)
 
 - Phase 4 — Performance & Optimization (P2)
-  - [ ] Issue: Rate Limiting — Load Tests (P2, GA) — [#908](https://github.com/subculture-collective/clipper/issues/908)
-  - [ ] Issue: Search Fallback Performance & Failover Tests (P2, GA) — [#897](https://github.com/subculture-collective/clipper/issues/897)
-  - [ ] Issue: CDN Failover Simulation Tests (P2, GA) — [#898](https://github.com/subculture-collective/clipper/issues/898)
-  - [ ] Issue: Webhook Delivery at Scale — Load & DLQ Replay (P2, GA) — [#899](https://github.com/subculture-collective/clipper/issues/899)
+  - [ ] Issue: Rate Limiting — Load Tests (P2, GA) — [#908](https://git.subcult.tv/subculture-collective/clpr/issues/908)
+  - [ ] Issue: Search Fallback Performance & Failover Tests (P2, GA) — [#897](https://git.subcult.tv/subculture-collective/clpr/issues/897)
+  - [ ] Issue: CDN Failover Simulation Tests (P2, GA) — [#898](https://git.subcult.tv/subculture-collective/clpr/issues/898)
+  - [ ] Issue: Webhook Delivery at Scale — Load & DLQ Replay (P2, GA) — [#899](https://git.subcult.tv/subculture-collective/clpr/issues/899)
 
 Notes:
 - Labels: use `kind/chore`, `area/testing`, plus area-specific labels (e.g., `area/backend`, `area/mobile`,

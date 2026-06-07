@@ -3,8 +3,8 @@
 # Installation:
 # 1. Copy this file or add the relevant line(s) to your crontab
 # 2. Update paths to match your installation directory
-# 3. Ensure log directory exists: mkdir -p /var/log/clipper
-# 4. Make sure the script is executable: chmod +x /opt/clipper/backend/bin/scrape_clips
+# 3. Ensure log directory exists: mkdir -p /var/log/clpr
+# 4. Make sure the script is executable: chmod +x /opt/clpr/backend/bin/scrape_clips
 #
 # Edit crontab:
 #   crontab -e
@@ -17,39 +17,39 @@
 # ----------------------------------------------------------------------------
 # Runs every day at 2:00 AM UTC
 # Good for active platforms with frequent submissions
-0 2 * * * cd /opt/clipper/backend && ./bin/scrape_clips >> /var/log/clipper/scraper.log 2>&1
+0 2 * * * cd /opt/clpr/backend && ./bin/scrape_clips >> /var/log/clpr/scraper.log 2>&1
 
 # ----------------------------------------------------------------------------
 # WEEKLY SCRAPING
 # ----------------------------------------------------------------------------
 # Runs every Sunday at 2:00 AM UTC with larger batch size
 # Good for platforms with less frequent submissions
-# 0 2 * * 0 cd /opt/clipper/backend && ./bin/scrape_clips --batch-size 100 >> /var/log/clipper/scraper.log 2>&1
+# 0 2 * * 0 cd /opt/clpr/backend && ./bin/scrape_clips --batch-size 100 >> /var/log/clpr/scraper.log 2>&1
 
 # ----------------------------------------------------------------------------
 # MULTIPLE TIMES PER DAY
 # ----------------------------------------------------------------------------
 # Runs every 6 hours
 # Good for very active platforms that need frequent updates
-# 0 */6 * * * cd /opt/clipper/backend && ./bin/scrape_clips >> /var/log/clipper/scraper.log 2>&1
+# 0 */6 * * * cd /opt/clpr/backend && ./bin/scrape_clips >> /var/log/clpr/scraper.log 2>&1
 
 # ----------------------------------------------------------------------------
 # CUSTOM CONFIGURATION
 # ----------------------------------------------------------------------------
 # With custom filters and settings
-# 0 2 * * * cd /opt/clipper/backend && ./bin/scrape_clips --batch-size 75 --min-views 200 --max-age-days 14 >> /var/log/clipper/scraper.log 2>&1
+# 0 2 * * * cd /opt/clpr/backend && ./bin/scrape_clips --batch-size 75 --min-views 200 --max-age-days 14 >> /var/log/clpr/scraper.log 2>&1
 
 # ----------------------------------------------------------------------------
 # SPECIFIC BROADCASTERS
 # ----------------------------------------------------------------------------
 # Scrape specific high-value broadcasters more frequently
-# 0 */3 * * * cd /opt/clipper/backend && ./bin/scrape_clips --broadcasters "xQc,Pokimane,shroud" --batch-size 100 >> /var/log/clipper/scraper-priority.log 2>&1
+# 0 */3 * * * cd /opt/clpr/backend && ./bin/scrape_clips --broadcasters "xQc,Pokimane,shroud" --batch-size 100 >> /var/log/clpr/scraper-priority.log 2>&1
 
 # ----------------------------------------------------------------------------
 # LOG ROTATION
 # ----------------------------------------------------------------------------
 # Rotate scraper logs weekly (add to root's crontab or use logrotate)
-# 0 3 * * 0 find /var/log/clipper -name "scraper*.log" -mtime +30 -delete
+# 0 3 * * 0 find /var/log/clpr -name "scraper*.log" -mtime +30 -delete
 
 # ----------------------------------------------------------------------------
 # NOTES
@@ -65,8 +65,8 @@
 # CREATOR VERIFICATION AUDIT
 # ----------------------------------------------------------------------------
 # Daily verification audit at 2 AM (checks verified users for eligibility)
-# 0 2 * * * cd /opt/clipper/backend && ./bin/audit-verification --limit=100 >> /var/log/clipper/audit-verification.log 2>&1
+# 0 2 * * * cd /opt/clpr/backend && ./bin/audit-verification --limit=100 >> /var/log/clpr/audit-verification.log 2>&1
 
 # Weekly comprehensive audit on Sunday at 3 AM (broader audit window)
-# 0 3 * * 0 cd /opt/clipper/backend && ./bin/audit-verification --limit=1000 --audit-period=30 >> /var/log/clipper/audit-verification-weekly.log 2>&1
+# 0 3 * * 0 cd /opt/clpr/backend && ./bin/audit-verification --limit=1000 --audit-period=30 >> /var/log/clpr/audit-verification-weekly.log 2>&1
 

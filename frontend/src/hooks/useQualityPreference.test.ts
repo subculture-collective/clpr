@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useQualityPreference } from './useQualityPreference';
 
 describe('useQualityPreference', () => {
-  const STORAGE_KEY = 'clipper_video_quality';
+  const STORAGE_KEY = 'clpr_video_quality';
 
   beforeEach(() => {
     // Clear localStorage before each test

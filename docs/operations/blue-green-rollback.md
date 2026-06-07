@@ -76,10 +76,10 @@ The deployment script (`blue-green-deploy.sh`) includes automatic rollback that 
 
 ```bash
 # Check deployment logs
-tail -f /var/log/clipper/deployment.log
+tail -f /var/log/clpr/deployment.log
 
 # Watch for rollback messages
-grep "Rollback" /var/log/clipper/deployment.log
+grep "Rollback" /var/log/clpr/deployment.log
 ```
 
 ## Manual Rollback
@@ -97,14 +97,14 @@ grep "Rollback" /var/log/clipper/deployment.log
 ssh deploy@production-server
 
 # 2. Navigate to deployment directory
-cd /opt/clipper
+cd /opt/clpr
 
 # 3. Check current state
-docker ps --filter "name=clipper-backend"
+docker ps --filter "name=clpr-backend"
 
 # 4. Identify active environment
-# If clipper-backend-green is running, rollback to blue
-# If clipper-backend-blue is running, rollback to green
+# If clpr-backend-green is running, rollback to blue
+# If clpr-backend-blue is running, rollback to green
 
 # 5. Execute rollback script (switches traffic and restarts old environment)
 ./scripts/rollback-blue-green.sh
@@ -117,7 +117,7 @@ docker ps --filter "name=clipper-backend"
 
 ```bash
 # 1. Determine current active environment
-CURRENT_ENV=$(docker ps --format '{{.Names}}' | grep -o 'clipper-backend-\(blue\|green\)' | head -1 | cut -d'-' -f3)
+CURRENT_ENV=$(docker ps --format '{{.Names}}' | grep -o 'clpr-backend-\(blue\|green\)' | head -1 | cut -d'-' -f3)
 echo "Current active: $CURRENT_ENV"
 
 # 2. Determine target environment (opposite)
@@ -133,7 +133,7 @@ docker compose -f docker-compose.blue-green.yml --profile $TARGET_ENV up -d back
 
 # 4. Wait for target to be healthy
 sleep 20
-docker exec clipper-backend-$TARGET_ENV wget --spider -q http://localhost:8080/health
+docker exec clpr-backend-$TARGET_ENV wget --spider -q http://localhost:8080/health
 
 # 5. Switch Caddy configuration to target environment
 export ACTIVE_ENV=$TARGET_ENV
@@ -154,7 +154,7 @@ docker compose -f docker-compose.blue-green.yml --profile $CURRENT_ENV stop back
 
 ```bash
 # Check active containers
-docker ps --filter "name=clipper"
+docker ps --filter "name=clpr"
 
 # Test endpoints
 curl -f http://localhost/health
@@ -182,14 +182,14 @@ For critical production issues requiring immediate action:
 
 # Emergency rollback to blue
 export ACTIVE_ENV=blue && \
-docker compose -f /opt/clipper/docker-compose.blue-green.yml up -d backend-blue frontend-blue && \
-docker compose -f /opt/clipper/docker-compose.blue-green.yml restart caddy && \
+docker compose -f /opt/clpr/docker-compose.blue-green.yml up -d backend-blue frontend-blue && \
+docker compose -f /opt/clpr/docker-compose.blue-green.yml restart caddy && \
 echo "Emergency rollback to blue completed"
 
 # Emergency rollback to green  
 export ACTIVE_ENV=green && \
-docker compose -f /opt/clipper/docker-compose.blue-green.yml --profile green up -d backend-green frontend-green && \
-docker compose -f /opt/clipper/docker-compose.blue-green.yml restart caddy && \
+docker compose -f /opt/clpr/docker-compose.blue-green.yml --profile green up -d backend-green frontend-green && \
+docker compose -f /opt/clpr/docker-compose.blue-green.yml restart caddy && \
 echo "Emergency rollback to green completed"
 ```
 
@@ -200,11 +200,11 @@ If both environments are running, instantly switch traffic:
 ```bash
 # Switch to blue
 export ACTIVE_ENV=blue
-docker compose -f /opt/clipper/docker-compose.blue-green.yml restart caddy
+docker compose -f /opt/clpr/docker-compose.blue-green.yml restart caddy
 
 # Switch to green
 export ACTIVE_ENV=green
-docker compose -f /opt/clipper/docker-compose.blue-green.yml restart caddy
+docker compose -f /opt/clpr/docker-compose.blue-green.yml restart caddy
 
 # Verify
 curl http://localhost/health
@@ -258,13 +258,13 @@ docker compose logs backend-green > /tmp/backend-green-failure.log
 docker compose logs frontend-green > /tmp/frontend-green-failure.log
 
 # Check deployment logs
-cat /var/log/clipper/deployment.log
+cat /var/log/clpr/deployment.log
 
 # Review recent changes
 git log --oneline -10
 
 # Analyze database state
-docker exec clipper-postgres psql -U clipper -d clipper_db -c "SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 5;"
+docker exec clpr-postgres psql -U clpr -d clpr_db -c "SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 5;"
 ```
 
 ### 4. Document Incident
@@ -333,7 +333,7 @@ watch -n 5 'curl -s http://localhost:8080/health/stats | jq .response_time_p95'
 watch -n 5 'curl -s http://localhost:8080/health/stats | jq .active_connections'
 
 # 4. Database connections
-docker exec clipper-postgres psql -U clipper -d clipper_db -c "SELECT count(*) FROM pg_stat_activity;"
+docker exec clpr-postgres psql -U clpr -d clpr_db -c "SELECT count(*) FROM pg_stat_activity;"
 ```
 
 ## Troubleshooting
@@ -361,13 +361,13 @@ docker compose logs --tail=100
 docker ps
 
 # 2. Check container health
-docker inspect clipper-backend-blue | jq '.[0].State.Health'
+docker inspect clpr-backend-blue | jq '.[0].State.Health'
 
 # 3. Test health endpoint directly
-docker exec clipper-backend-blue wget -O- http://localhost:8080/health
+docker exec clpr-backend-blue wget -O- http://localhost:8080/health
 
 # 4. Check database connectivity
-docker exec clipper-postgres pg_isready
+docker exec clpr-postgres pg_isready
 ```
 
 ### Traffic Not Switching
@@ -377,13 +377,13 @@ docker exec clipper-postgres pg_isready
 docker ps | grep caddy
 
 # 2. Check Caddy configuration
-docker exec clipper-caddy caddy environ
+docker exec clpr-caddy caddy environ
 
 # 3. Verify ACTIVE_ENV variable
-docker exec clipper-caddy env | grep ACTIVE_ENV
+docker exec clpr-caddy env | grep ACTIVE_ENV
 
 # 4. Manually reload Caddy
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 
 # 5. Restart Caddy if needed
 docker compose -f docker-compose.blue-green.yml restart caddy
@@ -393,9 +393,9 @@ docker compose -f docker-compose.blue-green.yml restart caddy
 
 For assistance with rollbacks:
 
-1. Check logs: `/var/log/clipper/deployment.log`
+1. Check logs: `/var/log/clpr/deployment.log`
 2. Run diagnostics: `./scripts/preflight-check.sh`
-3. Contact: <ops-team@clipper.app>
+3. Contact: <ops-team@clpr.app>
 4. Escalate: CTO (for critical issues)
 
 ## Related Documentation

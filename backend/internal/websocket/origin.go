@@ -6,7 +6,7 @@ import (
 )
 
 // isOriginAllowed checks if the given origin is allowed based on the configured patterns.
-// Supports exact matches and wildcard patterns (e.g., *.clipper.gg, *.clpr.tv).
+// Supports exact matches and wildcard patterns (e.g., *.clpr.gg, *.clpr.tv).
 func isOriginAllowed(origin string, allowedOrigins []string) bool {
 	if origin == "" {
 		return false
@@ -30,9 +30,9 @@ func matchesPattern(origin, pattern string) bool {
 		return true
 	}
 
-	// Wildcard pattern matching (e.g., *.clipper.gg)
+	// Wildcard pattern matching (e.g., *.clpr.gg)
 	if strings.HasPrefix(pattern, "*.") {
-		// Extract the domain suffix from the pattern (e.g., "clipper.gg" from "*.clipper.gg")
+		// Extract the domain suffix from the pattern (e.g., "clpr.gg" from "*.clpr.gg")
 		suffix := pattern[2:] // Remove "*."
 
 		// Extract the domain from the origin (remove protocol)

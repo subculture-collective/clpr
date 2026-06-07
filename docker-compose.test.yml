@@ -1,24 +1,24 @@
 services:
     postgres-test:
         image: pgvector/pgvector:pg17
-        container_name: clipper-postgres-test
+        container_name: clpr-postgres-test
         environment:
-            POSTGRES_USER: clipper
-            POSTGRES_PASSWORD: clipper_password
-            POSTGRES_DB: clipper_test
+            POSTGRES_USER: clpr
+            POSTGRES_PASSWORD: clpr_password
+            POSTGRES_DB: clpr_test
         ports:
             - '5437:5432'
         tmpfs:
             - /var/lib/postgresql/data
         healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U clipper -d clipper_test']
+            test: ['CMD-SHELL', 'pg_isready -U clpr -d clpr_test']
             interval: 5s
             timeout: 3s
             retries: 5
 
     redis-test:
         image: redis:7-alpine
-        container_name: clipper-redis-test
+        container_name: clpr-redis-test
         ports:
             - '6380:6379'
         tmpfs:
@@ -32,7 +32,7 @@ services:
 
     opensearch-test:
         image: opensearchproject/opensearch:2.11.1
-        container_name: clipper-opensearch-test
+        container_name: clpr-opensearch-test
         environment:
             - discovery.type=single-node
             - 'OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m'

@@ -18,10 +18,10 @@ Before deploying, ensure you have:
 3. **Caddy Reverse Proxy** (optional for initial setup)
    - Will serve `clpr.tv` domain
    - Connected to `web` network
-   - Configured to proxy to `clipper-backend` and `clipper-frontend`
+   - Configured to proxy to `clpr-backend` and `clpr-frontend`
 
 4. **Vault Secrets Configured**
-   - Backend secrets at `kv/clipper/backend`
+   - Backend secrets at `kv/clpr/backend`
    - Postgres password set in Vault
    - AppRole credentials generated
 
@@ -31,7 +31,7 @@ Before deploying, ensure you have:
 ~/projects/
 ├── vault/          # External Vault server
 ├── caddy/          # External Caddy server (optional location)
-├── clipper/        # This repository
+├── clpr/        # This repository
 └── systemd/        # Systemd service files (optional)
 ```
 
@@ -52,7 +52,7 @@ vault login
 vault secrets enable -path=kv kv-v2
 
 # Create backend secrets
-vault kv put kv/clipper/backend \
+vault kv put kv/clpr/backend \
   PORT=8080 \
   GIN_MODE=release \
   ENVIRONMENT=production \
@@ -60,9 +60,9 @@ vault kv put kv/clipper/backend \
   LOG_LEVEL=info \
   DB_HOST=postgres \
   DB_PORT=5432 \
-  DB_USER=clipper \
+  DB_USER=clpr \
   DB_PASSWORD='CHANGE_ME_SECURE_PASSWORD' \
-  DB_NAME=clipper_db \
+  DB_NAME=clpr_db \
   DB_SSLMODE=disable \
   REDIS_HOST=redis \
   REDIS_PORT=6379 \
@@ -75,27 +75,27 @@ vault kv put kv/clipper/backend \
   MFA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
 
 # Create Postgres secrets
-vault kv put kv/clipper/postgres \
-  POSTGRES_DB=clipper_db \
-  POSTGRES_USER=clipper \
+vault kv put kv/clpr/postgres \
+  POSTGRES_DB=clpr_db \
+  POSTGRES_USER=clpr \
   POSTGRES_PASSWORD='CHANGE_ME_SECURE_PASSWORD'
 
 # Create backend policy
-vault policy write clipper-backend vault/policies/clipper-backend.hcl
+vault policy write clpr-backend vault/policies/clpr-backend.hcl
 
 # Create AppRole
-vault write auth/approle/role/clipper-backend \
-  token_policies="clipper-backend" \
+vault write auth/approle/role/clpr-backend \
+  token_policies="clpr-backend" \
   token_ttl="24h" \
   token_max_ttl="72h" \
   secret_id_ttl="24h" \
   secret_id_num_uses=0
 
 # Generate AppRole credentials
-cd ~/projects/clipper
+cd ~/projects/clpr
 mkdir -p vault/approle
-vault read -field=role_id auth/approle/role/clipper-backend/role-id > vault/approle/role_id
-vault write -field=secret_id -f auth/approle/role/clipper-backend/secret-id > vault/approle/secret_id
+vault read -field=role_id auth/approle/role/clpr-backend/role-id > vault/approle/role_id
+vault write -field=secret_id -f auth/approle/role/clpr-backend/secret-id > vault/approle/secret_id
 chmod 600 vault/approle/role_id vault/approle/secret_id
 ```
 
@@ -108,7 +108,7 @@ docker network create web
 
 ### 3. Verify Vault Connectivity
 
-The clipper containers need to reach the Vault container. Ensure Vault is on a network accessible to clipper services:
+The clpr containers need to reach the Vault container. Ensure Vault is on a network accessible to clpr services:
 
 ```bash
 # Check which networks Vault is on
@@ -122,7 +122,7 @@ docker network connect web vault
 
 ### Quick Deploy
 
-From `~/projects/clipper`:
+From `~/projects/clpr`:
 
 ```bash
 # First time deployment
@@ -156,7 +156,7 @@ From `~/projects/clipper`:
 If you prefer manual control:
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 
 # 1. Build images
 docker compose -f docker-compose.vps.yml build
@@ -165,17 +165,17 @@ docker compose -f docker-compose.vps.yml build
 docker compose -f docker-compose.vps.yml up -d vault-agent postgres redis
 
 # 3. Wait for secrets to render (check logs)
-docker logs -f clipper-vault-agent
+docker logs -f clpr-vault-agent
 
 # 4. Run migrations
 docker run --rm \
-  --network container:clipper-postgres \
-  --volumes-from clipper-vault-agent \
+  --network container:clpr-postgres \
+  --volumes-from clpr-vault-agent \
   -v "$PWD/backend/migrations:/migrations:ro" \
   --entrypoint /bin/sh migrate/migrate:latest \
   -c 'set -e; set -a; . /vault-agent/rendered/postgres.env; set +a; \
       migrate -path /migrations \
-              -database "postgresql://clipper:${POSTGRES_PASSWORD}@localhost:5432/clipper_db?sslmode=disable" up'
+              -database "postgresql://clpr:${POSTGRES_PASSWORD}@localhost:5432/clpr_db?sslmode=disable" up'
 
 # 5. Start application services
 docker compose -f docker-compose.vps.yml up -d backend frontend
@@ -195,7 +195,7 @@ If Caddy is already running (e.g., in `~/projects/caddy`):
    docker network connect web <caddy-container-name>
    ```
 
-2. **Update Caddyfile** to include clipper routing:
+2. **Update Caddyfile** to include clpr routing:
    ```caddy
    clpr.tv {
        # Security headers
@@ -210,7 +210,7 @@ If Caddy is already running (e.g., in `~/projects/caddy`):
        
        # API routes -> backend
        handle /api/* {
-           reverse_proxy clipper-backend:8080 {
+           reverse_proxy clpr-backend:8080 {
                header_up Host {host}
                header_up X-Real-IP {remote_host}
                header_up X-Forwarded-For {remote_host}
@@ -225,12 +225,12 @@ If Caddy is already running (e.g., in `~/projects/caddy`):
        
        # Health check endpoint
        handle /health {
-           reverse_proxy clipper-backend:8080
+           reverse_proxy clpr-backend:8080
        }
        
        # WebSocket support
        handle /ws/* {
-           reverse_proxy clipper-backend:8080 {
+           reverse_proxy clpr-backend:8080 {
                header_up Upgrade {>Upgrade}
                header_up Connection {>Connection}
            }
@@ -238,7 +238,7 @@ If Caddy is already running (e.g., in `~/projects/caddy`):
        
        # Frontend (SPA)
        handle /* {
-           reverse_proxy clipper-frontend:80
+           reverse_proxy clpr-frontend:80
        }
        
        # Compression
@@ -261,11 +261,11 @@ If Caddy is already running (e.g., in `~/projects/caddy`):
 The repository includes a Caddyfile that can be used:
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 
 # Start Caddy container
 docker run -d \
-  --name clipper-caddy \
+  --name clpr-caddy \
   --network web \
   -p 80:80 \
   -p 443:443 \
@@ -281,7 +281,7 @@ docker run -d \
 ### 1. Check Container Status
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 docker compose -f docker-compose.vps.yml ps
 ```
 
@@ -293,14 +293,14 @@ All services should show as "healthy" or "running".
 # Check which containers are on the web network
 docker network inspect web | grep Name
 
-# Should include: clipper-backend, clipper-frontend, caddy, vault (optional)
+# Should include: clpr-backend, clpr-frontend, caddy, vault (optional)
 ```
 
 ### 3. Test Backend Health
 
 ```bash
 # Internal health check
-docker exec clipper-backend wget -qO- http://localhost:8080/api/v1/health
+docker exec clpr-backend wget -qO- http://localhost:8080/api/v1/health
 
 # Through Caddy (if configured)
 curl https://clpr.tv/api/v1/health
@@ -317,16 +317,16 @@ https://clpr.tv
 
 ```bash
 # Backend logs
-docker logs -f clipper-backend
+docker logs -f clpr-backend
 
 # Frontend logs
-docker logs -f clipper-frontend
+docker logs -f clpr-frontend
 
 # Vault agent logs
-docker logs -f clipper-vault-agent
+docker logs -f clpr-vault-agent
 
 # Postgres logs
-docker logs -f clipper-postgres
+docker logs -f clpr-postgres
 ```
 
 ## Troubleshooting
@@ -343,15 +343,15 @@ docker ps | grep vault
 # Check Vault networks
 docker inspect vault | grep -A 10 Networks
 
-# Ensure Vault is reachable from clipper network
+# Ensure Vault is reachable from clpr network
 # Option 1: Connect Vault to web network
 docker network connect web vault
 
-# Option 2: Connect Vault to clipper-network
-# Find your actual clipper network name first
-docker network ls | grep clipper
-# Then connect (replace <clipper-network> with actual name)
-docker network connect <clipper-network> vault
+# Option 2: Connect Vault to clpr-network
+# Find your actual clpr network name first
+docker network ls | grep clpr
+# Then connect (replace <clpr-network> with actual name)
+docker network connect <clpr-network> vault
 ```
 
 ### Secrets Not Rendering
@@ -361,13 +361,13 @@ docker network connect <clipper-network> vault
 **Solution**:
 ```bash
 # Check vault-agent logs
-docker logs -f clipper-vault-agent
+docker logs -f clpr-vault-agent
 
 # Verify AppRole credentials exist
 ls -l vault/approle/
 
 # Test Vault connectivity from vault-agent container
-docker exec clipper-vault-agent wget -qO- http://vault:8200/v1/sys/health
+docker exec clpr-vault-agent wget -qO- http://vault:8200/v1/sys/health
 
 # If vault-agent can't resolve 'vault', update VAULT_ADDR in docker-compose.vps.yml
 # to use the actual Vault container name or IP
@@ -394,13 +394,13 @@ netstat -tulpn | grep 5436
 
 **Solution**:
 ```bash
-# Ensure Caddy and clipper-backend are on same network
+# Ensure Caddy and clpr-backend are on same network
 docker network inspect web
 
 # If backend is not listed, something went wrong during deployment
 # Redeploy or manually connect:
-docker network connect web clipper-backend
-docker network connect web clipper-frontend
+docker network connect web clpr-backend
+docker network connect web clpr-frontend
 
 # Reload Caddy
 docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile
@@ -413,21 +413,21 @@ docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile
 **Solution**:
 ```bash
 # Check Postgres is healthy
-docker exec clipper-postgres pg_isready -U clipper -d clipper_db
+docker exec clpr-postgres pg_isready -U clpr -d clpr_db
 
 # Check Postgres password is correct in Vault
-vault kv get kv/clipper/postgres
+vault kv get kv/clpr/postgres
 
 # Run migrations manually with verbose output
 docker run --rm \
-  --network container:clipper-postgres \
-  --volumes-from clipper-vault-agent \
+  --network container:clpr-postgres \
+  --volumes-from clpr-vault-agent \
   -v "$PWD/backend/migrations:/migrations:ro" \
   --entrypoint /bin/sh migrate/migrate:latest \
   -c 'set -e; set -a; . /vault-agent/rendered/postgres.env; set +a; \
       echo "Using password: ${POSTGRES_PASSWORD:0:4}..."; \
       migrate -path /migrations \
-              -database "postgresql://clipper:${POSTGRES_PASSWORD}@localhost:5432/clipper_db?sslmode=disable" -verbose up'
+              -database "postgresql://clpr:${POSTGRES_PASSWORD}@localhost:5432/clpr_db?sslmode=disable" -verbose up'
 ```
 
 ## Updating Deployment
@@ -435,7 +435,7 @@ docker run --rm \
 ### Code Updates
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 ./scripts/deploy-vps.sh
 ```
 
@@ -449,12 +449,12 @@ This will:
 
 ```bash
 # Update secrets in Vault
-vault kv patch kv/clipper/backend \
+vault kv patch kv/clpr/backend \
   TWITCH_CLIENT_ID="new_value" \
   TWITCH_CLIENT_SECRET="new_secret"
 
 # Restart vault-agent to fetch new secrets
-cd ~/projects/clipper
+cd ~/projects/clpr
 docker compose -f docker-compose.vps.yml restart vault-agent
 
 # Wait a few seconds for secrets to render, then restart backend
@@ -466,7 +466,7 @@ docker compose -f docker-compose.vps.yml restart backend
 If a deployment fails:
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 
 # Check git history
 git log --oneline -10
@@ -487,24 +487,24 @@ git reset --hard <previous-commit-sha>
 docker compose -f docker-compose.vps.yml ps
 
 # Detailed health for all services
-docker ps --filter "name=clipper" --format "table {{.Names}}\t{{.Status}}"
+docker ps --filter "name=clpr" --format "table {{.Names}}\t{{.Status}}"
 ```
 
 ### Logs
 
 ```bash
-# Follow all clipper logs
+# Follow all clpr logs
 docker compose -f docker-compose.vps.yml logs -f
 
 # Specific service
-docker logs -f clipper-backend
+docker logs -f clpr-backend
 ```
 
 ### Resource Usage
 
 ```bash
 # Container resource usage
-docker stats clipper-backend clipper-frontend clipper-postgres clipper-redis
+docker stats clpr-backend clpr-frontend clpr-postgres clpr-redis
 ```
 
 ## Backup and Recovery
@@ -513,10 +513,10 @@ docker stats clipper-backend clipper-frontend clipper-postgres clipper-redis
 
 ```bash
 # Create backup
-docker exec clipper-postgres pg_dump -U clipper clipper_db | gzip > ~/backups/clipper-db-$(date +%Y%m%d-%H%M%S).sql.gz
+docker exec clpr-postgres pg_dump -U clpr clpr_db | gzip > ~/backups/clpr-db-$(date +%Y%m%d-%H%M%S).sql.gz
 
 # Restore from backup
-gunzip < ~/backups/clipper-db-TIMESTAMP.sql.gz | docker exec -i clipper-postgres psql -U clipper clipper_db
+gunzip < ~/backups/clpr-db-TIMESTAMP.sql.gz | docker exec -i clpr-postgres psql -U clpr clpr_db
 ```
 
 ### Volume Backup
@@ -524,7 +524,7 @@ gunzip < ~/backups/clipper-db-TIMESTAMP.sql.gz | docker exec -i clipper-postgres
 ```bash
 # Backup postgres data volume
 docker run --rm \
-  -v clipper_postgres_data:/data:ro \
+  -v clpr_postgres_data:/data:ro \
   -v ~/backups:/backup \
   alpine \
   tar czf /backup/postgres-data-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
@@ -541,7 +541,7 @@ docker run --rm \
 ## Support
 
 For issues or questions:
-- Check container logs: `docker logs -f clipper-backend`
-- Review Vault agent logs: `docker logs -f clipper-vault-agent`
+- Check container logs: `docker logs -f clpr-backend`
+- Review Vault agent logs: `docker logs -f clpr-vault-agent`
 - Inspect network: `docker network inspect web`
-- Test connectivity: `docker exec clipper-backend getent hosts postgres`
+- Test connectivity: `docker exec clpr-backend getent hosts postgres`

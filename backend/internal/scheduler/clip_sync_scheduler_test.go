@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/subculture-collective/clipper/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // MockClipSyncService is a mock implementation for testing

@@ -727,7 +727,7 @@ Set up monitoring for:
 Periodically rotate your webhook secrets for better security. The API provides a secret rotation endpoint:
 
 ```bash
-curl -X POST https://api.clipper.example/api/v1/webhooks/{id}/regenerate-secret \
+curl -X POST https://api.clpr.example/api/v1/webhooks/{id}/regenerate-secret \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

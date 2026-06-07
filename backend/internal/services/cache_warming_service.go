@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/subculture-collective/clipper/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // CacheWarmingService handles cache pre-population

@@ -344,7 +344,7 @@ export function PrivacyPage() {
               <li>
                 <strong className="text-foreground">GitHub:</strong>{' '}
                 <a
-                  href="https://github.com/subculture-collective/clipper/issues"
+                  href="https://git.subcult.tv/subculture-collective/clpr/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
@@ -353,7 +353,7 @@ export function PrivacyPage() {
                 </a>
               </li>
               <li>
-                <strong className="text-foreground">Email:</strong> privacy@clipper.com (for privacy-specific inquiries)
+                <strong className="text-foreground">Email:</strong> privacy@clpr.com (for privacy-specific inquiries)
               </li>
             </ul>
           </CardBody>

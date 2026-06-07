@@ -14,7 +14,7 @@ on:
       backup_bucket:
         description: 'Backup bucket name'
         required: false
-        default: 'clipper-backups-prod'
+        default: 'clpr-backups-prod'
 
 jobs:
   validate-backup:
@@ -50,14 +50,14 @@ jobs:
 
       - name: Create log directory
         run: |
-          sudo mkdir -p /var/log/clipper
-          sudo chown -R $USER:$USER /var/log/clipper
+          sudo mkdir -p /var/log/clpr
+          sudo chown -R $USER:$USER /var/log/clpr
 
       - name: Run backup validation
         id: validation
         env:
           CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider || 'gcp' }}
-          BACKUP_BUCKET: ${{ github.event.inputs.backup_bucket || secrets.BACKUP_BUCKET || 'clipper-backups-prod' }}
+          BACKUP_BUCKET: ${{ github.event.inputs.backup_bucket || secrets.BACKUP_BUCKET || 'clpr-backups-prod' }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
           MAX_BACKUP_AGE_HOURS: '24'
           MIN_BACKUP_SIZE_MB: '1'
@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backup-validation-log-${{ github.run_number }}
-          path: /var/log/clipper/backup-validation.log
+          path: /var/log/clpr/backup-validation.log
           retention-days: 30
 
       - name: Check validation result
@@ -87,7 +87,7 @@ jobs:
         if: steps.validation.outputs.exit_code == '0'
         run: |
           echo "::notice::Backup validation succeeded!"
-          cat /var/log/clipper/backup-validation.log
+          cat /var/log/clpr/backup-validation.log
 
       - name: Notify on failure
         if: failure()

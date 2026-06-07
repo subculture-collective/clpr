@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/subculture-collective/clipper/internal/middleware"
+	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 )
 
 func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {

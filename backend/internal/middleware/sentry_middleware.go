@@ -6,7 +6,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
-	sentrypkg "github.com/subculture-collective/clipper/pkg/sentry"
+	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 )
 
 // SentryMiddleware adds Sentry error tracking to Gin

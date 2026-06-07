@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // mockClipRepository is a mock implementation of ClipRepository for testing
@@ -50,7 +50,7 @@ func TestGetSitemap(t *testing.T) {
 	r := gin.New()
 	// Middleware to set base_url
 	r.Use(func(c *gin.Context) {
-		c.Set("base_url", "https://test.clipper.app")
+		c.Set("base_url", "https://test.clpr.app")
 		c.Next()
 	})
 	r.GET("/sitemap.xml", handler.GetSitemap)
@@ -78,8 +78,8 @@ func TestGetSitemap(t *testing.T) {
 	expectedStrings := []string{
 		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
 		"<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">",
-		"https://test.clipper.app/",
-		"https://test.clipper.app/discover",
+		"https://test.clpr.app/",
+		"https://test.clpr.app/discover",
 		clip1.ID.String(),
 		clip2.ID.String(),
 		"</urlset>",

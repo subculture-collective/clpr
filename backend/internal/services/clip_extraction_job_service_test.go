@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 func TestClipExtractionJobService_Initialization(t *testing.T) {

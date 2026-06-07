@@ -123,7 +123,7 @@ export function CookieSettingsPage() {
                     <td className="py-2">Session</td>
                   </tr>
                   <tr className="border-b border-border">
-                    <td className="py-2 font-mono text-xs">clipper_consent_preferences</td>
+                    <td className="py-2 font-mono text-xs">clpr_consent_preferences</td>
                     <td className="py-2">Stores your cookie consent choices</td>
                     <td className="py-2">12 months</td>
                   </tr>

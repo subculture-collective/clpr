@@ -33,10 +33,10 @@ The React chunking fix has been successfully deployed to production.
 
 ### Docker Container Status
 
-- **Image:** `clipper-frontend:latest` (rebuilt Dec 7 18:16 UTC)
-- **Container:** `clipper-frontend` (running on web network, port 80 internal)
+- **Image:** `clpr-frontend:latest` (rebuilt Dec 7 18:16 UTC)
+- **Container:** `clpr-frontend` (running on web network, port 80 internal)
 - **Health Status:** ✅ Healthy
-- **Reverse Proxy:** Caddy (clpr.tv → clipper-frontend:80)
+- **Reverse Proxy:** Caddy (clpr.tv → clpr-frontend:80)
 
 ### Verification Results
 
@@ -46,13 +46,13 @@ The React chunking fix has been successfully deployed to production.
 - **Result: MATCH**
 
 ✅ **Network Connectivity**
-- Caddy can reach frontend: `curl http://clipper-frontend/` → Returns HTML with correct bundle
+- Caddy can reach frontend: `curl http://clpr-frontend/` → Returns HTML with correct bundle
 - Frontend container is on: `web` network (same as Caddy reverse proxy)
 - **Result: WORKING**
 
 ✅ **Caddy Reverse Proxy**
 - Config location: `/home/onnwee/projects/caddy/conf.d/clpr.tv.caddy`
-- Frontend route: `reverse_proxy clipper-frontend:80`
+- Frontend route: `reverse_proxy clpr-frontend:80`
 - **Result: CONFIGURED**
 
 ## How to Verify in Browser
@@ -99,11 +99,11 @@ The React chunking fix has been successfully deployed to production.
 
 ```bash
 # If issues arise, the old container is still available as:
-# - Build without changes: docker build -f frontend/Dockerfile.bak -t clipper-frontend:previous /path/to/clipper
+# - Build without changes: docker build -f frontend/Dockerfile.bak -t clpr-frontend:previous /path/to/clpr
 # - Or rebuild from git: git checkout HEAD~1 -- frontend/vite.config.ts && docker build ...
 
 # Current safe state:
-docker ps  # Shows: clipper-frontend running with new image
+docker ps  # Shows: clpr-frontend running with new image
 ```
 
 ## Next Steps

@@ -53,7 +53,7 @@ Creates a new watch party.
   "data": {
     "id": "party-uuid",
     "invite_code": "ABC123",
-    "invite_url": "https://clipper.tv/watch-parties/ABC123",
+    "invite_url": "https://clpr.tv/watch-parties/ABC123",
     "party": {
       "id": "party-uuid",
       "host_user_id": "user-uuid",
@@ -103,7 +103,7 @@ Join an existing watch party using an invite code.
         }
       ]
     },
-    "invite_url": "https://clipper.tv/watch-parties/ABC123"
+    "invite_url": "https://clpr.tv/watch-parties/ABC123"
   }
 }
 ```
@@ -454,7 +454,7 @@ The client should implement a ±2 second tolerance for synchronization:
 
 1. **Host creates party:**
 ```bash
-curl -X POST https://api.clipper.tv/v1/watch-parties \
+curl -X POST https://api.clpr.tv/v1/watch-parties \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"title": "Movie Night", "visibility": "private"}'
@@ -464,13 +464,13 @@ curl -X POST https://api.clipper.tv/v1/watch-parties \
 
 3. **Friends join party:**
 ```bash
-curl -X POST https://api.clipper.tv/v1/watch-parties/ABC123/join \
+curl -X POST https://api.clpr.tv/v1/watch-parties/ABC123/join \
   -H "Authorization: Bearer <token>"
 ```
 
 4. **Connect to WebSocket:**
 ```javascript
-const ws = new WebSocket('wss://api.clipper.tv/v1/watch-parties/<party-id>/ws');
+const ws = new WebSocket('wss://api.clpr.tv/v1/watch-parties/<party-id>/ws');
 
 ws.onopen = () => {
   // Request initial sync

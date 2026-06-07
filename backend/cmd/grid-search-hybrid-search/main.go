@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/subculture-collective/clipper/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // GridSearchConfig defines the parameter grid to search

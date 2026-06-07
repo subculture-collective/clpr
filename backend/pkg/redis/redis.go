@@ -10,7 +10,7 @@ import (
 
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
-	"github.com/subculture-collective/clipper/config"
+	"git.subcult.tv/subculture-collective/clpr/config"
 )
 
 // Client wraps the Redis client

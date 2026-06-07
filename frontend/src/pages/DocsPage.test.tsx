@@ -57,7 +57,7 @@ const mockDocContent = {
     title: 'Getting Started',
   },
   toc: [],
-  github_url: 'https://github.com/subculture-collective/clipper/blob/main/docs/getting-started.md',
+  github_url: 'https://git.subcult.tv/subculture-collective/clpr/blob/main/docs/getting-started.md',
 };
 
 beforeAll(() => {

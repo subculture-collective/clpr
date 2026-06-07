@@ -36,7 +36,7 @@ Accepts log entries from frontend (web) and mobile (iOS/Android) clients.
   "level": "error",
   "message": "Failed to load clip",
   "timestamp": "2026-01-02T12:34:56Z",
-  "service": "clipper-frontend",
+  "service": "clpr-frontend",
   "platform": "web",
   "context": {
     "clipId": "clip_123",
@@ -45,7 +45,7 @@ Accepts log entries from frontend (web) and mobile (iOS/Android) clients.
   "user_agent": "Mozilla/5.0...",
   "session_id": "session_abc123",
   "trace_id": "trace_xyz789",
-  "url": "https://clipper.video/clips/123",
+  "url": "https://clpr.video/clips/123",
   "device_id": "device_456",
   "app_version": "1.0.0",
   "error": "NetworkError: Failed to fetch",

@@ -33,7 +33,7 @@ The authorization middleware implements comprehensive audit logging for all auth
   "timestamp": "2026-01-05T12:34:56Z",
   "level": "info",
   "message": "Authorization allowed: user=550e8400-e29b-41d4-a716-446655440000 resource=comment:123e4567-e89b-12d3-a456-426614174000 action=delete reason=user_is_owner",
-  "service": "clipper-backend",
+  "service": "clpr-backend",
   "fields": {
     "audit_type": "authorization",
     "user_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -55,7 +55,7 @@ The authorization middleware implements comprehensive audit logging for all auth
   "timestamp": "2026-01-05T12:35:23Z",
   "level": "warn",
   "message": "Authorization denied: user=550e8400-e29b-41d4-a716-446655440001 resource=clip:123e4567-e89b-12d3-a456-426614174000 action=delete reason=insufficient_role",
-  "service": "clipper-backend",
+  "service": "clpr-backend",
   "fields": {
     "audit_type": "authorization",
     "user_id": "550e8400-e29b-41d4-a716-446655440001",
@@ -81,7 +81,7 @@ The authorization middleware implements comprehensive audit logging for all auth
 | `timestamp` | string (ISO 8601) | UTC timestamp of the authorization decision |
 | `level` | string | Log level: "info" for allowed, "warn" for denied |
 | `message` | string | Human-readable summary of the decision |
-| `service` | string | Service name (always "clipper-backend") |
+| `service` | string | Service name (always "clpr-backend") |
 | `fields.audit_type` | string | Type of audit log (always "authorization") |
 | `fields.user_id` | string (UUID) | User ID making the request |
 | `fields.resource` | string | Resource type (clip, comment, user, etc.) |
@@ -169,18 +169,18 @@ The authorization logs integrate with the existing `StructuredLogger` from `pkg/
 
 Search for denied access attempts to clips:
 ```
-service:"clipper-backend" AND audit_type:"authorization" AND decision:"denied" AND resource:"clip"
+service:"clpr-backend" AND audit_type:"authorization" AND decision:"denied" AND resource:"clip"
 ```
 
 Search for authorization errors:
 ```
-service:"clipper-backend" AND audit_type:"authorization" AND decision:"error"
+service:"clpr-backend" AND audit_type:"authorization" AND decision:"error"
 ```
 
 ### Example Loki Query
 
 ```logql
-{service="clipper-backend"} |= "audit_type" |= "authorization" | json | decision="denied"
+{service="clpr-backend"} |= "audit_type" |= "authorization" | json | decision="denied"
 ```
 
 ## Usage in Code
@@ -206,7 +206,7 @@ router.DELETE("/clips/:id",
 For custom authorization logic, use `LogAuthorizationDecision`:
 
 ```go
-import "github.com/subculture-collective/clipper/internal/middleware"
+import "git.subcult.tv/subculture-collective/clpr/internal/middleware"
 
 middleware.LogAuthorizationDecision(
     userID,

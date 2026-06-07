@@ -1,5 +1,5 @@
 ---
-# yamllint configuration for clipper project
+# yamllint configuration for clpr project
 # See: https://yamllint.readthedocs.io/en/stable/configuration.html
 
 extends: default

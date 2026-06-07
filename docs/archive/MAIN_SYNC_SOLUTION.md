@@ -88,7 +88,7 @@ If bundle size becomes an issue (>500 KB gzipped):
 
 - `frontend/vite.config.ts` - Build configuration (no chunking)
 - `.github/workflows/deploy-production.yml` - Auto-deployment on main push
-- Origin: <https://github.com/subculture-collective/clipper>
+- Origin: <https://git.subcult.tv/subculture-collective/clpr>
 
 ## Testing
 

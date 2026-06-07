@@ -34,13 +34,13 @@ docker-compose up -d postgres
 
 2. Run migrations:
 ```bash
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5432/clipper?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5432/clpr?sslmode=disable" up
 ```
 
 3. Verify the new columns exist:
 ```sql
 -- Connect to database
-psql -h localhost -U clipper -d clipper
+psql -h localhost -U clpr -d clpr
 
 -- Check for new columns
 \d clips

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // UserSettingsHandler handles user settings endpoints
@@ -170,7 +170,7 @@ func (h *UserSettingsHandler) ExportData(c *gin.Context) {
 
 	// Set headers for download
 	c.Header("Content-Type", "application/zip")
-	c.Header("Content-Disposition", "attachment; filename=clipper_user_data_export.zip")
+	c.Header("Content-Disposition", "attachment; filename=clpr_user_data_export.zip")
 	c.Data(http.StatusOK, "application/zip", data)
 }
 

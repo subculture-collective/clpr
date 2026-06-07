@@ -58,9 +58,9 @@ The Stripe integration has been verified through comprehensive test suites cover
    ```bash
    export TEST_DATABASE_HOST=localhost
    export TEST_DATABASE_PORT=5437
-   export TEST_DATABASE_NAME=clipper_test
-   export TEST_DATABASE_USER=clipper
-   export TEST_DATABASE_PASSWORD=clipper_password
+   export TEST_DATABASE_NAME=clpr_test
+   export TEST_DATABASE_USER=clpr
+   export TEST_DATABASE_PASSWORD=clpr_password
    ```
 
 2. **Redis**: Redis instance for caching and session management
@@ -273,7 +273,7 @@ migrate -path migrations -database "postgresql://..." up
 Verify test database and Redis are running:
 ```bash
 # Check PostgreSQL
-psql -h localhost -p 5437 -U clipper -d clipper_test -c "SELECT 1;"
+psql -h localhost -p 5437 -U clpr -d clpr_test -c "SELECT 1;"
 
 # Check Redis
 redis-cli -h localhost -p 6380 ping
@@ -334,7 +334,7 @@ Add to your CI pipeline:
   env:
     TEST_DATABASE_HOST: localhost
     TEST_DATABASE_PORT: 5432
-    TEST_DATABASE_NAME: clipper_test
+    TEST_DATABASE_NAME: clpr_test
     TEST_DATABASE_USER: postgres
     TEST_DATABASE_PASSWORD: postgres
     TEST_REDIS_HOST: localhost

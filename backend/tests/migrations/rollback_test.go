@@ -10,16 +10,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/subculture-collective/clipper/tests/integration/testutil"
+	"git.subcult.tv/subculture-collective/clpr/tests/integration/testutil"
 )
 
 // runMigration runs migrate command
 func runMigration(direction string, steps int) error {
 	dbHost := testutil.GetEnv("TEST_DATABASE_HOST", "localhost")
 	dbPort := testutil.GetEnv("TEST_DATABASE_PORT", "5437")
-	dbUser := testutil.GetEnv("TEST_DATABASE_USER", "clipper")
-	dbPassword := testutil.GetEnv("TEST_DATABASE_PASSWORD", "clipper_password")
-	dbName := testutil.GetEnv("TEST_DATABASE_NAME", "clipper_test")
+	dbUser := testutil.GetEnv("TEST_DATABASE_USER", "clpr")
+	dbPassword := testutil.GetEnv("TEST_DATABASE_PASSWORD", "clpr_password")
+	dbName := testutil.GetEnv("TEST_DATABASE_NAME", "clpr_test")
 
 	// Build connection URL (password will be sanitized in error messages)
 	dbURL := fmt.Sprintf(

@@ -1,10 +1,10 @@
-# Policy for Clipper Frontend AppRole
+# Policy for Clpr Frontend AppRole
 # Grants read-only access to the frontend secrets in KV v2
 
-path "kv/data/clipper/frontend" {
+path "kv/data/clpr/frontend" {
   capabilities = ["read"]
 }
 
-path "kv/metadata/clipper/frontend" {
+path "kv/metadata/clpr/frontend" {
   capabilities = ["read", "list"]
 }

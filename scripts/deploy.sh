@@ -157,7 +157,7 @@ log "Waiting for services to be ready..."
 max_retries=30
 retry=0
 while [ $retry -lt $max_retries ]; do
-    if docker exec clipper-vault-agent test -s /vault-agent/rendered/postgres.env 2>/dev/null; then
+    if docker exec clpr-vault-agent test -s /vault-agent/rendered/postgres.env 2>/dev/null; then
         success "Vault agent secrets ready"
         break
     fi
@@ -178,13 +178,13 @@ log "Stage 5: Applying database migrations"
 
 # Run migrations in a one-off container, sourcing Vault credentials
 if docker run --rm \
-    --network container:clipper-postgres \
-    --volumes-from clipper-vault-agent \
+    --network container:clpr-postgres \
+    --volumes-from clpr-vault-agent \
     -v "$PWD/backend/migrations:/migrations:ro" \
     --entrypoint /bin/sh migrate/migrate:latest \
     -c 'set -e; set -a; . /vault-agent/rendered/postgres.env; set +a; \
         migrate -path /migrations \
-                -database "postgresql://clipper:${POSTGRES_PASSWORD}@localhost:5432/clipper_db?sslmode=disable" up'; then
+                -database "postgresql://clpr:${POSTGRES_PASSWORD}@localhost:5432/clpr_db?sslmode=disable" up'; then
     success "Migrations applied"
 else
     error "Migration failed"
@@ -209,8 +209,8 @@ log "Stage 7: Verifying service health"
 max_retries=30
 retry=0
 while [ $retry -lt $max_retries ]; do
-    if docker compose -f docker-compose.prod.yml ps | grep -q "clipper-backend.*healthy"; then
-        if docker compose -f docker-compose.prod.yml ps | grep -q "clipper-frontend.*healthy"; then
+    if docker compose -f docker-compose.prod.yml ps | grep -q "clpr-backend.*healthy"; then
+        if docker compose -f docker-compose.prod.yml ps | grep -q "clpr-frontend.*healthy"; then
             success "All services healthy"
             break
         fi
@@ -229,7 +229,7 @@ docker compose -f docker-compose.prod.yml ps
 
 # Print latest backend logs
 log "Recent backend logs:"
-docker logs --tail=20 clipper-backend 2>&1 | sed -e 's/JWT_PRIVATE_KEY.*/JWT_PRIVATE_KEY=[redacted]/' \
+docker logs --tail=20 clpr-backend 2>&1 | sed -e 's/JWT_PRIVATE_KEY.*/JWT_PRIVATE_KEY=[redacted]/' \
                                                  -e 's/JWT_PUBLIC_KEY.*/JWT_PUBLIC_KEY=[redacted]/' \
                                                  -e 's/DB_PASSWORD.*/DB_PASSWORD=[redacted]/'
 

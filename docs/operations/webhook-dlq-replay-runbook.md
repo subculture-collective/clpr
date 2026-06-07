@@ -51,7 +51,7 @@ This runbook provides operational procedures for managing and replaying failed w
 **Via API:**
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "https://api.clipper.example/api/v1/admin/webhooks/dlq?page=1&limit=1"
+  "https://api.clpr.example/api/v1/admin/webhooks/dlq?page=1&limit=1"
 ```
 
 Response includes `pagination.total` with total DLQ item count.
@@ -79,7 +79,7 @@ Review DLQ items for common patterns:
 ```bash
 # Fetch recent DLQ items
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "https://api.clipper.example/api/v1/admin/webhooks/dlq?page=1&limit=20"
+  "https://api.clpr.example/api/v1/admin/webhooks/dlq?page=1&limit=20"
 ```
 
 **Look for:**
@@ -117,7 +117,7 @@ Check if webhook subscription is still active:
 
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "https://api.clipper.example/api/v1/webhooks/{subscription_id}"
+  "https://api.clpr.example/api/v1/webhooks/{subscription_id}"
 ```
 
 Verify `is_active: true` before replay.
@@ -139,7 +139,7 @@ Verify `is_active: true` before replay.
 ```bash
 curl -X POST \
   -H "Authorization: Bearer YOUR_TOKEN" \
-  "https://api.clipper.example/api/v1/admin/webhooks/dlq/{dlq_item_id}/replay"
+  "https://api.clpr.example/api/v1/admin/webhooks/dlq/{dlq_item_id}/replay"
 ```
 
 **Expected Response:**
@@ -171,7 +171,7 @@ curl -X POST \
 # Bulk replay script with rate limiting
 
 AUTH_TOKEN="your_token_here"
-API_BASE="https://api.clipper.example"
+API_BASE="https://api.clpr.example"
 RATE_LIMIT=20  # replays per second
 DELAY=$(echo "scale=3; 1/$RATE_LIMIT" | bc)
 
@@ -212,7 +212,7 @@ echo "Bulk replay completed"
 ```bash
 # Monitor replay progress
 watch -n 5 'curl -s -H "Authorization: Bearer $AUTH_TOKEN" \
-  "https://api.clipper.example/api/v1/admin/webhooks/dlq" | \
+  "https://api.clpr.example/api/v1/admin/webhooks/dlq" | \
   jq ".pagination.total"'
 ```
 
@@ -367,7 +367,7 @@ For items that cannot be replayed (permanent failures):
 ```bash
 # Delete items older than 30 days
 curl -X DELETE -H "Authorization: Bearer $AUTH_TOKEN" \
-  "https://api.clipper.example/api/v1/admin/webhooks/dlq/{item_id}"
+  "https://api.clpr.example/api/v1/admin/webhooks/dlq/{item_id}"
 ```
 
 **Consider archiving if:**
@@ -381,7 +381,7 @@ curl -X DELETE -H "Authorization: Bearer $AUTH_TOKEN" \
 ```bash
 # Check DLQ size after cleanup
 curl -H "Authorization: Bearer $AUTH_TOKEN" \
-  "https://api.clipper.example/api/v1/admin/webhooks/dlq" | \
+  "https://api.clpr.example/api/v1/admin/webhooks/dlq" | \
   jq ".pagination.total"
 ```
 

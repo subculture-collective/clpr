@@ -78,7 +78,7 @@ All 59 issues have:
 
 **Status**: **COMPLETE**
 
-Comprehensive index comment added to [#805](https://github.com/subculture-collective/clipper/issues/805#issuecomment-3690769015) containing:
+Comprehensive index comment added to [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805#issuecomment-3690769015) containing:
 - Complete list of all 59 issues organized by phase and epic
 - Phase 0: Foundation & Planning (4 issues)
 - Phase 1: Testing Infrastructure (16 issues across 4 epics)
@@ -92,7 +92,7 @@ Comprehensive index comment added to [#805](https://github.com/subculture-collec
 ## Deliverables
 
 ### 1. Master Tracker Issue
-- **Issue**: [#805 Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805)
+- **Issue**: [#805 Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 - **Purpose**: Central tracking for all Roadmap 5.0 work
 - **Labels**: `priority/P0`, `kind/epic`, `area/product`
 
@@ -330,11 +330,11 @@ The platform is now positioned for systematic quality improvement across testing
 
 ## References
 
-- **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805)
-- **This Epic**: [#834 Feature Inventory Issue Creation](https://github.com/subculture-collective/clipper/issues/834)
+- **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805)
+- **This Epic**: [#834 Feature Inventory Issue Creation](https://git.subcult.tv/subculture-collective/clpr/issues/834)
 - **Roadmap Document**: [docs/product/roadmap-5.0.md](roadmap-5.0.md)
 - **Feature Inventory**: [docs/product/feature-inventory.md](feature-inventory.md)
-- **Issue Index**: [#805 Comment](https://github.com/subculture-collective/clipper/issues/805#issuecomment-3690769015)
+- **Issue Index**: [#805 Comment](https://git.subcult.tv/subculture-collective/clpr/issues/805#issuecomment-3690769015)
 
 ---
 

@@ -207,13 +207,13 @@ Updates every 15 minutes
 **Service Issues:**
 ```bash
 # Restart service
-kubectl rollout restart deployment/backend -n clipper
+kubectl rollout restart deployment/backend -n clpr
 
 # Scale up
-kubectl scale deployment backend --replicas=5 -n clipper
+kubectl scale deployment backend --replicas=5 -n clpr
 
 # Rollback deployment
-kubectl rollout undo deployment/backend -n clipper
+kubectl rollout undo deployment/backend -n clpr
 ```
 
 **Database Issues:**
@@ -269,7 +269,7 @@ Service metrics back to normal. Monitoring for 30 minutes before closing.
 - **Clipper SLO:** SLO breach alerts
 - **Clipper Security:** Security events and authentication failures
 
-**Access:** https://clipper.pagerduty.com
+**Access:** https://clpr.pagerduty.com
 
 ### Slack Channels
 
@@ -312,8 +312,8 @@ On-Call Manager: [Check PagerDuty schedule]
 ```
 VP Engineering: [Name] - [Phone] - [Email]
 CTO: [Name] - [Phone] - [Email]
-Security Team: security@clipper.app
-Platform Team: platform@clipper.app
+Security Team: security@clpr.app
+Platform Team: platform@clpr.app
 ```
 
 **Note:** Keep these contacts up-to-date in PagerDuty.
@@ -418,13 +418,13 @@ Platform Team: platform@clipper.app
 amtool silence add service=backend \
   --duration=2h \
   --comment="Backend deployment in progress" \
-  --author="ops@clipper.app"
+  --author="ops@clpr.app"
 
 # Silence specific alert
 amtool silence add alertname=HighMemoryUsage \
   --duration=1h \
   --comment="Investigating memory leak" \
-  --author="you@clipper.app"
+  --author="you@clpr.app"
 
 # List active silences
 amtool silence query
@@ -617,7 +617,7 @@ A: Consider silencing expected alerts. But watch dashboards closely and rollback
 
 **Questions about this guide:**
 - Slack: #platform-team
-- Email: platform@clipper.app
+- Email: platform@clpr.app
 
 **On-call support:**
 - Slack: #on-call-support

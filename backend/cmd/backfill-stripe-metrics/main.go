@@ -9,8 +9,8 @@ import (
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/invoice"
 	stripeSub "github.com/stripe/stripe-go/v81/subscription"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/pkg/database"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 )
 
 // BackfillStats tracks statistics for the backfill operation

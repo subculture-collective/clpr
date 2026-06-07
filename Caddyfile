@@ -99,7 +99,7 @@ clpr.tv {
     # API routes -> backend
     handle /api/* {
         # Blue backend (default)
-        reverse_proxy clipper-backend-blue:8080 {
+        reverse_proxy clpr-backend-blue:8080 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
@@ -112,7 +112,7 @@ clpr.tv {
         }
 
         # Uncomment to switch to green:
-        # reverse_proxy clipper-backend-green:8080 {
+        # reverse_proxy clpr-backend-green:8080 {
         #     header_up Host {host}
         #     header_up X-Real-IP {remote_host}
         #     header_up X-Forwarded-For {remote_host}
@@ -127,19 +127,19 @@ clpr.tv {
 
     # Health check endpoint (bypasses caching)
     handle /health {
-        reverse_proxy clipper-backend-blue:8080
+        reverse_proxy clpr-backend-blue:8080
         # Switch to green:
-        # reverse_proxy clipper-backend-green:8080
+        # reverse_proxy clpr-backend-green:8080
     }
 
     # WebSocket support
     handle /ws/* {
-        reverse_proxy clipper-backend-blue:8080 {
+        reverse_proxy clpr-backend-blue:8080 {
             header_up Upgrade {>Upgrade}
             header_up Connection {>Connection}
         }
         # Switch to green:
-        # reverse_proxy clipper-backend-green:8080 {
+        # reverse_proxy clpr-backend-green:8080 {
         #     header_up Upgrade {>Upgrade}
         #     header_up Connection {>Connection}
         # }
@@ -147,12 +147,12 @@ clpr.tv {
 
     # Frontend (SPA)
     handle /* {
-        reverse_proxy clipper-frontend-blue:80 {
+        reverse_proxy clpr-frontend-blue:80 {
             health_uri /health.html
             health_interval 30s
         }
         # Switch to green:
-        # reverse_proxy clipper-frontend-green:80
+        # reverse_proxy clpr-frontend-green:80
     }
 
     # Compression

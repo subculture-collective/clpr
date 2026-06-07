@@ -792,7 +792,7 @@ When you discover issues during testing:
 2. **Check Logs**:
    ```bash
    # Backend logs
-   docker logs clipper-backend | grep -i "stripe\|subscription\|webhook"
+   docker logs clpr-backend | grep -i "stripe\|subscription\|webhook"
    
    # Database logs
    SELECT * FROM subscription_events WHERE created_at > NOW() - INTERVAL '1 hour';
@@ -890,9 +890,9 @@ go test -v -tags=integration ./tests/integration/premium/ -run TestPaymentFailur
 
 Tests use the test database configured in `docker-compose.test.yml`:
 - **Host**: localhost:5437
-- **Database**: clipper_test
-- **User**: clipper
-- **Password**: clipper_password
+- **Database**: clpr_test
+- **User**: clpr
+- **Password**: clpr_password
 
 The Makefile target `test-integration-stripe` automatically:
 1. Starts the test database

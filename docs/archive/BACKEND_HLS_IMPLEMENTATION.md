@@ -283,7 +283,7 @@ package handlers
 import (
     "net/http"
     "github.com/gin-gonic/gin"
-    "github.com/subculture-collective/clipper/internal/repository"
+    "git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 type VideoStreamingHandler struct {
@@ -386,7 +386,7 @@ api.GET("/video/:clipId/:quality/segment-:number.ts", videoHandler.GetHLSSegment
 ### Directory Structure
 
 ```
-/var/clipper/video/
+/var/clpr/video/
 ├── [clip-id-1]/
 │   ├── master.m3u8
 │   ├── 480p/

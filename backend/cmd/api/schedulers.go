@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/subculture-collective/clipper/internal/scheduler"
+	"git.subcult.tv/subculture-collective/clpr/internal/scheduler"
 )
 
 // SchedulerGroup holds all background scheduler instances for graceful shutdown.

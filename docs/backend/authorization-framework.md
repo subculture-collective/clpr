@@ -441,7 +441,7 @@ A comprehensive RBAC regression suite is available at `backend/tests/integration
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Run all RBAC tests
 cd backend

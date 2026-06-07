@@ -1,7 +1,7 @@
 [Unit]
-Description=Run Clipper Clip Scraper Daily
-Documentation=https://github.com/subculture-collective/clipper
-Requires=clipper-scraper.service
+Description=Run Clpr Clip Scraper Daily
+Documentation=https://git.subcult.tv/subculture-collective/clpr
+Requires=clpr-scraper.service
 
 [Timer]
 # Run daily at 2:00 AM UTC

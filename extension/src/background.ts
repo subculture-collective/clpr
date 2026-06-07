@@ -10,7 +10,7 @@
 import { isTwitchClipUrl, extractTwitchClipInfo } from './lib/twitch';
 import type { TwitchClipInfo } from './types';
 
-const MENU_ITEM_ID = 'share-to-clipper';
+const MENU_ITEM_ID = 'share-to-clpr';
 
 /** Stores the most recently detected clip per tab. */
 const tabClips = new Map<number, TwitchClipInfo>();

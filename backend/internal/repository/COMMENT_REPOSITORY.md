@@ -203,7 +203,7 @@ The system has been designed to handle:
 
 For load testing, use the provided seed data:
 ```bash
-psql -U clipper -d clipper < migrations/seed_load_test.sql
+psql -U clpr -d clpr < migrations/seed_load_test.sql
 ```
 
 ## Migration History

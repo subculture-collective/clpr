@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // CloudflareProvider implements CDN operations for Cloudflare
@@ -21,7 +21,7 @@ func NewCloudflareProvider(zoneID, apiKey string, cacheTTL int) *CloudflareProvi
 		zoneID:    zoneID,
 		apiKey:    apiKey,
 		cacheTTL:  cacheTTL,
-		cdnDomain: "cdn.cloudflare.clipper.gg", // Default, can be overridden
+		cdnDomain: "cdn.cloudflare.clpr.gg", // Default, can be overridden
 	}
 }
 

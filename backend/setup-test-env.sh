@@ -40,9 +40,9 @@ fi
 # Test database configuration
 export TEST_DATABASE_HOST="${TEST_DATABASE_HOST:-localhost}"
 export TEST_DATABASE_PORT="${TEST_DATABASE_PORT:-5437}"
-export TEST_DATABASE_USER="${TEST_DATABASE_USER:-clipper}"
-export TEST_DATABASE_PASSWORD="${TEST_DATABASE_PASSWORD:-clipper_password}"
-export TEST_DATABASE_NAME="${TEST_DATABASE_NAME:-clipper_test}"
+export TEST_DATABASE_USER="${TEST_DATABASE_USER:-clpr}"
+export TEST_DATABASE_PASSWORD="${TEST_DATABASE_PASSWORD:-clpr_password}"
+export TEST_DATABASE_NAME="${TEST_DATABASE_NAME:-clpr_test}"
 
 # Compose a full connection URL for tests that consume TEST_DATABASE_URL directly
 export TEST_DATABASE_URL="postgres://${TEST_DATABASE_USER}:${TEST_DATABASE_PASSWORD}@${TEST_DATABASE_HOST}:${TEST_DATABASE_PORT}/${TEST_DATABASE_NAME}?sslmode=disable"

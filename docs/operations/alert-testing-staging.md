@@ -14,9 +14,9 @@ last_reviewed: 2026-01-29
 This document describes procedures for testing alert rules in the staging environment to ensure they fire correctly before deploying to production.
 
 **Related Issues (Roadmap 5.0 - Phase 5.3):**
-- [#805 - Observability Infrastructure](https://github.com/subculture-collective/clipper/issues/805)
-- [#858 - Grafana Dashboards](https://github.com/subculture-collective/clipper/issues/858)
-- [#860 - Alerting Configuration](https://github.com/subculture-collective/clipper/issues/860)
+- [#805 - Observability Infrastructure](https://git.subcult.tv/subculture-collective/clpr/issues/805)
+- [#858 - Grafana Dashboards](https://git.subcult.tv/subculture-collective/clpr/issues/858)
+- [#860 - Alerting Configuration](https://git.subcult.tv/subculture-collective/clpr/issues/860)
 
 ## Overview
 
@@ -31,9 +31,9 @@ Testing alerts in staging ensures:
 
 ### Access Required
 
-- [ ] Staging Prometheus: `https://prometheus-staging.clipper.app` or `http://localhost:9090` (port-forward)
-- [ ] Staging Alertmanager: `https://alertmanager-staging.clipper.app` or `http://localhost:9093`
-- [ ] Staging Grafana: `https://grafana-staging.clipper.app`
+- [ ] Staging Prometheus: `https://prometheus-staging.clpr.app` or `http://localhost:9090` (port-forward)
+- [ ] Staging Alertmanager: `https://alertmanager-staging.clpr.app` or `http://localhost:9093`
+- [ ] Staging Grafana: `https://grafana-staging.clpr.app`
 - [ ] Staging Slack workspace (or test channels in main workspace)
 - [ ] PagerDuty staging integration keys
 
@@ -339,7 +339,7 @@ kubectl scale deployment backend --replicas=3 -n staging
 ```bash
 # Generate errors by calling invalid endpoint repeatedly
 for i in {1..100}; do
-  curl -s https://staging.clipper.app/api/v1/invalid-endpoint > /dev/null &
+  curl -s https://staging.clpr.app/api/v1/invalid-endpoint > /dev/null &
 done
 
 # Wait for error rate to accumulate
@@ -385,7 +385,7 @@ kubectl set resources deployment backend \
 ```bash
 # Attempt multiple failed logins
 for i in {1..50}; do
-  curl -X POST https://staging.clipper.app/api/v1/auth/login \
+  curl -X POST https://staging.clpr.app/api/v1/auth/login \
     -H "Content-Type: application/json" \
     -d '{"username":"invalid","password":"invalid"}' &
 done
@@ -409,7 +409,7 @@ Test that silences work correctly.
 amtool silence add alertname=TestAlert \
   --duration=10m \
   --comment="Testing silence functionality" \
-  --author="test@clipper.app"
+  --author="test@clpr.app"
 
 # Using Alertmanager API
 curl -X POST http://localhost:9093/api/v1/silences \
@@ -425,7 +425,7 @@ curl -X POST http://localhost:9093/api/v1/silences \
     "startsAt": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
     "endsAt": "'$(date -u +%Y-%m-%dT%H:%M:%S -d @$(($(date +%s) + 600)))Z'",
     "comment": "Testing silence",
-    "createdBy": "test@clipper.app"
+    "createdBy": "test@clpr.app"
   }'
 ```
 
@@ -729,7 +729,7 @@ Track these metrics to assess alert quality:
 
 Questions about alert testing:
 - Slack: #platform-team
-- Email: platform@clipper.app
+- Email: platform@clpr.app
 
 ---
 
@@ -737,6 +737,6 @@ Questions about alert testing:
 **Last Updated:** 2026-01-02  
 **Owner:** Platform Engineering Team  
 **Related Issues:** 
-- [#860 - Alerting Configuration (Roadmap 5.0)](https://github.com/subculture-collective/clipper/issues/860)
-- [#858 - Grafana Dashboards](https://github.com/subculture-collective/clipper/issues/858)
-- [#805 - Observability Infrastructure](https://github.com/subculture-collective/clipper/issues/805)
+- [#860 - Alerting Configuration (Roadmap 5.0)](https://git.subcult.tv/subculture-collective/clpr/issues/860)
+- [#858 - Grafana Dashboards](https://git.subcult.tv/subculture-collective/clpr/issues/858)
+- [#805 - Observability Infrastructure](https://git.subcult.tv/subculture-collective/clpr/issues/805)

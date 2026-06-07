@@ -310,7 +310,7 @@ DMCA service includes URL validation and sanitization:
 ```bash
 # SendGrid Configuration
 SENDGRID_API_KEY=your_api_key_here
-FROM_EMAIL=noreply@clipper.example.com
+FROM_EMAIL=noreply@clpr.example.com
 FROM_NAME=Clipper
 
 # Email Service Settings
@@ -320,7 +320,7 @@ EMAIL_MAX_PER_HOUR=10
 EMAIL_TOKEN_EXPIRY_HOURS=2160  # 90 days
 
 # Base URL for links in emails
-BASE_URL=https://clipper.example.com
+BASE_URL=https://clpr.example.com
 ```
 
 ### Service Initialization

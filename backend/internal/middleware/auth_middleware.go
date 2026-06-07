@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/internal/services"
-	sentrypkg "github.com/subculture-collective/clipper/pkg/sentry"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 )
 
 // AuthMiddleware creates middleware that requires authentication

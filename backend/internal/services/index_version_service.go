@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
-	"github.com/subculture-collective/clipper/pkg/opensearch"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // IndexVersionService handles versioned index management for zero-downtime rebuilds

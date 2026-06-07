@@ -179,11 +179,11 @@ Automatic token refresh prevents session interruption:
 
 ```json
 {
-  "scheme": "clipper"
+  "scheme": "clpr"
 }
 ```
 
-This enables deep linking for OAuth callbacks via `clipper://` URLs.
+This enables deep linking for OAuth callbacks via `clpr://` URLs.
 
 ### Environment Variables
 
@@ -199,7 +199,7 @@ EXPO_PUBLIC_TWITCH_CLIENT_ID=your_twitch_client_id
 In the [Twitch Developer Console](https://dev.twitch.tv/console/apps):
 
 1. Create or edit your application
-2. Add OAuth Redirect URL: `clipper://`
+2. Add OAuth Redirect URL: `clpr://`
 3. Note your Client ID (no client secret needed for PKCE)
 
 ## Backend Integration
@@ -354,9 +354,9 @@ Backend revokes refresh token and clears cookies.
 **Cause:** Deep link not configured
 **Solution:**
 
-- Verify `scheme: "clipper"` in app.json
+- Verify `scheme: "clpr"` in app.json
 - Rebuild app with `npx expo prebuild`
-- Check Twitch app has `clipper://` redirect
+- Check Twitch app has `clpr://` redirect
 
 ### Session doesn't persist
 

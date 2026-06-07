@@ -313,7 +313,7 @@ PASS: All audit log tests passing (0.014s)
 - ✅ Load allowed origins from environment variable
 - ✅ No hardcoded origins in code
 - ✅ Support for multiple environments
-- ✅ Wildcard pattern support (e.g., `*.clipper.gg`)
+- ✅ Wildcard pattern support (e.g., `*.clpr.gg`)
 - ✅ Comma-separated list parsing
 - ✅ Origin validation on startup
 - ✅ Security warnings for insecure configurations
@@ -331,7 +331,7 @@ WebSocket: WebSocketConfig{
 
 ### Environment Variable:
 ```bash
-WEBSOCKET_ALLOWED_ORIGINS="https://clipper.gg,https://clpr.tv,*.staging.clipper.gg"
+WEBSOCKET_ALLOWED_ORIGINS="https://clpr.gg,https://clpr.tv,*.staging.clpr.gg"
 ```
 
 ### Origin Validation:

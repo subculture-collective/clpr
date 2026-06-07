@@ -78,7 +78,7 @@ After 24-48 hours of monitoring with **NO violations** (or violations resolved):
     ```
 4. **Reload Caddy**:
     ```bash
-    docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+    docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
     ```
     Or if using systemd:
     ```bash
@@ -305,10 +305,10 @@ content-security-policy-report-only: default-src 'self'; ...
 
 ```bash
 # For docker-compose deployment
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 
 # Verify Caddy logs
-docker logs clipper-caddy --tail 50
+docker logs clpr-caddy --tail 50
 ```
 
 ### Reload Caddy (VPS with systemd)
@@ -375,7 +375,7 @@ If enforcing CSP breaks your site:
     ```
 3. **Check Caddy logs**:
     ```bash
-    docker logs clipper-caddy --tail 100
+    docker logs clpr-caddy --tail 100
     ```
 
 ### Mixed Content Warnings

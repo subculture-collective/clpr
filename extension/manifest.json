@@ -14,7 +14,7 @@
   "host_permissions": [
     "https://www.twitch.tv/*/clip/*",
     "https://clips.twitch.tv/*",
-    "https://api.clipper.gg/*"
+    "https://api.clpr.gg/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -48,7 +48,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "extension@clipper.gg",
+      "id": "extension@clpr.gg",
       "strict_min_version": "109.0"
     }
   }

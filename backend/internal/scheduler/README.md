@@ -174,7 +174,7 @@ The testing framework provides:
 ### Quick Example
 
 ```go
-import schedulertesting "github.com/subculture-collective/clipper/internal/scheduler/testing"
+import schedulertesting "git.subcult.tv/subculture-collective/clpr/internal/scheduler/testing"
 
 func TestSchedulerWithFramework(t *testing.T) {
     // Use mock clock for deterministic timing

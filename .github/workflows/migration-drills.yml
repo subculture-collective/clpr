@@ -30,9 +30,9 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg17
         env:
-          POSTGRES_USER: clipper
-          POSTGRES_PASSWORD: clipper_password
-          POSTGRES_DB: clipper_test
+          POSTGRES_USER: clpr
+          POSTGRES_PASSWORD: clpr_password
+          POSTGRES_DB: clpr_test
         ports:
           - 5437:5432
         options: >-
@@ -74,20 +74,20 @@ jobs:
 
       - name: Run database migrations
         env:
-          DB_URL: postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable
+          DB_URL: postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable
         run: |
           echo "::add-mask::$DB_URL"
           migrate -path backend/migrations -database "$DB_URL" up
 
       - name: Run migration rollback drills
         env:
-          TEST_DATABASE_URL: postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable
+          TEST_DATABASE_URL: postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable
           TEST_REDIS_URL: localhost:6380
           TEST_DATABASE_HOST: localhost
           TEST_DATABASE_PORT: 5437
-          TEST_DATABASE_USER: clipper
-          TEST_DATABASE_PASSWORD: clipper_password
-          TEST_DATABASE_NAME: clipper_test
+          TEST_DATABASE_USER: clpr
+          TEST_DATABASE_PASSWORD: clpr_password
+          TEST_DATABASE_NAME: clpr_test
         run: |
           echo "::add-mask::$TEST_DATABASE_URL"
           echo "::add-mask::$TEST_DATABASE_PASSWORD"

@@ -1,24 +1,24 @@
 # Systemd service for credential rotation reminder
-# Install to /etc/systemd/system/clipper-rotation-reminder.service
+# Install to /etc/systemd/system/clpr-rotation-reminder.service
 #
 # Note: This service uses GNU date (date -d) which is Linux-specific.
 # This is intentional since systemd itself is Linux-only. For macOS users,
 # use cron with the portable date handling from the rotation scripts instead.
 
 [Unit]
-Description=Clipper Credential Rotation Reminder
-Documentation=https://github.com/subculture-collective/clipper/docs/operations/credential-rotation-runbook.md
+Description=Clpr Credential Rotation Reminder
+Documentation=https://git.subcult.tv/subculture-collective/clpr/docs/operations/credential-rotation-runbook.md
 After=network.target
 
 [Service]
 Type=oneshot
-User=clipper
-Group=clipper
-WorkingDirectory=/opt/clipper
+User=clpr
+Group=clpr
+WorkingDirectory=/opt/clpr
 
 # Check rotation log and send reminder if credentials are due for rotation
 ExecStart=/bin/bash -c '\
-  ROTATION_LOG="/opt/clipper/rotation-log.txt"; \
+  ROTATION_LOG="/opt/clpr/rotation-log.txt"; \
   ALERT_THRESHOLD=7; \
   \
   check_rotation() { \
@@ -58,14 +58,14 @@ ExecStart=/bin/bash -c '\
   if [ $ALERTS -gt 0 ]; then \
     echo ""; \
     echo "$ALERTS credential(s) require attention!"; \
-    echo "See: /opt/clipper/docs/operations/credential-rotation-runbook.md"; \
+    echo "See: /opt/clpr/docs/operations/credential-rotation-runbook.md"; \
     exit 1; \
   fi; \
   echo "All credentials are up to date."; \
 '
 
 # Send email notification on failure (requires mail command)
-# OnFailure=clipper-rotation-alert.service
+# OnFailure=clpr-rotation-alert.service
 
 [Install]
 WantedBy=multi-user.target

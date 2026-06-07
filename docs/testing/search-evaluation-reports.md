@@ -275,7 +275,7 @@ backend/
 - [nDCG Wikipedia](https://en.wikipedia.org/wiki/Discounted_cumulative_gain)
 - [Mean Reciprocal Rank](https://en.wikipedia.org/wiki/Mean_reciprocal_rank)
 - [Precision and Recall](https://en.wikipedia.org/wiki/Precision_and_recall)
-- Roadmap Issue: subculture-collective/clipper#805
+- Roadmap Issue: subculture-collective/clpr#805
 
 ## Support
 

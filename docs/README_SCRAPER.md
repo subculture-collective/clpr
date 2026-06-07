@@ -34,9 +34,9 @@ TWITCH_CLIENT_SECRET=your_client_secret
 # Database
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=clipper
+DB_USER=clpr
 DB_PASSWORD=your_password
-DB_NAME=clipper_db
+DB_NAME=clpr_db
 DB_SSLMODE=disable
 
 # Redis
@@ -119,19 +119,19 @@ Add to your crontab:
 
 ```bash
 # Clipper clip scraper - runs daily at 2 AM UTC
-0 2 * * * cd /path/to/clipper/backend && ./bin/scrape_clips >> /var/log/clipper/scraper.log 2>&1
+0 2 * * * cd /path/to/clpr/backend && ./bin/scrape_clips >> /var/log/clpr/scraper.log 2>&1
 ```
 
 ### Weekly Run (Sunday 2 AM UTC)
 
 ```bash
 # Clipper clip scraper - runs weekly on Sunday at 2 AM UTC
-0 2 * * 0 cd /path/to/clipper/backend && ./bin/scrape_clips --batch-size 100 >> /var/log/clipper/scraper.log 2>&1
+0 2 * * 0 cd /path/to/clpr/backend && ./bin/scrape_clips --batch-size 100 >> /var/log/clpr/scraper.log 2>&1
 ```
 
 ### With Systemd Timer
 
-Create `/etc/systemd/system/clipper-scraper.service`:
+Create `/etc/systemd/system/clpr-scraper.service`:
 
 ```ini
 [Unit]
@@ -140,20 +140,20 @@ After=network.target postgresql.service redis.service
 
 [Service]
 Type=oneshot
-User=clipper
-WorkingDirectory=/opt/clipper/backend
+User=clpr
+WorkingDirectory=/opt/clpr/backend
 Environment="PATH=/usr/local/go/bin:/usr/bin:/bin"
-ExecStart=/opt/clipper/backend/bin/scrape_clips
+ExecStart=/opt/clpr/backend/bin/scrape_clips
 StandardOutput=journal
 StandardError=journal
 ```
 
-Create `/etc/systemd/system/clipper-scraper.timer`:
+Create `/etc/systemd/system/clpr-scraper.timer`:
 
 ```ini
 [Unit]
 Description=Run Clipper Scraper Daily
-Requires=clipper-scraper.service
+Requires=clpr-scraper.service
 
 [Timer]
 OnCalendar=daily
@@ -168,8 +168,8 @@ Enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable clipper-scraper.timer
-sudo systemctl start clipper-scraper.timer
+sudo systemctl enable clpr-scraper.timer
+sudo systemctl start clpr-scraper.timer
 ```
 
 ## Monitoring
@@ -178,10 +178,10 @@ sudo systemctl start clipper-scraper.timer
 
 ```bash
 # Systemd journal
-sudo journalctl -u clipper-scraper.service -f
+sudo journalctl -u clpr-scraper.service -f
 
 # Log file
-tail -f /var/log/clipper/scraper.log
+tail -f /var/log/clpr/scraper.log
 ```
 
 ### Key Metrics
@@ -246,7 +246,7 @@ Average time per clip inserted: 1.06s
 #### "Failed to connect to database"
 
 **Solution**: 
-- Verify database is running: `psql -h localhost -U clipper -d clipper_db`
+- Verify database is running: `psql -h localhost -U clpr -d clpr_db`
 - Check connection settings in `.env`
 - Ensure database migrations have been run
 

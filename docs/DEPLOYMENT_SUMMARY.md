@@ -22,7 +22,7 @@ This implementation provides a complete, production-ready VPS deployment solutio
 
 #### 3. **Caddyfile.vps** (Production Caddy configuration)
 - Simplified configuration for standard deployment
-- Routes clpr.tv traffic to clipper-backend and clipper-frontend
+- Routes clpr.tv traffic to clpr-backend and clpr-frontend
 - Automatic HTTPS with Let's Encrypt
 - Security headers and health checks
 
@@ -109,8 +109,8 @@ Added VPS deployment targets:
 │  │  (~/projects/vault)                      │            │   │
 │  │                                           │            │   │
 │  │  Stores secrets:                   ◄─────┘            │   │
-│  │  - kv/clipper/backend                                 │   │
-│  │  - kv/clipper/postgres                                │   │
+│  │  - kv/clpr/backend                                 │   │
+│  │  - kv/clpr/postgres                                │   │
 │  └───────────────────────────────────────────────────────┘   │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
@@ -131,7 +131,7 @@ Added VPS deployment targets:
    - Clean isolation
 
 3. **Container Naming**
-   - Consistent names: `clipper-backend`, `clipper-frontend`, etc.
+   - Consistent names: `clpr-backend`, `clpr-frontend`, etc.
    - Works with Caddy DNS resolution
    - Easy to identify and manage
 
@@ -159,13 +159,13 @@ docker compose up -d
 # 2. Configure Vault secrets
 export VAULT_ADDR=http://localhost:8200
 vault login
-vault kv put kv/clipper/backend <key=value pairs>
-vault kv put kv/clipper/postgres <key=value pairs>
+vault kv put kv/clpr/backend <key=value pairs>
+vault kv put kv/clpr/postgres <key=value pairs>
 
 # 3. Create AppRole credentials
-cd ~/projects/clipper
-vault read -field=role_id auth/approle/role/clipper-backend/role-id > vault/approle/role_id
-vault write -field=secret_id -f auth/approle/role/clipper-backend/secret-id > vault/approle/secret_id
+cd ~/projects/clpr
+vault read -field=role_id auth/approle/role/clpr-backend/role-id > vault/approle/role_id
+vault write -field=secret_id -f auth/approle/role/clpr-backend/secret-id > vault/approle/secret_id
 
 # 4. Create network
 docker network create web
@@ -177,7 +177,7 @@ docker network create web
 ### Regular Deployment
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 
 # Deploy
 ./scripts/deploy-vps.sh
@@ -217,8 +217,8 @@ make deploy-vps-logs
    ```bash
    mkdir -p ~/projects
    cd ~/projects
-   git clone https://github.com/subculture-collective/clipper.git
-   cd clipper
+   git clone https://git.subcult.tv/subculture-collective/clpr.git
+   cd clpr
    ```
 
 2. **Setup Vault** (if not already done):
@@ -256,7 +256,7 @@ make deploy-vps-logs
 ./scripts/verify-vps-deployment.sh
 
 # Check specific container
-docker logs clipper-backend
+docker logs clpr-backend
 
 # Check networks
 docker network inspect web
@@ -340,19 +340,19 @@ Not applicable - this is specifically for VPS with external services.
 
 2. **Verify containers:**
    ```bash
-   docker ps | grep clipper
+   docker ps | grep clpr
    # Should show: vault-agent, postgres, redis, backend, frontend (all healthy)
    ```
 
 3. **Verify secrets:**
    ```bash
-   docker exec clipper-vault-agent ls -l /vault-agent/rendered/
+   docker exec clpr-vault-agent ls -l /vault-agent/rendered/
    # Should show: backend.env, postgres.env
    ```
 
 4. **Verify backend:**
    ```bash
-   docker exec clipper-backend wget -qO- http://localhost:8080/api/v1/health
+   docker exec clpr-backend wget -qO- http://localhost:8080/api/v1/health
    # Should return: {"status":"ok"}
    ```
 
@@ -373,7 +373,7 @@ Not applicable - this is specifically for VPS with external services.
 ### Update Code
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 ./scripts/deploy-vps.sh
 ```
 
@@ -381,7 +381,7 @@ cd ~/projects/clipper
 
 ```bash
 # Update in Vault
-vault kv patch kv/clipper/backend NEW_KEY=new_value
+vault kv patch kv/clpr/backend NEW_KEY=new_value
 
 # Restart vault-agent and backend
 docker compose -f docker-compose.vps.yml restart vault-agent
@@ -396,14 +396,14 @@ docker compose -f docker-compose.vps.yml restart backend
 make deploy-vps-logs
 
 # Specific service
-docker logs -f clipper-backend
+docker logs -f clpr-backend
 ```
 
 ### Backup Database
 
 ```bash
-docker exec clipper-postgres pg_dump -U clipper clipper_db | \
-  gzip > ~/backups/clipper-$(date +%Y%m%d).sql.gz
+docker exec clpr-postgres pg_dump -U clpr clpr_db | \
+  gzip > ~/backups/clpr-$(date +%Y%m%d).sql.gz
 ```
 
 ## Success Criteria Met

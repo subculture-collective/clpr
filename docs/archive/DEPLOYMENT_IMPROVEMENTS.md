@@ -211,8 +211,8 @@ docker-compose -f docker-compose.blue-green.yml logs -f
 
 ```bash
 # Copy blue-green config
-sudo cp nginx/blue-green.conf /etc/nginx/sites-available/clipper
-sudo ln -sf /etc/nginx/sites-available/clipper /etc/nginx/sites-enabled/
+sudo cp nginx/blue-green.conf /etc/nginx/sites-available/clpr
+sudo ln -sf /etc/nginx/sites-available/clpr /etc/nginx/sites-enabled/
 
 # Set active environment
 echo "blue" | sudo tee /etc/nginx/active_env

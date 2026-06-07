@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v81"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 const (

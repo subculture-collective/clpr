@@ -187,7 +187,7 @@ npm run preview
 - [ ] **Update Apple Team ID**
   - File: `frontend/public/.well-known/apple-app-site-association`
   - Replace: `TEAM_ID` with your Apple Developer Team ID
-  - Format: `TEAM123ABC.com.subculture.clipper`
+  - Format: `TEAM123ABC.com.subculture.clpr`
 
 - [ ] **Update Android Certificate**
   - File: `frontend/public/.well-known/assetlinks.json`
@@ -223,7 +223,7 @@ npm run preview
   # Use ADB to test
   adb shell am start -W -a android.intent.action.VIEW \
     -d "https://yourdomain.com/clip/test123" \
-    com.subculture.clipper
+    com.subculture.clpr
   ```
 
 - [ ] **Test Share Target**
@@ -316,7 +316,7 @@ npm run preview
 
 Potential improvements for future iterations:
 
-1. **Custom URL Scheme**: `clipper://` URLs for non-HTTPS environments
+1. **Custom URL Scheme**: `clpr://` URLs for non-HTTPS environments
 2. **Deep Link Analytics**: Track deep link opens and conversions
 3. **Deferred Deep Linking**: Install attribution and first-open routing
 4. **Branch.io Integration**: Advanced deep linking features

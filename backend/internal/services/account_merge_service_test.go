@@ -12,10 +12,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
-	"github.com/subculture-collective/clipper/pkg/database"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 )
 
 // setupTestDB creates a test database connection
@@ -33,17 +33,17 @@ func setupTestDB(t *testing.T) *database.DB {
 
 	user := os.Getenv("TEST_DATABASE_USER")
 	if user == "" {
-		user = "clipper"
+		user = "clpr"
 	}
 
 	password := os.Getenv("TEST_DATABASE_PASSWORD")
 	if password == "" {
-		password = "clipper_password_test_only" // Obviously test-only default
+		password = "clpr_password_test_only" // Obviously test-only default
 	}
 
 	dbName := os.Getenv("TEST_DATABASE_NAME")
 	if dbName == "" {
-		dbName = "clipper_test"
+		dbName = "clpr_test"
 	}
 
 	cfg := &config.DatabaseConfig{

@@ -1134,7 +1134,7 @@ const { data: comments } = useQuery({
 
 For issues or questions:
 
-- **GitHub Issues**: [subculture-collective/clipper/issues](https://github.com/subculture-collective/clipper/issues)
+- **GitHub Issues**: [subculture-collective/clpr/issues](https://git.subcult.tv/subculture-collective/clpr/issues)
 - **Documentation**: [Full docs](../index.md)
 - **API Status**: [status.clpr.tv](https://status.clpr.tv)
 

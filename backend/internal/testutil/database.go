@@ -14,7 +14,7 @@ func SetupTestDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 
 	// Use test database configuration
-	dbURL := "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable"
+	dbURL := "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable"
 
 	pool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {

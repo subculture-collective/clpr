@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // HealthStatus represents the health status of a service

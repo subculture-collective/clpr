@@ -1821,7 +1821,7 @@ Required environment variables for moderation features:
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/clipper
+DATABASE_URL=postgresql://user:password@localhost:5432/clpr
 
 # Redis (for rate limiting)
 REDIS_URL=redis://localhost:6379
@@ -1874,9 +1874,9 @@ docker run -d -p 6379:6379 redis:7-alpine
 
 # PostgreSQL
 docker run -d -p 5432:5432 \
-  -e POSTGRES_DB=clipper \
-  -e POSTGRES_USER=clipper \
-  -e POSTGRES_PASSWORD=clipper \
+  -e POSTGRES_DB=clpr \
+  -e POSTGRES_USER=clpr \
+  -e POSTGRES_PASSWORD=clpr \
   postgres:15-alpine
 ```
 
@@ -1931,7 +1931,7 @@ cd backend
 make build
 
 # Or using Docker
-docker build -t clipper-backend .
+docker build -t clpr-backend .
 ```
 
 ### Running
@@ -1992,16 +1992,16 @@ Moderation metrics are exposed at `/metrics`:
 
 ```
 # Ban operations
-clipper_moderation_bans_created_total
-clipper_moderation_bans_revoked_total
-clipper_moderation_ban_sync_duration_seconds
+clpr_moderation_bans_created_total
+clpr_moderation_bans_revoked_total
+clpr_moderation_ban_sync_duration_seconds
 
 # Moderator operations
-clipper_moderation_moderators_added_total
-clipper_moderation_moderators_removed_total
+clpr_moderation_moderators_added_total
+clpr_moderation_moderators_removed_total
 
 # Audit logs
-clipper_moderation_audit_logs_created_total
+clpr_moderation_audit_logs_created_total
 ```
 
 2. **Logging**
@@ -2082,7 +2082,7 @@ RATE_LIMIT_WHITELIST_IPS=10.0.0.0/8,172.16.0.0/12
 
 ```bash
 # Check logs
-docker logs clipper-backend | grep "ban_sync"
+docker logs clpr-backend | grep "ban_sync"
 
 # Test Twitch API connection
 curl -X POST http://localhost:8080/api/v1/moderation/sync-bans \
@@ -2127,7 +2127,7 @@ curl http://localhost:8080/api/v1/users/me \
 - [Authentication Guide](/docs/backend/authentication.md)
 - [Authorization Framework](/docs/backend/authorization-framework.md)
 - [Rate Limiting](/docs/backend/rate-limiting.md)
-- [GitHub Issues](https://github.com/subculture-collective/clipper/issues)
+- [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)
 - [API Status Page](https://status.clpr.tv)
 
 ---

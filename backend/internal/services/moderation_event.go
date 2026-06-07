@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/internal/models"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // ModerationEventType represents types of moderation events

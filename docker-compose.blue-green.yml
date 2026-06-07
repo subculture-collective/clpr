@@ -5,8 +5,8 @@
 services:
     # BLUE environment (current production)
     backend-blue:
-        image: ghcr.io/subculture-collective/clipper/backend:${BACKEND_BLUE_TAG:-latest}
-        container_name: clipper-backend-blue
+        image: ghcr.io/subculture-collective/clpr/backend:${BACKEND_BLUE_TAG:-latest}
+        container_name: clpr-backend-blue
         restart: unless-stopped
         depends_on:
             postgres:
@@ -31,9 +31,9 @@ services:
             - ENVIRONMENT=blue
             - DB_HOST=postgres
             - DB_PORT=5432
-            - DB_USER=${POSTGRES_USER:-clipper}
+            - DB_USER=${POSTGRES_USER:-clpr}
             - DB_PASSWORD=${POSTGRES_PASSWORD}
-            - DB_NAME=${POSTGRES_DB:-clipper_db}
+            - DB_NAME=${POSTGRES_DB:-clpr_db}
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - REDIS_DB=0
@@ -44,11 +44,11 @@ services:
             - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://clpr.tv}
             - LOG_LEVEL=info
         networks:
-            - clipper-network
+            - clpr-network
 
     frontend-blue:
-        image: ghcr.io/subculture-collective/clipper/frontend:${FRONTEND_BLUE_TAG:-latest}
-        container_name: clipper-frontend-blue
+        image: ghcr.io/subculture-collective/clpr/frontend:${FRONTEND_BLUE_TAG:-latest}
+        container_name: clpr-frontend-blue
         restart: unless-stopped
         depends_on:
             - backend-blue
@@ -68,12 +68,12 @@ services:
         environment:
             - BACKEND_URL=http://backend-blue:8080
         networks:
-            - clipper-network
+            - clpr-network
 
     # GREEN environment (new version during deploy)
     backend-green:
-        image: ghcr.io/subculture-collective/clipper/backend:${BACKEND_GREEN_TAG:-latest}
-        container_name: clipper-backend-green
+        image: ghcr.io/subculture-collective/clpr/backend:${BACKEND_GREEN_TAG:-latest}
+        container_name: clpr-backend-green
         restart: unless-stopped
         depends_on:
             postgres:
@@ -98,9 +98,9 @@ services:
             - ENVIRONMENT=green
             - DB_HOST=postgres
             - DB_PORT=5432
-            - DB_USER=${POSTGRES_USER:-clipper}
+            - DB_USER=${POSTGRES_USER:-clpr}
             - DB_PASSWORD=${POSTGRES_PASSWORD}
-            - DB_NAME=${POSTGRES_DB:-clipper_db}
+            - DB_NAME=${POSTGRES_DB:-clpr_db}
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - REDIS_DB=0
@@ -111,13 +111,13 @@ services:
             - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://clpr.tv}
             - LOG_LEVEL=info
         networks:
-            - clipper-network
+            - clpr-network
         profiles:
             - green # Only starts when explicitly requested
 
     frontend-green:
-        image: ghcr.io/subculture-collective/clipper/frontend:${FRONTEND_GREEN_TAG:-latest}
-        container_name: clipper-frontend-green
+        image: ghcr.io/subculture-collective/clpr/frontend:${FRONTEND_GREEN_TAG:-latest}
+        container_name: clpr-frontend-green
         restart: unless-stopped
         depends_on:
             - backend-green
@@ -137,7 +137,7 @@ services:
         environment:
             - BACKEND_URL=http://backend-green:8080
         networks:
-            - clipper-network
+            - clpr-network
         profiles:
             - green # Only starts when explicitly requested
 
@@ -146,11 +146,11 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.postgres
-        container_name: clipper-postgres
+        container_name: clpr-postgres
         restart: unless-stopped
         environment:
-            - POSTGRES_DB=${POSTGRES_DB:-clipper_db}
-            - POSTGRES_USER=${POSTGRES_USER:-clipper}
+            - POSTGRES_DB=${POSTGRES_DB:-clpr_db}
+            - POSTGRES_USER=${POSTGRES_USER:-clpr}
             - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
         ports:
             - '5436:5432'
@@ -160,18 +160,18 @@ services:
             test:
                 [
                     'CMD-SHELL',
-                    'pg_isready -U ${POSTGRES_USER:-clipper} -d ${POSTGRES_DB:-clipper_db}',
+                    'pg_isready -U ${POSTGRES_USER:-clpr} -d ${POSTGRES_DB:-clpr_db}',
                 ]
             interval: 10s
             timeout: 5s
             retries: 5
             start_period: 10s
         networks:
-            - clipper-network
+            - clpr-network
 
     redis:
         image: redis:7-alpine
-        container_name: clipper-redis
+        container_name: clpr-redis
         restart: unless-stopped
         command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
         volumes:
@@ -183,12 +183,12 @@ services:
             retries: 5
             start_period: 5s
         networks:
-            - clipper-network
+            - clpr-network
 
     # Caddy reverse proxy for traffic switching
     caddy:
         image: caddy:2-alpine
-        container_name: clipper-caddy
+        container_name: clpr-caddy
         restart: unless-stopped
         depends_on:
             - backend-blue
@@ -205,7 +205,7 @@ services:
         environment:
             - ACTIVE_ENV=${ACTIVE_ENV:-blue}
         networks:
-            - clipper-network
+            - clpr-network
         healthcheck:
             test:
                 [
@@ -232,5 +232,5 @@ volumes:
         driver: local
 
 networks:
-    clipper-network:
+    clpr-network:
         driver: bridge

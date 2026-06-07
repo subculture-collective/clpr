@@ -47,8 +47,8 @@ Generate or retrieve a share link for a playlist.
 {
   "success": true,
   "data": {
-    "share_url": "https://clipper.tv/playlists/abc123token",
-    "embed_code": "<iframe src=\"https://clipper.tv/embed/playlist/abc123token\" width=\"800\" height=\"600\" frameborder=\"0\" allowfullscreen></iframe>"
+    "share_url": "https://clpr.tv/playlists/abc123token",
+    "embed_code": "<iframe src=\"https://clpr.tv/embed/playlist/abc123token\" width=\"800\" height=\"600\" frameborder=\"0\" allowfullscreen></iframe>"
   }
 }
 ```

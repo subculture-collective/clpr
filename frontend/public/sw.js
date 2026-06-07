@@ -2,7 +2,7 @@
 // Provides offline shell caching for static assets only
 // Does NOT cache authenticated or sensitive API data
 
-const CACHE_NAME = 'clipper-v1';
+const CACHE_NAME = 'clpr-v1';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to cache for offline shell

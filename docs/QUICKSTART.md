@@ -20,9 +20,9 @@ TWITCH_CLIENT_ID=your_client_id
 TWITCH_CLIENT_SECRET=your_client_secret
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=clipper
+DB_USER=clpr
 DB_PASSWORD=your_password
-DB_NAME=clipper_db
+DB_NAME=clpr_db
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
@@ -77,7 +77,7 @@ Found X broadcasters with submissions in the last 30 days
 crontab -e
 
 # Add this line (runs daily at 2 AM UTC)
-0 2 * * * cd /opt/clipper/backend && ./bin/scrape_clips >> /var/log/clipper/scraper.log 2>&1
+0 2 * * * cd /opt/clpr/backend && ./bin/scrape_clips >> /var/log/clpr/scraper.log 2>&1
 ```
 
 **Option 2: Systemd**
@@ -89,11 +89,11 @@ sudo cp scripts/systemd/*.timer /etc/systemd/system/
 
 # Enable and start
 sudo systemctl daemon-reload
-sudo systemctl enable clipper-scraper.timer
-sudo systemctl start clipper-scraper.timer
+sudo systemctl enable clpr-scraper.timer
+sudo systemctl start clpr-scraper.timer
 
 # Check status
-sudo systemctl status clipper-scraper.timer
+sudo systemctl status clpr-scraper.timer
 ```
 
 ### Manual Scraping for Specific Broadcasters
@@ -123,19 +123,19 @@ sudo systemctl status clipper-scraper.timer
 
 **Cron:**
 ```bash
-tail -f /var/log/clipper/scraper.log
+tail -f /var/log/clpr/scraper.log
 ```
 
 **Systemd:**
 ```bash
-sudo journalctl -u clipper-scraper.service -f
+sudo journalctl -u clpr-scraper.service -f
 ```
 
 ### Check Last Run
 
 **Systemd:**
 ```bash
-sudo systemctl status clipper-scraper.service
+sudo systemctl status clpr-scraper.service
 ```
 
 ## Troubleshooting
@@ -147,7 +147,7 @@ sudo systemctl status clipper-scraper.service
 **Solution**: 
 ```bash
 # Check submissions
-psql -h localhost -U clipper -d clipper_db -c "SELECT COUNT(*) FROM clip_submissions WHERE created_at > NOW() - INTERVAL '30 days';"
+psql -h localhost -U clpr -d clpr_db -c "SELECT COUNT(*) FROM clip_submissions WHERE created_at > NOW() - INTERVAL '30 days';"
 
 # Try longer lookback or manual list
 ./bin/scrape_clips --lookback-days 60
@@ -167,7 +167,7 @@ psql -h localhost -U clipper -d clipper_db -c "SELECT COUNT(*) FROM clip_submiss
 **Solution**:
 ```bash
 # Test connection
-psql -h localhost -U clipper -d clipper_db
+psql -h localhost -U clpr -d clpr_db
 
 # Check .env file
 cat .env | grep DB_

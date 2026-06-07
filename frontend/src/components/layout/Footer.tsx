@@ -25,7 +25,7 @@ export function Footer() {
                             </li>
                             <li>
                                 <a
-                                    href='https://github.com/subculture-collective/clipper'
+                                    href='https://git.subcult.tv/subculture-collective/clpr'
                                     target='_blank'
                                     rel='noopener noreferrer'
                                     className='text-muted-foreground hover:text-foreground transition-colors'

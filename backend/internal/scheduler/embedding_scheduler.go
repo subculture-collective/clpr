@@ -6,10 +6,10 @@ import (
 	"time"
 
 	pgvector "github.com/pgvector/pgvector-go"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/pkg/database"
-	"github.com/subculture-collective/clipper/pkg/metrics"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 const embeddingSchedulerName = "embedding_generation"

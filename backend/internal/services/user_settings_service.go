@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // UserSettingsService handles user settings operations
@@ -315,7 +315,7 @@ Data Completeness
 
 The export metadata includes information about data completeness. If any warnings
 are present, it means some data could not be retrieved due to temporary errors.
-In such cases, you may request a new export or contact privacy@clipper.gg for
+In such cases, you may request a new export or contact privacy@clpr.gg for
 assistance.
 
 Data Not Included
@@ -327,7 +327,7 @@ The following data is intentionally not included in the automated export:
 - Moderation actions taken against your account (available via support if needed)
 - Internal system identifiers and technical metadata
 
-For any additional data requests, contact privacy@clipper.gg
+For any additional data requests, contact privacy@clpr.gg
 
 Your Rights
 -----------
@@ -337,11 +337,11 @@ Under GDPR, you have the following rights regarding your data:
 1. Right to Access (Article 15) - This export
 2. Right to Rectification (Article 16) - Update your profile in Settings
 3. Right to Erasure (Article 17) - Request account deletion in Settings
-4. Right to Restriction (Article 18) - Contact support@clipper.gg
+4. Right to Restriction (Article 18) - Contact support@clpr.gg
 5. Right to Data Portability (Article 20) - This export
 6. Right to Object (Article 21) - Manage in Cookie Settings
 
-For questions or additional data requests, contact: privacy@clipper.gg
+For questions or additional data requests, contact: privacy@clpr.gg
 
 Data Format
 -----------
@@ -371,8 +371,8 @@ This export is provided in compliance with:
 Clipper is committed to protecting your privacy and ensuring compliance with 
 all applicable data protection regulations.
 
-For our complete Privacy Policy, visit: https://clipper.gg/privacy
-For our Terms of Service, visit: https://clipper.gg/terms
+For our complete Privacy Policy, visit: https://clpr.gg/privacy
+For our Terms of Service, visit: https://clpr.gg/terms
 
 © 2024 Clipper. All rights reserved.
 `)

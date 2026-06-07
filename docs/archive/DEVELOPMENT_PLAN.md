@@ -16,8 +16,8 @@ last_reviewed: 2026-01-29
 
 ### Running Services
 
-- ✅ PostgreSQL (clipper-postgres:5436) - HEALTHY
-- ✅ Redis (clipper-redis:6379) - HEALTHY
+- ✅ PostgreSQL (clpr-postgres:5436) - HEALTHY
+- ✅ Redis (clpr-redis:6379) - HEALTHY
 - ✅ Frontend (nginx:80) - UNHEALTHY (disconnected from backend)
 - ❌ Backend (port 8080) - RESTARTING (connection issue fixed)
 - ✅ Vault Agent - running for secrets management
@@ -122,7 +122,7 @@ bash scripts/deploy-blue-green.sh
 ### First-Time Setup
 
 ```bash
-cd /home/onnwee/projects/clipper
+cd /home/onnwee/projects/clpr
 
 # 1. Install dependencies
 make install
@@ -309,14 +309,14 @@ git push origin feature/new-component
 
 ```bash
 # Backend
-docker logs clipper-backend -f --tail 100
-docker logs clipper-postgres -f --tail 100
+docker logs clpr-backend -f --tail 100
+docker logs clpr-postgres -f --tail 100
 
 # Frontend
 npm run dev -- --debug  # In frontend/
 
 # Database
-psql -h localhost -p 5436 -U clipper -d clipper_db
+psql -h localhost -p 5436 -U clpr -d clpr_db
 > SELECT * FROM clips LIMIT 5;
 
 # Redis
@@ -338,16 +338,16 @@ redis-cli -p 6379
 cat backend/.env
 
 # Should have:
-DB_HOST=clipper-postgres    # NOT localhost
+DB_HOST=clpr-postgres    # NOT localhost
 DB_PORT=5432                # NOT 5436 (5436 is host port)
-DB_NAME=clipper_db
+DB_NAME=clpr_db
 
 # Verify PostgreSQL is running and healthy
 docker ps | grep postgres
 # Should see: UP (healthy)
 
 # Check connection directly
-psql -h 127.0.0.1 -p 5436 -U clipper -d clipper_db
+psql -h 127.0.0.1 -p 5436 -U clpr -d clpr_db
 ```
 
 ### Frontend can't reach backend
@@ -366,7 +366,7 @@ curl http://localhost:8080/health
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 
 # If using Docker, verify network
-docker network inspect clipper-network
+docker network inspect clpr-network
 ```
 
 ### Hot reload not working
@@ -394,7 +394,7 @@ cd backend && go test -run TestFunctionName ./...
 
 # Check test database
 docker compose -f docker-compose.test.yml up -d
-docker logs -f clipper-postgres-test
+docker logs -f clpr-postgres-test
 ```
 
 ## Performance Optimization
@@ -416,7 +416,7 @@ npm run analyze  # Visual breakdown
 ```bash
 # Enable slow query logging
 # In backend logs, look for slow queries
-docker logs clipper-backend | grep "duration"
+docker logs clpr-backend | grep "duration"
 
 # Optimize with indexes
 make migrate-create NAME=add_clips_index
@@ -435,8 +435,8 @@ make migrate-up
 ### Logs
 
 ```bash
-docker logs -f clipper-postgres   # DB logs
-docker logs -f clipper-redis      # Cache logs
+docker logs -f clpr-postgres   # DB logs
+docker logs -f clpr-redis      # Cache logs
 make backend-dev                  # Backend logs in terminal
 ```
 
@@ -462,7 +462,7 @@ curl http://localhost:80/health.html
    ```bash
    make docker-up
    sleep 5
-   docker ps | grep clipper
+   docker ps | grep clpr
    ```
 
 2. **Create first feature branch**

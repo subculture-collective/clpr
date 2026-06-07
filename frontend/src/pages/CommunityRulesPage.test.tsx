@@ -98,7 +98,7 @@ describe('CommunityRulesPage', () => {
 
     expect(screen.getByText(/Questions or Concerns\?/i)).toBeInTheDocument();
     const githubLink = screen.getByText('GitHub repository');
-    expect(githubLink).toHaveAttribute('href', 'https://github.com/subculture-collective/clipper');
+    expect(githubLink).toHaveAttribute('href', 'https://git.subcult.tv/subculture-collective/clpr');
   });
 
   it('mentions the 80/20 self-promotion rule', () => {

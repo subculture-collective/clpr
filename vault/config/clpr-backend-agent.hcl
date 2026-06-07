@@ -1,10 +1,10 @@
-pid_file = "/vault-agent/pid/clipper-backend-agent.pid"
+pid_file = "/vault-agent/pid/clpr-backend-agent.pid"
 
 auto_auth {
   method "approle" {
     config = {
-      role_id_file_path   = "/run/secrets/clipper_backend_role_id"
-      secret_id_file_path = "/run/secrets/clipper_backend_secret_id"
+      role_id_file_path   = "/run/secrets/clpr_backend_role_id"
+      secret_id_file_path = "/run/secrets/clpr_backend_secret_id"
     }
   }
 

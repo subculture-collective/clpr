@@ -1,4 +1,4 @@
-module github.com/subculture-collective/clipper
+module git.subcult.tv/subculture-collective/clpr
 
 go 1.24.7
 

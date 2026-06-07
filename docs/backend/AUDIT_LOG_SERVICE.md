@@ -55,7 +55,7 @@ Database indexes on:
 import (
     "context"
     "github.com/google/uuid"
-    "github.com/subculture-collective/clipper/internal/services"
+    "git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // Initialize service (typically done in dependency injection)
@@ -99,7 +99,7 @@ import (
     "context"
     "time"
     "github.com/google/uuid"
-    "github.com/subculture-collective/clipper/internal/repository"
+    "git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // Build filters

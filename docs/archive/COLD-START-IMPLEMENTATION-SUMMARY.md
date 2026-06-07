@@ -1,6 +1,6 @@
 ---
 title: "COLD START IMPLEMENTATION SUMMARY"
-summary: "**Issue**: [#841](https://github.com/subculture-collective/clipper/issues/841)"
+summary: "**Issue**: [#841](https://git.subcult.tv/subculture-collective/clpr/issues/841)"
 tags: ["docs","implementation","summary"]
 area: "docs"
 status: "stable"
@@ -11,7 +11,7 @@ last_reviewed: 2026-01-29
 
 # Cold Start Handling Improvements - Implementation Summary
 
-**Issue**: [#841](https://github.com/subculture-collective/clipper/issues/841)  
+**Issue**: [#841](https://git.subcult.tv/subculture-collective/clpr/issues/841)
 **Roadmap**: 5.0 Phase 3.2  
 **Status**: Complete ✅  
 **Date**: 2024-12-30
@@ -202,7 +202,7 @@ All tests passing:
 === RUN   TestColdStartMetadataTracking
 --- PASS: TestColdStartMetadataTracking (0.00s)
 PASS
-ok  	github.com/subculture-collective/clipper/internal/services
+ok  	git.subcult.tv/subculture-collective/clpr/internal/services
 ```
 
 ## Performance Impact

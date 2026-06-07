@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 func TestRateLimitMiddleware_FallbackInitialization(t *testing.T) {

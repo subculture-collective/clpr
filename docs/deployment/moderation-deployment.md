@@ -57,7 +57,7 @@ The following tables must exist before migration:
 Run pre-flight checks to validate the environment:
 
 ```bash
-cd /opt/clipper
+cd /opt/clpr
 ./scripts/preflight-moderation.sh --env staging
 ```
 
@@ -90,7 +90,7 @@ Create a database backup (if not using `--skip-backup`):
 Verify backup was created:
 
 ```bash
-ls -lh /var/backups/clipper/
+ls -lh /var/backups/clpr/
 ```
 
 ### Step 4: Run Migration
@@ -123,7 +123,7 @@ Test basic moderation functionality:
 
 ```bash
 # Test moderation queue API endpoint
-curl -X GET https://staging.clipper.app/api/moderation/queue \
+curl -X GET https://staging.clpr.app/api/moderation/queue \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 
 # Expected: 200 OK with empty or populated queue
@@ -172,7 +172,7 @@ docker compose exec backend /app/maintenance on
 #### 3. Pre-flight Checks
 
 ```bash
-cd /opt/clipper
+cd /opt/clpr
 ./scripts/preflight-moderation.sh --env production --report preflight-prod.txt
 ```
 
@@ -185,7 +185,7 @@ Review the report and ensure all checks pass.
 ./scripts/backup.sh
 
 # Verify backup
-LATEST_BACKUP=$(ls -t /var/backups/clipper/db-*.sql.gz | head -1)
+LATEST_BACKUP=$(ls -t /var/backups/clpr/db-*.sql.gz | head -1)
 echo "Latest backup: $LATEST_BACKUP"
 du -h "$LATEST_BACKUP"
 ```
@@ -233,11 +233,11 @@ Test moderation functionality:
 
 ```bash
 # Test moderation queue
-curl -X GET https://clipper.app/api/moderation/queue \
+curl -X GET https://clpr.app/api/moderation/queue \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 
 # Test creating a moderation action
-curl -X POST https://clipper.app/api/moderation/queue \
+curl -X POST https://clpr.app/api/moderation/queue \
   -H "Authorization: Bearer $MODERATOR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"content_type": "comment", "content_id": "test-id", "reason": "spam"}'
@@ -255,7 +255,7 @@ docker compose logs -f backend
 # (Use your monitoring dashboard: Grafana, Datadog, etc.)
 
 # Check database connections
-psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "SELECT * FROM pg_stat_activity WHERE datname = 'clipper_db';"
+psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "SELECT * FROM pg_stat_activity WHERE datname = 'clpr_db';"
 ```
 
 ### Post-Deployment Checklist
@@ -307,7 +307,7 @@ This will:
 If the script fails, use golang-migrate directly:
 
 ```bash
-cd /opt/clipper
+cd /opt/clpr
 
 # Check current version
 migrate -path backend/migrations -database "$DB_URL" version
@@ -325,7 +325,7 @@ If rollback fails or data is corrupted:
 docker compose down
 
 # Restore from backup
-BACKUP_FILE="/var/backups/clipper/db-YYYYMMDD-HHMMSS.sql.gz"
+BACKUP_FILE="/var/backups/clpr/db-YYYYMMDD-HHMMSS.sql.gz"
 gunzip -c "$BACKUP_FILE" | psql -h $DB_HOST -U $DB_USER -d $DB_NAME
 
 # Restart application
@@ -393,17 +393,17 @@ ORDER BY conrelid::regclass::text;
 
 ```bash
 # Test moderation queue endpoint
-curl -X GET https://clipper.app/api/moderation/queue \
+curl -X GET https://clpr.app/api/moderation/queue \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   | jq
 
 # Test moderation actions
-curl -X GET https://clipper.app/api/moderation/decisions \
+curl -X GET https://clpr.app/api/moderation/decisions \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   | jq
 
 # Test moderation appeals
-curl -X GET https://clipper.app/api/moderation/appeals \
+curl -X GET https://clpr.app/api/moderation/appeals \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   | jq
 ```

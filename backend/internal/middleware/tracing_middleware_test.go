@@ -26,7 +26,7 @@ func TestTracingMiddleware(t *testing.T) {
 		},
 		{
 			name:        "POST request with tracing",
-			serviceName: "clipper-backend",
+			serviceName: "clpr-backend",
 			path:        "/api/v1/clips",
 			method:      "POST",
 		},

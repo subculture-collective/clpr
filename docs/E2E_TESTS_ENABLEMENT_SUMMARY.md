@@ -301,13 +301,13 @@ From Epic requirements:
 - [E2E_TEST_FIXTURES_GUIDE.md](./docs/testing/E2E_TEST_FIXTURES_GUIDE.md)
 
 ### Child Issues
-1. [#1143 - Premium Subscription Checkout Implementation](https://github.com/subculture-collective/clipper/issues/1143)
-2. [#1149 - Subscription Management Features](https://github.com/subculture-collective/clipper/issues/1149)
-3. [#1147 - Stripe Webhook Integration](https://github.com/subculture-collective/clipper/issues/1147)
-4. [#1144 - CDN Failover Configuration](https://github.com/subculture-collective/clipper/issues/1144)
-5. [#1145 - Channel Management Features](https://github.com/subculture-collective/clipper/issues/1145) ← Completed
-6. [#1148 - Advanced Search Discovery Features](https://github.com/subculture-collective/clipper/issues/1148) ← Already passing
-7. [#1146 - Moderation Workflow System](https://github.com/subculture-collective/clipper/issues/1146) ← Completed
+1. [#1143 - Premium Subscription Checkout Implementation](https://git.subcult.tv/subculture-collective/clpr/issues/1143)
+2. [#1149 - Subscription Management Features](https://git.subcult.tv/subculture-collective/clpr/issues/1149)
+3. [#1147 - Stripe Webhook Integration](https://git.subcult.tv/subculture-collective/clpr/issues/1147)
+4. [#1144 - CDN Failover Configuration](https://git.subcult.tv/subculture-collective/clpr/issues/1144)
+5. [#1145 - Channel Management Features](https://git.subcult.tv/subculture-collective/clpr/issues/1145) ← Completed
+6. [#1148 - Advanced Search Discovery Features](https://git.subcult.tv/subculture-collective/clpr/issues/1148) ← Already passing
+7. [#1146 - Moderation Workflow System](https://git.subcult.tv/subculture-collective/clpr/issues/1146) ← Completed
 
 ### Test Files
 - `frontend/e2e/tests/channel-management.spec.ts` ← Modified

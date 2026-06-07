@@ -13,7 +13,7 @@ last_reviewed: 2026-01-29
 
 ## Issue Reference
 
-This change addresses the type safety issue identified in [PR #48 review comment #r2451713544](https://github.com/subculture-collective/clipper/pull/48#discussion_r2451713544).
+This change addresses the type safety issue identified in [PR #48 review comment #r2451713544](https://git.subcult.tv/subculture-collective/clpr/pull/48#discussion_r2451713544).
 
 ## Problem
 

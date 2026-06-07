@@ -34,7 +34,7 @@ In production, the PgBouncer secret should be managed via Vault or external secr
 
 # First, ensure the database user exists in PostgreSQL with SCRAM-SHA-256 password
 kubectl exec postgres-0 -- psql -U postgres -c \
-  "CREATE ROLE clipper WITH LOGIN PASSWORD 'your-strong-password';"
+  "CREATE ROLE clpr WITH LOGIN PASSWORD 'your-strong-password';"
 
 # Create the secret with proper format for SCRAM-SHA-256
 # Format: "username" "password" (PgBouncer handles SCRAM exchange)
@@ -48,7 +48,7 @@ metadata:
 type: Opaque
 stringData:
   userlist.txt: |
-    "clipper" "your-strong-password"
+    "clpr" "your-strong-password"
 EOF
 
 # Note: Update the ConfigMap to use scram-sha-256 auth_type instead of md5
@@ -59,7 +59,7 @@ EOF
 ### 2. Deploy PgBouncer
 
 ```bash
-cd /path/to/clipper/backend/k8s
+cd /path/to/clpr/backend/k8s
 
 # Apply ConfigMap
 kubectl apply -f pgbouncer-configmap.yaml
@@ -96,7 +96,7 @@ curl http://localhost:9127/metrics | grep pgbouncer_pools
 ```bash
 # Test connection through PgBouncer
 kubectl run -it --rm test-pgbouncer --image=postgres:17 -- \
-  psql -h pgbouncer -p 6432 -U clipper -d clipper_db -c "SELECT version();"
+  psql -h pgbouncer -p 6432 -U clpr -d clpr_db -c "SELECT version();"
 
 # Should successfully connect and return PostgreSQL version
 ```
@@ -119,20 +119,20 @@ kubectl edit configmap backend-config
 
 ```bash
 # Perform rolling restart
-kubectl rollout restart deployment/clipper-backend
+kubectl rollout restart deployment/clpr-backend
 
 # Watch the rollout
-kubectl rollout status deployment/clipper-backend
+kubectl rollout status deployment/clpr-backend
 
 # Verify pods are healthy
-kubectl get pods -l app=clipper-backend
+kubectl get pods -l app=clpr-backend
 ```
 
 ### 7. Verify Backend Connectivity
 
 ```bash
 # Check backend logs for database connections
-kubectl logs -l app=clipper-backend --tail=50 | grep -i "database\|postgres\|connection"
+kubectl logs -l app=clpr-backend --tail=50 | grep -i "database\|postgres\|connection"
 
 # Test health endpoint
 curl https://clpr.tv/health/ready
@@ -150,7 +150,7 @@ If using static configuration, update Prometheus:
 
 ```bash
 # Edit Prometheus ConfigMap
-kubectl edit configmap prometheus-config -n clipper-monitoring
+kubectl edit configmap prometheus-config -n clpr-monitoring
 
 # Add to scrape_configs:
 #   - job_name: 'pgbouncer'
@@ -159,7 +159,7 @@ kubectl edit configmap prometheus-config -n clipper-monitoring
 #     scrape_interval: 10s
 
 # Reload Prometheus
-kubectl exec -n clipper-monitoring deployment/prometheus -- \
+kubectl exec -n clpr-monitoring deployment/prometheus -- \
   kill -HUP 1
 ```
 
@@ -179,7 +179,7 @@ Import the PgBouncer dashboard:
 # Option 2: Via ConfigMap (if using provisioning)
 kubectl create configmap grafana-dashboard-pgbouncer \
   --from-file=monitoring/dashboards/pgbouncer-pool.json \
-  -n clipper-monitoring
+  -n clpr-monitoring
 
 # Add to Grafana provisioning configuration
 ```
@@ -229,7 +229,7 @@ Quick rollback:
 kubectl edit configmap backend-config
 # Change: DB_HOST: "postgres", DB_PORT: "5432"
 
-kubectl rollout restart deployment/clipper-backend
+kubectl rollout restart deployment/clpr-backend
 
 # Optional: Remove PgBouncer
 kubectl delete -f backend/k8s/pgbouncer.yaml
@@ -259,7 +259,7 @@ kubectl describe svc pgbouncer
 
 # Test from another pod
 kubectl run -it --rm test-conn --image=postgres:17 -- \
-  psql -h pgbouncer -p 6432 -U clipper -d clipper_db
+  psql -h pgbouncer -p 6432 -U clpr -d clpr_db
 ```
 
 ### Authentication Failed

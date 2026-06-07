@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { VideoQuality } from '@/lib/adaptive-bitrate';
 
 // Quality preference key for localStorage
-const QUALITY_PREF_KEY = 'clipper_video_quality';
+const QUALITY_PREF_KEY = 'clpr_video_quality';
 
 /**
  * Custom hook to manage video quality preference across the application.

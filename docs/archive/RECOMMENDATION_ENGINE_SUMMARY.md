@@ -248,7 +248,7 @@ make migrate-up
 
 # Production
 migrate -path backend/migrations \
-  -database "postgresql://user:pass@host:5432/clipper?sslmode=disable" \
+  -database "postgresql://user:pass@host:5432/clpr?sslmode=disable" \
   up
 ```
 
@@ -256,7 +256,7 @@ To rollback:
 
 ```bash
 migrate -path backend/migrations \
-  -database "postgresql://user:pass@host:5432/clipper?sslmode=disable" \
+  -database "postgresql://user:pass@host:5432/clpr?sslmode=disable" \
   down 1
 ```
 

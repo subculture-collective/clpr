@@ -218,7 +218,7 @@ When adding a new migration test:
 ## Notes
 
 - Tests use the `//go:build integration` build tag
-- Test database is isolated (clipper_test on port 5437)
+- Test database is isolated (clpr_test on port 5437)
 - Coverage metrics are not applicable as these are schema tests
 - All tests should clean up after themselves
 - Tests should be idempotent and can run in any order

@@ -31,17 +31,17 @@ describe('ExtensionPage', () => {
     it('renders the page heading', () => {
         renderPage();
         expect(
-            screen.getByRole('heading', { name: /clipper browser extension/i }),
+            screen.getByRole('heading', { name: /clpr browser extension/i }),
         ).toBeInTheDocument();
     });
 
     it('renders Chrome and Firefox download links', () => {
         renderPage();
         expect(
-            screen.getByRole('link', { name: /get clipper for chrome/i }),
+            screen.getByRole('link', { name: /get clpr for chrome/i }),
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /get clipper for firefox/i }),
+            screen.getByRole('link', { name: /get clpr for firefox/i }),
         ).toBeInTheDocument();
     });
 

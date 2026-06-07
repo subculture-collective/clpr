@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // WebhookMonitoringHandler handles webhook monitoring endpoints

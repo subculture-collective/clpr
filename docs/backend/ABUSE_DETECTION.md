@@ -364,6 +364,6 @@ Where:
 ## References
 
 - Roadmap 5.0 Phase 3.3: Anomaly Detection
-- Issue: subculture-collective/clipper#805
+- Issue: subculture-collective/clpr#805
 - Moderation Queue: `migrations/000049_add_moderation_queue_system.up.sql`
 - Existing Abuse Detection: `internal/services/submission_abuse_detection.go`

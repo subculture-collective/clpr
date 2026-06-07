@@ -10,7 +10,7 @@ import (
 	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/subculture-collective/clipper/config"
+	"git.subcult.tv/subculture-collective/clpr/config"
 )
 
 // DB holds the database connection pool

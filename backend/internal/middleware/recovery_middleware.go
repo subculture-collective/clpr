@@ -5,7 +5,7 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // JSONRecoveryMiddleware returns a middleware that recovers from panics and returns JSON errors

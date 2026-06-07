@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // ClipRepositoryForSEO defines the interface for clip repository methods needed by SEO handler
@@ -53,7 +53,7 @@ func (h *SEOHandler) GetSitemap(c *gin.Context) {
 	// Base URL from config or environment
 	baseURL := c.GetString("base_url")
 	if baseURL == "" {
-		baseURL = "https://clipper.app" // Default, should be configured
+		baseURL = "https://clpr.app" // Default, should be configured
 	}
 
 	// Build sitemap XML using strings.Builder for better performance
@@ -180,7 +180,7 @@ func (h *SEOHandler) GetRobotsTxt(c *gin.Context) {
 	env := c.GetString("environment")
 	baseURL := c.GetString("base_url")
 	if baseURL == "" {
-		baseURL = "https://clipper.app" // Default, should be configured
+		baseURL = "https://clpr.app" // Default, should be configured
 	}
 
 	var robotsTxt string

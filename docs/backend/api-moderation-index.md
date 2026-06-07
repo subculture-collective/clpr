@@ -264,7 +264,7 @@ open http://localhost:8081
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/clipper
+DATABASE_URL=postgresql://user:password@localhost:5432/clpr
 
 # Redis (for rate limiting)
 REDIS_URL=redis://localhost:6379
@@ -294,12 +294,12 @@ See [Deployment Guide](./moderation-api.md#deployment-guide) for complete setup.
 - [Authentication Guide](./authentication.md)
 - [Authorization Framework](./authorization-framework.md)
 - [Audit Log Service](./AUDIT_LOG_SERVICE.md)
-- [GitHub Issues](https://github.com/subculture-collective/clipper/issues)
+- [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)
 
 ## 💬 Support
 
-- **Documentation Issues**: [Open an issue](https://github.com/subculture-collective/clipper/issues/new)
-- **API Questions**: [GitHub Discussions](https://github.com/subculture-collective/clipper/discussions)
+- **Documentation Issues**: [Open an issue](https://git.subcult.tv/subculture-collective/clpr/issues/new)
+- **API Questions**: [GitHub Discussions](https://git.subcult.tv/subculture-collective/clpr/discussions)
 - **Email**: support@clpr.tv
 
 ---

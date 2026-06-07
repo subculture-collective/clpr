@@ -12,9 +12,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/pkg/opensearch"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // SearchIndexerService handles indexing operations for OpenSearch

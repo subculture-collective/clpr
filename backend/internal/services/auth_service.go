@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
-	jwtpkg "github.com/subculture-collective/clipper/pkg/jwt"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	jwtpkg "git.subcult.tv/subculture-collective/clpr/pkg/jwt"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 var (

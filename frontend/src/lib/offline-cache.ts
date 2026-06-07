@@ -76,7 +76,7 @@ interface ClipperCacheDB extends DBSchema {
 // ============================================================================
 
 const DEFAULT_CONFIG: OfflineCacheConfig = {
-  dbName: 'clipper-offline-cache',
+  dbName: 'clpr-offline-cache',
   version: 1,
   defaultTTL: 1000 * 60 * 60 * 24, // 24 hours
 };

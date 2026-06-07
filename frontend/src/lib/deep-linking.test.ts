@@ -10,7 +10,7 @@ import {
 } from './deep-linking';
 
 describe('Deep Linking Utilities', () => {
-  const baseUrl = 'https://clipper.example.com';
+  const baseUrl = 'https://clpr.example.com';
 
   describe('isValidDeepLink', () => {
     it('should return true for valid clip detail link', () => {

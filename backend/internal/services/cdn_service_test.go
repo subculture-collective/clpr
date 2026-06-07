@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // MockCDNRepository is a mock implementation of CDNRepository
@@ -110,7 +110,7 @@ func TestCloudflareProvider_GenerateURL(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, url)
-	assert.Contains(t, url, "cdn.cloudflare.clipper.gg")
+	assert.Contains(t, url, "cdn.cloudflare.clpr.gg")
 }
 
 func TestCloudflareProvider_GetCacheHeaders(t *testing.T) {

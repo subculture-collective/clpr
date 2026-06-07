@@ -18,7 +18,7 @@ last_reviewed: 2026-01-29
 - **On-Call Lead:** [Phone number]
 - **Engineering Manager:** [Phone number]
 - **VP Engineering:** [Phone number]
-- **Security Team:** <security@clipper.app>
+- **Security Team:** <security@clpr.app>
 
 ## Alert Response Times
 
@@ -47,7 +47,7 @@ last_reviewed: 2026-01-29
 
 - **Slack Incidents:** #incidents
 - **Slack Alerts:** #alerts
-- **PagerDuty:** <https://clipper.pagerduty.com>
+- **PagerDuty:** <https://clpr.pagerduty.com>
 
 ## Common Alert Response Checklist
 
@@ -63,12 +63,12 @@ last_reviewed: 2026-01-29
 
 ```bash
 # Check service health
-kubectl get pods -n clipper
+kubectl get pods -n clpr
 docker-compose ps
 
 # View recent logs
-kubectl logs -l app=backend --tail=100 -n clipper
-{service="clipper-backend", level="error"} [15m]  # Loki
+kubectl logs -l app=backend --tail=100 -n clpr
+{service="clpr-backend", level="error"} [15m]  # Loki
 
 # Check database
 psql $POSTGRES_URL -c "SELECT 1"
@@ -79,24 +79,24 @@ redis-cli PING
 redis-cli INFO stats
 
 # Recent deployments
-kubectl rollout history deployment/backend -n clipper
+kubectl rollout history deployment/backend -n clpr
 ```
 
 ### Common Mitigation Actions
 
 **Rollback deployment:**
 ```bash
-kubectl rollout undo deployment/backend -n clipper
+kubectl rollout undo deployment/backend -n clpr
 ```
 
 **Scale up:**
 ```bash
-kubectl scale deployment backend --replicas=5 -n clipper
+kubectl scale deployment backend --replicas=5 -n clpr
 ```
 
 **Restart service:**
 ```bash
-kubectl rollout restart deployment/backend -n clipper
+kubectl rollout restart deployment/backend -n clpr
 ```
 
 **Clear cache:**

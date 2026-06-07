@@ -53,10 +53,10 @@ curl http://localhost/api/v1/health
 
 ```bash
 # Via Docker
-docker ps --filter "name=clipper-backend" --format "{{.Names}}" | grep -o "blue\|green"
+docker ps --filter "name=clpr-backend" --format "{{.Names}}" | grep -o "blue\|green"
 
 # Via Caddy
-docker exec clipper-caddy env | grep ACTIVE_ENV
+docker exec clpr-caddy env | grep ACTIVE_ENV
 ```
 
 ### Manual Traffic Switch
@@ -120,7 +120,7 @@ docker compose -f docker-compose.blue-green.yml up -d caddy
 ### Check Running Containers
 
 ```bash
-docker ps --filter "name=clipper"
+docker ps --filter "name=clpr"
 ```
 
 ### Check Container Health
@@ -130,7 +130,7 @@ docker ps --filter "name=clipper"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # Specific container health
-docker inspect clipper-backend-blue | jq '.[0].State.Health'
+docker inspect clpr-backend-blue | jq '.[0].State.Health'
 ```
 
 ### View Logs
@@ -162,13 +162,13 @@ docker compose logs | grep -i error
 docker compose logs backend-green --tail=100
 
 # Test health endpoint directly
-docker exec clipper-backend-green wget -O- http://localhost:8080/health
+docker exec clpr-backend-green wget -O- http://localhost:8080/health
 
 # Check database connectivity
-docker exec clipper-postgres pg_isready
+docker exec clpr-postgres pg_isready
 
 # Check Redis
-docker exec clipper-redis redis-cli ping
+docker exec clpr-redis redis-cli ping
 ```
 
 ### Issue: Out of Disk Space
@@ -187,7 +187,7 @@ docker image prune -a
 docker volume prune
 
 # Remove old backups
-rm -rf /opt/clipper/backups/*-old
+rm -rf /opt/clpr/backups/*-old
 ```
 
 ### Issue: Port Already in Use
@@ -216,7 +216,7 @@ sudo systemctl stop nginx  # or apache2
 docker login ghcr.io
 
 # Manually pull image
-docker pull ghcr.io/subculture-collective/clipper/backend:latest
+docker pull ghcr.io/subculture-collective/clpr/backend:latest
 
 # Check network connectivity
 ping ghcr.io
@@ -229,7 +229,7 @@ ping ghcr.io
 **Solutions**:
 ```bash
 # Identify active environment
-ACTIVE=$(docker ps --filter "name=clipper-backend" --format "{{.Names}}" | grep -o "blue\|green" | head -1)
+ACTIVE=$(docker ps --filter "name=clpr-backend" --format "{{.Names}}" | grep -o "blue\|green" | head -1)
 
 # Determine which to stop
 if [ "$ACTIVE" = "blue" ]; then
@@ -245,7 +245,7 @@ fi
 
 ```bash
 # Container stats
-docker stats clipper-backend-blue clipper-backend-green
+docker stats clpr-backend-blue clpr-backend-green
 
 # System resources
 htop  # or top
@@ -277,16 +277,16 @@ curl http://localhost/health/cache | jq
 
 ```bash
 # Connection count
-docker exec clipper-postgres psql -U clipper -d clipper_db -c \
+docker exec clpr-postgres psql -U clpr -d clpr_db -c \
   "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
 
 # Active queries
-docker exec clipper-postgres psql -U clipper -d clipper_db -c \
+docker exec clpr-postgres psql -U clpr -d clpr_db -c \
   "SELECT pid, now() - query_start as duration, query FROM pg_stat_activity WHERE state = 'active';"
 
 # Database size
-docker exec clipper-postgres psql -U clipper -d clipper_db -c \
-  "SELECT pg_size_pretty(pg_database_size('clipper_db'));"
+docker exec clpr-postgres psql -U clpr -d clpr_db -c \
+  "SELECT pg_size_pretty(pg_database_size('clpr_db'));"
 ```
 
 ## Emergency Procedures
@@ -310,10 +310,10 @@ docker compose -f docker-compose.blue-green.yml up -d caddy
 
 ```bash
 # To blue
-export ACTIVE_ENV=blue && docker compose -f /opt/clipper/docker-compose.blue-green.yml up -d backend-blue frontend-blue caddy
+export ACTIVE_ENV=blue && docker compose -f /opt/clpr/docker-compose.blue-green.yml up -d backend-blue frontend-blue caddy
 
 # To green
-export ACTIVE_ENV=green && docker compose -f /opt/clipper/docker-compose.blue-green.yml --profile green up -d backend-green frontend-green caddy
+export ACTIVE_ENV=green && docker compose -f /opt/clpr/docker-compose.blue-green.yml --profile green up -d backend-green frontend-green caddy
 ```
 
 ### Get Help
@@ -327,7 +327,7 @@ export ACTIVE_ENV=green && docker compose -f /opt/clipper/docker-compose.blue-gr
 journalctl -u docker -n 100
 
 # Check deployment logs
-tail -f /var/log/clipper/deployment.log
+tail -f /var/log/clpr/deployment.log
 ```
 
 ## Testing
@@ -339,7 +339,7 @@ tail -f /var/log/clipper/deployment.log
 ./scripts/test-blue-green-deployment.sh
 
 # Test in staging
-cd /opt/clipper-staging
+cd /opt/clpr-staging
 ./scripts/blue-green-deploy.sh
 ```
 
@@ -380,12 +380,12 @@ Add to `~/.bashrc` or `~/.bash_aliases`:
 
 ```bash
 # Blue/Green deployment aliases
-alias bgdeploy='cd /opt/clipper && ./scripts/blue-green-deploy.sh'
-alias bgrollback='cd /opt/clipper && ./scripts/rollback-blue-green.sh'
-alias bghealth='cd /opt/clipper && ./scripts/health-check.sh'
-alias bgtest='cd /opt/clipper && ./scripts/test-blue-green-deployment.sh'
-alias bglogs='cd /opt/clipper && docker compose logs -f --tail=100'
-alias bgstatus='docker ps --filter "name=clipper" --format "table {{.Names}}\t{{.Status}}"'
+alias bgdeploy='cd /opt/clpr && ./scripts/blue-green-deploy.sh'
+alias bgrollback='cd /opt/clpr && ./scripts/rollback-blue-green.sh'
+alias bghealth='cd /opt/clpr && ./scripts/health-check.sh'
+alias bgtest='cd /opt/clpr && ./scripts/test-blue-green-deployment.sh'
+alias bglogs='cd /opt/clpr && docker compose logs -f --tail=100'
+alias bgstatus='docker ps --filter "name=clpr" --format "table {{.Names}}\t{{.Status}}"'
 ```
 
 ## Documentation Links
@@ -398,7 +398,7 @@ alias bgstatus='docker ps --filter "name=clipper" --format "table {{.Names}}\t{{
 ## Support
 
 - **Slack**: #ops-deployments
-- **Email**: <ops-team@clipper.app>
+- **Email**: <ops-team@clpr.app>
 - **On-Call**: Check PagerDuty rotation
 - **Emergency**: Escalate to CTO
 

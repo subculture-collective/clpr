@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS application_logs (
     level VARCHAR(10) NOT NULL CHECK (level IN ('debug', 'info', 'warn', 'error')),
     message TEXT NOT NULL,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    service VARCHAR(50) NOT NULL, -- 'clipper-frontend', 'clipper-mobile', etc.
+    service VARCHAR(50) NOT NULL, -- 'clpr-frontend', 'clpr-mobile', etc.
     platform VARCHAR(20), -- 'web', 'ios', 'android'
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     session_id VARCHAR(255),
@@ -33,6 +33,6 @@ CREATE INDEX idx_application_logs_level_timestamp ON application_logs(level, tim
 -- Add comment to table
 COMMENT ON TABLE application_logs IS 'Centralized application logs from frontend and mobile clients';
 COMMENT ON COLUMN application_logs.level IS 'Log level: debug, info, warn, or error';
-COMMENT ON COLUMN application_logs.service IS 'Source service identifier (e.g., clipper-frontend, clipper-mobile)';
+COMMENT ON COLUMN application_logs.service IS 'Source service identifier (e.g., clpr-frontend, clpr-mobile)';
 COMMENT ON COLUMN application_logs.platform IS 'Platform identifier: web, ios, or android';
 COMMENT ON COLUMN application_logs.context IS 'Additional structured context data (JSONB)';

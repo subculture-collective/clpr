@@ -39,10 +39,10 @@ test-setup: ## Set up test environment (containers + migrations + env)
 	@echo "Waiting for Redis on localhost:6380..."
 	@bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T redis-test redis-cli ping >/dev/null 2>&1; then echo "Redis is ready"; exit 0; fi; sleep 1; done; echo "Redis failed to become ready"; exit 1'
 	@echo "Waiting for test Postgres on localhost:5437..."
-	@bash -c 'until pg_isready -h localhost -p 5437 -U clipper -d clipper_test >/dev/null 2>&1; do sleep 1; done'
+	@bash -c 'until pg_isready -h localhost -p 5437 -U clpr -d clpr_test >/dev/null 2>&1; do sleep 1; done'
 	@echo "Postgres is ready. Running test migrations..."
 	@if command -v migrate > /dev/null; then \
-		migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true; \
+		migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true; \
 	else \
 		echo "Warning: golang-migrate not installed. Skipping migrations."; \
 		echo "Install with: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"; \
@@ -59,9 +59,9 @@ test-setup: ## Set up test environment (containers + migrations + env)
 	@if [ -f scripts/test-seed-e2e.sh ]; then \
 		TEST_DATABASE_HOST=localhost \
 		TEST_DATABASE_PORT=5437 \
-		TEST_DATABASE_USER=clipper \
-		TEST_DATABASE_PASSWORD=clipper_password \
-		TEST_DATABASE_NAME=clipper_test \
+		TEST_DATABASE_USER=clpr \
+		TEST_DATABASE_PASSWORD=clpr_password \
+		TEST_DATABASE_NAME=clpr_test \
 		OPENSEARCH_URL=http://localhost:9201 \
 		bash scripts/test-seed-e2e.sh; \
 	else \
@@ -88,9 +88,9 @@ test: ## Run all tests (unit by default; set INTEGRATION=1 and/or E2E=1 to expan
 			BASE_URL=http://127.0.0.1:5173 \
 			DB_HOST=localhost \
 			DB_PORT=5437 \
-			DB_USER=clipper \
-			DB_PASSWORD=clipper_password \
-			DB_NAME=clipper_test \
+			DB_USER=clpr \
+			DB_PASSWORD=clpr_password \
+			DB_NAME=clpr_test \
 			REDIS_HOST=localhost \
 			REDIS_PORT=6380 \
 			OPENSEARCH_URL=http://localhost:9201 \
@@ -139,7 +139,7 @@ test-integration-coverage: ## Run integration tests with coverage report
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running integration tests with coverage..."
 	cd backend && go test -v -tags=integration -race -parallel=4 -coverprofile=coverage-integration.out -covermode=atomic ./tests/integration/...
 	@echo "Generating coverage report..."
@@ -157,7 +157,7 @@ test-integration-auth: ## Run authentication integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running authentication integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/auth/...
 	@echo "Stopping test database..."
@@ -170,7 +170,7 @@ test-integration-submissions: ## Run submission integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running submission integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/submissions/...
 	@echo "Stopping test database..."
@@ -183,7 +183,7 @@ test-integration-engagement: ## Run engagement integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running engagement integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/engagement/...
 	@echo "Stopping test database..."
@@ -196,7 +196,7 @@ test-integration-premium: ## Run premium integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running premium integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/premium/...
 	@echo "Stopping test database..."
@@ -209,7 +209,7 @@ test-integration-stripe: ## Run Stripe subscription & payment integration tests 
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running Stripe integration tests..."
 	@echo "Note: Tests use Stripe test mode keys. Set TEST_STRIPE_SECRET_KEY and TEST_STRIPE_WEBHOOK_SECRET env vars for full testing."
 	cd backend && go test -v -tags=integration ./tests/integration/premium/ -run "TestWebhook.*|TestEntitlement.*|TestProration.*|TestPaymentFailure.*"
@@ -223,7 +223,7 @@ test-integration-search: ## Run search integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running search integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/search/...
 	@echo "Stopping test database..."
@@ -236,7 +236,7 @@ test-integration-api: ## Run API integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running API integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/api/...
 	@echo "Stopping test database..."
@@ -249,7 +249,7 @@ test-integration-clips: ## Run clip management integration tests only
 	@echo "Waiting for database to be ready..."
 	@sleep 5
 	@echo "Running database migrations..."
-	migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up || true
+	migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up || true
 	@echo "Running clip integration tests..."
 	cd backend && go test -v -tags=integration ./tests/integration/clips/...
 	@echo "Stopping test database..."
@@ -630,23 +630,23 @@ docker-dev-logs: ## View Docker service logs for development
 	@echo "✓ Docker logs ended"
 
 docker-logs-backend: ## Stream backend container logs
-	docker logs -f clipper-backend
+	docker logs -f clpr-backend
 
 docker-logs-frontend: ## Stream frontend container logs
-	docker logs -f clipper-frontend
+	docker logs -f clpr-frontend
 
 docker-logs-postgres: ## Stream postgres container logs
-	docker logs -f clipper-postgres
+	docker logs -f clpr-postgres
 
 docker-logs-redis: ## Stream redis container logs
-	docker logs -f clipper-redis
+	docker logs -f clpr-redis
 
 docker-logs-vault: ## Stream vault-agent container logs
-	docker logs -f clipper-vault-agent
+	docker logs -f clpr-vault-agent
 
 backend-dev: ## Run backend in development mode
 	@echo "Waiting for PostgreSQL on localhost:5436..."
-	@bash -c 'until pg_isready -h localhost -p 5436 -U clipper -d clipper_db >/dev/null 2>&1; do sleep 1; done'
+	@bash -c 'until pg_isready -h localhost -p 5436 -U clpr -d clpr_db >/dev/null 2>&1; do sleep 1; done'
 	@echo "PostgreSQL is ready. Starting backend..."
 	cd backend && go run ./cmd/api
 
@@ -694,7 +694,7 @@ lint: ## Run linters
 	@echo "✓ Linting complete (mobile linting skipped - requires expo CLI fix)"
 
 # Database Migration Commands
-DB_URL := "postgresql://clipper:clipper_password@localhost:5436/clipper_db?sslmode=disable"
+DB_URL := "postgresql://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable"
 MIGRATIONS_PATH := backend/migrations
 
 migrate-up: ## Run database migrations up
@@ -752,13 +752,13 @@ migrate-status: ## Check current migration version
 
 migrate-seed: ## Seed database with sample data
 	@echo "Seeding database..."
-	@PGPASSWORD=clipper_password psql -h localhost -p 5436 -U clipper -d clipper_db -f $(MIGRATIONS_PATH)/seed.sql
+	@PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f $(MIGRATIONS_PATH)/seed.sql
 	@echo "✓ Database seeded"
 
 migrate-seed-load-test: ## Seed database with load test data (includes sample data)
 	@echo "Seeding database with load test data..."
-	@PGPASSWORD=clipper_password psql -h localhost -p 5436 -U clipper -d clipper_db -f $(MIGRATIONS_PATH)/seed.sql
-	@PGPASSWORD=clipper_password psql -h localhost -p 5436 -U clipper -d clipper_db -f $(MIGRATIONS_PATH)/seed_load_test.sql
+	@PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f $(MIGRATIONS_PATH)/seed.sql
+	@PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f $(MIGRATIONS_PATH)/seed_load_test.sql
 	@echo "✓ Load test data seeded"
 
 migrate-seed-moderation-perf-test: ## Seed database with moderation performance test data (10K+ bans, 50K+ audit logs)
@@ -768,7 +768,7 @@ migrate-seed-moderation-perf-test: ## Seed database with moderation performance 
 	@echo "  - 55,000+ audit log entries"
 	@echo "  - 5,000+ moderation queue items"
 	@echo "  - 100+ community moderators"
-	@PGPASSWORD=clipper_password psql -h localhost -p 5436 -U clipper -d clipper_db -f $(MIGRATIONS_PATH)/seed_moderation_perf_test.sql
+	@PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f $(MIGRATIONS_PATH)/seed_moderation_perf_test.sql
 	@echo "✓ Moderation performance test data seeded successfully"
 
 site-freshness-seed: ## Ensure default public smart playlists exist for fresh site content
@@ -837,32 +837,32 @@ k8s-verify: ## Verify cluster health and configuration
 k8s-deploy-prod: ## Deploy applications to production namespace
 	@echo "Deploying to production..."
 	@kubectl apply -k infrastructure/k8s/overlays/production/
-	@kubectl rollout status deployment/clipper-backend -n clipper-production
+	@kubectl rollout status deployment/clpr-backend -n clpr-production
 	@echo "✓ Production deployment complete"
 
 k8s-deploy-staging: ## Deploy applications to staging namespace
 	@echo "Deploying to staging..."
 	@kubectl apply -k infrastructure/k8s/overlays/staging/
-	@kubectl rollout status deployment/clipper-backend -n clipper-staging
+	@kubectl rollout status deployment/clpr-backend -n clpr-staging
 	@echo "✓ Staging deployment complete"
 
 k8s-logs-prod: ## View backend logs in production
-	@kubectl logs -f -l app=clipper-backend -n clipper-production
+	@kubectl logs -f -l app=clpr-backend -n clpr-production
 
 k8s-logs-staging: ## View backend logs in staging
-	@kubectl logs -f -l app=clipper-backend -n clipper-staging
+	@kubectl logs -f -l app=clpr-backend -n clpr-staging
 
 k8s-status-prod: ## Show status of production deployment
 	@echo "=== Production Status ==="
-	@kubectl get pods -n clipper-production
-	@kubectl get ingress -n clipper-production
-	@kubectl get certificate -n clipper-production
+	@kubectl get pods -n clpr-production
+	@kubectl get ingress -n clpr-production
+	@kubectl get certificate -n clpr-production
 
 k8s-status-staging: ## Show status of staging deployment
 	@echo "=== Staging Status ==="
-	@kubectl get pods -n clipper-staging
-	@kubectl get ingress -n clipper-staging
-	@kubectl get certificate -n clipper-staging
+	@kubectl get pods -n clpr-staging
+	@kubectl get ingress -n clpr-staging
+	@kubectl get certificate -n clpr-staging
 
 # OpenAPI Documentation
 openapi-validate: ## Validate OpenAPI specification

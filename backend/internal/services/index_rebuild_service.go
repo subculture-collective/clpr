@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/pkg/database"
-	"github.com/subculture-collective/clipper/pkg/opensearch"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
 )
 
 // IndexRebuildService handles rebuilding search indices with zero-downtime swaps

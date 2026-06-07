@@ -282,13 +282,13 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 
 ```bash
 #!/bin/bash
-# /opt/clipper/scripts/daily-audit-export.sh
+# /opt/clpr/scripts/daily-audit-export.sh
 
 set -euo pipefail
 
 API_TOKEN="${API_TOKEN}"
 API_BASE="https://api.clpr.tv/api/v1/moderation"
-EXPORT_DIR="/var/log/clipper/audit-exports"
+EXPORT_DIR="/var/log/clpr/audit-exports"
 
 # Create export directory if it doesn't exist
 mkdir -p "$EXPORT_DIR"
@@ -337,7 +337,7 @@ echo "Export complete: $EXPORT_DIR/audit-logs-$DATE_LABEL.*"
 crontab -e
 
 # Run daily at 2 AM UTC
-0 2 * * * /opt/clipper/scripts/daily-audit-export.sh >> /var/log/clipper/audit-export.log 2>&1
+0 2 * * * /opt/clpr/scripts/daily-audit-export.sh >> /var/log/clpr/audit-export.log 2>&1
 ```
 
 ---
@@ -610,7 +610,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 
 # Upload to S3
 aws s3 cp "archive-${CUTOFF_DATE}.json.gz" \
-  "s3://clipper-audit-archives/$(date +%Y)/" \
+  "s3://clpr-audit-archives/$(date +%Y)/" \
   --storage-class GLACIER
 
 # Mark as archived in database (if API supports)

@@ -1,5 +1,5 @@
 -- Fix bot user role from admin to service
-UPDATE users SET role = 'service' WHERE username = 'clipper-bot' AND role = 'admin';
+UPDATE users SET role = 'service' WHERE username = 'clpr-bot' AND role = 'admin';
 
 -- Backfill any NULL game slugs from game name
 UPDATE games SET slug = LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g')) WHERE slug IS NULL;

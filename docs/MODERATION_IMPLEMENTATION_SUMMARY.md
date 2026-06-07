@@ -46,18 +46,18 @@ All documentation is in the `.github/` directory:
 ## 🚀 GitHub Issues Created
 
 ### Main Epic
-- **[#1019](https://github.com/subculture-collective/clipper/issues/1019)** - Voluntary Ban Sync & Community Moderation System (EPIC)
+- **[#1019](https://git.subcult.tv/subculture-collective/clpr/issues/1019)** - Voluntary Ban Sync & Community Moderation System (EPIC)
   - Links to all documentation
   - 8 sub-epics defined
   - 10-week timeline with phases
   - Ban scope requirements emphasized
 
 ### Phase 1: Permission Model (EPIC 1)
-- **[#1020](https://github.com/subculture-collective/clipper/issues/1020)** - Add Community Moderator Role to Permission Model
-- **[#1021](https://github.com/subculture-collective/clipper/issues/1021)** - Add Community Moderation Permissions
+- **[#1020](https://git.subcult.tv/subculture-collective/clpr/issues/1020)** - Add Community Moderator Role to Permission Model
+- **[#1021](https://git.subcult.tv/subculture-collective/clpr/issues/1021)** - Add Community Moderation Permissions
 
 ### Phase 3: Frontend (EPIC 5)
-- **[#1022](https://github.com/subculture-collective/clipper/issues/1022)** - Create useCheckBanStatus Hook for Ban Status Checking
+- **[#1022](https://git.subcult.tv/subculture-collective/clpr/issues/1022)** - Create useCheckBanStatus Hook for Ban Status Checking
   - **Critical:** Explains ban visibility model and interaction requirements
 
 ### Additional Issues

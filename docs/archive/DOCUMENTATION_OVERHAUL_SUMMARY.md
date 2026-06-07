@@ -265,7 +265,7 @@ Per the requirements, `doctoc` is **not allowed** to write into `/docs/**`:
 
 **External:**
 - [Obsidian Documentation](https://obsidian.md/)
-- [GitHub Repository](https://github.com/subculture-collective/clipper)
+- [GitHub Repository](https://git.subcult.tv/subculture-collective/clpr)
 - [Admin Dashboard Docs Route](https://app.example.com/docs)
 
 ## Conclusion
@@ -279,4 +279,4 @@ The `/vault/**` directory is properly excluded from all documentation tooling, e
 ---
 
 **Last Updated:** 2026-01-29  
-**Maintained by:** [Subculture Collective](https://github.com/subculture-collective)
+**Maintained by:** [Subculture Collective](https://git.subcult.tv/subculture-collective)

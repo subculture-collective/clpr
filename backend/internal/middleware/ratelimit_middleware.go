@@ -13,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	goredis "github.com/redis/go-redis/v9"
-	"github.com/subculture-collective/clipper/internal/models"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 var (

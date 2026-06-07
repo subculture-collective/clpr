@@ -5,13 +5,13 @@ build-time secrets for the frontend from HashiCorp Vault.
 
 ## Layout
 
-- `config/clipper-backend-agent.hcl` – Vault agent configuration (AppRole auth + template rendering).
+- `config/clpr-backend-agent.hcl` – Vault agent configuration (AppRole auth + template rendering).
 - `templates/backend.env.ctmpl` – Consul-template file that renders the environment variables consumed by the backend.
 - `templates/frontend.env.ctmpl` – Consul-template file that renders Sentry/build environment variables for the frontend.
 - `rendered/` – Output directory for the processed `backend.env` and `frontend.env` files (ignored by git).
 - `approle/` – Placeholders for the AppRole `role_id` and `secret_id` files (ignored by git).
-- `policies/clipper-backend.hcl` – Vault policy granting the backend read-only access to `kv/clipper/backend`.
-- `policies/clipper-frontend.hcl` – Vault policy granting the frontend build read-only access to `kv/clipper/frontend`.
+- `policies/clpr-backend.hcl` – Vault policy granting the backend read-only access to `kv/clpr/backend`.
+- `policies/clpr-frontend.hcl` – Vault policy granting the frontend build read-only access to `kv/clpr/frontend`.
 
 ## Bootstrapping Steps
 
@@ -28,7 +28,7 @@ build-time secrets for the frontend from HashiCorp Vault.
 3. **Write the backend secret data** (replace the placeholder values with the real ones):
 
    ```bash
-   vault kv put kv/clipper/backend \
+   vault kv put kv/clpr/backend \
      PORT=8080 \
      GIN_MODE=release \
      ENVIRONMENT=production \
@@ -36,9 +36,9 @@ build-time secrets for the frontend from HashiCorp Vault.
      LOG_LEVEL=info \
      DB_HOST=postgres \
      DB_PORT=5432 \
-     DB_USER=clipper \
+     DB_USER=clpr \
      DB_PASSWORD='changeme' \
-     DB_NAME=clipper_db \
+     DB_NAME=clpr_db \
      DB_SSLMODE=disable \
      REDIS_HOST=redis \
      REDIS_PORT=6379 \
@@ -55,14 +55,14 @@ build-time secrets for the frontend from HashiCorp Vault.
 4. **Create the backend policy**:
 
    ```bash
-   vault policy write clipper-backend vault/policies/clipper-backend.hcl
+   vault policy write clpr-backend vault/policies/clpr-backend.hcl
    ```
 
 5. **Create the backend AppRole** (run once):
 
    ```bash
-   vault write auth/approle/role/clipper-backend \
-     token_policies="clipper-backend" \
+   vault write auth/approle/role/clpr-backend \
+     token_policies="clpr-backend" \
      token_ttl="24h" \
      token_max_ttl="72h" \
      secret_id_ttl="24h" \
@@ -72,15 +72,15 @@ build-time secrets for the frontend from HashiCorp Vault.
 6. **Capture backend AppRole credentials** and place them in `vault/approle/`:
 
    ```bash
-   vault read -field=role_id auth/approle/role/clipper-backend/role-id > vault/approle/role_id
-   vault write -field=secret_id -f auth/approle/role/clipper-backend/secret-id > vault/approle/secret_id
+   vault read -field=role_id auth/approle/role/clpr-backend/role-id > vault/approle/role_id
+   vault write -field=secret_id -f auth/approle/role/clpr-backend/secret-id > vault/approle/secret_id
    ```
 
    > Treat `role_id` and `secret_id` like passwords. The directory is git-ignored by default.
 
 7. **(Optional) Rotate secrets** by re-running step 6 whenever you want to mint a new `secret_id`.
 
-Once the files exist, `docker compose` (or the `clipper-prod` systemd unit) will start the `clipper-vault-agent`
+Once the files exist, `docker compose` (or the `clpr-prod` systemd unit) will start the `clpr-vault-agent`
 sidecar, which writes `vault/rendered/backend.env`. The backend container waits for that file, sources it, and then
 starts the API process with the injected configuration.
 
@@ -91,7 +91,7 @@ The frontend build requires Sentry credentials at build time to upload sourcemap
 1. **Write the frontend secret data**:
 
    ```bash
-   vault kv put kv/clipper/frontend \
+   vault kv put kv/clpr/frontend \
      VITE_SENTRY_ENABLED=true \
      VITE_SENTRY_DSN="https://your-dsn@o123.ingest.sentry.io/456" \
      VITE_SENTRY_ENVIRONMENT=production \
@@ -99,21 +99,21 @@ The frontend build requires Sentry credentials at build time to upload sourcemap
      VITE_SENTRY_TRACES_SAMPLE_RATE=0.1 \
      SENTRY_AUTH_TOKEN="sntrys_your_auth_token" \
      SENTRY_ORG="your-org" \
-     SENTRY_PROJECT="clipper-frontend" \
+     SENTRY_PROJECT="clpr-frontend" \
      SENTRY_RELEASE="$(git rev-parse --short HEAD)"
    ```
 
 2. **Create the frontend policy**:
 
    ```bash
-   vault policy write clipper-frontend vault/policies/clipper-frontend.hcl
+   vault policy write clpr-frontend vault/policies/clpr-frontend.hcl
    ```
 
 3. **Create the frontend AppRole** (run once):
 
    ```bash
-   vault write auth/approle/role/clipper-frontend \
-     token_policies="clipper-frontend" \
+   vault write auth/approle/role/clpr-frontend \
+     token_policies="clpr-frontend" \
      token_ttl="1h" \
      token_max_ttl="2h" \
      secret_id_ttl="24h" \
@@ -123,8 +123,8 @@ The frontend build requires Sentry credentials at build time to upload sourcemap
 4. **Capture frontend AppRole credentials**:
 
    ```bash
-   vault read -field=role_id auth/approle/role/clipper-frontend/role-id > vault/approle/frontend_role_id
-   vault write -field=secret_id -f auth/approle/role/clipper-frontend/secret-id > vault/approle/frontend_secret_id
+   vault read -field=role_id auth/approle/role/clpr-frontend/role-id > vault/approle/frontend_role_id
+   vault write -field=secret_id -f auth/approle/role/clpr-frontend/secret-id > vault/approle/frontend_secret_id
    ```
 
 5. **Build the frontend** using the script:
@@ -143,9 +143,9 @@ The frontend build requires Sentry credentials at build time to upload sourcemap
 
 ## Expected Keys
 
-### Backend (`kv/clipper/backend`)
+### Backend (`kv/clpr/backend`)
 
-The secret at `kv/clipper/backend` mirrors every variable in `backend/.env.example` (plus a few infrastructure
+The secret at `kv/clpr/backend` mirrors every variable in `backend/.env.example` (plus a few infrastructure
 helpers like `POSTGRES_PASSWORD`). The rendered template now includes:
 
 - Core service settings (`PORT`, `BASE_URL`, `ENVIRONMENT`, etc.)
@@ -159,13 +159,13 @@ Run the following to review what is currently stored:
 ```bash
 export VAULT_ADDR=https://vault.subcult.tv
 vault login
-vault kv get kv/clipper/backend
+vault kv get kv/clpr/backend
 ```
 
-To update individual values, use `vault kv patch kv/clipper/backend KEY=value`. For example:
+To update individual values, use `vault kv patch kv/clpr/backend KEY=value`. For example:
 
 ```bash
-vault kv patch kv/clipper/backend \
+vault kv patch kv/clpr/backend \
    STRIPE_SECRET_KEY="sk_live_xxx" \
    STRIPE_WEBHOOK_SECRET="whsec_primary" \
    STRIPE_WEBHOOK_SECRET_ALT="whsec_secondary" \
@@ -173,9 +173,9 @@ vault kv patch kv/clipper/backend \
    SENTRY_DSN="https://example@o123.ingest.sentry.io/456"
 ```
 
-### Frontend (`kv/clipper/frontend`)
+### Frontend (`kv/clpr/frontend`)
 
-The secret at `kv/clipper/frontend` contains Sentry credentials for runtime SDK and build-time sourcemap upload:
+The secret at `kv/clpr/frontend` contains Sentry credentials for runtime SDK and build-time sourcemap upload:
 
 - `VITE_SENTRY_ENABLED` – Enable Sentry SDK (true/false)
 - `VITE_SENTRY_DSN` – Sentry DSN for error reporting
@@ -190,7 +190,7 @@ The secret at `kv/clipper/frontend` contains Sentry credentials for runtime SDK 
 To update frontend secrets:
 
 ```bash
-vault kv patch kv/clipper/frontend \
+vault kv patch kv/clpr/frontend \
   VITE_SENTRY_DSN="https://new-dsn@sentry.io/123" \
   SENTRY_AUTH_TOKEN="sntrys_new_token"
 ```

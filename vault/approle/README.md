@@ -1,7 +1,7 @@
 # Clipper Backend AppRole Credentials
 
-Place the Vault AppRole files generated from `vault read auth/approle/role/clipper-backend/role-id` and
-`vault write -f auth/approle/role/clipper-backend/secret-id` in this directory:
+Place the Vault AppRole files generated from `vault read auth/approle/role/clpr-backend/role-id` and
+`vault write -f auth/approle/role/clpr-backend/secret-id` in this directory:
 
 - `role_id`
 - `secret_id`

@@ -1,22 +1,22 @@
 [Unit]
-Description=Clipper Targeted Clip Scraper
-Documentation=https://github.com/subculture-collective/clipper
+Description=Clpr Targeted Clip Scraper
+Documentation=https://git.subcult.tv/subculture-collective/clpr
 After=network-online.target postgresql.service redis.service
 Wants=network-online.target
 Requires=postgresql.service redis.service
 
 [Service]
 Type=oneshot
-User=clipper
-Group=clipper
-WorkingDirectory=/opt/clipper/backend
+User=clpr
+Group=clpr
+WorkingDirectory=/opt/clpr/backend
 
 # Environment setup
 Environment="PATH=/usr/local/go/bin:/usr/bin:/bin"
-EnvironmentFile=-/opt/clipper/backend/.env
+EnvironmentFile=-/opt/clpr/backend/.env
 
 # Main command
-ExecStart=/opt/clipper/backend/bin/scrape_clips
+ExecStart=/opt/clpr/backend/bin/scrape_clips
 
 # Resource limits
 MemoryLimit=512M
@@ -25,7 +25,7 @@ CPUQuota=50%
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=clipper-scraper
+SyslogIdentifier=clpr-scraper
 
 # Security hardening
 NoNewPrivileges=true

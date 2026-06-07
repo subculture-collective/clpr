@@ -507,7 +507,7 @@ export function DocsPage() {
                                     <div className='space-y-3'>
                                         <div>
                                             <a
-                                                href='https://github.com/subculture-collective/clipper'
+                                                href='https://git.subcult.tv/subculture-collective/clpr'
                                                 target='_blank'
                                                 rel='noopener noreferrer'
                                                 className='text-primary hover:underline font-medium'
@@ -520,7 +520,7 @@ export function DocsPage() {
                                         </div>
                                         <div>
                                             <a
-                                                href='https://github.com/subculture-collective/clipper/issues'
+                                                href='https://git.subcult.tv/subculture-collective/clpr/issues'
                                                 target='_blank'
                                                 rel='noopener noreferrer'
                                                 className='text-primary hover:underline font-medium'
@@ -533,7 +533,7 @@ export function DocsPage() {
                                         </div>
                                         <div>
                                             <a
-                                                href='https://github.com/subculture-collective/clipper/discussions'
+                                                href='https://git.subcult.tv/subculture-collective/clpr/discussions'
                                                 target='_blank'
                                                 rel='noopener noreferrer'
                                                 className='text-primary hover:underline font-medium'

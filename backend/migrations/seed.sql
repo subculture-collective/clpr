@@ -290,7 +290,7 @@ CROSS JOIN (VALUES
     ('first_clip'),
     ('first_comment'),
     ('helpful'),
-    ('top_clipper'),
+    ('top_clpr'),
     ('streak_7'),
     ('streak_30'),
     ('community_builder'),

@@ -14,7 +14,7 @@ on:
       backup_bucket:
         description: 'Backup bucket name'
         required: false
-        default: 'clipper-backups-prod'
+        default: 'clpr-backups-prod'
       postgres_host:
         description: 'PostgreSQL host for restore test'
         required: false
@@ -30,9 +30,9 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: clipper
-          POSTGRES_PASSWORD: clipper_test_password
-          POSTGRES_DB: clipper_test
+          POSTGRES_USER: clpr
+          POSTGRES_PASSWORD: clpr_test_password
+          POSTGRES_DB: clpr_test
         ports:
           - 5432:5432
         options: >-
@@ -69,12 +69,12 @@ jobs:
 
       - name: Create log directory
         run: |
-          sudo mkdir -p /var/log/clipper
-          sudo chown -R $USER:$USER /var/log/clipper
+          sudo mkdir -p /var/log/clpr
+          sudo chown -R $USER:$USER /var/log/clpr
 
       - name: Wait for PostgreSQL to be ready
         run: |
-          until pg_isready -h localhost -p 5432 -U clipper; do
+          until pg_isready -h localhost -p 5432 -U clpr; do
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
@@ -84,13 +84,13 @@ jobs:
         id: drill
         env:
           CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider || 'gcp' }}
-          BACKUP_BUCKET: ${{ github.event.inputs.backup_bucket || secrets.BACKUP_BUCKET || 'clipper-backups-prod' }}
+          BACKUP_BUCKET: ${{ github.event.inputs.backup_bucket || secrets.BACKUP_BUCKET || 'clpr-backups-prod' }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
           POSTGRES_HOST: ${{ github.event.inputs.postgres_host || 'localhost' }}
           POSTGRES_PORT: '5432'
-          POSTGRES_USER: 'clipper'
-          POSTGRES_PASSWORD: 'clipper_test_password'
-          POSTGRES_DB: 'clipper_test'
+          POSTGRES_USER: 'clpr'
+          POSTGRES_PASSWORD: 'clpr_test_password'
+          POSTGRES_DB: 'clpr_test'
           RTO_TARGET_SECONDS: '3600'  # 1 hour
           RPO_TARGET_SECONDS: '900'   # 15 minutes
           PROMETHEUS_PUSHGATEWAY: ${{ secrets.PROMETHEUS_PUSHGATEWAY }}
@@ -106,19 +106,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: restore-drill-log-${{ github.run_number }}
-          path: /var/log/clipper/restore-drill.log
+          path: /var/log/clpr/restore-drill.log
           retention-days: 90
 
       - name: Parse drill results
         if: always()
         id: results
         run: |
-          if [ -f /var/log/clipper/restore-drill.log ]; then
+          if [ -f /var/log/clpr/restore-drill.log ]; then
             # Extract key metrics from log
-            restore_duration=$(grep "Duration:" /var/log/clipper/restore-drill.log | grep -oP '\d+s' | head -1 | tr -d 's' || echo "0")
-            rpo_seconds=$(grep "RPO (backup age):" /var/log/clipper/restore-drill.log | grep -oP '\d+s' | head -1 | tr -d 's' || echo "0")
-            clip_count=$(grep "Clips count:" /var/log/clipper/restore-drill.log | grep -oP '\d+' || echo "0")
-            user_count=$(grep "Users count:" /var/log/clipper/restore-drill.log | grep -oP '\d+' || echo "0")
+            restore_duration=$(grep "Duration:" /var/log/clpr/restore-drill.log | grep -oP '\d+s' | head -1 | tr -d 's' || echo "0")
+            rpo_seconds=$(grep "RPO (backup age):" /var/log/clpr/restore-drill.log | grep -oP '\d+s' | head -1 | tr -d 's' || echo "0")
+            clip_count=$(grep "Clips count:" /var/log/clpr/restore-drill.log | grep -oP '\d+' || echo "0")
+            user_count=$(grep "Users count:" /var/log/clpr/restore-drill.log | grep -oP '\d+' || echo "0")
 
             echo "restore_duration=$restore_duration" >> $GITHUB_OUTPUT
             echo "rpo_seconds=$rpo_seconds" >> $GITHUB_OUTPUT
@@ -143,7 +143,7 @@ jobs:
         if: steps.drill.outputs.exit_code == '0'
         run: |
           echo "::notice::Restore drill succeeded! RTO < 1h and RPO < 15m demonstrated."
-          cat /var/log/clipper/restore-drill.log
+          cat /var/log/clpr/restore-drill.log
 
       - name: Notify on failure
         if: failure()

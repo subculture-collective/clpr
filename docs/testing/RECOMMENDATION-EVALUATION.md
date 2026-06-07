@@ -299,7 +299,7 @@ Focus optimization efforts based on metric status:
 
 ## Links and References
 
-- Issue: [subculture-collective/clipper#805](https://github.com/subculture-collective/clipper/issues/805)
+- Issue: [subculture-collective/clpr#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 - Recommendation Service: `backend/internal/services/recommendation_service.go`
 - Evaluation Service: `backend/internal/services/recommendation_evaluation_service.go`
 - Dataset: `backend/testdata/recommendation_evaluation_dataset.yaml`

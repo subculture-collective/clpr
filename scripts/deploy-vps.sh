@@ -46,8 +46,8 @@ warn() { echo -e "${YELLOW}!${NC} $1"; }
 log "Stage 0: VPS Environment Check"
 
 # Check if we're in the expected location
-if [[ ! "$PWD" =~ projects/clipper ]]; then
-    warn "Not in expected VPS location (~/projects/clipper)"
+if [[ ! "$PWD" =~ projects/clpr ]]; then
+    warn "Not in expected VPS location (~/projects/clpr)"
     warn "Current location: $PWD"
 fi
 
@@ -126,8 +126,8 @@ fi
 if [ ! -f "vault/approle/role_id" ] || [ ! -f "vault/approle/secret_id" ]; then
     error "Vault AppRole files missing (vault/approle/role_id or vault/approle/secret_id)"
     error "Generate them using:"
-    error "  vault read -field=role_id auth/approle/role/clipper-backend/role-id > vault/approle/role_id"
-    error "  vault write -field=secret_id -f auth/approle/role/clipper-backend/secret-id > vault/approle/secret_id"
+    error "  vault read -field=role_id auth/approle/role/clpr-backend/role-id > vault/approle/role_id"
+    error "  vault write -field=secret_id -f auth/approle/role/clpr-backend/secret-id > vault/approle/secret_id"
     exit 1
 fi
 success "Vault AppRole files present"
@@ -173,8 +173,8 @@ log "Waiting for Vault agent to render secrets..."
 max_retries=60
 retry=0
 while [ $retry -lt $max_retries ]; do
-    if docker exec clipper-vault-agent test -s /vault-agent/rendered/backend.env 2>/dev/null && \
-       docker exec clipper-vault-agent test -s /vault-agent/rendered/postgres.env 2>/dev/null; then
+    if docker exec clpr-vault-agent test -s /vault-agent/rendered/backend.env 2>/dev/null && \
+       docker exec clpr-vault-agent test -s /vault-agent/rendered/postgres.env 2>/dev/null; then
         success "Vault agent secrets ready"
         break
     fi
@@ -188,7 +188,7 @@ done
 if [ $retry -eq $max_retries ]; then
     error "Vault agent secrets not ready after ${max_retries}s"
     log "Checking vault-agent logs:"
-    docker logs --tail=50 clipper-vault-agent
+    docker logs --tail=50 clpr-vault-agent
     exit 1
 fi
 
@@ -218,13 +218,13 @@ if [ "$SKIP_MIGRATIONS" = false ]; then
 
     # Run migrations in a one-off container, sourcing Vault credentials
     if docker run --rm \
-        --network container:clipper-postgres \
-        --volumes-from clipper-vault-agent \
+        --network container:clpr-postgres \
+        --volumes-from clpr-vault-agent \
         -v "$PWD/backend/migrations:/migrations:ro" \
         --entrypoint /bin/sh migrate/migrate:latest \
         -c 'set -e; set -a; . /vault-agent/rendered/postgres.env; set +a; \
             migrate -path /migrations \
-                    -database "postgresql://clipper:${POSTGRES_PASSWORD}@localhost:5432/clipper_db?sslmode=disable" up'; then
+                    -database "postgresql://clpr:${POSTGRES_PASSWORD}@localhost:5432/clpr_db?sslmode=disable" up'; then
         success "Migrations applied"
     else
         error "Migration failed"
@@ -292,10 +292,10 @@ if [ "$CADDY_RUNNING" = true ]; then
         # Verify Caddyfile points to the right containers
         log "Checking Caddyfile configuration..."
         if [ -f "Caddyfile" ]; then
-            if grep -q "clipper-backend" Caddyfile && grep -q "clipper-frontend" Caddyfile; then
-                success "Caddyfile references clipper containers"
+            if grep -q "clpr-backend" Caddyfile && grep -q "clpr-frontend" Caddyfile; then
+                success "Caddyfile references clpr containers"
             else
-                warn "Caddyfile may need updating to reference clipper-backend and clipper-frontend"
+                warn "Caddyfile may need updating to reference clpr-backend and clpr-frontend"
             fi
         fi
 
@@ -328,7 +328,7 @@ docker network inspect web --format '{{range .Containers}}{{.Name}} {{end}}' || 
 
 # Test internal connectivity
 log "Testing internal backend health:"
-if docker exec clipper-backend wget -qO- http://localhost:8080/api/v1/health 2>/dev/null | grep -q "ok\|healthy\|status"; then
+if docker exec clpr-backend wget -qO- http://localhost:8080/api/v1/health 2>/dev/null | grep -q "ok\|healthy\|status"; then
     success "Backend responding to health checks"
 else
     warn "Backend may not be responding to health checks yet"
@@ -339,8 +339,8 @@ echo ""
 success "Deployment complete!"
 echo ""
 echo "Service endpoints (internal):"
-echo "  Backend:  http://clipper-backend:8080 (internal Docker network)"
-echo "  Frontend: http://clipper-frontend:80 (internal Docker network)"
+echo "  Backend:  http://clpr-backend:8080 (internal Docker network)"
+echo "  Frontend: http://clpr-frontend:80 (internal Docker network)"
 echo "  Postgres: postgres://postgres:5432 (internal) / localhost:5436 (external)"
 echo ""
 echo "Public access (via Caddy):"
@@ -348,14 +348,14 @@ echo "  Website:  https://clpr.tv (ensure Caddy is configured and running)"
 echo ""
 echo "Next steps:"
 echo "  1. Verify Caddy is running: docker ps | grep caddy"
-echo "  2. Check Caddy config points to clipper-backend and clipper-frontend"
+echo "  2. Check Caddy config points to clpr-backend and clpr-frontend"
 echo "  3. Reload Caddy: docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile"
 echo "  4. Test https://clpr.tv in browser"
 echo ""
 
 # Print recent backend logs (sanitized)
 log "Recent backend logs (last 30 lines):"
-docker logs --tail=30 clipper-backend 2>&1 | \
+docker logs --tail=30 clpr-backend 2>&1 | \
     sed -e 's/JWT_PRIVATE_KEY.*/JWT_PRIVATE_KEY=[REDACTED]/' \
         -e 's/JWT_PUBLIC_KEY.*/JWT_PUBLIC_KEY=[REDACTED]/' \
         -e 's/DB_PASSWORD.*/DB_PASSWORD=[REDACTED]/' \

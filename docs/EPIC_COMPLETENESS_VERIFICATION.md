@@ -4,7 +4,7 @@
 
 **Date:** 2026-02-02  
 **Verified By:** GitHub Copilot Agent  
-**Repository:** subculture-collective/clipper  
+**Repository:** subculture-collective/clpr
 **Branch:** copilot/complete-user-handler-apis
 
 ---
@@ -290,7 +290,7 @@ $ grep -n "sqlx\|database/sql" discovery_list_repository.go
 import (
     "github.com/jackc/pgx/v5"
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/subculture-collective/clipper/internal/models"
+    "git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 ```
 

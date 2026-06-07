@@ -1187,11 +1187,11 @@ make migrate-up
 
 # Or manually:
 migrate -path backend/migrations \
-        -database "postgresql://user:pass@localhost:5432/clipper?sslmode=disable" \
+        -database "postgresql://user:pass@localhost:5432/clpr?sslmode=disable" \
         up
 
 # Verify
-psql -d clipper -c "\d user_warnings"
+psql -d clpr -c "\d user_warnings"
 ```
 
 #### Step 5: Test Rollback
@@ -1202,7 +1202,7 @@ make migrate-down
 
 # Or manually:
 migrate -path backend/migrations \
-        -database "postgresql://user:pass@localhost:5432/clipper?sslmode=disable" \
+        -database "postgresql://user:pass@localhost:5432/clpr?sslmode=disable" \
         down 1
 ```
 
@@ -2064,8 +2064,8 @@ import (
     "github.com/google/uuid"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
-    "github.com/subculture-collective/clipper/internal/models"
-    "github.com/subculture-collective/clipper/internal/services"
+    "git.subcult.tv/subculture-collective/clpr/internal/models"
+    "git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // Mock repositories
@@ -2226,10 +2226,10 @@ import (
     "github.com/google/uuid"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.com/subculture-collective/clipper/internal/models"
-    "github.com/subculture-collective/clipper/internal/repository"
-    "github.com/subculture-collective/clipper/internal/services"
-    "github.com/subculture-collective/clipper/internal/testutil"
+    "git.subcult.tv/subculture-collective/clpr/internal/models"
+    "git.subcult.tv/subculture-collective/clpr/internal/repository"
+    "git.subcult.tv/subculture-collective/clpr/internal/services"
+    "git.subcult.tv/subculture-collective/clpr/internal/testutil"
 )
 
 func TestModerationService_Integration(t *testing.T) {
@@ -2327,8 +2327,8 @@ import (
     "github.com/google/uuid"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
-    "github.com/subculture-collective/clipper/internal/handlers"
-    "github.com/subculture-collective/clipper/internal/services"
+    "git.subcult.tv/subculture-collective/clpr/internal/handlers"
+    "git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 func TestBanUserHandler(t *testing.T) {
@@ -2794,13 +2794,13 @@ func (r *AuditLogRepository) GetByEntity(
 
 ```bash
 # Check user's account type and permissions
-psql -d clipper -c "SELECT id, username, account_type, moderator_scope FROM users WHERE id = 'user_id';"
+psql -d clpr -c "SELECT id, username, account_type, moderator_scope FROM users WHERE id = 'user_id';"
 
 # Check if user is in moderation_channels (for community moderators)
-psql -d clipper -c "SELECT moderation_channels FROM users WHERE id = 'user_id';"
+psql -d clpr -c "SELECT moderation_channels FROM users WHERE id = 'user_id';"
 
 # Check community membership and role
-psql -d clipper -c "SELECT role FROM community_members WHERE user_id = 'user_id' AND community_id = 'community_id';"
+psql -d clpr -c "SELECT role FROM community_members WHERE user_id = 'user_id' AND community_id = 'community_id';"
 ```
 
 **Common Causes:**
@@ -2829,10 +2829,10 @@ WHERE id = 'user_id';
 
 ```bash
 # Check if audit logs exist for the moderator
-psql -d clipper -c "SELECT * FROM moderation_audit_logs WHERE moderator_id = 'moderator_id' ORDER BY created_at DESC LIMIT 5;"
+psql -d clpr -c "SELECT * FROM moderation_audit_logs WHERE moderator_id = 'moderator_id' ORDER BY created_at DESC LIMIT 5;"
 
 # Check application logs for errors
-tail -f /var/log/clipper/app.log | grep "audit log"
+tail -f /var/log/clpr/app.log | grep "audit log"
 
 # Check if audit log repository is properly initialized
 # Look for initialization errors in startup logs
@@ -2863,7 +2863,7 @@ if err := s.auditLogRepo.Create(ctx, auditLog); err != nil {
 
 ```bash
 # Check moderator configuration
-psql -d clipper -c "
+psql -d clpr -c "
     SELECT 
         u.id,
         u.username,
@@ -2875,10 +2875,10 @@ psql -d clipper -c "
 "
 
 # Verify community exists
-psql -d clipper -c "SELECT id, name FROM communities WHERE id = 'community_id';"
+psql -d clpr -c "SELECT id, name FROM communities WHERE id = 'community_id';"
 
 # Check community membership
-psql -d clipper -c "
+psql -d clpr -c "
     SELECT role 
     FROM community_members 
     WHERE user_id = 'moderator_id' AND community_id = 'community_id';
@@ -3207,7 +3207,7 @@ cd backend && gosec ./...
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/clipper
+DATABASE_URL=postgresql://user:pass@localhost:5432/clpr
 
 # JWT
 JWT_SECRET=your_jwt_secret_here
@@ -3375,7 +3375,7 @@ export function useActionName(resourceId: string) {
 
 ### Getting Help
 
-- **Internal Wiki**: https://wiki.clipper.internal/moderation
+- **Internal Wiki**: https://wiki.clpr.internal/moderation
 - **Team Chat**: #moderation-dev on Slack
 - **Code Reviews**: Tag @moderation-team
 - **Issues**: Label with `moderation` and `needs-review`

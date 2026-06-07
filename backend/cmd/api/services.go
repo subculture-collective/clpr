@@ -5,10 +5,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/services"
-	"github.com/subculture-collective/clipper/internal/websocket"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/websocket"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // Services holds all application service instances.

@@ -76,7 +76,7 @@ go test -v ./internal/websocket
 
 ```bash
 # Required for production
-WEBSOCKET_ALLOWED_ORIGINS="https://clipper.gg,https://clpr.tv"
+WEBSOCKET_ALLOWED_ORIGINS="https://clpr.gg,https://clpr.tv"
 
 # Optional configurations
 TOXICITY_RULES_CONFIG_PATH="backend/config/toxicity_rules.yaml"

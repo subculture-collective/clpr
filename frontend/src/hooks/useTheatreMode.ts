@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Theatre mode preference key for localStorage
-const THEATRE_MODE_PREF_KEY = 'clipper_theatre_mode';
+const THEATRE_MODE_PREF_KEY = 'clpr_theatre_mode';
 
 /**
  * Custom hook to manage theatre mode state and keyboard shortcuts

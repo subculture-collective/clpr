@@ -189,10 +189,10 @@ To apply the database schema changes:
 
 ```sql
 -- Run the migration
-psql -d clipper -f backend/migrations/000004_add_clip_submissions.up.sql
+psql -d clpr -f backend/migrations/000004_add_clip_submissions.up.sql
 
 -- To rollback
-psql -d clipper -f backend/migrations/000004_add_clip_submissions.down.sql
+psql -d clpr -f backend/migrations/000004_add_clip_submissions.down.sql
 ```
 
 ## Configuration

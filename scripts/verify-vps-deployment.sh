@@ -88,8 +88,8 @@ if [ -f "vault/approle/role_id" ] && [ -f "vault/approle/secret_id" ]; then
 else
     check_fail "Vault AppRole credentials missing"
     echo "         Generate with:"
-    echo "         vault read -field=role_id auth/approle/role/clipper-backend/role-id > vault/approle/role_id"
-    echo "         vault write -field=secret_id -f auth/approle/role/clipper-backend/secret-id > vault/approle/secret_id"
+    echo "         vault read -field=role_id auth/approle/role/clpr-backend/role-id > vault/approle/role_id"
+    echo "         vault write -field=secret_id -f auth/approle/role/clpr-backend/secret-id > vault/approle/secret_id"
 fi
 
 # Check 3: Clipper containers
@@ -100,7 +100,7 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"
 fi
 
-declare -a REQUIRED_CONTAINERS=("clipper-vault-agent" "clipper-postgres" "clipper-redis" "clipper-backend" "clipper-frontend")
+declare -a REQUIRED_CONTAINERS=("clpr-vault-agent" "clpr-postgres" "clpr-redis" "clpr-backend" "clpr-frontend")
 
 for container in "${REQUIRED_CONTAINERS[@]}"; do
     if docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
@@ -131,14 +131,14 @@ done
 # Check 4: Vault secrets rendered
 section "4. Vault Secrets"
 
-if docker ps --format '{{.Names}}' | grep -q "clipper-vault-agent"; then
-    if docker exec clipper-vault-agent test -f /vault-agent/rendered/backend.env 2>/dev/null; then
+if docker ps --format '{{.Names}}' | grep -q "clpr-vault-agent"; then
+    if docker exec clpr-vault-agent test -f /vault-agent/rendered/backend.env 2>/dev/null; then
         check_pass "Backend secrets rendered"
     else
         check_fail "Backend secrets not rendered"
     fi
     
-    if docker exec clipper-vault-agent test -f /vault-agent/rendered/postgres.env 2>/dev/null; then
+    if docker exec clpr-vault-agent test -f /vault-agent/rendered/postgres.env 2>/dev/null; then
         check_pass "Postgres secrets rendered"
     else
         check_fail "Postgres secrets not rendered"
@@ -150,8 +150,8 @@ fi
 # Check 5: Service health checks
 section "5. Service Health"
 
-if docker ps --format '{{.Names}}' | grep -q "clipper-backend"; then
-    if docker exec clipper-backend wget -qO- --timeout=5 http://localhost:8080/api/v1/health 2>/dev/null | grep -q "ok\|healthy\|status"; then
+if docker ps --format '{{.Names}}' | grep -q "clpr-backend"; then
+    if docker exec clpr-backend wget -qO- --timeout=5 http://localhost:8080/api/v1/health 2>/dev/null | grep -q "ok\|healthy\|status"; then
         check_pass "Backend health endpoint responds"
     else
         check_fail "Backend health endpoint not responding"
@@ -160,8 +160,8 @@ else
     check_warn "Backend not running, cannot check health"
 fi
 
-if docker ps --format '{{.Names}}' | grep -q "clipper-postgres"; then
-    if docker exec clipper-postgres pg_isready -U clipper -d clipper_db >/dev/null 2>&1; then
+if docker ps --format '{{.Names}}' | grep -q "clpr-postgres"; then
+    if docker exec clpr-postgres pg_isready -U clpr -d clpr_db >/dev/null 2>&1; then
         check_pass "PostgreSQL is ready"
     else
         check_fail "PostgreSQL is not ready"
@@ -170,8 +170,8 @@ else
     check_warn "PostgreSQL not running"
 fi
 
-if docker ps --format '{{.Names}}' | grep -q "clipper-redis"; then
-    if docker exec clipper-redis redis-cli ping >/dev/null 2>&1; then
+if docker ps --format '{{.Names}}' | grep -q "clpr-redis"; then
+    if docker exec clpr-redis redis-cli ping >/dev/null 2>&1; then
         check_pass "Redis is responding"
     else
         check_fail "Redis is not responding"
@@ -196,20 +196,20 @@ if docker ps --format '{{.Names}}' | grep -q caddy; then
     fi
     
     # Check if Caddy can reach backend
-    if docker ps --format '{{.Names}}' | grep -q "clipper-backend"; then
-        if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clipper-backend:8080/api/v1/health 2>/dev/null >/dev/null; then
-            check_pass "Caddy can reach clipper-backend"
+    if docker ps --format '{{.Names}}' | grep -q "clpr-backend"; then
+        if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clpr-backend:8080/api/v1/health 2>/dev/null >/dev/null; then
+            check_pass "Caddy can reach clpr-backend"
         else
-            check_fail "Caddy cannot reach clipper-backend"
+            check_fail "Caddy cannot reach clpr-backend"
         fi
     fi
     
     # Check if Caddy can reach frontend
-    if docker ps --format '{{.Names}}' | grep -q "clipper-frontend"; then
-        if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clipper-frontend:80/ 2>/dev/null >/dev/null; then
-            check_pass "Caddy can reach clipper-frontend"
+    if docker ps --format '{{.Names}}' | grep -q "clpr-frontend"; then
+        if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clpr-frontend:80/ 2>/dev/null >/dev/null; then
+            check_pass "Caddy can reach clpr-frontend"
         else
-            check_fail "Caddy cannot reach clipper-frontend"
+            check_fail "Caddy cannot reach clpr-frontend"
         fi
     fi
     

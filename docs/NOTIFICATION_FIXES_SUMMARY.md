@@ -81,7 +81,7 @@ Before testing links, you'll need to:
    make restart-backend
 
    # Or docker-compose:
-   docker-compose restart clipper-backend
+   docker-compose restart clpr-backend
    ```
 
 3. **Test notification links:**

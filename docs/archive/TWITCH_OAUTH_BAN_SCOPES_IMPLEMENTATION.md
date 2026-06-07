@@ -1,6 +1,6 @@
 ---
 title: "TWITCH OAUTH BAN SCOPES IMPLEMENTATION"
-summary: "**Epic:** subculture-collective/clipper#1059"
+summary: "**Epic:** subculture-collective/clpr#1059"
 tags: ["docs","implementation"]
 area: "docs"
 status: "stable"
@@ -11,7 +11,7 @@ last_reviewed: 2026-01-29
 
 # Twitch OAuth Scopes Implementation - Ban Management
 
-**Epic:** subculture-collective/clipper#1059  
+**Epic:** subculture-collective/clpr#1059
 **Phase:** P0 (Foundation)  
 **Implementation Date:** 2026-01-11  
 **Status:** ✅ COMPLETE
@@ -297,7 +297,7 @@ If issues arise:
 
 ## Related Issues
 
-- Epic: subculture-collective/clipper#1059
+- Epic: subculture-collective/clpr#1059
 - Related to ban sync service implementation
 - Prerequisite for Twitch ban management UI features
 

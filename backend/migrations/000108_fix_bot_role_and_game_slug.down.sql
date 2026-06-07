@@ -6,4 +6,4 @@ CREATE INDEX idx_games_slug ON games (slug);
 ALTER TABLE games ALTER COLUMN slug DROP NOT NULL;
 
 -- Revert bot user role back to admin
-UPDATE users SET role = 'admin' WHERE username = 'clipper-bot' AND role = 'service';
+UPDATE users SET role = 'admin' WHERE username = 'clpr-bot' AND role = 'service';

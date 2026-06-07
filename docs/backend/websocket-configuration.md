@@ -1,6 +1,6 @@
 ---
 title: "Websocket Configuration"
-summary: "This document describes the WebSocket CORS (Cross-Origin Resource Sharing) configuration for the clipper backend."
+summary: "This document describes the WebSocket CORS (Cross-Origin Resource Sharing) configuration for the clpr backend."
 tags: ["backend"]
 area: "backend"
 status: "stable"
@@ -11,7 +11,7 @@ last_reviewed: 2026-01-29
 
 # WebSocket Configuration
 
-This document describes the WebSocket CORS (Cross-Origin Resource Sharing) configuration for the clipper backend.
+This document describes the WebSocket CORS (Cross-Origin Resource Sharing) configuration for the clpr backend.
 
 ## Overview
 
@@ -79,7 +79,7 @@ This allows WebSocket connections from:
 
 ```bash
 # .env.staging
-WEBSOCKET_ALLOWED_ORIGINS=https://staging.clpr.tv,https://staging.clipper.app
+WEBSOCKET_ALLOWED_ORIGINS=https://staging.clpr.tv,https://staging.clpr.app
 ```
 
 This allows WebSocket connections from the staging frontend servers.
@@ -258,7 +258,7 @@ If you're migrating from hardcoded origins to environment-based configuration:
 allowedOrigins := []string{
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://clipper.subculture.gg",
+    "https://clpr.subculture.gg",
 }
 ```
 

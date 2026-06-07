@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // ApplicationLogRepositoryInterface defines the interface for application log repository operations
@@ -74,13 +74,13 @@ func (h *ApplicationLogHandler) CreateLog(c *gin.Context) {
 	}
 
 	// Determine service from platform or use provided service
-	service := "clipper-frontend"
+	service := "clpr-frontend"
 	if req.Service != "" {
 		service = req.Service
 	} else {
 		// Auto-detect service from platform only if not provided
 		if req.Platform == "ios" || req.Platform == "android" {
-			service = "clipper-mobile"
+			service = "clpr-mobile"
 		}
 	}
 

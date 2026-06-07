@@ -217,7 +217,7 @@ go build -o bin/api ./cmd/api
 ```bash
 make restart-backend
 # Or
-docker-compose restart clipper-backend
+docker-compose restart clpr-backend
 ```
 
 ### Run Tests

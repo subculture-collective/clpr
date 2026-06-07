@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // AnomalyScorer scores actions for abuse and anomaly patterns

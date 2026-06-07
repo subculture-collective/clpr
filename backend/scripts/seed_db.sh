@@ -92,9 +92,9 @@ fi
 
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5436}"
-DB_USER="${DB_USER:-clipper}"
-DB_PASSWORD="${DB_PASSWORD:-clipper_password}"
-DB_NAME="${DB_NAME:-clipper_db}"
+DB_USER="${DB_USER:-clpr}"
+DB_PASSWORD="${DB_PASSWORD:-clpr_password}"
+DB_NAME="${DB_NAME:-clpr_db}"
 DB_URL="${DB_URL:-}" # Optional Postgres connection string
 
 # psql safety flags: stop on first error, ignore ~/.psqlrc, single-transaction per file

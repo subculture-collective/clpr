@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { Search, MousePointer, Tag, PenLine, Zap, Lock } from 'lucide-react';
 import { Container, Card, CardBody, SEO, Button } from '../components';
 
-const CHROME_STORE_URL = 'https://chrome.google.com/webstore/detail/clipper';
-const FIREFOX_STORE_URL = 'https://addons.mozilla.org/firefox/addon/clipper';
+const CHROME_STORE_URL = 'https://chrome.google.com/webstore/detail/clpr';
+const FIREFOX_STORE_URL = 'https://addons.mozilla.org/firefox/addon/clpr';
 const GITHUB_EXTENSION_URL =
-    'https://github.com/subculture-collective/clipper/tree/main/extension';
+    'https://git.subcult.tv/subculture-collective/clpr/tree/main/extension';
 
 interface FeatureProps {
     icon: React.ReactNode;

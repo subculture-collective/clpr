@@ -1,6 +1,6 @@
 ---
 title: Offline Caching and Background Sync - Implementation Summary
-summary: **Issue**: [Mobile: Offline caching and background sync](https://github.com/subculture-collective/clipper/issues/XXX) **PR**:...
+summary: **Issue**: [Mobile: Offline caching and background sync](https://git.subcult.tv/subculture-collective/clpr/issues/XXX) **PR**:...
 tags: ["archive", "implementation", "summary"]
 area: docs
 status: archived
@@ -11,9 +11,9 @@ last_reviewed: 2026-01-29
 
 # Offline Caching and Background Sync - Implementation Summary
 
-**Issue**: [Mobile: Offline caching and background sync](https://github.com/subculture-collective/clipper/issues/XXX)
+**Issue**: [Mobile: Offline caching and background sync](https://git.subcult.tv/subculture-collective/clpr/issues/XXX)
 
-**PR**: <https://github.com/subculture-collective/clipper/pull/XXX>
+**PR**: <https://git.subcult.tv/subculture-collective/clpr/pull/XXX>
 
 ## Overview
 

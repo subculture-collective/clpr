@@ -79,7 +79,7 @@ describe('AboutPage', () => {
         expect(githubLinks.length).toBeGreaterThan(0);
         expect(githubLinks[0]).toHaveAttribute(
             'href',
-            'https://github.com/subculture-collective/clipper'
+            'https://git.subcult.tv/subculture-collective/clpr'
         );
     });
 

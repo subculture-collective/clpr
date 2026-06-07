@@ -94,7 +94,7 @@ This runbook provides guidance on monitoring the moderation system, configuring 
 # /etc/prometheus/prometheus.yml
 
 scrape_configs:
-  - job_name: 'clipper-moderation'
+  - job_name: 'clpr-moderation'
     scrape_interval: 15s
     metrics_path: '/api/v1/metrics'
     static_configs:
@@ -103,13 +103,13 @@ scrape_configs:
     scheme: https
     bearer_token: 'YOUR_METRICS_TOKEN'
     
-  - job_name: 'clipper-moderation-db'
+  - job_name: 'clpr-moderation-db'
     scrape_interval: 30s
     static_configs:
       - targets:
           - 'db-exporter.clpr.tv:9187'
     
-  - job_name: 'clipper-redis'
+  - job_name: 'clpr-redis'
     scrape_interval: 15s
     static_configs:
       - targets:
@@ -303,7 +303,7 @@ groups:
 
 ```yaml
       - alert: ModerationAPIDown
-        expr: up{job="clipper-moderation"} == 0
+        expr: up{job="clpr-moderation"} == 0
         for: 1m
         labels:
           severity: critical
@@ -509,26 +509,26 @@ groups:
 
 ```bash
 # High error rate in logs
-tail -f /var/log/clipper/moderation.log | grep -E "ERROR|FATAL"
+tail -f /var/log/clpr/moderation.log | grep -E "ERROR|FATAL"
 
 # Authentication failures
-tail -f /var/log/clipper/moderation.log | grep "authentication failed"
+tail -f /var/log/clpr/moderation.log | grep "authentication failed"
 
 # Database connection issues
-tail -f /var/log/clipper/moderation.log | grep "database connection"
+tail -f /var/log/clpr/moderation.log | grep "database connection"
 
 # Twitch API errors
-tail -f /var/log/clipper/moderation.log | grep "twitch.*error"
+tail -f /var/log/clpr/moderation.log | grep "twitch.*error"
 ```
 
 #### Success Patterns
 
 ```bash
 # Successful bans
-tail -f /var/log/clipper/moderation.log | grep "ban_user.*success"
+tail -f /var/log/clpr/moderation.log | grep "ban_user.*success"
 
 # Successful syncs
-tail -f /var/log/clipper/moderation.log | grep "sync_bans.*completed"
+tail -f /var/log/clpr/moderation.log | grep "sync_bans.*completed"
 ```
 
 ### Centralized Logging

@@ -95,7 +95,7 @@ export function MiniFooter() {
                   About clpr
                 </Link>
                 <a
-                  href="https://github.com/subculture-collective/clipper"
+                  href="https://git.subcult.tv/subculture-collective/clpr"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-sm text-foreground hover:text-primary-500 transition-colors"

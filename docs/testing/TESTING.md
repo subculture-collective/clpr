@@ -97,7 +97,7 @@ Integration tests require a test database and Redis instance.
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 ```
 
 **Run tests:**
@@ -375,7 +375,7 @@ Load tests enforce the following thresholds:
 |-------------|---------|-----------|-----|---------------|
 | **Local** | Developer testing | Docker Compose | localhost:8080 | On-demand |
 | **CI** | Automated testing | GitHub Services | N/A | Every commit |
-| **Staging** | Pre-production E2E | Dedicated PostgreSQL | staging.clipper.dev | Daily |
+| **Staging** | Pre-production E2E | Dedicated PostgreSQL | staging.clpr.dev | Daily |
 | **Load Test** | Performance testing | Scaled PostgreSQL | N/A | On-demand |
 
 **Test Data Management:**
@@ -511,7 +511,7 @@ The GDPR account deletion system has comprehensive test coverage including:
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Integration tests
 cd backend
@@ -550,7 +550,7 @@ The admin user management system has comprehensive test coverage including:
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Integration tests
 cd backend
@@ -628,7 +628,7 @@ The Live Status Tracking system has comprehensive integration test coverage:
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Integration tests
 cd backend
@@ -685,7 +685,7 @@ The Chat/WebSocket system has comprehensive integration test coverage for reliab
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Integration tests
 cd backend
@@ -919,7 +919,7 @@ The Search Failover tests validate behavior when the primary search backend (Ope
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Run search failover integration tests
 cd backend
@@ -1029,7 +1029,7 @@ The CDN Failover tests validate behavior when the CDN is degraded or unavailable
 docker compose -f docker-compose.test.yml up -d
 
 # Run migrations
-migrate -path backend/migrations -database "postgresql://clipper:clipper_password@localhost:5437/clipper_test?sslmode=disable" up
+migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
 
 # Run CDN failover integration tests
 cd backend
@@ -1268,8 +1268,8 @@ Backup validation verifies that nightly backups are complete, encrypted, stored 
 ```bash
 # Set required environment variables
 export CLOUD_PROVIDER="gcp"  # or "aws", "azure"
-export BACKUP_BUCKET="clipper-backups-prod"
-export AZURE_STORAGE_ACCOUNT="clipperbackupsprod"  # Azure only
+export BACKUP_BUCKET="clpr-backups-prod"
+export AZURE_STORAGE_ACCOUNT="clprbackupsprod"  # Azure only
 export MAX_BACKUP_AGE_HOURS="24"
 export MIN_BACKUP_SIZE_MB="1"
 
@@ -1313,11 +1313,11 @@ az login --service-principal -u <app-id> -p <password> --tenant <tenant-id>
 === Backup Validation Started at 2026-01-29 03:00:00 ===
 [INFO] Configuration:
 [INFO]   Cloud Provider: gcp
-[INFO]   Backup Bucket: clipper-backups-prod
+[INFO]   Backup Bucket: clpr-backups-prod
 [INFO]   Max Backup Age: 24h
 [INFO]   Min Backup Size: 1MB
-[INFO] Checking GCS bucket: gs://clipper-backups-prod/database/
-[INFO] Latest backup: gs://clipper-backups-prod/database/postgres-backup-20260129-020000.sql.gz
+[INFO] Checking GCS bucket: gs://clpr-backups-prod/database/
+[INFO] Latest backup: gs://clpr-backups-prod/database/postgres-backup-20260129-020000.sql.gz
 [INFO] Backup size: 147MB
 [INFO] Backup timestamp: 2026-01-29 02:00:00
 [INFO] Backup age: 1 hours
@@ -1342,12 +1342,12 @@ Restore drill performs a complete restore operation to validate that backups can
 ```bash
 # Set required environment variables
 export CLOUD_PROVIDER="gcp"
-export BACKUP_BUCKET="clipper-backups-prod"
+export BACKUP_BUCKET="clpr-backups-prod"
 export POSTGRES_HOST="localhost"
 export POSTGRES_PORT="5432"
-export POSTGRES_USER="clipper"
+export POSTGRES_USER="clpr"
 export POSTGRES_PASSWORD="your_password"
-export POSTGRES_DB="clipper"
+export POSTGRES_DB="clpr"
 export RTO_TARGET_SECONDS="3600"  # 1 hour
 export RPO_TARGET_SECONDS="900"   # 15 minutes
 
@@ -1371,12 +1371,12 @@ bash scripts/restore-drill.sh
 === Restore Drill Started at 2026-02-01 04:00:00 ===
 [INFO] Configuration:
 [INFO]   Cloud Provider: gcp
-[INFO]   Backup Bucket: clipper-backups-prod
+[INFO]   Backup Bucket: clpr-backups-prod
 [INFO]   PostgreSQL Host: localhost:5432
 [INFO]   RTO Target: 3600s (60 minutes)
 [INFO]   RPO Target: 900s (15 minutes)
 [INFO] Finding latest backup...
-[INFO] Downloading backup from GCS: gs://clipper-backups-prod/database/postgres-backup-20260201-020000.sql.gz
+[INFO] Downloading backup from GCS: gs://clpr-backups-prod/database/postgres-backup-20260201-020000.sql.gz
 [INFO] ✓ Backup downloaded: /tmp/restore-drill-20260201-040000.sql.gz
 [INFO]   Size: 147MB
 [INFO]   Backup timestamp: 2026-02-01 02:00:00
@@ -1485,26 +1485,26 @@ restore_drill_rpo_met              # 1 = RPO met, 0 = not met
 
 1. Check backup job logs:
    ```bash
-   kubectl logs -n clipper-production -l app=postgres-backup --tail=100
+   kubectl logs -n clpr-production -l app=postgres-backup --tail=100
    # Or check GitHub Actions workflow logs
    ```
 
 2. Verify cloud storage access:
    ```bash
    # GCP
-   gsutil ls gs://clipper-backups-prod/database/
+   gsutil ls gs://clpr-backups-prod/database/
    
    # AWS
-   aws s3 ls s3://clipper-backups-prod/database/
+   aws s3 ls s3://clpr-backups-prod/database/
    
    # Azure
-   az storage blob list --account-name clipperbackupsprod --container-name clipper-backups-prod --prefix database/
+   az storage blob list --account-name clprbackupsprod --container-name clpr-backups-prod --prefix database/
    ```
 
 3. Check for recent backups:
    ```bash
    # Should see files from last 24 hours
-   gsutil ls -l gs://clipper-backups-prod/database/ | grep postgres-backup | tail -5
+   gsutil ls -l gs://clpr-backups-prod/database/ | grep postgres-backup | tail -5
    ```
 
 **Restore drill fails:**
@@ -1517,20 +1517,20 @@ restore_drill_rpo_met              # 1 = RPO met, 0 = not met
 2. Verify backup file integrity:
    ```bash
    # Download and test backup file
-   gsutil cp gs://clipper-backups-prod/database/postgres-backup-latest.sql.gz /tmp/
+   gsutil cp gs://clpr-backups-prod/database/postgres-backup-latest.sql.gz /tmp/
    gunzip -t /tmp/postgres-backup-latest.sql.gz
    ```
 
 3. Test restore manually:
    ```bash
    # Create test database
-   psql -h localhost -U clipper -d postgres -c "CREATE DATABASE restore_test;"
+   psql -h localhost -U clpr -d postgres -c "CREATE DATABASE restore_test;"
    
    # Restore backup
-   pg_restore -h localhost -U clipper -d restore_test -F c /tmp/backup.sql.gz
+   pg_restore -h localhost -U clpr -d restore_test -F c /tmp/backup.sql.gz
    
    # Verify data
-   psql -h localhost -U clipper -d restore_test -c "SELECT COUNT(*) FROM clips;"
+   psql -h localhost -U clpr -d restore_test -c "SELECT COUNT(*) FROM clips;"
    ```
 
 **RTO target exceeded:**
@@ -1561,7 +1561,7 @@ restore_drill_rpo_met              # 1 = RPO met, 0 = not met
 If integration tests fail to connect to the database:
 
 1. Ensure Docker containers are running: `docker ps`
-2. Check database is ready: `docker logs clipper-test-db`
+2. Check database is ready: `docker logs clpr-test-db`
 3. Verify connection string matches `docker-compose.test.yml` settings
 4. Try restarting containers: `docker compose -f docker-compose.test.yml restart`
 
@@ -1599,39 +1599,39 @@ When tests fail:
 This testing strategy supports the following Roadmap 5.0 initiatives:
 
 ### Master Tracker
-- [#805 - Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805)
+- [#805 - Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 
 ### Phase 1 - Critical Security & Compliance (P0)
-- [#917 - DMCA Handler Test Suite](https://github.com/subculture-collective/clipper/issues/917) ✅
-- [#904 - GDPR Account Deletion Lifecycle Tests](https://github.com/subculture-collective/clipper/issues/904) ✅
-- [#912 - Admin User Management Authorization Tests](https://github.com/subculture-collective/clipper/issues/912) ✅
-- [#901 - Authorization Test Suite (RBAC Endpoints)](https://github.com/subculture-collective/clipper/issues/901) ✅
-- [#914 - Validation Middleware Security Tests](https://github.com/subculture-collective/clipper/issues/914) ✅
+- [#917 - DMCA Handler Test Suite](https://git.subcult.tv/subculture-collective/clpr/issues/917) ✅
+- [#904 - GDPR Account Deletion Lifecycle Tests](https://git.subcult.tv/subculture-collective/clpr/issues/904) ✅
+- [#912 - Admin User Management Authorization Tests](https://git.subcult.tv/subculture-collective/clpr/issues/912) ✅
+- [#901 - Authorization Test Suite (RBAC Endpoints)](https://git.subcult.tv/subculture-collective/clpr/issues/901) ✅
+- [#914 - Validation Middleware Security Tests](https://git.subcult.tv/subculture-collective/clpr/issues/914) ✅
 
 ### Phase 2 - Infrastructure Reliability (P0/P1)
-- [#903 - Deployment Scripts Test Harness & Smoke Tests](https://github.com/subculture-collective/clipper/issues/903)
-- [#902 - Database Migration Rollback Tests](https://github.com/subculture-collective/clipper/issues/902)
-- [#913 - Backup & Restore Validation](https://github.com/subculture-collective/clipper/issues/913)
-- [#907 - Monitoring Alert Rule Validation](https://github.com/subculture-collective/clipper/issues/907)
+- [#903 - Deployment Scripts Test Harness & Smoke Tests](https://git.subcult.tv/subculture-collective/clpr/issues/903)
+- [#902 - Database Migration Rollback Tests](https://git.subcult.tv/subculture-collective/clpr/issues/902)
+- [#913 - Backup & Restore Validation](https://git.subcult.tv/subculture-collective/clpr/issues/913)
+- [#907 - Monitoring Alert Rule Validation](https://git.subcult.tv/subculture-collective/clpr/issues/907)
 
 ### Phase 3 - Feature Completeness (P1)
-- [#910 - Mobile E2E Test Suite - Core Flows](https://github.com/subculture-collective/clipper/issues/910)
-- [#906 - Discovery Lists - Unit + Integration + E2E Coverage](https://github.com/subculture-collective/clipper/issues/906) ✅
-- [#911 - Live Status Tracking - Integration Tests](https://github.com/subculture-collective/clipper/issues/911) ✅
-- [#915 - Moderation Workflow - E2E Coverage](https://github.com/subculture-collective/clipper/issues/915) ✅
-- [#905 - Watch Party Real-time Sync Tests](https://github.com/subculture-collective/clipper/issues/905)
+- [#910 - Mobile E2E Test Suite - Core Flows](https://git.subcult.tv/subculture-collective/clpr/issues/910)
+- [#906 - Discovery Lists - Unit + Integration + E2E Coverage](https://git.subcult.tv/subculture-collective/clpr/issues/906) ✅
+- [#911 - Live Status Tracking - Integration Tests](https://git.subcult.tv/subculture-collective/clpr/issues/911) ✅
+- [#915 - Moderation Workflow - E2E Coverage](https://git.subcult.tv/subculture-collective/clpr/issues/915) ✅
+- [#905 - Watch Party Real-time Sync Tests](https://git.subcult.tv/subculture-collective/clpr/issues/905)
 
 ### Phase 4 - Performance & Optimization (P2)
-- [#908 - Rate Limiting - Load Tests](https://github.com/subculture-collective/clipper/issues/908) ✅
-- [#897 - Search Fallback Performance & Failover Tests](https://github.com/subculture-collective/clipper/issues/897) ✅
-- [#898 - CDN Failover Simulation Tests](https://github.com/subculture-collective/clipper/issues/898) ✅
-- [#899 - Webhook Delivery at Scale - Load & DLQ Replay](https://github.com/subculture-collective/clipper/issues/899)
+- [#908 - Rate Limiting - Load Tests](https://git.subcult.tv/subculture-collective/clpr/issues/908) ✅
+- [#897 - Search Fallback Performance & Failover Tests](https://git.subcult.tv/subculture-collective/clpr/issues/897) ✅
+- [#898 - CDN Failover Simulation Tests](https://git.subcult.tv/subculture-collective/clpr/issues/898) ✅
+- [#899 - Webhook Delivery at Scale - Load & DLQ Replay](https://git.subcult.tv/subculture-collective/clpr/issues/899)
 
 ### Additional Related Issues
-- [#806-822 - Testing Infrastructure Issues](https://github.com/subculture-collective/clipper/issues?q=is%3Aissue+is%3Aopen+label%3Aarea%2Ftesting)
-- [#817-818 - E2E Testing Enhancements](https://github.com/subculture-collective/clipper/issues?q=is%3Aissue+is%3Aopen+label%3Ae2e)
-- [#812-814 - Integration Testing Improvements](https://github.com/subculture-collective/clipper/issues?q=is%3Aissue+is%3Aopen+label%3Aintegration)
-- [#809 - Performance Testing Strategy](https://github.com/subculture-collective/clipper/issues/809)
+- [#806-822 - Testing Infrastructure Issues](https://git.subcult.tv/subculture-collective/clpr/issues?q=is%3Aissue+is%3Aopen+label%3Aarea%2Ftesting)
+- [#817-818 - E2E Testing Enhancements](https://git.subcult.tv/subculture-collective/clpr/issues?q=is%3Aissue+is%3Aopen+label%3Ae2e)
+- [#812-814 - Integration Testing Improvements](https://git.subcult.tv/subculture-collective/clpr/issues?q=is%3Aissue+is%3Aopen+label%3Aintegration)
+- [#809 - Performance Testing Strategy](https://git.subcult.tv/subculture-collective/clpr/issues/809)
 
 ---
 

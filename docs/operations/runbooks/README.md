@@ -301,7 +301,7 @@ Regularly test runbooks to ensure accuracy:
 
 Found an issue or have a suggestion?
 
-1. **Create an issue**: [GitHub Issues](https://github.com/subculture-collective/clipper/issues)
+1. **Create an issue**: [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)
 2. **Submit a PR**: Update the runbook and submit for review
 3. **Contact ops team**: ops@clpr.tv or Slack #ops-team
 

@@ -27,7 +27,7 @@ interface LogEntry {
 
 class StructuredLogger {
   private minLevel: LogLevel;
-  private service: string = 'clipper-frontend';
+  private service: string = 'clpr-frontend';
 
   constructor(minLevel: LogLevel = LogLevel.INFO) {
     this.minLevel = minLevel;

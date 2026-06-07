@@ -309,7 +309,7 @@ Database (PostgreSQL)
 We will integrate the mobile app into the existing monorepo:
 
 ```
-clipper/
+clpr/
 ├── frontend/              # React web app
 │   ├── src/
 │   └── package.json
@@ -355,7 +355,7 @@ clipper/
 
 ```json
 {
-  "name": "clipper",
+  "name": "clpr",
   "private": true,
   "workspaces": [
     "frontend",

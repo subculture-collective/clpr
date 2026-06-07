@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Success actions.
-  el<HTMLButtonElement>('btn-view-clipper').addEventListener('click', () => {
+  el<HTMLButtonElement>('btn-view-clpr').addEventListener('click', () => {
     chrome.tabs.create({ url: `${config.frontendUrl}/submit` });
   });
 

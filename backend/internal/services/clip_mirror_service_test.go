@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // MockMirrorRepository is a mock implementation of MirrorRepository
@@ -112,7 +112,7 @@ func TestClipMirrorService_GetMirrorURL(t *testing.T) {
 			ID:        uuid.New(),
 			ClipID:    clipID,
 			Region:    userRegion,
-			MirrorURL: "https://s3.us-east-1.clipper.cdn/test.mp4",
+			MirrorURL: "https://s3.us-east-1.clpr.cdn/test.mp4",
 			Status:    models.MirrorStatusActive,
 		}
 

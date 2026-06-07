@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/subculture-collective/clipper/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 func TestDefaultSiteFreshnessPresetsWithoutTwitch(t *testing.T) {

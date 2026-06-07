@@ -70,8 +70,8 @@ last_reviewed: 2026-01-29
 
 - **Target**: ~25 issues for feature audit gaps
 - **Delivered**: 59 comprehensive issues covering all gaps
-- **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805)
-- **Issue Creation Epic**: [#834 Feature Inventory Issue Creation](https://github.com/subculture-collective/clipper/issues/834)
+- **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805)
+- **Issue Creation Epic**: [#834 Feature Inventory Issue Creation](https://git.subcult.tv/subculture-collective/clpr/issues/834)
 
 All issues ensure features are:
 - ✅ Fully implemented and working
@@ -175,8 +175,8 @@ Milestone: All issues are part of Roadmap 5.0 execution (Q1-Q2 2026)
 
 ## Links & References
 
-- **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805)
-- **Issue Index Comment**: [Full issue listing with phase/epic organization](https://github.com/subculture-collective/clipper/issues/805#issuecomment-3690769015)
+- **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805)
+- **Issue Index Comment**: [Full issue listing with phase/epic organization](https://git.subcult.tv/subculture-collective/clpr/issues/805#issuecomment-3690769015)
 - **Roadmap Document**: [docs/product/roadmap-5.0.md](roadmap-5.0.md)
 - **Feature Inventory**: [docs/product/feature-inventory.md](feature-inventory.md)
 
@@ -195,6 +195,6 @@ All gaps from the original 25 categories are covered in the Roadmap 5.0 issues.
 
 ---
 
-*This document serves as a historical record of the feature audit issue creation initiative. All issues have been created and are tracked in [#805 Roadmap 5.0 Master Tracker](https://github.com/subculture-collective/clipper/issues/805).*
+*This document serves as a historical record of the feature audit issue creation initiative. All issues have been created and are tracked in [#805 Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805).*
 
 **Sweep II Update (2026-01-14)**: Feature inventory verified and updated with 3 new implementations. All new features are infrastructure supporting existing Roadmap 5.0 issues. No additional audit issues required.

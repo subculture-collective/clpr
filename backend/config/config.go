@@ -307,7 +307,7 @@ type NSFWConfig struct {
 // TelemetryConfig holds distributed tracing configuration
 type TelemetryConfig struct {
 	Enabled          bool    // Enable OpenTelemetry tracing (default: false)
-	ServiceName      string  // Service name for traces (default: "clipper-backend")
+	ServiceName      string  // Service name for traces (default: "clpr-backend")
 	ServiceVersion   string  // Service version for traces
 	OTLPEndpoint     string  // OTLP endpoint for trace export (default: "localhost:4317")
 	Insecure         bool    // Use insecure connection to OTLP endpoint (default: true for development)
@@ -363,9 +363,9 @@ func Load() (*Config, error) {
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),
-			User:     getEnv("DB_USER", "clipper"),
+			User:     getEnv("DB_USER", "clpr"),
 			Password: getEnv("DB_PASSWORD", "CHANGEME_SECURE_PASSWORD_HERE"),
-			Name:     getEnv("DB_NAME", "clipper_db"),
+			Name:     getEnv("DB_NAME", "clpr_db"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		Redis: RedisConfig{
@@ -417,7 +417,7 @@ func Load() (*Config, error) {
 		Email: EmailConfig{
 			SendGridAPIKey:           getEnv("SENDGRID_API_KEY", ""),
 			SendGridWebhookPublicKey: getEnv("SENDGRID_WEBHOOK_PUBLIC_KEY", ""),
-			FromEmail:                getEnv("EMAIL_FROM_ADDRESS", "noreply@clipper.gg"),
+			FromEmail:                getEnv("EMAIL_FROM_ADDRESS", "noreply@clpr.gg"),
 			FromName:                 getEnv("EMAIL_FROM_NAME", "clpr"),
 			Enabled:                  getEnv("EMAIL_ENABLED", "false") == "true",
 			SandboxMode:              getEnv("EMAIL_SANDBOX_MODE", "false") == "true",
@@ -570,7 +570,7 @@ func Load() (*Config, error) {
 		},
 		Telemetry: TelemetryConfig{
 			Enabled:          getEnvBool("TELEMETRY_ENABLED", false),
-			ServiceName:      getEnv("TELEMETRY_SERVICE_NAME", "clipper-backend"),
+			ServiceName:      getEnv("TELEMETRY_SERVICE_NAME", "clpr-backend"),
 			ServiceVersion:   getEnv("TELEMETRY_SERVICE_VERSION", ""),
 			OTLPEndpoint:     getEnv("TELEMETRY_OTLP_ENDPOINT", "localhost:4317"),
 			Insecure:         getEnvBool("TELEMETRY_INSECURE", true),

@@ -187,7 +187,7 @@ export function SettingsPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'clipper_user_data_export.zip';
+            a.download = 'clpr_user_data_export.zip';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

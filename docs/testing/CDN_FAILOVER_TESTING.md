@@ -232,7 +232,7 @@ curl 'http://prometheus:9090/api/v1/alerts' | jq '.data.alerts[] | select(.label
 docker ps | grep postgres
 
 # Check database is ready
-pg_isready -h localhost -p 5437 -U clipper
+pg_isready -h localhost -p 5437 -U clpr
 
 # Restart database
 docker compose -f docker-compose.test.yml restart postgres

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // AbuseIntegrationService integrates anomaly detection into core actions

@@ -1,5 +1,5 @@
 {
-  "name": "clipper-extension",
+  "name": "clpr-extension",
   "version": "1.0.0",
   "type": "module",
   "description": "Clipper browser extension for sharing Twitch clips",

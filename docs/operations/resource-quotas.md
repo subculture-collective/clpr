@@ -12,7 +12,7 @@ last_reviewed: 2026-01-29
 # Resource Quotas & Limits
 
 **Status**: Implemented (Roadmap 5.0 Phase 5.2)  
-**Related Issues**: [#853](https://github.com/subculture-collective/clipper/issues/853), [#805](https://github.com/subculture-collective/clipper/issues/805)
+**Related Issues**: [#853](https://git.subcult.tv/subculture-collective/clpr/issues/853), [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 
 ## Overview
 
@@ -25,9 +25,9 @@ This document describes the resource quota and limit policies enforced in the Cl
 ResourceQuotas enforce hard limits on aggregate resource consumption per namespace. They prevent any single namespace from consuming excessive cluster resources.
 
 **Namespaces with ResourceQuotas:**
-- `clipper-production` - Production workloads
-- `clipper-staging` - Staging/testing workloads
-- `clipper-monitoring` - Monitoring infrastructure (Prometheus, Grafana, Loki)
+- `clpr-production` - Production workloads
+- `clpr-staging` - Staging/testing workloads
+- `clpr-monitoring` - Monitoring infrastructure (Prometheus, Grafana, Loki)
 
 ### LimitRanges
 
@@ -35,7 +35,7 @@ LimitRanges define default, minimum, and maximum resource constraints for indivi
 
 ## Resource Allocations
 
-### Production Environment (`clipper-production`)
+### Production Environment (`clpr-production`)
 
 #### ResourceQuota
 ```yaml
@@ -67,7 +67,7 @@ maxLimitRequestRatio:
   memory: 8
 ```
 
-### Staging Environment (`clipper-staging`)
+### Staging Environment (`clpr-staging`)
 
 #### ResourceQuota
 ```yaml
@@ -96,7 +96,7 @@ min:
   memory: "32Mi"
 ```
 
-### Monitoring Environment (`clipper-monitoring`)
+### Monitoring Environment (`clpr-monitoring`)
 
 #### ResourceQuota
 ```yaml
@@ -200,10 +200,10 @@ kubectl get limitrange -A
 
 ```bash
 # View quota status for a namespace
-kubectl describe resourcequota -n clipper-production
+kubectl describe resourcequota -n clpr-production
 
 # View limit ranges
-kubectl describe limitrange -n clipper-production
+kubectl describe limitrange -n clpr-production
 
 # Check quota usage across all namespaces
 kubectl get resourcequota -A -o json | \
@@ -232,7 +232,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: oom-test
-  namespace: clipper-staging
+  namespace: clpr-staging
 spec:
   containers:
   - name: memory-hog
@@ -252,13 +252,13 @@ EOF
 
 ```bash
 # Watch pod status
-kubectl get pod oom-test -n clipper-staging -w
+kubectl get pod oom-test -n clpr-staging -w
 
 # Check termination reason
-kubectl describe pod oom-test -n clipper-staging | grep -A 5 "Last State"
+kubectl describe pod oom-test -n clpr-staging | grep -A 5 "Last State"
 
 # View OOM events
-kubectl get events -n clipper-staging --field-selector involvedObject.name=oom-test
+kubectl get events -n clpr-staging --field-selector involvedObject.name=oom-test
 ```
 
 #### Expected Behavior
@@ -272,7 +272,7 @@ kubectl get events -n clipper-staging --field-selector involvedObject.name=oom-t
 #### Cleanup
 
 ```bash
-kubectl delete pod oom-test -n clipper-staging
+kubectl delete pod oom-test -n clpr-staging
 ```
 
 ### OOM Prevention
@@ -475,5 +475,5 @@ kubectl get pod <pod-name> -n <namespace> -o yaml
 - [Kubernetes ResourceQuotas](https://kubernetes.io/docs/concepts/policy/resource-quotas/)
 - [Kubernetes LimitRanges](https://kubernetes.io/docs/concepts/policy/limit-range/)
 - [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
-- Issue [#853 - Application Helm Charts](https://github.com/subculture-collective/clipper/issues/853)
-- Issue [#805](https://github.com/subculture-collective/clipper/issues/805)
+- Issue [#853 - Application Helm Charts](https://git.subcult.tv/subculture-collective/clpr/issues/853)
+- Issue [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)

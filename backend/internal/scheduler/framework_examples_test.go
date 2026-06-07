@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	schedulertesting "github.com/subculture-collective/clipper/internal/scheduler/testing"
+	schedulertesting "git.subcult.tv/subculture-collective/clpr/internal/scheduler/testing"
 )
 
 // TestSchedulerWithMockClock demonstrates using the mock clock for deterministic testing

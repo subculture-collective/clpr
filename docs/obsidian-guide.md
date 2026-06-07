@@ -23,14 +23,14 @@ This guide explains how to use the Clipper documentation as an Obsidian vault fo
 
 1. **Clone the Repository** (if not already done):
    ```bash
-   git clone https://github.com/subculture-collective/clipper.git
-   cd clipper
+   git clone https://git.subcult.tv/subculture-collective/clpr.git
+   cd clpr
    ```
 
 2. **Open in Obsidian**:
    - Launch Obsidian
    - Click "Open folder as vault"
-   - Navigate to `/path/to/clipper/docs`
+   - Navigate to `/path/to/clpr/docs`
    - Click "Open"
 
 3. **Trust the Vault**:

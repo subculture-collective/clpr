@@ -94,7 +94,7 @@ services:
   backend:
     image: ${BACKEND_IMAGE:-nginx:alpine}
     labels:
-      app: clipper-drill
+      app: clpr-drill
       version: "${VERSION:-v1}"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
@@ -105,7 +105,7 @@ services:
   frontend:
     image: ${FRONTEND_IMAGE:-nginx:alpine}
     labels:
-      app: clipper-drill
+      app: clpr-drill
       version: "${VERSION:-v1}"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
@@ -140,7 +140,7 @@ capture_initial_state() {
         docker ps --format "{{.Names}}" > "$DRILL_DIR/state/initial-containers.txt" || true
         
         # List docker images
-        docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "drill|clipper" > "$DRILL_DIR/state/initial-images.txt" || true
+        docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "drill|clpr" > "$DRILL_DIR/state/initial-images.txt" || true
     else
         # Create empty state files for DRY_RUN
         touch "$DRILL_DIR/state/initial-containers.txt"

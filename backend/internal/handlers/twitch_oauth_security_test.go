@@ -13,8 +13,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // TestTokenMaskingInLogs verifies that access and refresh tokens are never logged
@@ -25,7 +25,7 @@ func TestTokenMaskingInLogs(t *testing.T) {
 	defer log.SetOutput(os.Stderr)
 	connString := os.Getenv("TEST_DATABASE_URL")
 	if connString == "" {
-		connString = "postgres://clipper:clipper_password@localhost:5436/clipper_db?sslmode=disable"
+		connString = "postgres://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable"
 	}
 
 	pool, err := pgxpool.New(context.Background(), connString)
@@ -146,7 +146,7 @@ func TestTokenNotInJSONResponses(t *testing.T) {
 func TestScopesStoredAndRetrieved(t *testing.T) {
 	connString := os.Getenv("TEST_DATABASE_URL")
 	if connString == "" {
-		connString = "postgres://clipper:clipper_password@localhost:5436/clipper_db?sslmode=disable"
+		connString = "postgres://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable"
 	}
 
 	pool, err := pgxpool.New(context.Background(), connString)

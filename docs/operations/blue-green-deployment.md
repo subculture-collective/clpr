@@ -106,8 +106,8 @@ df -h    # At least 20GB free disk
 
 ```bash
 # Clone repository
-git clone https://github.com/subculture-collective/clipper.git
-cd clipper
+git clone https://git.subcult.tv/subculture-collective/clpr.git
+cd clpr
 
 # Copy environment file
 cp .env.production.example .env
@@ -122,8 +122,8 @@ Create `.env` file with required variables:
 
 ```bash
 # Database
-POSTGRES_DB=clipper_db
-POSTGRES_USER=clipper
+POSTGRES_DB=clpr_db
+POSTGRES_USER=clpr
 POSTGRES_PASSWORD=<secure-password>
 
 # Image Tags (optional, defaults to 'latest')
@@ -221,8 +221,8 @@ docker compose -f docker-compose.blue-green.yml --profile $TARGET_ENV up -d back
 sleep 30
 
 # 6. Health check
-docker exec clipper-backend-$TARGET_ENV wget --spider -q http://localhost:8080/health
-docker exec clipper-frontend-$TARGET_ENV wget --spider -q http://localhost:80/health.html
+docker exec clpr-backend-$TARGET_ENV wget --spider -q http://localhost:8080/health
+docker exec clpr-frontend-$TARGET_ENV wget --spider -q http://localhost:80/health.html
 
 # 7. Switch traffic
 export ACTIVE_ENV=$TARGET_ENV
@@ -266,11 +266,11 @@ For gradual traffic migration, modify Caddyfile to use weighted load balancing:
 # Example: 90% blue, 10% green
 handle /api/* {
     reverse_proxy {
-        to clipper-backend-blue:8080 clipper-backend-blue:8080 \
-           clipper-backend-blue:8080 clipper-backend-blue:8080 \
-           clipper-backend-blue:8080 clipper-backend-blue:8080 \
-           clipper-backend-blue:8080 clipper-backend-blue:8080 \
-           clipper-backend-blue:8080 clipper-backend-green:8080
+        to clpr-backend-blue:8080 clpr-backend-blue:8080 \
+           clpr-backend-blue:8080 clpr-backend-blue:8080 \
+           clpr-backend-blue:8080 clpr-backend-blue:8080 \
+           clpr-backend-blue:8080 clpr-backend-blue:8080 \
+           clpr-backend-blue:8080 clpr-backend-green:8080
         lb_policy round_robin
     }
 }
@@ -397,7 +397,7 @@ During and after deployment, monitor:
 
 ```bash
 # Watch container stats
-docker stats clipper-backend-blue clipper-backend-green
+docker stats clpr-backend-blue clpr-backend-green
 
 # Monitor logs for errors
 docker compose logs -f --tail=100 | grep -i error
@@ -406,11 +406,11 @@ docker compose logs -f --tail=100 | grep -i error
 time curl http://localhost/api/v1/clips
 
 # Monitor database connections
-docker exec clipper-postgres psql -U clipper -d clipper_db -c \
+docker exec clpr-postgres psql -U clpr -d clpr_db -c \
   "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
 
 # Check Redis stats
-docker exec clipper-redis redis-cli INFO stats
+docker exec clpr-redis redis-cli INFO stats
 ```
 
 ### Integration with Monitoring Tools
@@ -446,7 +446,7 @@ export ACTIVE_ENV=blue && docker compose -f docker-compose.blue-green.yml up -d 
 
 ```bash
 # 1. Test in staging
-cd /opt/clipper-staging
+cd /opt/clpr-staging
 ./scripts/blue-green-deploy.sh
 
 # 2. Run smoke tests
@@ -496,10 +496,10 @@ watch -n 30 'curl -s http://localhost/health/stats'
 docker compose logs backend-green
 
 # Test health endpoint directly
-docker exec clipper-backend-green wget -O- http://localhost:8080/health
+docker exec clpr-backend-green wget -O- http://localhost:8080/health
 
 # Check database connectivity
-docker exec clipper-backend-green psql -h postgres -U clipper -d clipper_db -c "SELECT 1"
+docker exec clpr-backend-green psql -h postgres -U clpr -d clpr_db -c "SELECT 1"
 ```
 
 #### Issue: High Memory Usage
@@ -509,7 +509,7 @@ docker exec clipper-backend-green psql -h postgres -U clipper -d clipper_db -c "
 docker stats --no-stream
 
 # Check for memory leaks
-docker exec clipper-backend-green ps aux --sort=-%mem | head
+docker exec clpr-backend-green ps aux --sort=-%mem | head
 
 # Restart if needed
 docker compose restart backend-green
@@ -519,13 +519,13 @@ docker compose restart backend-green
 
 ```bash
 # Verify ACTIVE_ENV
-docker exec clipper-caddy env | grep ACTIVE_ENV
+docker exec clpr-caddy env | grep ACTIVE_ENV
 
 # Check Caddy config
-docker exec clipper-caddy caddy environ
+docker exec clpr-caddy caddy environ
 
 # Reload Caddy
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 
 # Restart Caddy
 docker compose restart caddy
@@ -535,20 +535,20 @@ docker compose restart caddy
 
 ```bash
 # View all running containers
-docker ps --filter "name=clipper"
+docker ps --filter "name=clpr"
 
 # Check network connectivity
-docker exec clipper-backend-blue ping -c 3 postgres
-docker exec clipper-backend-green ping -c 3 redis
+docker exec clpr-backend-blue ping -c 3 postgres
+docker exec clpr-backend-green ping -c 3 redis
 
 # Inspect container health
-docker inspect clipper-backend-blue | jq '.[0].State.Health'
+docker inspect clpr-backend-blue | jq '.[0].State.Health'
 
 # View Caddy logs
 docker compose logs caddy --tail=100
 
 # Test from inside container
-docker exec -it clipper-backend-blue sh
+docker exec -it clpr-backend-blue sh
 wget -O- http://localhost:8080/health
 ```
 
@@ -577,5 +577,5 @@ wget -O- http://localhost:8080/health
 
 For issues or questions:
 - Slack: #ops-deployments
-- Email: <ops-team@clipper.app>
+- Email: <ops-team@clpr.app>
 - On-call: Check PagerDuty rotation

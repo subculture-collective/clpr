@@ -1,6 +1,6 @@
 # Caddyfile for VPS Production Deployment
 # Serves clpr.tv with automatic HTTPS via Let's Encrypt
-# Routes traffic to clipper-backend and clipper-frontend containers
+# Routes traffic to clpr-backend and clpr-frontend containers
 
 {
     # Global options
@@ -88,7 +88,7 @@ clpr.tv {
     }
     # API routes -> backend
     handle /api/* {
-        reverse_proxy clipper-backend:8080 {
+        reverse_proxy clpr-backend:8080 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
@@ -103,12 +103,12 @@ clpr.tv {
     # Health check endpoint (bypasses caching)
     handle /health {
         uri path /api/v1/health
-        reverse_proxy clipper-backend:8080
+        reverse_proxy clpr-backend:8080
     }
 
     # WebSocket support (if needed)
     handle /ws/* {
-        reverse_proxy clipper-backend:8080 {
+        reverse_proxy clpr-backend:8080 {
             header_up Upgrade {>Upgrade}
             header_up Connection {>Connection}
         }
@@ -116,7 +116,7 @@ clpr.tv {
 
     # Frontend (SPA) - must come last to act as catch-all
     handle /* {
-        reverse_proxy clipper-frontend:80 {
+        reverse_proxy clpr-frontend:80 {
             health_uri /health.html
             health_interval 30s
         }

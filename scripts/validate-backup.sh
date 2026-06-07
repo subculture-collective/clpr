@@ -12,13 +12,13 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/clipper}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/clpr}"
 CLOUD_PROVIDER="${CLOUD_PROVIDER:-gcp}"
-BACKUP_BUCKET="${BACKUP_BUCKET:-clipper-backups-prod}"
+BACKUP_BUCKET="${BACKUP_BUCKET:-clpr-backups-prod}"
 AZURE_STORAGE_ACCOUNT="${AZURE_STORAGE_ACCOUNT:-}"
 MAX_BACKUP_AGE_HOURS="${MAX_BACKUP_AGE_HOURS:-24}"
 MIN_BACKUP_SIZE_MB="${MIN_BACKUP_SIZE_MB:-1}"
-VALIDATION_LOG="${VALIDATION_LOG:-/var/log/clipper/backup-validation.log}"
+VALIDATION_LOG="${VALIDATION_LOG:-/var/log/clpr/backup-validation.log}"
 
 # Metrics for alerting
 VALIDATION_SUCCESS=0

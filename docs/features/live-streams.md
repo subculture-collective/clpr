@@ -611,6 +611,6 @@ Set up alerts for:
 
 For issues or questions:
 
-- GitHub Issues: [Create an issue](https://github.com/subculture-collective/clipper/issues)
+- GitHub Issues: [Create an issue](https://git.subcult.tv/subculture-collective/clpr/issues)
 - Documentation: [View full docs](../index.md)
-- Community: [Join discussions](https://github.com/subculture-collective/clipper/discussions)
+- Community: [Join discussions](https://git.subcult.tv/subculture-collective/clpr/discussions)

@@ -79,7 +79,7 @@ describe('MiniFooter', () => {
     
     // Check GitHub link
     const githubLink = screen.getByRole('link', { name: /github/i });
-    expect(githubLink).toHaveAttribute('href', 'https://github.com/subculture-collective/clipper');
+    expect(githubLink).toHaveAttribute('href', 'https://git.subcult.tv/subculture-collective/clpr');
     expect(githubLink).toHaveAttribute('target', '_blank');
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer');
   });

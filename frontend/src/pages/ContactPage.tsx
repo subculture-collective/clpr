@@ -219,7 +219,7 @@ export function ContactPage() {
               <p className="text-sm text-muted-foreground">
                 For bug reports or feature requests, you can also open an issue on our{' '}
                 <a
-                  href="https://github.com/subculture-collective/clipper/issues"
+                  href="https://git.subcult.tv/subculture-collective/clpr/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"

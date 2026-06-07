@@ -36,13 +36,13 @@ See [Dashboard README](../../monitoring/dashboards/README.md) for full documenta
 
 ```bash
 # All services
-kubectl get pods -n clipper
+kubectl get pods -n clpr
 
 # Specific service
-kubectl describe pod backend-xyz -n clipper
+kubectl describe pod backend-xyz -n clpr
 
 # Logs
-kubectl logs -f deployment/backend -n clipper
+kubectl logs -f deployment/backend -n clpr
 ```
 
 ### Database Operations
@@ -65,13 +65,13 @@ kubectl exec -it backend-pod -- make migrate-up
 
 ```bash
 # Cluster health
-curl https://opensearch.clipper.app/_cluster/health
+curl https://opensearch.clpr.app/_cluster/health
 
 # Reindex from PostgreSQL
 kubectl exec -it backend-pod -- go run cmd/backfill-search/main.go
 
 # Force refresh
-curl -X POST https://opensearch.clipper.app/_refresh
+curl -X POST https://opensearch.clpr.app/_refresh
 ```
 
 ### Cache Operations
@@ -91,23 +91,23 @@ redis-cli INFO memory
 
 ```bash
 # Scale backend pods
-kubectl scale deployment backend --replicas=5 -n clipper
+kubectl scale deployment backend --replicas=5 -n clpr
 
 # Horizontal Pod Autoscaler
-kubectl autoscale deployment backend --cpu-percent=70 --min=3 --max=10 -n clipper
+kubectl autoscale deployment backend --cpu-percent=70 --min=3 --max=10 -n clpr
 ```
 
 ### Deployments
 
 ```bash
 # Deploy new version
-kubectl set image deployment/backend backend=clipper:v1.2.3 -n clipper
+kubectl set image deployment/backend backend=clpr:v1.2.3 -n clpr
 
 # Check rollout status
-kubectl rollout status deployment/backend -n clipper
+kubectl rollout status deployment/backend -n clpr
 
 # Rollback
-kubectl rollout undo deployment/backend -n clipper
+kubectl rollout undo deployment/backend -n clpr
 ```
 
 ## Deployment Testing & Validation

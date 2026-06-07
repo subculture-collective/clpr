@@ -139,7 +139,7 @@ These features are under evaluation:
 
 ## Feature Requests
 
-Have a feature idea? [Open an issue](https://github.com/subculture-collective/clipper/issues/new) with the `enhancement` label.
+Have a feature idea? [Open an issue](https://git.subcult.tv/subculture-collective/clpr/issues/new) with the `enhancement` label.
 
 ---
 

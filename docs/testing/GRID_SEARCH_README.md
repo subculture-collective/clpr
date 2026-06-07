@@ -311,8 +311,8 @@ go run cmd/search-ab-test/main.go \
 ## Dependencies
 
 ### Related Issues
-- [#837](https://github.com/subculture-collective/clipper/issues/837) - Search Relevance Evaluation Framework (completed)
-- [#805](https://github.com/subculture-collective/clipper/issues/805) - Related search improvements
+- [#837](https://git.subcult.tv/subculture-collective/clpr/issues/837) - Search Relevance Evaluation Framework (completed)
+- [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805) - Related search improvements
 
 ### Technical Dependencies
 - Go 1.21+
@@ -386,5 +386,5 @@ When adding new features:
 ## Support
 
 For questions or issues:
-- GitHub Issues: https://github.com/subculture-collective/clipper/issues
-- Documentation: https://github.com/subculture-collective/clipper/tree/main/docs
+- GitHub Issues: https://git.subcult.tv/subculture-collective/clpr/issues
+- Documentation: https://git.subcult.tv/subculture-collective/clpr/tree/main/docs

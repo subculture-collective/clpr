@@ -1,6 +1,6 @@
 ---
 title: "TWITCH BAN UNBAN ENDPOINTS IMPLEMENTATION"
-summary: "**Epic:** subculture-collective/clipper#1059"
+summary: "**Epic:** subculture-collective/clpr#1059"
 tags: ["docs","implementation"]
 area: "docs"
 status: "stable"
@@ -11,9 +11,9 @@ last_reviewed: 2026-01-29
 
 # Twitch Ban/Unban API Endpoints Implementation
 
-**Epic:** subculture-collective/clipper#1059  
+**Epic:** subculture-collective/clpr#1059
 **Phase:** P1 (API)  
-**Issue:** subculture-collective/clipper#1063  
+**Issue:** subculture-collective/clpr#1063
 **Implementation Date:** 2024-12-XX (PR #1103)  
 **Status:** ✅ COMPLETE
 

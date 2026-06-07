@@ -36,8 +36,8 @@ echo ""
 
 # 3. Check database connectivity
 echo "3. Checking database connections..."
-psql -h 127.0.0.1 -p 5436 -U clipper -d clipper_db -c "SELECT 1" > /dev/null 2>&1 && echo "  ✓ PostgreSQL connected" || echo "  ✗ PostgreSQL NOT connected"
-docker exec clipper-redis redis-cli PING > /dev/null 2>&1 && echo "  ✓ Redis connected" || echo "  ✗ Redis NOT connected"
+psql -h 127.0.0.1 -p 5436 -U clpr -d clpr_db -c "SELECT 1" > /dev/null 2>&1 && echo "  ✓ PostgreSQL connected" || echo "  ✗ PostgreSQL NOT connected"
+docker exec clpr-redis redis-cli PING > /dev/null 2>&1 && echo "  ✓ Redis connected" || echo "  ✗ Redis NOT connected"
 echo ""
 
 # 4. Check environment files

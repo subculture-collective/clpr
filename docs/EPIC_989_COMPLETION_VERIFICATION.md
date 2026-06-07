@@ -58,15 +58,15 @@ From the epic description:
 **Key Implementation:**
 ```bash
 # Pre-flight validation
-if ! docker exec clipper-postgres pg_isready -U "${POSTGRES_USER:-clipper}" \
-     -d "${POSTGRES_DB:-clipper_db}" > /dev/null 2>&1; then
+if ! docker exec clpr-postgres pg_isready -U "${POSTGRES_USER:-clpr}" \
+     -d "${POSTGRES_DB:-clpr_db}" > /dev/null 2>&1; then
     log_error "Database is not ready for migrations"
     return 1
 fi
 
 # Execute migrations
 docker run --rm \
-    --network clipper-network \
+    --network clpr-network \
     -v "$DEPLOY_DIR/backend/migrations:/migrations:ro" \
     -e DATABASE_URL="$DB_URL" \
     migrate/migrate@sha256:4d017c6fb5997127093648cab09e63d377997125c3d3dcca18e5d1c847da49fa \
@@ -462,4 +462,4 @@ The implementation is:
 - [Deployment Automation Guide](docs/operations/DEPLOYMENT_AUTOMATION.md)
 - [Blue-Green Deployment Guide](docs/operations/blue-green-deployment.md)  
 - [Deployment Testing Guide](scripts/DEPLOYMENT_TESTING.md)
-- [Roadmap 6.0 - TODO Cleanup (#968)](https://github.com/subculture-collective/clipper/issues/968)
+- [Roadmap 6.0 - TODO Cleanup (#968)](https://git.subcult.tv/subculture-collective/clpr/issues/968)

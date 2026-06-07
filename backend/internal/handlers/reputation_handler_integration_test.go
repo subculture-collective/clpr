@@ -10,11 +10,11 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/config"
-	"github.com/subculture-collective/clipper/internal/middleware"
-	"github.com/subculture-collective/clipper/internal/repository"
-	"github.com/subculture-collective/clipper/internal/services"
-	"github.com/subculture-collective/clipper/pkg/database"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 )
 
 func TestLeaderboardIntegration(t *testing.T) {
@@ -30,9 +30,9 @@ func TestLeaderboardIntegration(t *testing.T) {
 	dbConfig := &config.DatabaseConfig{
 		Host:     getEnvOrDefault("DB_HOST", "localhost"),
 		Port:     getEnvOrDefault("DB_PORT", "5437"), // Test DB port (see docker-compose.test.yml)
-		User:     getEnvOrDefault("DB_USER", "clipper"),
-		Password: getEnvOrDefault("DB_PASSWORD", "clipper_password"),
-		Name:     getEnvOrDefault("DB_NAME", "clipper_test"),
+		User:     getEnvOrDefault("DB_USER", "clpr"),
+		Password: getEnvOrDefault("DB_PASSWORD", "clpr_password"),
+		Name:     getEnvOrDefault("DB_NAME", "clpr_test"),
 		SSLMode:  "disable",
 	}
 

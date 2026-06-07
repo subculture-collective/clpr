@@ -182,9 +182,9 @@ In-depth documentation for major platform features:
 
 ## 🔗 External Links
 
-- [GitHub Repository](https://github.com/subculture-collective/clipper)
-- [Issue Tracker](https://github.com/subculture-collective/clipper/issues)
-- [Discussions](https://github.com/subculture-collective/clipper/discussions)
+- [GitHub Repository](https://git.subcult.tv/subculture-collective/clpr)
+- [Issue Tracker](https://git.subcult.tv/subculture-collective/clpr/issues)
+- [Discussions](https://git.subcult.tv/subculture-collective/clpr/discussions)
 - [Twitch API Documentation](https://dev.twitch.tv/docs/api/)
 
 ## 💡 Using This Documentation
@@ -244,18 +244,18 @@ All documentation is automatically validated on every commit:
 - Configuration file documentation
 - Best practices
 
-Related: [CI Workflow](.github/workflows/docs.yml) | Issues [#803](https://github.com/subculture-collective/clipper/issues/803), [#845](https://github.com/subculture-collective/clipper/issues/845), [#846](https://github.com/subculture-collective/clipper/issues/846), [#805](https://github.com/subculture-collective/clipper/issues/805)
+Related: [CI Workflow](.github/workflows/docs.yml) | Issues [#803](https://git.subcult.tv/subculture-collective/clpr/issues/803), [#845](https://git.subcult.tv/subculture-collective/clpr/issues/845), [#846](https://git.subcult.tv/subculture-collective/clpr/issues/846), [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 
 ## 🆘 Getting Help
 
 - **Users**: Check [[users/faq|FAQ]] or [[users/user-guide|User Guide]]
 - **Developers**: See [[setup/troubleshooting|Troubleshooting]] or open an issue
 - **Contributors**: Read [[contributing|Contributing Guide]]
-- **Bugs**: [Report an issue](https://github.com/subculture-collective/clipper/issues/new)
+- **Bugs**: [Report an issue](https://git.subcult.tv/subculture-collective/clpr/issues/new)
 
 ---
 
 **Last Updated**: 2026-01-29  
-**Maintained by**: [Subculture Collective](https://github.com/subculture-collective)
+**Maintained by**: [Subculture Collective](https://git.subcult.tv/subculture-collective)
 
-**Related Issues**: [#803](https://github.com/subculture-collective/clipper/issues/803), [#845](https://github.com/subculture-collective/clipper/issues/845), [#846](https://github.com/subculture-collective/clipper/issues/846)
+**Related Issues**: [#803](https://git.subcult.tv/subculture-collective/clpr/issues/803), [#845](https://git.subcult.tv/subculture-collective/clpr/issues/845), [#846](https://git.subcult.tv/subculture-collective/clpr/issues/846)

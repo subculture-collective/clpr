@@ -149,7 +149,7 @@ This implementation adds PgBouncer-based connection pooling to the Clipper Kuber
    ```bash
    kubectl patch configmap backend-config \
      -p '{"data":{"DB_HOST":"pgbouncer","DB_PORT":"6432"}}'
-   kubectl rollout restart deployment/clipper-backend
+   kubectl rollout restart deployment/clpr-backend
    ```
 
 3. **Import Dashboard**: Upload `monitoring/dashboards/pgbouncer-pool.json` to Grafana
@@ -225,7 +225,7 @@ OR manually:
 ```bash
 kubectl patch configmap backend-config \
   -p '{"data":{"DB_HOST":"postgres","DB_PORT":"5432"}}'
-kubectl rollout restart deployment/clipper-backend
+kubectl rollout restart deployment/clpr-backend
 ```
 
 ## Related Documentation

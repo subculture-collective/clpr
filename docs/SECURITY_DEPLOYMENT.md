@@ -13,7 +13,7 @@ docker-compose down
 docker-compose up -d
 
 # Reload Caddy only (faster)
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ### 2. Verify Headers (Immediately After)
@@ -74,7 +74,7 @@ nano Caddyfile.vps
 Content-Security-Policy "default-src 'self'; script-src 'self'; ..."
 
 # Save and reload
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ### 5. Run ZAP Scan Again (After Enforcement)
@@ -152,14 +152,14 @@ nano Caddyfile.vps
 # Content-Security-Policy "..."
 
 # Reload Caddy
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ### 2. Full Rollback (Revert All Changes)
 
 ```bash
 git checkout main -- Caddyfile Caddyfile.vps
-docker exec clipper-caddy caddy reload --config /etc/caddy/Caddyfile
+docker exec clpr-caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ---

@@ -68,14 +68,14 @@ The pool sizing is based on:
    
    # Create the user in PostgreSQL first if not exists:
    # kubectl exec postgres-0 -- psql -U postgres -c \
-   #   "CREATE ROLE clipper WITH LOGIN PASSWORD 'your-strong-password';"
+   #   "CREATE ROLE clpr WITH LOGIN PASSWORD 'your-strong-password';"
    
    # For PgBouncer with SCRAM-SHA-256, use auth_query or auth_file with plaintext
    # (PgBouncer will handle the SCRAM exchange with PostgreSQL)
    # Note: The userlist.txt format for SCRAM is: "username" "password"
    
    kubectl create secret generic pgbouncer-secret \
-     --from-literal=userlist.txt='\"clipper\" \"your-strong-password\"'
+     --from-literal=userlist.txt='\"clpr\" \"your-strong-password\"'
    
    # Update ConfigMap to use scram-sha-256 auth_type
    kubectl patch configmap pgbouncer-config \
@@ -110,7 +110,7 @@ The pool sizing is based on:
    
    # Test connection
    kubectl run -it --rm psql --image=postgres:17 -- \
-     psql -h pgbouncer -p 6432 -U clipper -d clipper_db -c "SELECT version();"
+     psql -h pgbouncer -p 6432 -U clpr -d clpr_db -c "SELECT version();"
    ```
 
 4. **Update Backend to Use PgBouncer**:
@@ -121,8 +121,8 @@ The pool sizing is based on:
    # Change: DB_PORT: "6432"
    
    # Restart backend deployment
-   kubectl rollout restart deployment/clipper-backend
-   kubectl rollout status deployment/clipper-backend
+   kubectl rollout restart deployment/clpr-backend
+   kubectl rollout status deployment/clpr-backend
    ```
 
 5. **Configure Prometheus** (if not using in-cluster service discovery):
@@ -209,11 +209,11 @@ kubectl edit configmap backend-config
 # Change: DB_PORT: "5432"
 
 # 2. Restart backend immediately
-kubectl rollout restart deployment/clipper-backend
+kubectl rollout restart deployment/clpr-backend
 
 # 3. Verify backend health
-kubectl get pods -l app=clipper-backend
-kubectl logs -f deployment/clipper-backend
+kubectl get pods -l app=clpr-backend
+kubectl logs -f deployment/clpr-backend
 
 # 4. Test database connectivity
 curl https://clpr.tv/health/ready
@@ -231,12 +231,12 @@ kubectl edit configmap backend-config
 # Change: DB_PORT: "5432"
 
 # 3. Rolling restart of backend
-kubectl rollout restart deployment/clipper-backend
-kubectl rollout status deployment/clipper-backend
+kubectl rollout restart deployment/clpr-backend
+kubectl rollout status deployment/clpr-backend
 
 # 4. Verify functionality
 kubectl run -it --rm test-db --image=postgres:17 -- \
-  psql -h postgres -p 5432 -U clipper -d clipper_db -c "SELECT COUNT(*) FROM clips;"
+  psql -h postgres -p 5432 -U clpr -d clpr_db -c "SELECT COUNT(*) FROM clips;"
 
 # 5. Remove PgBouncer resources (if needed)
 kubectl delete -f backend/k8s/pgbouncer.yaml
@@ -251,13 +251,13 @@ kubectl delete -f backend/k8s/pgbouncer-configmap.yaml
 curl https://clpr.tv/health/stats
 
 # Monitor direct PostgreSQL connections
-kubectl exec postgres-0 -- psql -U clipper -d clipper_db \
-  -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'clipper_db';"
+kubectl exec postgres-0 -- psql -U clpr -d clpr_db \
+  -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'clpr_db';"
 
 # Run health checks
 kubectl get pods
 kubectl get svc
-kubectl logs -f deployment/clipper-backend --tail=50
+kubectl logs -f deployment/clpr-backend --tail=50
 ```
 
 ## Tuning Guidelines
@@ -314,7 +314,7 @@ kubectl describe svc pgbouncer
 
 # Test connectivity
 kubectl run -it --rm test-pgbouncer --image=postgres:17 -- \
-  psql -h pgbouncer -p 6432 -U clipper -d clipper_db -c "SELECT 1;"
+  psql -h pgbouncer -p 6432 -U clpr -d clpr_db -c "SELECT 1;"
 ```
 
 ### Authentication Errors
@@ -337,10 +337,10 @@ kubectl port-forward svc/pgbouncer 9127:9127
 curl -s http://localhost:9127/metrics | grep -E 'cl_waiting|sv_active|sv_idle'
 
 # Check PostgreSQL for slow queries
-kubectl exec postgres-0 -- psql -U clipper -d clipper_db -c \
+kubectl exec postgres-0 -- psql -U clpr -d clpr_db -c \
   "SELECT pid, usename, query, state, wait_event
    FROM pg_stat_activity
-   WHERE datname = 'clipper_db' AND state != 'idle';"
+   WHERE datname = 'clpr_db' AND state != 'idle';"
 
 # Increase pool size if needed
 kubectl edit configmap pgbouncer-config
@@ -362,7 +362,7 @@ curl http://localhost:9127/metrics
 # Prometheus UI → Status → Targets → pgbouncer
 
 # Verify Prometheus config includes pgbouncer job
-kubectl exec -n clipper-monitoring deployment/prometheus -- \
+kubectl exec -n clpr-monitoring deployment/prometheus -- \
   cat /etc/prometheus/prometheus.yml | grep pgbouncer
 ```
 
@@ -389,8 +389,8 @@ kubectl exec -n clipper-monitoring deployment/prometheus -- \
 
 ## Related Issues
 
-- [#852](https://github.com/subculture-collective/clipper/issues/852) - Kubernetes Cluster Setup
-- [#805](https://github.com/subculture-collective/clipper/issues/805) - Related Infrastructure Issue
+- [#852](https://git.subcult.tv/subculture-collective/clpr/issues/852) - Kubernetes Cluster Setup
+- [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805) - Related Infrastructure Issue
 
 ## References
 

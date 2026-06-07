@@ -81,7 +81,7 @@ export interface ConsentContextType {
     canTrackAnalytics: boolean;
 }
 
-const CONSENT_STORAGE_KEY = 'clipper_consent_preferences';
+const CONSENT_STORAGE_KEY = 'clpr_consent_preferences';
 const CONSENT_VERSION = '1.0'; // Increment when consent categories change
 
 const ConsentContext = createContext<ConsentContextType | undefined>(undefined);

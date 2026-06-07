@@ -8,12 +8,12 @@ This directory contains systemd service and timer units for running the Clipper 
 
 ```bash
 # Copy service and timer files to systemd directory
-sudo cp clipper-scraper.service /etc/systemd/system/
-sudo cp clipper-scraper.timer /etc/systemd/system/
+sudo cp clpr-scraper.service /etc/systemd/system/
+sudo cp clpr-scraper.timer /etc/systemd/system/
 
 # Set correct permissions
-sudo chmod 644 /etc/systemd/system/clipper-scraper.service
-sudo chmod 644 /etc/systemd/system/clipper-scraper.timer
+sudo chmod 644 /etc/systemd/system/clpr-scraper.service
+sudo chmod 644 /etc/systemd/system/clpr-scraper.timer
 ```
 
 ### 2. Update Paths
@@ -21,15 +21,15 @@ sudo chmod 644 /etc/systemd/system/clipper-scraper.timer
 Edit the service file to match your installation:
 
 ```bash
-sudo nano /etc/systemd/system/clipper-scraper.service
+sudo nano /etc/systemd/system/clpr-scraper.service
 ```
 
 Update these values:
-- `User=clipper` - Change to your application user
-- `Group=clipper` - Change to your application group
-- `WorkingDirectory=/opt/clipper/backend` - Change to your installation path
-- `ExecStart=/opt/clipper/backend/bin/scrape_clips` - Change to your binary path
-- `EnvironmentFile=-/opt/clipper/backend/.env` - Change to your .env path
+- `User=clpr` - Change to your application user
+- `Group=clpr` - Change to your application group
+- `WorkingDirectory=/opt/clpr/backend` - Change to your installation path
+- `ExecStart=/opt/clpr/backend/bin/scrape_clips` - Change to your binary path
+- `EnvironmentFile=-/opt/clpr/backend/.env` - Change to your .env path
 
 ### 3. Reload Systemd
 
@@ -41,10 +41,10 @@ sudo systemctl daemon-reload
 
 ```bash
 # Enable timer to start on boot
-sudo systemctl enable clipper-scraper.timer
+sudo systemctl enable clpr-scraper.timer
 
 # Start timer now
-sudo systemctl start clipper-scraper.timer
+sudo systemctl start clpr-scraper.timer
 ```
 
 ## Usage
@@ -53,59 +53,59 @@ sudo systemctl start clipper-scraper.timer
 
 ```bash
 # Check if timer is active
-sudo systemctl status clipper-scraper.timer
+sudo systemctl status clpr-scraper.timer
 
 # List all timers
 sudo systemctl list-timers
 
 # View detailed timer info
-sudo systemctl show clipper-scraper.timer
+sudo systemctl show clpr-scraper.timer
 ```
 
 ### View Service Status
 
 ```bash
 # Check last run status
-sudo systemctl status clipper-scraper.service
+sudo systemctl status clpr-scraper.service
 ```
 
 ### View Logs
 
 ```bash
 # View all logs
-sudo journalctl -u clipper-scraper.service
+sudo journalctl -u clpr-scraper.service
 
 # Follow logs in real-time
-sudo journalctl -u clipper-scraper.service -f
+sudo journalctl -u clpr-scraper.service -f
 
 # View logs from last run
-sudo journalctl -u clipper-scraper.service -n 100
+sudo journalctl -u clpr-scraper.service -n 100
 
 # View logs from specific date
-sudo journalctl -u clipper-scraper.service --since "2024-01-01"
+sudo journalctl -u clpr-scraper.service --since "2024-01-01"
 ```
 
 ### Manual Execution
 
 ```bash
 # Run service manually (bypasses timer)
-sudo systemctl start clipper-scraper.service
+sudo systemctl start clpr-scraper.service
 
 # Watch logs while running
-sudo journalctl -u clipper-scraper.service -f
+sudo journalctl -u clpr-scraper.service -f
 ```
 
 ### Stop/Disable Timer
 
 ```bash
 # Stop timer (prevents future runs)
-sudo systemctl stop clipper-scraper.timer
+sudo systemctl stop clpr-scraper.timer
 
 # Disable timer (won't start on boot)
-sudo systemctl disable clipper-scraper.timer
+sudo systemctl disable clpr-scraper.timer
 
 # Stop running service
-sudo systemctl stop clipper-scraper.service
+sudo systemctl stop clpr-scraper.service
 ```
 
 ### Restart After Changes
@@ -113,7 +113,7 @@ sudo systemctl stop clipper-scraper.service
 ```bash
 # After editing service or timer files
 sudo systemctl daemon-reload
-sudo systemctl restart clipper-scraper.timer
+sudo systemctl restart clpr-scraper.timer
 ```
 
 ## Configuration
@@ -123,7 +123,7 @@ sudo systemctl restart clipper-scraper.timer
 Edit the timer file:
 
 ```bash
-sudo nano /etc/systemd/system/clipper-scraper.timer
+sudo nano /etc/systemd/system/clpr-scraper.timer
 ```
 
 Common schedules:
@@ -146,7 +146,7 @@ After changes:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart clipper-scraper.timer
+sudo systemctl restart clpr-scraper.timer
 ```
 
 ### Adding Scraper Options
@@ -154,17 +154,17 @@ sudo systemctl restart clipper-scraper.timer
 Edit the service file:
 
 ```bash
-sudo nano /etc/systemd/system/clipper-scraper.service
+sudo nano /etc/systemd/system/clpr-scraper.service
 ```
 
 Modify `ExecStart`:
 
 ```ini
 # With custom options
-ExecStart=/opt/clipper/backend/bin/scrape_clips --batch-size 100 --min-views 200
+ExecStart=/opt/clpr/backend/bin/scrape_clips --batch-size 100 --min-views 200
 
 # With dry-run
-ExecStart=/opt/clipper/backend/bin/scrape_clips --dry-run
+ExecStart=/opt/clpr/backend/bin/scrape_clips --dry-run
 ```
 
 ## Monitoring
@@ -172,7 +172,7 @@ ExecStart=/opt/clipper/backend/bin/scrape_clips --dry-run
 ### Check Next Run Time
 
 ```bash
-sudo systemctl list-timers clipper-scraper.timer
+sudo systemctl list-timers clpr-scraper.timer
 ```
 
 ### Enable Email Notifications
@@ -195,10 +195,10 @@ OnFailure=status-email@%n.service
 
 ```bash
 # Export logs to file
-sudo journalctl -u clipper-scraper.service > scraper-logs.txt
+sudo journalctl -u clpr-scraper.service > scraper-logs.txt
 
 # Export logs as JSON
-sudo journalctl -u clipper-scraper.service -o json > scraper-logs.json
+sudo journalctl -u clpr-scraper.service -o json > scraper-logs.json
 ```
 
 ## Troubleshooting
@@ -207,23 +207,23 @@ sudo journalctl -u clipper-scraper.service -o json > scraper-logs.json
 
 ```bash
 # Check timer status
-sudo systemctl status clipper-scraper.timer
+sudo systemctl status clpr-scraper.timer
 
 # Check for errors
-sudo journalctl -u clipper-scraper.timer -xe
+sudo journalctl -u clpr-scraper.timer -xe
 ```
 
 ### Service Fails to Start
 
 ```bash
 # Check service status
-sudo systemctl status clipper-scraper.service
+sudo systemctl status clpr-scraper.service
 
 # View detailed logs
-sudo journalctl -u clipper-scraper.service -xe
+sudo journalctl -u clpr-scraper.service -xe
 
 # Test manually
-cd /opt/clipper/backend
+cd /opt/clpr/backend
 ./bin/scrape_clips --dry-run
 ```
 
@@ -231,13 +231,13 @@ cd /opt/clipper/backend
 
 ```bash
 # Check file permissions
-ls -la /opt/clipper/backend/bin/scrape_clips
+ls -la /opt/clpr/backend/bin/scrape_clips
 
 # Make executable
-sudo chmod +x /opt/clipper/backend/bin/scrape_clips
+sudo chmod +x /opt/clpr/backend/bin/scrape_clips
 
 # Check user/group
-id clipper
+id clpr
 ```
 
 ### Environment Variables Not Loading
@@ -245,9 +245,9 @@ id clipper
 Ensure `.env` file exists and is readable:
 
 ```bash
-ls -la /opt/clipper/backend/.env
-sudo chmod 640 /opt/clipper/backend/.env
-sudo chown clipper:clipper /opt/clipper/backend/.env
+ls -la /opt/clpr/backend/.env
+sudo chmod 640 /opt/clpr/backend/.env
+sudo chown clpr:clpr /opt/clpr/backend/.env
 ```
 
 ## Security Considerations
@@ -266,12 +266,12 @@ Adjust based on your security requirements.
 
 ```bash
 # Stop and disable timer
-sudo systemctl stop clipper-scraper.timer
-sudo systemctl disable clipper-scraper.timer
+sudo systemctl stop clpr-scraper.timer
+sudo systemctl disable clpr-scraper.timer
 
 # Remove service files
-sudo rm /etc/systemd/system/clipper-scraper.service
-sudo rm /etc/systemd/system/clipper-scraper.timer
+sudo rm /etc/systemd/system/clpr-scraper.service
+sudo rm /etc/systemd/system/clpr-scraper.timer
 
 # Reload systemd
 sudo systemctl daemon-reload

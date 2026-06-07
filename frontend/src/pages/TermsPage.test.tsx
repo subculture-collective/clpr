@@ -128,7 +128,7 @@ describe('TermsPage', () => {
         expect(
             screen.getByText(/14\. Contact Information/i)
         ).toBeInTheDocument();
-        expect(screen.getByText(/legal@clipper.com/i)).toBeInTheDocument();
+        expect(screen.getByText(/legal@clpr.com/i)).toBeInTheDocument();
     });
 
     it('mentions dispute resolution', () => {

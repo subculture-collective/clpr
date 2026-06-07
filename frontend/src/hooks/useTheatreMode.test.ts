@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useTheatreMode } from './useTheatreMode';
 
 describe('useTheatreMode', () => {
-  const STORAGE_KEY = 'clipper_theatre_mode';
+  const STORAGE_KEY = 'clpr_theatre_mode';
 
   beforeEach(() => {
     // Clear localStorage before each test

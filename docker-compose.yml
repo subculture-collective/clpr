@@ -7,11 +7,11 @@ networks:
     external: true
 
 services:
-  clipper-backend:
+  clpr-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: clipper-backend
+    container_name: clpr-backend
     networks: [projects, dev]
     env_file: .env
     entrypoint:
@@ -35,11 +35,11 @@ services:
       - com.centurylinklabs.watchtower.enable=false
     restart: unless-stopped
 
-  clipper-crawler:
+  clpr-crawler:
     build:
       context: ./backend
       dockerfile: Dockerfile.crawler
-    container_name: clipper-crawler
+    container_name: clpr-crawler
     networks: [projects]
     env_file: .env
     environment:
@@ -51,14 +51,14 @@ services:
       - com.centurylinklabs.watchtower.enable=false
     restart: unless-stopped
 
-  clipper-frontend:
+  clpr-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: clipper-frontend
+    container_name: clpr-frontend
     networks: [projects]
     depends_on:
-      clipper-backend:
+      clpr-backend:
         condition: service_healthy
     labels:
       - com.centurylinklabs.watchtower.enable=false

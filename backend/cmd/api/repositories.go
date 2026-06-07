@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/subculture-collective/clipper/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // Repositories holds all database repository instances.

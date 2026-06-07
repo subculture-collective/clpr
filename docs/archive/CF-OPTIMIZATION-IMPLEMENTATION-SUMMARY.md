@@ -1,6 +1,6 @@
 ---
 title: "CF OPTIMIZATION IMPLEMENTATION SUMMARY"
-summary: "**Issue**: [#840](https://github.com/subculture-collective/clipper/issues/840)"
+summary: "**Issue**: [#840](https://git.subcult.tv/subculture-collective/clpr/issues/840)"
 tags: ["docs","implementation","summary"]
 area: "docs"
 status: "stable"
@@ -11,7 +11,7 @@ last_reviewed: 2026-01-29
 
 # Collaborative Filtering Optimization - Implementation Summary
 
-**Issue**: [#840](https://github.com/subculture-collective/clipper/issues/840)  
+**Issue**: [#840](https://git.subcult.tv/subculture-collective/clpr/issues/840)
 **Roadmap**: 5.0 Phase 3.2  
 **Status**: Complete ✅  
 **Date**: 2024-12-30

@@ -265,7 +265,7 @@ chmod +x test-all-webhooks.sh
 3. Verify the event is added to retry queue:
    ```bash
    # Check webhook retry queue in your database
-   psql -d clipper_db -c "SELECT * FROM webhook_retry_queue ORDER BY created_at DESC LIMIT 10;"
+   psql -d clpr_db -c "SELECT * FROM webhook_retry_queue ORDER BY created_at DESC LIMIT 10;"
    ```
 4. Restore database connection
 5. Wait for retry scheduler to process the queued event (runs every 1 minute by default)
@@ -315,7 +315,7 @@ chmod +x test-all-webhooks.sh
 
 ```bash
 # View recent webhook processing logs
-tail -f /var/log/clipper/backend.log | grep WEBHOOK
+tail -f /var/log/clpr/backend.log | grep WEBHOOK
 
 # Or use your logging system (e.g., CloudWatch, Datadog)
 ```

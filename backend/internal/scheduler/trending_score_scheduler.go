@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/subculture-collective/clipper/pkg/metrics"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 const (

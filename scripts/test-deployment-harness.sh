@@ -66,9 +66,9 @@ setup_mock_env() {
 version: '3.8'
 services:
   backend:
-    image: clipper-backend:test
+    image: clpr-backend:test
   frontend:
-    image: clipper-frontend:test
+    image: clpr-frontend:test
 EOF
 
     # Create mock .env
@@ -83,13 +83,13 @@ EOF
 version: '3.8'
 services:
   backend-blue:
-    image: clipper-backend:blue
+    image: clpr-backend:blue
   backend-green:
-    image: clipper-backend:green
+    image: clpr-backend:green
   frontend-blue:
-    image: clipper-frontend:blue
+    image: clpr-frontend:blue
   frontend-green:
-    image: clipper-frontend:green
+    image: clpr-frontend:green
   postgres:
     image: postgres:15
   redis:
@@ -108,16 +108,16 @@ mock_docker() {
     case "$1" in
         images)
             # Mock docker images output
-            if echo "$*" | grep -q "clipper-backend"; then
-                echo "clipper-backend    backup-20240101-120000   abc123   1 day ago   100MB"
-                echo "clipper-backend    latest                   def456   1 hour ago  100MB"
-            elif echo "$*" | grep -q "clipper-frontend"; then
-                echo "clipper-frontend   backup-20240101-120000   ghi789   1 day ago   50MB"
-                echo "clipper-frontend   latest                   jkl012   1 hour ago  50MB"
+            if echo "$*" | grep -q "clpr-backend"; then
+                echo "clpr-backend    backup-20240101-120000   abc123   1 day ago   100MB"
+                echo "clpr-backend    latest                   def456   1 hour ago  100MB"
+            elif echo "$*" | grep -q "clpr-frontend"; then
+                echo "clpr-frontend   backup-20240101-120000   ghi789   1 day ago   50MB"
+                echo "clpr-frontend   latest                   jkl012   1 hour ago  50MB"
             else
                 echo "REPOSITORY         TAG                      IMAGE ID   CREATED     SIZE"
-                echo "clipper-backend    latest                   def456     1 hour ago  100MB"
-                echo "clipper-frontend   latest                   jkl012     1 hour ago  50MB"
+                echo "clpr-backend    latest                   def456     1 hour ago  100MB"
+                echo "clpr-frontend   latest                   jkl012     1 hour ago  50MB"
             fi
             return 0
             ;;
@@ -128,8 +128,8 @@ mock_docker() {
         ps)
             # Mock docker ps output
             echo "CONTAINER ID   IMAGE                      STATUS"
-            echo "abc123         clipper-backend:latest     Up 1 hour"
-            echo "def456         clipper-frontend:latest    Up 1 hour"
+            echo "abc123         clpr-backend:latest     Up 1 hour"
+            echo "def456         clpr-frontend:latest    Up 1 hour"
             return 0
             ;;
         compose|exec)
@@ -181,15 +181,15 @@ mock_docker_compose() {
             ;;
         ps)
             echo "NAME                     STATUS"
-            echo "clipper-backend-1        Up 1 hour"
-            echo "clipper-frontend-1       Up 1 hour"
+            echo "clpr-backend-1        Up 1 hour"
+            echo "clpr-frontend-1       Up 1 hour"
             return 0
             ;;
         config)
             # Return valid config
             echo "services:"
             echo "  backend:"
-            echo "    image: clipper-backend:latest"
+            echo "    image: clpr-backend:latest"
             return 0
             ;;
         *)

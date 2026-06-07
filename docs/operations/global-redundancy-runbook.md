@@ -64,12 +64,12 @@ This runbook provides operational procedures for managing global redundancy, fai
 
 ```bash
 # Check primary region health
-curl https://api.clipper.gg/health
+curl https://api.clpr.gg/health
 
 # Check specific region
-curl https://us-east-1.api.clipper.gg/health
-curl https://eu-west-1.api.clipper.gg/health
-curl https://ap-southeast-1.api.clipper.gg/health
+curl https://us-east-1.api.clpr.gg/health
+curl https://eu-west-1.api.clpr.gg/health
+curl https://ap-southeast-1.api.clpr.gg/health
 ```
 
 ### Key Metrics
@@ -100,10 +100,10 @@ curl https://ap-southeast-1.api.clipper.gg/health
 
 ### Dashboards
 
-- **Global Overview**: [Grafana Dashboard](http://grafana.clipper.gg/d/global-overview)
-- **Region Health**: [Grafana Dashboard](http://grafana.clipper.gg/d/region-health)
-- **Mirror Status**: [Grafana Dashboard](http://grafana.clipper.gg/d/mirror-status)
-- **CDN Performance**: [Grafana Dashboard](http://grafana.clipper.gg/d/cdn-performance)
+- **Global Overview**: [Grafana Dashboard](http://grafana.clpr.gg/d/global-overview)
+- **Region Health**: [Grafana Dashboard](http://grafana.clpr.gg/d/region-health)
+- **Mirror Status**: [Grafana Dashboard](http://grafana.clpr.gg/d/mirror-status)
+- **CDN Performance**: [Grafana Dashboard](http://grafana.clpr.gg/d/cdn-performance)
 
 ## Common Scenarios
 
@@ -123,13 +123,13 @@ curl https://ap-southeast-1.api.clipper.gg/health
 **Commands:**
 ```bash
 # Check region health
-curl https://api.clipper.gg/v1/health/regions
+curl https://api.clpr.gg/v1/health/regions
 
 # Check replication status
 psql -h replica.eu-west-1 -c "SELECT * FROM pg_stat_replication;"
 
 # Check mirror availability
-curl https://api.clipper.gg/v1/mirrors/stats
+curl https://api.clpr.gg/v1/mirrors/stats
 ```
 
 ### Scenario 2: Primary Database Failure
@@ -161,11 +161,11 @@ curl https://api.clipper.gg/v1/mirrors/stats
 pg_ctl promote -D /var/lib/postgresql/data
 
 # Update application config
-export DB_HOST=eu-west-1.db.clipper.gg
-systemctl restart clipper-api
+export DB_HOST=eu-west-1.db.clpr.gg
+systemctl restart clpr-api
 
 # Verify new primary
-psql -h eu-west-1.db.clipper.gg -c "SELECT pg_is_in_recovery();"
+psql -h eu-west-1.db.clpr.gg -c "SELECT pg_is_in_recovery();"
 # Should return: f (false = not in recovery = primary)
 ```
 
@@ -186,14 +186,14 @@ psql -h eu-west-1.db.clipper.gg -c "SELECT pg_is_in_recovery();"
 ```bash
 # Disable CDN temporarily
 export CDN_ENABLED=false
-systemctl restart clipper-api
+systemctl restart clpr-api
 
 # Switch to backup CDN provider
 export CDN_PROVIDER=bunny  # or aws-cloudfront
-systemctl restart clipper-api
+systemctl restart clpr-api
 
 # Monitor direct serving costs
-curl https://api.clipper.gg/v1/metrics/bandwidth
+curl https://api.clpr.gg/v1/metrics/bandwidth
 ```
 
 ### Scenario 4: Mirror Storage Failure
@@ -212,13 +212,13 @@ curl https://api.clipper.gg/v1/metrics/bandwidth
 **Commands:**
 ```bash
 # Check mirror status by region
-curl https://api.clipper.gg/v1/mirrors?region=us-east-1
+curl https://api.clpr.gg/v1/mirrors?region=us-east-1
 
 # Force mirror failover test
-curl -X POST https://api.clipper.gg/v1/mirrors/test-failover
+curl -X POST https://api.clpr.gg/v1/mirrors/test-failover
 
 # Trigger mirror re-sync after recovery
-curl -X POST https://api.clipper.gg/v1/mirrors/sync
+curl -X POST https://api.clpr.gg/v1/mirrors/sync
 ```
 
 ## Incident Response
@@ -324,12 +324,12 @@ Follow-up: [Link to post-mortem]
 
 ```bash
 # 1. Create base backup from primary
-pg_basebackup -h primary.db.clipper.gg -D /var/lib/postgresql/replica -U replication -v -P
+pg_basebackup -h primary.db.clpr.gg -D /var/lib/postgresql/replica -U replication -v -P
 
 # 2. Configure recovery.conf
 cat > /var/lib/postgresql/replica/recovery.conf <<EOF
 standby_mode = 'on'
-primary_conninfo = 'host=primary.db.clipper.gg port=5432 user=replication'
+primary_conninfo = 'host=primary.db.clpr.gg port=5432 user=replication'
 trigger_file = '/tmp/postgresql.trigger'
 EOF
 
@@ -351,8 +351,8 @@ psql -h primary -c "SELECT * FROM pg_stat_replication;"
 pg_ctl promote -D /var/lib/postgresql/replica
 
 # 3. Update application
-export DB_HOST=replica.db.clipper.gg
-systemctl restart clipper-api
+export DB_HOST=replica.db.clpr.gg
+systemctl restart clpr-api
 
 # 4. Monitor for issues (30 minutes)
 
@@ -386,13 +386,13 @@ export CDN_ENABLED=true
 
 ```bash
 # Full re-sync of all mirrors
-curl -X POST https://api.clipper.gg/v1/admin/mirrors/resync
+curl -X POST https://api.clpr.gg/v1/admin/mirrors/resync
 
 # Re-sync specific region
-curl -X POST https://api.clipper.gg/v1/admin/mirrors/resync?region=us-east-1
+curl -X POST https://api.clpr.gg/v1/admin/mirrors/resync?region=us-east-1
 
 # Force expire old mirrors
-curl -X POST https://api.clipper.gg/v1/admin/mirrors/cleanup
+curl -X POST https://api.clpr.gg/v1/admin/mirrors/cleanup
 ```
 
 ## Troubleshooting
@@ -439,10 +439,10 @@ pg_ctl -D /var/lib/postgresql/replica restart
 
 ```bash
 # Check cache statistics
-curl https://api.clipper.gg/v1/cdn/stats
+curl https://api.clpr.gg/v1/cdn/stats
 
 # Verify cache headers
-curl -I https://cdn.clipper.gg/clips/example.mp4
+curl -I https://cdn.clpr.gg/clips/example.mp4
 
 # Solutions:
 # - Increase Cache-Control max-age
@@ -454,10 +454,10 @@ curl -I https://cdn.clipper.gg/clips/example.mp4
 
 ```bash
 # Get cost breakdown
-curl https://api.clipper.gg/v1/cdn/costs
+curl https://api.clpr.gg/v1/cdn/costs
 
 # Analyze by region
-curl https://api.clipper.gg/v1/cdn/costs?breakdown=region
+curl https://api.clpr.gg/v1/cdn/costs?breakdown=region
 
 # Solutions:
 # - Optimize cache TTL
@@ -471,10 +471,10 @@ curl https://api.clipper.gg/v1/cdn/costs?breakdown=region
 
 ```bash
 # Check mirror statistics
-curl https://api.clipper.gg/v1/mirrors/stats
+curl https://api.clpr.gg/v1/mirrors/stats
 
 # Analyze by region
-curl https://api.clipper.gg/v1/mirrors/stats?region=all
+curl https://api.clpr.gg/v1/mirrors/stats?region=all
 
 # Solutions:
 # - Lower replication threshold

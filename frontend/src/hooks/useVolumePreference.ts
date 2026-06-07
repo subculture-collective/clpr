@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Volume preference key for localStorage
-const VOLUME_PREF_KEY = 'clipper_video_muted';
+const VOLUME_PREF_KEY = 'clpr_video_muted';
 
 /**
  * Custom hook to manage video volume preference across the application.

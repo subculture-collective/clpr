@@ -76,6 +76,6 @@ export interface ExtensionConfig {
 }
 
 export const DEFAULT_CONFIG: ExtensionConfig = {
-  apiBaseUrl: 'https://api.clipper.gg/api/v1',
-  frontendUrl: 'https://clipper.gg',
+  apiBaseUrl: 'https://api.clpr.gg/api/v1',
+  frontendUrl: 'https://clpr.gg',
 };

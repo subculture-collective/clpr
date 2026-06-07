@@ -22,13 +22,13 @@ For complete operational procedures including monitoring, incident response, dep
 
 ```bash
 # Deploy new version
-kubectl set image deployment/backend backend=clipper:v1.2.3 -n clipper
+kubectl set image deployment/backend backend=clpr:v1.2.3 -n clpr
 
 # Check rollout status
-kubectl rollout status deployment/backend -n clipper
+kubectl rollout status deployment/backend -n clpr
 
 # Rollback if needed
-kubectl rollout undo deployment/backend -n clipper
+kubectl rollout undo deployment/backend -n clpr
 ```
 
 ### Pre-Deployment Checklist
@@ -52,8 +52,8 @@ kubectl rollout undo deployment/backend -n clipper
 
 ### Post-Deployment Verification
 
-1. Check service health: `kubectl get pods -n clipper`
-2. Check logs: `kubectl logs -f deployment/backend -n clipper`
+1. Check service health: `kubectl get pods -n clpr`
+2. Check logs: `kubectl logs -f deployment/backend -n clpr`
 3. Verify metrics in Grafana
 4. Run smoke tests
 5. Monitor for 30 minutes
@@ -62,16 +62,16 @@ kubectl rollout undo deployment/backend -n clipper
 
 ### Deployment Stuck
 
-1. Check pod events: `kubectl describe pod <pod-name> -n clipper`
+1. Check pod events: `kubectl describe pod <pod-name> -n clpr`
 2. Check resource limits and quotas
 3. Verify image pull credentials
 4. Check for failing health checks
 
 ### Rolling Update Failed
 
-1. Check rollout status: `kubectl rollout status deployment/backend -n clipper`
+1. Check rollout status: `kubectl rollout status deployment/backend -n clpr`
 2. Review pod logs for errors
-3. Rollback: `kubectl rollout undo deployment/backend -n clipper`
+3. Rollback: `kubectl rollout undo deployment/backend -n clpr`
 4. Investigate and fix issues before re-deploying
 
 ## Related Documentation

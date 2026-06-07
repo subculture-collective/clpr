@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/subculture-collective/clipper/internal/models"
-	"github.com/subculture-collective/clipper/internal/repository"
-	"github.com/subculture-collective/clipper/pkg/metrics"
-	"github.com/subculture-collective/clipper/pkg/twitch"
-	"github.com/subculture-collective/clipper/pkg/utils"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
+	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // TwitchClientInterface defines the interface for Twitch client operations

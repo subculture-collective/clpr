@@ -46,7 +46,7 @@ The service maps Twitch API errors to structured error codes for consistent erro
 ```go
 import (
     "context"
-    "github.com/subculture-collective/clipper/pkg/twitch"
+    "git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 )
 
 // Initialize client (done during app startup)

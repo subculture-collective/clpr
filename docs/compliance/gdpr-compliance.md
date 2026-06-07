@@ -288,13 +288,13 @@ The following features from the comprehensive GDPR issue are **not implemented**
 
 - **Status:** Not implemented as automated feature
 - **Rationale:** This right applies to specific circumstances (accuracy disputes, legal claims, etc.) and is rarely exercised. GDPR allows handling via support tickets.
-- **Alternative:** Users can contact <privacy@clipper.gg> for restriction requests, which can be handled manually.
+- **Alternative:** Users can contact <privacy@clpr.gg> for restriction requests, which can be handled manually.
 
 ### 4. Right to Object to Processing (Article 21)
 
 - **Status:** Partially implemented (cookie consent covers marketing/analytics)
 - **Rationale:** Cookie consent system allows users to object to marketing and analytics processing. Other objections are rare and can be handled via support.
-- **Alternative:** Cookie Settings + <privacy@clipper.gg> for specific objection requests.
+- **Alternative:** Cookie Settings + <privacy@clpr.gg> for specific objection requests.
 
 ### 5. Email Notifications for Request Lifecycle
 
@@ -371,8 +371,8 @@ The following features from the comprehensive GDPR issue are **not implemented**
 ## Contact Information
 
 For privacy inquiries, data subject requests, or compliance questions:
-- **Email:** <privacy@clipper.gg>
-- **Data Protection Officer:** Available via <support@clipper.gg>
+- **Email:** <privacy@clpr.gg>
+- **Data Protection Officer:** Available via <support@clpr.gg>
 
 ## References
 

@@ -48,24 +48,24 @@ This runbook covers Horizontal Pod Autoscaler (HPA) operations, troubleshooting,
 
 ```bash
 # List all HPAs
-kubectl get hpa -n clipper-production
+kubectl get hpa -n clpr-production
 
 # Detailed HPA status
-kubectl describe hpa clipper-backend -n clipper-production
-kubectl describe hpa clipper-frontend -n clipper-production
+kubectl describe hpa clpr-backend -n clpr-production
+kubectl describe hpa clpr-frontend -n clpr-production
 
 # Watch HPA in real-time
-kubectl get hpa -n clipper-production -w
+kubectl get hpa -n clpr-production -w
 ```
 
 ### Check Current Metrics
 
 ```bash
 # Resource metrics (CPU/Memory)
-kubectl top pods -n clipper-production
+kubectl top pods -n clpr-production
 
 # Custom metrics via Prometheus Adapter
-kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/clipper-production/pods/*/http_requests_per_second" | jq .
+kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/clpr-production/pods/*/http_requests_per_second" | jq .
 
 # Check metrics-server health
 kubectl get apiservice v1beta1.metrics.k8s.io
@@ -78,10 +78,10 @@ kubectl get apiservice v1beta1.custom.metrics.k8s.io
 
 ```bash
 # Temporarily override HPA (not recommended for production)
-kubectl scale deployment clipper-backend -n clipper-production --replicas=5
+kubectl scale deployment clpr-backend -n clpr-production --replicas=5
 
 # Re-enable HPA
-kubectl patch hpa clipper-backend -n clipper-production -p '{"spec":{"minReplicas":3}}'
+kubectl patch hpa clpr-backend -n clpr-production -p '{"spec":{"minReplicas":3}}'
 ```
 
 ## Troubleshooting
@@ -94,13 +94,13 @@ kubectl patch hpa clipper-backend -n clipper-production -p '{"spec":{"minReplica
 **Investigation**:
 ```bash
 # Check current load
-kubectl top pods -n clipper-production -l app.kubernetes.io/name=clipper-backend
+kubectl top pods -n clpr-production -l app.kubernetes.io/name=clpr-backend
 
 # Check custom metrics
-kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/clipper-production/pods/*/http_requests_per_second" | jq .
+kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/clpr-production/pods/*/http_requests_per_second" | jq .
 
 # Review recent scaling events
-kubectl describe hpa clipper-backend -n clipper-production | grep -A 20 "Events:"
+kubectl describe hpa clpr-backend -n clpr-production | grep -A 20 "Events:"
 ```
 
 **Resolution**:
@@ -112,11 +112,11 @@ kubectl describe hpa clipper-backend -n clipper-production | grep -A 20 "Events:
 **Update maxReplicas**:
 ```bash
 # Edit HPA directly (temporary)
-kubectl edit hpa clipper-backend -n clipper-production
+kubectl edit hpa clpr-backend -n clpr-production
 
 # Or update values and redeploy (permanent)
 # Edit helm/charts/backend/values.yaml
-# Then: helm upgrade clipper-backend ./helm/charts/backend
+# Then: helm upgrade clpr-backend ./helm/charts/backend
 ```
 
 ### HPA Unable to Scale
@@ -127,16 +127,16 @@ kubectl edit hpa clipper-backend -n clipper-production
 **Investigation**:
 ```bash
 # Check HPA conditions
-kubectl describe hpa clipper-backend -n clipper-production
+kubectl describe hpa clpr-backend -n clpr-production
 
 # Check node capacity
 kubectl top nodes
 
 # Check resource quotas
-kubectl describe resourcequota -n clipper-production
+kubectl describe resourcequota -n clpr-production
 
 # Check pod scheduling
-kubectl get pods -n clipper-production -o wide
+kubectl get pods -n clpr-production -o wide
 kubectl describe nodes
 ```
 
@@ -149,13 +149,13 @@ kubectl describe nodes
 **Resolution**:
 ```bash
 # Scale cluster (GKE example)
-gcloud container clusters resize clipper-prod --num-nodes=5
+gcloud container clusters resize clpr-prod --num-nodes=5
 
 # Or enable cluster autoscaler
-gcloud container clusters update clipper-prod --enable-autoscaling --min-nodes=3 --max-nodes=10
+gcloud container clusters update clpr-prod --enable-autoscaling --min-nodes=3 --max-nodes=10
 
 # Check and adjust resource quotas if needed
-kubectl get resourcequota -n clipper-production
+kubectl get resourcequota -n clpr-production
 ```
 
 ### HPA Metrics Unavailable
@@ -175,7 +175,7 @@ kubectl logs -n custom-metrics deployment/prometheus-adapter
 
 # Test metrics API
 kubectl top nodes
-kubectl top pods -n clipper-production
+kubectl top pods -n clpr-production
 ```
 
 **Resolution**:
@@ -192,7 +192,7 @@ kubectl get pods -n kube-system -l k8s-app=metrics-server
 2. **Prometheus Adapter Issues**:
 ```bash
 # Check Prometheus connectivity
-kubectl exec -it -n custom-metrics deployment/prometheus-adapter -- wget -O- http://clipper-monitoring-prometheus-server.clipper-monitoring.svc:9090/-/healthy
+kubectl exec -it -n custom-metrics deployment/prometheus-adapter -- wget -O- http://clpr-monitoring-prometheus-server.clpr-monitoring.svc:9090/-/healthy
 
 # Restart prometheus-adapter
 kubectl rollout restart deployment/prometheus-adapter -n custom-metrics
@@ -204,10 +204,10 @@ kubectl logs -n custom-metrics deployment/prometheus-adapter --tail=100
 3. **Application not exposing metrics**:
 ```bash
 # Check if app exposes metrics
-kubectl exec -it -n clipper-production deployment/clipper-backend -- wget -O- http://localhost:8080/debug/metrics
+kubectl exec -it -n clpr-production deployment/clpr-backend -- wget -O- http://localhost:8080/debug/metrics
 
 # Verify service monitor/scrape config
-kubectl get servicemonitor -n clipper-production
+kubectl get servicemonitor -n clpr-production
 ```
 
 ### HPA Frequent Scaling
@@ -224,13 +224,13 @@ kubectl get servicemonitor -n clipper-production
 **Investigation**:
 ```bash
 # Monitor HPA decisions over time
-kubectl get hpa clipper-backend -n clipper-production -w
+kubectl get hpa clpr-backend -n clpr-production -w
 
 # Check metrics trend
 # (Use Grafana dashboard or Prometheus)
 
 # Review HPA behavior configuration
-kubectl get hpa clipper-backend -n clipper-production -o yaml | grep -A 20 behavior
+kubectl get hpa clpr-backend -n clpr-production -o yaml | grep -A 20 behavior
 ```
 
 **Resolution**:
@@ -256,16 +256,16 @@ behavior:
 **Investigation**:
 ```bash
 # Check pod status
-kubectl get pods -n clipper-production -l app.kubernetes.io/name=clipper-backend
+kubectl get pods -n clpr-production -l app.kubernetes.io/name=clpr-backend
 
 # Check deployment rollout
-kubectl rollout status deployment/clipper-backend -n clipper-production
+kubectl rollout status deployment/clpr-backend -n clpr-production
 
 # Look for scheduling issues
-kubectl get events -n clipper-production --sort-by='.lastTimestamp' | head -20
+kubectl get events -n clpr-production --sort-by='.lastTimestamp' | head -20
 
 # Check for failing pods
-kubectl get pods -n clipper-production | grep -v Running
+kubectl get pods -n clpr-production | grep -v Running
 ```
 
 **Common Causes**:
@@ -288,7 +288,7 @@ kubectl get pods -n custom-metrics
 kubectl logs -n custom-metrics deployment/prometheus-adapter
 
 # Verify Prometheus connectivity
-kubectl port-forward -n clipper-monitoring svc/clipper-monitoring-prometheus-server 9090:9090
+kubectl port-forward -n clpr-monitoring svc/clpr-monitoring-prometheus-server 9090:9090
 # Then visit http://localhost:9090 and check targets
 
 # Test custom metrics API
@@ -305,7 +305,7 @@ kubectl edit configmap prometheus-adapter-config -n custom-metrics
 kubectl rollout restart deployment/prometheus-adapter -n custom-metrics
 
 # Verify metrics are available
-kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/clipper-production/pods/*/http_requests_per_second" | jq .
+kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/clpr-production/pods/*/http_requests_per_second" | jq .
 ```
 
 ### Metrics Server Down
@@ -343,13 +343,13 @@ kubectl apply -f infrastructure/k8s/base/metrics-server.yaml
 **Investigation**:
 ```bash
 # Check HPA evaluation interval (default: 15s)
-kubectl describe hpa clipper-backend -n clipper-production
+kubectl describe hpa clpr-backend -n clpr-production
 
 # Check metric collection lag
-kubectl top pods -n clipper-production
+kubectl top pods -n clpr-production
 
 # Review HPA events
-kubectl get events -n clipper-production --field-selector involvedObject.name=clipper-backend
+kubectl get events -n clpr-production --field-selector involvedObject.name=clpr-backend
 ```
 
 **Causes**:
@@ -413,7 +413,7 @@ Before production:
 hey -z 60s -c 100 https://clpr.tv/api/v1/clips
 
 # Monitor HPA response
-kubectl get hpa -n clipper-production -w
+kubectl get hpa -n clpr-production -w
 ```
 
 ### 6. Plan for Peak Traffic

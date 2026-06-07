@@ -101,7 +101,7 @@ describe('PrivacyPage', () => {
         );
 
         expect(screen.getByText('Contact Us')).toBeInTheDocument();
-        expect(screen.getByText(/privacy@clipper.com/i)).toBeInTheDocument();
+        expect(screen.getByText(/privacy@clpr.com/i)).toBeInTheDocument();
     });
 
     it('mentions third-party services', () => {

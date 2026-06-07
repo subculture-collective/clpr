@@ -311,7 +311,7 @@ check_backup_capability() {
     fi
     
     log_check "Backup directory"
-    BACKUP_DIR="${BACKUP_DIR:-/var/backups/clipper}"
+    BACKUP_DIR="${BACKUP_DIR:-/var/backups/clpr}"
     if [ -d "$BACKUP_DIR" ] && [ -w "$BACKUP_DIR" ]; then
         check_pass "Backup directory writable: $BACKUP_DIR"
     elif [ ! -d "$BACKUP_DIR" ]; then

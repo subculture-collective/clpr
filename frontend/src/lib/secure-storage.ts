@@ -4,12 +4,12 @@
  * Falls back to sessionStorage for environments without crypto support
  */
 
-const DB_NAME = 'clipper-secure-storage';
+const DB_NAME = 'clpr-secure-storage';
 const STORE_NAME = 'encrypted-data';
 const DB_VERSION = 1;
 
 // Encryption key storage key
-const ENCRYPTION_KEY_NAME = 'clipper-encryption-key';
+const ENCRYPTION_KEY_NAME = 'clpr-encryption-key';
 
 /**
  * Initialize IndexedDB

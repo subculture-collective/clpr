@@ -429,8 +429,8 @@ The framework follows established patterns, integrates seamlessly with existing 
 
 ## References
 
-- [Issue #837 - Search Relevance Evaluation Framework](https://github.com/subculture-collective/clipper/issues/837)
-- [Issue #805 - Related Search Improvements](https://github.com/subculture-collective/clipper/issues/805)
+- [Issue #837 - Search Relevance Evaluation Framework](https://git.subcult.tv/subculture-collective/clpr/issues/837)
+- [Issue #805 - Related Search Improvements](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 - [Rollout Plan](docs/HYBRID_SEARCH_ROLLOUT.md)
 - [Usage Guide](docs/GRID_SEARCH_README.md)
 - [Implementation Summary](docs/HYBRID_SEARCH_OPTIMIZATION_SUMMARY.md)

@@ -3,7 +3,7 @@
 ## One-Command Deploy
 
 ```bash
-cd ~/projects/clipper && ./scripts/deploy-vps.sh
+cd ~/projects/clpr && ./scripts/deploy-vps.sh
 ```
 
 ## Deploy Options
@@ -35,9 +35,9 @@ docker ps | grep vault
 docker network connect web vault
 
 # 4. Generate Vault AppRole credentials
-cd ~/projects/clipper
-vault read -field=role_id auth/approle/role/clipper-backend/role-id > vault/approle/role_id
-vault write -field=secret_id -f auth/approle/role/clipper-backend/secret-id > vault/approle/secret_id
+cd ~/projects/clpr
+vault read -field=role_id auth/approle/role/clpr-backend/role-id > vault/approle/role_id
+vault write -field=secret_id -f auth/approle/role/clpr-backend/secret-id > vault/approle/secret_id
 ```
 
 ## Post-Deploy: Configure Caddy
@@ -57,7 +57,7 @@ docker restart <caddy-container-name>
 docker compose -f docker-compose.vps.yml ps
 
 # 2. Test backend health
-docker exec clipper-backend wget -qO- http://localhost:8080/api/v1/health
+docker exec clpr-backend wget -qO- http://localhost:8080/api/v1/health
 
 # 3. Test via Caddy
 curl https://clpr.tv/api/v1/health
@@ -70,13 +70,13 @@ https://clpr.tv
 
 ### Vault agent can't connect
 ```bash
-# Find the actual clipper network name
-# It will be based on your project directory name (e.g., clipper_clipper-network)
-docker network ls | grep clipper
+# Find the actual clpr network name
+# It will be based on your project directory name (e.g., clpr_clpr-network)
+docker network ls | grep clpr
 
-# Connect Vault to networks (replace <clipper-network> with actual name)
+# Connect Vault to networks (replace <clpr-network> with actual name)
 docker network connect web vault
-docker network connect <clipper-network> vault
+docker network connect <clpr-network> vault
 
 # Restart vault-agent
 docker compose -f docker-compose.vps.yml restart vault-agent
@@ -85,23 +85,23 @@ docker compose -f docker-compose.vps.yml restart vault-agent
 ### Secrets not rendering
 ```bash
 # Check vault-agent logs
-docker logs -f clipper-vault-agent
+docker logs -f clpr-vault-agent
 
 # Verify AppRole files exist
 ls -l vault/approle/role_id vault/approle/secret_id
 
 # Test Vault connectivity
-docker exec clipper-vault-agent wget -qO- http://vault:8200/v1/sys/health
+docker exec clpr-vault-agent wget -qO- http://vault:8200/v1/sys/health
 ```
 
 ### Caddy shows 502
 ```bash
 # Ensure backend is on web network
-docker network inspect web | grep clipper-backend
+docker network inspect web | grep clpr-backend
 
 # If not, connect it
-docker network connect web clipper-backend
-docker network connect web clipper-frontend
+docker network connect web clpr-backend
+docker network connect web clpr-frontend
 
 # Reload Caddy
 docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile
@@ -111,9 +111,9 @@ docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile
 
 ```bash
 # View logs
-docker logs -f clipper-backend
-docker logs -f clipper-frontend
-docker logs -f clipper-vault-agent
+docker logs -f clpr-backend
+docker logs -f clpr-frontend
+docker logs -f clpr-vault-agent
 
 # Restart a service
 docker compose -f docker-compose.vps.yml restart backend
@@ -125,13 +125,13 @@ docker compose -f docker-compose.vps.yml down
 docker compose -f docker-compose.vps.yml up -d
 
 # View resource usage
-docker stats clipper-backend clipper-frontend clipper-postgres
+docker stats clpr-backend clpr-frontend clpr-postgres
 ```
 
 ## Emergency Rollback
 
 ```bash
-cd ~/projects/clipper
+cd ~/projects/clpr
 
 # Find previous commit
 git log --oneline -10
@@ -147,7 +147,7 @@ git reset --hard <commit-sha>
 
 ```bash
 # Update in Vault
-vault kv patch kv/clipper/backend KEY=new_value
+vault kv patch kv/clpr/backend KEY=new_value
 
 # Restart vault-agent
 docker compose -f docker-compose.vps.yml restart vault-agent
@@ -164,21 +164,21 @@ docker compose -f docker-compose.vps.yml restart backend
 docker network inspect web --format '{{range .Containers}}{{.Name}} {{end}}'
 
 # Check vault-agent rendered files
-docker exec clipper-vault-agent ls -lh /vault-agent/rendered/
+docker exec clpr-vault-agent ls -lh /vault-agent/rendered/
 
 # Test postgres connectivity
-docker exec clipper-postgres pg_isready -U clipper -d clipper_db
+docker exec clpr-postgres pg_isready -U clpr -d clpr_db
 
 # Test backend can resolve and reach postgres
-docker exec clipper-backend wget -qO- --timeout=5 http://postgres:5432 2>&1 || echo "Can resolve postgres"
-docker exec clipper-backend getent hosts postgres
+docker exec clpr-backend wget -qO- --timeout=5 http://postgres:5432 2>&1 || echo "Can resolve postgres"
+docker exec clpr-backend getent hosts postgres
 
 # Test backend can resolve and reach redis  
-docker exec clipper-backend wget -qO- --timeout=5 http://redis:6379 2>&1 || echo "Can resolve redis"
-docker exec clipper-backend getent hosts redis
+docker exec clpr-backend wget -qO- --timeout=5 http://redis:6379 2>&1 || echo "Can resolve redis"
+docker exec clpr-backend getent hosts redis
 
 # See all environment variables (sanitized)
-docker exec clipper-backend env | grep -v PASSWORD | grep -v SECRET | grep -v KEY
+docker exec clpr-backend env | grep -v PASSWORD | grep -v SECRET | grep -v KEY
 ```
 
 ## Full Documentation

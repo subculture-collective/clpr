@@ -51,7 +51,7 @@ go test -tags=integration ./tests/integration/premium/... -run "TestSubscription
 # Database
 export TEST_DATABASE_HOST=localhost
 export TEST_DATABASE_PORT=5437
-export TEST_DATABASE_NAME=clipper_test
+export TEST_DATABASE_NAME=clpr_test
 
 # Redis
 export TEST_REDIS_HOST=localhost

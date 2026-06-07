@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/subculture-collective/clipper/internal/utils"
-	"github.com/subculture-collective/clipper/pkg/twitch"
+	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 )
 
 func TestExtractClipID(t *testing.T) {

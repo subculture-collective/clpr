@@ -490,7 +490,7 @@ echo "Last log: $LAST_LOG"
 echo "Current time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 # Check database connection
-psql -h production-db.clpr.tv -U clipper_admin -d clipper_prod \
+psql -h production-db.clpr.tv -U clpr_admin -d clpr_prod \
   -c "SELECT COUNT(*), MAX(created_at) FROM audit_logs WHERE created_at > NOW() - INTERVAL '1 hour';"
 ```
 
@@ -507,10 +507,10 @@ curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
 **Database connection issue:**
 ```bash
 # Restart backend service
-sudo systemctl restart clipper-backend
+sudo systemctl restart clpr-backend
 
 # Or in Kubernetes
-kubectl rollout restart deployment/clipper-backend -n production
+kubectl rollout restart deployment/clpr-backend -n production
 ```
 
 **Queue backlog:**
@@ -544,8 +544,8 @@ END=$(date +%s%N)
 echo "Latency: $(( (END - START) / 1000000 ))ms"
 
 # Check database connections
-psql -h production-db.clpr.tv -U clipper_admin -d clipper_prod \
-  -c "SELECT COUNT(*), state FROM pg_stat_activity WHERE datname = 'clipper_prod' GROUP BY state;"
+psql -h production-db.clpr.tv -U clpr_admin -d clpr_prod \
+  -c "SELECT COUNT(*), state FROM pg_stat_activity WHERE datname = 'clpr_prod' GROUP BY state;"
 
 # Check cache hit rate
 redis-cli -h redis.clpr.tv INFO stats | grep keyspace_hits
@@ -556,12 +556,12 @@ redis-cli -h redis.clpr.tv INFO stats | grep keyspace_hits
 **Database connection pool full:**
 ```bash
 # Kill idle connections
-psql -h production-db.clpr.tv -U clipper_admin -d clipper_prod << SQL
+psql -h production-db.clpr.tv -U clpr_admin -d clpr_prod << SQL
 SELECT pg_terminate_backend(pid) 
 FROM pg_stat_activity 
 WHERE state = 'idle' 
   AND state_change < NOW() - INTERVAL '5 minutes'
-  AND datname = 'clipper_prod';
+  AND datname = 'clpr_prod';
 SQL
 ```
 
@@ -576,7 +576,7 @@ curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
 **Query optimization needed:**
 ```bash
 # Check slow queries
-psql -h production-db.clpr.tv -U clipper_admin -d clipper_prod \
+psql -h production-db.clpr.tv -U clpr_admin -d clpr_prod \
   -c "SELECT query, calls, mean_exec_time, max_exec_time 
       FROM pg_stat_statements 
       WHERE query LIKE '%bans%' OR query LIKE '%moderators%'

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // DistributedRateLimiter provides a Redis-backed distributed rate limiter

@@ -294,7 +294,7 @@ The system is ready for production deployment once the grid search tool is conne
 
 ## References
 
-- [Evaluation Framework (#837)](https://github.com/subculture-collective/clipper/issues/837)
-- [Related Issues (#805)](https://github.com/subculture-collective/clipper/issues/805)
+- [Evaluation Framework (#837)](https://git.subcult.tv/subculture-collective/clpr/issues/837)
+- [Related Issues (#805)](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 - [Rollout Plan](HYBRID_SEARCH_ROLLOUT.md)
 - [Usage Guide](GRID_SEARCH_README.md)

@@ -37,9 +37,9 @@ twitch/
 
 ```go
 import (
-    "github.com/subculture-collective/clipper/config"
-    "github.com/subculture-collective/clipper/pkg/twitch"
-    "github.com/subculture-collective/clipper/pkg/redis"
+    "git.subcult.tv/subculture-collective/clpr/config"
+    "git.subcult.tv/subculture-collective/clpr/pkg/twitch"
+    "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 // Create Redis client
@@ -239,8 +239,8 @@ REDIS_PORT=6379
 ## Dependencies
 
 - `github.com/redis/go-redis/v9` - Redis client
-- `github.com/subculture-collective/clipper/config` - Configuration management
-- `github.com/subculture-collective/clipper/pkg/redis` - Redis wrapper
+- `git.subcult.tv/subculture-collective/clpr/config` - Configuration management
+- `git.subcult.tv/subculture-collective/clpr/pkg/redis` - Redis wrapper
 
 ## Best Practices
 

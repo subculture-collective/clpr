@@ -1,7 +1,7 @@
 # Moderation System Monitoring Implementation Summary
 
-**Related Issue:** [#1021 - Set Up Monitoring & Alerts](https://github.com/subculture-collective/clipper/issues/1021)  
-**Epic:** [#1019 - Moderation System](https://github.com/subculture-collective/clipper/issues/1019)  
+**Related Issue:** [#1021 - Set Up Monitoring & Alerts](https://git.subcult.tv/subculture-collective/clpr/issues/1021)
+**Epic:** [#1019 - Moderation System](https://git.subcult.tv/subculture-collective/clpr/issues/1019)
 **Phase:** 5 - Production Readiness  
 **Date:** 2026-02-06
 
@@ -389,7 +389,7 @@ kubectl port-forward svc/grafana 3000:3000
 Already configured in `monitoring/prometheus.yml`:
 ```yaml
 scrape_configs:
-  - job_name: 'clipper-backend'
+  - job_name: 'clpr-backend'
     static_configs:
       - targets: ['backend:8080']
     metrics_path: '/debug/metrics'

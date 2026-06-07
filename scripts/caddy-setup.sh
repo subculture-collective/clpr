@@ -129,21 +129,21 @@ verify_config() {
     fi
     
     # Check if Caddy can see the backend
-    log "Checking if Caddy can reach clipper-backend..."
-    if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clipper-backend:8080/api/v1/health 2>/dev/null; then
-        success "Caddy can reach clipper-backend"
+    log "Checking if Caddy can reach clpr-backend..."
+    if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clpr-backend:8080/api/v1/health 2>/dev/null; then
+        success "Caddy can reach clpr-backend"
     else
-        warn "Caddy cannot reach clipper-backend"
-        log "Ensure clipper-backend is running and on the 'web' network"
+        warn "Caddy cannot reach clpr-backend"
+        log "Ensure clpr-backend is running and on the 'web' network"
     fi
     
     # Check if Caddy can see the frontend
-    log "Checking if Caddy can reach clipper-frontend..."
-    if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clipper-frontend:80/ 2>/dev/null >/dev/null; then
-        success "Caddy can reach clipper-frontend"
+    log "Checking if Caddy can reach clpr-frontend..."
+    if docker exec "$CADDY_CONTAINER" wget -qO- --timeout=5 http://clpr-frontend:80/ 2>/dev/null >/dev/null; then
+        success "Caddy can reach clpr-frontend"
     else
-        warn "Caddy cannot reach clipper-frontend"
-        log "Ensure clipper-frontend is running and on the 'web' network"
+        warn "Caddy cannot reach clpr-frontend"
+        log "Ensure clpr-frontend is running and on the 'web' network"
     fi
     
     # Check TLS certificate status

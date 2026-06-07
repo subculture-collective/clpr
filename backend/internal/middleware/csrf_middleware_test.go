@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/subculture-collective/clipper/config"
-	redispkg "github.com/subculture-collective/clipper/pkg/redis"
+	"git.subcult.tv/subculture-collective/clpr/config"
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 func TestCSRFMiddleware_SafeMethods(t *testing.T) {

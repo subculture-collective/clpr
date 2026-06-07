@@ -2,7 +2,7 @@
 
 > A modern, community-driven Twitch clip curation platform
 
-[![CI Status](https://github.com/subculture-collective/clipper/workflows/CI/badge.svg)](https://github.com/subculture-collective/clipper/actions)
+[![CI Status](https://git.subcult.tv/subculture-collective/clpr/workflows/CI/badge.svg)](https://git.subcult.tv/subculture-collective/clpr/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Clipper is a full-stack platform for discovering, curating, and sharing the best Twitch clips. It combines powerful search capabilities, community voting, and social features to help users find and organize memorable gaming moments.
@@ -30,8 +30,8 @@ Clipper is a full-stack platform for discovering, curating, and sharing the best
 
 \`\`\`bash
 # Clone the repository
-git clone https://github.com/subculture-collective/clipper.git
-cd clipper
+git clone https://git.subcult.tv/subculture-collective/clpr.git
+cd clpr
 
 # Copy environment files
 cp .env.development.example .env
@@ -171,13 +171,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 Links
 
 - **Documentation**: [docs/index.md](docs/index.md)
-- **Issue Tracker**: [GitHub Issues](https://github.com/subculture-collective/clipper/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/subculture-collective/clipper/discussions)
+- **Issue Tracker**: [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)
+- **Discussions**: [GitHub Discussions](https://git.subcult.tv/subculture-collective/clpr/discussions)
 - **Twitch API**: [Twitch Developer Docs](https://dev.twitch.tv/docs/api/)
 
 ## 🙏 Acknowledgments
 
-Built with ❤️ by the [Subculture Collective](https://github.com/subculture-collective)
+Built with ❤️ by the [Subculture Collective](https://git.subcult.tv/subculture-collective)
 
 Special thanks to:
 - The Twitch developer community

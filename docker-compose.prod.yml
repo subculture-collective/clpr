@@ -6,7 +6,7 @@ services:
         build:
             context: ./backend
             dockerfile: Dockerfile
-        container_name: clipper-backend
+        container_name: clpr-backend
         restart: unless-stopped
         depends_on:
             postgres:
@@ -34,43 +34,43 @@ services:
             - |
                 set -e
                 until [ -s /vault-agent/rendered/backend.env ]; do
-                  echo "[clipper-backend] waiting for Vault secrets..."
+                  echo "[clpr-backend] waiting for Vault secrets..."
                   sleep 1
                 done
-                echo "[clipper-backend] Sourcing secrets..."
+                echo "[clpr-backend] Sourcing secrets..."
                 set -a
                 . /vault-agent/rendered/backend.env
                 set +a
                 # Decode base64-encoded JWT keys
                 if [ -n "$${JWT_PRIVATE_KEY_B64:-}" ]; then
                   export JWT_PRIVATE_KEY=$$(echo "$$JWT_PRIVATE_KEY_B64" | base64 -d)
-                  echo "[clipper-backend] Decoded JWT_PRIVATE_KEY"
+                  echo "[clpr-backend] Decoded JWT_PRIVATE_KEY"
                 else
-                  echo "[clipper-backend] No JWT_PRIVATE_KEY_B64 found"
+                  echo "[clpr-backend] No JWT_PRIVATE_KEY_B64 found"
                 fi
                 if [ -n "$${JWT_PUBLIC_KEY_B64:-}" ]; then
                   export JWT_PUBLIC_KEY=$$(echo "$$JWT_PUBLIC_KEY_B64" | base64 -d)
-                  echo "[clipper-backend] Decoded JWT_PUBLIC_KEY"
+                  echo "[clpr-backend] Decoded JWT_PUBLIC_KEY"
                 else
-                  echo "[clipper-backend] No JWT_PUBLIC_KEY_B64 found"
+                  echo "[clpr-backend] No JWT_PUBLIC_KEY_B64 found"
                 fi
                 exec ./api
         volumes_from:
             - vault-agent # Share tmpfs mounts from vault-agent container
         networks:
-            clipper-network:
+            clpr-network:
                 aliases:
                     - backend
-                    - clipper-backend
+                    - clpr-backend
             web:
                 aliases:
-                    - clipper-backend
+                    - clpr-backend
 
     frontend:
         build:
             context: ./frontend
             dockerfile: Dockerfile
-        container_name: clipper-frontend
+        container_name: clpr-frontend
         restart: unless-stopped
         depends_on:
             - backend
@@ -88,14 +88,14 @@ services:
             retries: 3
             start_period: 5s
         networks:
-            - clipper-network
+            - clpr-network
             - web
 
     postgres:
         build:
             context: .
             dockerfile: Dockerfile.postgres
-        container_name: clipper-postgres
+        container_name: clpr-postgres
         restart: unless-stopped
         depends_on:
             vault-agent:
@@ -106,16 +106,16 @@ services:
             - |
                 set -e
                 until [ -s /vault-agent/rendered/postgres.env ]; do
-                  echo "[clipper-postgres] waiting for Vault secrets..."
+                  echo "[clpr-postgres] waiting for Vault secrets..."
                   sleep 1
                 done
-                echo "[clipper-postgres] Sourcing secrets..."
+                echo "[clpr-postgres] Sourcing secrets..."
                 set -a
                 . /vault-agent/rendered/postgres.env
                 set +a
-                export POSTGRES_DB=${POSTGRES_DB:-clipper_db}
-                export POSTGRES_USER=${POSTGRES_USER:-clipper}
-                echo "[clipper-postgres] Starting PostgreSQL..."
+                export POSTGRES_DB=${POSTGRES_DB:-clpr_db}
+                export POSTGRES_USER=${POSTGRES_USER:-clpr}
+                echo "[clpr-postgres] Starting PostgreSQL..."
                 exec docker-entrypoint.sh postgres
         ports:
             - '127.0.0.1:5436:5432' # Expose Postgres only on localhost
@@ -127,18 +127,18 @@ services:
             test:
                 [
                     'CMD-SHELL',
-                    'pg_isready -U ${POSTGRES_USER:-clipper} -d ${POSTGRES_DB:-clipper_db}',
+                    'pg_isready -U ${POSTGRES_USER:-clpr} -d ${POSTGRES_DB:-clpr_db}',
                 ]
             interval: 10s
             timeout: 5s
             retries: 5
             start_period: 10s
         networks:
-            - clipper-network
+            - clpr-network
 
     redis:
         image: redis:7-alpine
-        container_name: clipper-redis
+        container_name: clpr-redis
         restart: unless-stopped
         command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
         volumes:
@@ -150,11 +150,11 @@ services:
             retries: 5
             start_period: 5s
         networks:
-            - clipper-network
+            - clpr-network
 
     vault-agent:
         image: hashicorp/vault:1.17.5
-        container_name: clipper-vault-agent
+        container_name: clpr-vault-agent
         restart: unless-stopped
         cap_add:
             - IPC_LOCK # Required for mlock() to prevent secrets from being swapped to disk
@@ -172,14 +172,14 @@ services:
             VAULT_ADDR: http://vault:8200
             SKIP_SETCAP: 'true' # Skip setcap since we're using cap_add
         volumes:
-            - ./vault/config/clipper-backend-agent.hcl:/vault-agent/config.hcl:ro
+            - ./vault/config/clpr-backend-agent.hcl:/vault-agent/config.hcl:ro
             - ./vault/templates:/vault-agent/templates:ro
             - vault_agent_data:/vault-agent:rw # Single volume for all vault-agent writable data
         secrets:
-            - clipper_backend_role_id
-            - clipper_backend_secret_id
+            - clpr_backend_role_id
+            - clpr_backend_secret_id
         networks:
-            - clipper-network
+            - clpr-network
             - web
 
 volumes:
@@ -191,13 +191,13 @@ volumes:
         driver: local
 
 networks:
-    clipper-network:
+    clpr-network:
         driver: bridge
     web:
         external: true
 
 secrets:
-    clipper_backend_role_id:
+    clpr_backend_role_id:
         file: ./vault/approle/role_id
-    clipper_backend_secret_id:
+    clpr_backend_secret_id:
         file: ./vault/approle/secret_id

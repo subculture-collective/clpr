@@ -1,7 +1,7 @@
-path "kv/data/clipper/backend" {
+path "kv/data/clpr/backend" {
   capabilities = ["read", "create", "update"]
 }
 
-path "kv/metadata/clipper/backend" {
+path "kv/metadata/clpr/backend" {
   capabilities = ["read"]
 }

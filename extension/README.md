@@ -1,6 +1,6 @@
 # Clipper Browser Extension
 
-Share Twitch clips to [Clipper](https://clipper.gg) with one click.
+Share Twitch clips to [Clipper](https://clpr.gg) with one click.
 
 ## Features
 
@@ -75,7 +75,7 @@ npm run typecheck
 
 ## Configuration
 
-By default the extension points to the production Clipper API (`https://api.clipper.gg/api/v1`).
+By default the extension points to the production Clipper API (`https://api.clpr.gg/api/v1`).
 
 To point at a local backend, open the browser's extension storage inspector and set:
 
@@ -100,7 +100,7 @@ chrome.storage.local.set({
 The extension reads the `access_token` JWT cookie issued by the Clipper backend and sends it as a `Bearer` token.  To authenticate:
 
 1. Click the extension icon
-2. Click **Login with Twitch** – this opens `clipper.gg` in a new tab
+2. Click **Login with Twitch** – this opens `clpr.gg` in a new tab
 3. Complete the Twitch OAuth flow on the website
 4. Return to the extension popup – you should now be logged in
 
@@ -134,7 +134,7 @@ extension/
 ### Chrome Web Store
 
 1. Run `npm run build`
-2. Zip the `dist/` folder: `cd dist && zip -r ../clipper-extension.zip .`
+2. Zip the `dist/` folder: `cd dist && zip -r ../clpr-extension.zip .`
 3. Upload to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 
 ### Firefox Add-ons (AMO)

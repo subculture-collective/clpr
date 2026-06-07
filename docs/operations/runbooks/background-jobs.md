@@ -46,22 +46,22 @@ All background jobs expose the following Prometheus metrics:
 
 1. Check job logs for error messages:
    ```bash
-   kubectl logs -f deployment/backend -n clipper | grep "job_name"
+   kubectl logs -f deployment/backend -n clpr | grep "job_name"
    ```
 
 2. Identify error patterns in recent logs:
    ```bash
-   kubectl logs deployment/backend -n clipper --tail=1000 | grep -i "error\|failed"
+   kubectl logs deployment/backend -n clpr --tail=1000 | grep -i "error\|failed"
    ```
 
 3. Check dependent services:
-   - Database connectivity: `kubectl get pods -n clipper | grep postgres`
-   - Redis connectivity: `kubectl get pods -n clipper | grep redis`
+   - Database connectivity: `kubectl get pods -n clpr | grep postgres`
+   - Redis connectivity: `kubectl get pods -n clpr | grep redis`
    - External APIs (Twitch, OpenSearch): Check network and API status
 
 4. Review recent changes:
    ```bash
-   kubectl rollout history deployment/backend -n clipper
+   kubectl rollout history deployment/backend -n clpr
    ```
 
 #### Resolution
@@ -81,32 +81,32 @@ All background jobs expose the following Prometheus metrics:
 
 1. Immediate: Check if service is healthy:
    ```bash
-   kubectl get pods -n clipper -l app=backend
-   kubectl describe pod <pod-name> -n clipper
+   kubectl get pods -n clpr -l app=backend
+   kubectl describe pod <pod-name> -n clpr
    ```
 
 2. Check for cascading failures:
    ```bash
-   kubectl logs deployment/backend -n clipper --tail=500 | grep -E "panic|fatal|critical"
+   kubectl logs deployment/backend -n clpr --tail=500 | grep -E "panic|fatal|critical"
    ```
 
 3. Verify database and cache health:
    ```bash
-   kubectl exec -it postgres-pod -n clipper -- psql -U clipper -c "SELECT 1;"
-   kubectl exec -it redis-pod -n clipper -- redis-cli PING
+   kubectl exec -it postgres-pod -n clpr -- psql -U clpr -c "SELECT 1;"
+   kubectl exec -it redis-pod -n clpr -- redis-cli PING
    ```
 
 #### Resolution
 
 - **Immediate**: If recent deployment, rollback:
   ```bash
-  kubectl rollout undo deployment/backend -n clipper
+  kubectl rollout undo deployment/backend -n clpr
   ```
 - **Database down**: Restart database pod or check cloud provider status
 - **Code panic**: Review panic stack traces, deploy hotfix
 - **Resource exhaustion**: Scale deployment immediately:
   ```bash
-  kubectl scale deployment backend --replicas=5 -n clipper
+  kubectl scale deployment backend --replicas=5 -n clpr
   ```
 
 ### Job Not Running (Stale)
@@ -119,18 +119,18 @@ All background jobs expose the following Prometheus metrics:
 
 1. Check if job is scheduled to run:
    ```bash
-   kubectl logs deployment/backend -n clipper | grep "Starting.*scheduler"
+   kubectl logs deployment/backend -n clpr | grep "Starting.*scheduler"
    ```
 
 2. Verify job didn't get stuck:
    ```bash
-   kubectl top pods -n clipper
+   kubectl top pods -n clpr
    # Look for high CPU usage that might indicate stuck job
    ```
 
 3. Check for deadlocks or long-running operations:
    ```bash
-   kubectl exec -it postgres-pod -n clipper -- psql -U clipper -c \
+   kubectl exec -it postgres-pod -n clpr -- psql -U clpr -c \
      "SELECT pid, now() - pg_stat_activity.query_start AS duration, query 
       FROM pg_stat_activity 
       WHERE state = 'active' 
@@ -141,11 +141,11 @@ All background jobs expose the following Prometheus metrics:
 
 - **Job stuck**: Restart backend pod:
   ```bash
-  kubectl rollout restart deployment/backend -n clipper
+  kubectl rollout restart deployment/backend -n clpr
   ```
 - **Database lock**: Kill long-running query:
   ```bash
-  kubectl exec -it postgres-pod -n clipper -- psql -U clipper -c \
+  kubectl exec -it postgres-pod -n clpr -- psql -U clpr -c \
     "SELECT pg_terminate_backend(<pid>);"
   ```
 - **Configuration issue**: Check job interval settings in environment variables
@@ -160,18 +160,18 @@ All background jobs expose the following Prometheus metrics:
 
 1. Verify job is enabled and configured:
    ```bash
-   kubectl get configmap backend-config -n clipper -o yaml
+   kubectl get configmap backend-config -n clpr -o yaml
    ```
 
 2. Check for panic recovery or restart loops:
    ```bash
-   kubectl describe pod <backend-pod> -n clipper
+   kubectl describe pod <backend-pod> -n clpr
    # Look at restart count and events
    ```
 
 3. Review error logs for the specific job:
    ```bash
-   kubectl logs deployment/backend -n clipper --since=24h | grep "<job_name>"
+   kubectl logs deployment/backend -n clpr --since=24h | grep "<job_name>"
    ```
 
 #### Resolution
@@ -190,7 +190,7 @@ All background jobs expose the following Prometheus metrics:
 
 1. Check database query performance:
    ```bash
-   kubectl exec -it postgres-pod -n clipper -- psql -U clipper -c \
+   kubectl exec -it postgres-pod -n clpr -- psql -U clpr -c \
      "SELECT query, calls, mean_exec_time, max_exec_time 
       FROM pg_stat_statements 
       ORDER BY mean_exec_time DESC 
@@ -199,12 +199,12 @@ All background jobs expose the following Prometheus metrics:
 
 2. Analyze slow queries:
    ```bash
-   kubectl logs deployment/backend -n clipper | grep "slow query\|took.*ms"
+   kubectl logs deployment/backend -n clpr | grep "slow query\|took.*ms"
    ```
 
 3. Check for lock contention:
    ```bash
-   kubectl exec -it postgres-pod -n clipper -- psql -U clipper -c \
+   kubectl exec -it postgres-pod -n clpr -- psql -U clpr -c \
      "SELECT * FROM pg_locks WHERE NOT granted;"
    ```
 
@@ -251,7 +251,7 @@ All background jobs expose the following Prometheus metrics:
 
 - **Emergency**: Scale backend replicas immediately:
   ```bash
-  kubectl scale deployment backend --replicas=10 -n clipper
+  kubectl scale deployment backend --replicas=10 -n clpr
   ```
 - **Clear queue**: If items are stale, consider manual cleanup
 - **Root cause**: Fix underlying processing issue before scaling down
@@ -289,7 +289,7 @@ Key panels:
 
 ```bash
 # Connect to backend pod
-kubectl exec -it <backend-pod> -n clipper -- /bin/sh
+kubectl exec -it <backend-pod> -n clpr -- /bin/sh
 
 # Trigger job via API (if available)
 curl -X POST http://localhost:8080/admin/jobs/trigger \
@@ -301,13 +301,13 @@ curl -X POST http://localhost:8080/admin/jobs/trigger \
 
 Update environment variables in deployment and redeploy:
 ```bash
-kubectl rollout restart deployment/backend -n clipper
+kubectl rollout restart deployment/backend -n clpr
 ```
 
 ### Check Job Configuration
 
 ```bash
-kubectl exec -it <backend-pod> -n clipper -- env | grep -i "interval\|job"
+kubectl exec -it <backend-pod> -n clpr -- env | grep -i "interval\|job"
 ```
 
 ## Escalation

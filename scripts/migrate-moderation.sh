@@ -202,7 +202,7 @@ create_backup() {
         log_warn "Creating manual backup..."
         
         # Manual backup
-        BACKUP_DIR="${BACKUP_DIR:-/tmp/clipper-backups}"
+        BACKUP_DIR="${BACKUP_DIR:-/tmp/clpr-backups}"
         mkdir -p "$BACKUP_DIR"
         BACKUP_FILE="$BACKUP_DIR/moderation-pre-migration-$(date +%Y%m%d-%H%M%S).sql"
         
