@@ -306,6 +306,11 @@ const QueueTheatrePage = lazy(() =>
         default: m.QueueTheatrePage,
     })),
 );
+const StreamerClipRoomPage = lazy(() =>
+    import('./pages/StreamerClipRoomPage').then(m => ({
+        default: m.StreamerClipRoomPage,
+    })),
+);
 const StreamPage = lazy(() =>
     import('./pages/StreamPage').then(m => ({ default: m.StreamPage })),
 );
@@ -614,6 +619,14 @@ function App() {
                                             element={
                                                 <ProtectedRoute>
                                                     <QueueTheatrePage />
+                                                </ProtectedRoute>
+                                            }
+                                        />
+                                        <Route
+                                            path='/streamer-tools/:channel/clips'
+                                            element={
+                                                <ProtectedRoute>
+                                                    <StreamerClipRoomPage />
                                                 </ProtectedRoute>
                                             }
                                         />

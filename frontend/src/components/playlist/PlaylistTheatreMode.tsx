@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui';
 import { Tab } from '@/components/ui/Tab';
 import { CommentSection } from '@/components/comment/CommentSection';
+import type { ReactNode } from 'react';
 import type { Clip } from '@/types/clip';
 
 export interface PlaylistItem {
@@ -37,6 +38,14 @@ interface PlaylistTheatreModeProps {
     isQueue?: boolean; // True for queue, false for playlist
     contained?: boolean; // True for embedded mode, false for full-screen
     className?: string;
+    pendingLabel?: string;
+    commentsLabel?: string;
+    extraSidebarTab?: {
+        id: string;
+        label: string;
+        content: ReactNode;
+        count?: number;
+    };
 }
 
 export function PlaylistTheatreMode({
@@ -51,11 +60,18 @@ export function PlaylistTheatreMode({
     isQueue = false,
     contained = false,
     className,
+    pendingLabel,
+    commentsLabel,
+    extraSidebarTab,
 }: PlaylistTheatreModeProps) {
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const [showSidebar, setShowSidebar] = useState(true);
-    const [activeTab, setActiveTab] = useState<'queue' | 'chat'>('queue');
+    const [activeTab, setActiveTab] = useState<'queue' | 'chat' | 'extra'>(
+        'queue',
+    );
+    const pendingTabLabel = pendingLabel ?? (isQueue ? 'Queue' : 'Playlist');
+    const commentsTabLabel = commentsLabel ?? 'Comments';
     // Find current item and clip
     const currentItem = useMemo(
         () => items.find(item => item.id === currentItemId),
@@ -89,6 +105,12 @@ export function PlaylistTheatreMode({
             onItemClick(items[currentIndex - 1]);
         }
     }, [items, currentItemId, onItemClick]);
+
+    useEffect(() => {
+        if (!extraSidebarTab && activeTab === 'extra') {
+            setActiveTab('queue');
+        }
+    }, [extraSidebarTab, activeTab]);
 
     // Drag and drop handlers
     const handleDragStart = useCallback((id: string) => {
@@ -335,7 +357,7 @@ export function PlaylistTheatreMode({
                     <button
                         onClick={() => setShowSidebar(true)}
                         className='absolute top-4 right-4 z-10 p-2 bg-surface/80 hover:bg-surface-hover border border-border rounded-lg transition-colors cursor-pointer'
-                        aria-label='Show playlist'
+                        aria-label={`Show ${pendingTabLabel.toLowerCase()}`}
                     >
                         <ChevronLeft className='h-5 w-5 text-text-primary' />
                     </button>
@@ -376,52 +398,70 @@ export function PlaylistTheatreMode({
 
                         <Tab
                             tabs={[
-                                { id: 'queue', label: isQueue ? 'Queue' : 'Playlist' },
-                                { id: 'chat', label: 'Chat', badge: currentClip?.comment_count },
+                                { id: 'queue', label: pendingTabLabel },
+                                {
+                                    id: 'chat',
+                                    label: commentsTabLabel,
+                                    badge: currentClip?.comment_count,
+                                },
+                                ...(
+                                    extraSidebarTab
+                                        ? [
+                                              {
+                                                  id: 'extra',
+                                                  label: extraSidebarTab.label,
+                                                  badge: extraSidebarTab.count,
+                                              },
+                                          ]
+                                        : []
+                                ),
                             ]}
                             activeTab={activeTab}
-                            onTabChange={(id) => setActiveTab(id as 'queue' | 'chat')}
+                            onTabChange={id =>
+                                setActiveTab(id as 'queue' | 'chat' | 'extra')
+                            }
                         />
 
                         {/* Scrollable items list */}
                         {activeTab === 'queue' && (
-                        <div className='flex-1 overflow-y-auto'>
-                            {items.map((item, idx) => {
-                                const isCurrentItem = item.id === currentItemId;
-                                const isPlayed = !!item.played_at;
+                            <div className='flex-1 overflow-y-auto'>
+                                {items.map((item, idx) => {
+                                    const isCurrentItem =
+                                        item.id === currentItemId;
+                                    const isPlayed = !!item.played_at;
 
-                                return (
-                                    <div
-                                        key={item.id}
-                                        draggable={!!onReorder}
-                                        onDragStart={() =>
-                                            handleDragStart(item.id)
-                                        }
-                                        onDragOver={e =>
-                                            handleDragOver(e, item.id)
-                                        }
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={e => handleDrop(e, item.id)}
-                                        className={cn(
-                                            'group relative border-b border-border hover:bg-surface-hover transition-colors',
-                                            isCurrentItem &&
-                                                'bg-primary-500/20',
-                                            draggedId === item.id &&
-                                                'opacity-50',
-                                            dragOverId === item.id &&
-                                                'border-t-2 border-primary-500',
-                                        )}
-                                    >
-                                        <div className='flex gap-2 p-3'>
-                                            {/* Drag handle and number */}
-                                            <div className='flex items-center gap-2 text-text-tertiary'>
-                                                {onReorder && (
-                                                    <GripVertical className='h-4 w-4 cursor-grab active:cursor-grabbing' />
-                                                )}
-                                                <span className='text-xs font-mono w-6 text-right'>
-                                                    {idx + 1}
-                                                </span>
-                                            </div>
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            draggable={!!onReorder}
+                                            onDragStart={() =>
+                                                handleDragStart(item.id)
+                                            }
+                                            onDragOver={e =>
+                                                handleDragOver(e, item.id)
+                                            }
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={e => handleDrop(e, item.id)}
+                                            className={cn(
+                                                'group relative border-b border-border hover:bg-surface-hover transition-colors',
+                                                isCurrentItem &&
+                                                    'bg-primary-500/20',
+                                                draggedId === item.id &&
+                                                    'opacity-50',
+                                                dragOverId === item.id &&
+                                                    'border-t-2 border-primary-500',
+                                            )}
+                                        >
+                                            <div className='flex gap-2 p-3'>
+                                                {/* Drag handle and number */}
+                                                <div className='flex items-center gap-2 text-text-tertiary'>
+                                                    {onReorder && (
+                                                        <GripVertical className='h-4 w-4 cursor-grab active:cursor-grabbing' />
+                                                    )}
+                                                    <span className='text-xs font-mono w-6 text-right'>
+                                                        {idx + 1}
+                                                    </span>
+                                                </div>
 
                                             {/* Thumbnail */}
                                             <button
@@ -506,19 +546,28 @@ export function PlaylistTheatreMode({
                                                 </button>
                                             )}
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                        </div>
+                                    );
+                                })}
 
-                            {items.length === 0 && (
-                                <div className='text-center py-12 text-text-tertiary'>
-                                    <p>
-                                        No clips in{' '}
-                                        {isQueue ? 'queue' : 'playlist'}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                                {items.length === 0 && (
+                                    <div className='text-center py-12 text-text-tertiary'>
+                                        <p>
+                                            No clips in{' '}
+                                            {pendingTabLabel.toLowerCase()}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'extra' && extraSidebarTab && (
+                            <div
+                                className='flex-1 overflow-y-auto'
+                                data-sidebar-tab-id={extraSidebarTab.id}
+                            >
+                                {extraSidebarTab.content}
+                            </div>
                         )}
 
                         {activeTab === 'chat' && currentClip && (
@@ -531,7 +580,7 @@ export function PlaylistTheatreMode({
                         )}
                         {activeTab === 'chat' && !currentClip && (
                             <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm">
-                                Select a clip to see comments
+                                Select a clip to see {commentsTabLabel.toLowerCase()}
                             </div>
                         )}
 
@@ -607,12 +656,12 @@ export function PlaylistTheatreMode({
                                     <kbd className='px-1.5 py-0.5 bg-surface-raised rounded text-text-secondary'>
                                         Q
                                     </kbd>{' '}
-                                    Queue
+                                    {pendingTabLabel}
                                     {' • '}
                                     <kbd className='px-1.5 py-0.5 bg-surface-raised rounded text-text-secondary'>
                                         C
                                     </kbd>{' '}
-                                    Chat
+                                    {commentsTabLabel}
                                 </p>
                             </div>
                         </div>
