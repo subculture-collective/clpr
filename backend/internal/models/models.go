@@ -2279,6 +2279,7 @@ type BroadcasterLiveStatus struct {
 	UserLogin     *string    `json:"user_login,omitempty" db:"user_login"`
 	UserName      *string    `json:"user_name,omitempty" db:"user_name"`
 	IsLive        bool       `json:"is_live" db:"is_live"`
+	IsStale       bool       `json:"is_stale" db:"-"`
 	StreamTitle   *string    `json:"stream_title,omitempty" db:"stream_title"`
 	GameName      *string    `json:"game_name,omitempty" db:"game_name"`
 	ViewerCount   int        `json:"viewer_count" db:"viewer_count"`

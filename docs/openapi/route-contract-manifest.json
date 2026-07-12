@@ -949,7 +949,7 @@
     "path": "/api/v1/broadcasters/live",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*LiveStatusHandler).ListLiveBroadcasters-fm",
     "operation_id": "getApiV1BroadcastersLive",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -998,7 +998,7 @@
     "path": "/api/v1/broadcasters/{id}/live-status",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*LiveStatusHandler).GetBroadcasterLiveStatus-fm",
     "operation_id": "getApiV1BroadcastersIdLiveStatus",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

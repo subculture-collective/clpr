@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
+	"github.com/google/uuid"
 )
 
 // LiveStatusService handles live status updates and queries
@@ -372,7 +372,23 @@ func (s *LiveStatusService) logSyncEvent(ctx context.Context, broadcasterID stri
 
 // GetLiveStatus retrieves live status for a broadcaster
 func (s *LiveStatusService) GetLiveStatus(ctx context.Context, broadcasterID string) (*models.BroadcasterLiveStatus, error) {
-	return s.broadcasterRepo.GetLiveStatus(ctx, broadcasterID)
+	status, err := s.broadcasterRepo.GetLiveStatus(ctx, broadcasterID)
+	if err != nil {
+		return nil, err
+	}
+	markStaleLiveStatus(status, time.Now())
+	return status, nil
+}
+
+func markStaleLiveStatus(status *models.BroadcasterLiveStatus, now time.Time) {
+	if status.IsLive && now.Sub(status.LastChecked) > 2*time.Minute {
+		status.IsLive = false
+		status.IsStale = true
+		status.ViewerCount = 0
+		status.StreamTitle = nil
+		status.GameName = nil
+		status.StartedAt = nil
+	}
 }
 
 // ListLiveBroadcasters retrieves all currently live broadcasters

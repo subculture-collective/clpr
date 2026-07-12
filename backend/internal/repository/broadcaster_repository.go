@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // BroadcasterRepository handles database operations for broadcasters
@@ -245,7 +245,7 @@ func (r *BroadcasterRepository) GetLiveStatus(ctx context.Context, broadcasterID
 // ListLiveBroadcasters retrieves all currently live broadcasters
 func (r *BroadcasterRepository) ListLiveBroadcasters(ctx context.Context, limit, offset int) ([]models.BroadcasterLiveStatus, int, error) {
 	// Get total count of live broadcasters
-	countQuery := `SELECT COUNT(*) FROM broadcaster_live_status WHERE is_live = true`
+	countQuery := `SELECT COUNT(*) FROM broadcaster_live_status WHERE is_live = true AND last_checked >= NOW() - INTERVAL '2 minutes'`
 	var total int
 	if err := r.pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count live broadcasters: %w", err)
@@ -256,7 +256,7 @@ func (r *BroadcasterRepository) ListLiveBroadcasters(ctx context.Context, limit,
 		SELECT broadcaster_id, user_login, user_name, is_live, stream_title, game_name, viewer_count,
 		       started_at, last_checked, created_at, updated_at
 		FROM broadcaster_live_status
-		WHERE is_live = true
+		WHERE is_live = true AND last_checked >= NOW() - INTERVAL '2 minutes'
 		ORDER BY viewer_count DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -302,7 +302,7 @@ func (r *BroadcasterRepository) GetFollowedLiveBroadcasters(ctx context.Context,
 		       bls.created_at, bls.updated_at
 		FROM broadcaster_live_status bls
 		INNER JOIN broadcaster_follows bf ON bls.broadcaster_id = bf.broadcaster_id
-		WHERE bf.user_id = $1 AND bls.is_live = true
+		WHERE bf.user_id = $1 AND bls.is_live = true AND bls.last_checked >= NOW() - INTERVAL '2 minutes'
 		ORDER BY bls.viewer_count DESC
 	`
 	rows, err := r.pool.Query(ctx, query, userID)

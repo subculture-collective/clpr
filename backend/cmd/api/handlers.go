@@ -161,7 +161,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	}
 
 	if svcs.LiveStatus != nil {
-		liveStatusHandler = handlers.NewLiveStatusHandler(svcs.LiveStatus, svcs.Auth)
+		liveStatusHandler = handlers.NewLiveStatusHandler(svcs.LiveStatus)
 	}
 
 	// Initialize Twitch-related handlers

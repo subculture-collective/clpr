@@ -1,39 +1,39 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
-	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
+
+type liveStatusService interface {
+	GetLiveStatus(context.Context, string) (*models.BroadcasterLiveStatus, error)
+	ListLiveBroadcasters(context.Context, int, int) ([]models.BroadcasterLiveStatus, int, error)
+	GetFollowedLiveBroadcasters(context.Context, uuid.UUID) ([]models.BroadcasterLiveStatus, error)
+}
 
 // LiveStatusHandler handles live status HTTP requests
 type LiveStatusHandler struct {
-	liveStatusService *services.LiveStatusService
-	authService       *services.AuthService
+	liveStatusService liveStatusService
 }
 
 // NewLiveStatusHandler creates a new live status handler
-func NewLiveStatusHandler(
-	liveStatusService *services.LiveStatusService,
-	authService *services.AuthService,
-) *LiveStatusHandler {
-	return &LiveStatusHandler{
-		liveStatusService: liveStatusService,
-		authService:       authService,
-	}
+func NewLiveStatusHandler(liveStatusService liveStatusService) *LiveStatusHandler {
+	return &LiveStatusHandler{liveStatusService: liveStatusService}
 }
 
 // GetBroadcasterLiveStatus returns live status for a specific broadcaster
 // GET /api/v1/broadcasters/:id/live-status
 func (h *LiveStatusHandler) GetBroadcasterLiveStatus(c *gin.Context) {
 	broadcasterID := c.Param("id")
-	if broadcasterID == "" {
+	if broadcasterID == "" || len(broadcasterID) > 100 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "broadcaster_id is required"})
 		return
 	}
@@ -47,6 +47,7 @@ func (h *LiveStatusHandler) GetBroadcasterLiveStatus(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"broadcaster_id": broadcasterID,
 				"is_live":        false,
+				"is_stale":       false,
 				"viewer_count":   0,
 			})
 			return
@@ -65,14 +66,15 @@ func (h *LiveStatusHandler) ListLiveBroadcasters(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-
-	if page < 1 {
-		page = 1
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	offset := (page - 1) * limit
