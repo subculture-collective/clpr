@@ -3,7 +3,7 @@ title: "Feature Inventory"
 summary: "> **Last Updated**: 2026-01-14"
 tags: ["product"]
 area: "product"
-status: "stable"
+status: "draft"
 owner: "team-core"
 version: "1.0"
 last_reviewed: 2026-01-29
@@ -11,11 +11,15 @@ last_reviewed: 2026-01-29
 
 # Feature Inventory & Verification Map
 
-> **Last Updated**: 2026-01-14  
-> **Sweep**: Feature Inventory & Verification Sweep II  
-> **Purpose**: Complete inventory of all features in the Clipper platform, documenting status, location, tests, typing, and documentation coverage.  
-> **Scope**: Covers Backend API, Frontend Web, Mobile App, Infrastructure, and Documentation features.  
-> **Current Stats**: 61 Backend Handlers, 71 Backend Services, 80 Frontend Pages, 17 Mobile Screens, 15 CI/CD Workflows, 9 Deployment/Maintenance Scripts, 192 Backend Tests, 107 Frontend Tests
+> **Last Updated**: 2026-07-12
+>
+> **Sweep**: Production-readiness evidence correction
+>
+> **Purpose**: Complete inventory of all features in the Clipper platform, documenting status, location, tests, typing, and documentation coverage.
+>
+> **Scope**: Covers the tracked backend API, frontend web app, infrastructure, and documentation. Native mobile material is planning documentation only.
+>
+> **Current evidence**: 5 tracked workflows; no buildable mobile workspace; source CI and E2E release gates are under remediation.
 
 ---
 
@@ -43,16 +47,21 @@ last_reviewed: 2026-01-29
 
 ## Summary
 
-This inventory documents **270+ features** across the Clipper platform (updated 2026-01-14):
+This inventory is a pre-release catalog, not proof that every listed feature is
+release-ready. Status must be backed by registered routes, buildable clients,
+and executable tests. The production-readiness audit supersedes earlier raw
+counts that included planned or missing artifacts.
 
-- **Backend API**: 150+ endpoints across 61 handlers and 71 services
-- **Backend Tests**: 192 test files providing comprehensive coverage
-- **Frontend**: 80 pages and major components across web app
-- **Frontend Tests**: 107 test files (unit + integration + E2E)
-- **Mobile**: 17 screens/flows (React Native + Expo 52)
-- **Mobile Tests**: 8 test files with growing coverage
-- **Infrastructure**: 15 CI/CD workflows, 27 deployment scripts
-- **Documentation**: 300+ markdown files across /docs directory
+- **Backend**: Go API with a passing default test suite; integration and skip
+  coverage remain release gaps.
+- **Frontend**: React web app with a successful production build; lint, unit,
+  and browser gates remain under remediation.
+- **Mobile**: No tracked buildable application. Mobile documents describe a
+  possible future client and are not current product availability.
+- **Infrastructure**: Five tracked workflows at this revision; mandatory source
+  CI, browser, security, and performance gates are not yet present.
+- **Documentation**: Historical feature entries may still require evidence
+  correction. Use the status legend and remediation plan for release decisions.
 
 ### Status Legend
 
@@ -73,7 +82,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/auth/twitch`, `/api/v1/auth/twitch/callback`
 - **Frontend**: `AuthCallbackPage.tsx`, `LoginPage.tsx`
-- **Mobile**: `app/auth/login.tsx`
+- **Planned mobile design**: `app/auth/login.tsx` (workspace absent)
 - **Handlers**: `auth_handler.go`, `twitch_oauth_handler.go`
 - **Services**: `auth_service.go`
 - **Tests**: ✅ Handler tests exist
@@ -146,7 +155,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/clips/*`
 - **Frontend**: `ClipDetailPage.tsx`, clip components
-- **Mobile**: `app/clip/[id].tsx`
+- **Planned mobile design**: `app/clip/[id].tsx` (workspace absent)
 - **Handlers**: `clip_handler.go`
 - **Services**: `clip_service.go`
 - **Repository**: `clip_repository.go`
@@ -175,7 +184,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/submissions/*`
 - **Frontend**: `SubmitClipPage.tsx`, `UserSubmissionsPage.tsx`
-- **Mobile**: `app/submit/index.tsx`
+- **Planned mobile design**: `app/submit/index.tsx` (workspace absent)
 - **Handlers**: `submission_handler.go`
 - **Services**: `submission_service.go`, `submission_abuse_detection.go`
 - **Tests**: 🟡 partial
@@ -216,7 +225,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - Broadcaster-targeted scraping
 - Scheduled sync jobs (every 15 minutes)
 - Clip claiming by creators
-- CDN mirroring support
+- CDN mirroring design (disabled; provider implementations are incomplete)
 - Metadata enrichment
 - Auto-tagging
 
@@ -256,7 +265,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/clips/:id/favorite`, `/api/v1/favorites`
 - **Frontend**: `FavoritesPage.tsx`, favorite buttons
-- **Mobile**: `app/(tabs)/favorites.tsx`
+- **Planned mobile design**: `app/(tabs)/favorites.tsx` (workspace absent)
 - **Handlers**: `favorite_handler.go`
 - **Repository**: `favorite_repository.go`
 - **Tests**: ✅ Unit tests exist
@@ -283,7 +292,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/users/:id`, `/api/v1/users/by-username/:username`
 - **Frontend**: `UserProfilePage.tsx`, `ProfilePage.tsx`
-- **Mobile**: `app/(tabs)/profile.tsx`, `app/profile/[id].tsx`, `app/profile/edit.tsx`
+- **Planned mobile design**: `app/(tabs)/profile.tsx`, `app/profile/[id].tsx`, `app/profile/edit.tsx` (workspace absent)
 - **Handlers**: `user_handler.go`, `admin_user_handler.go`
 - **Repository**: `user_repository.go`
 - **Tests**: 🟡 partial
@@ -312,7 +321,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/users/me/settings`
 - **Frontend**: `SettingsPage.tsx`, `NotificationPreferencesPage.tsx`, `CookieSettingsPage.tsx`
-- **Mobile**: `app/settings/index.tsx`
+- **Planned mobile design**: `app/settings/index.tsx` (workspace absent)
 - **Handlers**: `user_settings_handler.go`
 - **Services**: `user_settings_service.go`
 - **Tests**: ✅ Unit tests exist
@@ -498,7 +507,7 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 - **Status**: ✅ complete (hybrid search)
 - **Backend**: `/api/v1/search`, `/api/v1/search/suggestions`, `/api/v1/search/scores`
 - **Frontend**: `SearchPage.tsx`
-- **Mobile**: `app/(tabs)/search.tsx`
+- **Planned mobile design**: `app/(tabs)/search.tsx` (workspace absent)
 - **Handlers**: `search_handler.go`
 - **Services**: `opensearch_search_service.go`, `hybrid_search_service.go`, `embedding_service.go`
 - **Repository**: `search_repository.go`
@@ -626,15 +635,15 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 
 #### 9.1 Live Stream Integration
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/streams/*`, `/api/v1/broadcasters/:id/live-status`
-- **Features**: Status tracking, follow, notifications, clip creation, scheduled updates
-- **Gaps**: Stream embed, VOD integration
+- **Status**: 🟡 partial | **Backend**: `/api/v1/streams/*`, `/api/v1/broadcasters/:id/live-status`
+- **Features**: Status tracking, follow, notifications, scheduled updates
+- **Gaps**: Live-feed UI is hidden. Stream clip creation is disabled by default pending real VOD resolution and durable job-state acceptance tests.
 
 #### 9.2 Watch Parties
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/watch-parties/*`
+- **Status**: 🟡 partial/disabled | **Backend**: `/api/v1/watch-parties/*` when `FEATURE_WATCH_PARTIES=true`
 - **Features**: Create parties, real-time sync, chat, reactions, analytics, discovery
-- **Gaps**: Screen sharing, voice chat
+- **Gaps**: Routes and navigation are disabled for launch; browser, privacy, authorization, and WebSocket resilience gates are incomplete.
 
 ---
 
@@ -702,11 +711,11 @@ This inventory documents **270+ features** across the Clipper platform (updated 
 
 #### 13.1 CI/CD Pipelines
 
-- **Status**: ✅ complete | **Workflows**: 15 GitHub Actions workflows
-- **Features**: Testing (CI, Playwright, Mobile), deployment (staging, production), security scanning (CodeQL, secrets), performance (lighthouse, load tests), documentation checks, Docker builds
-- **Workflows**: ci.yml, codeql.yml, deploy-production.yml, deploy-staging.yml, docker.yml, docs.yml, frontend-env-policy.yml, lighthouse.yml, load-tests.yml, mobile-ci.yml, playwright.yml, recommendation-evaluation.yml, search-evaluation.yml, secrets-scanning.yml, sync-issue-labels.yml
-- **Tests**: Workflow configurations validated
-- **Gaps**: None identified
+- **Status**: ⚠️ incomplete | **Workflows**: 5 tracked GitHub Actions workflows
+- **Features**: Documentation, OpenAPI, migration, backup, and restore checks
+- **Workflows**: `backup-validation.yml`, `docs.yml`, `migration-drills.yml`, `openapi.yml`, `restore-drill.yml`
+- **Tests**: Source build/test/browser/security gates are not currently enforced
+- **Gaps**: Mandatory source CI, Playwright, dependency/secret scanning, container scanning, performance budgets, and immutable release artifacts
 
 #### 13.2 Deployment & Infrastructure
 
@@ -879,24 +888,11 @@ For each feature category (25 categories above), create a GitHub issue using the
 
 ## Feature Status Summary
 
-| Category | Total Features | ✅ Complete | 🟡 Partial | ⚠️ Broken | 🔴 Stub |
-|----------|---------------|------------|-----------|----------|---------|
-| Authentication & Authorization | 3 | 3 | 0 | 0 | 0 |
-| Clip Management | 5 | 4 | 1 | 1 | 0 |
-| User Management & Profiles | 4 | 4 | 0 | 0 | 0 |
-| Social Features | 4 | 4 | 0 | 0 | 0 |
-| Search & Discovery | 4 | 3 | 1 | 0 | 0 |
-| Content Moderation | 4 | 4 | 0 | 0 | 0 |
-| Premium & Subscriptions | 2 | 2 | 0 | 0 | 0 |
-| Analytics & Metrics | 4 | 4 | 0 | 0 | 0 |
-| Live Streams & Watch Parties | 2 | 2 | 0 | 0 | 0 |
-| Community & Forums | 2 | 2 | 0 | 0 | 0 |
-| Webhooks & Integrations | 2 | 2 | 0 | 0 | 0 |
-| Admin & Moderation Tools | 4 | 4 | 0 | 0 | 0 |
-| Infrastructure & Operations | 23 | 23 | 0 | 0 | 0 |
-| **TOTAL** | **67** | **65** | **2** | **1** | **0** |
-
-**Overall Completion**: 97% features complete, 3% needing attention
+The former 97% completion summary was removed because it counted planned,
+disabled, placeholder, or unverified work as complete. A generated summary will
+replace it after route, client, documentation, and executable-test evidence can
+be joined in CI. Until then, the production-readiness gates—not a percentage in
+this document—are authoritative for launch decisions.
 
 **New Features Added Since 2024-12-24**:
 - Abuse Detection Analytics (Section 8.4)

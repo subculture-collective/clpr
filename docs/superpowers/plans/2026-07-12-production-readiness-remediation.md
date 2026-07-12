@@ -71,7 +71,7 @@ flowchart LR
 
 ### R0.2 — Prevent unsafe feature activation
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Backend + release engineering
 - **Work:** Add centrally validated, false-by-default flags for stream clip extraction, CDN, mirroring, live feed, and watch parties. Do not register mutating/expensive backend routes when disabled. Return a stable `feature_disabled` API error where route compatibility is required.
 - **Acceptance:** A production-profile test proves every incomplete feature is disabled without an explicit valid configuration; frontend navigation cannot expose disabled features.
@@ -79,7 +79,7 @@ flowchart LR
 
 ### R0.3 — Remove immediate secret exposure
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Backend security
 - **Work:** Remove private-key logging immediately. Permit ephemeral JWT keys only in an explicit development profile. Add a regression test that captures logs and proves key material is absent.
 - **Acceptance:** Staging/production startup fails if JWT key material is missing; development logs a fingerprint only.
@@ -87,7 +87,7 @@ flowchart LR
 
 ### R0.4 — Publish accurate pre-release scope
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Product + documentation
 - **Work:** Correct the README and feature inventory immediately: web client only; hidden/disabled features marked planned; CI/test counts derived from current evidence; obsolete quick-start links and commands removed or fixed.
 - **Acceptance:** No native-mobile, workflow-count, test-count, CDN, mirroring, live-feed, or watch-party completeness claim exceeds executable evidence.
@@ -451,3 +451,5 @@ Before each commit:
 | Date | Milestone | Result | Evidence/commit |
 |---|---|---|---|
 | 2026-07-12 | R0.1 plan and branch | Done | Branch created; `git diff --check` and Markdown lint pass |
+| 2026-07-12 | R0.2-R0.3 feature/key containment | Done | Focused route/key tests, full `go test ./...`, and `go vet ./...` pass |
+| 2026-07-12 | R0.4 truthful release scope | Done | README/inventory corrected; Markdown lint and `git diff --check` pass |

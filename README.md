@@ -7,64 +7,61 @@
 
 Clipper is a full-stack platform for discovering, curating, and sharing the best Twitch clips. It combines powerful search capabilities, community voting, and social features to help users find and organize memorable gaming moments.
 
+> **Pre-release scope:** The current repository ships a responsive web client and
+> Go API. Native mobile clients are design/planning work only; there is no
+> buildable `mobile/` workspace in this tree. Stream clip extraction, CDN
+> mirroring, live feed, and watch parties are disabled by default while their
+> production acceptance gates are completed. See the
+> [production-readiness remediation plan](docs/superpowers/plans/2026-07-12-production-readiness-remediation.md).
+
 ## ✨ Key Features
 
 - **🔍 Advanced Search**: Hybrid BM25 + semantic vector search with natural language queries
 - **⬆️ Community Curation**: Reddit-style voting, comments, and karma system
-- **📱 Multi-Platform**: Responsive web app + native iOS/Android apps
+- **📱 Responsive Web**: React web experience across desktop and mobile browsers
 - **💎 Premium Features**: Unlimited collections, advanced filters, and cross-device sync
-- **🎮 Twitch Integration**: OAuth login, live streams, and clip submission
-- **🚀 Modern Stack**: Go backend, React frontend, React Native mobile
+- **🎮 Twitch Integration**: OAuth login, broadcaster data, and clip submission
+- **🚀 Modern Stack**: Go backend and React frontend
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - **Docker** & **Docker Compose** (recommended)
-- **Node.js** 20+ (for frontend/mobile development)
+- **Node.js** 20+ (for frontend development)
 - **Go** 1.24+ (for backend development)
 - **PostgreSQL** 17+ (if running without Docker)
 - **Redis** 8+ (if running without Docker)
 
-### Getting Started with Docker
+### Current setup status
 
-\`\`\`bash
-# Clone the repository
-git clone https://git.subcult.tv/subculture-collective/clpr.git
-cd clpr
+The checked-in Compose file expects an operator-provided `.env` and existing
+external Docker networks. A supported clean-clone/full-stack bootstrap is an
+open release gate; do not use the old quick-start commands, which referenced a
+missing environment template and migration program.
 
-# Copy environment files
-cp .env.development.example .env
+Repository-owned checks that work without production credentials:
 
-# Start all services
-docker-compose up -d
-
-# Run database migrations
-cd backend
-go run cmd/migrate/main.go up
-
-# Access the application
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:8080
-# Docs: http://localhost:3000
-\`\`\`
-
-
-This will start all services in Docker containers.
+```bash
+cd backend && go test ./...
+cd ../frontend && npm ci && npm run build
+```
 
 ## Development Without Docker
 
-See the complete [Development Setup Guide](docs/setup/development.md) for detailed instructions.
+Backend commands and prerequisites are documented in the
+[backend README](backend/README.md). Frontend commands are defined in
+`frontend/package.json`. A single clean-clone setup guide is tracked as a
+release gate in the remediation plan.
 
 ## 📚 Documentation
 
 Comprehensive documentation is available in the [\`/docs\`](docs/) directory:
 
-- **[Getting Started](docs/setup/development.md)** - Development environment setup
-- **[User Guide](docs/users/user-guide.md)** - Using the platform
-- **[API Reference](docs/backend/api.md)** - REST API documentation
-- **[Architecture](docs/backend/architecture.md)** - System design and components
-- **[Deployment](docs/operations/deployment.md)** - General deployment guide
+- **[Backend](docs/backend/index.md)** - Backend documentation hub
+- **[Frontend](docs/frontend/index.md)** - Frontend documentation hub
+- **[API Reference](docs/openapi/README.md)** - OpenAPI documentation
+- **[Operations](docs/operations/index.md)** - Deployment and operations hub
 - **[Site Freshness Automation](docs/operations/SITE_FRESHNESS_AUTOMATION.md)** - Bootstrapping auto-refreshing public playlists
 - **[Contributing](docs/contributing.md)** - Contribution guidelines
 
@@ -74,11 +71,11 @@ Comprehensive documentation is available in the [\`/docs\`](docs/) directory:
 
 Clipper is built as a modern, scalable full-stack application:
 
-\`\`\`
-┌─────────────┐      ┌──────────────┐      ┌───────────────┐
-│   Web App   │      │  Mobile Apps │      │   Backend API │
-│  (React)    │─────▶│ (React Native)│─────▶│    (Go/Gin)   │
-└─────────────┘      └──────────────┘      └───────┬───────┘
+```
+┌─────────────┐                           ┌───────────────┐
+│   Web App   │──────────────────────────▶│   Backend API │
+│  (React)    │                           │    (Go/Gin)   │
+└─────────────┘                           └───────┬───────┘
                                                     │
                           ┌─────────────────────────┼─────────────────────┐
                           ▼                         ▼                     ▼
@@ -86,15 +83,14 @@ Clipper is built as a modern, scalable full-stack application:
                     │PostgreSQL│            │  Redis   │         │ OpenSearch  │
                     │  (Data)  │            │ (Cache)  │         │  (Search)   │
                     └──────────┘            └──────────┘         └─────────────┘
-\`\`\`
+```
 
 - **Frontend**: React 19 + TypeScript + Vite + TailwindCSS
-- **Mobile**: React Native 0.76 + Expo 52
 - **Backend**: Go 1.24 + Gin + PostgreSQL + Redis
 - **Search**: OpenSearch 2.11 with hybrid BM25 + vector search
 - **Infrastructure**: Docker, Kubernetes, GitHub Actions
 
-See [Architecture Documentation](docs/backend/architecture.md) for details.
+See the [backend documentation hub](docs/backend/index.md) for current details.
 
 ## 🛠️ Tech Stack
 
@@ -114,12 +110,6 @@ See [Architecture Documentation](docs/backend/architecture.md) for details.
 - **Routing**: React Router 7
 - **State**: TanStack Query + Zustand
 - **Forms**: React Hook Form
-
-### Mobile (iOS/Android)
-- **Framework**: React Native 0.76
-- **Platform**: Expo 52 with Expo Router
-- **Language**: TypeScript (shared types)
-- **State**: TanStack Query + Zustand
 
 ### Infrastructure
 - **Containers**: Docker & Docker Compose
@@ -170,4 +160,4 @@ Special thanks to:
 
 ---
 
-**Status**: Active Development | **Version**: v0.x (Pre-release) | **Target**: MVP Release Q2 2025
+**Status**: Active Development | **Version**: v0.x (Pre-release) | **Release gate**: [Remediation plan](docs/superpowers/plans/2026-07-12-production-readiness-remediation.md)
