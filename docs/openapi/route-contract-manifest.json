@@ -171,8 +171,8 @@
     "method": "POST",
     "path": "/api/v1/admin/broadcasters/refresh-rankings",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).RefreshBroadcasterRankings-fm",
-    "operation_id": "postApiV1AdminBroadcastersRefreshRankings",
-    "contract_level": "transitional"
+    "operation_id": "refreshBroadcasterRankings",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

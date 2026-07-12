@@ -1,27 +1,33 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // BroadcasterHandler handles broadcaster-related HTTP requests
 type BroadcasterHandler struct {
-	broadcasterRepo *repository.BroadcasterRepository
-	clipRepo        *repository.ClipRepository
-	twitchClient    *twitch.Client
-	authService     *services.AuthService
+	broadcasterRepo  *repository.BroadcasterRepository
+	rankingRefresher broadcasterRankingRefresher
+	clipRepo         *repository.ClipRepository
+	twitchClient     *twitch.Client
+	authService      *services.AuthService
+}
+
+type broadcasterRankingRefresher interface {
+	RefreshRankings(context.Context) error
 }
 
 // NewBroadcasterHandler creates a new broadcaster handler
@@ -32,10 +38,11 @@ func NewBroadcasterHandler(
 	authService *services.AuthService,
 ) *BroadcasterHandler {
 	return &BroadcasterHandler{
-		broadcasterRepo: broadcasterRepo,
-		clipRepo:        clipRepo,
-		twitchClient:    twitchClient,
-		authService:     authService,
+		broadcasterRepo:  broadcasterRepo,
+		rankingRefresher: broadcasterRepo,
+		clipRepo:         clipRepo,
+		twitchClient:     twitchClient,
+		authService:      authService,
 	}
 }
 
@@ -259,7 +266,13 @@ func (h *BroadcasterHandler) GetBroadcasterRankings(c *gin.Context) {
 // RefreshBroadcasterRankings triggers a refresh of the rankings materialized view (admin only)
 // POST /api/v1/admin/broadcasters/refresh-rankings
 func (h *BroadcasterHandler) RefreshBroadcasterRankings(c *gin.Context) {
-	if err := h.broadcasterRepo.RefreshRankings(c.Request.Context()); err != nil {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+	if err := h.rankingRefresher.RefreshRankings(ctx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Ranking refresh timed out"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh rankings"})
 		return
 	}

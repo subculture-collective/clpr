@@ -5821,6 +5821,29 @@ paths:
               schema: {$ref: '#/components/schemas/Error'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/admin/broadcasters/refresh-rankings:
+    post:
+      tags: [Admin Broadcasters]
+      summary: Refresh broadcaster ranking materialization
+      description: Runs an administrator-triggered refresh with a 30-second server deadline.
+      operationId: refreshBroadcasterRankings
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Rankings refreshed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BroadcasterRankingRefreshResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+        '504':
+          description: Refresh exceeded its deadline
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -6151,23 +6174,6 @@ paths:
       summary: GET /api/v1/admin/analytics/trends
       description: Router-derived operation pending a route-specific response schema.
       operationId: getApiV1AdminAnalyticsTrends
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/broadcasters/refresh-rankings:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/broadcasters/refresh-rankings
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1AdminBroadcastersRefreshRankings
       x-clpr-router-derived: true
       responses:
         '200':
@@ -13315,6 +13321,13 @@ components:
           maxItems: 200
           uniqueItems: true
           items: {type: string, format: uuid}
+
+    BroadcasterRankingRefreshResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success: {type: boolean, const: true}
+        message: {type: string}
 
     Appeal:
       type: object
