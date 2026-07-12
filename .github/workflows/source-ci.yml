@@ -54,6 +54,11 @@ jobs:
       - name: Build
         working-directory: backend
         run: go build ./cmd/api
+      - name: Validate Prometheus SLO rules
+        run: >-
+          docker run --rm --entrypoint=promtool
+          -v "$PWD/monitoring/prometheus/clpr-slo-rules.yml:/clpr-slo-rules.yml:ro"
+          prom/prometheus:v3.5.0 check rules /clpr-slo-rules.yml
       - name: Upload backend test evidence
         if: always()
         uses: actions/upload-artifact@v4
