@@ -5902,6 +5902,33 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/ReputationError'}
 
+  /api/v1/moderation/ban:
+    post:
+      tags: [Moderation]
+      summary: Ban a user from a community
+      description: Atomically removes community membership, creates the ban, and records its moderation audit event. Cookie-authenticated requests must also send the CSRF token. Rate limited to 10 requests per hour.
+      operationId: createCommunityBan
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateCommunityBanRequest'}
+      responses:
+        '201':
+          description: Ban created and audited
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CommunityBanCreatedResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -9364,23 +9391,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/moderation/ban:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/moderation/ban
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1ModerationBan
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -13401,6 +13411,27 @@ components:
         error: {type: string}
         code: {type: string}
         message: {type: string}
+
+    CreateCommunityBanRequest:
+      type: object
+      additionalProperties: false
+      required: [channelId, userId]
+      properties:
+        channelId: {type: string, format: uuid}
+        userId: {type: string, format: uuid}
+        reason: {type: string, maxLength: 1000}
+
+    CommunityBanCreatedResponse:
+      type: object
+      additionalProperties: false
+      required: [id, channelId, userId, bannedBy, reason, bannedAt]
+      properties:
+        id: {type: string, format: uuid}
+        channelId: {type: string, format: uuid}
+        userId: {type: string, format: uuid}
+        bannedBy: {type: string, format: uuid}
+        reason: {type: [string, "null"], maxLength: 1000}
+        bannedAt: {type: string, format: date-time}
 
     Appeal:
       type: object

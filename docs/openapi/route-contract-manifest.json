@@ -1928,8 +1928,8 @@
     "method": "POST",
     "path": "/api/v1/moderation/ban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).CreateBan-fm",
-    "operation_id": "postApiV1ModerationBan",
-    "contract_level": "transitional"
+    "operation_id": "createCommunityBan",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

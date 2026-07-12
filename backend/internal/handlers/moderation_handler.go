@@ -1752,23 +1752,23 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 
 	// Get moderator ID from context
 	moderatorIDVal, exists := c.Get("user_id")
-	if !exists {
+	moderatorID, authenticated := moderatorIDVal.(uuid.UUID)
+	if !exists || !authenticated || moderatorID == uuid.Nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	moderatorID := moderatorIDVal.(uuid.UUID)
 
 	// Parse request body
 	var req struct {
 		ChannelID string  `json:"channelId" binding:"required"`
 		UserID    string  `json:"userId" binding:"required"`
-		Reason    *string `json:"reason"`
+		Reason    *string `json:"reason" binding:"omitempty,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
+			"error": "Invalid request",
 		})
 		return
 	}
@@ -1799,7 +1799,7 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 	}
 
 	// Create ban using moderation service
-	err = h.moderationService.BanUser(ctx, channelID, moderatorID, userID, req.Reason)
+	ban, err := h.moderationService.BanUserWithResult(ctx, channelID, moderatorID, userID, req.Reason)
 	if err != nil {
 		if errors.Is(err, services.ErrModerationPermissionDenied) || errors.Is(err, services.ErrModerationNotAuthorized) {
 			c.JSON(http.StatusForbidden, gin.H{
@@ -1825,27 +1825,7 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the created ban to return full details using direct query
-	// Note: We use a direct query here because we need the most recently created ban
-	// and CommunityRepository doesn't have a method to get ban by channel+user
-	var ban models.CommunityBan
-	err = h.db.QueryRow(ctx, `
-		SELECT id, community_id, banned_user_id, banned_by_user_id, reason, banned_at
-		FROM community_bans
-		WHERE community_id = $1 AND banned_user_id = $2
-		ORDER BY banned_at DESC
-		LIMIT 1
-	`, channelID, userID).Scan(
-		&ban.ID, &ban.CommunityID, &ban.BannedUserID, &ban.BannedByUserID, &ban.Reason, &ban.BannedAt,
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Ban created but failed to retrieve details",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"id":        ban.ID,
 		"channelId": ban.CommunityID,
 		"userId":    ban.BannedUserID,
