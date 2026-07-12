@@ -32,6 +32,7 @@ var (
 	ErrStripeCustomerNotFound = errors.New("stripe customer not found")
 	// ErrSubscriptionsUnavailable indicates checkout is intentionally disabled.
 	ErrSubscriptionsUnavailable = errors.New("subscriptions are unavailable")
+	ErrInvalidWebhookSignature  = errors.New("invalid webhook signature")
 )
 
 const webhookLogComponent = "stripe_webhook"
@@ -301,13 +302,16 @@ func (s *SubscriptionService) ensureSubscriptionsAvailable() error {
 
 // HandleWebhook processes Stripe webhook events
 func (s *SubscriptionService) HandleWebhook(ctx context.Context, payload []byte, signature string) error {
+	if s.cfg == nil || len(s.cfg.Stripe.WebhookSecrets) == 0 {
+		return ErrSubscriptionsUnavailable
+	}
 	// Verify webhook signature against all configured secrets
 	event, err := s.verifyWebhookSignature(payload, signature)
 	if err != nil {
 		logWebhookError("Webhook signature verification failed", err, map[string]interface{}{
 			"event_type": "unknown",
 		})
-		return fmt.Errorf("webhook signature verification failed: %w", err)
+		return fmt.Errorf("%w: %v", ErrInvalidWebhookSignature, err)
 	}
 
 	// Log webhook received

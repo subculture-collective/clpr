@@ -179,16 +179,17 @@ func (h *SubscriptionHandler) GetSubscription(c *gin.Context) {
 // @Router /api/v1/webhooks/stripe [post]
 func (h *SubscriptionHandler) HandleWebhook(c *gin.Context) {
 	// Read the request body
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Printf("Failed to read webhook body: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Webhook payload exceeds 1 MiB"})
 		return
 	}
 
 	// Get the Stripe signature header
 	signature := c.GetHeader("Stripe-Signature")
-	if signature == "" {
+	if signature == "" || len(signature) > 8192 {
 		log.Printf("Missing Stripe-Signature header")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing signature"})
 		return
@@ -197,7 +198,15 @@ func (h *SubscriptionHandler) HandleWebhook(c *gin.Context) {
 	// Process webhook
 	if err := h.subscriptionService.HandleWebhook(c.Request.Context(), payload, signature); err != nil {
 		log.Printf("Failed to process webhook: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errors.Is(err, services.ErrInvalidWebhookSignature) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid signature"})
+			return
+		}
+		if errors.Is(err, services.ErrSubscriptionsUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Webhook processing is unavailable"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Webhook processing failed"})
 		return
 	}
 

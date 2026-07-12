@@ -3140,7 +3140,7 @@
     "path": "/api/v1/webhooks/stripe",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).HandleWebhook-fm",
     "operation_id": "postApiV1WebhooksStripe",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
