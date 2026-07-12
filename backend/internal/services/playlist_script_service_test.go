@@ -1,10 +1,11 @@
 package services
 
 import (
+	"context"
 	"testing"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/google/uuid"
 )
 
 func TestShouldAutoCurateGeneratedPlaylist(t *testing.T) {
@@ -53,5 +54,13 @@ func TestShouldAutoCurateGeneratedPlaylist(t *testing.T) {
 				t.Fatalf("expected %v, got %v", tt.expected, actual)
 			}
 		})
+	}
+}
+
+func TestPlaylistScriptUpdateRejectsEmptyRequestBeforeRepositoryWork(t *testing.T) {
+	service := &PlaylistScriptService{}
+	updated, err := service.UpdateScript(context.Background(), uuid.New(), &models.UpdatePlaylistScriptRequest{})
+	if err == nil || updated != nil {
+		t.Fatalf("expected empty update to fail, got script=%v err=%v", updated, err)
 	}
 }

@@ -2,13 +2,21 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+)
+
+var (
+	ErrPlaylistScriptNotFound   = repository.ErrPlaylistScriptNotFound
+	ErrPlaylistScriptInactive   = errors.New("playlist script is inactive")
+	ErrPlaylistScriptValidation = errors.New("invalid playlist script")
+	ErrPlaylistGenerationEmpty  = errors.New("playlist generation returned no clips")
 )
 
 // BotUserID is the well-known UUID of the system bot user that posts clips
@@ -19,6 +27,10 @@ type generatedPlaylistPresentation struct {
 	isCurated    bool
 	isFeatured   bool
 	displayOrder int
+}
+
+type playlistGenerationWriter interface {
+	Persist(context.Context, *models.PlaylistScript, *models.Playlist, []models.Clip) error
 }
 
 var siteFreshnessDisplayOrder = map[string]int{
@@ -37,21 +49,23 @@ var siteFreshnessDisplayOrder = map[string]int{
 
 // PlaylistScriptService handles script-based playlist automation
 type PlaylistScriptService struct {
-	scriptRepo      *repository.PlaylistScriptRepository
-	playlistRepo    *repository.PlaylistRepository
-	clipRepo        *repository.ClipRepository
-	curationRepo    *repository.PlaylistCurationRepository
-	clipSyncService *ClipSyncService // nil when Twitch client is not configured
+	scriptRepo       *repository.PlaylistScriptRepository
+	playlistRepo     *repository.PlaylistRepository
+	clipRepo         *repository.ClipRepository
+	curationRepo     *repository.PlaylistCurationRepository
+	clipSyncService  *ClipSyncService // nil when Twitch client is not configured
+	generationWriter playlistGenerationWriter
 }
 
 // NewPlaylistScriptService creates a new PlaylistScriptService
 func NewPlaylistScriptService(scriptRepo *repository.PlaylistScriptRepository, playlistRepo *repository.PlaylistRepository, clipRepo *repository.ClipRepository, curationRepo *repository.PlaylistCurationRepository, clipSyncService *ClipSyncService) *PlaylistScriptService {
 	return &PlaylistScriptService{
-		scriptRepo:      scriptRepo,
-		playlistRepo:    playlistRepo,
-		clipRepo:        clipRepo,
-		curationRepo:    curationRepo,
-		clipSyncService: clipSyncService,
+		scriptRepo:       scriptRepo,
+		playlistRepo:     playlistRepo,
+		clipRepo:         clipRepo,
+		curationRepo:     curationRepo,
+		clipSyncService:  clipSyncService,
+		generationWriter: repository.NewPlaylistGenerationWriter(scriptRepo),
 	}
 }
 
@@ -81,6 +95,9 @@ var allowedUserSchedules = map[string]bool{
 // CreateUserScript creates a playlist script scoped to a regular user.
 // Strategy is forced to "standard" and schedule is restricted.
 func (s *PlaylistScriptService) CreateUserScript(ctx context.Context, userID uuid.UUID, req *models.CreatePlaylistScriptRequest) (*models.PlaylistScript, error) {
+	if req.Strategy != nil && *req.Strategy != "standard" {
+		return nil, fmt.Errorf("%w: user scripts only support the standard strategy", ErrPlaylistScriptValidation)
+	}
 	// Force strategy to standard for user-created scripts
 	standard := "standard"
 	req.Strategy = &standard
@@ -91,7 +108,7 @@ func (s *PlaylistScriptService) CreateUserScript(ctx context.Context, userID uui
 		schedule = *req.Schedule
 	}
 	if !allowedUserSchedules[schedule] {
-		return nil, fmt.Errorf("schedule %q is not allowed; choose manual, daily, or weekly", schedule)
+		return nil, fmt.Errorf("%w: schedule is not allowed", ErrPlaylistScriptValidation)
 	}
 
 	return s.CreateScript(ctx, userID, req)
@@ -104,10 +121,10 @@ func (s *PlaylistScriptService) GetUserScript(ctx context.Context, scriptID, use
 		return nil, err
 	}
 	if script == nil {
-		return nil, fmt.Errorf("playlist script not found")
+		return nil, ErrPlaylistScriptNotFound
 	}
 	if script.CreatedBy == nil || *script.CreatedBy != userID {
-		return nil, fmt.Errorf("playlist script not found")
+		return nil, ErrPlaylistScriptNotFound
 	}
 	return script, nil
 }
@@ -119,12 +136,15 @@ func (s *PlaylistScriptService) UpdateUserScript(ctx context.Context, scriptID, 
 		return nil, err
 	}
 
-	// Prevent users from changing strategy
+	if req.Strategy != nil && *req.Strategy != "standard" {
+		return nil, fmt.Errorf("%w: user scripts only support the standard strategy", ErrPlaylistScriptValidation)
+	}
+	// The strategy is immutable on the user surface.
 	req.Strategy = nil
 
 	// Validate schedule if provided
 	if req.Schedule != nil && !allowedUserSchedules[*req.Schedule] {
-		return nil, fmt.Errorf("schedule %q is not allowed; choose manual, daily, or weekly", *req.Schedule)
+		return nil, fmt.Errorf("%w: schedule is not allowed", ErrPlaylistScriptValidation)
 	}
 
 	return s.UpdateScript(ctx, scriptID, req)
@@ -177,7 +197,7 @@ func (s *PlaylistScriptService) CreateScript(ctx context.Context, userID uuid.UU
 	if req.SeedClipID != nil {
 		parsed, err := uuid.Parse(*req.SeedClipID)
 		if err != nil {
-			return nil, fmt.Errorf("invalid seed_clip_id: %w", err)
+			return nil, fmt.Errorf("%w: invalid seed_clip_id", ErrPlaylistScriptValidation)
 		}
 		seedClipID = &parsed
 	}
@@ -218,12 +238,15 @@ func (s *PlaylistScriptService) CreateScript(ctx context.Context, userID uuid.UU
 
 // UpdateScript updates an existing playlist script
 func (s *PlaylistScriptService) UpdateScript(ctx context.Context, scriptID uuid.UUID, req *models.UpdatePlaylistScriptRequest) (*models.PlaylistScript, error) {
+	if req == nil || !hasPlaylistScriptUpdate(req) {
+		return nil, fmt.Errorf("%w: at least one field is required", ErrPlaylistScriptValidation)
+	}
 	script, err := s.scriptRepo.GetByID(ctx, scriptID)
 	if err != nil {
 		return nil, err
 	}
 	if script == nil {
-		return nil, fmt.Errorf("playlist script not found")
+		return nil, ErrPlaylistScriptNotFound
 	}
 
 	if req.Name != nil {
@@ -286,7 +309,7 @@ func (s *PlaylistScriptService) UpdateScript(ctx context.Context, scriptID uuid.
 	if req.SeedClipID != nil {
 		parsed, err := uuid.Parse(*req.SeedClipID)
 		if err != nil {
-			return nil, fmt.Errorf("invalid seed_clip_id: %w", err)
+			return nil, fmt.Errorf("%w: invalid seed_clip_id", ErrPlaylistScriptValidation)
 		}
 		script.SeedClipID = &parsed
 	}
@@ -304,6 +327,15 @@ func (s *PlaylistScriptService) UpdateScript(ctx context.Context, scriptID uuid.
 	return script, nil
 }
 
+func hasPlaylistScriptUpdate(req *models.UpdatePlaylistScriptRequest) bool {
+	return req.Name != nil || req.Description != nil || req.Sort != nil || req.Timeframe != nil ||
+		req.ClipLimit != nil || req.Visibility != nil || req.IsActive != nil || req.Schedule != nil ||
+		req.Strategy != nil || req.GameID != nil || req.GameIDs != nil || req.BroadcasterID != nil ||
+		req.Tag != nil || req.ExcludeTags != nil || req.Language != nil || req.MinVoteScore != nil ||
+		req.MinViewCount != nil || req.ExcludeNSFW != nil || req.Top10kStreamers != nil ||
+		req.SeedClipID != nil || req.RetentionDays != nil || req.TitleTemplate != nil
+}
+
 // DeleteScript removes a playlist script
 func (s *PlaylistScriptService) DeleteScript(ctx context.Context, scriptID uuid.UUID) error {
 	return s.scriptRepo.Delete(ctx, scriptID)
@@ -316,10 +348,10 @@ func (s *PlaylistScriptService) GeneratePlaylist(ctx context.Context, scriptID u
 		return nil, err
 	}
 	if script == nil {
-		return nil, fmt.Errorf("playlist script not found")
+		return nil, ErrPlaylistScriptNotFound
 	}
 	if !script.IsActive {
-		return nil, fmt.Errorf("playlist script is inactive")
+		return nil, ErrPlaylistScriptInactive
 	}
 
 	var clips []models.Clip
@@ -347,11 +379,7 @@ func (s *PlaylistScriptService) GeneratePlaylist(ctx context.Context, scriptID u
 		return nil, fmt.Errorf("invalid script owner")
 	}
 	if len(clips) == 0 {
-		// Soft-delete the previous playlist so stale content isn't shown
-		if script.LastGeneratedPlaylistID != nil {
-			_ = s.playlistRepo.SoftDelete(ctx, *script.LastGeneratedPlaylistID)
-		}
-		return nil, fmt.Errorf("strategy %s returned no clips", script.Strategy)
+		return nil, ErrPlaylistGenerationEmpty
 	}
 
 	title := buildPlaylistTitle(script)
@@ -368,21 +396,11 @@ func (s *PlaylistScriptService) GeneratePlaylist(ctx context.Context, scriptID u
 		ScriptID:     &script.ID,
 	}
 
-	if err := s.playlistRepo.Create(ctx, playlist); err != nil {
-		return nil, fmt.Errorf("failed to create generated playlist: %w", err)
+	if s.generationWriter == nil {
+		return nil, fmt.Errorf("playlist generation persistence is unavailable")
 	}
-
-	for idx, clip := range clips {
-		if err := s.playlistRepo.AddClip(ctx, playlist.ID, clip.ID, idx); err != nil {
-			return nil, fmt.Errorf("failed to add clip to generated playlist: %w", err)
-		}
-	}
-
-	if err := s.scriptRepo.CreateGeneratedPlaylist(ctx, script.ID, playlist.ID); err != nil {
-		return nil, err
-	}
-	if err := s.scriptRepo.UpdateLastRun(ctx, script.ID, playlist.ID); err != nil {
-		return nil, err
+	if err := s.generationWriter.Persist(ctx, script, playlist, clips); err != nil {
+		return nil, fmt.Errorf("failed to persist generated playlist: %w", err)
 	}
 
 	return playlist, nil

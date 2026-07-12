@@ -3658,10 +3658,10 @@ type CreatePlaylistScriptRequest struct {
 	Schedule        *string  `json:"schedule,omitempty" binding:"omitempty,oneof=manual hourly daily weekly monthly"`
 	Strategy        *string  `json:"strategy,omitempty" binding:"omitempty,oneof=standard sleeper_hits viral_velocity community_favorites deep_cuts fresh_faces one_per_creator similar_vibes cross_game_hits controversial binge_worthy rising_stars twitch_top_game twitch_top_broadcaster twitch_trending twitch_discovery"`
 	GameID          *string  `json:"game_id,omitempty" binding:"omitempty,max=50"`
-	GameIDs         []string `json:"game_ids,omitempty"`
+	GameIDs         []string `json:"game_ids,omitempty" binding:"omitempty,max=50,dive,max=50"`
 	BroadcasterID   *string  `json:"broadcaster_id,omitempty" binding:"omitempty,max=50"`
 	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`
-	ExcludeTags     []string `json:"exclude_tags,omitempty"`
+	ExcludeTags     []string `json:"exclude_tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
 	Language        *string  `json:"language,omitempty" binding:"omitempty,max=10"`
 	MinVoteScore    *int     `json:"min_vote_score,omitempty" binding:"omitempty,min=0"`
 	MinViewCount    *int     `json:"min_view_count,omitempty" binding:"omitempty,min=0"`
@@ -3684,10 +3684,10 @@ type UpdatePlaylistScriptRequest struct {
 	Schedule        *string  `json:"schedule,omitempty" binding:"omitempty,oneof=manual hourly daily weekly monthly"`
 	Strategy        *string  `json:"strategy,omitempty" binding:"omitempty,oneof=standard sleeper_hits viral_velocity community_favorites deep_cuts fresh_faces one_per_creator similar_vibes cross_game_hits controversial binge_worthy rising_stars twitch_top_game twitch_top_broadcaster twitch_trending twitch_discovery"`
 	GameID          *string  `json:"game_id,omitempty" binding:"omitempty,max=50"`
-	GameIDs         []string `json:"game_ids,omitempty"`
+	GameIDs         []string `json:"game_ids,omitempty" binding:"omitempty,max=50,dive,max=50"`
 	BroadcasterID   *string  `json:"broadcaster_id,omitempty" binding:"omitempty,max=50"`
 	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`
-	ExcludeTags     []string `json:"exclude_tags,omitempty"`
+	ExcludeTags     []string `json:"exclude_tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
 	Language        *string  `json:"language,omitempty" binding:"omitempty,max=10"`
 	MinVoteScore    *int     `json:"min_vote_score,omitempty" binding:"omitempty,min=0"`
 	MinViewCount    *int     `json:"min_view_count,omitempty" binding:"omitempty,min=0"`

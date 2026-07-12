@@ -110,6 +110,8 @@ tags:
     description: Community management
   - name: Playlists
     description: Playlist management
+  - name: Playlist Scripts
+    description: Automated owned playlist definitions and generation
   - name: Forum
     description: Forum discussions
   - name: Queue
@@ -5522,6 +5524,11 @@ paths:
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '404': {$ref: '#/components/responses/NotFound'}
+        '409':
+          description: No clips matched the script; the previous generated playlist remains active
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
         '429': {$ref: '#/components/responses/TooManyRequests'}
         '500': {$ref: '#/components/responses/InternalServerError'}
     delete:
@@ -9601,103 +9608,101 @@ paths:
         '500': {$ref: '#/components/responses/InternalServerError'}
   /api/v1/playlist-scripts:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlist-scripts
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistScripts
-      x-clpr-router-derived: true
+      tags: [Playlist Scripts]
+      summary: List playlist scripts owned by the authenticated user
+      operationId: listMyPlaylistScripts
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Owned playlist scripts
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistScriptListResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlist-scripts
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistScripts
-      x-clpr-router-derived: true
+      tags: [Playlist Scripts]
+      summary: Create an owned standard playlist script
+      description: User-created scripts are forced to the standard strategy and may use manual, daily, or weekly schedules. Rate limited to 20 per hour.
+      operationId: createMyPlaylistScript
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreatePlaylistScriptRequest'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201':
+          description: Playlist script created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistScriptResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlist-scripts/{id}:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/playlist-scripts/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1PlaylistScriptsId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/playlist-scripts/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1PlaylistScriptsId
-      x-clpr-router-derived: true
+      tags: [Playlist Scripts]
+      summary: Update an owned playlist script
+      operationId: updateMyPlaylistScript
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdatePlaylistScriptRequest'}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Playlist script updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistScriptResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Playlist Scripts]
+      summary: Delete an owned playlist script
+      operationId: deleteMyPlaylistScript
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Playlist script deleted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistScriptMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlist-scripts/{id}/generate:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlist-scripts/{id}/generate
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistScriptsIdGenerate
-      x-clpr-router-derived: true
+      tags: [Playlist Scripts]
+      summary: Atomically generate a playlist from an owned active script
+      description: Playlist metadata, ordered clips, generation history, prior-playlist retirement, and script run metadata commit together. Rate limited to 10 per hour.
+      operationId: generateMyPlaylist
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
+        '201':
+          description: Playlist generated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GeneratedPlaylistResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
   /api/v1/playlists:
     get:
       tags: [Generated Route Contracts]
@@ -13545,6 +13550,125 @@ components:
       required: [device_token]
       properties:
         device_token: {type: string, minLength: 1, maxLength: 4096}
+
+    PlaylistScript:
+      type: object
+      required: [id, name, sort, clip_limit, visibility, is_active, schedule, strategy, exclude_nsfw, top_10k_streamers, retention_days, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        sort: {$ref: '#/components/schemas/PlaylistScriptSort'}
+        timeframe: {type: string, enum: [hour, day, week, month, year]}
+        clip_limit: {type: integer, minimum: 1, maximum: 100}
+        visibility: {type: string, enum: [private, public, unlisted]}
+        is_active: {type: boolean}
+        schedule: {type: string, enum: [manual, hourly, daily, weekly, monthly]}
+        strategy: {$ref: '#/components/schemas/PlaylistScriptStrategy'}
+        game_id: {type: string, maxLength: 50}
+        game_ids: {type: array, maxItems: 50, items: {type: string, maxLength: 50}}
+        broadcaster_id: {type: string, maxLength: 50}
+        tag: {type: string, maxLength: 100}
+        exclude_tags: {type: array, maxItems: 50, items: {type: string, minLength: 1, maxLength: 100}}
+        language: {type: string, maxLength: 10}
+        min_vote_score: {type: integer, minimum: 0}
+        min_view_count: {type: integer, minimum: 0}
+        exclude_nsfw: {type: boolean}
+        top_10k_streamers: {type: boolean}
+        seed_clip_id: {type: string, format: uuid}
+        retention_days: {type: integer, minimum: 1, maximum: 365}
+        title_template: {type: string, maxLength: 200}
+        created_by: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        last_run_at: {type: string, format: date-time}
+        last_generated_playlist_id: {type: string, format: uuid}
+
+    PlaylistScriptSort:
+      type: string
+      enum: [hot, new, top, rising, discussed, trending, popular]
+
+    PlaylistScriptStrategy:
+      type: string
+      enum: [standard, sleeper_hits, viral_velocity, community_favorites, deep_cuts, fresh_faces, one_per_creator, similar_vibes, cross_game_hits, controversial, binge_worthy, rising_stars, twitch_top_game, twitch_top_broadcaster, twitch_trending, twitch_discovery]
+
+    CreatePlaylistScriptRequest:
+      type: object
+      required: [name, sort, clip_limit]
+      properties: &playlistScriptInputProperties
+        name: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        sort: {$ref: '#/components/schemas/PlaylistScriptSort'}
+        timeframe: {type: string, enum: [hour, day, week, month, year]}
+        clip_limit: {type: integer, minimum: 1, maximum: 100}
+        visibility: {type: string, enum: [private, public, unlisted]}
+        is_active: {type: boolean}
+        schedule: {type: string, enum: [manual, daily, weekly]}
+        strategy: {type: string, const: standard}
+        game_id: {type: string, maxLength: 50}
+        game_ids: {type: array, maxItems: 50, items: {type: string, maxLength: 50}}
+        broadcaster_id: {type: string, maxLength: 50}
+        tag: {type: string, maxLength: 100}
+        exclude_tags: {type: array, maxItems: 50, items: {type: string, minLength: 1, maxLength: 100}}
+        language: {type: string, maxLength: 10}
+        min_vote_score: {type: integer, minimum: 0}
+        min_view_count: {type: integer, minimum: 0}
+        exclude_nsfw: {type: boolean}
+        top_10k_streamers: {type: boolean}
+        seed_clip_id: {type: string, format: uuid}
+        retention_days: {type: integer, minimum: 1, maximum: 365}
+        title_template: {type: string, maxLength: 200}
+
+    UpdatePlaylistScriptRequest:
+      type: object
+      minProperties: 1
+      properties: *playlistScriptInputProperties
+
+    PlaylistScriptListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, items: {$ref: '#/components/schemas/PlaylistScript'}}
+
+    PlaylistScriptResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/PlaylistScript'}
+
+    PlaylistScriptMutationResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [message]
+          properties:
+            message: {type: string}
+
+    GeneratedPlaylistResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [id, user_id, title, visibility, is_curated, is_featured, display_order, script_id, created_at, updated_at]
+          properties:
+            id: {type: string, format: uuid}
+            user_id: {type: string, format: uuid}
+            title: {type: string, minLength: 1, maxLength: 100}
+            description: {type: string, maxLength: 500}
+            visibility: {type: string, enum: [private, public, unlisted]}
+            is_curated: {type: boolean}
+            is_featured: {type: boolean}
+            display_order: {type: integer}
+            script_id: {type: string, format: uuid}
+            created_at: {type: string, format: date-time}
+            updated_at: {type: string, format: date-time}
 
     Appeal:
       type: object

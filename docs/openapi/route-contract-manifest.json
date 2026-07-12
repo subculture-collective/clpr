@@ -2131,36 +2131,36 @@
     "method": "GET",
     "path": "/api/v1/playlist-scripts",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).ListMyScripts-fm",
-    "operation_id": "getApiV1PlaylistScripts",
-    "contract_level": "transitional"
+    "operation_id": "listMyPlaylistScripts",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlist-scripts",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).CreateMyScript-fm",
-    "operation_id": "postApiV1PlaylistScripts",
-    "contract_level": "transitional"
+    "operation_id": "createMyPlaylistScript",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/playlist-scripts/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).DeleteMyScript-fm",
-    "operation_id": "deleteApiV1PlaylistScriptsId",
-    "contract_level": "transitional"
+    "operation_id": "deleteMyPlaylistScript",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/playlist-scripts/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).UpdateMyScript-fm",
-    "operation_id": "putApiV1PlaylistScriptsId",
-    "contract_level": "transitional"
+    "operation_id": "updateMyPlaylistScript",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlist-scripts/{id}/generate",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).GenerateMyPlaylist-fm",
-    "operation_id": "postApiV1PlaylistScriptsIdGenerate",
-    "contract_level": "transitional"
+    "operation_id": "generateMyPlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
