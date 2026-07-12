@@ -2552,35 +2552,35 @@
     "path": "/api/v1/streams/following",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).GetFollowedStreamers-fm",
     "operation_id": "getApiV1StreamsFollowing",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/streams/{streamer}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).GetStreamStatus-fm",
     "operation_id": "getApiV1StreamsStreamer",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/streams/{streamer}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).UnfollowStreamer-fm",
     "operation_id": "deleteApiV1StreamsStreamerFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/streams/{streamer}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).FollowStreamer-fm",
     "operation_id": "postApiV1StreamsStreamerFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/streams/{streamer}/follow-status",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).GetStreamFollowStatus-fm",
     "operation_id": "getApiV1StreamsStreamerFollowStatus",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

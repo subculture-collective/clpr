@@ -1,13 +1,15 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // TestGetStreamStatus_MissingStreamer tests request with missing streamer parameter
@@ -34,6 +36,46 @@ func TestGetStreamStatus_MissingStreamer(t *testing.T) {
 
 	if _, ok := response["error"]; !ok {
 		t.Error("Expected error field in response")
+	}
+}
+
+func TestFollowStreamerRejectsMalformedOptionalBody(t *testing.T) {
+	handler := NewStreamHandler(nil, nil, nil, nil, nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/streams/moonmoon/follow", bytes.NewBufferString(`{"notifications_enabled":`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "streamer", Value: "moonmoon"}}
+	c.Set("user_id", uuid.New())
+	handler.FollowStreamer(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestGetFollowedStreamersRejectsInvalidPagination(t *testing.T) {
+	handler := NewStreamHandler(nil, nil, nil, nil, nil)
+	for _, query := range []string{"limit=0", "limit=101", "limit=nope", "offset=-1"} {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/streams/following?"+query, nil)
+		c.Set("user_id", uuid.New())
+		handler.GetFollowedStreamers(c)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("%s: expected 400, got %d", query, w.Code)
+		}
+	}
+}
+
+func TestStreamFollowHandlersRejectMalformedIdentityWithoutPanic(t *testing.T) {
+	handler := NewStreamHandler(nil, nil, nil, nil, nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/streams/following", nil)
+	c.Set("user_id", "not-a-uuid")
+	handler.GetFollowedStreamers(c)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d", w.Code)
 	}
 }
 
