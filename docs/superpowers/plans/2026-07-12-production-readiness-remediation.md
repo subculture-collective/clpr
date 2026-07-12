@@ -352,7 +352,7 @@ flowchart LR
 
 ### R4.4 — Establish maintainable module and UI boundaries
 
-- **State:** IN PROGRESS
+- **State:** DONE
 - **Owner role:** Frontend/backend architecture
 - **Depends on:** R3.7, R4.1
 - **Work:** Consolidate modal/button/input/date/number/API-state primitives, prevent broad barrel imports on entry paths, split the route surface into versioned bounded modules, and add dependency/layering checks.
@@ -369,7 +369,7 @@ flowchart LR
 
 ### Phase 4 exit — G4
 
-- **State:** TODO
+- **State:** DONE
 - Critical journeys meet accessibility and performance budgets.
 - Test and module boundaries are enforceable and documented.
 
@@ -497,3 +497,4 @@ Before each commit:
 | 2026-07-12 | R4.1-R4.2 accessibility | Done | Shared semantic tests pass; 11 Chromium journey/axe/keyboard/touch/reflow/reduced-motion checks pass; evidence in `docs/testing/accessibility-release-evidence.md` |
 | 2026-07-12 | R4.3 performance | Done | Initial JS reduced from 1,270.59 KiB to 495.49 KiB; 550/600/120 KiB app/lazy/CSS budgets fail CI on regression; build warnings removed |
 | 2026-07-12 | R4.5 test pyramid | Done | Coverage baseline 53.6/50.43/48.96/54.8 and executable tier/skip inventory: 131 frontend, 178 backend, 3 mocked-browser, 1 real-backend-browser, 1 approved skip |
+| 2026-07-12 | R4.4 module/UI boundaries | Done | Versioned account/admin route modules, shared dialog/format primitives, route tests, ESLint import restrictions, and `boundaries:check` pass across 460 source modules |
