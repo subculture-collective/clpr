@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 235 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 229 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 235 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 229 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -536,6 +536,7 @@ Before each commit:
 | 2026-07-12 | R2.4/R3.7 playlist discovery | Partial | `0a69e6fe`; featured and playlist-of-the-day reads now have route-specific contracts and focused handler tests; malformed optional identity and invalid pagination fail closed, featured row-stream errors cannot return partial results, and absent daily output maps through a dedicated 404 sentinel rather than database error text; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 249 to 247 |
 | 2026-07-12 | R2.4/R3.7 playlist collaborators | Partial | `f1383363`; all four collaborator list/add/update/remove operations now have route-specific contracts and focused handler tests; malformed required/optional identity and binder details fail closed, private lists conceal existence, permissions are closed to view/edit/admin, owners cannot be collaborators, missing mutations return 404 through sentinels, row-stream errors propagate, and responses use a minimal public user DTO; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 247 to 243 |
 | 2026-07-12 | R2.4/R3.7 queue lifecycle | Partial | All eight queue operations now have route-specific contracts and focused handler/service tests; malformed limits and database-sized playlist fields fail closed, missing active items return 404, full/empty state returns 409, queue size enforcement is serialized, position changes use collision-safe staging under a per-user transaction lock, played history no longer breaks active ordering, and queue-to-playlist conversion (including optional clear) is atomic and honors `only_unplayed`; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 243 to 235 |
+| 2026-07-12 | R2.4/R3.7 recommendation lifecycle | Partial | All six recommendation operations now have route-specific contracts and focused malformed-input tests; empty preference updates, oversized preference values, invalid recommendation context, and negative/excessive dwell time fail closed; recommendation algorithm/score feedback is persisted with its derived like/dislike interaction in one transaction via migration 119; optional Redis absence is safe in tests; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 235 to 229 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
