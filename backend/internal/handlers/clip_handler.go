@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -21,16 +22,20 @@ import (
 
 // ClipSyncHandler handles clip sync operations
 type ClipSyncHandler struct {
-	syncService *services.ClipSyncService
-	cfg         *config.Config
+	syncService clipSyncService
+}
+
+type clipSyncService interface {
+	SyncClipsByGame(context.Context, string, int, int, *services.SyncClipsByGameOptions) (*services.SyncStats, string, error)
+	SyncClipsByBroadcaster(context.Context, string, int, int, *services.SyncClipsByBroadcasterOptions) (*services.SyncStats, error)
+	SyncTrendingClips(context.Context, int, *services.TrendingSyncOptions) (*services.SyncStats, error)
+	GetLastSyncTime(context.Context) (*time.Time, error)
+	FetchClipByURL(context.Context, string) (*models.Clip, error)
 }
 
 // NewClipSyncHandler creates a new ClipSyncHandler
-func NewClipSyncHandler(syncService *services.ClipSyncService, cfg *config.Config) *ClipSyncHandler {
-	return &ClipSyncHandler{
-		syncService: syncService,
-		cfg:         cfg,
-	}
+func NewClipSyncHandler(syncService clipSyncService) *ClipSyncHandler {
+	return &ClipSyncHandler{syncService: syncService}
 }
 
 // TriggerSync handles manual sync trigger
@@ -47,7 +52,10 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 	}
 
 	// Body is optional — all fields have defaults
-	_ = c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
 
 	// Set defaults
 	if req.Hours == 0 {
@@ -55,6 +63,18 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 	}
 	if req.Limit == 0 {
 		req.Limit = 100
+	}
+	if req.Hours < 1 || req.Hours > 168 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hours must be between 1 and 168"})
+		return
+	}
+	if req.Limit < 1 || req.Limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
+	}
+	if len(req.GameID) > 100 || len(req.BroadcasterID) > 100 || len(req.Language) > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "identifier or language filter is too long"})
+		return
 	}
 	if req.Strategy == "" {
 		if req.GameID != "" {
@@ -107,8 +127,14 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "Sync completed",
+	responseStatus := http.StatusOK
+	message := "Sync completed"
+	if len(stats.Errors) > 0 {
+		responseStatus = http.StatusMultiStatus
+		message = "Sync completed with errors"
+	}
+	c.JSON(responseStatus, gin.H{
+		"message":       message,
 		"strategy":      req.Strategy,
 		"clips_fetched": stats.ClipsFetched,
 		"clips_created": stats.ClipsCreated,
@@ -124,12 +150,18 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 // GetSyncStatus returns the current sync status
 // GET /admin/sync/status
 func (h *ClipSyncHandler) GetSyncStatus(c *gin.Context) {
-	// Get statistics from the clip repository
-	// This would be extended with a proper sync status tracking mechanism
-
+	lastSync, err := h.syncService.GetLastSyncTime(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve sync status"})
+		return
+	}
+	status := "never_run"
+	if lastSync != nil {
+		status = "ready"
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "ready",
-		"message": "Sync service is operational",
+		"status":       status,
+		"last_sync_at": lastSync,
 	})
 }
 

@@ -613,14 +613,14 @@
     "path": "/api/v1/admin/sync/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipSyncHandler).TriggerSync-fm",
     "operation_id": "postApiV1AdminSyncClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/sync/status",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipSyncHandler).GetSyncStatus-fm",
     "operation_id": "getApiV1AdminSyncStatus",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",

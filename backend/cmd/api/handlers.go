@@ -157,7 +157,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	var twitchOAuthHandler *handlers.TwitchOAuthHandler
 
 	if svcs.ClipSync != nil {
-		clipSyncHandler = handlers.NewClipSyncHandler(svcs.ClipSync, cfg)
+		clipSyncHandler = handlers.NewClipSyncHandler(svcs.ClipSync)
 	}
 
 	if svcs.LiveStatus != nil {
