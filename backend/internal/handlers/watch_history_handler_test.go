@@ -2,14 +2,39 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+type watchHistoryRepositoryStub struct {
+	enabled bool
+	history []models.WatchHistoryEntry
+	err     error
+}
+
+func (s *watchHistoryRepositoryStub) IsWatchHistoryEnabled(context.Context, uuid.UUID) (bool, error) {
+	return s.enabled, s.err
+}
+func (s *watchHistoryRepositoryStub) RecordWatchProgress(context.Context, uuid.UUID, uuid.UUID, int, int, string) error {
+	return s.err
+}
+func (s *watchHistoryRepositoryStub) GetWatchHistory(context.Context, uuid.UUID, string, int) ([]models.WatchHistoryEntry, error) {
+	return s.history, s.err
+}
+func (s *watchHistoryRepositoryStub) GetResumePosition(context.Context, uuid.UUID, uuid.UUID) (int, bool, error) {
+	return 0, false, s.err
+}
+func (s *watchHistoryRepositoryStub) ClearWatchHistory(context.Context, uuid.UUID) error {
+	return s.err
+}
 
 func TestRecordWatchProgress_Unauthenticated(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -170,6 +195,106 @@ func TestProgressPercentCalculation(t *testing.T) {
 
 			if completed != tt.expectedComplete {
 				t.Errorf("expected completed %v, got %v", tt.expectedComplete, completed)
+			}
+		})
+	}
+}
+
+func TestWatchHistoryLiveResponseContracts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	userID := uuid.New()
+	clipID := uuid.New()
+	repo := &watchHistoryRepositoryStub{
+		enabled: true,
+		history: []models.WatchHistoryEntry{{
+			ID: uuid.New(), UserID: userID, ClipID: clipID, ProgressSeconds: 30,
+			DurationSeconds: 120, ProgressPercent: 25, SessionID: "session-1",
+			WatchedAt: time.Now(), CreatedAt: time.Now(), UpdatedAt: time.Now(),
+		}},
+	}
+	handler := NewWatchHistoryHandler(repo)
+
+	t.Run("records zero-second progress", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodPost, "/api/v1/watch-history", bytes.NewBufferString(`{"clip_id":"`+clipID.String()+`","progress_seconds":0,"duration_seconds":120,"session_id":"session-1"}`))
+		request.Header.Set("Content-Type", "application/json")
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = request
+		ctx.Set("user_id", userID)
+		handler.RecordWatchProgress(ctx)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected status 200, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+		var response struct {
+			Status          string  `json:"status"`
+			Completed       bool    `json:"completed"`
+			ProgressPercent float64 `json:"progress_percent"`
+		}
+		if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+			t.Fatal(err)
+		}
+		if response.Status != "recorded" || response.Completed || response.ProgressPercent != 0 {
+			t.Fatalf("unexpected response: %+v", response)
+		}
+	})
+
+	t.Run("lists history", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/api/v1/watch-history?filter=in-progress&limit=25", nil)
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = request
+		ctx.Set("user_id", userID)
+		handler.GetWatchHistory(ctx)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", recorder.Code)
+		}
+		var response models.WatchHistoryResponse
+		if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+			t.Fatal(err)
+		}
+		if response.Total != 1 || len(response.History) != 1 || response.History[0].ClipID != clipID {
+			t.Fatalf("unexpected history response: %+v", response)
+		}
+	})
+
+	t.Run("clears history", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodDelete, "/api/v1/watch-history", nil)
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = request
+		ctx.Set("user_id", userID)
+		handler.ClearWatchHistory(ctx)
+		if recorder.Code != http.StatusOK || recorder.Body.String() != `{"status":"cleared"}` {
+			t.Fatalf("unexpected clear response: %d %s", recorder.Code, recorder.Body.String())
+		}
+	})
+}
+
+func TestWatchHistoryRejectsInvalidBounds(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	userID := uuid.New()
+	clipID := uuid.New()
+	handler := NewWatchHistoryHandler(&watchHistoryRepositoryStub{enabled: true})
+
+	tests := []struct {
+		name, method, target, body string
+		handle                     func(*gin.Context)
+	}{
+		{"unknown filter", http.MethodGet, "/api/v1/watch-history?filter=unknown", "", handler.GetWatchHistory},
+		{"excessive limit", http.MethodGet, "/api/v1/watch-history?limit=1000", "", handler.GetWatchHistory},
+		{"progress beyond duration", http.MethodPost, "/api/v1/watch-history", `{"clip_id":"` + clipID.String() + `","progress_seconds":121,"duration_seconds":120,"session_id":"session-1"}`, handler.RecordWatchProgress},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(test.method, test.target, bytes.NewBufferString(test.body))
+			request.Header.Set("Content-Type", "application/json")
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = request
+			ctx.Set("user_id", userID)
+			test.handle(ctx)
+			if recorder.Code != http.StatusBadRequest {
+				t.Fatalf("expected status 400, got %d: %s", recorder.Code, recorder.Body.String())
 			}
 		})
 	}

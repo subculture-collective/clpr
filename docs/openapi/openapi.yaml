@@ -4284,6 +4284,64 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/watch-history:
+    get:
+      tags: [Users]
+      summary: Get the current user's watch history
+      operationId: getApiV1WatchHistory
+      parameters:
+        - name: filter
+          in: query
+          schema: {type: string, enum: [all, completed, in-progress], default: all}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+      responses:
+        '200':
+          description: Watch-history entries
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchHistoryResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    post:
+      tags: [Users]
+      summary: Record clip watch progress
+      description: Records a bounded progress position when watch-history tracking is enabled. Cookie-authenticated requests must also send the CSRF token.
+      operationId: postApiV1WatchHistory
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RecordWatchProgressRequest'}
+      responses:
+        '200':
+          description: Progress recorded or tracking disabled
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchProgressResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Users]
+      summary: Clear the current user's watch history
+      description: Permanently deletes all watch-history entries for the authenticated user. Cookie-authenticated requests must also send the CSRF token.
+      operationId: deleteApiV1WatchHistory
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Watch history cleared
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WatchHistoryClearedResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -10824,53 +10882,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/watch-history:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/watch-history
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1WatchHistory
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/watch-history
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1WatchHistory
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/watch-history
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1WatchHistory
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/webhooks/sendgrid:
     post:
       tags: [Generated Route Contracts]
@@ -11618,6 +11629,60 @@ components:
         success: {type: boolean, const: true}
         secret: {type: string, minLength: 1, writeOnly: true}
         message: {type: string}
+
+    RecordWatchProgressRequest:
+      type: object
+      required: [clip_id, progress_seconds, duration_seconds, session_id]
+      properties:
+        clip_id: {type: string, format: uuid}
+        progress_seconds: {type: integer, minimum: 0}
+        duration_seconds: {type: integer, minimum: 1}
+        session_id: {type: string, minLength: 1, maxLength: 100}
+
+    WatchProgressResponse:
+      oneOf:
+        - type: object
+          required: [status, completed, progress_percent]
+          properties:
+            status: {type: string, const: recorded}
+            completed: {type: boolean}
+            progress_percent: {type: number, minimum: 0, maximum: 100}
+        - type: object
+          required: [status]
+          properties:
+            status: {type: string, const: tracking_disabled}
+
+    WatchHistoryEntry:
+      type: object
+      required: [id, user_id, clip_id, progress_seconds, duration_seconds, progress_percent, completed, session_id, watched_at, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        clip_id: {type: string, format: uuid}
+        clip: {$ref: '#/components/schemas/Clip'}
+        progress_seconds: {type: integer, minimum: 0}
+        duration_seconds: {type: integer, minimum: 1}
+        progress_percent: {type: number, minimum: 0, maximum: 100}
+        completed: {type: boolean}
+        session_id: {type: string}
+        watched_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    WatchHistoryResponse:
+      type: object
+      required: [history, total]
+      properties:
+        history:
+          type: array
+          items: {$ref: '#/components/schemas/WatchHistoryEntry'}
+        total: {type: integer, minimum: 0}
+
+    WatchHistoryClearedResponse:
+      type: object
+      required: [status]
+      properties:
+        status: {type: string, const: cleared}
 
     TwitchModerationResult:
       type: object

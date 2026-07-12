@@ -3834,7 +3834,7 @@ type WatchHistoryEntry struct {
 // RecordWatchProgressRequest represents the request to record watch progress
 type RecordWatchProgressRequest struct {
 	ClipID          string `json:"clip_id" binding:"required,uuid"`
-	ProgressSeconds int    `json:"progress_seconds" binding:"required,min=0"`
+	ProgressSeconds int    `json:"progress_seconds" binding:"min=0"`
 	DurationSeconds int    `json:"duration_seconds" binding:"required,min=1"`
 	SessionID       string `json:"session_id" binding:"required,min=1,max=100"`
 }

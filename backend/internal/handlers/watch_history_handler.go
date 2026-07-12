@@ -1,22 +1,30 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // WatchHistoryHandler handles watch history related endpoints
+type watchHistoryRepository interface {
+	IsWatchHistoryEnabled(context.Context, uuid.UUID) (bool, error)
+	RecordWatchProgress(context.Context, uuid.UUID, uuid.UUID, int, int, string) error
+	GetWatchHistory(context.Context, uuid.UUID, string, int) ([]models.WatchHistoryEntry, error)
+	GetResumePosition(context.Context, uuid.UUID, uuid.UUID) (int, bool, error)
+	ClearWatchHistory(context.Context, uuid.UUID) error
+}
+
 type WatchHistoryHandler struct {
-	repo *repository.WatchHistoryRepository
+	repo watchHistoryRepository
 }
 
 // NewWatchHistoryHandler creates a new watch history handler
-func NewWatchHistoryHandler(repo *repository.WatchHistoryRepository) *WatchHistoryHandler {
+func NewWatchHistoryHandler(repo watchHistoryRepository) *WatchHistoryHandler {
 	return &WatchHistoryHandler{repo: repo}
 }
 
@@ -50,6 +58,10 @@ func (h *WatchHistoryHandler) RecordWatchProgress(c *gin.Context) {
 	var req models.RecordWatchProgressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.ProgressSeconds > req.DurationSeconds {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Progress cannot exceed duration"})
 		return
 	}
 
@@ -97,10 +109,18 @@ func (h *WatchHistoryHandler) GetWatchHistory(c *gin.Context) {
 	}
 
 	filterType := c.DefaultQuery("filter", "all")
+	if filterType != "all" && filterType != "completed" && filterType != "in-progress" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid filter parameter"})
+		return
+	}
 	limit := 50
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if _, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+			return
+		}
+		if limit < 1 || limit > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Limit must be between 1 and 100"})
 			return
 		}
 	}

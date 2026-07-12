@@ -3084,21 +3084,21 @@
     "path": "/api/v1/watch-history",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).ClearWatchHistory-fm",
     "operation_id": "deleteApiV1WatchHistory",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/watch-history",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).GetWatchHistory-fm",
     "operation_id": "getApiV1WatchHistory",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/watch-history",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).RecordWatchProgress-fm",
     "operation_id": "postApiV1WatchHistory",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
