@@ -1733,98 +1733,98 @@
     "path": "/api/v1/forum/analytics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetForumAnalytics-fm",
     "operation_id": "getApiV1ForumAnalytics",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/forum/flag",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).FlagContent-fm",
     "operation_id": "postApiV1ForumFlag",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/helpful-replies",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetMostHelpfulReplies-fm",
     "operation_id": "getApiV1ForumHelpfulReplies",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/popular",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetPopularDiscussions-fm",
     "operation_id": "getApiV1ForumPopular",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/forum/replies/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).DeleteReply-fm",
     "operation_id": "deleteApiV1ForumRepliesId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/forum/replies/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).UpdateReply-fm",
     "operation_id": "patchApiV1ForumRepliesId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/forum/replies/{id}/vote",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).VoteOnReply-fm",
     "operation_id": "postApiV1ForumRepliesIdVote",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/replies/{id}/votes",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetReplyVotes-fm",
     "operation_id": "getApiV1ForumRepliesIdVotes",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/search",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).SearchThreads-fm",
     "operation_id": "getApiV1ForumSearch",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/threads",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).ListThreads-fm",
     "operation_id": "getApiV1ForumThreads",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/forum/threads",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).CreateThread-fm",
     "operation_id": "postApiV1ForumThreads",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/threads/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetThread-fm",
     "operation_id": "getApiV1ForumThreadsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/forum/threads/{id}/replies",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).CreateReply-fm",
     "operation_id": "postApiV1ForumThreadsIdReplies",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/forum/users/{id}/reputation",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetUserReputation-fm",
     "operation_id": "getApiV1ForumUsersIdReputation",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

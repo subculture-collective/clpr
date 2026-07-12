@@ -149,7 +149,7 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 		forum.GET("/threads", h.Forum.ListThreads)
 		forum.GET("/threads/:id", h.Forum.GetThread)
 		forum.GET("/search", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.SearchThreads)
-		forum.GET("/replies/:id/votes", h.Forum.GetReplyVotes)
+		forum.GET("/replies/:id/votes", middleware.OptionalAuthMiddleware(svcs.Auth), h.Forum.GetReplyVotes)
 		forum.GET("/users/:id/reputation", h.Forum.GetUserReputation)
 		forum.GET("/analytics", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.GetForumAnalytics)
 		forum.GET("/popular", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.GetPopularDiscussions)

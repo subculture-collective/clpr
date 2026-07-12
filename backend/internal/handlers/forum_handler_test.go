@@ -135,6 +135,55 @@ func TestCreateThread_Unauthenticated(t *testing.T) {
 	}
 }
 
+func TestCreateThread_MalformedAuthentication(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := &ForumHandler{db: nil}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/forum/threads", bytes.NewBufferString(`{"title":"Valid title","content":"Valid content long enough"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set("user_id", "not-a-uuid")
+
+	handler.CreateThread(c)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
+
+func TestForumListAndSearchRejectMalformedQueries(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name   string
+		target string
+		call   func(*ForumHandler, *gin.Context)
+	}{
+		{"thread page", "/api/v1/forum/threads?page=zero", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
+		{"thread sort", "/api/v1/forum/threads?sort=unknown", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
+		{"search page", "/api/v1/forum/search?q=hello&page=0", func(h *ForumHandler, c *gin.Context) { h.SearchThreads(c) }},
+		{"search sort", "/api/v1/forum/search?q=hello&sort=unknown", func(h *ForumHandler, c *gin.Context) { h.SearchThreads(c) }},
+		{"popular timeframe", "/api/v1/forum/popular?timeframe=year", func(h *ForumHandler, c *gin.Context) { h.GetPopularDiscussions(c) }},
+		{"popular limit", "/api/v1/forum/popular?limit=101", func(h *ForumHandler, c *gin.Context) { h.GetPopularDiscussions(c) }},
+		{"helpful timeframe", "/api/v1/forum/helpful-replies?timeframe=day", func(h *ForumHandler, c *gin.Context) { h.GetMostHelpfulReplies(c) }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			handler := &ForumHandler{db: nil}
+			req := httptest.NewRequest(http.MethodGet, test.target, http.NoBody)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+
+			test.call(handler, c)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("expected %d, got %d", http.StatusBadRequest, w.Code)
+			}
+		})
+	}
+}
+
 func TestGetThread_InvalidID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

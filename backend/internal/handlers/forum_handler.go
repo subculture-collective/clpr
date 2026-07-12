@@ -97,33 +97,55 @@ type CreateThreadRequest struct {
 	Tags    []string `json:"tags" binding:"max=5"`
 }
 
+func parseForumPage(c *gin.Context) (int, bool) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return 0, false
+	}
+	return page, true
+}
+
+func parseForumLimit(c *gin.Context, defaultLimit int) (int, bool) {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultLimit)))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return 0, false
+	}
+	return limit, true
+}
+
 // CreateThread creates a new forum thread
 // POST /api/v1/forum/threads
 func (h *ForumHandler) CreateThread(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	var req CreateThreadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid thread"})
 		return
 	}
 
 	// Validate tags
-	for _, tag := range req.Tags {
-		if len(tag) > 50 {
+	seenTags := make(map[string]struct{}, len(req.Tags))
+	for i, tag := range req.Tags {
+		tag = strings.TrimSpace(tag)
+		if tag == "" || len(tag) > 50 {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Tag cannot exceed 50 characters",
+				"error": "Tags must contain 1 to 50 characters",
 			})
 			return
 		}
+		normalized := strings.ToLower(tag)
+		if _, exists := seenTags[normalized]; exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Tags must be unique"})
+			return
+		}
+		seenTags[normalized] = struct{}{}
+		req.Tags[i] = tag
 	}
 
 	// Parse game_id if provided
@@ -171,16 +193,24 @@ func (h *ForumHandler) CreateThread(c *gin.Context) {
 // ListThreads retrieves a list of forum threads with filters
 // GET /api/v1/forum/threads?page=1&sort=recent&game_filter=<game_id>&search=<query>
 func (h *ForumHandler) ListThreads(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if page < 1 {
-		page = 1
+	page, ok := parseForumPage(c)
+	if !ok {
+		return
 	}
 	limit := 20
 	offset := (page - 1) * limit
 
 	sort := c.DefaultQuery("sort", "recent") // recent, popular, replies
+	if sort != "recent" && sort != "popular" && sort != "replies" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sort must be recent, popular, or replies"})
+		return
+	}
 	gameFilter := c.Query("game_filter")
-	searchQuery := c.Query("search")
+	searchQuery := strings.TrimSpace(c.Query("search"))
+	if len(searchQuery) > 200 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "search cannot exceed 200 characters"})
+		return
+	}
 
 	// Build query
 	queryBuilder := strings.Builder{}
@@ -263,6 +293,10 @@ func (h *ForumHandler) ListThreads(c *gin.Context) {
 			thread.Tags = []string{}
 		}
 		threads = append(threads, thread)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve threads"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -361,6 +395,7 @@ func (h *ForumHandler) getThreadRepliesHierarchical(ctx context.Context, threadI
 		FROM forum_replies fr
 		JOIN users u ON fr.user_id = u.id
 		WHERE fr.thread_id = $1 AND fr.is_deleted = FALSE
+		  AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE
 		ORDER BY fr.path
 	`
 
@@ -372,6 +407,7 @@ func (h *ForumHandler) getThreadRepliesHierarchical(ctx context.Context, threadI
 
 	// Map to store replies by ID for building hierarchy
 	replyMap := make(map[uuid.UUID]*ForumReply)
+	orderedReplies := make([]*ForumReply, 0)
 	var rootReplies []*ForumReply
 
 	// First pass: create all reply objects and store in map
@@ -387,10 +423,14 @@ func (h *ForumHandler) getThreadRepliesHierarchical(ctx context.Context, threadI
 
 		reply.Replies = []ForumReply{}
 		replyMap[reply.ID] = &reply
+		orderedReplies = append(orderedReplies, &reply)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	// Second pass: build hierarchy by connecting children to parents
-	for _, reply := range replyMap {
+	for _, reply := range orderedReplies {
 		if reply.ParentReplyID == nil {
 			// Root level reply
 			rootReplies = append(rootReplies, reply)
@@ -448,19 +488,14 @@ func (h *ForumHandler) CreateReply(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	var req CreateReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reply"})
 		return
 	}
 
@@ -477,7 +512,7 @@ func (h *ForumHandler) CreateReply(c *gin.Context) {
 	var isLocked bool
 	var isDeleted bool
 	err = tx.QueryRow(c.Request.Context(),
-		`SELECT locked, is_deleted FROM forum_threads WHERE id = $1`,
+		`SELECT locked, is_deleted FROM forum_threads WHERE id = $1 FOR UPDATE`,
 		threadID).Scan(&isLocked, &isDeleted)
 
 	if err != nil {
@@ -616,19 +651,14 @@ func (h *ForumHandler) UpdateReply(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	var req UpdateReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reply update"})
 		return
 	}
 
@@ -670,11 +700,8 @@ func (h *ForumHandler) DeleteReply(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -723,26 +750,31 @@ type ForumSearchResult struct {
 // SearchThreads performs full-text search on threads and replies with filters
 // GET /api/v1/forum/search?q=<query>&author=<username>&sort=<relevance|date|votes>&page=1
 func (h *ForumHandler) SearchThreads(c *gin.Context) {
-	searchQuery := c.Query("q")
-	if searchQuery == "" {
+	searchQuery := strings.TrimSpace(c.Query("q"))
+	if searchQuery == "" || len(searchQuery) > 200 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Search query is required",
 		})
 		return
 	}
 
-	author := c.Query("author")
+	author := strings.TrimSpace(c.Query("author"))
+	if len(author) > 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "author cannot exceed 50 characters"})
+		return
+	}
 	sortBy := c.DefaultQuery("sort", "relevance") // relevance, date, votes
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if page < 1 {
-		page = 1
+	page, ok := parseForumPage(c)
+	if !ok {
+		return
 	}
 	limit := 50
 	offset := (page - 1) * limit
 
 	// Validate sort parameter
 	if sortBy != "relevance" && sortBy != "date" && sortBy != "votes" {
-		sortBy = "relevance"
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sort must be relevance, date, or votes"})
+		return
 	}
 
 	// Build the query with UNION of threads and replies
@@ -805,8 +837,10 @@ func (h *ForumHandler) SearchThreads(c *gin.Context) {
 			ts_rank(fr.search_vector, plainto_tsquery('english', $1)) as rank
 		FROM forum_replies fr
 		JOIN users u ON fr.user_id = u.id
+		JOIN forum_threads ft ON ft.id = fr.thread_id
 		LEFT JOIN forum_vote_counts vc ON fr.id = vc.reply_id
-		WHERE fr.is_deleted = FALSE
+		WHERE fr.is_deleted = FALSE AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE
+			AND ft.is_deleted = FALSE
 			AND fr.search_vector @@ plainto_tsquery('english', $1)
 	`)
 
@@ -898,11 +932,8 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -911,9 +942,7 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid vote"})
 		return
 	}
 
@@ -925,12 +954,19 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 		return
 	}
 
-	// Check if reply exists and is not deleted
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
+
+	// Lock the reply so visibility cannot change between authorization and vote persistence.
 	var replyUserID uuid.UUID
-	var isDeleted bool
-	err = h.db.QueryRow(c.Request.Context(),
-		`SELECT user_id, is_deleted FROM forum_replies WHERE id = $1`,
-		replyID).Scan(&replyUserID, &isDeleted)
+	var isDeleted, hidden, spam bool
+	err = tx.QueryRow(c.Request.Context(),
+		`SELECT user_id, is_deleted, hidden, flagged_as_spam FROM forum_replies WHERE id = $1 FOR UPDATE`,
+		replyID).Scan(&replyUserID, &isDeleted, &hidden, &spam)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -945,7 +981,7 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 		return
 	}
 
-	if isDeleted {
+	if isDeleted || hidden || spam {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Reply not found",
 		})
@@ -953,41 +989,34 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 	}
 
 	// Prevent self-voting
-	if replyUserID == userID.(uuid.UUID) {
+	if replyUserID == userID {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Cannot vote on your own reply",
 		})
 		return
 	}
 
-	// Insert or update vote
-	_, err = h.db.Exec(c.Request.Context(), `
-		INSERT INTO forum_votes (user_id, reply_id, vote_value)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (user_id, reply_id) 
-		DO UPDATE SET vote_value = EXCLUDED.vote_value, updated_at = NOW()
-	`, userID, replyID, req.VoteValue)
-
+	if req.VoteValue == 0 {
+		_, err = tx.Exec(c.Request.Context(), `DELETE FROM forum_votes WHERE user_id = $1 AND reply_id = $2`, userID, replyID)
+	} else {
+		_, err = tx.Exec(c.Request.Context(), `
+			INSERT INTO forum_votes (user_id, reply_id, vote_value)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (user_id, reply_id)
+			DO UPDATE SET vote_value = EXCLUDED.vote_value, updated_at = NOW()`, userID, replyID, req.VoteValue)
+	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to save vote",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save vote"})
 		return
 	}
-
-	// Update reputation for reply author (async via goroutine for performance)
-	// Use a separate context with timeout to prevent goroutine leaks
-	handlerBackgroundJobs.Submit(func() {
-		// Create background context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		// Update reputation - errors are logged for debugging
-		if _, err := h.db.Exec(ctx, "SELECT update_reputation_score($1)", replyUserID); err != nil {
-			// Log error but don't fail the vote operation
-			fmt.Printf("Warning: Failed to update reputation for user %s: %v\n", replyUserID, err)
-		}
-	})
+	if _, err := tx.Exec(c.Request.Context(), "SELECT update_reputation_score($1)", replyUserID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update reputation"})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save vote"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -1007,12 +1036,9 @@ func (h *ForumHandler) GetReplyVotes(c *gin.Context) {
 	}
 
 	// Get authenticated user ID (may be nil for guests)
-	userID, exists := c.Get("user_id")
-	var userUUID *uuid.UUID
-	if exists {
-		if id, ok := userID.(uuid.UUID); ok {
-			userUUID = &id
-		}
+	userUUID, ok := optionalCommunityUserID(c)
+	if !ok {
+		return
 	}
 
 	var stats VoteStats
@@ -1028,7 +1054,7 @@ func (h *ForumHandler) GetReplyVotes(c *gin.Context) {
 			FROM forum_replies fr
 			LEFT JOIN forum_vote_counts vc ON fr.id = vc.reply_id
 			LEFT JOIN forum_votes v ON fr.id = v.reply_id AND v.user_id = $2
-			WHERE fr.id = $1
+			WHERE fr.id = $1 AND fr.is_deleted = FALSE AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE
 		`, replyID, userUUID).Scan(&stats.Upvotes, &stats.Downvotes, &stats.NetVotes, &stats.UserVote)
 	} else {
 		// Guest user - no user vote
@@ -1039,7 +1065,7 @@ func (h *ForumHandler) GetReplyVotes(c *gin.Context) {
 				COALESCE(vc.net_votes, 0) as net_votes
 			FROM forum_replies fr
 			LEFT JOIN forum_vote_counts vc ON fr.id = vc.reply_id
-			WHERE fr.id = $1
+			WHERE fr.id = $1 AND fr.is_deleted = FALSE AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE
 		`, replyID).Scan(&stats.Upvotes, &stats.Downvotes, &stats.NetVotes)
 		stats.UserVote = 0
 	}
@@ -1077,15 +1103,16 @@ func (h *ForumHandler) GetUserReputation(c *gin.Context) {
 	var rep ReputationScore
 	err = h.db.QueryRow(c.Request.Context(), `
 		SELECT 
-			user_id, 
-			reputation_score, 
-			reputation_badge, 
-			total_votes, 
-			threads_created, 
-			replies_created, 
-			last_updated
-		FROM user_reputation
-		WHERE user_id = $1
+			u.id,
+			COALESCE(ur.reputation_score, 0),
+			COALESCE(ur.reputation_badge, 'new'),
+			COALESCE(ur.total_votes, 0),
+			COALESCE(ur.threads_created, 0),
+			COALESCE(ur.replies_created, 0),
+			COALESCE(ur.last_updated, u.created_at)
+		FROM users u
+		LEFT JOIN user_reputation ur ON ur.user_id = u.id
+		WHERE u.id = $1
 	`, userID).Scan(
 		&rep.UserID,
 		&rep.Score,
@@ -1098,16 +1125,8 @@ func (h *ForumHandler) GetUserReputation(c *gin.Context) {
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			// User has no reputation yet - return default
-			rep = ReputationScore{
-				UserID:    userID,
-				Score:     0,
-				Badge:     "new",
-				Votes:     0,
-				Threads:   0,
-				Replies:   0,
-				UpdatedAt: time.Now(),
-			}
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to retrieve reputation",
@@ -1202,7 +1221,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 
 	// Get total replies
 	err = h.db.QueryRow(ctx, `
-		SELECT COUNT(*) FROM forum_replies WHERE is_deleted = FALSE
+		SELECT COUNT(*) FROM forum_replies WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE
 	`).Scan(&analytics.TotalReplies)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get reply count"})
@@ -1214,7 +1233,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 		SELECT COUNT(DISTINCT user_id) FROM (
 			SELECT user_id FROM forum_threads WHERE is_deleted = FALSE
 			UNION
-			SELECT user_id FROM forum_replies WHERE is_deleted = FALSE
+			SELECT user_id FROM forum_replies WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE
 		) u
 	`).Scan(&analytics.TotalUsers)
 	if err != nil {
@@ -1229,7 +1248,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE
 			UNION ALL
 			SELECT created_at FROM forum_replies 
-			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE
+			WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE AND created_at >= CURRENT_DATE
 		) posts
 	`).Scan(&analytics.PostsToday)
 	if err != nil {
@@ -1244,7 +1263,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '7 days'
 			UNION ALL
 			SELECT created_at FROM forum_replies 
-			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+			WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE AND created_at >= CURRENT_DATE - INTERVAL '7 days'
 		) posts
 	`).Scan(&analytics.PostsThisWeek)
 	if err != nil {
@@ -1259,7 +1278,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '30 days'
 			UNION ALL
 			SELECT created_at FROM forum_replies 
-			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+			WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE AND created_at >= CURRENT_DATE - INTERVAL '30 days'
 		) posts
 	`).Scan(&analytics.PostsThisMonth)
 	if err != nil {
@@ -1274,7 +1293,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE
 			UNION
 			SELECT user_id FROM forum_replies 
-			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE
+			WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE AND created_at >= CURRENT_DATE
 		) u
 	`).Scan(&analytics.ActiveUsersToday)
 	if err != nil {
@@ -1289,7 +1308,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '7 days'
 			UNION
 			SELECT user_id FROM forum_replies 
-			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+			WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE AND created_at >= CURRENT_DATE - INTERVAL '7 days'
 		) u
 	`).Scan(&analytics.ActiveUsersWeek)
 	if err != nil {
@@ -1323,12 +1342,16 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 		}
 		analytics.TrendingTopics = append(analytics.TrendingTopics, topic)
 	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get trending topics"})
+		return
+	}
 
 	// Get popular threads (most replies + views in last 30 days)
 	threadRows, err := h.db.Query(ctx, `
 		SELECT 
 			ft.id, ft.user_id, u.username, ft.title, ft.content,
-			ft.game_id, g.title as game_name, ft.tags,
+			ft.game_id, g.name as game_name, ft.tags,
 			ft.view_count, ft.reply_count, ft.locked, ft.locked_at,
 			ft.pinned, ft.created_at, ft.updated_at
 		FROM forum_threads ft
@@ -1361,6 +1384,10 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 		thread.GameName = gameName
 		analytics.PopularThreads = append(analytics.PopularThreads, thread)
 	}
+	if err := threadRows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get popular threads"})
+		return
+	}
 
 	// Get top contributors (users with most activity in last 30 days)
 	contribRows, err := h.db.Query(ctx, `
@@ -1379,7 +1406,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 		LEFT JOIN (
 			SELECT user_id, COUNT(*) as reply_count
 			FROM forum_replies
-			WHERE is_deleted = FALSE AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+			WHERE is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE AND created_at >= CURRENT_DATE - INTERVAL '30 days'
 			GROUP BY user_id
 		) r ON u.id = r.user_id
 		LEFT JOIN user_reputation ur ON u.id = ur.user_id
@@ -1401,6 +1428,10 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 		}
 		analytics.TopContributors = append(analytics.TopContributors, contrib)
 	}
+	if err := contribRows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get top contributors"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -1413,9 +1444,9 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 func (h *ForumHandler) GetPopularDiscussions(c *gin.Context) {
 	ctx := c.Request.Context()
 	timeframe := c.DefaultQuery("timeframe", "week") // day, week, month, all
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if limit < 1 || limit > 100 {
-		limit = 20
+	limit, ok := parseForumLimit(c, 20)
+	if !ok {
+		return
 	}
 
 	var intervalDays int
@@ -1429,13 +1460,14 @@ func (h *ForumHandler) GetPopularDiscussions(c *gin.Context) {
 	case "all":
 		intervalDays = 3650 // ~10 years
 	default:
-		intervalDays = 7
+		c.JSON(http.StatusBadRequest, gin.H{"error": "timeframe must be day, week, month, or all"})
+		return
 	}
 
 	query := `
 		SELECT 
 			ft.id, ft.user_id, u.username, ft.title, ft.content,
-			ft.game_id, g.title as game_name, ft.tags,
+			ft.game_id, g.name as game_name, ft.tags,
 			ft.view_count, ft.reply_count, ft.locked, ft.locked_at,
 			ft.pinned, ft.created_at, ft.updated_at
 		FROM forum_threads ft
@@ -1470,6 +1502,10 @@ func (h *ForumHandler) GetPopularDiscussions(c *gin.Context) {
 		thread.GameName = gameName
 		threads = append(threads, thread)
 	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get popular discussions"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -1487,9 +1523,9 @@ func (h *ForumHandler) GetPopularDiscussions(c *gin.Context) {
 func (h *ForumHandler) GetMostHelpfulReplies(c *gin.Context) {
 	ctx := c.Request.Context()
 	timeframe := c.DefaultQuery("timeframe", "month") // week, month, all
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if limit < 1 || limit > 100 {
-		limit = 20
+	limit, ok := parseForumLimit(c, 20)
+	if !ok {
+		return
 	}
 
 	var intervalDays int
@@ -1501,13 +1537,14 @@ func (h *ForumHandler) GetMostHelpfulReplies(c *gin.Context) {
 	case "all":
 		intervalDays = 3650 // ~10 years
 	default:
-		intervalDays = 30
+		c.JSON(http.StatusBadRequest, gin.H{"error": "timeframe must be week, month, or all"})
+		return
 	}
 
 	query := `
 		SELECT 
 			fr.id, fr.user_id, u.username, fr.thread_id, 
-			fr.parent_reply_id, fr.content, fr.depth, fr.path,
+			fr.parent_reply_id, fr.content, fr.depth, fr.path::text,
 			fr.created_at, fr.updated_at,
 			ft.title as thread_title,
 			COALESCE(fvc.net_votes, 0) as net_votes,
@@ -1517,7 +1554,8 @@ func (h *ForumHandler) GetMostHelpfulReplies(c *gin.Context) {
 		INNER JOIN users u ON fr.user_id = u.id
 		INNER JOIN forum_threads ft ON fr.thread_id = ft.id
 		LEFT JOIN forum_vote_counts fvc ON fr.id = fvc.reply_id
-		WHERE fr.is_deleted = FALSE
+		WHERE fr.is_deleted = FALSE AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE
+			AND ft.is_deleted = FALSE
 			AND fr.created_at >= CURRENT_DATE - ($2 || ' days')::INTERVAL
 		ORDER BY COALESCE(fvc.net_votes, 0) DESC, fr.created_at DESC
 		LIMIT $1
@@ -1551,6 +1589,10 @@ func (h *ForumHandler) GetMostHelpfulReplies(c *gin.Context) {
 			continue
 		}
 		replies = append(replies, reply)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get helpful replies"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

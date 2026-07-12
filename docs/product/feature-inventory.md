@@ -651,7 +651,7 @@ counts that included planned or missing artifacts.
 
 #### 10.1 Forum System
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/forum/*`
+- **Status**: 🟡 partial | **Backend**: `/api/v1/forum/*` | **Frontend**: forum pages and components
 - **Features**: Threads, replies, voting, search, analytics, moderation
 - **Gaps**: Categories, thread subscriptions
 

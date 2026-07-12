@@ -8989,11 +8989,11 @@ paths:
 
   /api/v1/forum/analytics:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/analytics
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Get public forum analytics
+      description: Returns visible thread, reply, activity, topic, and contributor aggregates.
       operationId: getApiV1ForumAnalytics
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9006,11 +9006,10 @@ paths:
 
   /api/v1/forum/flag:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/forum/flag
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Flag visible forum content
+      description: Idempotently flags an existing visible thread or reply authored by another user for moderation review.
       operationId: postApiV1ForumFlag
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9023,11 +9022,11 @@ paths:
 
   /api/v1/forum/helpful-replies:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/helpful-replies
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: List helpful forum replies
+      description: Returns highly voted visible replies from visible threads using a strict timeframe and limit.
       operationId: getApiV1ForumHelpfulReplies
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9040,11 +9039,11 @@ paths:
 
   /api/v1/forum/popular:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/popular
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: List popular forum discussions
+      description: Returns visible threads ranked by replies and views for a strict timeframe and limit.
       operationId: getApiV1ForumPopular
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9057,11 +9056,10 @@ paths:
 
   /api/v1/forum/replies/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/forum/replies/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Delete an owned forum reply
+      description: Soft-deletes a visible reply owned by the authenticated user.
       operationId: deleteApiV1ForumRepliesId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -9078,11 +9076,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/forum/replies/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Update an owned forum reply
+      description: Replaces the bounded content of a visible reply owned by the authenticated user.
       operationId: patchApiV1ForumRepliesId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -9101,11 +9098,10 @@ paths:
 
   /api/v1/forum/replies/{id}/vote:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/forum/replies/{id}/vote
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Vote on a visible forum reply
+      description: Atomically creates, changes, or clears a non-self vote and recalculates the reply author's reputation.
       operationId: postApiV1ForumRepliesIdVote
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -9124,11 +9120,11 @@ paths:
 
   /api/v1/forum/replies/{id}/votes:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/replies/{id}/votes
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Get visible reply vote totals
+      description: Returns aggregate votes and, when optionally authenticated, the requesting user's current vote.
       operationId: getApiV1ForumRepliesIdVotes
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -9147,11 +9143,11 @@ paths:
 
   /api/v1/forum/search:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/search
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Search visible forum content
+      description: Searches visible threads and visible replies from non-deleted threads with bounded filters and strict pagination.
       operationId: getApiV1ForumSearch
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9164,11 +9160,11 @@ paths:
 
   /api/v1/forum/threads:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/threads
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: List visible forum threads
+      description: Lists non-deleted threads with strict pagination, sorting, game filtering, and bounded search.
       operationId: getApiV1ForumThreads
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9179,13 +9175,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/forum/threads
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Create a forum thread
+      description: Creates a bounded thread with up to five unique, non-empty tags.
       operationId: postApiV1ForumThreads
-      x-clpr-router-derived: true
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -9196,11 +9191,11 @@ paths:
 
   /api/v1/forum/threads/{id}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/threads/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Get a forum thread and visible replies
+      description: Returns a non-deleted thread and deterministic visible reply hierarchy, then records a best-effort view.
       operationId: getApiV1ForumThreadsId
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -9219,11 +9214,10 @@ paths:
 
   /api/v1/forum/threads/{id}/replies:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/forum/threads/{id}/replies
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Create a forum reply
+      description: Creates a reply up to ten levels deep while serializing against thread locking and deletion.
       operationId: postApiV1ForumThreadsIdReplies
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -9231,7 +9225,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -9242,11 +9236,11 @@ paths:
 
   /api/v1/forum/users/{id}/reputation:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/forum/users/{id}/reputation
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Forum]
+      summary: Get forum reputation for an existing user
+      description: Returns persisted reputation or a zero-valued new-user score; nonexistent users return 404.
       operationId: getApiV1ForumUsersIdReputation
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path

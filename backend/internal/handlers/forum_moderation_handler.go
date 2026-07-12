@@ -638,20 +638,17 @@ func (h *ForumModerationHandler) GetModerationLog(c *gin.Context) {
 
 // FlagContentRequest represents the request to flag content
 type FlagContentRequest struct {
-	TargetType string  `json:"target_type" binding:"required"`
-	TargetID   string  `json:"target_id" binding:"required"`
-	Reason     string  `json:"reason" binding:"required"`
-	Details    *string `json:"details"`
+	TargetType string  `json:"target_type" binding:"required,oneof=thread reply"`
+	TargetID   string  `json:"target_id" binding:"required,uuid"`
+	Reason     string  `json:"reason" binding:"required,oneof=spam harassment off-topic misinformation other"`
+	Details    *string `json:"details" binding:"omitempty,max=2000"`
 }
 
 // FlagContent allows authenticated users to flag a thread or reply
 // POST /api/v1/forum/flag
 func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -673,11 +670,11 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 
 	// Validate reason
 	validReasons := map[string]bool{
-		"spam":            true,
-		"harassment":      true,
-		"off-topic":       true,
-		"misinformation":  true,
-		"other":           true,
+		"spam":           true,
+		"harassment":     true,
+		"off-topic":      true,
+		"misinformation": true,
+		"other":          true,
 	}
 	if !validReasons[req.Reason] {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -694,9 +691,35 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 		})
 		return
 	}
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
+	var authorID uuid.UUID
+	if req.TargetType == "thread" {
+		err = tx.QueryRow(c.Request.Context(),
+			`SELECT user_id FROM forum_threads WHERE id = $1 AND is_deleted = FALSE FOR UPDATE`, targetID).Scan(&authorID)
+	} else {
+		err = tx.QueryRow(c.Request.Context(),
+			`SELECT user_id FROM forum_replies WHERE id = $1 AND is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE FOR UPDATE`, targetID).Scan(&authorID)
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Content not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify content"})
+		return
+	}
+	if authorID == userID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot flag your own content"})
+		return
+	}
 
 	// Insert flag, handling duplicates gracefully
-	_, err = h.db.Exec(c.Request.Context(),
+	_, err = tx.Exec(c.Request.Context(),
 		`INSERT INTO content_flags (user_id, target_type, target_id, reason, details, status)
 		VALUES ($1, $2, $3, $4, $5, 'pending')
 		ON CONFLICT (user_id, target_type, target_id) DO NOTHING`,
@@ -705,6 +728,10 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to flag content",
 		})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to flag content"})
 		return
 	}
 

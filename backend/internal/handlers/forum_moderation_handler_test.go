@@ -11,6 +11,40 @@ import (
 	"github.com/google/uuid"
 )
 
+func TestFlagContentRejectsMalformedIdentity(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := &ForumModerationHandler{db: nil}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/forum/flag", strings.NewReader(`{"target_type":"thread","target_id":"`+uuid.NewString()+`","reason":"spam"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set("user_id", "not-a-uuid")
+
+	handler.FlagContent(c)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
+
+func TestFlagContentRejectsInvalidBoundedRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := &ForumModerationHandler{db: nil}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/forum/flag", strings.NewReader(`{"target_type":"clip","target_id":"`+uuid.NewString()+`","reason":"spam"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set("user_id", uuid.New())
+
+	handler.FlagContent(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
+
 // TestLockThread_InvalidThreadID tests that invalid thread IDs are rejected
 func TestLockThread_InvalidThreadID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
