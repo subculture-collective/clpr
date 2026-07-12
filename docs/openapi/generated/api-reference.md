@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T16:21:34.068Z
+generated: 2026-07-12T16:26:45.379Z
 ---
 
 # Clipper API
@@ -7839,9 +7839,15 @@ Content reporting
 
 `POST /api/v1/reports`
 
-Submit a content report (rate limited - 10/hour)
+Submit a content report (rate limited to 10 per hour per user). Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+|  |  | string |  |  |
 
 #### Request Body
 
@@ -7855,7 +7861,13 @@ Content-Type: `application/json`
 
 **401** - Success
 
+**404** - Success
+
+**409** - The user already reported this item
+
 **429** - Success
+
+**500** - Success
 
 #### Code Examples
 
@@ -7934,6 +7946,356 @@ func main() {
     }
 
     req, err := http.NewRequest("POST", "/api/v1/reports", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List content reports
+
+`GET /api/v1/admin/reports`
+
+Requires an administrator session with MFA.
+
+**Tags:** Admin, Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| status | query | string |  |  |
+| type | query | string |  |  |
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+
+#### Responses
+
+**200** - Paginated reports
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/admin/reports"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/reports', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/reports'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/reports", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Get a content report
+
+`GET /api/v1/admin/reports/{id}`
+
+Requires an administrator session with MFA. Includes reporter information and reports for the same target.
+
+**Tags:** Admin, Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+
+#### Responses
+
+**200** - Report details
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/admin/reports/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/reports/{id}', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/reports/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/reports/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Resolve a content report
+
+`PUT /api/v1/admin/reports/{id}`
+
+Requires an administrator session with MFA. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Admin, Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Report updated after any moderation action succeeded
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X PUT "http://localhost:8080/api/v1/admin/reports/{id}" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/reports/{id}', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.put(
+        '/api/v1/admin/reports/{id}',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/admin/reports/{id}", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
@@ -14793,6 +15155,356 @@ func main() {
     }
 
     req, err := http.NewRequest("PUT", "/api/v1/admin/contact/{id}/status", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List content reports
+
+`GET /api/v1/admin/reports`
+
+Requires an administrator session with MFA.
+
+**Tags:** Admin, Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| status | query | string |  |  |
+| type | query | string |  |  |
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+
+#### Responses
+
+**200** - Paginated reports
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/admin/reports"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/reports', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/reports'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/reports", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Get a content report
+
+`GET /api/v1/admin/reports/{id}`
+
+Requires an administrator session with MFA. Includes reporter information and reports for the same target.
+
+**Tags:** Admin, Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+
+#### Responses
+
+**200** - Report details
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/admin/reports/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/reports/{id}', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/reports/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/reports/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Resolve a content report
+
+`PUT /api/v1/admin/reports/{id}`
+
+Requires an administrator session with MFA. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Admin, Reports
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Report updated after any moderation action succeeded
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X PUT "http://localhost:8080/api/v1/admin/reports/{id}" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/reports/{id}', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.put(
+        '/api/v1/admin/reports/{id}',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/admin/reports/{id}", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
@@ -23254,312 +23966,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("POST", "/api/v1/admin/playlist-scripts/{id}/generate", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/admin/reports
-
-`GET /api/v1/admin/reports`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/admin/reports"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/reports', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/reports'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/reports", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/admin/reports/{id}
-
-`GET /api/v1/admin/reports/{id}`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/admin/reports/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/reports/{id}', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/reports/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/reports/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### PUT /api/v1/admin/reports/{id}
-
-`PUT /api/v1/admin/reports/{id}`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X PUT "http://localhost:8080/api/v1/admin/reports/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/reports/{id}', {
-    method: 'PUT',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.put(
-        '/api/v1/admin/reports/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/admin/reports/{id}", nil)
     if err != nil {
         // Handle error
         return

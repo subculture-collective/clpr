@@ -543,21 +543,21 @@
     "path": "/api/v1/admin/reports",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).ListReports-fm",
     "operation_id": "getApiV1AdminReports",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/reports/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).GetReport-fm",
     "operation_id": "getApiV1AdminReportsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/admin/reports/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).UpdateReport-fm",
     "operation_id": "putApiV1AdminReportsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
