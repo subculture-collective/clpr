@@ -788,21 +788,21 @@
     "path": "/api/v1/admin/webhooks/dlq",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookDLQHandler).GetDeadLetterQueue-fm",
     "operation_id": "getApiV1AdminWebhooksDlq",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/webhooks/dlq/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookDLQHandler).DeleteDeadLetterQueueItem-fm",
     "operation_id": "deleteApiV1AdminWebhooksDlqId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/webhooks/dlq/{id}/replay",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookDLQHandler).ReplayDeadLetterQueueItem-fm",
     "operation_id": "postApiV1AdminWebhooksDlqIdReplay",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

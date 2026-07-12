@@ -1,22 +1,31 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+type webhookDLQService interface {
+	GetDeadLetterQueueItems(context.Context, int, int) ([]*models.OutboundWebhookDeadLetterQueue, int, error)
+	ReplayDeadLetterQueueItem(context.Context, uuid.UUID) error
+	DeleteDeadLetterQueueItem(context.Context, uuid.UUID) error
+}
 
 // WebhookDLQHandler handles webhook dead-letter queue management endpoints
 type WebhookDLQHandler struct {
-	webhookService *services.OutboundWebhookService
+	webhookService webhookDLQService
 }
 
 // NewWebhookDLQHandler creates a new webhook DLQ handler
-func NewWebhookDLQHandler(webhookService *services.OutboundWebhookService) *WebhookDLQHandler {
+func NewWebhookDLQHandler(webhookService webhookDLQService) *WebhookDLQHandler {
 	return &WebhookDLQHandler{
 		webhookService: webhookService,
 	}
@@ -37,9 +46,12 @@ func (h *WebhookDLQHandler) GetDeadLetterQueue(c *gin.Context) {
 	// Parse pagination parameters
 	page := 1
 	if pageStr := c.Query("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
+		p, err := strconv.Atoi(pageStr)
+		if err != nil || p < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'page' query parameter; must be a positive integer"})
+			return
 		}
+		page = p
 	}
 
 	limit := 20
@@ -105,7 +117,15 @@ func (h *WebhookDLQHandler) ReplayDeadLetterQueueItem(c *gin.Context) {
 			"component": "webhook_dlq",
 			"dlq_id":    dlqID,
 		})
-		c.JSON(http.StatusInternalServerError, gin.H{
+		if errors.Is(err, services.ErrWebhookDLQItemNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "DLQ item not found"})
+			return
+		}
+		if errors.Is(err, services.ErrWebhookDLQReplayUnavailable) {
+			c.JSON(http.StatusConflict, gin.H{"error": "DLQ item was already replayed or is currently replaying"})
+			return
+		}
+		c.JSON(http.StatusBadGateway, gin.H{
 			"error": "Failed to replay webhook delivery",
 		})
 		return
@@ -139,6 +159,10 @@ func (h *WebhookDLQHandler) DeleteDeadLetterQueueItem(c *gin.Context) {
 
 	// Delete the item
 	if err := h.webhookService.DeleteDeadLetterQueueItem(c.Request.Context(), dlqID); err != nil {
+		if errors.Is(err, services.ErrWebhookDLQItemNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "DLQ item not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete DLQ item",
 		})

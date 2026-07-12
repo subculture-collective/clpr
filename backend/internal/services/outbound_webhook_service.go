@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -17,10 +18,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+)
+
+var (
+	ErrWebhookDLQItemNotFound      = errors.New("webhook DLQ item not found")
+	ErrWebhookDLQReplayUnavailable = errors.New("webhook DLQ item is already replayed or currently replaying")
 )
 
 const (
@@ -732,11 +739,25 @@ func (s *OutboundWebhookService) GetDeadLetterQueueItems(ctx context.Context, pa
 func (s *OutboundWebhookService) ReplayDeadLetterQueueItem(ctx context.Context, dlqID uuid.UUID) error {
 	startTime := time.Now()
 
-	// Get the DLQ item
-	dlqItem, err := s.webhookRepo.GetDeadLetterQueueItemByID(ctx, dlqID)
+	// Atomically claim the item so concurrent operators cannot deliver it twice.
+	dlqItem, err := s.webhookRepo.ClaimDeadLetterQueueItemForReplay(ctx, dlqID)
 	if err != nil {
-		return fmt.Errorf("failed to get DLQ item: %w", err)
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("failed to claim DLQ item: %w", err)
+		}
+		if _, lookupErr := s.webhookRepo.GetDeadLetterQueueItemByID(ctx, dlqID); errors.Is(lookupErr, pgx.ErrNoRows) {
+			return ErrWebhookDLQItemNotFound
+		} else if lookupErr != nil {
+			return fmt.Errorf("failed to verify DLQ item: %w", lookupErr)
+		}
+		return ErrWebhookDLQReplayUnavailable
 	}
+	deliveryAttempted := false
+	defer func() {
+		if !deliveryAttempted {
+			_ = s.webhookRepo.UpdateDLQItemReplayStatus(ctx, dlqID, false)
+		}
+	}()
 
 	// Get subscription details
 	subscription, err := s.webhookRepo.GetSubscriptionByID(ctx, dlqItem.SubscriptionID)
@@ -775,6 +796,7 @@ func (s *OutboundWebhookService) ReplayDeadLetterQueueItem(ctx context.Context, 
 	req.Header.Set("User-Agent", "Clipper-Webhooks/1.0")
 
 	// Send request
+	deliveryAttempted = true
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		// Update DLQ item with failed replay
@@ -825,7 +847,11 @@ func (s *OutboundWebhookService) ReplayDeadLetterQueueItem(ctx context.Context, 
 
 // DeleteDeadLetterQueueItem deletes a DLQ item
 func (s *OutboundWebhookService) DeleteDeadLetterQueueItem(ctx context.Context, dlqID uuid.UUID) error {
-	return s.webhookRepo.DeleteDeadLetterQueueItem(ctx, dlqID)
+	err := s.webhookRepo.DeleteDeadLetterQueueItem(ctx, dlqID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrWebhookDLQItemNotFound
+	}
+	return err
 }
 
 // Helper function to create a pointer to time.Time
