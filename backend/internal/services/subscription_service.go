@@ -714,6 +714,16 @@ func (s *SubscriptionService) handleInvoicePaid(ctx context.Context, event strip
 		return nil // Not critical
 	}
 
+	// A paid subscription invoice is authoritative recovery evidence. Restore
+	// local entitlement before clearing dunning state so the user is not left
+	// locked out after Stripe successfully collects payment.
+	if sub.Status == "past_due" || sub.Status == "unpaid" {
+		sub.Status = "active"
+		if err := s.repo.Update(ctx, sub); err != nil {
+			return fmt.Errorf("failed to restore subscription after payment: %w", err)
+		}
+	}
+
 	// Process payment success for dunning (clears grace period and marks failures as resolved)
 	if s.dunningService != nil {
 		if err := s.dunningService.HandlePaymentSuccess(ctx, &invoice); err != nil {

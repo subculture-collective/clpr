@@ -30,6 +30,7 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), "DELETE FROM users WHERE id = $1", userID) })
 
 	repo := repository.NewSubscriptionRepository(pool)
+	userRepo := repository.NewUserRepository(pool)
 	customerID := "cus_" + userID.String()
 	subscriptionID := "sub_" + userID.String()
 	require.NoError(t, repo.Create(ctx, &models.Subscription{
@@ -41,7 +42,8 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 		SecretKey: "sk_test_123", WebhookSecrets: []string{secret},
 		ProMonthlyPriceID: "price_monthly_contract", ProYearlyPriceID: "price_yearly_contract",
 	}}
-	service := services.NewSubscriptionService(repo, repository.NewUserRepository(pool), repository.NewWebhookRepository(pool), cfg, nil, nil, nil)
+	dunningService := services.NewDunningService(repository.NewDunningRepository(pool), repo, userRepo, nil, nil)
+	service := services.NewSubscriptionService(repo, userRepo, repository.NewWebhookRepository(pool), cfg, nil, dunningService, nil)
 	baseTime := time.Now().Unix()
 
 	created := subscriptionEvent("evt_created_"+userID.String(), "customer.subscription.created", baseTime,
@@ -64,7 +66,24 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 	failedInvoice := fmt.Sprintf(`{"id":"evt_failed_%s","object":"event","api_version":"2025-02-24.acacia","type":"invoice.payment_failed","created":%d,"data":{"object":{"id":"in_failed_%s","object":"invoice","subscription":"%s","customer":"%s","amount_due":999,"currency":"usd"}}}`,
 		userID, baseTime+60, userID, subscriptionID, customerID)
 	require.NoError(t, deliverSigned(service, secret, []byte(failedInvoice)))
-	assertSubscription(t, ctx, repo, service, userID, "past_due", "pro", false)
+	assertSubscription(t, ctx, repo, service, userID, "past_due", "pro", true)
+	var unresolvedFailures int
+	require.NoError(t, pool.QueryRow(ctx, "SELECT COUNT(*) FROM payment_failures WHERE subscription_id = (SELECT id FROM subscriptions WHERE user_id = $1) AND resolved = false", userID).Scan(&unresolvedFailures))
+	require.Equal(t, 1, unresolvedFailures)
+	pastDue, err := repo.GetByUserID(ctx, userID)
+	require.NoError(t, err)
+	require.NotNil(t, pastDue.GracePeriodEnd)
+
+	paidInvoice := fmt.Sprintf(`{"id":"evt_paid_%s","object":"event","api_version":"2025-02-24.acacia","type":"invoice.paid","created":%d,"data":{"object":{"id":"in_paid_%s","object":"invoice","subscription":"%s","customer":"%s","amount_paid":999,"currency":"usd"}}}`,
+		userID, baseTime+90, userID, subscriptionID, customerID)
+	require.NoError(t, deliverSigned(service, secret, []byte(paidInvoice)))
+	assertSubscription(t, ctx, repo, service, userID, "active", "pro", true)
+	var remainingFailures int
+	require.NoError(t, pool.QueryRow(ctx, "SELECT COUNT(*) FROM payment_failures WHERE subscription_id = (SELECT id FROM subscriptions WHERE user_id = $1) AND resolved = false", userID).Scan(&remainingFailures))
+	require.Zero(t, remainingFailures)
+	recovered, err := repo.GetByUserID(ctx, userID)
+	require.NoError(t, err)
+	require.Nil(t, recovered.GracePeriodEnd)
 
 	deleted := subscriptionEvent("evt_deleted_"+userID.String(), "customer.subscription.deleted", baseTime+120,
 		subscriptionID, customerID, "canceled", "price_monthly_contract")

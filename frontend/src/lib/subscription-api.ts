@@ -14,6 +14,7 @@ export interface Subscription {
   canceled_at?: string;
   trial_start?: string;
   trial_end?: string;
+  grace_period_end?: string;
   created_at: string;
   updated_at: string;
 }
@@ -119,10 +120,10 @@ export async function changeSubscriptionPlan(priceId: string): Promise<void> {
  * Check if user has an active subscription
  */
 export function hasActiveSubscription(subscription: Subscription | null): boolean {
-  return (
-    subscription !== null &&
-    (subscription.status === 'active' || subscription.status === 'trialing')
-  );
+  if (subscription === null) return false;
+  if (subscription.status === 'active' || subscription.status === 'trialing') return true;
+  return (subscription.status === 'past_due' || subscription.status === 'unpaid') &&
+    !!subscription.grace_period_end && new Date(subscription.grace_period_end).getTime() > Date.now();
 }
 
 /**
