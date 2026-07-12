@@ -174,7 +174,11 @@ flowchart LR
 
 ### R2.1 — Implement coherent environment profiles
 
-- **State:** TODO
+- **State:** DONE — `Config.Validate()` rejects unknown/incoherent profiles and
+  release profiles fail closed on insecure URLs/origins, debug mode, default or
+  missing secrets, disabled database/OpenSearch verification, local storage,
+  insecure telemetry, incomplete paid-feature configuration, and contained
+  launch features. Table-driven config tests plus full backend test/vet pass.
 - **Owner role:** Backend
 - **Depends on:** R0.3
 - **Work:** Add `Config.Validate()` and explicit development/staging/production profiles. Unify `ENVIRONMENT` and Gin release behavior. Validate URLs, origins, JWT/MFA/Twitch/Stripe/storage/telemetry settings based on enabled features. Require secure cookies, HTTPS, verified OpenSearch TLS, and non-local durable storage in production.
