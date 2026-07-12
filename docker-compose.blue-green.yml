@@ -5,7 +5,7 @@
 services:
     # BLUE environment (current production)
     backend-blue:
-        image: ghcr.io/subculture-collective/clpr/backend:${BACKEND_BLUE_TAG:-latest}
+        image: ghcr.io/subculture-collective/clpr/backend@${BACKEND_BLUE_DIGEST:?BACKEND_BLUE_DIGEST is required}
         container_name: clpr-backend-blue
         restart: unless-stopped
         depends_on:
@@ -68,9 +68,18 @@ services:
             - LOG_LEVEL=info
         networks:
             - clpr-network
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=64m
+            - /app/exports:rw,noexec,nosuid,size=256m,uid=10001,gid=10001
+        cap_drop: [ALL]
+        security_opt: [no-new-privileges:true]
+        pids_limit: 256
+        mem_limit: 768m
+        cpus: 1.5
 
     frontend-blue:
-        image: ghcr.io/subculture-collective/clpr/frontend:${FRONTEND_BLUE_TAG:-latest}
+        image: ghcr.io/subculture-collective/clpr/frontend@${FRONTEND_BLUE_DIGEST:?FRONTEND_BLUE_DIGEST is required}
         container_name: clpr-frontend-blue
         restart: unless-stopped
         depends_on:
@@ -82,7 +91,7 @@ services:
                     'wget',
                     '--spider',
                     '-q',
-                    'http://localhost:80/health.html',
+                    'http://localhost:8080/health.html',
                 ]
             interval: 30s
             timeout: 10s
@@ -92,10 +101,18 @@ services:
             - BACKEND_URL=http://backend-blue:8080
         networks:
             - clpr-network
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=64m,uid=101,gid=101
+        cap_drop: [ALL]
+        security_opt: [no-new-privileges:true]
+        pids_limit: 128
+        mem_limit: 256m
+        cpus: 0.5
 
     # GREEN environment (new version during deploy)
     backend-green:
-        image: ghcr.io/subculture-collective/clpr/backend:${BACKEND_GREEN_TAG:-latest}
+        image: ghcr.io/subculture-collective/clpr/backend@${BACKEND_GREEN_DIGEST:?BACKEND_GREEN_DIGEST is required}
         container_name: clpr-backend-green
         restart: unless-stopped
         depends_on:
@@ -158,11 +175,20 @@ services:
             - LOG_LEVEL=info
         networks:
             - clpr-network
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=64m
+            - /app/exports:rw,noexec,nosuid,size=256m,uid=10001,gid=10001
+        cap_drop: [ALL]
+        security_opt: [no-new-privileges:true]
+        pids_limit: 256
+        mem_limit: 768m
+        cpus: 1.5
         profiles:
             - green # Only starts when explicitly requested
 
     frontend-green:
-        image: ghcr.io/subculture-collective/clpr/frontend:${FRONTEND_GREEN_TAG:-latest}
+        image: ghcr.io/subculture-collective/clpr/frontend@${FRONTEND_GREEN_DIGEST:?FRONTEND_GREEN_DIGEST is required}
         container_name: clpr-frontend-green
         restart: unless-stopped
         depends_on:
@@ -174,7 +200,7 @@ services:
                     'wget',
                     '--spider',
                     '-q',
-                    'http://localhost:80/health.html',
+                    'http://localhost:8080/health.html',
                 ]
             interval: 30s
             timeout: 10s
@@ -184,6 +210,14 @@ services:
             - BACKEND_URL=http://backend-green:8080
         networks:
             - clpr-network
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=64m,uid=101,gid=101
+        cap_drop: [ALL]
+        security_opt: [no-new-privileges:true]
+        pids_limit: 128
+        mem_limit: 256m
+        cpus: 0.5
         profiles:
             - green # Only starts when explicitly requested
 

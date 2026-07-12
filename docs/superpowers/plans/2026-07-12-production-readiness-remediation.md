@@ -187,13 +187,13 @@ flowchart LR
 
 ### R2.2 — Upgrade vulnerable dependencies and automate policy
 
-- **State:** IN PROGRESS — npm production audit is clean and mandatory in CI;
+- **State:** DONE — npm production audit is clean and mandatory in CI;
   Go 1.26.5 plus pgx, Goldmark, QUIC, x/net, and OpenTelemetry upgrades reduce
   reachable `govulncheck` findings from 14 to zero, with the scan mandatory in
   CI. All 14 high-severity gosec findings are remediated and the high-severity
-  gate is mandatory; secret scanning, dependency review, and source SBOM
-  generation are configured. Medium/low static-analysis debt, image scanning,
-  and signed-artifact policy remain.
+  gate is mandatory; secret scanning, dependency review, source/image SBOMs,
+  high/critical image scanning, and keyless SBOM signatures are configured.
+  All three release images scan with zero high/critical vulnerabilities.
 - **Owner role:** Frontend + security
 - **Depends on:** R1.4
 - **Work:** Upgrade Axios, React Router, DOMPurify, form-data/picomatch dependency paths, and any new findings. Install/run `govulncheck`; add `gosec`, secret scanning, dependency review, SBOM, image scanning, and signed-artifact support.
@@ -232,7 +232,13 @@ flowchart LR
 
 ### R2.6 — Harden HTTP and container runtime
 
-- **State:** TODO
+- **State:** DONE — HTTP headers, reads, writes, keep-alives, and header size are
+  bounded; hijacked WebSocket connections remain outside the HTTP write timer;
+  shutdown has a 15-second drain and an in-flight request test. Runtime images
+  use digest-pinned bases and non-root UIDs. Compose enforces read-only roots,
+  tmpfs write locations, dropped capabilities, no-new-privileges, PID/memory/CPU
+  limits, and digest-only release references. All images build, run non-root
+  under the restrictions, and scan with zero high/critical vulnerabilities.
 - **Owner role:** Backend + platform
 - **Depends on:** R2.1
 - **Work:** Add bounded read/write/idle/header limits with explicit streaming/WebSocket handling and graceful-drain tests. Run containers as non-root, pin bases/digests, set read-only roots/tmpfs, drop capabilities, enable `no-new-privileges`, add resource limits, health checks, and immutable release image references.

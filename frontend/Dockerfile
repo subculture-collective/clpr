@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for React frontend
 
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS builder
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN rm -f .env .env.local
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -33,15 +33,17 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# Apply security updates available for the pinned base snapshot.
+RUN apk upgrade --no-cache
+
+USER nginx
 
 # Expose port
-EXPOSE 80
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -fsS http://localhost/health.html || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health.html || exit 1
 
 # Run nginx
 CMD ["nginx", "-g", "daemon off;"]

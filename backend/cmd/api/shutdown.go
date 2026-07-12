@@ -47,8 +47,8 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 		svcs.Embedding.Close()
 	}
 
-	// Graceful shutdown with 5 second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Allow in-flight requests to drain while remaining bounded for orchestrators.
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {

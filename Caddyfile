@@ -147,12 +147,12 @@ clpr.tv {
 
     # Frontend (SPA)
     handle /* {
-        reverse_proxy clpr-frontend-blue:80 {
+        reverse_proxy clpr-frontend-blue:8080 {
             health_uri /health.html
             health_interval 30s
         }
         # Switch to green:
-        # reverse_proxy clpr-frontend-green:80
+        # reverse_proxy clpr-frontend-green:8080
     }
 
     # Compression

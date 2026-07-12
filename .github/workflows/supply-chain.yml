@@ -32,6 +32,9 @@ jobs:
   source-sbom:
     name: Source SBOM
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: anchore/sbom-action@v0
@@ -39,8 +42,63 @@ jobs:
           path: .
           format: spdx-json
           output-file: clpr-source.spdx.json
+      - uses: sigstore/cosign-installer@v3.8.2
+      - name: Keyless-sign the SBOM
+        if: github.event_name == 'push'
+        run: cosign sign-blob --yes --bundle clpr-source.spdx.sigstore.json clpr-source.spdx.json
       - uses: actions/upload-artifact@v4
         with:
           name: source-sbom
-          path: clpr-source.spdx.json
+          path: |
+            clpr-source.spdx.json
+            clpr-source.spdx.sigstore.json
           if-no-files-found: error
+
+  image-security:
+    name: Image security (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: backend
+            file: backend/Dockerfile
+          - name: crawler
+            context: backend
+            file: backend/Dockerfile.crawler
+          - name: frontend
+            context: frontend
+            file: frontend/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          load: true
+          tags: clpr-${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: clpr-${{ matrix.name }}:ci
+          format: sarif
+          output: trivy-${{ matrix.name }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+      - uses: anchore/sbom-action@v0
+        with:
+          image: clpr-${{ matrix.name }}:ci
+          format: spdx-json
+          output-file: clpr-${{ matrix.name }}.spdx.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-security-${{ matrix.name }}
+          path: |
+            trivy-${{ matrix.name }}.sarif
+            clpr-${{ matrix.name }}.spdx.json
+          if-no-files-found: warn
