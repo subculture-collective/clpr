@@ -10879,127 +10879,68 @@ paths:
 
   /api/v1/users/{id}/filter-presets:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/users/{id}/filter-presets
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Filter Presets]
+      summary: List the authenticated user's filter presets
       operationId: getApiV1UsersIdFilterPresets
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Presets returned, content: {application/json: {schema: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/FilterPreset'}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/users/{id}/filter-presets
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Filter Presets]
+      summary: Create a filter preset
       operationId: postApiV1UsersIdFilterPresets
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateFilterPresetRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201': {description: Preset created, content: {application/json: {schema: {$ref: '#/components/schemas/FilterPreset'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/filter-presets/{presetId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/users/{id}/filter-presets/{presetId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Filter Presets]
+      summary: Delete a filter preset
       operationId: deleteApiV1UsersIdFilterPresetsPresetid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: presetId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FilterPresetID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Preset deleted, content: {application/json: {schema: {$ref: '#/components/schemas/FilterPresetMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/users/{id}/filter-presets/{presetId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Filter Presets]
+      summary: Get a filter preset
       operationId: getApiV1UsersIdFilterPresetsPresetid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: presetId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FilterPresetID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Preset returned, content: {application/json: {schema: {$ref: '#/components/schemas/FilterPreset'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/users/{id}/filter-presets/{presetId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Filter Presets]
+      summary: Update a filter preset
       operationId: putApiV1UsersIdFilterPresetsPresetid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: presetId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FilterPresetID'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UpdateFilterPresetRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Preset updated, content: {application/json: {schema: {$ref: '#/components/schemas/FilterPreset'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/games/following:
     get:
@@ -11468,6 +11409,12 @@ components:
 
     FeedClipID:
       name: clipId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+
+    FilterPresetID:
+      name: presetId
       in: path
       required: true
       schema: {type: string, format: uuid}
@@ -13810,6 +13757,53 @@ components:
         clips: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/Clip'}}
         pagination: {type: object, additionalProperties: true}
         filters_applied: {type: object, additionalProperties: true}
+
+    FilterPresetFilters:
+      type: object
+      additionalProperties: false
+      properties:
+        games: {type: array, maxItems: 20, uniqueItems: true, items: {type: string, minLength: 1, maxLength: 100}}
+        streamers: {type: array, maxItems: 20, uniqueItems: true, items: {type: string, minLength: 1, maxLength: 100}}
+        tags: {type: array, maxItems: 20, uniqueItems: true, items: {type: string, minLength: 1, maxLength: 100}}
+        exclude_tags: {type: array, maxItems: 20, uniqueItems: true, items: {type: string, minLength: 1, maxLength: 100}}
+        date_from: {type: string, format: date-time}
+        date_to: {type: string, format: date-time}
+        sort: {type: string, enum: [trending, popular, new, top, discussed, hot, rising]}
+        language: {type: string, minLength: 2, maxLength: 10}
+        nsfw_filter: {type: boolean}
+
+    FilterPreset:
+      type: object
+      required: [id, user_id, name, filters, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 100}
+        filters: {$ref: '#/components/schemas/FilterPresetFilters'}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    CreateFilterPresetRequest:
+      type: object
+      additionalProperties: false
+      required: [name, filters]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        filters: {$ref: '#/components/schemas/FilterPresetFilters'}
+
+    UpdateFilterPresetRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        filters: {$ref: '#/components/schemas/FilterPresetFilters'}
+
+    FilterPresetMutationResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
 
     PlaylistListItem:
       allOf:

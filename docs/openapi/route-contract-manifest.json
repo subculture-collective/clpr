@@ -2979,35 +2979,35 @@
     "path": "/api/v1/users/{id}/filter-presets",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).GetUserPresets-fm",
     "operation_id": "getApiV1UsersIdFilterPresets",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/users/{id}/filter-presets",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).CreatePreset-fm",
     "operation_id": "postApiV1UsersIdFilterPresets",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/users/{id}/filter-presets/{presetId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).DeletePreset-fm",
     "operation_id": "deleteApiV1UsersIdFilterPresetsPresetid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/users/{id}/filter-presets/{presetId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).GetPreset-fm",
     "operation_id": "getApiV1UsersIdFilterPresetsPresetid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/users/{id}/filter-presets/{presetId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).UpdatePreset-fm",
     "operation_id": "putApiV1UsersIdFilterPresetsPresetid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",

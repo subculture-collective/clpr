@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -3327,6 +3328,15 @@ type UserFilterPreset struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
+type PublicFilterPreset struct {
+	ID        uuid.UUID           `json:"id"`
+	UserID    uuid.UUID           `json:"user_id"`
+	Name      string              `json:"name"`
+	Filters   FilterPresetFilters `json:"filters"`
+	CreatedAt time.Time           `json:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at"`
+}
+
 // FilterPresetFilters represents the filter configuration in a preset
 type FilterPresetFilters struct {
 	Games       []string `json:"games,omitempty"`
@@ -3350,6 +3360,65 @@ type CreateFilterPresetRequest struct {
 type UpdateFilterPresetRequest struct {
 	Name    *string              `json:"name,omitempty" binding:"omitempty,min=1,max=100"`
 	Filters *FilterPresetFilters `json:"filters,omitempty"`
+}
+
+func (r *UpdateFilterPresetRequest) Validate() error {
+	if r.Name == nil && r.Filters == nil {
+		return fmt.Errorf("at least one field must be provided")
+	}
+	if r.Filters != nil {
+		return r.Filters.Validate()
+	}
+	return nil
+}
+
+func (f *FilterPresetFilters) Validate() error {
+	if f == nil {
+		return fmt.Errorf("filters are required")
+	}
+	for name, values := range map[string][]string{"games": f.Games, "streamers": f.Streamers, "tags": f.Tags, "exclude_tags": f.ExcludeTags} {
+		if len(values) > 20 {
+			return fmt.Errorf("%s cannot contain more than 20 values", name)
+		}
+		seen := map[string]struct{}{}
+		for _, value := range values {
+			value = strings.TrimSpace(value)
+			if value == "" || len(value) > 100 {
+				return fmt.Errorf("%s values must be between 1 and 100 characters", name)
+			}
+			if _, ok := seen[value]; ok {
+				return fmt.Errorf("%s values must be unique", name)
+			}
+			seen[value] = struct{}{}
+		}
+	}
+	if f.Sort != nil {
+		valid := map[string]bool{"trending": true, "popular": true, "new": true, "top": true, "discussed": true, "hot": true, "rising": true}
+		if !valid[*f.Sort] {
+			return fmt.Errorf("invalid sort")
+		}
+	}
+	if f.Language != nil && (len(*f.Language) < 2 || len(*f.Language) > 10) {
+		return fmt.Errorf("language must be between 2 and 10 characters")
+	}
+	var from, to time.Time
+	var err error
+	if f.DateFrom != nil {
+		from, err = time.Parse(time.RFC3339, *f.DateFrom)
+		if err != nil {
+			return fmt.Errorf("invalid date_from")
+		}
+	}
+	if f.DateTo != nil {
+		to, err = time.Parse(time.RFC3339, *f.DateTo)
+		if err != nil {
+			return fmt.Errorf("invalid date_to")
+		}
+	}
+	if !from.IsZero() && !to.IsZero() && from.After(to) {
+		return fmt.Errorf("date_from must not be after date_to")
+	}
+	return nil
 }
 
 // ClipFiltersResponse represents enhanced clip feed response with filter metadata

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
 
 type FilterPresetService struct {
@@ -54,7 +54,7 @@ func (s *FilterPresetService) GetPreset(ctx context.Context, presetID uuid.UUID,
 
 	// Verify ownership
 	if preset.UserID != userID {
-		return nil, repository.ErrUnauthorizedPresetAccess
+		return nil, repository.ErrPresetNotFound
 	}
 
 	return preset, nil
@@ -74,7 +74,7 @@ func (s *FilterPresetService) UpdatePreset(ctx context.Context, presetID, userID
 	}
 
 	if preset.UserID != userID {
-		return nil, repository.ErrUnauthorizedPresetAccess
+		return nil, repository.ErrPresetNotFound
 	}
 
 	// Update fields if provided
