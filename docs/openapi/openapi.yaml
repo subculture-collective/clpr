@@ -6127,122 +6127,83 @@ paths:
 
   /api/v1/admin/analytics/alerts:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/alerts
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Analytics]
+      summary: List engagement alerts
+      description: Evaluates current engagement thresholds for administrators with MFA.
       operationId: getApiV1AdminAnalyticsAlerts
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Current alerts, content: {application/json: {schema: {type: object, required: [alerts, count], properties: {alerts: {type: array, items: {type: object, additionalProperties: true}}, count: {type: integer, minimum: 0}}}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/analytics/content:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/content
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Analytics]
+      summary: Get platform content metrics
+      description: Returns aggregate content metrics for administrators with MFA.
       operationId: getApiV1AdminAnalyticsContent
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/analytics/export:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/export
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1AdminAnalyticsExport
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Content metrics, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/analytics/health:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/health
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Analytics]
+      summary: Get platform engagement health
+      description: Returns aggregate engagement health for administrators with MFA.
       operationId: getApiV1AdminAnalyticsHealth
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Platform engagement health, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/analytics/overview:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/overview
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Analytics]
+      summary: Get platform analytics overview
+      description: Returns platform KPIs for administrators with MFA.
       operationId: getApiV1AdminAnalyticsOverview
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Platform overview, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/analytics/trending:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/trending
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Analytics]
+      summary: Get trending engagement metrics
+      description: Returns a bounded engagement trend for administrators with MFA.
       operationId: getApiV1AdminAnalyticsTrending
-      x-clpr-router-derived: true
+      parameters:
+        - {name: metric, in: query, schema: {type: string, enum: [dau, clips, votes, comments], default: dau}}
+        - {name: days, in: query, schema: {type: integer, minimum: 1, maximum: 365, default: 7}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Engagement trend, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/analytics/trends:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/analytics/trends
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Analytics]
+      summary: Get platform metric trends
+      description: Returns a bounded platform trend for administrators with MFA.
       operationId: getApiV1AdminAnalyticsTrends
-      x-clpr-router-derived: true
+      parameters:
+        - {name: metric, in: query, schema: {type: string, enum: [users, clips, views, votes, comments], default: users}}
+        - {name: days, in: query, schema: {type: integer, minimum: 1, maximum: 365, default: 30}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Platform trend, content: {application/json: {schema: {type: object, required: [metric, days, data], properties: {metric: {type: string}, days: {type: integer}, data: {type: array, items: {type: object, additionalProperties: true}}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/alerts:
     get:

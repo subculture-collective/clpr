@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // EngagementHandler handles engagement metrics HTTP requests
@@ -124,9 +124,14 @@ func (h *EngagementHandler) GetTrendingMetrics(c *gin.Context) {
 	}
 
 	metric := c.DefaultQuery("metric", "dau")
-	days, _ := strconv.Atoi(c.DefaultQuery("days", "7"))
+	validMetrics := map[string]bool{"dau": true, "clips": true, "votes": true, "comments": true}
+	if !validMetrics[metric] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "metric must be dau, clips, votes, or comments"})
+		return
+	}
+	days, err := strconv.Atoi(c.DefaultQuery("days", "7"))
 
-	if days <= 0 || days > 365 {
+	if err != nil || days <= 0 || days > 365 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "days must be between 1 and 365"})
 		return
 	}

@@ -212,7 +212,16 @@ func (h *AnalyticsHandler) GetContentMetrics(c *gin.Context) {
 // GET /api/v1/admin/analytics/trends?metric=users&days=30
 func (h *AnalyticsHandler) GetPlatformTrends(c *gin.Context) {
 	metricType := c.DefaultQuery("metric", "users")
-	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	validMetrics := map[string]bool{"users": true, "clips": true, "views": true, "votes": true, "comments": true}
+	if !validMetrics[metricType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "metric must be users, clips, views, votes, or comments"})
+		return
+	}
+	days, err := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if err != nil || days < 1 || days > 365 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "days must be between 1 and 365"})
+		return
+	}
 
 	trends, err := h.analyticsService.GetPlatformTrends(c.Request.Context(), metricType, days)
 	if err != nil {

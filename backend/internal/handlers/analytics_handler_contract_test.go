@@ -107,6 +107,32 @@ func TestCreatorAnalyticsHandlersValidatePublicQueries(t *testing.T) {
 	}
 }
 
+func TestPlatformTrendsRejectsInvalidQueriesBeforeServiceWork(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, target := range []string{
+		"/api/v1/admin/analytics/trends?days=invalid",
+		"/api/v1/admin/analytics/trends?days=366",
+		"/api/v1/admin/analytics/trends?metric=revenue",
+	} {
+		t.Run(target, func(t *testing.T) {
+			service := &analyticsServiceStub{}
+			handler := NewAnalyticsHandler(service)
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(http.MethodGet, target, nil)
+
+			handler.GetPlatformTrends(ctx)
+
+			if recorder.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d", recorder.Code)
+			}
+			if service.unexpectedCall {
+				t.Fatal("service called for invalid query")
+			}
+		})
+	}
+}
+
 func TestCreatorAnalyticsHandlerContracts(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	t.Run("overview distinguishes absence from dependency failure", func(t *testing.T) {

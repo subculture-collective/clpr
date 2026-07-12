@@ -91,6 +91,7 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 		// Analytics routes (admin only)
 		analytics := admin.Group("/analytics")
+		analytics.Use(middleware.RequireRole("admin"))
 		{
 			analytics.GET("/overview", h.Analytics.GetPlatformOverview)
 			analytics.GET("/content", h.Analytics.GetContentMetrics)
@@ -100,7 +101,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			analytics.GET("/health", h.Engagement.GetPlatformHealthMetrics)
 			analytics.GET("/trending", h.Engagement.GetTrendingMetrics)
 			analytics.GET("/alerts", h.Engagement.CheckAlerts)
-			analytics.GET("/export", h.Engagement.ExportEngagementData)
 		}
 
 		// Revenue metrics (admin only)

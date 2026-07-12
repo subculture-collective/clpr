@@ -109,49 +109,42 @@
     "path": "/api/v1/admin/analytics/alerts",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).CheckAlerts-fm",
     "operation_id": "getApiV1AdminAnalyticsAlerts",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/analytics/content",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetContentMetrics-fm",
     "operation_id": "getApiV1AdminAnalyticsContent",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/analytics/export",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).ExportEngagementData-fm",
-    "operation_id": "getApiV1AdminAnalyticsExport",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/analytics/health",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).GetPlatformHealthMetrics-fm",
     "operation_id": "getApiV1AdminAnalyticsHealth",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/analytics/overview",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetPlatformOverview-fm",
     "operation_id": "getApiV1AdminAnalyticsOverview",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/analytics/trending",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).GetTrendingMetrics-fm",
     "operation_id": "getApiV1AdminAnalyticsTrending",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/analytics/trends",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetPlatformTrends-fm",
     "operation_id": "getApiV1AdminAnalyticsTrends",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
