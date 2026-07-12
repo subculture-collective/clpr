@@ -4524,6 +4524,110 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/events:
+    post:
+      tags: [Analytics]
+      summary: Queue one or more analytics events
+      description: Accepts a single event or a batch of up to 100 events. A response confirms queue acceptance, not database persistence. Requests are limited to 64 KiB and 100 requests per minute.
+      operationId: postApiV1Events
+      parameters:
+        - name: X-Session-ID
+          in: header
+          required: false
+          schema: {type: string, maxLength: 100}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - {$ref: '#/components/schemas/TrackEventRequest'}
+                - {$ref: '#/components/schemas/BatchEventsRequest'}
+      responses:
+        '202':
+          description: Event or complete batch accepted into the queue
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - {$ref: '#/components/schemas/EventAcceptedResponse'}
+                  - {$ref: '#/components/schemas/EventBatchResponse'}
+        '207':
+          description: Only part of the batch was accepted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EventBatchResponse'}
+        '400':
+          description: Invalid event, batch, or session identifier
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ContactErrorResponse'}
+        '413':
+          description: Request exceeds 64 KiB
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ContactErrorResponse'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500':
+          description: Event could not be queued
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ContactErrorResponse'}
+        '503':
+          description: Event queue is saturated; retry later
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - {$ref: '#/components/schemas/ContactErrorResponse'}
+                  - {$ref: '#/components/schemas/EventBatchResponse'}
+
+  /api/v1/feeds/analytics:
+    get:
+      tags: [Admin, Analytics]
+      summary: Get aggregate feed event metrics
+      description: Requires an administrator session.
+      operationId: getApiV1FeedsAnalytics
+      parameters:
+        - name: hours
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 720, default: 24}
+      responses:
+        '200':
+          description: Aggregate event metrics
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FeedEventMetricsResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/feeds/analytics/hourly:
+    get:
+      tags: [Admin, Analytics]
+      summary: Get hourly metrics for an event type
+      description: Requires an administrator session.
+      operationId: getApiV1FeedsAnalyticsHourly
+      parameters:
+        - name: event_type
+          in: query
+          required: true
+          schema: {type: string, minLength: 1, maxLength: 100}
+        - name: hours
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 720, default: 24}
+      responses:
+        '200':
+          description: Hourly event metrics
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HourlyEventMetricsResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -8352,57 +8456,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/events:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/events
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1Events
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/feeds/analytics:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/feeds/analytics
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1FeedsAnalytics
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/feeds/analytics/hourly:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/feeds/analytics/hourly
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1FeedsAnalyticsHourly
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -12254,6 +12307,75 @@ components:
       required: [message]
       properties:
         message: {type: string}
+
+    TrackEventRequest:
+      type: object
+      required: [event_type]
+      properties:
+        event_type: {type: string, minLength: 1, maxLength: 100}
+        properties: {type: object, additionalProperties: true}
+
+    BatchEventsRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {$ref: '#/components/schemas/TrackEventRequest'}
+
+    EventAcceptedResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string, const: event accepted}
+
+    EventBatchResponse:
+      type: object
+      required: [message, success_count, total_count]
+      properties:
+        message: {type: string, const: batch events tracked}
+        success_count: {type: integer, minimum: 0}
+        total_count: {type: integer, minimum: 1, maximum: 100}
+
+    FeedEventMetric:
+      type: object
+      required: [event_type, total_count, unique_users, unique_sessions]
+      properties:
+        event_type: {type: string}
+        total_count: {type: integer, format: int64, minimum: 0}
+        unique_users: {type: integer, format: int64, minimum: 0}
+        unique_sessions: {type: integer, format: int64, minimum: 0}
+
+    FeedEventMetricsResponse:
+      type: object
+      required: [events, period_hours]
+      properties:
+        events:
+          type: array
+          items: {$ref: '#/components/schemas/FeedEventMetric'}
+        period_hours: {type: integer, minimum: 1, maximum: 720}
+
+    HourlyMetric:
+      type: object
+      required: [hour, event_type, count, unique_users, unique_sessions]
+      properties:
+        hour: {type: string, format: date-time}
+        event_type: {type: string}
+        count: {type: integer, format: int64, minimum: 0}
+        unique_users: {type: integer, format: int64, minimum: 0}
+        unique_sessions: {type: integer, format: int64, minimum: 0}
+
+    HourlyEventMetricsResponse:
+      type: object
+      required: [event_type, hours, metrics]
+      properties:
+        event_type: {type: string}
+        hours: {type: integer, minimum: 1, maximum: 720}
+        metrics:
+          type: array
+          items: {$ref: '#/components/schemas/HourlyMetric'}
 
     Appeal:
       type: object

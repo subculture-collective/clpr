@@ -1,23 +1,34 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+const maxEventRequestBytes = 64 << 10
+
+type eventTrackingService interface {
+	TrackEvent(models.Event) error
+	GetFeedMetrics(context.Context, int) (map[string]interface{}, error)
+	GetHourlyMetrics(context.Context, string, int) ([]models.HourlyMetric, error)
+}
 
 // EventHandler handles feed analytics event tracking
 type EventHandler struct {
-	eventTracker *services.EventTracker
+	eventTracker eventTrackingService
 }
 
 // NewEventHandler creates a new event handler
-func NewEventHandler(eventTracker *services.EventTracker) *EventHandler {
+func NewEventHandler(eventTracker eventTrackingService) *EventHandler {
 	return &EventHandler{
 		eventTracker: eventTracker,
 	}
@@ -27,9 +38,15 @@ func NewEventHandler(eventTracker *services.EventTracker) *EventHandler {
 // Accepts either a single event or a batch of events
 // Batch requests must include an "events" array field
 func (h *EventHandler) TrackEvent(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEventRequestBytes)
 	// Get raw body to detect request type
 	bodyBytes, err := c.GetRawData()
 	if err != nil {
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "event request exceeds 64 KiB"})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
 		return
 	}
@@ -52,6 +69,16 @@ func (h *EventHandler) TrackEvent(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "batch events array cannot be empty"})
 			return
 		}
+		if len(batchReq.Events) > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "batch cannot contain more than 100 events"})
+			return
+		}
+		for _, event := range batchReq.Events {
+			if err := validateTrackedEvent(event); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+		}
 		h.trackBatchEvents(c, batchReq)
 		return
 	}
@@ -62,8 +89,8 @@ func (h *EventHandler) TrackEvent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid event format"})
 		return
 	}
-	if req.EventType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "event_type is required"})
+	if err := validateTrackedEvent(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -80,6 +107,10 @@ func (h *EventHandler) TrackEvent(c *gin.Context) {
 	if sessionID == "" {
 		sessionID = uuid.New().String()
 	}
+	if len(sessionID) > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Session-ID cannot exceed 100 characters"})
+		return
+	}
 
 	event := models.Event{
 		EventType:  req.EventType,
@@ -89,11 +120,26 @@ func (h *EventHandler) TrackEvent(c *gin.Context) {
 	}
 
 	if err := h.eventTracker.TrackEvent(event); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to track event"})
+		if errors.Is(err, services.ErrEventQueueFull) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "event queue is temporarily full"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to queue event"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "event tracked successfully"})
+	c.JSON(http.StatusAccepted, gin.H{"message": "event accepted"})
+}
+
+func validateTrackedEvent(event models.TrackEventRequest) error {
+	eventType := strings.TrimSpace(event.EventType)
+	if eventType == "" {
+		return errors.New("event_type is required")
+	}
+	if len(eventType) > 100 {
+		return errors.New("event_type cannot exceed 100 characters")
+	}
+	return nil
 }
 
 // trackBatchEvents handles batch event tracking
@@ -111,6 +157,10 @@ func (h *EventHandler) trackBatchEvents(c *gin.Context, batchReq models.BatchEve
 	if sessionID == "" {
 		sessionID = uuid.New().String()
 	}
+	if len(sessionID) > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Session-ID cannot exceed 100 characters"})
+		return
+	}
 
 	successCount := 0
 	for _, eventReq := range batchReq.Events {
@@ -126,7 +176,13 @@ func (h *EventHandler) trackBatchEvents(c *gin.Context, batchReq models.BatchEve
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	status := http.StatusAccepted
+	if successCount == 0 {
+		status = http.StatusServiceUnavailable
+	} else if successCount != len(batchReq.Events) {
+		status = http.StatusMultiStatus
+	}
+	c.JSON(status, gin.H{
 		"message":       "batch events tracked",
 		"success_count": successCount,
 		"total_count":   len(batchReq.Events),
@@ -136,9 +192,10 @@ func (h *EventHandler) trackBatchEvents(c *gin.Context, batchReq models.BatchEve
 // GetFeedMetrics handles GET /api/feed/analytics
 // Returns aggregated feed metrics
 func (h *EventHandler) GetFeedMetrics(c *gin.Context) {
-	hours, _ := strconv.Atoi(c.DefaultQuery("hours", "24"))
-	if hours <= 0 || hours > 720 { // Max 30 days
-		hours = 24
+	hours, err := strconv.Atoi(c.DefaultQuery("hours", "24"))
+	if err != nil || hours <= 0 || hours > 720 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hours must be between 1 and 720"})
+		return
 	}
 
 	metrics, err := h.eventTracker.GetFeedMetrics(c.Request.Context(), hours)
@@ -154,14 +211,15 @@ func (h *EventHandler) GetFeedMetrics(c *gin.Context) {
 // Returns hourly aggregated metrics for a specific event type
 func (h *EventHandler) GetHourlyMetrics(c *gin.Context) {
 	eventType := c.Query("event_type")
-	if eventType == "" {
+	if strings.TrimSpace(eventType) == "" || len(eventType) > 100 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "event_type parameter is required"})
 		return
 	}
 
-	hours, _ := strconv.Atoi(c.DefaultQuery("hours", "24"))
-	if hours <= 0 || hours > 720 { // Max 30 days
-		hours = 24
+	hours, err := strconv.Atoi(c.DefaultQuery("hours", "24"))
+	if err != nil || hours <= 0 || hours > 720 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hours must be between 1 and 720"})
+		return
 	}
 
 	metrics, err := h.eventTracker.GetHourlyMetrics(c.Request.Context(), eventType, hours)

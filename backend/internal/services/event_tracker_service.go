@@ -3,14 +3,17 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"sync"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var ErrEventQueueFull = errors.New("event queue full")
 
 // EventTracker handles batching and writing of feed analytics events
 type EventTracker struct {
@@ -94,10 +97,10 @@ func (et *EventTracker) TrackEvent(event models.Event) error {
 	case et.eventBatch <- event:
 		return nil
 	default:
-		// Channel is full, log warning and return error for visibility
+		// Surface saturation so callers do not claim that a dropped event was accepted.
 		log.Printf("Warning: Event batch channel full, dropping event: %s (type: %s, session: %s)",
 			event.ID, event.EventType, event.SessionID)
-		return nil // Still return nil to not break caller flow, but event is logged as dropped
+		return ErrEventQueueFull
 	}
 }
 

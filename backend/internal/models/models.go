@@ -3472,7 +3472,7 @@ type HourlyMetric struct {
 
 // TrackEventRequest represents a request to track an event
 type TrackEventRequest struct {
-	EventType  string                 `json:"event_type" binding:"required"`
+	EventType  string                 `json:"event_type" binding:"required,max=100"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
 }
 

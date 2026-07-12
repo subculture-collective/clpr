@@ -1670,7 +1670,7 @@
     "path": "/api/v1/events",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EventHandler).TrackEvent-fm",
     "operation_id": "postApiV1Events",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1684,14 +1684,14 @@
     "path": "/api/v1/feeds/analytics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EventHandler).GetFeedMetrics-fm",
     "operation_id": "getApiV1FeedsAnalytics",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/feeds/analytics/hourly",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EventHandler).GetHourlyMetrics-fm",
     "operation_id": "getApiV1FeedsAnalyticsHourly",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
