@@ -5,10 +5,12 @@
 *.env
 backend/.env
 backend/.env.*
+!backend/.env.example
 backend/env.production
 backend/.env.production
 frontend/.env
 frontend/.env.*
+!frontend/.env.example
 frontend/env.production
 frontend/frontend.env
 mobile/.env

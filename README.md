@@ -33,26 +33,32 @@ Clipper is a full-stack platform for discovering, curating, and sharing the best
 - **PostgreSQL** 17+ (if running without Docker)
 - **Redis** 8+ (if running without Docker)
 
-### Current setup status
+### Reproducible local validation
 
-The checked-in Compose file expects an operator-provided `.env` and existing
-external Docker networks. A supported clean-clone/full-stack bootstrap is an
-open release gate; do not use the old quick-start commands, which referenced a
-missing environment template and migration program.
-
-Repository-owned checks that work without production credentials:
+The release-supported clean-clone path uses disposable test services and never
+requires production credentials. Install [Task](https://taskfile.dev/) and
+`golang-migrate`, then run:
 
 ```bash
-cd backend && go test ./...
-cd ../frontend && npm ci && npm run build
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+task test:setup
+bash scripts/run-release-critical-backend-tests.sh
+npm --prefix frontend ci
+npm --prefix frontend run test:coverage
+npm --prefix frontend run build
+task test:teardown
 ```
+
+`task test:setup` creates a separate test database, Redis, and OpenSearch and
+applies every migration. The ordinary deployment Compose file remains an
+operator path and expects deployment-managed networks and secrets.
 
 ## Development Without Docker
 
 Backend commands and prerequisites are documented in the
 [backend README](backend/README.md). Frontend commands are defined in
-`frontend/package.json`. A single clean-clone setup guide is tracked as a
-release gate in the remediation plan.
+`frontend/package.json`.
 
 ## 📚 Documentation
 
