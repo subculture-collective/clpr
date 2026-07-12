@@ -4452,6 +4452,153 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/contact:
+    post:
+      tags:
+        - Support
+      summary: Submit a contact message
+      description: Submits a rate-limited support request. Authentication is optional; authenticated requests associate the message with the current user.
+      operationId: postApiV1Contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContactMessageRequest'
+      responses:
+        '201':
+          description: Contact message accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionResponse'
+        '400':
+          description: Invalid contact message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          description: Contact message could not be stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+  /api/v1/admin/contact:
+    get:
+      tags:
+        - Admin
+        - Support
+      summary: List contact messages
+      description: Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.
+      operationId: getApiV1AdminContact
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              - abuse
+              - account
+              - billing
+              - feedback
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - reviewed
+              - resolved
+      responses:
+        '200':
+          description: Paginated contact messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactMessageListResponse'
+        '400':
+          description: Invalid filter or pagination value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          description: Contact messages could not be retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+  /api/v1/admin/contact/{id}/status:
+    put:
+      tags:
+        - Admin
+        - Support
+      summary: Update a contact message status
+      description: Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+      operationId: putApiV1AdminContactIdStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactMessageStatusRequest'
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactStatusUpdateResponse'
+        '400':
+          description: Invalid message ID or status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Contact message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '500':
+          description: Status could not be updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
   /api/v1/admin/ads/campaigns:
     get:
       tags:
@@ -4838,46 +4985,6 @@ paths:
       description: Router-derived operation pending a route-specific response schema.
       operationId: postApiV1AdminBroadcastersRefreshRankings
       x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/admin/contact:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/admin/contact
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1AdminContact
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/admin/contact/{id}/status:
-    put:
-      tags:
-        - Generated Route Contracts
-      summary: PUT /api/v1/admin/contact/{id}/status
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1AdminContactIdStatus
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -8003,23 +8110,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/contact:
-    post:
-      tags:
-        - Generated Route Contracts
-      summary: POST /api/v1/contact
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1Contact
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -12128,6 +12218,154 @@ components:
         status:
           type: string
           const: cleared
+    CreateContactMessageRequest:
+      type: object
+      required:
+        - email
+        - category
+        - subject
+        - message
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        category:
+          type: string
+          enum:
+            - abuse
+            - account
+            - billing
+            - feedback
+        subject:
+          type: string
+          minLength: 3
+          maxLength: 200
+        message:
+          type: string
+          minLength: 10
+          maxLength: 5000
+    ContactMessage:
+      type: object
+      required:
+        - id
+        - email
+        - category
+        - subject
+        - message
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        email:
+          type: string
+          format: email
+        category:
+          type: string
+          enum:
+            - abuse
+            - account
+            - billing
+            - feedback
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - reviewed
+            - resolved
+        ip_address:
+          type:
+            - string
+            - 'null'
+        user_agent:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ContactSubmissionResponse:
+      type: object
+      required:
+        - message
+        - status
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+          const: success
+    ContactMessageListResponse:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactMessage'
+        meta:
+          type: object
+          required:
+            - page
+            - limit
+            - total_items
+            - total_pages
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+            total_items:
+              type: integer
+              minimum: 0
+            total_pages:
+              type: integer
+              minimum: 0
+    UpdateContactMessageStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - reviewed
+            - resolved
+    ContactStatusUpdateResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+    ContactErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
     TwitchModerationResult:
       type: object
       required:

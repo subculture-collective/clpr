@@ -2,13 +2,16 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrContactMessageNotFound = errors.New("contact message not found")
 
 // ContactRepository handles database operations for contact messages
 type ContactRepository struct {
@@ -132,7 +135,7 @@ func (r *ContactRepository) UpdateStatus(ctx context.Context, messageID uuid.UUI
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("contact message not found")
+		return ErrContactMessageNotFound
 	}
 
 	return nil

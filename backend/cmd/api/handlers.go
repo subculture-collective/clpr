@@ -112,7 +112,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	adminUserHandler := handlers.NewAdminUserHandler(repos.User, repos.AuditLog, svcs.Auth)
 	userSettingsHandler := handlers.NewUserSettingsHandler(svcs.UserSettings, svcs.Auth)
 	consentHandler := handlers.NewConsentHandler(repos.Consent)
-	contactHandler := handlers.NewContactHandler(repos.Contact, svcs.Auth)
+	contactHandler := handlers.NewContactHandler(repos.Contact)
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
 	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")

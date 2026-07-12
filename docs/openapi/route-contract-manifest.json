@@ -179,14 +179,14 @@
     "path": "/api/v1/admin/contact",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).GetContactMessages-fm",
     "operation_id": "getApiV1AdminContact",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/admin/contact/{id}/status",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).UpdateContactMessageStatus-fm",
     "operation_id": "putApiV1AdminContactIdStatus",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1530,7 +1530,7 @@
     "path": "/api/v1/contact",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).SubmitContactMessage-fm",
     "operation_id": "postApiV1Contact",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
