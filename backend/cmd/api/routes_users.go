@@ -100,13 +100,13 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	creators := v1.Group("/creators")
 	{
 		// Public creator analytics endpoints
-		creators.GET("/:creatorName/analytics/overview", h.Analytics.GetCreatorAnalyticsOverview)
-		creators.GET("/:creatorName/analytics/clips", h.Analytics.GetCreatorTopClips)
-		creators.GET("/:creatorName/analytics/trends", h.Analytics.GetCreatorTrends)
-		creators.GET("/:creatorName/analytics/audience", h.Analytics.GetCreatorAudienceInsights)
+		creators.GET("/:creator/analytics/overview", h.Analytics.GetCreatorAnalyticsOverview)
+		creators.GET("/:creator/analytics/clips", h.Analytics.GetCreatorTopClips)
+		creators.GET("/:creator/analytics/trends", h.Analytics.GetCreatorTrends)
+		creators.GET("/:creator/analytics/audience", h.Analytics.GetCreatorAudienceInsights)
 
 		// Creator clips listing (shows hidden clips if authenticated as creator)
-		creators.GET("/:creatorName/clips", middleware.OptionalAuthMiddleware(svcs.Auth), h.Clip.ListCreatorClips)
+		creators.GET("/:creator/clips", middleware.OptionalAuthMiddleware(svcs.Auth), h.Clip.ListCreatorClips)
 
 		// Creator data export routes (authenticated, rate limited)
 		creators.POST("/me/export/request", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 3, 24*time.Hour), h.Export.RequestExport)

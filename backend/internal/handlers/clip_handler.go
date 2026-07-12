@@ -196,18 +196,24 @@ func (h *ClipSyncHandler) RequestClip(c *gin.Context) {
 
 // ClipHandler handles clip retrieval operations
 type ClipHandler struct {
-	clipService *services.ClipService
-	authService *services.AuthService
-	cdnProvider services.CDNProvider
-	jobService  *services.ClipExtractionJobService
-	clipConfig  *config.ClipConfig
+	clipService        *services.ClipService
+	creatorClipService creatorClipService
+	authService        *services.AuthService
+	cdnProvider        services.CDNProvider
+	jobService         *services.ClipExtractionJobService
+	clipConfig         *config.ClipConfig
+}
+
+type creatorClipService interface {
+	ListCreatorClips(context.Context, string, *uuid.UUID, int, int) ([]services.ClipWithUserData, int, error)
 }
 
 // NewClipHandler creates a new ClipHandler
 func NewClipHandler(clipService *services.ClipService, authService *services.AuthService, opts ...ClipHandlerOption) *ClipHandler {
 	handler := &ClipHandler{
-		clipService: clipService,
-		authService: authService,
+		clipService:        clipService,
+		creatorClipService: clipService,
+		authService:        authService,
 	}
 
 	for _, opt := range opts {
@@ -1597,27 +1603,30 @@ func (h *ClipHandler) UpdateClipVisibility(c *gin.Context) {
 // ListCreatorClips handles GET /creators/:creatorId/clips
 // Lists clips for a specific creator
 func (h *ClipHandler) ListCreatorClips(c *gin.Context) {
-	creatorID := c.Param("creatorId")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "25"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
+	creatorID := strings.TrimSpace(c.Param("creator"))
+	if creatorID == "" || len(creatorID) > 100 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CREATOR_ID", Message: "Creator ID must be between 1 and 100 characters"}})
+		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 25
+	page, ok := parseBoundedPositiveQuery(c, "page", 1, 1_000_000)
+	if !ok {
+		return
+	}
+	limit, ok := parseBoundedPositiveQuery(c, "limit", 25, 100)
+	if !ok {
+		return
 	}
 
 	// Get user ID from context (optional)
 	var userID *uuid.UUID
 	if uid, exists := c.Get("user_id"); exists {
-		id := uid.(uuid.UUID)
-		userID = &id
+		if id, valid := uid.(uuid.UUID); valid && id != uuid.Nil {
+			userID = &id
+		}
 	}
 
 	// List clips
-	clips, total, err := h.clipService.ListCreatorClips(c.Request.Context(), creatorID, userID, page, limit)
+	clips, total, err := h.creatorClipService.ListCreatorClips(c.Request.Context(), creatorID, userID, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
@@ -1645,4 +1654,20 @@ func (h *ClipHandler) ListCreatorClips(c *gin.Context) {
 		Data:    clips,
 		Meta:    meta,
 	})
+}
+
+func parseBoundedPositiveQuery(c *gin.Context, key string, defaultValue, maximum int) (int, bool) {
+	raw, exists := c.GetQuery(key)
+	if !exists {
+		return defaultValue, true
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 1 || value > maximum {
+		c.JSON(http.StatusBadRequest, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "INVALID_PAGINATION", Message: fmt.Sprintf("%s must be an integer between 1 and %d", key, maximum)},
+		})
+		return 0, false
+	}
+	return value, true
 }

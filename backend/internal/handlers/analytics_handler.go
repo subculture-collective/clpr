@@ -37,7 +37,7 @@ func NewAnalyticsHandler(analyticsService analyticsService) *AnalyticsHandler {
 }
 
 func creatorAnalyticsName(c *gin.Context) (string, bool) {
-	name := strings.TrimSpace(c.Param("creatorName"))
+	name := strings.TrimSpace(c.Param("creator"))
 	if name == "" || len(name) > 100 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid creator name"})
 		return "", false

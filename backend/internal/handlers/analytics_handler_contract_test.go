@@ -72,7 +72,7 @@ func (s *analyticsServiceStub) TrackEvent(context.Context, string, *uuid.UUID, *
 func creatorAnalyticsContext(method, target, creatorName string) (*gin.Context, *httptest.ResponseRecorder) {
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Params = gin.Params{{Key: "creatorName", Value: creatorName}}
+	ctx.Params = gin.Params{{Key: "creator", Value: creatorName}}
 	ctx.Request = httptest.NewRequest(method, target, nil)
 	return ctx, recorder
 }

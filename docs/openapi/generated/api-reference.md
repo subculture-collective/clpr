@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T17:41:02.029Z
+generated: 2026-07-12T17:45:26.681Z
 ---
 
 # Clipper API
@@ -5249,6 +5249,119 @@ func main() {
         // Handle error
         return
     }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List clips for a Twitch creator ID
+
+`GET /api/v1/creators/{creator}/clips`
+
+Public requests exclude hidden clips. An authenticated owner, administrator, or moderator can also receive hidden clips.
+
+**Tags:** Clips
+
+🔒 **Authentication Required**
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| creator | path | string | ✓ | Twitch creator ID, not a display name. |
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+
+#### Responses
+
+**200** - Creator clips and pagination metadata
+
+**400** - Invalid creator ID or pagination
+
+**500** - Clip listing failed
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/creators/{creator}/clips" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/creators/{creator}/clips', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+try:
+    response = requests.get(
+        '/api/v1/creators/{creator}/clips',
+        headers=headers
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/creators/{creator}/clips", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
 
     client := &http.Client{}
     resp, err := client.Do(req)
@@ -21060,7 +21173,7 @@ func main() {
 
 ### Get public creator analytics totals
 
-`GET /api/v1/creators/{creatorName}/analytics/overview`
+`GET /api/v1/creators/{creator}/analytics/overview`
 
 **Tags:** Creator Analytics
 
@@ -21085,7 +21198,7 @@ func main() {
 ##### cURL
 
 ```bash
-curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/overview"
+curl -X GET "http://localhost:8080/api/v1/creators/{creator}/analytics/overview"
 ```
 
 ##### JavaScript
@@ -21093,7 +21206,7 @@ curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/overv
 ```javascript
 // Using fetch API
 try {
-  const response = await fetch('/api/v1/creators/{creatorName}/analytics/overview', {
+  const response = await fetch('/api/v1/creators/{creator}/analytics/overview', {
     method: 'GET',
   });
 
@@ -21115,7 +21228,7 @@ import requests
 
 try:
     response = requests.get(
-        '/api/v1/creators/{creatorName}/analytics/overview'
+        '/api/v1/creators/{creator}/analytics/overview'
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -21135,7 +21248,7 @@ import (
 )
 
 func main() {
-    req, err := http.NewRequest("GET", "/api/v1/creators/{creatorName}/analytics/overview", nil)
+    req, err := http.NewRequest("GET", "/api/v1/creators/{creator}/analytics/overview", nil)
     if err != nil {
         // Handle error
         return
@@ -21162,7 +21275,7 @@ func main() {
 
 ### List a creator's top-performing clips
 
-`GET /api/v1/creators/{creatorName}/analytics/clips`
+`GET /api/v1/creators/{creator}/analytics/clips`
 
 **Tags:** Creator Analytics
 
@@ -21187,7 +21300,7 @@ func main() {
 ##### cURL
 
 ```bash
-curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/clips"
+curl -X GET "http://localhost:8080/api/v1/creators/{creator}/analytics/clips"
 ```
 
 ##### JavaScript
@@ -21195,7 +21308,7 @@ curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/clips
 ```javascript
 // Using fetch API
 try {
-  const response = await fetch('/api/v1/creators/{creatorName}/analytics/clips', {
+  const response = await fetch('/api/v1/creators/{creator}/analytics/clips', {
     method: 'GET',
   });
 
@@ -21217,7 +21330,7 @@ import requests
 
 try:
     response = requests.get(
-        '/api/v1/creators/{creatorName}/analytics/clips'
+        '/api/v1/creators/{creator}/analytics/clips'
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -21237,7 +21350,7 @@ import (
 )
 
 func main() {
-    req, err := http.NewRequest("GET", "/api/v1/creators/{creatorName}/analytics/clips", nil)
+    req, err := http.NewRequest("GET", "/api/v1/creators/{creator}/analytics/clips", nil)
     if err != nil {
         // Handle error
         return
@@ -21264,7 +21377,7 @@ func main() {
 
 ### Get a creator metric time series
 
-`GET /api/v1/creators/{creatorName}/analytics/trends`
+`GET /api/v1/creators/{creator}/analytics/trends`
 
 **Tags:** Creator Analytics
 
@@ -21289,7 +21402,7 @@ func main() {
 ##### cURL
 
 ```bash
-curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/trends"
+curl -X GET "http://localhost:8080/api/v1/creators/{creator}/analytics/trends"
 ```
 
 ##### JavaScript
@@ -21297,7 +21410,7 @@ curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/trend
 ```javascript
 // Using fetch API
 try {
-  const response = await fetch('/api/v1/creators/{creatorName}/analytics/trends', {
+  const response = await fetch('/api/v1/creators/{creator}/analytics/trends', {
     method: 'GET',
   });
 
@@ -21319,7 +21432,7 @@ import requests
 
 try:
     response = requests.get(
-        '/api/v1/creators/{creatorName}/analytics/trends'
+        '/api/v1/creators/{creator}/analytics/trends'
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -21339,7 +21452,7 @@ import (
 )
 
 func main() {
-    req, err := http.NewRequest("GET", "/api/v1/creators/{creatorName}/analytics/trends", nil)
+    req, err := http.NewRequest("GET", "/api/v1/creators/{creator}/analytics/trends", nil)
     if err != nil {
         // Handle error
         return
@@ -21366,7 +21479,7 @@ func main() {
 
 ### Get aggregate creator audience device insights
 
-`GET /api/v1/creators/{creatorName}/analytics/audience`
+`GET /api/v1/creators/{creator}/analytics/audience`
 
 Returns device categories for views in the last 90 days. Geographic results remain empty until a production GeoIP provider and accuracy policy are configured.
 
@@ -21392,7 +21505,7 @@ Returns device categories for views in the last 90 days. Geographic results rema
 ##### cURL
 
 ```bash
-curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/audience"
+curl -X GET "http://localhost:8080/api/v1/creators/{creator}/analytics/audience"
 ```
 
 ##### JavaScript
@@ -21400,7 +21513,7 @@ curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/analytics/audie
 ```javascript
 // Using fetch API
 try {
-  const response = await fetch('/api/v1/creators/{creatorName}/analytics/audience', {
+  const response = await fetch('/api/v1/creators/{creator}/analytics/audience', {
     method: 'GET',
   });
 
@@ -21422,7 +21535,7 @@ import requests
 
 try:
     response = requests.get(
-        '/api/v1/creators/{creatorName}/analytics/audience'
+        '/api/v1/creators/{creator}/analytics/audience'
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -21442,7 +21555,7 @@ import (
 )
 
 func main() {
-    req, err := http.NewRequest("GET", "/api/v1/creators/{creatorName}/analytics/audience", nil)
+    req, err := http.NewRequest("GET", "/api/v1/creators/{creator}/analytics/audience", nil)
     if err != nil {
         // Handle error
         return
@@ -37492,110 +37605,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("PUT", "/api/v1/communities/{id}/members/{userId}/role", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/creators/{creatorName}/clips
-
-`GET /api/v1/creators/{creatorName}/clips`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| creatorName | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/creators/{creatorName}/clips"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/creators/{creatorName}/clips', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/creators/{creatorName}/clips'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/creators/{creatorName}/clips", nil)
     if err != nil {
         // Handle error
         return

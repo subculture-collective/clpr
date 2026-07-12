@@ -1562,38 +1562,38 @@
   },
   {
     "method": "GET",
-    "path": "/api/v1/creators/{creatorName}/analytics/audience",
+    "path": "/api/v1/creators/{creator}/analytics/audience",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorAudienceInsights-fm",
     "operation_id": "getCreatorAudienceInsights",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
-    "path": "/api/v1/creators/{creatorName}/analytics/clips",
+    "path": "/api/v1/creators/{creator}/analytics/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorTopClips-fm",
     "operation_id": "getCreatorTopClips",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
-    "path": "/api/v1/creators/{creatorName}/analytics/overview",
+    "path": "/api/v1/creators/{creator}/analytics/overview",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorAnalyticsOverview-fm",
     "operation_id": "getCreatorAnalyticsOverview",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
-    "path": "/api/v1/creators/{creatorName}/analytics/trends",
+    "path": "/api/v1/creators/{creator}/analytics/trends",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorTrends-fm",
     "operation_id": "getCreatorAnalyticsTrends",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
-    "path": "/api/v1/creators/{creatorName}/clips",
+    "path": "/api/v1/creators/{creator}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).ListCreatorClips-fm",
-    "operation_id": "getApiV1CreatorsCreatornameClips",
-    "contract_level": "transitional"
+    "operation_id": "listCreatorClips",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
