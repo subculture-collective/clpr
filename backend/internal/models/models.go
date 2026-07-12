@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -3095,6 +3096,34 @@ type CreateVerificationApplicationRequest struct {
 	AvgViewers         *int              `json:"avg_viewers,omitempty" binding:"omitempty,min=0"`
 	ContentDescription *string           `json:"content_description,omitempty" binding:"omitempty,max=2000"`
 	SocialMediaLinks   map[string]string `json:"social_media_links,omitempty"`
+}
+
+func (r *CreateVerificationApplicationRequest) Validate() error {
+	parsed, err := url.Parse(r.TwitchChannelURL)
+	if err != nil || parsed.Scheme != "https" || (strings.ToLower(parsed.Hostname()) != "twitch.tv" && strings.ToLower(parsed.Hostname()) != "www.twitch.tv") {
+		return fmt.Errorf("twitch_channel_url must be an HTTPS Twitch channel URL")
+	}
+	if strings.Trim(parsed.Path, "/") == "" || strings.Contains(strings.Trim(parsed.Path, "/"), "/") {
+		return fmt.Errorf("twitch_channel_url must identify one channel")
+	}
+	for _, value := range []*int{r.FollowerCount, r.SubscriberCount, r.AvgViewers} {
+		if value != nil && *value > 1_000_000_000 {
+			return fmt.Errorf("audience metrics are too large")
+		}
+	}
+	if len(r.SocialMediaLinks) > 10 {
+		return fmt.Errorf("social_media_links cannot contain more than 10 entries")
+	}
+	for key, value := range r.SocialMediaLinks {
+		if len(key) < 1 || len(key) > 50 || len(value) > 500 {
+			return fmt.Errorf("invalid social media link")
+		}
+		parsed, err := url.Parse(value)
+		if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
+			return fmt.Errorf("social media links must use HTTPS")
+		}
+	}
+	return nil
 }
 
 // ReviewVerificationApplicationRequest represents admin request to review an application

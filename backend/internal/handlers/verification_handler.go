@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -47,7 +48,11 @@ func (h *VerificationHandler) CreateApplication(c *gin.Context) {
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := userIDVal.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authenticated user"})
+		return
+	}
 
 	var req models.CreateVerificationApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,87 +61,8 @@ func (h *VerificationHandler) CreateApplication(c *gin.Context) {
 		})
 		return
 	}
-
-	// === ABUSE PREVENTION CHECKS ===
-
-	// 0. Check if user is already verified
-	isVerified, err := h.verificationRepo.IsUserVerified(ctx, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check verification status",
-		})
-		return
-	}
-
-	if isVerified {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You are already verified",
-		})
-		return
-	}
-
-	// 1. Check if user already has a pending application
-	existing, err := h.verificationRepo.GetApplicationByUserID(ctx, userID, models.VerificationStatusPending)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check for existing application",
-		})
-		return
-	}
-
-	if existing != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You already have a pending verification application",
-		})
-		return
-	}
-
-	// 2. Check for recently rejected applications (30-day cooldown)
-	recentRejection, err := h.verificationRepo.GetRecentRejectedApplicationByUserID(ctx, userID, 30)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check application history",
-		})
-		return
-	}
-
-	if recentRejection != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":       "You must wait 30 days after a rejection before reapplying",
-			"rejected_at": recentRejection.ReviewedAt,
-		})
-		return
-	}
-
-	// 3. Check total application count to detect potential abuse
-	totalApps, err := h.verificationRepo.GetApplicationCountByUserID(ctx, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check application history",
-		})
-		return
-	}
-
-	if totalApps >= 5 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You have reached the maximum number of verification applications",
-		})
-		return
-	}
-
-	// 4. Check for duplicate Twitch URLs from other users
-	duplicateApps, err := h.verificationRepo.GetApplicationsByTwitchURL(ctx, req.TwitchChannelURL, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to validate Twitch channel",
-		})
-		return
-	}
-
-	if len(duplicateApps) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "This Twitch channel is already associated with another verification application",
-		})
+	if err := req.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -158,8 +84,16 @@ func (h *VerificationHandler) CreateApplication(c *gin.Context) {
 		app.SocialMediaLinks[k] = v
 	}
 
-	err = h.verificationRepo.CreateApplication(ctx, app)
+	err := h.verificationRepo.CreateApplicationGuarded(ctx, app)
 	if err != nil {
+		if errors.Is(err, repository.ErrVerificationAlreadyVerified) || errors.Is(err, repository.ErrVerificationPending) || errors.Is(err, repository.ErrVerificationLimit) || errors.Is(err, repository.ErrVerificationDuplicateChannel) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, repository.ErrVerificationCooldown) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "You must wait 30 days after a rejection before reapplying"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to create verification application",
 		})
@@ -186,7 +120,11 @@ func (h *VerificationHandler) GetApplication(c *gin.Context) {
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := userIDVal.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authenticated user"})
+		return
+	}
 
 	// Get latest application regardless of status (empty string means no status filter)
 	app, err := h.verificationRepo.GetApplicationByUserID(ctx, userID, "")

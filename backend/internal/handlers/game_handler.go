@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // GameHandler handles game-related HTTP requests
@@ -254,7 +254,7 @@ func (h *GameHandler) UnfollowGame(c *gin.Context) {
 
 // GetFollowedGames handles GET /api/v1/users/:userId/games/following
 func (h *GameHandler) GetFollowedGames(c *gin.Context) {
-	userIDStr := c.Param("userId")
+	userIDStr := c.Param("id")
 
 	// Parse user ID
 	userID, err := uuid.Parse(userIDStr)
@@ -271,12 +271,14 @@ func (h *GameHandler) GetFollowedGames(c *gin.Context) {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 || limit > 100 {
-		limit = 20
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		page = 1
+	if err != nil || page < 1 || page > 100000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be between 1 and 100000"})
+		return
 	}
 
 	offset := (page - 1) * limit

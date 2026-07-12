@@ -3049,7 +3049,7 @@
     "path": "/api/v1/users/{id}/games/following",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetFollowedGames-fm",
     "operation_id": "getApiV1UsersIdGamesFollowing",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -3077,14 +3077,14 @@
     "path": "/api/v1/verification/applications",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).CreateApplication-fm",
     "operation_id": "postApiV1VerificationApplications",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/verification/applications/me",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplication-fm",
     "operation_id": "getApiV1VerificationApplicationsMe",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",

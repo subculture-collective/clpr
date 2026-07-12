@@ -3,11 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // VerificationRepository handles database operations for creator verification applications
@@ -47,6 +48,61 @@ func (r *VerificationRepository) CreateApplication(ctx context.Context, app *mod
 	).Scan(&app.ID, &app.CreatedAt, &app.UpdatedAt)
 
 	return err
+}
+
+// CreateApplicationGuarded serializes and enforces all user-facing submission invariants.
+func (r *VerificationRepository) CreateApplicationGuarded(ctx context.Context, app *models.CreatorVerificationApplication) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	normalizedURL := strings.ToLower(strings.TrimSpace(app.TwitchChannelURL))
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1::text, 2))`, app.UserID); err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1, 3))`, normalizedURL); err != nil {
+		return err
+	}
+	var verified bool
+	if err = tx.QueryRow(ctx, `SELECT is_verified FROM users WHERE id = $1`, app.UserID).Scan(&verified); err != nil {
+		return err
+	}
+	if verified {
+		return ErrVerificationAlreadyVerified
+	}
+	var exists bool
+	if err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM creator_verification_applications WHERE user_id = $1 AND status = 'pending')`, app.UserID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return ErrVerificationPending
+	}
+	if err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM creator_verification_applications WHERE user_id = $1 AND status = 'rejected' AND reviewed_at >= NOW() - INTERVAL '30 days')`, app.UserID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return ErrVerificationCooldown
+	}
+	var count int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM creator_verification_applications WHERE user_id = $1`, app.UserID).Scan(&count); err != nil {
+		return err
+	}
+	if count >= 5 {
+		return ErrVerificationLimit
+	}
+	if err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM creator_verification_applications WHERE user_id <> $1 AND lower(trim(twitch_channel_url)) = $2)`, app.UserID, normalizedURL).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return ErrVerificationDuplicateChannel
+	}
+	app.TwitchChannelURL = normalizedURL
+	err = tx.QueryRow(ctx, `INSERT INTO creator_verification_applications (user_id, twitch_channel_url, follower_count, subscriber_count, avg_viewers, content_description, social_media_links, status, priority) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, created_at, updated_at`, app.UserID, app.TwitchChannelURL, app.FollowerCount, app.SubscriberCount, app.AvgViewers, app.ContentDescription, app.SocialMediaLinks, app.Status, app.Priority).Scan(&app.ID, &app.CreatedAt, &app.UpdatedAt)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // GetApplicationByID retrieves a verification application by ID
