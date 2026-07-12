@@ -1,16 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	pkgutils "git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // DiscoveryListHandler handles discovery list-related requests
@@ -113,14 +115,16 @@ func (h *DiscoveryListHandler) GetDiscoveryList(c *gin.Context) {
 
 	// Track list view for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_view",
 				UserID:    userID,
 			}
 			// Note: We can't easily track the list ID as clip_id here since the schema expects a clip
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, list)
@@ -258,13 +262,15 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 
 	// Track follow event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_follow",
 				UserID:    &userID,
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully followed list"})
@@ -316,13 +322,15 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 
 	// Track unfollow event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_unfollow",
 				UserID:    &userID,
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully unfollowed list"})
@@ -382,13 +390,15 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 
 	// Track bookmark event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_bookmark",
 				UserID:    &userID,
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully bookmarked list"})
@@ -440,13 +450,15 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 
 	// Track unbookmark event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_unbookmark",
 				UserID:    &userID,
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully removed bookmark"})

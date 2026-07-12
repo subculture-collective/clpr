@@ -977,7 +977,7 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 
 	// Update reputation for reply author (async via goroutine for performance)
 	// Use a separate context with timeout to prevent goroutine leaks
-	go func() {
+	handlerBackgroundJobs.Submit(func() {
 		// Create background context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -987,7 +987,7 @@ func (h *ForumHandler) VoteOnReply(c *gin.Context) {
 			// Log error but don't fail the vote operation
 			fmt.Printf("Warning: Failed to update reputation for user %s: %v\n", replyUserID, err)
 		}
-	}()
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

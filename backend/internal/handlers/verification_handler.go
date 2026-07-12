@@ -4,13 +4,14 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // VerificationHandler handles creator verification operations
@@ -368,8 +369,9 @@ func (h *VerificationHandler) ReviewApplication(c *gin.Context) {
 
 	// Send notification to user (async - don't fail request if notification fails)
 	// Use background context to avoid cancellation when HTTP request completes
-	go func() {
-		bgCtx := context.Background()
+	handlerBackgroundJobs.Submit(func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		var notificationType string
 		var title string
 		var message string
@@ -398,7 +400,7 @@ func (h *VerificationHandler) ReviewApplication(c *gin.Context) {
 			nil, // sourceContentID
 			nil, // sourceContentType
 		)
-	}()
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

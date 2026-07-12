@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -1566,8 +1566,8 @@ func (h *ModerationHandler) SyncBans(c *gin.Context) {
 		"job_id":     jobID.String(),
 	})
 
-	// Start async ban sync in a goroutine (fire and forget)
-	go func() {
+	// Submit async ban sync to the bounded worker pool.
+	queued := handlerBackgroundJobs.Submit(func() {
 		// Create a new context for the background job with timeout
 		bgCtx, cancel := context.WithTimeout(context.Background(), banSyncTimeoutDuration)
 		defer cancel()
@@ -1618,7 +1618,14 @@ func (h *ModerationHandler) SyncBans(c *gin.Context) {
 				"job_id":     jobID.String(),
 			})
 		}
-	}()
+	})
+	if !queued {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Ban sync queue is at capacity. Please retry shortly.",
+			"code":  "BACKGROUND_QUEUE_FULL",
+		})
+		return
+	}
 
 	// Return immediate response
 	c.JSON(http.StatusOK, gin.H{
