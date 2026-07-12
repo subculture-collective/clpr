@@ -7357,253 +7357,327 @@ paths:
 
   /api/v1/admin/users:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/users
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Search users for administration
+      description: Strictly filters and paginates administrative user records. Administrator MFA is required.
       operationId: getApiV1AdminUsers
-      x-clpr-router-derived: true
+      parameters:
+        - {name: search, in: query, schema: {type: string, maxLength: 200}}
+        - {name: role, in: query, schema: {type: string, enum: [user, moderator, admin]}}
+        - {name: status, in: query, schema: {type: string, enum: [active, banned, unclaimed]}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: per_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 25}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Administrative user results
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserListResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/badges:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/users/{id}/badges
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Award a badge to a user
+      description: Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminUsersIdBadges
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminBadgeAwardRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Badge awarded
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/badges/{badgeId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/admin/users/{id}/badges/{badgeId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Remove a badge from a user
+      description: Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
       operationId: deleteApiV1AdminUsersIdBadgesBadgeid
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
         - name: badgeId
           in: path
           required: true
           schema:
             type: string
+            minLength: 1
+            maxLength: 100
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Badge removed
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/ban:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/users/{id}/ban
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Ban a user
+      description: Atomically bans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminUsersIdBan
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminReasonRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: User banned
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/comment-suspension-history:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/users/{id}/comment-suspension-history
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Get comment-suspension history
+      description: Administrator MFA is required.
       operationId: getApiV1AdminUsersIdCommentSuspensionHistory
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Comment-suspension history
+          content: {application/json: {schema: {$ref: '#/components/schemas/CommentSuspensionHistoryResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/karma:
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/admin/users/{id}/karma
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Set user karma
+      description: Atomically sets bounded karma and records the audit event. Administrator MFA and CSRF protection are required.
       operationId: patchApiV1AdminUsersIdKarma
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminKarmaRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Karma updated
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminKarmaResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/lift-comment-suspension:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/users/{id}/lift-comment-suspension
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Lift a comment suspension
+      description: Atomically lifts active suspensions and records the audit event. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminUsersIdLiftCommentSuspension
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminLiftSuspensionRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Suspension lifted
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/role:
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/admin/users/{id}/role
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Change a user role
+      description: Atomically changes a non-administrator target role and records the audit event. Administrator MFA and CSRF protection are required.
       operationId: patchApiV1AdminUsersIdRole
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminRoleRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Role updated
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/suspend-comments:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/users/{id}/suspend-comments
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Suspend comment privileges
+      description: Atomically records a warning or suspension with its audit event. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminUsersIdSuspendComments
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminCommentSuspensionRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Comment privileges suspended
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminCommentSuspensionResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/toggle-comment-review:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/users/{id}/toggle-comment-review
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Set comment-review requirement
+      description: Atomically changes the review requirement and records the audit event. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminUsersIdToggleCommentReview
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminCommentReviewRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Review requirement updated
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminCommentReviewResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/users/{id}/unban:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/users/{id}/unban
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Users]
+      summary: Unban a user
+      description: Atomically unbans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminUsersIdUnban
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: false
+        content: {application/json: {schema: {$ref: '#/components/schemas/AdminOptionalReasonRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: User unbanned
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminUserMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -11604,6 +11678,134 @@ components:
       properties:
         decision: {type: string, enum: [approve, reject]}
         resolution: {type: string, maxLength: 2000}
+
+    AdminUserListResponse:
+      type: object
+      required: [users, total, page, per_page]
+      properties:
+        users:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/User'}
+        total: {type: integer, minimum: 0}
+        page: {type: integer, minimum: 1}
+        per_page: {type: integer, minimum: 1, maximum: 100}
+
+    AdminUserMutationResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+
+    AdminReasonRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: {type: string, minLength: 3, maxLength: 1000}
+
+    AdminOptionalReasonRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: {type: string, maxLength: 1000}
+
+    AdminBadgeAwardRequest:
+      type: object
+      required: [badge_id]
+      additionalProperties: false
+      properties:
+        badge_id: {type: string, minLength: 1, maxLength: 100}
+
+    AdminKarmaRequest:
+      type: object
+      required: [karma_points]
+      additionalProperties: false
+      properties:
+        karma_points: {type: integer, minimum: -1000000, maximum: 1000000}
+
+    AdminKarmaResponse:
+      allOf:
+        - $ref: '#/components/schemas/AdminUserMutationResponse'
+        - type: object
+          required: [karma_points]
+          properties:
+            karma_points: {type: integer, minimum: -1000000, maximum: 1000000}
+
+    AdminRoleRequest:
+      type: object
+      required: [role]
+      additionalProperties: false
+      properties:
+        role: {type: string, enum: [user, moderator, admin]}
+        reason: {type: string, maxLength: 1000}
+
+    AdminCommentSuspensionRequest:
+      type: object
+      required: [suspension_type, reason]
+      additionalProperties: false
+      properties:
+        suspension_type: {type: string, enum: [warning, temporary, permanent]}
+        reason: {type: string, minLength: 10, maxLength: 1000}
+        duration_hours: {type: integer, minimum: 1, maximum: 8760}
+
+    AdminCommentSuspensionResponse:
+      allOf:
+        - $ref: '#/components/schemas/AdminUserMutationResponse'
+        - type: object
+          required: [suspension_type]
+          properties:
+            suspension_type: {type: string, enum: [warning, temporary, permanent]}
+
+    AdminLiftSuspensionRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: {type: string, minLength: 10, maxLength: 500}
+
+    AdminCommentReviewRequest:
+      type: object
+      required: [require_review, reason]
+      additionalProperties: false
+      properties:
+        require_review: {type: boolean}
+        reason: {type: string, minLength: 3, maxLength: 1000}
+
+    AdminCommentReviewResponse:
+      allOf:
+        - $ref: '#/components/schemas/AdminUserMutationResponse'
+        - type: object
+          required: [require_review]
+          properties:
+            require_review: {type: boolean}
+
+    CommentSuspensionHistoryEntry:
+      type: object
+      required: [id, user_id, suspended_by, suspension_type, reason, suspended_at, is_active]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        suspended_by: {type: string, format: uuid}
+        suspension_type: {type: string, enum: [warning, temporary, permanent]}
+        reason: {type: string}
+        duration_hours: {type: integer, minimum: 1}
+        suspended_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time}
+        is_active: {type: boolean}
+        lifted_at: {type: string, format: date-time}
+        lifted_by: {type: string, format: uuid}
+        lift_reason: {type: string}
+
+    CommentSuspensionHistoryResponse:
+      type: object
+      required: [history, count]
+      properties:
+        history:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/CommentSuspensionHistoryEntry'}
+        count: {type: integer, minimum: 0, maximum: 100}
 
     AccountTypeConversion:
       type: object

@@ -669,77 +669,77 @@
     "path": "/api/v1/admin/users",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).ListUsers-fm",
     "operation_id": "getApiV1AdminUsers",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/users/{id}/badges",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).AwardBadge-fm",
     "operation_id": "postApiV1AdminUsersIdBadges",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/users/{id}/badges/{badgeId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).RemoveBadge-fm",
     "operation_id": "deleteApiV1AdminUsersIdBadgesBadgeid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/users/{id}/ban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).BanUser-fm",
     "operation_id": "postApiV1AdminUsersIdBan",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/users/{id}/comment-suspension-history",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).GetCommentSuspensionHistory-fm",
     "operation_id": "getApiV1AdminUsersIdCommentSuspensionHistory",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/admin/users/{id}/karma",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UpdateUserKarma-fm",
     "operation_id": "patchApiV1AdminUsersIdKarma",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/users/{id}/lift-comment-suspension",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).LiftCommentSuspension-fm",
     "operation_id": "postApiV1AdminUsersIdLiftCommentSuspension",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/admin/users/{id}/role",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UpdateUserRole-fm",
     "operation_id": "patchApiV1AdminUsersIdRole",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/users/{id}/suspend-comments",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).SuspendCommentPrivileges-fm",
     "operation_id": "postApiV1AdminUsersIdSuspendComments",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/users/{id}/toggle-comment-review",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).ToggleCommentReview-fm",
     "operation_id": "postApiV1AdminUsersIdToggleCommentReview",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/users/{id}/unban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UnbanUser-fm",
     "operation_id": "postApiV1AdminUsersIdUnban",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
