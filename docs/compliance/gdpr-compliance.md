@@ -49,20 +49,10 @@ Clipper implements a GDPR-compliant system for handling data subject requests in
 
 ### 2. Right to Erasure (GDPR Article 17)
 
-**Endpoint:** `POST /api/v1/users/me/delete`
-
-**Frontend:** Settings page (`/settings`) - "Delete Account" button in Danger Zone
-
-**Implementation:**
-- Two-step confirmation process:
-  1. User must type "DELETE MY ACCOUNT" to confirm intent
-  2. Optional reason can be provided
-- 30-day grace period before final deletion
-- During grace period:
-  - Account remains accessible
-  - User can cancel deletion via `POST /api/v1/users/me/delete/cancel`
-  - Deletion status available via `GET /api/v1/users/me/delete/status`
-- Audit logging for all deletion requests and cancellations
+**Launch process:** Automated account deletion is not enabled. The former
+request/status endpoints and Settings control are not registered because the
+repository has no verified erasure executor. Erasure requests must be submitted
+to <privacy@clpr.gg> and tracked through the manual privacy-request process.
 
 **Data Retention:**
 The system respects legal data retention requirements:
@@ -70,17 +60,9 @@ The system respects legal data retention requirements:
 - DMCA records: Retained indefinitely (legal defense)
 - Public content (submissions): Can be anonymized but not required to be deleted under GDPR
 
-**Compliance:**
-- ✅ 30-day grace period prevents accidental deletions
-- ✅ Clear confirmation process
-- ✅ Respects legal retention requirements
-- ✅ Audit trail maintained
-- ✅ Response time: Within 30 days (meets GDPR requirement)
-
-**Cancellation:**
-- **Endpoint:** `POST /api/v1/users/me/delete/cancel`
-- **Frontend:** Settings page shows cancellation option when deletion is pending
-- Users can cancel deletion request at any time during the 30-day grace period
+**Automation status:** Deferred until deletion/anonymization, session and OAuth
+revocation, retention exceptions, retry recovery, and audit evidence are
+implemented and integration-tested. See `docs/LAUNCH_FEATURE_INVENTORY.md`.
 
 ### 3. Right to Rectification (GDPR Article 16)
 
@@ -244,9 +226,8 @@ CREATE TABLE audit_logs (
 
 ### Account Deletion
 
-- `POST /api/v1/users/me/delete` - Request account deletion
-- `POST /api/v1/users/me/delete/cancel` - Cancel pending deletion
-- `GET /api/v1/users/me/delete/status` - Check deletion status
+- No automated deletion endpoints are supported at launch. Contact
+  <privacy@clpr.gg> to submit an erasure request.
 
 ### Profile Rectification
 
@@ -264,7 +245,7 @@ CREATE TABLE audit_logs (
 | Right | GDPR Requirement | Clipper Implementation |
 |-------|-----------------|----------------------|
 | Access | 30 days | Immediate (< 1 second) |
-| Erasure | 30 days | 30 days (with grace period) |
+| Erasure | 30 days | Manual privacy-request process |
 | Rectification | 30 days | Immediate (< 1 second) |
 | Portability | 30 days | Immediate (< 1 second) |
 
@@ -281,8 +262,8 @@ The following features from the comprehensive GDPR issue are **not implemented**
 ### 2. Admin Panel for GDPR Requests
 
 - **Status:** Not implemented
-- **Rationale:** Most requests (export, rectification) are fully automated. Deletion requests have a 30-day grace period which provides sufficient time for manual review if needed.
-- **Alternative:** Audit logs can be queried directly for compliance review.
+- **Rationale:** Export and rectification are automated; erasure remains a manual process until the executor is production-ready.
+- **Alternative:** Privacy requests are tracked and reviewed manually.
 
 ### 3. Right to Restriction of Processing (Article 18)
 
@@ -299,14 +280,14 @@ The following features from the comprehensive GDPR issue are **not implemented**
 ### 5. Email Notifications for Request Lifecycle
 
 - **Status:** Not implemented
-- **Rationale:** Export is immediate (no waiting), deletion has 30-day grace period with status check available.
-- **Alternative:** In-app status indicators and user-initiated status checks.
+- **Rationale:** Export is immediate; erasure request updates are handled through the privacy contact process.
+- **Alternative:** Manual lifecycle notifications.
 
-### 6. Two-Step Email Verification for Deletion
+### 6. Automated Account Deletion
 
 - **Status:** Not implemented
-- **Rationale:** User must be logged in (session authenticated) and type exact confirmation text. Additional email step would add friction without significant security benefit for logged-in users.
-- **Alternative:** Current confirmation requirement + 30-day cancellation period.
+- **Rationale:** Scheduling without a verified erasure executor would create false success.
+- **Alternative:** Manual requests through <privacy@clpr.gg>.
 
 ### 7. Advanced Identity Verification (SMS)
 
@@ -340,16 +321,9 @@ The following features from the comprehensive GDPR issue are **not implemented**
 - [ ] Verify `README.txt` is comprehensive and clear
 
 **Account Deletion:**
-- [ ] Log in as a test user
-- [ ] Navigate to Settings (`/settings`)
-- [ ] Click "Delete Account" in Danger Zone
-- [ ] Enter "DELETE MY ACCOUNT" in confirmation field
-- [ ] Optionally provide reason
-- [ ] Submit deletion request
-- [ ] Verify deletion is scheduled for 30 days from now
-- [ ] Verify cancellation option appears
-- [ ] Click cancel and verify deletion is cancelled
-- [ ] Request deletion again to test the full flow
+- [ ] Verify deletion controls are absent from Settings
+- [ ] Verify former automated deletion endpoints return 404
+- [ ] Verify the privacy notice directs erasure requests to <privacy@clpr.gg>
 
 **Profile Rectification:**
 - [ ] Update display name - verify immediate change

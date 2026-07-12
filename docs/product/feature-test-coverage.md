@@ -1038,7 +1038,7 @@ See section 4.2 for forum coverage.
 ### Phase 1: Critical Security & Compliance (Weeks 1-2)
 
 1. ✅ Create tests for DMCA handler
-2. ✅ Test account deletion lifecycle (GDPR)
+2. ⛔ Keep automated account deletion disabled until the full GDPR lifecycle is implemented and tested
 3. ✅ Add admin operation tests **[COMPLETED: 2025-12-30]**
 4. ✅ Security test suite for authorization **[COMPLETED: 2025-12-30]**
 5. 🟡 Validation middleware security tests

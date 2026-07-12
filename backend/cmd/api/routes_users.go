@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
@@ -64,11 +64,6 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		// Cookie consent management (authenticated, rate limited)
 		users.GET("/me/consent", middleware.AuthMiddleware(svcs.Auth), h.Consent.GetConsent)
 		users.POST("/me/consent", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Consent.SaveConsent)
-
-		// Account deletion (authenticated, rate limited)
-		users.POST("/me/delete", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 1, time.Hour), h.UserSettings.RequestAccountDeletion)
-		users.POST("/me/delete/cancel", middleware.AuthMiddleware(svcs.Auth), h.UserSettings.CancelAccountDeletion)
-		users.GET("/me/delete/status", middleware.AuthMiddleware(svcs.Auth), h.UserSettings.GetDeletionStatus)
 
 		// Email logs for current user (authenticated)
 		users.GET("/me/email-logs", middleware.AuthMiddleware(svcs.Auth), h.EmailMetrics.GetUserEmailLogs)

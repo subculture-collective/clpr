@@ -28,6 +28,17 @@ func TestIncompleteFeatureRoutesDefaultAbsent(t *testing.T) {
 	assertRouteAbsent(t, router, "GET", "/api/v1/users/:id/watch-party-stats")
 }
 
+func TestAccountDeletionRoutesRemainAbsentUntilErasureWorkerExists(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	v1 := router.Group("/api/v1")
+	registerUserRoutes(v1, &Handlers{}, &Services{}, &Infrastructure{Config: &config.Config{}})
+
+	assertRouteAbsent(t, router, "POST", "/api/v1/users/me/delete")
+	assertRouteAbsent(t, router, "POST", "/api/v1/users/me/delete/cancel")
+	assertRouteAbsent(t, router, "GET", "/api/v1/users/me/delete/status")
+}
+
 func TestIncompleteFeatureRoutesRequireExplicitFlags(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

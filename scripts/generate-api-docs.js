@@ -375,7 +375,9 @@ function main() {
         
         // Generate markdown
         console.log('📝 Generating Markdown...');
-        const markdown = generateAPIReference(spec);
+        // Keep generated documentation compatible with the repository's
+        // whitespace gate even when code-sample templates contain spacer lines.
+        const markdown = generateAPIReference(spec).replace(/[ \t]+$/gm, '');
         
         // Write to file
         fs.writeFileSync(OUTPUT_FILE, markdown, 'utf8');

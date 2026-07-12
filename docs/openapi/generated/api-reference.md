@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-01-30T03:08:31.382Z
+generated: 2026-07-12T07:39:51.820Z
 ---
 
 # Clipper API
@@ -120,11 +120,11 @@ try {
   const response = await fetch('/sitemap.xml', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -164,7 +164,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -212,11 +212,11 @@ try {
   const response = await fetch('/robots.txt', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -256,7 +256,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -306,11 +306,11 @@ try {
   const response = await fetch('/health/ready', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -350,7 +350,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -398,11 +398,11 @@ try {
   const response = await fetch('/health/live', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -442,7 +442,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -490,11 +490,11 @@ try {
   const response = await fetch('/health/stats', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -534,7 +534,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -582,11 +582,11 @@ try {
   const response = await fetch('/health/cache', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -626,7 +626,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -676,11 +676,11 @@ try {
   const response = await fetch('/health/cache/check', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -720,7 +720,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -768,11 +768,11 @@ try {
   const response = await fetch('/health/webhooks', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -812,7 +812,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -860,11 +860,11 @@ try {
   const response = await fetch('/debug/metrics', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -904,7 +904,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -952,11 +952,11 @@ try {
   const response = await fetch('/api/v1/health', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -996,7 +996,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1044,11 +1044,11 @@ try {
   const response = await fetch('/api/v1/ping', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1088,7 +1088,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1136,11 +1136,11 @@ try {
   const response = await fetch('/api/v1/config', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1180,7 +1180,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1244,11 +1244,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1281,16 +1281,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/logs", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/logs", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1340,11 +1352,11 @@ try {
   const response = await fetch('/api/v1/logs/stats', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1384,7 +1396,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1444,11 +1456,11 @@ try {
   const response = await fetch('/api/v1/auth/twitch', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1488,7 +1500,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1547,11 +1559,11 @@ try {
   const response = await fetch('/api/v1/auth/twitch/callback', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1591,7 +1603,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1655,11 +1667,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1692,16 +1704,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/twitch/callback", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/auth/twitch/callback", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1765,11 +1789,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1802,16 +1826,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/test-login", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/auth/test-login", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1877,11 +1913,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -1914,16 +1950,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/refresh", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/auth/refresh", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -1962,8 +2010,7 @@ Invalidates current session and refresh tokens
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/auth/logout" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/auth/logout"
 ```
 
 ##### JavaScript
@@ -1974,11 +2021,11 @@ try {
   const response = await fetch('/api/v1/auth/logout', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2018,7 +2065,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2068,11 +2115,11 @@ try {
   const response = await fetch('/api/v1/auth/me', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2112,7 +2159,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2153,8 +2200,7 @@ Re-initiates Twitch OAuth flow for additional scopes (rate limited - 3/hour)
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/auth/twitch/reauthorize" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/auth/twitch/reauthorize"
 ```
 
 ##### JavaScript
@@ -2165,11 +2211,11 @@ try {
   const response = await fetch('/api/v1/auth/twitch/reauthorize', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2209,7 +2255,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2254,8 +2300,7 @@ Initiates MFA enrollment process (rate limited - 3/hour)
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/auth/mfa/enroll" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/auth/mfa/enroll"
 ```
 
 ##### JavaScript
@@ -2266,11 +2311,11 @@ try {
   const response = await fetch('/api/v1/auth/mfa/enroll', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2310,7 +2355,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2376,11 +2421,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2413,16 +2458,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/verify-enrollment", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/verify-enrollment", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2472,11 +2529,11 @@ try {
   const response = await fetch('/api/v1/auth/mfa/status', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2516,7 +2573,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2557,8 +2614,7 @@ Generates new backup codes (rate limited - 5/hour)
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/auth/mfa/regenerate-backup-codes" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/auth/mfa/regenerate-backup-codes"
 ```
 
 ##### JavaScript
@@ -2569,11 +2625,11 @@ try {
   const response = await fetch('/api/v1/auth/mfa/regenerate-backup-codes', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2613,7 +2669,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2679,11 +2735,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2716,16 +2772,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/disable", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/disable", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2775,11 +2843,11 @@ try {
   const response = await fetch('/api/v1/auth/mfa/trusted-devices', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2819,7 +2887,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2877,11 +2945,11 @@ try {
   const response = await fetch('/api/v1/auth/mfa/trusted-devices/{id}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -2921,7 +2989,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -2987,11 +3055,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3024,16 +3092,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/verify-login", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/verify-login", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3100,11 +3180,11 @@ try {
   const response = await fetch('/api/v1/clips', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3144,7 +3224,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3200,11 +3280,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3244,7 +3324,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3318,11 +3398,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3355,16 +3435,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/clips/{id}", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/clips/{id}", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3424,11 +3516,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3468,7 +3560,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3525,11 +3617,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/related', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3569,7 +3661,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3633,11 +3725,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3670,16 +3762,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/batch-media", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/clips/batch-media", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3735,11 +3839,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/analytics', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3779,7 +3883,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3847,11 +3951,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3884,16 +3988,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/track-view", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/track-view", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -3949,11 +4065,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/engagement', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -3993,7 +4109,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4067,11 +4183,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4104,16 +4220,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/vote", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/vote", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4160,8 +4288,7 @@ Adds a clip to user's favorites
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/clips/{id}/favorite" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/clips/{id}/favorite"
 ```
 
 ##### JavaScript
@@ -4172,11 +4299,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/favorite', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4216,7 +4343,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4274,11 +4401,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/favorite', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4318,7 +4445,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4394,11 +4521,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4431,16 +4558,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/clips/{id}/metadata", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/clips/{id}/metadata", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4516,11 +4655,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4553,16 +4692,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/clips/{id}/visibility", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/clips/{id}/visibility", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4628,11 +4779,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4665,16 +4816,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/request", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/clips/request", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4729,11 +4892,11 @@ try {
   const response = await fetch('/api/v1/scraped-clips', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4773,7 +4936,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4830,11 +4993,11 @@ try {
   const response = await fetch('/api/v1/favorites', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4874,7 +5037,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -4934,11 +5097,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/tags', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -4978,7 +5141,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5052,11 +5215,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5089,16 +5252,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/tags", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/tags", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5157,11 +5332,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/tags/{slug}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5201,7 +5376,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5256,11 +5431,11 @@ try {
   const response = await fetch('/api/v1/tags', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5300,7 +5475,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5359,11 +5534,11 @@ try {
   const response = await fetch('/api/v1/tags/search', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5403,7 +5578,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5459,11 +5634,11 @@ try {
   const response = await fetch('/api/v1/tags/{slug}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5503,7 +5678,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5562,11 +5737,11 @@ try {
   const response = await fetch('/api/v1/tags/{slug}/clips', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5606,7 +5781,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5666,11 +5841,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/progress', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5710,7 +5885,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5773,11 +5948,11 @@ try {
   const response = await fetch('/api/v1/clips/{id}/comments', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5817,7 +5992,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5891,11 +6066,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -5928,16 +6103,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/comments", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/comments", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -5995,11 +6182,11 @@ try {
   const response = await fetch('/api/v1/comments/{id}/replies', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6039,7 +6226,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6113,11 +6300,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6150,16 +6337,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/comments/{id}", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/comments/{id}", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6219,11 +6418,11 @@ try {
   const response = await fetch('/api/v1/comments/{id}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6263,7 +6462,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6337,11 +6536,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6374,16 +6573,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/comments/{id}/vote", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/comments/{id}/vote", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6448,11 +6659,11 @@ try {
   const response = await fetch('/api/v1/search', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6492,7 +6703,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6548,11 +6759,11 @@ try {
   const response = await fetch('/api/v1/search/suggestions', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6592,7 +6803,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6649,11 +6860,11 @@ try {
   const response = await fetch('/api/v1/search/scores', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6693,7 +6904,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6749,11 +6960,11 @@ try {
   const response = await fetch('/api/v1/search/trending', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6793,7 +7004,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6849,11 +7060,11 @@ try {
   const response = await fetch('/api/v1/search/history', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6893,7 +7104,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -6952,11 +7163,11 @@ try {
   const response = await fetch('/api/v1/search/failed', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -6996,7 +7207,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7048,11 +7259,11 @@ try {
   const response = await fetch('/api/v1/search/analytics', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7092,7 +7303,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7154,11 +7365,11 @@ try {
   const response = await fetch('/api/v1/submissions', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7198,7 +7409,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7264,11 +7475,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7301,16 +7512,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/submissions", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/submissions", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7360,11 +7583,11 @@ try {
   const response = await fetch('/api/v1/submissions/stats', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7404,7 +7627,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7464,11 +7687,11 @@ try {
   const response = await fetch('/api/v1/submissions/metadata', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7508,7 +7731,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7566,11 +7789,11 @@ try {
   const response = await fetch('/api/v1/submissions/check/{clip_id}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7610,7 +7833,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7680,11 +7903,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7717,16 +7940,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/reports", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/reports", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7787,11 +8022,11 @@ try {
   const response = await fetch('/api/v1/moderation/appeals', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7831,7 +8066,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7895,11 +8130,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -7932,16 +8167,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/moderation/appeals", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/moderation/appeals", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -7965,17 +8212,37 @@ func main() {
 
 `POST /api/v1/moderation/sync-bans`
 
-Synchronizes ban status from Twitch (rate limited - 5/hour)
+Synchronizes ban status from Twitch for a specific channel. This endpoint triggers an asynchronous
+background job that syncs ban data from Twitch. The operation has a 5-minute timeout.
+
+**Required Permissions**: Channel owner, moderator, or admin
+
+**Rate Limit**: 5 requests per hour
+
+**Requirements**:
+- Valid Twitch moderator OAuth scopes
+- Moderator permissions on the target channel
+
 
 **Tags:** Moderation
 
+🔒 **Authentication Required**
+
+#### Request Body
+
+Content-Type: `application/json`
+
 #### Responses
 
-**200** - Bans synchronized
+**200** - Ban sync started successfully
+
+**400** - Bad request - Invalid or missing channel_id
 
 **401** - Success
 
 **429** - Success
+
+**503** - Service unavailable - Twitch ban sync service is unavailable
 
 #### Code Examples
 
@@ -7983,7 +8250,9 @@ Synchronizes ban status from Twitch (rate limited - 5/hour)
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/moderation/sync-bans" \
-  -H "Content-Type: application/json"
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
 ```
 
 ##### JavaScript
@@ -7993,12 +8262,19 @@ curl -X POST "http://localhost:8080/api/v1/moderation/sync-bans" \
 try {
   const response = await fetch('/api/v1/moderation/sync-bans', {
     method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8011,9 +8287,12 @@ try {
 ```python
 import requests
 
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
 try:
     response = requests.post(
-        '/api/v1/moderation/sync-bans'
+        '/api/v1/moderation/sync-bans',
+        headers=headers,
+        json={}  # Your request data
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -8030,15 +8309,29 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/moderation/sync-bans", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
     if err != nil {
         // Handle error
         return
     }
-    
+
+    req, err := http.NewRequest("POST", "/api/v1/moderation/sync-bans", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+    req.Header.Set("Content-Type", "application/json")
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8058,26 +8351,40 @@ func main() {
 
 ---
 
-### Get bans
+### List channel bans
 
 `GET /api/v1/moderation/bans`
 
-Returns list of bans (rate limited - 60/minute)
+Retrieves a paginated list of bans for a specific channel.
+
+**Required Permissions**: Channel owner, moderator, or admin
+
+**Rate Limit**: 60 requests per minute
+
 
 **Tags:** Moderation
+
+🔒 **Authentication Required**
 
 #### Parameters
 
 | Name | In | Type | Required | Description |
 |------|-------|------|----------|-------------|
-|  |  | string |  |  |
-|  |  | string |  |  |
+| channelId | query | string | ✓ | Channel ID to list bans for |
+| limit | query | integer |  | Number of results per page |
+| offset | query | integer |  | Number of results to skip (must be multiple of limit) |
 
 #### Responses
 
-**200** - List of bans
+**200** - List of bans retrieved successfully
+
+**400** - Bad request - Invalid parameters
 
 **401** - Success
+
+**403** - Forbidden - Insufficient permissions
+
+**404** - Not found - Channel does not exist
 
 **429** - Success
 
@@ -8086,7 +8393,8 @@ Returns list of bans (rate limited - 60/minute)
 ##### cURL
 
 ```bash
-curl -X GET "http://localhost:8080/api/v1/moderation/bans"
+curl -X GET "http://localhost:8080/api/v1/moderation/bans" \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ##### JavaScript
@@ -8096,12 +8404,15 @@ curl -X GET "http://localhost:8080/api/v1/moderation/bans"
 try {
   const response = await fetch('/api/v1/moderation/bans', {
     method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8114,9 +8425,11 @@ try {
 ```python
 import requests
 
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
 try:
     response = requests.get(
-        '/api/v1/moderation/bans'
+        '/api/v1/moderation/bans',
+        headers=headers
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -8141,7 +8454,8 @@ func main() {
         // Handle error
         return
     }
-    
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8165,9 +8479,21 @@ func main() {
 
 `POST /api/v1/moderation/bans`
 
-Creates a new ban (rate limited - 10/hour)
+Creates a new ban for a user in a specific channel. Permanent bans are created by default.
+
+**Required Permissions**: Channel owner, admin, or moderator
+
+**Rate Limit**: 10 requests per hour
+
+**Notes**:
+- Cannot ban the channel owner
+- Creates an audit log entry automatically
+- Broadcasts ban event via WebSocket
+
 
 **Tags:** Moderation
+
+🔒 **Authentication Required**
 
 #### Request Body
 
@@ -8175,9 +8501,17 @@ Content-Type: `application/json`
 
 #### Responses
 
-**201** - Ban created
+**201** - Ban created successfully
+
+**400** - Bad request - Invalid parameters or cannot ban owner
 
 **401** - Success
+
+**403** - Forbidden - Insufficient permissions
+
+**404** - Not found - User or channel not found
+
+**409** - Conflict - User already banned
 
 **429** - Success
 
@@ -8187,6 +8521,7 @@ Content-Type: `application/json`
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/moderation/bans" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"example": "data"}'
 ```
@@ -8199,17 +8534,18 @@ try {
   const response = await fetch('/api/v1/moderation/bans', {
     method: 'POST',
     headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8222,9 +8558,11 @@ try {
 ```python
 import requests
 
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
 try:
     response = requests.post(
         '/api/v1/moderation/bans',
+        headers=headers,
         json={}  # Your request data
     )
     response.raise_for_status()  # Raise error for bad status
@@ -8242,16 +8580,29 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/moderation/bans", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
     if err != nil {
         // Handle error
         return
     }
+
+    req, err := http.NewRequest("POST", "/api/v1/moderation/bans", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8311,11 +8662,11 @@ try {
   const response = await fetch('/api/v1/moderation/ban/{id}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8355,7 +8706,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8415,11 +8766,11 @@ try {
   const response = await fetch('/api/v1/moderation/ban/{id}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8459,7 +8810,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8523,11 +8874,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8560,16 +8911,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/moderation/twitch/ban", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/moderation/twitch/ban", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8632,11 +8995,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8669,16 +9032,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/moderation/twitch/ban", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("DELETE", "/api/v1/moderation/twitch/ban", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8702,22 +9077,34 @@ func main() {
 
 `GET /api/v1/moderation/moderators`
 
-Returns list of moderators (rate limited - 60/minute)
+Retrieves a paginated list of moderators for a specific channel.
+
+**Required Permissions**: Authenticated users can view moderators
+
+**Rate Limit**: 60 requests per minute
+
 
 **Tags:** Moderation
+
+🔒 **Authentication Required**
 
 #### Parameters
 
 | Name | In | Type | Required | Description |
 |------|-------|------|----------|-------------|
-|  |  | string |  |  |
-|  |  | string |  |  |
+| channelId | query | string | ✓ | Channel ID to list moderators for |
+| limit | query | integer |  | Number of results per page |
+| offset | query | integer |  | Number of results to skip |
 
 #### Responses
 
-**200** - List of moderators
+**200** - List of moderators retrieved successfully
+
+**400** - Bad request - Missing or invalid channelId
 
 **401** - Success
+
+**403** - Forbidden - Insufficient permissions
 
 **429** - Success
 
@@ -8726,7 +9113,8 @@ Returns list of moderators (rate limited - 60/minute)
 ##### cURL
 
 ```bash
-curl -X GET "http://localhost:8080/api/v1/moderation/moderators"
+curl -X GET "http://localhost:8080/api/v1/moderation/moderators" \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ##### JavaScript
@@ -8736,12 +9124,15 @@ curl -X GET "http://localhost:8080/api/v1/moderation/moderators"
 try {
   const response = await fetch('/api/v1/moderation/moderators', {
     method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8754,9 +9145,11 @@ try {
 ```python
 import requests
 
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
 try:
     response = requests.get(
-        '/api/v1/moderation/moderators'
+        '/api/v1/moderation/moderators',
+        headers=headers
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -8781,7 +9174,8 @@ func main() {
         // Handle error
         return
     }
-    
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8805,9 +9199,22 @@ func main() {
 
 `POST /api/v1/moderation/moderators`
 
-Adds a new moderator (rate limited - 10/hour)
+Adds a new moderator to a specific channel.
+
+**Required Permissions**: Channel owner or admin only
+
+**Rate Limit**: 10 requests per hour
+
+**Notes**:
+- If user is already a member, upgrades them to moderator
+- If user is not a member, adds them as a new moderator
+- Validates moderator scope for community-specific permissions
+- Cannot add users who are already admins
+
 
 **Tags:** Moderation
+
+🔒 **Authentication Required**
 
 #### Request Body
 
@@ -8815,9 +9222,15 @@ Content-Type: `application/json`
 
 #### Responses
 
-**201** - Moderator added
+**201** - Moderator added successfully
+
+**400** - Bad request - Invalid UUID or user already admin
 
 **401** - Success
+
+**403** - Forbidden - Not channel owner/admin
+
+**404** - Not found - User or channel not found
 
 **429** - Success
 
@@ -8827,6 +9240,7 @@ Content-Type: `application/json`
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/moderation/moderators" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"example": "data"}'
 ```
@@ -8839,17 +9253,18 @@ try {
   const response = await fetch('/api/v1/moderation/moderators', {
     method: 'POST',
     headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -8862,9 +9277,11 @@ try {
 ```python
 import requests
 
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
 try:
     response = requests.post(
         '/api/v1/moderation/moderators',
+        headers=headers,
         json={}  # Your request data
     )
     response.raise_for_status()  # Raise error for bad status
@@ -8882,16 +9299,29 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/moderation/moderators", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
     if err != nil {
         // Handle error
         return
     }
+
+    req, err := http.NewRequest("POST", "/api/v1/moderation/moderators", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -8963,11 +9393,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9000,16 +9430,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PATCH", "/api/v1/moderation/moderators/{id}", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PATCH", "/api/v1/moderation/moderators/{id}", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9069,11 +9511,11 @@ try {
   const response = await fetch('/api/v1/moderation/moderators/{id}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9113,7 +9555,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9174,11 +9616,11 @@ try {
   const response = await fetch('/api/v1/moderation/audit-logs', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9218,7 +9660,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9279,11 +9721,11 @@ try {
   const response = await fetch('/api/v1/moderation/audit-logs/export', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9323,7 +9765,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9385,11 +9827,11 @@ try {
   const response = await fetch('/api/v1/moderation/audit-logs/{id}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9429,7 +9871,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9488,11 +9930,11 @@ try {
   const response = await fetch('/api/v1/moderation/ban-templates', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9532,7 +9974,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9596,11 +10038,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9633,16 +10075,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/moderation/ban-templates", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/moderation/ban-templates", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9694,11 +10148,11 @@ try {
   const response = await fetch('/api/v1/moderation/ban-templates/stats', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9738,7 +10192,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9798,11 +10252,11 @@ try {
   const response = await fetch('/api/v1/moderation/ban-templates/{id}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9842,7 +10296,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -9914,11 +10368,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -9951,16 +10405,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PATCH", "/api/v1/moderation/ban-templates/{id}", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PATCH", "/api/v1/moderation/ban-templates/{id}", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10020,11 +10486,11 @@ try {
   const response = await fetch('/api/v1/moderation/ban-templates/{id}', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10064,7 +10530,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10124,11 +10590,11 @@ try {
   const response = await fetch('/api/v1/users/by-username/{username}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10168,7 +10634,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10225,11 +10691,11 @@ try {
   const response = await fetch('/api/v1/users/autocomplete', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10269,7 +10735,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10325,11 +10791,11 @@ try {
   const response = await fetch('/api/v1/users/{id}', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10369,7 +10835,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10433,11 +10899,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10470,16 +10936,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/users/claim-account", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/users/claim-account", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10535,11 +11013,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/reputation', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10579,7 +11057,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10635,11 +11113,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/karma', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10679,7 +11157,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10735,11 +11213,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/badges', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10779,7 +11257,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10837,11 +11315,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/comments', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10881,7 +11359,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -10939,11 +11417,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/clips', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -10983,7 +11461,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11041,11 +11519,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/activity', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11085,7 +11563,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11143,11 +11621,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/upvoted', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11187,7 +11665,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11245,11 +11723,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/downvoted', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11289,7 +11767,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11347,11 +11825,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/followers', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11391,7 +11869,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11449,11 +11927,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/following', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11493,7 +11971,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11551,11 +12029,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/following/broadcasters', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11595,7 +12073,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11642,8 +12120,7 @@ Follows a user
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/users/{id}/follow" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/users/{id}/follow"
 ```
 
 ##### JavaScript
@@ -11654,11 +12131,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/follow', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11698,7 +12175,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11756,11 +12233,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/follow', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11800,7 +12277,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11849,8 +12326,7 @@ Blocks a user (rate limited - 20/minute)
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/users/{id}/block" \
-  -H "Content-Type: application/json"
+curl -X POST "http://localhost:8080/api/v1/users/{id}/block"
 ```
 
 ##### JavaScript
@@ -11861,11 +12337,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/block', {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -11905,7 +12381,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -11963,11 +12439,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/block', {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12007,7 +12483,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12064,11 +12540,11 @@ try {
   const response = await fetch('/api/v1/users/me/blocked', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12108,7 +12584,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12158,11 +12634,11 @@ try {
   const response = await fetch('/api/v1/users/me/stats', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12202,7 +12678,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12260,11 +12736,11 @@ try {
   const response = await fetch('/api/v1/users/{id}/engagement', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12304,7 +12780,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12368,11 +12844,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12405,16 +12881,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/users/me/profile", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/users/me/profile", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12478,11 +12966,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12515,16 +13003,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/users/me/social-links", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/users/me/social-links", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12574,11 +13074,11 @@ try {
   const response = await fetch('/api/v1/users/me/settings', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12618,7 +13118,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12682,11 +13182,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12719,16 +13219,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/users/me/settings", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/users/me/settings", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12780,11 +13292,11 @@ try {
   const response = await fetch('/api/v1/users/me/export', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12824,7 +13336,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12874,11 +13386,11 @@ try {
   const response = await fetch('/api/v1/users/me/consent', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -12918,7 +13430,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -12984,11 +13496,11 @@ try {
       // Your request data
     })
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -13021,317 +13533,28 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/users/me/consent", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/users/me/consent", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
     }
     req.Header.Set("Content-Type", "application/json")
-    
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
 
----
-
-### Request account deletion
-
-`POST /api/v1/users/me/delete`
-
-Requests account deletion (rate limited - 1/hour)
-
-**Tags:** Users
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**202** - Deletion request submitted
-
-**400** - Success
-
-**401** - Success
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/users/me/delete" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/users/me/delete', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-  
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-  
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/users/me/delete',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/users/me/delete", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-    
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Cancel account deletion
-
-`POST /api/v1/users/me/delete/cancel`
-
-Cancels pending account deletion
-
-**Tags:** Users
-
-#### Responses
-
-**200** - Deletion cancelled
-
-**401** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/users/me/delete/cancel" \
-  -H "Content-Type: application/json"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/users/me/delete/cancel', {
-    method: 'POST',
-  });
-  
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-  
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/users/me/delete/cancel'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/users/me/delete/cancel", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-    
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get deletion status
-
-`GET /api/v1/users/me/delete/status`
-
-Returns account deletion status
-
-**Tags:** Users
-
-#### Responses
-
-**200** - Deletion status
-
-**401** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/users/me/delete/status"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/users/me/delete/status', {
-    method: 'GET',
-  });
-  
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-  
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/users/me/delete/status'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/users/me/delete/status", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-    
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
@@ -13388,11 +13611,11 @@ try {
   const response = await fetch('/api/v1/users/me/email-logs', {
     method: 'GET',
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const data = await response.json();
   // Process data
 } catch (error) {
@@ -13432,7 +13655,7 @@ func main() {
         // Handle error
         return
     }
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {

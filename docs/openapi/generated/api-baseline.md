@@ -172,8 +172,4 @@ generated: 2026-01-30T03:02:25.951Z
 - **GET /api/v1/users/me/export** - Export user data
 - **GET /api/v1/users/me/consent** - Get cookie consent
 - **POST /api/v1/users/me/consent** - Save cookie consent
-- **POST /api/v1/users/me/delete** - Request account deletion
-- **POST /api/v1/users/me/delete/cancel** - Cancel account deletion
-- **GET /api/v1/users/me/delete/status** - Get deletion status
 - **GET /api/v1/users/me/email-logs** - Get email logs
-

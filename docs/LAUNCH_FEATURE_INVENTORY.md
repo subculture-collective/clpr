@@ -12,6 +12,7 @@ configuration.
 | Clip mirroring | Disabled | `MIRROR_ENABLED=false`; release validation rejects `true`; no mirror service or scheduler is registered by the API process | No mirror status or configuration UI is exposed | Real storage replication, object verification, cleanup/failure recovery, and regional failover tests |
 | Live feed | Disabled | `FEATURE_LIVE_FEED=false`; release validation rejects `true`; `/api/v1/feed/live` is not registered | `/discover/live` has no active route or navigation entry | Privacy review, API and browser acceptance tests, and measured dependency behavior |
 | Watch parties | Disabled | `FEATURE_WATCH_PARTIES=false`; release validation rejects `true`; watch-party HTTP and WebSocket routes are not registered | Watch-party routes and navigation are absent | Authorization matrix, WebSocket resilience/load tests, moderation/privacy review, and end-to-end journeys |
+| Automated account deletion | Disabled | Deletion request, cancellation, and status routes are not registered | Settings does not promise or offer automated deletion | Transactional erasure/anonymization worker, session and OAuth revocation, retained-data policy, recovery/retry behavior, and lifecycle integration evidence |
 
 ## Executable evidence
 
