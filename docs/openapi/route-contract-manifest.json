@@ -2166,22 +2166,22 @@
     "method": "GET",
     "path": "/api/v1/playlists",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListUserPlaylists-fm",
-    "operation_id": "getApiV1Playlists",
-    "contract_level": "transitional"
+    "operation_id": "listUserPlaylists",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlists",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).CreatePlaylist-fm",
-    "operation_id": "postApiV1Playlists",
-    "contract_level": "transitional"
+    "operation_id": "createPlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/playlists/bookmarks",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListBookmarkedPlaylists-fm",
-    "operation_id": "getApiV1PlaylistsBookmarks",
-    "contract_level": "transitional"
+    "operation_id": "listBookmarkedPlaylists",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -2194,15 +2194,15 @@
     "method": "GET",
     "path": "/api/v1/playlists/public",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListPublicPlaylists-fm",
-    "operation_id": "getApiV1PlaylistsPublic",
-    "contract_level": "transitional"
+    "operation_id": "listPublicPlaylists",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/playlists/share/{token}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetPlaylistByShareToken-fm",
-    "operation_id": "getApiV1PlaylistsShareToken",
-    "contract_level": "transitional"
+    "operation_id": "getPlaylistByShareToken",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -2215,22 +2215,22 @@
     "method": "DELETE",
     "path": "/api/v1/playlists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).DeletePlaylist-fm",
-    "operation_id": "deleteApiV1PlaylistsId",
-    "contract_level": "transitional"
+    "operation_id": "deletePlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/playlists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetPlaylist-fm",
-    "operation_id": "getApiV1PlaylistsId",
-    "contract_level": "transitional"
+    "operation_id": "getPlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/playlists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UpdatePlaylist-fm",
-    "operation_id": "patchApiV1PlaylistsId",
-    "contract_level": "transitional"
+    "operation_id": "updatePlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",

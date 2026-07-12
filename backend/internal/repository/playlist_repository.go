@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // PlaylistRepository handles database operations for playlists
@@ -317,6 +317,9 @@ func (r *PlaylistRepository) ListByUserID(ctx context.Context, userID uuid.UUID,
 		}
 		playlists = append(playlists, &item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating user playlists: %w", err)
+	}
 
 	if currentUserID != nil {
 		if err := r.enrichPlaylistInteractionStates(ctx, *currentUserID, playlists); err != nil {
@@ -442,6 +445,9 @@ func (r *PlaylistRepository) ListPublic(ctx context.Context, currentUserID *uuid
 			return nil, 0, fmt.Errorf("failed to scan playlist: %w", err)
 		}
 		playlists = append(playlists, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating public playlists: %w", err)
 	}
 
 	if currentUserID != nil {
@@ -570,6 +576,9 @@ func (r *PlaylistRepository) ListBookmarkedByUser(ctx context.Context, userID uu
 			return nil, 0, fmt.Errorf("failed to scan playlist: %w", err)
 		}
 		playlists = append(playlists, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating bookmarked playlists: %w", err)
 	}
 
 	if currentUserID != nil {

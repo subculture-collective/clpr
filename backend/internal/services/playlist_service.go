@@ -4,12 +4,19 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+)
+
+var (
+	ErrPlaylistValidation = errors.New("invalid playlist request")
+	ErrPlaylistNotFound   = errors.New("playlist not found")
+	ErrPlaylistPrivate    = errors.New("playlist is private")
 )
 
 // PlaylistService handles business logic for playlists
@@ -118,7 +125,7 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID uuid.UUID,
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check visibility permissions
@@ -135,10 +142,10 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID uuid.UUID,
 
 	if playlist.Visibility == models.PlaylistVisibilityPrivate {
 		if userID == nil {
-			return nil, fmt.Errorf("unauthorized: playlist is private")
+			return nil, ErrPlaylistPrivate
 		}
 		if *userID != playlist.UserID && currentPermission == nil {
-			return nil, fmt.Errorf("unauthorized: playlist is private")
+			return nil, ErrPlaylistPrivate
 		}
 	}
 
@@ -176,12 +183,12 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID uuid.UUID,
 	}
 
 	result := &models.PlaylistWithClips{
-		Playlist:  *playlist,
-		ClipCount: clipCount,
-		Clips:     clips,
-		IsLiked:   isLiked,
+		Playlist:     *playlist,
+		ClipCount:    clipCount,
+		Clips:        clips,
+		IsLiked:      isLiked,
 		IsBookmarked: isBookmarked,
-		Creator:   creator,
+		Creator:      creator,
 	}
 	result.CurrentUserPermission = currentPermission
 
@@ -195,7 +202,7 @@ func (s *PlaylistService) GetPlaylistByShareToken(ctx context.Context, shareToke
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Determine current user permission if available
@@ -244,12 +251,12 @@ func (s *PlaylistService) GetPlaylistByShareToken(ctx context.Context, shareToke
 	}
 
 	result := &models.PlaylistWithClips{
-		Playlist:  *playlist,
-		ClipCount: clipCount,
-		Clips:     clips,
-		IsLiked:   isLiked,
+		Playlist:     *playlist,
+		ClipCount:    clipCount,
+		Clips:        clips,
+		IsLiked:      isLiked,
 		IsBookmarked: isBookmarked,
-		Creator:   creator,
+		Creator:      creator,
 	}
 	result.CurrentUserPermission = currentPermission
 
@@ -258,6 +265,9 @@ func (s *PlaylistService) GetPlaylistByShareToken(ctx context.Context, shareToke
 
 // UpdatePlaylist updates a playlist
 func (s *PlaylistService) UpdatePlaylist(ctx context.Context, playlistID, userID uuid.UUID, req *models.UpdatePlaylistRequest) (*models.Playlist, error) {
+	if req == nil || (req.Title == nil && req.Description == nil && req.CoverURL == nil && req.Visibility == nil) {
+		return nil, fmt.Errorf("%w: at least one field is required", ErrPlaylistValidation)
+	}
 	// Get the playlist to verify ownership or permission
 	playlist, err := s.playlistRepo.GetByID(ctx, playlistID)
 	if err != nil {

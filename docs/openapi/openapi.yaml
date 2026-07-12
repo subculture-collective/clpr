@@ -9705,52 +9705,61 @@ paths:
         '500': {$ref: '#/components/responses/InternalServerError'}
   /api/v1/playlists:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlists
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1Playlists
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: List playlists owned by the authenticated user
+      operationId: listUserPlaylists
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Owned playlists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistListResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlists
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1Playlists
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Create a playlist
+      description: Rate limited to 20 per hour.
+      operationId: createPlaylist
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreatePlaylistRequest'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201':
+          description: Playlist created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/bookmarks:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlists/bookmarks
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistsBookmarks
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: List the authenticated user's bookmarked playlists
+      operationId: listBookmarkedPlaylists
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Bookmarked playlists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistListResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/featured:
     get:
@@ -9771,43 +9780,51 @@ paths:
 
   /api/v1/playlists/public:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlists/public
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistsPublic
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: List public playlists
+      operationId: listPublicPlaylists
+      security: []
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Public playlists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistListResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
         '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Optional authentication context is malformed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/share/{token}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlists/share/{token}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistsShareToken
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Get a playlist through its share token
+      operationId: getPlaylistByShareToken
+      security: []
       parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: token, in: path, required: true, schema: {type: string, minLength: 1, maxLength: 256}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Shared playlist and paginated clips
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistDetailResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
         '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Optional authentication context is malformed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/today:
     get:
@@ -9827,69 +9844,69 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/playlists/{id}:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/playlists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1PlaylistsId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistsId
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Get a visible playlist and paginated clips
+      operationId: getPlaylist
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Playlist details
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistDetailResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
         '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Optional authentication context is malformed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/playlists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: patchApiV1PlaylistsId
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Update a playlist when the caller has edit permission
+      operationId: updatePlaylist
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdatePlaylistRequest'}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Playlist updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Playlists]
+      summary: Soft-delete an owned playlist
+      operationId: deletePlaylist
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Playlist deleted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/{id}/bookmark:
     delete:
@@ -13583,6 +13600,127 @@ components:
         updated_at: {type: string, format: date-time}
         last_run_at: {type: string, format: date-time}
         last_generated_playlist_id: {type: string, format: uuid}
+
+    Playlist:
+      type: object
+      required: [id, user_id, title, visibility, view_count, share_count, like_count, follower_count, bookmark_count, is_curated, is_featured, display_order, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        cover_url: {type: string, format: uri, maxLength: 255}
+        visibility: {type: string, enum: [private, public, unlisted]}
+        share_token: {type: string}
+        view_count: {type: integer, minimum: 0}
+        share_count: {type: integer, minimum: 0}
+        like_count: {type: integer, minimum: 0}
+        follower_count: {type: integer, minimum: 0}
+        bookmark_count: {type: integer, minimum: 0}
+        is_curated: {type: boolean}
+        is_featured: {type: boolean}
+        display_order: {type: integer}
+        script_id: {type: string, format: uuid}
+        slug: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    PlaylistListItem:
+      allOf:
+        - $ref: '#/components/schemas/Playlist'
+        - type: object
+          required: [clip_count, has_processing_clips, is_liked, is_bookmarked]
+          properties:
+            clip_count: {type: integer, minimum: 0}
+            has_processing_clips: {type: boolean}
+            is_liked: {type: boolean}
+            is_bookmarked: {type: boolean}
+            preview_clips:
+              type: array
+              maxItems: 4
+              items: {$ref: '#/components/schemas/Clip'}
+
+    PlaylistDetail:
+      allOf:
+        - $ref: '#/components/schemas/Playlist'
+        - type: object
+          required: [clip_count, is_liked, is_followed, is_bookmarked]
+          properties:
+            clip_count: {type: integer, minimum: 0}
+            clips:
+              type: array
+              maxItems: 100
+              items: {$ref: '#/components/schemas/Clip'}
+            is_liked: {type: boolean}
+            is_followed: {type: boolean}
+            is_bookmarked: {type: boolean}
+            creator: {type: object, additionalProperties: true}
+            current_user_permission: {type: string, enum: [view, edit, admin]}
+
+    CreatePlaylistRequest:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        cover_url: {type: string, format: uri, maxLength: 255}
+        visibility: {type: string, enum: [private, public, unlisted]}
+
+    UpdatePlaylistRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        cover_url: {type: string, format: uri, maxLength: 255}
+        visibility: {type: string, enum: [private, public, unlisted]}
+
+    PlaylistPaginationMeta:
+      type: object
+      required: [page, limit, total, total_pages, has_next, has_prev]
+      properties:
+        page: {type: integer, minimum: 1, maximum: 1000000}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+        total_pages: {type: integer, minimum: 0}
+        has_next: {type: boolean}
+        has_prev: {type: boolean}
+
+    PlaylistListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, items: {$ref: '#/components/schemas/PlaylistListItem'}}
+        meta: {$ref: '#/components/schemas/PlaylistPaginationMeta'}
+
+    PlaylistDetailResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/PlaylistDetail'}
+        meta: {$ref: '#/components/schemas/PlaylistPaginationMeta'}
+
+    PlaylistResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/Playlist'}
+
+    PlaylistMutationResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [message]
+          properties:
+            message: {type: string}
 
     PlaylistScriptSort:
       type: string
