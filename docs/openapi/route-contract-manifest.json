@@ -3105,21 +3105,21 @@
     "path": "/api/v1/webhooks",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).ListSubscriptions-fm",
     "operation_id": "getApiV1Webhooks",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/webhooks",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).CreateSubscription-fm",
     "operation_id": "postApiV1Webhooks",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/webhooks/events",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).GetSupportedEvents-fm",
     "operation_id": "getApiV1WebhooksEvents",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
@@ -3140,35 +3140,35 @@
     "path": "/api/v1/webhooks/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).DeleteSubscription-fm",
     "operation_id": "deleteApiV1WebhooksId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/webhooks/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).GetSubscription-fm",
     "operation_id": "getApiV1WebhooksId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/webhooks/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).UpdateSubscription-fm",
     "operation_id": "patchApiV1WebhooksId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/webhooks/{id}/deliveries",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).GetSubscriptionDeliveries-fm",
     "operation_id": "getApiV1WebhooksIdDeliveries",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/webhooks/{id}/regenerate-secret",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).RegenerateSecret-fm",
     "operation_id": "postApiV1WebhooksIdRegenerateSecret",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

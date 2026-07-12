@@ -4122,6 +4122,168 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/webhooks:
+    get:
+      tags: [Webhooks]
+      summary: List webhook subscriptions
+      description: Lists outbound webhook subscriptions owned by the authenticated user.
+      operationId: getApiV1Webhooks
+      responses:
+        '200':
+          description: Webhook subscriptions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookSubscriptionListResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    post:
+      tags: [Webhooks]
+      summary: Create a webhook subscription
+      description: Creates an outbound webhook subscription. The signing secret is returned only by this response. Cookie-authenticated requests must also send the CSRF token.
+      operationId: postApiV1Webhooks
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateWebhookSubscriptionRequest'}
+      responses:
+        '201':
+          description: Subscription created and signing secret issued
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookSubscriptionCreatedResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/webhooks/events:
+    get:
+      tags: [Webhooks]
+      summary: List supported webhook events
+      operationId: getApiV1WebhooksEvents
+      responses:
+        '200':
+          description: Supported event identifiers
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookEventsResponse'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+
+  /api/v1/webhooks/{id}:
+    get:
+      tags: [Webhooks]
+      summary: Get a webhook subscription
+      operationId: getApiV1WebhooksId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Webhook subscription
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookSubscriptionResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Webhooks]
+      summary: Update a webhook subscription
+      description: Updates mutable subscription settings. Cookie-authenticated requests must also send the CSRF token.
+      operationId: patchApiV1WebhooksId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateWebhookSubscriptionRequest'}
+      responses:
+        '200':
+          description: Subscription updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Webhooks]
+      summary: Delete a webhook subscription
+      description: Permanently deletes the subscription. Cookie-authenticated requests must also send the CSRF token.
+      operationId: deleteApiV1WebhooksId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Subscription deleted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/webhooks/{id}/deliveries:
+    get:
+      tags: [Webhooks]
+      summary: List webhook delivery attempts
+      operationId: getApiV1WebhooksIdDeliveries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: page
+          in: query
+          schema: {type: integer, minimum: 1, default: 1}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      responses:
+        '200':
+          description: Paginated delivery attempts
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookDeliveriesResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/webhooks/{id}/regenerate-secret:
+    post:
+      tags: [Webhooks]
+      summary: Regenerate a webhook signing secret
+      description: Invalidates the previous secret and returns its replacement once. Cookie-authenticated requests must also send the CSRF token.
+      operationId: postApiV1WebhooksIdRegenerateSecret
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Replacement signing secret
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookSecretResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -10709,55 +10871,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/webhooks:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/webhooks
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1Webhooks
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/webhooks
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1Webhooks
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/webhooks/events:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/webhooks/events
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1WebhooksEvents
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/webhooks/sendgrid:
     post:
       tags: [Generated Route Contracts]
@@ -10782,117 +10895,6 @@ paths:
       description: Router-derived operation pending a route-specific response schema.
       operationId: postApiV1WebhooksStripe
       x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/webhooks/{id}:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/webhooks/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1WebhooksId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/webhooks/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1WebhooksId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/webhooks/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: patchApiV1WebhooksId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/webhooks/{id}/deliveries:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/webhooks/{id}/deliveries
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1WebhooksIdDeliveries
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/webhooks/{id}/regenerate-secret:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/webhooks/{id}/regenerate-secret
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1WebhooksIdRegenerateSecret
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11487,6 +11489,135 @@ components:
         success: {type: boolean, const: true}
         message: {type: string}
         data: {$ref: '#/components/schemas/AccountTypeInfo'}
+
+    WebhookSubscription:
+      type: object
+      required: [id, user_id, url, events, is_active, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        url: {type: string, format: uri, maxLength: 2048}
+        events:
+          type: array
+          items: {type: string}
+          minItems: 1
+          maxItems: 10
+        is_active: {type: boolean}
+        description: {type: [string, 'null'], maxLength: 500}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        last_delivery_at: {type: [string, 'null'], format: date-time}
+
+    WebhookDelivery:
+      type: object
+      required: [id, subscription_id, event_type, event_id, payload, status, attempt_count, max_attempts, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        subscription_id: {type: string, format: uuid}
+        event_type: {type: string}
+        event_id: {type: string, format: uuid}
+        payload: {type: string}
+        status: {type: string}
+        http_status_code: {type: [integer, 'null'], minimum: 100, maximum: 599}
+        response_body: {type: [string, 'null']}
+        error_message: {type: [string, 'null']}
+        attempt_count: {type: integer, minimum: 0}
+        max_attempts: {type: integer, minimum: 1}
+        next_attempt_at: {type: [string, 'null'], format: date-time}
+        delivered_at: {type: [string, 'null'], format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    CreateWebhookSubscriptionRequest:
+      type: object
+      required: [url, events]
+      properties:
+        url: {type: string, format: uri, maxLength: 2048}
+        events:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected]}
+        description: {type: [string, 'null'], maxLength: 500}
+
+    UpdateWebhookSubscriptionRequest:
+      type: object
+      minProperties: 1
+      properties:
+        url: {type: string, format: uri, maxLength: 2048}
+        events:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected]}
+        is_active: {type: boolean}
+        description: {type: [string, 'null'], maxLength: 500}
+
+    WebhookSubscriptionResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/WebhookSubscription'}
+
+    WebhookSubscriptionListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {$ref: '#/components/schemas/WebhookSubscription'}
+
+    WebhookSubscriptionCreatedResponse:
+      type: object
+      required: [success, data, secret, message]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/WebhookSubscription'}
+        secret: {type: string, minLength: 1, writeOnly: true}
+        message: {type: string}
+
+    WebhookMutationResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success: {type: boolean, const: true}
+        message: {type: string}
+
+    WebhookEventsResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected]}
+
+    WebhookDeliveriesResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {$ref: '#/components/schemas/WebhookDelivery'}
+        meta:
+          type: object
+          required: [page, limit, total, total_pages]
+          properties:
+            page: {type: integer, minimum: 1}
+            limit: {type: integer, minimum: 1, maximum: 100}
+            total: {type: integer, minimum: 0}
+            total_pages: {type: integer, minimum: 0}
+
+    WebhookSecretResponse:
+      type: object
+      required: [success, secret, message]
+      properties:
+        success: {type: boolean, const: true}
+        secret: {type: string, minLength: 1, writeOnly: true}
+        message: {type: string}
 
     TwitchModerationResult:
       type: object

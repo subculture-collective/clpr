@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T16:07:09.980Z
+generated: 2026-07-12T16:13:20.896Z
 ---
 
 # Clipper API
@@ -62,6 +62,7 @@ The API uses standard HTTP status codes:
 - [Reports](#reports)
 - [Moderation](#moderation)
 - [Users](#users)
+- [Webhooks](#webhooks)
 - [Watch History](#watch-history)
 - [Admin](#admin)
 
@@ -14218,6 +14219,875 @@ func main() {
         return
     }
     req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+## Webhooks
+
+Webhook management
+
+### List webhook subscriptions
+
+`GET /api/v1/webhooks`
+
+Lists outbound webhook subscriptions owned by the authenticated user.
+
+**Tags:** Webhooks
+
+#### Responses
+
+**200** - Webhook subscriptions
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/webhooks"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Create a webhook subscription
+
+`POST /api/v1/webhooks`
+
+Creates an outbound webhook subscription. The signing secret is returned only by this response. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**201** - Subscription created and signing secret issued
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/webhooks" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/webhooks',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/webhooks", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List supported webhook events
+
+`GET /api/v1/webhooks/events`
+
+**Tags:** Webhooks
+
+#### Responses
+
+**200** - Supported event identifiers
+
+**429** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/webhooks/events"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/events', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks/events'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks/events", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Get a webhook subscription
+
+`GET /api/v1/webhooks/{id}`
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+
+#### Responses
+
+**200** - Webhook subscription
+
+**400** - Success
+
+**401** - Success
+
+**404** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/webhooks/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Update a webhook subscription
+
+`PATCH /api/v1/webhooks/{id}`
+
+Updates mutable subscription settings. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Subscription updated
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X PATCH "http://localhost:8080/api/v1/webhooks/{id}" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.patch(
+        '/api/v1/webhooks/{id}',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PATCH", "/api/v1/webhooks/{id}", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Delete a webhook subscription
+
+`DELETE /api/v1/webhooks/{id}`
+
+Permanently deletes the subscription. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Subscription deleted
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X DELETE "http://localhost:8080/api/v1/webhooks/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}', {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.delete(
+        '/api/v1/webhooks/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("DELETE", "/api/v1/webhooks/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List webhook delivery attempts
+
+`GET /api/v1/webhooks/{id}/deliveries`
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+
+#### Responses
+
+**200** - Paginated delivery attempts
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/webhooks/{id}/deliveries"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}/deliveries', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks/{id}/deliveries'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}/deliveries", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Regenerate a webhook signing secret
+
+`POST /api/v1/webhooks/{id}/regenerate-secret`
+
+Invalidates the previous secret and returns its replacement once. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Replacement signing secret
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/webhooks/{id}/regenerate-secret"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}/regenerate-secret', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/webhooks/{id}/regenerate-secret'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("POST", "/api/v1/webhooks/{id}/regenerate-secret", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
 
     client := &http.Client{}
     resp, err := client.Do(req)
@@ -46899,300 +47769,6 @@ func main() {
 
 ---
 
-### GET /api/v1/webhooks
-
-`GET /api/v1/webhooks`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/webhooks"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### POST /api/v1/webhooks
-
-`POST /api/v1/webhooks`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/webhooks"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/webhooks'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/webhooks", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/webhooks/events
-
-`GET /api/v1/webhooks/events`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/webhooks/events"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/events', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks/events'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks/events", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
 ### POST /api/v1/webhooks/sendgrid
 
 `POST /api/v1/webhooks/sendgrid`
@@ -47365,526 +47941,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("POST", "/api/v1/webhooks/stripe", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/webhooks/{id}
-
-`GET /api/v1/webhooks/{id}`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/webhooks/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### PATCH /api/v1/webhooks/{id}
-
-`PATCH /api/v1/webhooks/{id}`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X PATCH "http://localhost:8080/api/v1/webhooks/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}', {
-    method: 'PATCH',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.patch(
-        '/api/v1/webhooks/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("PATCH", "/api/v1/webhooks/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### DELETE /api/v1/webhooks/{id}
-
-`DELETE /api/v1/webhooks/{id}`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X DELETE "http://localhost:8080/api/v1/webhooks/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}', {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.delete(
-        '/api/v1/webhooks/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/webhooks/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/webhooks/{id}/deliveries
-
-`GET /api/v1/webhooks/{id}/deliveries`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/webhooks/{id}/deliveries"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}/deliveries', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks/{id}/deliveries'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}/deliveries", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### POST /api/v1/webhooks/{id}/regenerate-secret
-
-`POST /api/v1/webhooks/{id}/regenerate-secret`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/webhooks/{id}/regenerate-secret"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}/regenerate-secret', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/webhooks/{id}/regenerate-secret'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/webhooks/{id}/regenerate-secret", nil)
     if err != nil {
         // Handle error
         return
