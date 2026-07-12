@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 api_port=${E2E_API_PORT:-18088}
 api_origin="http://127.0.0.1:${api_port}"
+seed_clip_id="00000000-0000-4000-8000-000000000001"
 log_file="$repo_root/.tmp/backend-e2e.log"
 pid_file="$repo_root/.tmp/backend-e2e.pid"
 
@@ -22,6 +23,29 @@ if curl -fsS "$api_origin/health/live" >/dev/null 2>&1; then
 fi
 
 mkdir -p "$repo_root/.tmp"
+
+# Seed one deterministic public clip in the disposable test database so the
+# browser suite exercises a real repository read instead of only static pages.
+docker compose -f "$repo_root/docker-compose.test.yml" exec -T postgres-test \
+    psql --username=clpr --dbname=clpr_test --set=ON_ERROR_STOP=1 <<SQL
+INSERT INTO clips (
+    id, twitch_clip_id, twitch_clip_url, embed_url, title,
+    creator_name, creator_id, broadcaster_name, broadcaster_id,
+    game_id, game_name, language, duration, view_count, created_at
+) VALUES (
+    '$seed_clip_id', 'clpr-release-smoke',
+    'https://clips.twitch.tv/clpr-release-smoke',
+    'https://clips.twitch.tv/embed?clip=clpr-release-smoke',
+    'CLPR release smoke clip', 'Release Tester', 'release-tester',
+    'Release Channel', 'release-channel', 'release-game',
+    'Release Readiness', 'en', 30, 42, NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    is_removed = false,
+    is_hidden = false;
+SQL
+
 (
     cd "$repo_root/backend"
     set -a
@@ -42,7 +66,8 @@ echo $! >"$pid_file"
 for _ in {1..60}; do
     if curl -fsS "$api_origin/health/live" >/dev/null 2>&1; then
         cd "$repo_root/frontend"
-        PLAYWRIGHT_API_BASE_URL="$api_origin" npm run test:e2e:real
+        PLAYWRIGHT_API_BASE_URL="$api_origin" \
+            PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" npm run test:e2e:real
         exit 0
     fi
     if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then

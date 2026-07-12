@@ -113,10 +113,11 @@ flowchart LR
 
 ### R1.2 — Add mandatory source CI
 
-- **State:** IN PROGRESS — source workflow now enforces backend test/vet/build,
-  frontend audit/lint/test/build, non-zero browser discovery, and real-backend
-  cross-browser smoke with diagnostic artifacts. Hosted execution and skip-budget
-  integration remain before this task is `DONE`.
+- **State:** BLOCKED ON HOSTED EVIDENCE — source workflow enforces backend
+  test/vet/build, frontend audit/lint/test/build, non-zero browser discovery,
+  skip-budget ratchets, and real-backend cross-browser smoke with diagnostic
+  artifacts. A hosted run and required-branch-protection evidence remain before
+  this task is `DONE`.
 - **Owner role:** Platform engineering
 - **Depends on:** R1.1
 - **Work:** Add a pull-request workflow for clean dependency install, backend test/race/vet, frontend lint/build/unit, Playwright discovery/smoke, OpenAPI validation/coverage, docs validation, dependency scanning, secret scanning, SBOM generation, and container build/scan.
@@ -143,10 +144,14 @@ flowchart LR
 
 ### R1.5 — Restore Playwright discovery and real-backend smoke coverage
 
-- **State:** IN PROGRESS — maintained mocked and real-backend tiers discover tests;
-  Chromium/Firefox real-stack smoke and Chromium mocked smoke pass locally. CI
-  must prove WebKit on a supported runner, and the remaining critical journeys
-  below still require fixtures and coverage.
+- **State:** IN PROGRESS / EXTERNAL GATES — maintained mocked and real-backend
+  tiers discover tests. A disposable migrated stack now seeds and proves a real
+  repository-backed clip detail plus public browsing and unauthenticated
+  submission/settings/admin boundaries: all 13 runnable Chromium/Firefox checks
+  pass locally. WebKit is discovered but this host lacks its native libraries,
+  so a supported hosted runner must prove its six checks. Authenticated OAuth,
+  submission, export/deletion, moderator allow/deny, playback, search, and Stripe
+  test-mode checkout journeys still require maintained identity/provider fixtures.
 - **Owner role:** QA automation
 - **Depends on:** R1.1, R1.4
 - **Work:** Restore fixture/page/helper modules or rewrite specs around maintained fixtures. Separate mocked UI tests from real-backend smoke tests. Add non-zero discovery enforcement.
@@ -580,3 +585,4 @@ Before each commit:
 | 2026-07-12 | R5.5 backup/restore | Partial/external gate | `6b6c6747`; real PostgreSQL restores from gzip plain/custom dumps pass; production RPO/RTO and deployment rollback require operator access |
 | 2026-07-12 | R5.6 docs/setup | Done | `7587a6eb`, `31c7a97c`; 201 Markdown files lint/anchor clean, 1,309 offline links with zero errors, 198 reachable docs plus two intentional plan records |
 | 2026-07-12 | R5.7 release decision | No-go | `e5287d4c`; protected evidence workflow is fail-closed and currently names all five remaining release blockers |
+| 2026-07-12 | R1.5 real-backend browser journeys | Partial/external gate | A deterministic clip is seeded into the disposable migrated database; public browsing, repository-backed clip detail, submission/settings login boundaries, and admin login denial pass all 13 locally runnable Chromium/Firefox checks. Six WebKit checks are discovered but require a supported hosted runner because this host lacks its native libraries; authenticated identity, playback/search, account lifecycle, moderator allow, and Stripe test-mode journeys still need maintained fixtures |
