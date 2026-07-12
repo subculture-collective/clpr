@@ -10,6 +10,12 @@ if (transitionalOperations > 0) {
 }
 
 const requirements = {
+  'hosted-ci.json': {
+    required_workflow_passed: true, branch_protection_verified: true, webkit_passed: true,
+  },
+  'security-operations.json': {
+    jwt_exposure_reviewed: true, jwt_rotated_or_not_required: true, secret_scan_passed: true,
+  },
   'stripe-test-mode.json': {
     mode: 'test', checkout_passed: true, signed_webhooks_passed: true, reconciliation_passed: true,
   },
@@ -50,4 +56,3 @@ if (failures.length) {
   process.exit(1);
 }
 console.log('Release evidence gate passed');
-
