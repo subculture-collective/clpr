@@ -37,6 +37,7 @@ func TestAccountDeletionRoutesRemainAbsentUntilErasureWorkerExists(t *testing.T)
 	assertRouteAbsent(t, router, "POST", "/api/v1/users/me/delete")
 	assertRouteAbsent(t, router, "POST", "/api/v1/users/me/delete/cancel")
 	assertRouteAbsent(t, router, "GET", "/api/v1/users/me/delete/status")
+	assertRouteAbsent(t, router, "GET", "/api/v1/users/me/export")
 }
 
 func TestIncompleteFeatureRoutesRequireExplicitFlags(t *testing.T) {

@@ -19,33 +19,10 @@ Clipper implements a GDPR-compliant system for handling data subject requests in
 
 ### 1. Right to Access (GDPR Article 15)
 
-**Endpoint:** `GET /api/v1/users/me/export`
-
-**Frontend:** Settings page (`/settings`) - "Export Your Data" button
-
-**Implementation:**
-- Users can download a complete export of their personal data
-- Export format: ZIP file containing JSON data and README
-- Data included:
-  - User profile (ID, username, email, display name, bio, avatar, social links)
-  - Account metrics (karma points, trust score, follower counts)
-  - User settings (profile visibility, karma display preferences)
-  - Favorites (all favorited clips)
-  - Comments (all comments posted with metadata)
-  - Submissions (all clip submissions with status and metadata)
-  - Premium subscription data (tier, status, billing information)
-  - Cookie consent preferences (consent categories and timestamps)
-- Comprehensive README.txt included explaining:
-  - Contents of the export
-  - Data formats and structure
-  - User rights under GDPR
-  - Contact information for privacy inquiries
-
-**Compliance:**
-- ✅ Data provided in machine-readable format (JSON)
-- ✅ Includes all personal data required by GDPR Article 15
-- ✅ Provided free of charge
-- ✅ Response time: Immediate (exceeds 30-day GDPR requirement)
+**Launch process:** The automated export endpoint is disabled because it does
+not yet cover every personal-data category and can produce a partial archive.
+Access requests must be submitted to <privacy@clpr.gg> and fulfilled through
+the verified manual privacy-request process.
 
 ### 2. Right to Erasure (GDPR Article 17)
 
@@ -91,18 +68,8 @@ implemented and integration-tested. See `docs/LAUNCH_FEATURE_INVENTORY.md`.
 
 ### 4. Right to Data Portability (GDPR Article 20)
 
-**Endpoint:** `GET /api/v1/users/me/export`
-
-**Implementation:**
-- Same as "Right to Access" - export includes all user-provided data
-- Data format: JSON (structured, commonly used, machine-readable)
-- Can be imported into other systems
-- No derived/calculated data that cannot be ported
-
-**Compliance:**
-- ✅ Machine-readable format (JSON)
-- ✅ Structured and commonly used format
-- ✅ Includes all user-provided data
+**Launch process:** Portability requests use the same manual privacy workflow as
+access requests until the complete automated archive is production-ready.
 - ✅ Portable to other services
 
 ### 5. Cookie Consent (GDPR Article 6)
@@ -222,7 +189,8 @@ CREATE TABLE audit_logs (
 
 ### User Data Export
 
-- `GET /api/v1/users/me/export` - Download complete data export (ZIP)
+- No automated data-subject export endpoint is supported at launch. Contact
+  <privacy@clpr.gg>. Creator-content export endpoints are a separate feature.
 
 ### Account Deletion
 
@@ -244,10 +212,10 @@ CREATE TABLE audit_logs (
 
 | Right | GDPR Requirement | Clipper Implementation |
 |-------|-----------------|----------------------|
-| Access | 30 days | Immediate (< 1 second) |
+| Access | 30 days | Manual privacy-request process |
 | Erasure | 30 days | Manual privacy-request process |
 | Rectification | 30 days | Immediate (< 1 second) |
-| Portability | 30 days | Immediate (< 1 second) |
+| Portability | 30 days | Manual privacy-request process |
 
 ## Not Implemented (Deferred)
 
@@ -256,13 +224,13 @@ The following features from the comprehensive GDPR issue are **not implemented**
 ### 1. Unified Data Subject Request System
 
 - **Status:** Not implemented
-- **Rationale:** Current implementation provides all required GDPR rights through individual endpoints. A unified tracking system is an enterprise feature useful for organizations with high request volumes but not legally required.
-- **Alternative:** Current system with separate endpoints and audit logging meets compliance.
+- **Rationale:** Access, portability, and erasure requests require manual tracking while automation is disabled.
+- **Alternative:** Privacy requests are tracked and reviewed manually.
 
 ### 2. Admin Panel for GDPR Requests
 
 - **Status:** Not implemented
-- **Rationale:** Export and rectification are automated; erasure remains a manual process until the executor is production-ready.
+- **Rationale:** Rectification is automated; access, portability, and erasure remain manual until complete automation is production-ready.
 - **Alternative:** Privacy requests are tracked and reviewed manually.
 
 ### 3. Right to Restriction of Processing (Article 18)
@@ -280,7 +248,7 @@ The following features from the comprehensive GDPR issue are **not implemented**
 ### 5. Email Notifications for Request Lifecycle
 
 - **Status:** Not implemented
-- **Rationale:** Export is immediate; erasure request updates are handled through the privacy contact process.
+- **Rationale:** Request updates are handled through the privacy contact process.
 - **Alternative:** Manual lifecycle notifications.
 
 ### 6. Automated Account Deletion
@@ -295,30 +263,20 @@ The following features from the comprehensive GDPR issue are **not implemented**
 - **Rationale:** Session authentication + explicit confirmation text provides adequate verification for standard accounts.
 - **Alternative:** Manual verification available for high-risk accounts via support.
 
-### 8. Rate Limiting (3 requests/24 hours)
+### 8. Automated Data-Subject Export
 
-- **Status:** Basic rate limiting exists (1 request/hour for exports)
-- **Rationale:** Current rate limiting prevents abuse. Lower limit would improve DoS protection but is not legally required.
-- **Alternative:** Monitoring and manual intervention for suspicious activity.
+- **Status:** Not implemented for launch
+- **Rationale:** Partial archives cannot satisfy a complete access or portability request.
+- **Alternative:** Manual requests through <privacy@clpr.gg>.
 
 ## Testing
 
 ### Manual Testing Checklist
 
 **Data Export:**
-- [ ] Log in as a user
-- [ ] Navigate to Settings (`/settings`)
-- [ ] Click "Export Your Data" button
-- [ ] Verify ZIP file downloads
-- [ ] Extract and verify `user_data.json` contains:
-  - User profile
-  - Settings
-  - Favorites
-  - Comments
-  - Submissions
-  - Subscription (if applicable)
-  - Consent preferences
-- [ ] Verify `README.txt` is comprehensive and clear
+- [ ] Verify automated data-subject export is absent from Settings
+- [ ] Verify `/api/v1/users/me/export` returns 404
+- [ ] Verify the privacy notice directs access and portability requests to <privacy@clpr.gg>
 
 **Account Deletion:**
 - [ ] Verify deletion controls are absent from Settings

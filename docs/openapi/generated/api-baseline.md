@@ -169,7 +169,6 @@ generated: 2026-01-30T03:02:25.951Z
 - **PUT /api/v1/users/me/social-links** - Update social links
 - **GET /api/v1/users/me/settings** - Get user settings
 - **PUT /api/v1/users/me/settings** - Update settings
-- **GET /api/v1/users/me/export** - Export user data
 - **GET /api/v1/users/me/consent** - Get cookie consent
 - **POST /api/v1/users/me/consent** - Save cookie consent
 - **GET /api/v1/users/me/email-logs** - Get email logs

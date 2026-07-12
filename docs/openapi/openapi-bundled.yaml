@@ -3835,30 +3835,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /api/v1/users/me/export:
-    get:
-      tags:
-        - Users
-      summary: Export user data
-      description: Exports user data (GDPR compliance, rate limited - 1/hour)
-      operationId: exportUserData
-      responses:
-        '200':
-          description: Data export initiated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  export_id:
-                    type: string
-                    format: uuid
-                  status:
-                    type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
   /api/v1/users/me/consent:
     get:
       tags:

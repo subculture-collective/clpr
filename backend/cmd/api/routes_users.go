@@ -58,9 +58,6 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		users.GET("/me/settings", middleware.AuthMiddleware(svcs.Auth), h.UserSettings.GetSettings)
 		users.PUT("/me/settings", middleware.AuthMiddleware(svcs.Auth), h.UserSettings.UpdateSettings)
 
-		// Data export (authenticated, rate limited)
-		users.GET("/me/export", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 1, time.Hour), h.UserSettings.ExportData)
-
 		// Cookie consent management (authenticated, rate limited)
 		users.GET("/me/consent", middleware.AuthMiddleware(svcs.Auth), h.Consent.GetConsent)
 		users.POST("/me/consent", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Consent.SaveConsent)

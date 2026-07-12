@@ -13,6 +13,7 @@ configuration.
 | Live feed | Disabled | `FEATURE_LIVE_FEED=false`; release validation rejects `true`; `/api/v1/feed/live` is not registered | `/discover/live` has no active route or navigation entry | Privacy review, API and browser acceptance tests, and measured dependency behavior |
 | Watch parties | Disabled | `FEATURE_WATCH_PARTIES=false`; release validation rejects `true`; watch-party HTTP and WebSocket routes are not registered | Watch-party routes and navigation are absent | Authorization matrix, WebSocket resilience/load tests, moderation/privacy review, and end-to-end journeys |
 | Automated account deletion | Disabled | Deletion request, cancellation, and status routes are not registered | Settings does not promise or offer automated deletion | Transactional erasure/anonymization worker, session and OAuth revocation, retained-data policy, recovery/retry behavior, and lifecycle integration evidence |
+| Automated data-subject export | Disabled | `/api/v1/users/me/export` is not registered; creator-content exports are unaffected | Settings does not claim a complete automated privacy export | Inventory every personal-data category, fail closed on partial collection, redact third-party data, retention-policy review, and full archive contract tests |
 
 ## Executable evidence
 

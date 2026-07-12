@@ -6,7 +6,7 @@ import { Alert, Button, Card, CardBody, CardHeader, Container, Input, Modal, Sta
 import { useAuth } from '../context/AuthContext';
 import { useConsent } from '../context/ConsentContext';
 import type { UpdateProfileRequest, UpdateSettingsRequest } from '../lib/user-settings-api';
-import { exportUserData, getUserSettings, updateProfile, updateUserSettings } from '../lib/user-settings-api';
+import { getUserSettings, updateProfile, updateUserSettings } from '../lib/user-settings-api';
 import {
     getSubscription,
     cancelSubscription,
@@ -58,10 +58,6 @@ export function SettingsPage() {
 
     // Consent state
     const [consentSuccess, setConsentSuccess] = useState(false);
-
-    // Export state
-    const [isExporting, setIsExporting] = useState(false);
-    const [exportError, setExportError] = useState<string | null>(null);
 
     // Subscription state
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -135,27 +131,6 @@ export function SettingsPage() {
             setSettingsError('Failed to update settings. Please try again.');
         } finally {
             setIsSavingSettings(false);
-        }
-    };
-
-    // Export data
-    const handleExportData = async () => {
-        setIsExporting(true);
-        setExportError(null);
-        try {
-            const blob = await exportUserData();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'clpr_user_data_export.zip';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        } catch {
-            setExportError('Failed to export data. Please try again.');
-        } finally {
-            setIsExporting(false);
         }
     };
 
@@ -584,30 +559,6 @@ export function SettingsPage() {
                         </CardBody>
                     </Card>
 
-                    {/* Data Management */}
-                    <Card className='mb-6 border-warning-500'>
-                        <CardHeader>
-                            <h2 className='text-xl font-semibold text-warning-600'>Data Management</h2>
-                        </CardHeader>
-                        <CardBody>
-                            <Stack direction='vertical' gap={4}>
-                                <div>
-                                    <h3 className='font-medium mb-2'>Export Your Data</h3>
-                                    <p className='text-sm text-muted-foreground mb-3'>
-                                        Download a copy of your data in JSON format (GDPR compliance)
-                                    </p>
-                                    <Button variant='outline' onClick={handleExportData} disabled={isExporting}>
-                                        {isExporting ? 'Exporting...' : 'Export Data'}
-                                    </Button>
-                                    {exportError && (
-                                        <Alert variant='error' className='mt-3'>
-                                            {exportError}
-                                        </Alert>
-                                    )}
-                                </div>
-                            </Stack>
-                        </CardBody>
-                    </Card>
                 </div>
             </Container>
 
