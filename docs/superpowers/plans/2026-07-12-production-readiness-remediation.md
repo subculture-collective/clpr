@@ -95,7 +95,9 @@ flowchart LR
 
 ### Phase 0 exit — G0
 
-- **State:** TODO
+- **State:** BLOCKED ON OPERATOR SECURITY REVIEW — enabled launch paths and
+  published scope are contained; possible non-local JWT exposure and required
+  rotation still need authoritative operator evidence.
 - No unsafe fallback or placeholder path can be enabled accidentally.
 - Release status and available clients/features are truthful.
 - Any JWT key that may have reached non-local logs is identified for operator rotation; rotation itself is an external operational action and must be reported if access is unavailable.
@@ -171,7 +173,9 @@ flowchart LR
 
 ### Phase 1 exit — G1
 
-- **State:** TODO
+- **State:** BLOCKED ON HOSTED EVIDENCE — clean local verification and the
+  mandatory source workflow exist; a passing hosted candidate run, required
+  branch protection, and supported-runner WebKit result remain external.
 - Clean-checkout verification is executable locally and in CI.
 - All mandatory suites pass, discover tests, and emit required evidence.
 
@@ -258,7 +262,9 @@ flowchart LR
 
 ### Phase 2 exit — G2
 
-- **State:** TODO
+- **State:** DONE — secure production configuration, route-family
+  authorization, operational endpoint protection, dependency policy, container
+  hardening, and explicit API contracts pass repository-owned verification.
 - Production starts only with a valid secure profile.
 - Operational data and resource mutations are access-controlled.
 - Dependency/scanner policy passes with documented exceptions only.
@@ -323,7 +329,9 @@ flowchart LR
 
 ### Phase 3 exit — G3
 
-- **State:** TODO
+- **State:** BLOCKED ON PROVIDER/IDENTITY EVIDENCE — enabled paths no longer
+  return placeholders and runtime/API scope is aligned; Stripe test-mode and
+  authenticated critical-journey evidence require operator fixtures.
 - No enabled path returns placeholder media, URLs, metrics, or fake success.
 - Payment/privacy/account/moderation critical journeys have real integration evidence.
 - API and feature inventory match runtime behavior.
