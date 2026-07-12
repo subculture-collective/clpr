@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 205 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 190 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 205 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 190 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -541,6 +541,7 @@ Before each commit:
 | 2026-07-12 | R2.4/R3.7 stream follows | Partial | All five stream status/follow operations now have route-specific contracts and focused malformed-input tests; authenticated identity extraction cannot panic, usernames are canonical lowercase and Twitch-bounded, malformed optional follow JSON fails closed, missing unfollows return 404, followed-streamer pagination is bounded with total metadata, and notification-preference read failures are no longer silently reported as disabled; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 221 to 216 |
 | 2026-07-12 | R2.4/R3.7 subscriptions | Partial | All seven subscription operations now have route-specific contracts and disabled-mode regression tests; every outbound Stripe operation fails closed unless credentials and the premium feature flag are present, cancellation requires an explicit immediate/period-end choice, price/coupon inputs are bounded, provider errors are redacted into stable 404/409/503 responses, and subscription/invoice responses use public DTOs that omit internal Stripe identifiers and SDK expansion fields; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 216 to 209 |
 | 2026-07-12 | R2.4/R3.7 Twitch OAuth | Partial | All four Twitch authentication operations now have route-specific contracts and focused state-integrity tests; authorization uses a random, ten-minute, HMAC-signed state bound to the authenticated user, callbacks reject missing/tampered/expired/cross-user state before token exchange, callback inputs are bounded, missing refresh configuration fails before network access, and Twitch's array-form scopes decode into the persisted space-delimited representation; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 209 to 205 |
+| 2026-07-12 | R2.4/R3.7 feeds | Partial | All fifteen custom/discovery/following/filter feed operations now have route-specific contracts and focused validation tests; authenticated identity extraction cannot panic, owner path semantics are enforced without blocking cross-user follows, private feeds conceal existence, empty updates and malformed pagination/filter/date input fail closed, discovery owners use a minimal DTO, feed membership is capped at 500, and add/remove/exact reorder are serialized and reindexed transactionally with stable 403/404/409 errors; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 205 to 190 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
