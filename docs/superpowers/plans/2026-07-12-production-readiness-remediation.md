@@ -313,7 +313,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — all 469 registered release routes have matching operations and schema-bearing responses (485 total documented operations, including debug/spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 50 router-derived operations remain, all in the administrative API family
+- **State:** IN PROGRESS — all 468 registered release routes have matching operations and schema-bearing responses (484 total documented operations, including debug/spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 43 router-derived operations remain, all in the administrative API family
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -428,7 +428,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 50 transitional administrative API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 43 transitional administrative API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -570,6 +570,7 @@ Before each commit:
 | 2026-07-12 | R2.4/R3.6/R3.7 administrative moderation | Partial | `0c7b35db`; all sixteen moderation operations now have explicit contracts; malformed identity, event types/actions, pagination, filters, duplicate IDs, and unordered/oversized date ranges fail closed; queue row failures cannot return partial success; bulk status and decision writes are all-or-nothing; event processing persists actioned state; appeal review is administrator-only and commits its audit record atomically; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 89 to 73 |
 | 2026-07-12 | R2.4/R3.6/R3.7 submission moderation | Partial | `0ade3cd3`; all six administrative submission operations now have explicit contracts; malformed identity, booleans, pagination, names, tags, dates, reasons, oversized/duplicate ID sets, and raw service errors fail closed; individual and bulk decisions lock every target and atomically commit clip creation, submission status, karma, and per-submission audit records before post-commit notification/cache/webhook effects; missing and stale decisions return stable 404/409 responses; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 62 to 56 |
 | 2026-07-12 | R2.4/R3.7 administrative taxonomy | Partial | `f4678974`; all six tag and blacklist operations now have explicit contracts and are administrator-only; tag names/slugs/descriptions/colors and blacklist reasons are bounded, slugs are canonical, duplicate and missing resources use sentinels with stable 404/409 responses, blacklisted slugs cannot be created or assigned by updates, blacklist creation requires a valid actor, and tag deletion plus clip-association cleanup is atomic; full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 56 to 50 |
+| 2026-07-12 | R2.4/R3.7 administrative forum | Partial | `e34dc8b5`; the six supported forum-administration operations now have explicit contracts; malformed identities, statuses, booleans, pagination, action filters, target filters, and oversized reasons fail closed; flagged queues exclude deleted/hidden/spam targets and all row-stream failures propagate; active-ban reads exclude expired records; lock/pin/delete changes retain atomic moderation logs. The misleading forum-ban mutation that changed the platform-wide account flag without enforcing scoped records is removed from release routing/spec and recorded as unavailable; release routes decrease from 469 to 468 and transitional operations from 50 to 43; full Go test/vet and the 84-warning OpenAPI baseline pass |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
