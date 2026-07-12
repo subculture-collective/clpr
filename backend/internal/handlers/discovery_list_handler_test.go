@@ -3,15 +3,15 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // ==============================================================================
@@ -184,6 +184,7 @@ func TestListDiscoveryLists_DefaultPagination(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
+	c.Set("user_id", "malformed")
 
 	handler.ListDiscoveryLists(c)
 
@@ -248,17 +249,27 @@ func TestListDiscoveryLists_WithCustomPagination(t *testing.T) {
 		{
 			name:   "Limit exceeds max",
 			url:    "/api/v1/discovery-lists?limit=200",
-			status: http.StatusOK, // Should be clamped to maximum allowed limit (100)
+			status: http.StatusBadRequest,
 		},
 		{
 			name:   "Zero limit",
 			url:    "/api/v1/discovery-lists?limit=0",
-			status: http.StatusOK, // Should use default limit (20)
+			status: http.StatusBadRequest,
 		},
 		{
 			name:   "Negative offset",
 			url:    "/api/v1/discovery-lists?offset=-5",
-			status: http.StatusOK, // Should default to 0
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "Non-numeric limit",
+			url:    "/api/v1/discovery-lists?limit=many",
+			status: http.StatusBadRequest,
+		},
+		{
+			name:   "Invalid featured flag",
+			url:    "/api/v1/discovery-lists?featured=yes",
+			status: http.StatusBadRequest,
 		},
 	}
 
@@ -288,7 +299,7 @@ func TestGetDiscoveryList_NotFound(t *testing.T) {
 
 	mockRepo := new(MockDiscoveryListRepository)
 	mockRepo.On("GetDiscoveryList", mock.Anything, mock.Anything, (*uuid.UUID)(nil)).
-		Return(nil, errors.New("discovery list not found"))
+		Return(nil, repository.ErrDiscoveryListNotFound)
 
 	handler := &DiscoveryListHandler{
 		repo:          mockRepo,
@@ -317,7 +328,7 @@ func TestGetDiscoveryList_WithSlug(t *testing.T) {
 
 	mockRepo := new(MockDiscoveryListRepository)
 	mockRepo.On("GetDiscoveryList", mock.Anything, "top-clips", (*uuid.UUID)(nil)).
-		Return(nil, errors.New("discovery list not found"))
+		Return(nil, repository.ErrDiscoveryListNotFound)
 
 	handler := &DiscoveryListHandler{
 		repo:          mockRepo,
@@ -350,7 +361,7 @@ func TestGetDiscoveryListClips_InvalidListID(t *testing.T) {
 
 	mockRepo := new(MockDiscoveryListRepository)
 	mockRepo.On("GetDiscoveryList", mock.Anything, "invalid-uuid", (*uuid.UUID)(nil)).
-		Return(nil, errors.New("discovery list not found"))
+		Return(nil, repository.ErrDiscoveryListNotFound)
 
 	handler := &DiscoveryListHandler{
 		repo:          mockRepo,
@@ -421,6 +432,9 @@ func TestGetDiscoveryListClips_WithPagination(t *testing.T) {
 	if _, exists := response["has_more"]; !exists {
 		t.Error("expected has_more field in response")
 	}
+	if response["page"] != float64(1) {
+		t.Errorf("expected one-based page 1, got %v", response["page"])
+	}
 }
 
 func TestGetDiscoveryListClips_BoundaryValues(t *testing.T) {
@@ -441,26 +455,31 @@ func TestGetDiscoveryListClips_BoundaryValues(t *testing.T) {
 		name   string
 		limit  string
 		offset string
+		status int
 	}{
 		{
 			name:   "Max limit",
 			limit:  "100",
 			offset: "0",
+			status: http.StatusOK,
 		},
 		{
 			name:   "Over max limit",
 			limit:  "200",
 			offset: "0",
+			status: http.StatusBadRequest,
 		},
 		{
 			name:   "Zero limit",
 			limit:  "0",
 			offset: "0",
+			status: http.StatusBadRequest,
 		},
 		{
 			name:   "Negative offset",
 			limit:  "20",
 			offset: "-10",
+			status: http.StatusBadRequest,
 		},
 	}
 
@@ -478,8 +497,8 @@ func TestGetDiscoveryListClips_BoundaryValues(t *testing.T) {
 
 			handler.GetDiscoveryListClips(c)
 
-			if w.Code != http.StatusOK {
-				t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+			if w.Code != tt.status {
+				t.Errorf("expected status %d, got %d", tt.status, w.Code)
 			}
 		})
 	}

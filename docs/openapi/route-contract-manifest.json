@@ -1599,15 +1599,15 @@
     "method": "GET",
     "path": "/api/v1/discovery-lists",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).ListDiscoveryLists-fm",
-    "operation_id": "getApiV1DiscoveryLists",
-    "contract_level": "transitional"
+    "operation_id": "listDiscoveryLists",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/discovery-lists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryList-fm",
-    "operation_id": "getApiV1DiscoveryListsId",
-    "contract_level": "transitional"
+    "operation_id": "getDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
@@ -1627,8 +1627,8 @@
     "method": "GET",
     "path": "/api/v1/discovery-lists/{id}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryListClips-fm",
-    "operation_id": "getApiV1DiscoveryListsIdClips",
-    "contract_level": "transitional"
+    "operation_id": "getDiscoveryListClips",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -19,6 +20,41 @@ import (
 type DiscoveryListHandler struct {
 	repo          repository.DiscoveryListRepositoryInterface
 	analyticsRepo *repository.AnalyticsRepository
+}
+
+func discoveryOptionalUserID(c *gin.Context) *uuid.UUID {
+	value, exists := c.Get("user_id")
+	if !exists {
+		return nil
+	}
+	userID, ok := value.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		return nil
+	}
+	return &userID
+}
+
+func discoveryPagination(c *gin.Context) (int, int, bool) {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer between 1 and 100"})
+		return 0, 0, false
+	}
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil || offset < 0 || offset > 10_000_000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be an integer between 0 and 10000000"})
+		return 0, 0, false
+	}
+	return limit, offset, true
+}
+
+func discoveryIdentifier(c *gin.Context) (string, bool) {
+	value := strings.TrimSpace(c.Param("id"))
+	if value == "" || len(value) > 200 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid discovery list identifier"})
+		return "", false
+	}
+	return value, true
 }
 
 // NewDiscoveryListHandler creates a new handler instance
@@ -46,25 +82,20 @@ func (h *DiscoveryListHandler) ListDiscoveryLists(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse query parameters
-	featuredOnly := c.Query("featured") == "true"
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
-	}
-
-	// Get user ID if authenticated
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if id, ok := userIDVal.(uuid.UUID); ok {
-			userID = &id
+	featuredOnly := false
+	if raw, exists := c.GetQuery("featured"); exists {
+		if raw != "true" && raw != "false" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "featured must be true or false"})
+			return
 		}
+		featuredOnly = raw == "true"
 	}
+	limit, offset, ok := discoveryPagination(c)
+	if !ok {
+		return
+	}
+
+	userID := discoveryOptionalUserID(c)
 
 	// Get lists from repository
 	lists, err := h.repo.ListDiscoveryLists(ctx, featuredOnly, userID, limit, offset)
@@ -91,20 +122,18 @@ func (h *DiscoveryListHandler) ListDiscoveryLists(c *gin.Context) {
 func (h *DiscoveryListHandler) GetDiscoveryList(c *gin.Context) {
 	logger := pkgutils.GetLogger()
 	ctx := c.Request.Context()
-	idOrSlug := c.Param("id")
+	idOrSlug, ok := discoveryIdentifier(c)
+	if !ok {
+		return
+	}
 
 	// Get user ID if authenticated
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if id, ok := userIDVal.(uuid.UUID); ok {
-			userID = &id
-		}
-	}
+	userID := discoveryOptionalUserID(c)
 
 	// Get list from repository
 	list, err := h.repo.GetDiscoveryList(ctx, idOrSlug, userID)
 	if err != nil {
-		if err.Error() == "discovery list not found" {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 			return
 		}
@@ -147,15 +176,13 @@ func (h *DiscoveryListHandler) GetDiscoveryList(c *gin.Context) {
 func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 	logger := pkgutils.GetLogger()
 	ctx := c.Request.Context()
-	listIDStr := c.Param("id")
+	listIDStr, ok := discoveryIdentifier(c)
+	if !ok {
+		return
+	}
 
 	// Get user ID if authenticated
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if id, ok := userIDVal.(uuid.UUID); ok {
-			userID = &id
-		}
-	}
+	userID := discoveryOptionalUserID(c)
 
 	// Resolve listIDStr to UUID (accept both UUID and slug)
 	var listID uuid.UUID
@@ -164,7 +191,7 @@ func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 		// Not a UUID, try to resolve as slug
 		list, err2 := h.repo.GetDiscoveryList(ctx, listIDStr, userID)
 		if err2 != nil {
-			if err2.Error() == "discovery list not found" {
+			if errors.Is(err2, repository.ErrDiscoveryListNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 				return
 			}
@@ -176,15 +203,9 @@ func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 	}
 
 	// Parse query parameters
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
+	limit, offset, ok := discoveryPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get clips from repository
@@ -196,8 +217,8 @@ func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 	}
 
 	// Calculate pagination metadata
-	page := offset / limit
-	hasMore := len(clips) == limit && (offset+limit) < total
+	page := offset/limit + 1
+	hasMore := len(clips) > 0 && offset+len(clips) < total
 
 	c.JSON(http.StatusOK, gin.H{
 		"clips":    clips,

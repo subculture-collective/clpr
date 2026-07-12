@@ -5420,6 +5420,85 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/StandardErrorResponse'}
 
+  /api/v1/discovery-lists:
+    get:
+      tags: [Discovery Lists]
+      summary: List active discovery lists
+      operationId: listDiscoveryLists
+      security:
+        - {}
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: featured
+          in: query
+          schema: {type: boolean, default: false}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000000, default: 0}
+      responses:
+        '200':
+          description: Discovery lists, including viewer-specific follow and bookmark state when authenticated
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items: {$ref: '#/components/schemas/DiscoveryListWithStats'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/discovery-lists/{id}:
+    get:
+      tags: [Discovery Lists]
+      summary: Get a discovery list by UUID or slug
+      operationId: getDiscoveryList
+      security:
+        - {}
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListIdentifier'
+      responses:
+        '200':
+          description: Discovery list details
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListWithStats'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/discovery-lists/{id}/clips:
+    get:
+      tags: [Discovery Lists]
+      summary: List clips in a discovery list
+      operationId: getDiscoveryListClips
+      security:
+        - {}
+        - BearerAuth: []
+        - CookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListIdentifier'
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000000, default: 0}
+      responses:
+        '200':
+          description: Discovery-list clips with one-based page metadata
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListClipsResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -8667,46 +8746,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/discovery-lists:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/discovery-lists
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1DiscoveryLists
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/discovery-lists/{id}:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/discovery-lists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1DiscoveryListsId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/discovery-lists/{id}/bookmark:
     delete:
       tags: [Generated Route Contracts]
@@ -8734,29 +8773,6 @@ paths:
       summary: POST /api/v1/discovery-lists/{id}/bookmark
       description: Router-derived operation pending a route-specific response schema.
       operationId: postApiV1DiscoveryListsIdBookmark
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/discovery-lists/{id}/clips:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/discovery-lists/{id}/clips
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1DiscoveryListsIdClips
       x-clpr-router-derived: true
       parameters:
         - name: id
@@ -11663,6 +11679,13 @@ components:
       required: true
       schema: {type: string, minLength: 1, maxLength: 100}
 
+    DiscoveryListIdentifier:
+      name: id
+      in: path
+      required: true
+      description: Discovery-list UUID or slug.
+      schema: {type: string, minLength: 1, maxLength: 200}
+
     Page:
       name: page
       in: query
@@ -13162,6 +13185,64 @@ components:
       properties:
         success: {type: boolean, const: false}
         error: {$ref: '#/components/schemas/StandardErrorInfo'}
+
+    DiscoveryList:
+      type: object
+      required: [id, name, slug, is_featured, is_active, display_order, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 200}
+        slug: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, maxLength: 1000}
+        is_featured: {type: boolean}
+        is_active: {type: boolean}
+        display_order: {type: integer}
+        created_by: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    DiscoveryListWithStats:
+      allOf:
+        - $ref: '#/components/schemas/DiscoveryList'
+        - type: object
+          required: [clip_count, follower_count, is_following, is_bookmarked]
+          properties:
+            clip_count: {type: integer, minimum: 0}
+            follower_count: {type: integer, minimum: 0}
+            is_following: {type: boolean}
+            is_bookmarked: {type: boolean}
+            preview_clips:
+              type: array
+              items: {$ref: '#/components/schemas/Clip'}
+
+    ClipSubmitterInfo:
+      type: object
+      required: [id, username, display_name]
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+        display_name: {type: string}
+        avatar_url: {type: string, format: uri}
+
+    ClipWithSubmitter:
+      allOf:
+        - $ref: '#/components/schemas/Clip'
+        - type: object
+          properties:
+            submitted_by: {$ref: '#/components/schemas/ClipSubmitterInfo'}
+
+    DiscoveryListClipsResponse:
+      type: object
+      required: [clips, total, page, limit, has_more]
+      properties:
+        clips:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/ClipWithSubmitter'}
+        total: {type: integer, minimum: 0}
+        page: {type: integer, minimum: 1}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        has_more: {type: boolean}
 
     Appeal:
       type: object
