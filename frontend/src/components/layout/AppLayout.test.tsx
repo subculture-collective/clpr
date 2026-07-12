@@ -33,6 +33,10 @@ vi.mock('@/hooks/useSyncManager', () => ({
     useSyncManager: () => {},
 }));
 
+vi.mock('@/context/AuthContext', () => ({
+    useAuth: () => ({ isAuthenticated: false }),
+}));
+
 // Helper component to programmatically navigate
 function NavigateButton({
     to,

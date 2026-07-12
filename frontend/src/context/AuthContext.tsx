@@ -17,7 +17,7 @@ import { isModeratorOrAdmin } from '../lib/roles';
 import {
     setUser as setSentryUser,
     clearUser as clearSentryUser,
-} from '../lib/sentry';
+} from '../lib/sentry-client';
 import {
     resetUser,
     identifyUser,

@@ -10,10 +10,6 @@ export default defineConfig(({ mode }) => ({
     optimizeDeps: {
         include: ['lucide-react', '@tanstack/react-query', 'react-router-dom'],
     },
-    define: {
-        // Polyfill for gray-matter which uses Buffer
-        global: 'globalThis',
-    },
     plugins: [
         react(),
         // Upload source maps to Sentry on production builds
@@ -37,7 +33,7 @@ export default defineConfig(({ mode }) => ({
         // Bundle analyzer - only in analyze mode
         ...(mode === 'analyze' ? [visualizer({
             filename: './dist/stats.html',
-            open: true,
+            open: false,
             gzipSize: true,
             brotliSize: true,
         }) as Plugin] : []),
@@ -45,7 +41,6 @@ export default defineConfig(({ mode }) => ({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
-            buffer: 'buffer/',
         },
     },
     server: {
@@ -67,7 +62,6 @@ export default defineConfig(({ mode }) => ({
             output: {
                 // Create vendor chunks for better caching and preloading
                 manualChunks: {
-                    'react-vendor': ['react', 'react-dom'],
                     'query-vendor': ['@tanstack/react-query'],
                     'router-vendor': ['react-router-dom'],
                     'icons-vendor': ['lucide-react'],

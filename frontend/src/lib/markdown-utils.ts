@@ -3,8 +3,6 @@
  * Handles frontmatter parsing, doctoc removal, Dataview blocks, and TOC generation
  */
 
-import matter from 'gray-matter';
-
 /**
  * Frontmatter metadata interface
  */
@@ -40,12 +38,54 @@ export interface TOCEntry {
     children?: TOCEntry[];
 }
 
+function parseFrontmatterValue(value: string): unknown {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        const entries = trimmed.slice(1, -1).trim();
+        return entries ? entries.split(',').map((entry) => parseFrontmatterValue(entry)) : [];
+    }
+    if (
+        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+        return trimmed.slice(1, -1);
+    }
+    if (trimmed === 'true') return true;
+    if (trimmed === 'false') return false;
+    if (trimmed === 'null') return null;
+    if (/^-?\d+(?:\.\d+)?$/.test(trimmed)) return Number(trimmed);
+    return trimmed;
+}
+
+function extractFrontmatter(markdown: string): {
+    data: DocFrontmatter;
+    content: string;
+} {
+    if (!markdown.startsWith('---\n')) return { data: {}, content: markdown };
+    const closingDelimiter = markdown.indexOf('\n---', 4);
+    if (closingDelimiter === -1) return { data: {}, content: markdown };
+
+    const data: DocFrontmatter = {};
+    const block = markdown.slice(4, closingDelimiter);
+    for (const line of block.split('\n')) {
+        const separator = line.indexOf(':');
+        if (separator <= 0) continue;
+        const key = line.slice(0, separator).trim();
+        if (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key)) continue;
+        data[key] = parseFrontmatterValue(line.slice(separator + 1));
+    }
+    return {
+        data,
+        content: markdown.slice(closingDelimiter + 4).replace(/^\r?\n/, ''),
+    };
+}
+
 /**
  * Parse frontmatter from markdown and return processed content
  */
 export function parseMarkdown(markdown: string): ProcessedMarkdown {
     // Parse frontmatter
-    const { data, content } = matter(markdown);
+    const { data, content } = extractFrontmatter(markdown);
 
     // Remove doctoc blocks
     const contentWithoutDoctoc = removeDoctocBlocks(content);

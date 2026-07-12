@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
-import { Button } from '../ui';
+import { Button } from '../ui/Button';
 import { NotificationBell } from './NotificationBell';
 import { UserMenu } from './UserMenu';
 import {

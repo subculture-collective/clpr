@@ -6,7 +6,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ConsentProvider } from './context/ConsentContext';
 import { AppLayout } from './components/layout';
 import { ProtectedRoute, AdminRoute, GuestRoute } from './components/guards';
-import { Spinner } from './components';
+import { Spinner } from './components/ui/Spinner';
 import { ConsentBanner } from './components/consent';
 
 // Lazy load page components for code splitting

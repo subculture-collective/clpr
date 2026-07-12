@@ -1,19 +1,24 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
-import { SkipLink } from '../ui';
+import { SkipLink } from '../ui/SkipLink';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { CategoriesNav } from './CategoriesNav';
 import { OfflineIndicator } from '../OfflineIndicator';
-import { QueueWidget } from '../queue/QueueWidget';
 import { useOfflineCacheInit } from '@/hooks/useOfflineCache';
 import { useSyncManager } from '@/hooks/useSyncManager';
+import { useAuth } from '@/context/AuthContext';
+
+const QueueWidget = lazy(() =>
+    import('../queue/QueueWidget').then((module) => ({ default: module.QueueWidget })),
+);
 
 const scrollPositions = new Map<string, number>();
 
 export function AppLayout() {
     const location = useLocation();
     const navigationType = useNavigationType();
+    const { isAuthenticated } = useAuth();
 
     // Initialize offline cache on app start
     useOfflineCacheInit();
@@ -50,7 +55,11 @@ export function AppLayout() {
             </main>
             <Footer />
             <OfflineIndicator />
-            <QueueWidget />
+            {isAuthenticated && (
+                <Suspense fallback={null}>
+                    <QueueWidget />
+                </Suspense>
+            )}
         </div>
     );
 }

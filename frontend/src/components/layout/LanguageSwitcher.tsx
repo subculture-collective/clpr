@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
+import { Button } from '../ui/Button';
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
