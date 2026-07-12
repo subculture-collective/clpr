@@ -72,11 +72,11 @@ export function EmptyStateWithAction({
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
           {primaryAction && (
             primaryAction.href ? (
-              <Link to={primaryAction.href}>
-                <Button size="lg">
+              <Button asChild size="lg">
+                <Link to={primaryAction.href}>
                   {primaryAction.label}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             ) : (
               <Button size="lg" onClick={primaryAction.onClick}>
                 {primaryAction.label}
@@ -85,11 +85,11 @@ export function EmptyStateWithAction({
           )}
           {secondaryAction && (
             secondaryAction.href ? (
-              <Link to={secondaryAction.href}>
-                <Button size="lg" variant="outline">
+              <Button asChild size="lg" variant="outline">
+                <Link to={secondaryAction.href}>
                   {secondaryAction.label}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             ) : (
               <Button size="lg" variant="outline" onClick={secondaryAction.onClick}>
                 {secondaryAction.label}

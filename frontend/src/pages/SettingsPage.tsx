@@ -386,11 +386,11 @@ export function SettingsPage() {
                                 />
                                 <div className='pt-2 border-t border-border'>
                                     <div className='flex flex-wrap gap-2'>
-                                        <Link to='/settings/cookies'>
-                                            <Button variant='outline' size='sm'>
+                                        <Button asChild variant='outline' size='sm'>
+                                            <Link to='/settings/cookies'>
                                                 Manage Cookie Settings
-                                            </Button>
-                                        </Link>
+                                            </Link>
+                                        </Button>
                                         <Button
                                             variant='ghost'
                                             size='sm'
@@ -511,18 +511,14 @@ export function SettingsPage() {
                                             </Button>
                                         )}
                                         {subscription.tier === 'free' && (
-                                            <Link to='/pricing'>
-                                                <Button variant='primary'>Upgrade to Pro</Button>
-                                            </Link>
+                                            <Button asChild variant='primary'><Link to='/pricing'>Upgrade to Pro</Link></Button>
                                         )}
                                     </div>
                                 </Stack>
                             ) : (
                                 <div>
                                     <p className='text-muted-foreground mb-4'>You are currently on the free plan.</p>
-                                    <Link to='/pricing'>
-                                        <Button variant='primary'>View Pro Plans</Button>
-                                    </Link>
+                                    <Button asChild variant='primary'><Link to='/pricing'>View Pro Plans</Link></Button>
                                 </div>
                             )}
                         </CardBody>
@@ -537,9 +533,7 @@ export function SettingsPage() {
                             <p className='text-muted-foreground mb-4'>
                                 Manage your notification preferences including email and reply notifications.
                             </p>
-                            <Link to='/notifications/preferences'>
-                                <Button variant='outline'>Manage Notification Preferences</Button>
-                            </Link>
+                            <Button asChild variant='outline'><Link to='/notifications/preferences'>Manage Notification Preferences</Link></Button>
                         </CardBody>
                     </Card>
 
@@ -553,9 +547,7 @@ export function SettingsPage() {
                                 Configure webhook endpoints to receive real-time notifications when events occur.
                                 Integrate with your own applications.
                             </p>
-                            <Link to='/settings/webhooks'>
-                                <Button variant='outline'>Manage Webhook Subscriptions</Button>
-                            </Link>
+                            <Button asChild variant='outline'><Link to='/settings/webhooks'>Manage Webhook Subscriptions</Link></Button>
                         </CardBody>
                     </Card>
 

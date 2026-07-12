@@ -270,16 +270,16 @@ export function CookieSettingsPage() {
                   please read our Privacy Policy.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/privacy">
-                    <Button variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/privacy">
                       Privacy Policy
-                    </Button>
-                  </Link>
-                  <Link to="/settings">
-                    <Button variant="outline" size="sm">
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/settings">
                       Back to Settings
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </Stack>
             </CardBody>
