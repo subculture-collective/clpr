@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const apiOrigin =
+    process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:18088';
+
 /**
  * Playwright E2E Test Configuration
  *
@@ -14,7 +17,7 @@ import { defineConfig, devices } from '@playwright/test';
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-    testDir: './e2e/tests',
+    testDir: './e2e',
 
     /* Maximum time one test can run for */
     timeout: 30 * 1000,
@@ -66,38 +69,34 @@ export default defineConfig({
         navigationTimeout: 30 * 1000,
     },
 
-    /* Configure projects for major browsers */
+    /* Mocked UI checks cannot satisfy the real-backend release gate. */
     projects: [
         {
-            name: 'chromium',
+            name: 'mocked-chromium',
             use: { ...devices['Desktop Chrome'] },
+            testMatch: /mocked\/.*\.spec\.ts/,
         },
-
         {
-            name: 'firefox',
+            name: 'real-chromium',
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: /real-backend\/.*\.spec\.ts/,
+        },
+        {
+            name: 'real-firefox',
             use: { ...devices['Desktop Firefox'] },
+            testMatch: /real-backend\/.*\.spec\.ts/,
         },
-
         {
-            name: 'webkit',
+            name: 'real-webkit',
             use: { ...devices['Desktop Safari'] },
+            testMatch: /real-backend\/.*\.spec\.ts/,
         },
-
-        /* Optionally test against mobile viewports - enable as needed */
-        // {
-        //   name: 'Mobile Chrome',
-        //   use: { ...devices['Pixel 5'] },
-        // },
-        // {
-        //   name: 'Mobile Safari',
-        //   use: { ...devices['iPhone 12'] },
-        // },
     ],
 
     /* Run your local dev server before starting the tests */
     webServer: {
         command:
-            'VITE_AUTO_CONSENT=true VITE_ENABLE_ANALYTICS=false VITE_API_URL=http://127.0.0.1:8080/api/v1 VITE_STRIPE_PRO_MONTHLY_PRICE_ID=price_e2e_monthly VITE_STRIPE_PRO_YEARLY_PRICE_ID=price_e2e_yearly VITE_E2E_TEST_LOGIN=true VITE_E2E_TEST_USER=user1_e2e' +
+            `VITE_AUTO_CONSENT=true VITE_ENABLE_ANALYTICS=false VITE_API_BASE_URL=${apiOrigin}/api/v1 VITE_STRIPE_PRO_MONTHLY_PRICE_ID=price_e2e_monthly VITE_STRIPE_PRO_YEARLY_PRICE_ID=price_e2e_yearly` +
             (process.env.E2E_CDN_FAILOVER_MODE === 'true' ? ' VITE_CDN_FAILOVER_MODE=true' : '') +
             ' npm run dev -- --host 127.0.0.1',
         url: 'http://127.0.0.1:5173',

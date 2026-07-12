@@ -140,7 +140,10 @@ flowchart LR
 
 ### R1.5 — Restore Playwright discovery and real-backend smoke coverage
 
-- **State:** TODO
+- **State:** IN PROGRESS — maintained mocked and real-backend tiers discover tests;
+  Chromium/Firefox real-stack smoke and Chromium mocked smoke pass locally. CI
+  must prove WebKit on a supported runner, and the remaining critical journeys
+  below still require fixtures and coverage.
 - **Owner role:** QA automation
 - **Depends on:** R1.1, R1.4
 - **Work:** Restore fixture/page/helper modules or rewrite specs around maintained fixtures. Separate mocked UI tests from real-backend smoke tests. Add non-zero discovery enforcement.
