@@ -6920,102 +6920,90 @@ paths:
 
   /api/v1/admin/playlist-scripts:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/playlist-scripts
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Playlist Scripts]
+      summary: List playlist automation scripts
+      description: Returns a bounded list of scripts to administrators with MFA.
       operationId: getApiV1AdminPlaylistScripts
-      x-clpr-router-derived: true
+      parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Playlist scripts, content: {application/json: {schema: {$ref: '#/components/schemas/PlaylistScriptListResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/playlist-scripts
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Playlist Scripts]
+      summary: Create a playlist automation script
+      description: Creates a validated script. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminPlaylistScripts
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminCreatePlaylistScriptRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201': {description: Script created, content: {application/json: {schema: {$ref: '#/components/schemas/PlaylistScriptResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/playlist-scripts/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/admin/playlist-scripts/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Playlist Scripts]
+      summary: Delete a playlist automation script
+      description: Deletes one script. Administrator MFA and CSRF protection are required.
       operationId: deleteApiV1AdminPlaylistScriptsId
-      x-clpr-router-derived: true
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/CSRFToken'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Script deleted, content: {application/json: {schema: {$ref: '#/components/schemas/PlaylistScriptMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/admin/playlist-scripts/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Playlist Scripts]
+      summary: Update a playlist automation script
+      description: Updates at least one field while preserving strategy requirements. Administrator MFA and CSRF protection are required.
       operationId: putApiV1AdminPlaylistScriptsId
-      x-clpr-router-derived: true
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/CSRFToken'}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminUpdatePlaylistScriptRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Script updated, content: {application/json: {schema: {$ref: '#/components/schemas/PlaylistScriptResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/playlist-scripts/{id}/generate:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/playlist-scripts/{id}/generate
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Playlist Scripts]
+      summary: Generate a playlist from a script
+      description: Atomically creates the replacement playlist and retires the previous generation. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminPlaylistScriptsIdGenerate
-      x-clpr-router-derived: true
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/CSRFToken'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201':
+          description: Generated playlist
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {type: boolean, const: true}
+                  data: {$ref: '#/components/schemas/Playlist'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/submissions:
     get:
@@ -14723,6 +14711,22 @@ components:
         seed_clip_id: {type: string, format: uuid}
         retention_days: {type: integer, minimum: 1, maximum: 365}
         title_template: {type: string, maxLength: 200}
+
+    AdminCreatePlaylistScriptRequest:
+      type: object
+      required: [name, sort, clip_limit]
+      properties:
+        <<: *playlistScriptInputProperties
+        schedule: {type: string, enum: [manual, hourly, daily, weekly, monthly]}
+        strategy: {$ref: '#/components/schemas/PlaylistScriptStrategy'}
+
+    AdminUpdatePlaylistScriptRequest:
+      type: object
+      minProperties: 1
+      properties:
+        <<: *playlistScriptInputProperties
+        schedule: {type: string, enum: [manual, hourly, daily, weekly, monthly]}
+        strategy: {$ref: '#/components/schemas/PlaylistScriptStrategy'}
 
     UpdatePlaylistScriptRequest:
       type: object

@@ -226,8 +226,9 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminDiscoveryLists.PUT("/:id/clips/reorder", h.DiscoveryList.AdminReorderListClips)
 		}
 
-		// Playlist script management (admin/moderator only)
+		// Playlist script management (admin only)
 		adminPlaylistScripts := admin.Group("/playlist-scripts")
+		adminPlaylistScripts.Use(middleware.RequireRole("admin"))
 		{
 			adminPlaylistScripts.GET("", h.PlaylistScript.ListScripts)
 			adminPlaylistScripts.POST("", h.PlaylistScript.CreateScript)

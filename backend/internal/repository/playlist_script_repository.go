@@ -114,10 +114,10 @@ func scanPlaylistScriptRows(rows pgx.Rows) ([]*models.PlaylistScript, error) {
 }
 
 // List retrieves all playlist scripts
-func (r *PlaylistScriptRepository) List(ctx context.Context) ([]*models.PlaylistScript, error) {
-	query := fmt.Sprintf(`SELECT %s FROM playlist_scripts ORDER BY created_at DESC`, playlistScriptColumns)
+func (r *PlaylistScriptRepository) List(ctx context.Context, limit int) ([]*models.PlaylistScript, error) {
+	query := fmt.Sprintf(`SELECT %s FROM playlist_scripts ORDER BY created_at DESC LIMIT $1`, playlistScriptColumns)
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list playlist scripts: %w", err)
 	}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
@@ -22,7 +23,16 @@ func NewPlaylistScriptHandler(service *services.PlaylistScriptService) *Playlist
 
 // ListScripts handles GET /api/v1/admin/playlist-scripts
 func (h *PlaylistScriptHandler) ListScripts(c *gin.Context) {
-	scripts, err := h.service.ListScripts(c.Request.Context())
+	limit := 100
+	if value := c.Query("limit"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > 500 {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "limit must be between 1 and 500"}})
+			return
+		}
+		limit = parsed
+	}
+	scripts, err := h.service.ListScripts(c.Request.Context(), limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
@@ -80,6 +90,10 @@ func (h *PlaylistScriptHandler) CreateScript(c *gin.Context) {
 
 	script, err := h.service.CreateScript(c.Request.Context(), userID, &req)
 	if err != nil {
+		if errors.Is(err, services.ErrPlaylistScriptValidation) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Playlist script configuration is invalid"}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -133,6 +147,10 @@ func (h *PlaylistScriptHandler) UpdateScript(c *gin.Context) {
 					Message: "Playlist script not found",
 				},
 			})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistScriptValidation) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Playlist script configuration is invalid"}})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{

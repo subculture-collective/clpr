@@ -59,3 +59,18 @@ func TestCreatePlaylistScriptBoundsListFilters(t *testing.T) {
 		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
 	}
 }
+
+func TestAdminPlaylistScriptListRejectsMalformedLimitBeforeServiceWork(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, target := range []string{"/api/v1/admin/playlist-scripts?limit=invalid", "/api/v1/admin/playlist-scripts?limit=501"} {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, target, nil)
+
+		NewPlaylistScriptHandler(nil).ListScripts(c)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400 for %s, got %d", target, w.Code)
+		}
+	}
+}

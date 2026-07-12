@@ -64,3 +64,25 @@ func TestPlaylistScriptUpdateRejectsEmptyRequestBeforeRepositoryWork(t *testing.
 		t.Fatalf("expected empty update to fail, got script=%v err=%v", updated, err)
 	}
 }
+
+func TestPlaylistScriptCreateRejectsIncompleteStrategiesBeforeRepositoryWork(t *testing.T) {
+	service := &PlaylistScriptService{}
+	for _, strategy := range []string{"similar_vibes", "cross_game_hits", "twitch_top_game", "twitch_top_broadcaster"} {
+		t.Run(strategy, func(t *testing.T) {
+			created, err := service.CreateScript(context.Background(), uuid.New(), &models.CreatePlaylistScriptRequest{
+				Name: "Incomplete", Sort: "hot", ClipLimit: 10, Strategy: &strategy,
+			})
+			if err == nil || created != nil {
+				t.Fatalf("expected incomplete %s strategy to fail, got script=%v err=%v", strategy, created, err)
+			}
+		})
+	}
+}
+
+func TestPlaylistScriptCreateRejectsWhitespaceNameBeforeRepositoryWork(t *testing.T) {
+	service := &PlaylistScriptService{}
+	created, err := service.CreateScript(context.Background(), uuid.New(), &models.CreatePlaylistScriptRequest{Name: "   ", Sort: "hot", ClipLimit: 10})
+	if err == nil || created != nil {
+		t.Fatalf("expected whitespace name to fail, got script=%v err=%v", created, err)
+	}
+}

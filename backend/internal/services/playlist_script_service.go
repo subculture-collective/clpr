@@ -76,8 +76,8 @@ func (s *PlaylistScriptService) SetClipSyncService(clipSyncService *ClipSyncServ
 }
 
 // ListScripts returns all playlist scripts
-func (s *PlaylistScriptService) ListScripts(ctx context.Context) ([]*models.PlaylistScript, error) {
-	return s.scriptRepo.List(ctx)
+func (s *PlaylistScriptService) ListScripts(ctx context.Context, limit int) ([]*models.PlaylistScript, error) {
+	return s.scriptRepo.List(ctx, limit)
 }
 
 // ListUserScripts returns playlist scripts owned by a specific user
@@ -168,6 +168,9 @@ func (s *PlaylistScriptService) GenerateUserPlaylist(ctx context.Context, script
 
 // CreateScript creates a new playlist script
 func (s *PlaylistScriptService) CreateScript(ctx context.Context, userID uuid.UUID, req *models.CreatePlaylistScriptRequest) (*models.PlaylistScript, error) {
+	if req == nil || strings.TrimSpace(req.Name) == "" {
+		return nil, fmt.Errorf("%w: name is required", ErrPlaylistScriptValidation)
+	}
 	visibility := models.PlaylistVisibilityPublic
 	if req.Visibility != nil {
 		visibility = *req.Visibility
@@ -227,6 +230,9 @@ func (s *PlaylistScriptService) CreateScript(ctx context.Context, userID uuid.UU
 		RetentionDays:   retentionDays,
 		TitleTemplate:   req.TitleTemplate,
 		CreatedBy:       &userID,
+	}
+	if err := validatePlaylistScriptStrategy(script); err != nil {
+		return nil, err
 	}
 
 	if err := s.scriptRepo.Create(ctx, script); err != nil {
@@ -319,12 +325,40 @@ func (s *PlaylistScriptService) UpdateScript(ctx context.Context, scriptID uuid.
 	if req.TitleTemplate != nil {
 		script.TitleTemplate = req.TitleTemplate
 	}
+	if strings.TrimSpace(script.Name) == "" {
+		return nil, fmt.Errorf("%w: name is required", ErrPlaylistScriptValidation)
+	}
+	if err := validatePlaylistScriptStrategy(script); err != nil {
+		return nil, err
+	}
 
 	if err := s.scriptRepo.Update(ctx, script); err != nil {
 		return nil, err
 	}
 
 	return script, nil
+}
+
+func validatePlaylistScriptStrategy(script *models.PlaylistScript) error {
+	switch script.Strategy {
+	case "similar_vibes":
+		if script.SeedClipID == nil {
+			return fmt.Errorf("%w: similar_vibes requires seed_clip_id", ErrPlaylistScriptValidation)
+		}
+	case "cross_game_hits":
+		if len(script.GameIDs) == 0 {
+			return fmt.Errorf("%w: cross_game_hits requires game_ids", ErrPlaylistScriptValidation)
+		}
+	case "twitch_top_game":
+		if script.GameID == nil || strings.TrimSpace(*script.GameID) == "" {
+			return fmt.Errorf("%w: twitch_top_game requires game_id", ErrPlaylistScriptValidation)
+		}
+	case "twitch_top_broadcaster":
+		if script.BroadcasterID == nil || strings.TrimSpace(*script.BroadcasterID) == "" {
+			return fmt.Errorf("%w: twitch_top_broadcaster requires broadcaster_id", ErrPlaylistScriptValidation)
+		}
+	}
+	return nil
 }
 
 func hasPlaylistScriptUpdate(req *models.UpdatePlaylistScriptRequest) bool {
