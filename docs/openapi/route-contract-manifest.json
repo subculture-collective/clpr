@@ -354,112 +354,112 @@
     "path": "/api/v1/admin/moderation/abuse/{userId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetUserAbuseStats-fm",
     "operation_id": "getApiV1AdminModerationAbuseUserid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/analytics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationAnalytics-fm",
     "operation_id": "getApiV1AdminModerationAnalytics",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/appeals",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetAppeals-fm",
     "operation_id": "getApiV1AdminModerationAppeals",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/moderation/appeals/{id}/resolve",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ResolveAppeal-fm",
     "operation_id": "postApiV1AdminModerationAppealsIdResolve",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/audit",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationAuditLogs-fm",
     "operation_id": "getApiV1AdminModerationAudit",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/moderation/bulk",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).BulkModerate-fm",
     "operation_id": "postApiV1AdminModerationBulk",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/events",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetPendingEvents-fm",
     "operation_id": "getApiV1AdminModerationEvents",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/moderation/events/{id}/process",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ProcessEvent-fm",
     "operation_id": "postApiV1AdminModerationEventsIdProcess",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/moderation/events/{id}/review",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).MarkEventReviewed-fm",
     "operation_id": "postApiV1AdminModerationEventsIdReview",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/events/{type}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetEventsByType-fm",
     "operation_id": "getApiV1AdminModerationEventsType",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/queue",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationQueue-fm",
     "operation_id": "getApiV1AdminModerationQueue",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/queue/stats",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationStats-fm",
     "operation_id": "getApiV1AdminModerationQueueStats",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/stats",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetEventStats-fm",
     "operation_id": "getApiV1AdminModerationStats",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/moderation/toxicity/metrics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetToxicityMetrics-fm",
     "operation_id": "getApiV1AdminModerationToxicityMetrics",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/moderation/{id}/approve",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ApproveContent-fm",
     "operation_id": "postApiV1AdminModerationIdApprove",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/moderation/{id}/reject",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).RejectContent-fm",
     "operation_id": "postApiV1AdminModerationIdReject",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",

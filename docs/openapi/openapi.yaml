@@ -6559,20 +6559,21 @@ paths:
 
   /api/v1/admin/moderation/abuse/{userId}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/abuse/{userId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Get abuse statistics for a user
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationAbuseUserid
-      x-clpr-router-derived: true
       parameters:
         - name: userId
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Abuse statistics
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationDataResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6582,14 +6583,15 @@ paths:
 
   /api/v1/admin/moderation/analytics:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/analytics
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Get moderation analytics
+      description: Returns analytics for an ordered date range of at most 366 days. Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationAnalytics
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/StartDate'}, {$ref: '#/components/parameters/EndDate'}]
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Moderation analytics
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationDataResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6599,54 +6601,75 @@ paths:
 
   /api/v1/admin/moderation/appeals:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/appeals
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: List moderation appeals
+      description: Administrator MFA is required.
       operationId: getApiV1AdminModerationAppeals
-      x-clpr-router-derived: true
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected], default: pending}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Appeals
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationCollectionResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/moderation/appeals/{id}/resolve:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/moderation/appeals/{id}/resolve
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Resolve a moderation appeal
+      description: Atomically resolves one pending appeal and writes its audit record. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminModerationAppealsIdResolve
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ResolveModerationAppealRequest'}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Appeal resolved
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/moderation/audit:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/audit
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: List moderation decisions
+      description: Filters decisions with strict dates and bounded offset pagination. Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationAudit
-      x-clpr-router-derived: true
+      parameters:
+        - {name: moderator_id, in: query, schema: {type: string, format: uuid}}
+        - {name: action, in: query, schema: {type: string, enum: [approve, reject, escalate, ban_user]}}
+        - {$ref: '#/components/parameters/StartDate'}
+        - {$ref: '#/components/parameters/EndDate'}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 1000, default: 100}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 1000000, default: 0}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Moderation decisions
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationCollectionResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6656,31 +6679,38 @@ paths:
 
   /api/v1/admin/moderation/bulk:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/moderation/bulk
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Moderate multiple queue items
+      description: Applies one decision to 1–100 unique pending items atomically. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminModerationBulk
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/BulkModerationRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: All items moderated
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/moderation/events:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/events
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: List pending moderation events
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationEvents
-      x-clpr-router-derived: true
+      parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}]
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Pending events
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationCollectionResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6690,20 +6720,25 @@ paths:
 
   /api/v1/admin/moderation/events/{id}/process:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/moderation/events/{id}/process
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Process a moderation event
+      description: Records one bounded action for an event. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminModerationEventsIdProcess
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ProcessModerationEventRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Event processed
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6713,20 +6748,22 @@ paths:
 
   /api/v1/admin/moderation/events/{id}/review:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/moderation/events/{id}/review
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Mark a moderation event reviewed
+      description: Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminModerationEventsIdReview
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Event marked reviewed
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6736,20 +6773,22 @@ paths:
 
   /api/v1/admin/moderation/events/{type}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/events/{type}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: List moderation events by type
+      description: Rejects unknown event types. Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationEventsType
-      x-clpr-router-derived: true
       parameters:
         - name: type
           in: path
           required: true
           schema:
             type: string
+            enum: [submission_received, submission_suspicious, submission_auto_rejected, submission_approved, submission_rejected, submission_duplicate, abuse_detected, rate_limit_exceeded, velocity_violation, ip_share_suspicious, user_cooldown_activated]
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Events of the requested type
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationCollectionResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6759,14 +6798,18 @@ paths:
 
   /api/v1/admin/moderation/queue:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/queue
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: List moderation queue items
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationQueue
-      x-clpr-router-derived: true
+      parameters:
+        - {name: type, in: query, schema: {type: string, enum: [comment, clip, user, submission]}}
+        - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected, escalated], default: pending}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Queue items
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationCollectionResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6776,14 +6819,14 @@ paths:
 
   /api/v1/admin/moderation/queue/stats:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/queue/stats
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Get moderation queue statistics
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationQueueStats
-      x-clpr-router-derived: true
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Queue statistics
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationDataResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6793,14 +6836,14 @@ paths:
 
   /api/v1/admin/moderation/stats:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/stats
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Get moderation event statistics
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationStats
-      x-clpr-router-derived: true
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Event statistics
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationDataResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6810,14 +6853,15 @@ paths:
 
   /api/v1/admin/moderation/toxicity/metrics:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/moderation/toxicity/metrics
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Get toxicity-classification metrics
+      description: Returns an ordered date range of at most 366 days. Requires moderator or administrator MFA.
       operationId: getApiV1AdminModerationToxicityMetrics
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/StartDate'}, {$ref: '#/components/parameters/EndDate'}]
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Toxicity metrics
+          content: {application/json: {schema: {$ref: '#/components/schemas/ToxicityMetricsResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6827,47 +6871,56 @@ paths:
 
   /api/v1/admin/moderation/{id}/approve:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/moderation/{id}/approve
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Approve a pending moderation item
+      description: Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminModerationIdApprove
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Item approved
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/moderation/{id}/reject:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/moderation/{id}/reject
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Moderation]
+      summary: Reject a pending moderation item
+      description: Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminModerationIdReject
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: false
+        content: {application/json: {schema: {$ref: '#/components/schemas/RejectModerationItemRequest'}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Item rejected
+          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -11240,6 +11293,18 @@ components:
       description: Dedicated machine credential for internal operational diagnostics
 
   parameters:
+    StartDate:
+      name: start_date
+      in: query
+      description: Inclusive start date.
+      schema: {type: string, format: date}
+
+    EndDate:
+      name: end_date
+      in: query
+      description: Inclusive end date; ranges may not exceed 366 days.
+      schema: {type: string, format: date}
+
     CSRFToken:
       name: X-CSRF-Token
       in: header
@@ -11466,6 +11531,80 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    ModerationMutationResponse:
+      type: object
+      required: [success]
+      properties:
+        success: {type: boolean, const: true}
+        message: {type: string}
+        action: {type: string, enum: [approve, reject, escalate]}
+        status: {type: string, enum: [approved, rejected, escalated]}
+        processed: {type: integer, minimum: 0, maximum: 100}
+        total: {type: integer, minimum: 0, maximum: 100}
+
+    ModerationCollectionResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          maxItems: 1000
+          items: {type: object, additionalProperties: true}
+        meta: {type: object, additionalProperties: true}
+
+    ModerationDataResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: object, additionalProperties: true}
+        user_id: {type: string, format: uuid}
+
+    ToxicityMetricsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ModerationDataResponse'
+        - type: object
+          required: [start_date, end_date]
+          properties:
+            start_date: {type: string, format: date}
+            end_date: {type: string, format: date}
+
+    ProcessModerationEventRequest:
+      type: object
+      required: [action]
+      additionalProperties: false
+      properties:
+        action: {type: string, enum: [approve, reject, escalate]}
+
+    RejectModerationItemRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: {type: string, maxLength: 1000}
+
+    BulkModerationRequest:
+      type: object
+      required: [item_ids, action]
+      additionalProperties: false
+      properties:
+        item_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: {type: string, format: uuid}
+        action: {type: string, enum: [approve, reject, escalate]}
+        reason: {type: string, maxLength: 1000}
+
+    ResolveModerationAppealRequest:
+      type: object
+      required: [decision]
+      additionalProperties: false
+      properties:
+        decision: {type: string, enum: [approve, reject]}
+        resolution: {type: string, maxLength: 2000}
+
     AccountTypeConversion:
       type: object
       required: [id, user_id, old_type, new_type, converted_at, created_at]

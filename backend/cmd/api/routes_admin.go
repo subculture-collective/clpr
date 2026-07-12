@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/gin-gonic/gin"
 )
 
 func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
@@ -175,8 +175,8 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 				moderation.GET("/queue/stats", h.Moderation.GetModerationStats)
 
 				// Appeals management (admin)
-				moderation.GET("/appeals", h.Moderation.GetAppeals)
-				moderation.POST("/appeals/:id/resolve", h.Moderation.ResolveAppeal)
+				moderation.GET("/appeals", middleware.RequireRole("admin"), h.Moderation.GetAppeals)
+				moderation.POST("/appeals/:id/resolve", middleware.RequireRole("admin"), h.Moderation.ResolveAppeal)
 
 				// Audit logs and analytics
 				moderation.GET("/audit", h.Moderation.GetModerationAuditLogs)

@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 func TestModerationEventService_EmitEvent(t *testing.T) {
@@ -241,6 +242,17 @@ func TestModerationEventService_ProcessEvent(t *testing.T) {
 	require.NoError(t, err)
 
 	// Process the event
-	err = service.ProcessEvent(ctx, event.ID, reviewerID, "approved")
+	err = service.ProcessEvent(ctx, event.ID, reviewerID, "approve")
 	require.NoError(t, err)
+
+	storedJSON, err := redisClient.Get(ctx, "moderation:event:"+event.ID.String())
+	require.NoError(t, err)
+	var stored ModerationEvent
+	require.NoError(t, json.Unmarshal([]byte(storedJSON), &stored))
+	assert.Equal(t, "actioned", stored.Status)
+	assert.Equal(t, "approve", stored.Metadata["moderation_action"])
+	assert.Equal(t, reviewerID, *stored.ReviewedBy)
+
+	err = service.ProcessEvent(ctx, event.ID, reviewerID, "delete")
+	require.Error(t, err)
 }

@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/google/uuid"
 )
 
 // ModerationEventType represents types of moderation events
@@ -297,13 +297,35 @@ func (s *ModerationEventService) notifyModerators(ctx context.Context, event *Mo
 
 // ProcessEvent processes an event and removes it from the queue
 func (s *ModerationEventService) ProcessEvent(ctx context.Context, eventID uuid.UUID, reviewerID uuid.UUID, action string) error {
-	// Mark as reviewed
-	if err := s.MarkEventReviewed(ctx, eventID, reviewerID); err != nil {
-		return err
+	switch action {
+	case "approve", "reject", "escalate":
+	default:
+		return fmt.Errorf("invalid moderation action")
 	}
-
-	// Log the action
+	eventKey := fmt.Sprintf("moderation:event:%s", eventID.String())
+	eventJSON, err := s.redisClient.Get(ctx, eventKey)
+	if err != nil {
+		return fmt.Errorf("failed to get event: %w", err)
+	}
+	var event ModerationEvent
+	if err := json.Unmarshal([]byte(eventJSON), &event); err != nil {
+		return fmt.Errorf("failed to unmarshal event: %w", err)
+	}
+	now := time.Now()
+	event.ReviewedBy = &reviewerID
+	event.ReviewedAt = &now
+	event.Status = "actioned"
+	if event.Metadata == nil {
+		event.Metadata = make(map[string]interface{})
+	}
+	event.Metadata["moderation_action"] = action
+	updatedJSON, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("failed to serialize processed event: %w", err)
+	}
+	if err := s.redisClient.Set(ctx, eventKey, string(updatedJSON), 30*24*time.Hour); err != nil {
+		return fmt.Errorf("failed to save processed event: %w", err)
+	}
 	log.Printf("[MODERATION ACTION] event_id=%s reviewer_id=%s action=%s", eventID, reviewerID, action)
-
 	return nil
 }
