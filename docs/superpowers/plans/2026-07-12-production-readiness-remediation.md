@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 325 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 323 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 325 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 323 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -511,6 +511,7 @@ Before each commit:
 | 2026-07-12 | R3.7 SendGrid webhook contract | Partial | `e31c54b9`; signed ingestion now bounds payload and event counts, validates required event identity, treats lookup failures as retryable errors, and reports partial processing failures; transitional operations reduced from 329 to 328 |
 | 2026-07-12 | R3.7 revenue contract | Partial | `3ebbf1d6`; recognized revenue now uses paid invoice amounts rather than monthly equivalents, historical subscriber totals and monthly MRR are calculated separately, incomplete financial queries fail closed, and the admin response has a route-specific contract; transitional operations reduced from 328 to 327 |
 | 2026-07-12 | R3.7 live-status contracts | Partial | `9c97db63`; both public live-status routes now have route-specific contracts and cross-layer tests; records older than two minutes fail offline and are excluded from lists, while invalid pagination fails closed; transitional operations reduced from 327 to 325 |
+| 2026-07-12 | R3.7 clip-sync contracts | Partial | `768489f2`; both admin synchronization routes now have route-specific contracts and live-handler tests; the status placeholder was replaced with persisted import evidence, requests are bounded, and item failures return 207; transitional operations reduced from 325 to 323 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
