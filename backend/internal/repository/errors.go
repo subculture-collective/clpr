@@ -14,4 +14,6 @@ var (
 	ErrVerificationCooldown         = errors.New("verification application cooldown is active")
 	ErrVerificationLimit            = errors.New("verification application limit reached")
 	ErrVerificationDuplicateChannel = errors.New("Twitch channel is already associated with another user")
+	ErrVerificationNotFound         = errors.New("verification application not found")
+	ErrVerificationAlreadyReviewed  = errors.New("verification application has already been reviewed")
 )

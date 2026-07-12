@@ -203,6 +203,7 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 		// Creator verification management (admin only)
 		adminVerification := admin.Group("/verification")
+		adminVerification.Use(middleware.RequireRole("admin"))
 		{
 			adminVerification.GET("/applications", h.Verification.ListApplications)
 			adminVerification.GET("/applications/:id", h.Verification.GetApplicationByID)

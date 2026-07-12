@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -135,7 +136,7 @@ func (r *VerificationRepository) GetApplicationByID(ctx context.Context, id uuid
 	)
 
 	if err == pgx.ErrNoRows {
-		return nil, fmt.Errorf("verification application not found")
+		return nil, ErrVerificationNotFound
 	}
 	return app, err
 }
@@ -267,6 +268,42 @@ func (r *VerificationRepository) UpdateApplicationStatus(ctx context.Context, id
 	return nil
 }
 
+// ReviewApplication atomically transitions a pending application and records its decision audit row.
+func (r *VerificationRepository) ReviewApplication(ctx context.Context, id, reviewerID uuid.UUID, decision string, notes *string) (uuid.UUID, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	var userID uuid.UUID
+	var currentStatus string
+	if err = tx.QueryRow(ctx, `SELECT user_id, status FROM creator_verification_applications WHERE id = $1 FOR UPDATE`, id).Scan(&userID, &currentStatus); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, ErrVerificationNotFound
+		}
+		return uuid.Nil, err
+	}
+	if currentStatus != models.VerificationStatusPending {
+		return uuid.Nil, ErrVerificationAlreadyReviewed
+	}
+
+	noteValue := ""
+	if notes != nil {
+		noteValue = *notes
+	}
+	if _, err = tx.Exec(ctx, `UPDATE creator_verification_applications SET status = $1, reviewed_by = $2, reviewer_notes = $3, updated_at = NOW() WHERE id = $4`, decision, reviewerID, noteValue, id); err != nil {
+		return uuid.Nil, err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO creator_verification_decisions (application_id, reviewer_id, decision, notes, metadata) VALUES ($1, $2, $3, $4, '{}'::jsonb)`, id, reviewerID, decision, notes); err != nil {
+		return uuid.Nil, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return uuid.Nil, err
+	}
+	return userID, nil
+}
+
 // GetApplicationStats retrieves statistics about verification applications
 func (r *VerificationRepository) GetApplicationStats(ctx context.Context) (*models.VerificationApplicationStats, error) {
 	query := `
@@ -393,7 +430,7 @@ func (r *VerificationRepository) GetApplicationWithUser(ctx context.Context, id 
 	)
 
 	if err == pgx.ErrNoRows {
-		return nil, fmt.Errorf("verification application not found")
+		return nil, ErrVerificationNotFound
 	}
 	if err != nil {
 		return nil, err

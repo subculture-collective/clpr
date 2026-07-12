@@ -725,42 +725,42 @@
     "path": "/api/v1/admin/verification/applications",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).ListApplications-fm",
     "operation_id": "getApiV1AdminVerificationApplications",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/verification/applications/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplicationByID-fm",
     "operation_id": "getApiV1AdminVerificationApplicationsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/verification/applications/{id}/review",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).ReviewApplication-fm",
     "operation_id": "postApiV1AdminVerificationApplicationsIdReview",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/verification/audit-logs",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetAuditLogs-fm",
     "operation_id": "getApiV1AdminVerificationAuditLogs",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/verification/stats",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplicationStats-fm",
     "operation_id": "getApiV1AdminVerificationStats",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/verification/users/{user_id}/audit-logs",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetUserAuditHistory-fm",
     "operation_id": "getApiV1AdminVerificationUsersUserIdAuditLogs",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
