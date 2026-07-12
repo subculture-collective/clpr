@@ -1,0 +1,31 @@
+name: Release readiness evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      evidence_run_id:
+        description: Workflow run ID containing the protected release-evidence artifact
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Download protected release evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: release-evidence
+          path: release-evidence
+          run-id: ${{ inputs.evidence_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify evidence and API completion
+        run: node scripts/verify-release-evidence.js
