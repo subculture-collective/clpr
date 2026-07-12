@@ -1705,28 +1705,28 @@
     "path": "/api/v1/feeds/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFilteredClips-fm",
     "operation_id": "getApiV1FeedsClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/feeds/discover",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).DiscoverFeeds-fm",
     "operation_id": "getApiV1FeedsDiscover",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/feeds/following",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFollowingFeed-fm",
     "operation_id": "getApiV1FeedsFollowing",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/feeds/search",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).SearchFeeds-fm",
     "operation_id": "getApiV1FeedsSearch",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -2902,77 +2902,77 @@
     "path": "/api/v1/users/{id}/feeds",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).ListUserFeeds-fm",
     "operation_id": "getApiV1UsersIdFeeds",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/users/{id}/feeds",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).CreateFeed-fm",
     "operation_id": "postApiV1UsersIdFeeds",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/users/{id}/feeds/{feedId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).DeleteFeed-fm",
     "operation_id": "deleteApiV1UsersIdFeedsFeedid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/users/{id}/feeds/{feedId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFeed-fm",
     "operation_id": "getApiV1UsersIdFeedsFeedid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/users/{id}/feeds/{feedId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).UpdateFeed-fm",
     "operation_id": "putApiV1UsersIdFeedsFeedid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/users/{id}/feeds/{feedId}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFeedClips-fm",
     "operation_id": "getApiV1UsersIdFeedsFeedidClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/users/{id}/feeds/{feedId}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).AddClipToFeed-fm",
     "operation_id": "postApiV1UsersIdFeedsFeedidClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/users/{id}/feeds/{feedId}/clips/reorder",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).ReorderFeedClips-fm",
     "operation_id": "putApiV1UsersIdFeedsFeedidClipsReorder",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/users/{id}/feeds/{feedId}/clips/{clipId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).RemoveClipFromFeed-fm",
     "operation_id": "deleteApiV1UsersIdFeedsFeedidClipsClipid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/users/{id}/feeds/{feedId}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).UnfollowFeed-fm",
     "operation_id": "deleteApiV1UsersIdFeedsFeedidFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/users/{id}/feeds/{feedId}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).FollowFeed-fm",
     "operation_id": "postApiV1UsersIdFeedsFeedidFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

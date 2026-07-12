@@ -2,12 +2,18 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
+)
+
+var (
+	ErrFeedNotFound           = errors.New("feed not found")
+	ErrFeedClipNotFound       = errors.New("feed clip not found")
+	ErrFeedMembershipMismatch = errors.New("feed clip membership mismatch")
 )
 
 type FeedRepository struct {
@@ -44,7 +50,7 @@ func (r *FeedRepository) GetFeedByID(ctx context.Context, feedID uuid.UUID) (*mo
 		&feed.IsPublic, &feed.FollowerCount, &feed.CreatedAt, &feed.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
-		return nil, fmt.Errorf("feed not found")
+		return nil, ErrFeedNotFound
 	}
 	return feed, err
 }
@@ -104,35 +110,71 @@ func (r *FeedRepository) DeleteFeed(ctx context.Context, feedID uuid.UUID) error
 
 // AddClipToFeed adds a clip to a feed
 func (r *FeedRepository) AddClipToFeed(ctx context.Context, feedItem *models.FeedItem) error {
-	// Get the next position
-	var maxPosition *int
-	err := r.pool.QueryRow(ctx, `SELECT MAX(position) FROM feed_items WHERE feed_id = $1`, feedItem.FeedID).Scan(&maxPosition)
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-
-	position := 0
-	if maxPosition != nil {
-		position = *maxPosition + 1
+	defer tx.Rollback(ctx)
+	var lockedFeedID uuid.UUID
+	if err = tx.QueryRow(ctx, `SELECT id FROM feeds WHERE id = $1 FOR UPDATE`, feedItem.FeedID).Scan(&lockedFeedID); err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrFeedNotFound
+		}
+		return err
 	}
-	feedItem.Position = position
-
+	var count int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM feed_items WHERE feed_id = $1`, feedItem.FeedID).Scan(&count); err != nil {
+		return err
+	}
+	if count >= 500 {
+		return ErrFeedMembershipMismatch
+	}
+	if err = tx.QueryRow(ctx, `SELECT COALESCE(MAX(position), -1) + 1 FROM feed_items WHERE feed_id = $1`, feedItem.FeedID).Scan(&feedItem.Position); err != nil {
+		return err
+	}
 	query := `
 		INSERT INTO feed_items (id, feed_id, clip_id, position, added_at)
 		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT (feed_id, clip_id) DO UPDATE SET position = EXCLUDED.position
+		ON CONFLICT (feed_id, clip_id) DO NOTHING
 		RETURNING id, position, added_at
 	`
-	return r.pool.QueryRow(ctx, query,
+	err = tx.QueryRow(ctx, query,
 		feedItem.ID, feedItem.FeedID, feedItem.ClipID, feedItem.Position, feedItem.AddedAt,
 	).Scan(&feedItem.ID, &feedItem.Position, &feedItem.AddedAt)
+	if err == pgx.ErrNoRows {
+		return ErrFeedMembershipMismatch
+	}
+	if err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // RemoveClipFromFeed removes a clip from a feed
 func (r *FeedRepository) RemoveClipFromFeed(ctx context.Context, feedID, clipID uuid.UUID) error {
-	query := `DELETE FROM feed_items WHERE feed_id = $1 AND clip_id = $2`
-	_, err := r.pool.Exec(ctx, query, feedID, clipID)
-	return err
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	var lockedFeedID uuid.UUID
+	if err = tx.QueryRow(ctx, `SELECT id FROM feeds WHERE id = $1 FOR UPDATE`, feedID).Scan(&lockedFeedID); err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrFeedNotFound
+		}
+		return err
+	}
+	result, err := tx.Exec(ctx, `DELETE FROM feed_items WHERE feed_id = $1 AND clip_id = $2`, feedID, clipID)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrFeedClipNotFound
+	}
+	if _, err = tx.Exec(ctx, `WITH ordered AS (SELECT id, ROW_NUMBER() OVER (ORDER BY position, added_at, id) - 1 AS new_position FROM feed_items WHERE feed_id = $1) UPDATE feed_items fi SET position = ordered.new_position FROM ordered WHERE fi.id = ordered.id`, feedID); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // GetFeedClips retrieves all clips in a feed
@@ -180,11 +222,39 @@ func (r *FeedRepository) GetFeedClips(ctx context.Context, feedID uuid.UUID) ([]
 
 // ReorderFeedClips reorders clips in a feed
 func (r *FeedRepository) ReorderFeedClips(ctx context.Context, feedID uuid.UUID, clipIDs []uuid.UUID) error {
+	if len(clipIDs) == 0 || len(clipIDs) > 500 {
+		return ErrFeedMembershipMismatch
+	}
+	seen := make(map[uuid.UUID]struct{}, len(clipIDs))
+	for _, id := range clipIDs {
+		if _, ok := seen[id]; ok {
+			return ErrFeedMembershipMismatch
+		}
+		seen[id] = struct{}{}
+	}
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	var lockedFeedID uuid.UUID
+	if err = tx.QueryRow(ctx, `SELECT id FROM feeds WHERE id = $1 FOR UPDATE`, feedID).Scan(&lockedFeedID); err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrFeedNotFound
+		}
+		return err
+	}
+	var count int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM feed_items WHERE feed_id = $1 AND clip_id = ANY($2)`, feedID, clipIDs).Scan(&count); err != nil {
+		return err
+	}
+	var total int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM feed_items WHERE feed_id = $1`, feedID).Scan(&total); err != nil {
+		return err
+	}
+	if count != len(clipIDs) || total != len(clipIDs) {
+		return ErrFeedMembershipMismatch
+	}
 
 	for i, clipID := range clipIDs {
 		query := `UPDATE feed_items SET position = $1 WHERE feed_id = $2 AND clip_id = $3`
@@ -316,7 +386,7 @@ func (r *FeedRepository) DiscoverPublicFeeds(ctx context.Context, limit, offset 
 	feeds := []*models.FeedWithOwner{}
 	for rows.Next() {
 		feed := &models.FeedWithOwner{
-			Owner: &models.User{},
+			Owner: &models.FeedOwner{},
 		}
 		err := rows.Scan(
 			&feed.ID, &feed.UserID, &feed.Name, &feed.Description, &feed.Icon,
@@ -353,7 +423,7 @@ func (r *FeedRepository) SearchFeeds(ctx context.Context, query string, limit, o
 	feeds := []*models.FeedWithOwner{}
 	for rows.Next() {
 		feed := &models.FeedWithOwner{
-			Owner: &models.User{},
+			Owner: &models.FeedOwner{},
 		}
 		err := rows.Scan(
 			&feed.ID, &feed.UserID, &feed.Name, &feed.Description, &feed.Icon,

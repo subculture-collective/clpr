@@ -8959,71 +8959,65 @@ paths:
 
   /api/v1/feeds/clips:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/feeds/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: List filtered feed clips
       operationId: getApiV1FeedsClips
-      x-clpr-router-derived: true
+      parameters:
+        - {name: sort, in: query, schema: {type: string, enum: [trending, popular, new, top, discussed, hot, rising], default: trending}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 10, maximum: 100, default: 20}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 2048}}
+        - {name: 'filter[game]', in: query, schema: {type: string, maxLength: 100}}
+        - {name: 'filter[streamer]', in: query, schema: {type: string, maxLength: 100}}
+        - {name: 'filter[tags]', in: query, schema: {type: string, maxLength: 100}}
+        - {name: 'filter[date_from]', in: query, schema: {type: string, format: date-time}}
+        - {name: 'filter[date_to]', in: query, schema: {type: string, format: date-time}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Clips returned, content: {application/json: {schema: {$ref: '#/components/schemas/FilteredFeedClipsResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/feeds/discover:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/feeds/discover
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Discover public feeds
       operationId: getApiV1FeedsDiscover
-      x-clpr-router-derived: true
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feeds returned, content: {application/json: {schema: {$ref: '#/components/schemas/FeedDiscoveryResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/feeds/following:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/feeds/following
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: List clips from followed accounts
       operationId: getApiV1FeedsFollowing
-      x-clpr-router-derived: true
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Following feed returned, content: {application/json: {schema: {$ref: '#/components/schemas/FollowingFeedResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/feeds/search:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/feeds/search
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Search public feeds
       operationId: getApiV1FeedsSearch
-      x-clpr-router-derived: true
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 100}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feeds returned, content: {application/json: {schema: {$ref: '#/components/schemas/FeedDiscoveryResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/forum/analytics:
     get:
@@ -10741,296 +10735,147 @@ paths:
 
   /api/v1/users/{id}/feeds:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/users/{id}/feeds
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: List a user's visible feeds
       operationId: getApiV1UsersIdFeeds
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feeds returned, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Feed'}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/users/{id}/feeds
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Create a feed for the authenticated user
       operationId: postApiV1UsersIdFeeds
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateFeedRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201': {description: Feed created, content: {application/json: {schema: {$ref: '#/components/schemas/Feed'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/feeds/{feedId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/users/{id}/feeds/{feedId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Delete an owned feed
       operationId: deleteApiV1UsersIdFeedsFeedid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed deleted, content: {application/json: {schema: {$ref: '#/components/schemas/FeedMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/users/{id}/feeds/{feedId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Get a visible feed
       operationId: getApiV1UsersIdFeedsFeedid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed returned, content: {application/json: {schema: {$ref: '#/components/schemas/Feed'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/users/{id}/feeds/{feedId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Update an owned feed
       operationId: putApiV1UsersIdFeedsFeedid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UpdateFeedRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed updated, content: {application/json: {schema: {$ref: '#/components/schemas/Feed'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/feeds/{feedId}/clips:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/users/{id}/feeds/{feedId}/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: List clips in a visible feed
       operationId: getApiV1UsersIdFeedsFeedidClips
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed clips returned, content: {application/json: {schema: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/FeedItem'}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/users/{id}/feeds/{feedId}/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Add a clip to an owned feed
       operationId: postApiV1UsersIdFeedsFeedidClips
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AddClipToFeedRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201': {description: Feed item created, content: {application/json: {schema: {$ref: '#/components/schemas/FeedItem'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/feeds/{feedId}/clips/reorder:
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/users/{id}/feeds/{feedId}/clips/reorder
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Reorder every clip in an owned feed
       operationId: putApiV1UsersIdFeedsFeedidClipsReorder
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReorderFeedClipsRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed clips reordered, content: {application/json: {schema: {$ref: '#/components/schemas/FeedMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/feeds/{feedId}/clips/{clipId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/users/{id}/feeds/{feedId}/clips/{clipId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Remove a clip from an owned feed
       operationId: deleteApiV1UsersIdFeedsFeedidClipsClipid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: clipId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}, {$ref: '#/components/parameters/FeedClipID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Clip removed, content: {application/json: {schema: {$ref: '#/components/schemas/FeedMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/feeds/{feedId}/follow:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/users/{id}/feeds/{feedId}/follow
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Unfollow a public feed
       operationId: deleteApiV1UsersIdFeedsFeedidFollow
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed unfollowed, content: {application/json: {schema: {$ref: '#/components/schemas/FeedMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/users/{id}/feeds/{feedId}/follow
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Feeds]
+      summary: Follow a public feed
       operationId: postApiV1UsersIdFeedsFeedidFollow
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: feedId
-          in: path
-          required: true
-          schema:
-            type: string
+      parameters: [{$ref: '#/components/parameters/FeedOwnerID'}, {$ref: '#/components/parameters/FeedID'}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feed followed, content: {application/json: {schema: {$ref: '#/components/schemas/FeedMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/users/{id}/filter-presets:
     get:
@@ -11608,6 +11453,24 @@ components:
       in: path
       required: true
       schema: {type: string, pattern: '^[A-Za-z0-9_]{4,25}$'}
+
+    FeedOwnerID:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+
+    FeedID:
+      name: feedId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+
+    FeedClipID:
+      name: clipId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
 
   responses:
     PageHTML:
@@ -13835,6 +13698,118 @@ components:
       required: [message]
       properties:
         message: {type: string}
+
+    Feed:
+      type: object
+      required: [id, user_id, name, is_public, follower_count, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string, maxLength: 1000}
+        icon: {type: string, maxLength: 100}
+        is_public: {type: boolean}
+        follower_count: {type: integer, minimum: 0}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    FeedOwner:
+      type: object
+      required: [id, username, display_name]
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+        display_name: {type: string}
+        avatar_url: {type: string, format: uri}
+
+    FeedWithOwner:
+      allOf:
+        - $ref: '#/components/schemas/Feed'
+        - type: object
+          properties:
+            owner: {$ref: '#/components/schemas/FeedOwner'}
+
+    FeedItem:
+      type: object
+      required: [id, feed_id, clip_id, position, added_at]
+      properties:
+        id: {type: string, format: uuid}
+        feed_id: {type: string, format: uuid}
+        clip_id: {type: string, format: uuid}
+        position: {type: integer, minimum: 0, maximum: 499}
+        added_at: {type: string, format: date-time}
+        clip: {$ref: '#/components/schemas/Clip'}
+
+    CreateFeedRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string, maxLength: 1000}
+        icon: {type: string, maxLength: 100}
+        is_public: {type: boolean, default: true}
+
+    UpdateFeedRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string, maxLength: 1000}
+        icon: {type: string, maxLength: 100}
+        is_public: {type: boolean}
+
+    AddClipToFeedRequest:
+      type: object
+      additionalProperties: false
+      required: [clip_id]
+      properties:
+        clip_id: {type: string, format: uuid}
+
+    ReorderFeedClipsRequest:
+      type: object
+      additionalProperties: false
+      required: [clip_ids]
+      properties:
+        clip_ids: {type: array, minItems: 1, maxItems: 500, uniqueItems: true, items: {type: string, format: uuid}}
+
+    FeedMutationResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+
+    FeedDiscoveryResponse:
+      type: array
+      maxItems: 100
+      items: {$ref: '#/components/schemas/FeedWithOwner'}
+
+    FeedPagination:
+      type: object
+      required: [page, limit, total, total_pages]
+      properties:
+        page: {type: integer, minimum: 1}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, minimum: 0}
+        total_pages: {type: integer, minimum: 0}
+
+    FollowingFeedResponse:
+      type: object
+      required: [success, data, pagination]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/Clip'}}
+        pagination: {$ref: '#/components/schemas/FeedPagination'}
+
+    FilteredFeedClipsResponse:
+      type: object
+      required: [success, clips, pagination, filters_applied]
+      properties:
+        success: {type: boolean, const: true}
+        clips: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/Clip'}}
+        pagination: {type: object, additionalProperties: true}
+        filters_applied: {type: object, additionalProperties: true}
 
     PlaylistListItem:
       allOf:

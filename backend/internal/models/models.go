@@ -2017,7 +2017,14 @@ type Feed struct {
 // FeedWithOwner includes owner information
 type FeedWithOwner struct {
 	Feed
-	Owner *User `json:"owner,omitempty"`
+	Owner *FeedOwner `json:"owner,omitempty"`
+}
+
+type FeedOwner struct {
+	ID          uuid.UUID `json:"id"`
+	Username    string    `json:"username"`
+	DisplayName string    `json:"display_name"`
+	AvatarURL   *string   `json:"avatar_url,omitempty"`
 }
 
 // FeedItem represents a clip in a feed
@@ -2059,6 +2066,13 @@ type UpdateFeedRequest struct {
 	IsPublic    *bool   `json:"is_public,omitempty"`
 }
 
+func (r *UpdateFeedRequest) Validate() error {
+	if r.Name == nil && r.Description == nil && r.Icon == nil && r.IsPublic == nil {
+		return fmt.Errorf("at least one field must be provided")
+	}
+	return nil
+}
+
 // AddClipToFeedRequest represents the request to add a clip to a feed
 type AddClipToFeedRequest struct {
 	ClipID uuid.UUID `json:"clip_id" binding:"required"`
@@ -2066,7 +2080,7 @@ type AddClipToFeedRequest struct {
 
 // ReorderFeedClipsRequest represents the request to reorder clips in a feed
 type ReorderFeedClipsRequest struct {
-	ClipIDs []uuid.UUID `json:"clip_ids" binding:"required"`
+	ClipIDs []uuid.UUID `json:"clip_ids" binding:"required,min=1,max=500,unique"`
 }
 
 // UserFollow represents a user following another user
