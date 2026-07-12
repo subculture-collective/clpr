@@ -249,49 +249,49 @@
     "path": "/api/v1/admin/email/alerts",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetAlerts-fm",
     "operation_id": "getApiV1AdminEmailAlerts",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/email/alerts/{id}/acknowledge",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).AcknowledgeAlert-fm",
     "operation_id": "postApiV1AdminEmailAlertsIdAcknowledge",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/email/alerts/{id}/resolve",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).ResolveAlert-fm",
     "operation_id": "postApiV1AdminEmailAlertsIdResolve",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/email/logs",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).SearchEmailLogs-fm",
     "operation_id": "getApiV1AdminEmailLogs",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/email/metrics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetMetrics-fm",
     "operation_id": "getApiV1AdminEmailMetrics",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/email/metrics/dashboard",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetDashboardMetrics-fm",
     "operation_id": "getApiV1AdminEmailMetricsDashboard",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/email/metrics/templates",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetTemplateMetrics-fm",
     "operation_id": "getApiV1AdminEmailMetricsTemplates",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

@@ -6207,134 +6207,132 @@ paths:
 
   /api/v1/admin/email/alerts:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/email/alerts
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: List unresolved email alerts
+      description: Returns a bounded list of unresolved delivery alerts for administrators with MFA.
       operationId: getApiV1AdminEmailAlerts
-      x-clpr-router-derived: true
+      parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}]
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Email alerts, content: {application/json: {schema: {type: array, maxItems: 200, items: {type: object, additionalProperties: true}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/alerts/{id}/acknowledge:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/email/alerts/{id}/acknowledge
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: Acknowledge an email alert
+      description: Acknowledges one unresolved alert. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminEmailAlertsIdAcknowledge
-      x-clpr-router-derived: true
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/CSRFToken'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Alert acknowledged, content: {application/json: {schema: {type: object, required: [message], properties: {message: {type: string}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/alerts/{id}/resolve:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/email/alerts/{id}/resolve
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: Resolve an email alert
+      description: Resolves one unresolved alert. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminEmailAlertsIdResolve
-      x-clpr-router-derived: true
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {$ref: '#/components/parameters/CSRFToken'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Alert resolved, content: {application/json: {schema: {type: object, required: [message], properties: {message: {type: string}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/logs:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/email/logs
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: Search email delivery logs
+      description: Searches sensitive delivery logs for administrators with MFA; date ranges are capped at 366 days.
       operationId: getApiV1AdminEmailLogs
-      x-clpr-router-derived: true
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [sent, delivered, bounce, dropped, open, click, spam_report, unsubscribe, deferred, processed]}}
+        - {name: template, in: query, schema: {type: string, maxLength: 200}}
+        - {name: recipient, in: query, schema: {type: string, maxLength: 254}}
+        - {name: start_date, in: query, schema: {type: string, format: date-time}}
+        - {name: end_date, in: query, schema: {type: string, format: date-time}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Email logs, content: {application/json: {schema: {type: array, maxItems: 200, items: {type: object, additionalProperties: true}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/metrics:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/email/metrics
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: Get aggregate email metrics
+      description: Returns metrics for an ordered range of at most 366 days to administrators with MFA.
       operationId: getApiV1AdminEmailMetrics
-      x-clpr-router-derived: true
+      parameters:
+        - {name: start_date, in: query, schema: {type: string, format: date-time}}
+        - {name: end_date, in: query, schema: {type: string, format: date-time}}
+        - {name: template, in: query, schema: {type: string, maxLength: 200}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Aggregate email metrics, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/metrics/dashboard:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/email/metrics/dashboard
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: Get the email operations dashboard
+      description: Returns a complete dashboard snapshot for administrators with MFA; dependency failures fail the request.
       operationId: getApiV1AdminEmailMetricsDashboard
-      x-clpr-router-derived: true
+      parameters: [{name: days, in: query, schema: {type: integer, minimum: 1, maximum: 30, default: 7}}]
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Dashboard snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [daily_metrics, current_metrics, template_metrics, recent_bounces, alerts]
+                properties:
+                  daily_metrics: {type: array, items: {type: object, additionalProperties: true}}
+                  current_metrics: {type: object, additionalProperties: true}
+                  template_metrics: {type: array, maxItems: 10, items: {type: object, additionalProperties: true}}
+                  recent_bounces: {type: array, maxItems: 10, items: {type: object, additionalProperties: true}}
+                  alerts: {type: array, maxItems: 10, items: {type: object, additionalProperties: true}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/email/metrics/templates:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/email/metrics/templates
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Email]
+      summary: Get email metrics by template
+      description: Returns bounded template metrics for an ordered range of at most 366 days to administrators with MFA.
       operationId: getApiV1AdminEmailMetricsTemplates
-      x-clpr-router-derived: true
+      parameters:
+        - {name: start_date, in: query, schema: {type: string, format: date-time}}
+        - {name: end_date, in: query, schema: {type: string, format: date-time}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 10}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Template metrics, content: {application/json: {schema: {type: array, maxItems: 100, items: {type: object, additionalProperties: true}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/admin/forum/bans:
     get:

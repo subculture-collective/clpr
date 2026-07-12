@@ -140,6 +140,7 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 		// Email monitoring and metrics (admin only)
 		adminEmail := admin.Group("/email")
+		adminEmail.Use(middleware.RequireRole("admin"))
 		{
 			// Dashboard and metrics
 			adminEmail.GET("/metrics/dashboard", h.EmailMetrics.GetDashboardMetrics)
