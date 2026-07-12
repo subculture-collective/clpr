@@ -98,10 +98,12 @@ tags:
     description: Premium subscriptions
   - name: Webhooks
     description: Webhook management
+  - name: Chat
+    description: Chat channels, membership, messages, and realtime connections
+  - name: Chat Moderation
+    description: Channel-scoped chat moderation and audit operations
   - name: Contact
     description: Contact form
-  - name: Chat
-    description: Chat channels and messaging
   - name: Ads
     description: Advertisement system
   - name: Documentation
@@ -7943,11 +7945,10 @@ paths:
 
   /api/v1/chat/channels:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: List visible chat channels
+      description: Returns active public channels and private channels the authenticated user has joined.
       operationId: getApiV1ChatChannels
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -7958,13 +7959,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/chat/channels
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Create a chat channel
+      description: Creates a public or private channel and makes the authenticated user its owner.
       operationId: postApiV1ChatChannels
-      x-clpr-router-derived: true
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -7975,11 +7975,10 @@ paths:
 
   /api/v1/chat/channels/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/chat/channels/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Delete a chat channel
+      description: Permanently deletes a channel owned by the authenticated user.
       operationId: deleteApiV1ChatChannelsId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -7996,11 +7995,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Get a visible chat channel
+      description: Returns a public channel or a private channel belonging to the authenticated user.
       operationId: getApiV1ChatChannelsId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8017,11 +8015,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/chat/channels/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Update a chat channel
+      description: Updates channel settings; only the channel creator may perform this operation.
       operationId: patchApiV1ChatChannelsId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8040,11 +8037,10 @@ paths:
 
   /api/v1/chat/channels/{id}/ban:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/chat/channels/{id}/ban
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: Ban a user from a channel
+      description: Creates or replaces a channel ban and its audit record atomically; channel staff membership is required.
       operationId: postApiV1ChatChannelsIdBan
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8063,11 +8059,10 @@ paths:
 
   /api/v1/chat/channels/{id}/ban/{user_id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/chat/channels/{id}/ban/{user_id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: Remove a channel ban
+      description: Removes a user's channel ban and records the action atomically; channel staff membership is required.
       operationId: deleteApiV1ChatChannelsIdBanUserId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8091,11 +8086,10 @@ paths:
 
   /api/v1/chat/channels/{id}/check-ban:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}/check-ban
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: Check an active channel ban
+      description: Users may inspect their own ban status; channel staff may inspect another user's status.
       operationId: getApiV1ChatChannelsIdCheckBan
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8114,11 +8108,10 @@ paths:
 
   /api/v1/chat/channels/{id}/members:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}/members
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: List channel members
+      description: Lists members of a visible channel with strict offset pagination.
       operationId: getApiV1ChatChannelsIdMembers
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8135,11 +8128,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/chat/channels/{id}/members
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Add a channel member
+      description: Adds a member subject to channel role permissions and the serialized participant limit.
       operationId: postApiV1ChatChannelsIdMembers
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8147,7 +8139,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -8158,11 +8150,10 @@ paths:
 
   /api/v1/chat/channels/{id}/members/{user_id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/chat/channels/{id}/members/{user_id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Remove a channel member
+      description: Removes a member subject to the channel role hierarchy; non-owners may remove themselves.
       operationId: deleteApiV1ChatChannelsIdMembersUserId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8184,11 +8175,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/chat/channels/{id}/members/{user_id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Change a channel member role
+      description: Changes a non-owner member's role; only the channel owner may perform this operation.
       operationId: patchApiV1ChatChannelsIdMembersUserId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8212,11 +8202,10 @@ paths:
 
   /api/v1/chat/channels/{id}/messages:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}/messages
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Get channel message history
+      description: Returns non-deleted messages from a visible channel using an RFC3339 cursor.
       operationId: getApiV1ChatChannelsIdMessages
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8235,11 +8224,10 @@ paths:
 
   /api/v1/chat/channels/{id}/moderation-log:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}/moderation-log
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: List a channel's moderation log
+      description: Returns audited moderation actions to channel staff.
       operationId: getApiV1ChatChannelsIdModerationLog
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8258,11 +8246,10 @@ paths:
 
   /api/v1/chat/channels/{id}/mute:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/chat/channels/{id}/mute
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: Mute a user in a channel
+      description: Creates or replaces a restriction and its audit record atomically; channel staff membership is required.
       operationId: postApiV1ChatChannelsIdMute
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8281,11 +8268,10 @@ paths:
 
   /api/v1/chat/channels/{id}/role:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}/role
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Get the current user's channel role
+      description: Returns the authenticated user's owner, admin, moderator, or member role.
       operationId: getApiV1ChatChannelsIdRole
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8304,11 +8290,10 @@ paths:
 
   /api/v1/chat/channels/{id}/timeout:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/chat/channels/{id}/timeout
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: Time out a user in a channel
+      description: Creates a time-limited restriction and audit record atomically; channel staff membership is required.
       operationId: postApiV1ChatChannelsIdTimeout
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8327,11 +8312,10 @@ paths:
 
   /api/v1/chat/channels/{id}/ws:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/channels/{id}/ws
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Connect to channel chat
+      description: Upgrades an authorized, non-banned user's request to a WebSocket connection.
       operationId: getApiV1ChatChannelsIdWs
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8339,8 +8323,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+        '101':
+          $ref: '#/components/responses/WebSocketUpgrade'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8350,11 +8334,11 @@ paths:
 
   /api/v1/chat/health:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/health
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Get chat server health
+      description: Returns aggregate WebSocket health and connection counts without authentication.
       operationId: getApiV1ChatHealth
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -8367,11 +8351,10 @@ paths:
 
   /api/v1/chat/messages/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/chat/messages/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat Moderation]
+      summary: Delete a chat message
+      description: Soft-deletes a message and records the action atomically; staff membership in its channel is required.
       operationId: deleteApiV1ChatMessagesId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8390,11 +8373,10 @@ paths:
 
   /api/v1/chat/stats:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/chat/stats
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Chat]
+      summary: Get detailed chat server statistics
+      description: Returns aggregate WebSocket server statistics to application administrators.
       operationId: getApiV1ChatStats
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'

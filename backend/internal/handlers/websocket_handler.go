@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	ws "git.subcult.tv/subculture-collective/clpr/internal/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	ws "git.subcult.tv/subculture-collective/clpr/internal/websocket"
 )
 
 // WebSocketHandler handles WebSocket chat connections
@@ -40,29 +40,11 @@ func (h *WebSocketHandler) HandleConnection(c *gin.Context) {
 	}
 
 	// Extract user from context (set by AuthMiddleware)
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	userID, ok := userIDInterface.(uuid.UUID)
+	userID, ok := authenticatedUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
 	}
-
-	// Verify channel exists and is active
-	var channelExists bool
-	err = h.db.QueryRow(c.Request.Context(),
-		"SELECT EXISTS(SELECT 1 FROM chat_channels WHERE id = $1 AND is_active = true)",
-		channelUUID).Scan(&channelExists)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify channel"})
-		return
-	}
-	if !channelExists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Channel not found or inactive"})
+	if !requireChatChannelAccess(c, h.db, channelUUID, userID) {
 		return
 	}
 
@@ -109,29 +91,11 @@ func (h *WebSocketHandler) GetMessageHistory(c *gin.Context) {
 	}
 
 	// Get authenticated user
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	userID, ok := userIDInterface.(uuid.UUID)
+	userID, ok := authenticatedUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
 	}
-
-	// Verify channel exists
-	var channelExists bool
-	err = h.db.QueryRow(c.Request.Context(),
-		"SELECT EXISTS(SELECT 1 FROM chat_channels WHERE id = $1 AND is_active = true)",
-		channelUUID).Scan(&channelExists)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify channel"})
-		return
-	}
-	if !channelExists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Channel not found or inactive"})
+	if !requireChatChannelAccess(c, h.db, channelUUID, userID) {
 		return
 	}
 
@@ -161,7 +125,8 @@ func (h *WebSocketHandler) GetMessageHistory(c *gin.Context) {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 || limit > 100 {
-		limit = 50
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	// Build query

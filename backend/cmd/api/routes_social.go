@@ -35,18 +35,18 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 			// Message history endpoint
 			channels.GET("/:id/messages", h.WebSocket.GetMessageHistory)
 
-			// Moderation endpoints (require moderator role)
-			channels.POST("/:id/ban", middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.BanUser)
-			channels.DELETE("/:id/ban/:user_id", middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.UnbanUser)
-			channels.POST("/:id/mute", middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.MuteUser)
-			channels.POST("/:id/timeout", middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.TimeoutUser)
-			channels.GET("/:id/moderation-log", middleware.RequireRole("admin", "moderator"), h.Chat.GetModerationLog)
+			// Moderation endpoints enforce owner/admin/moderator membership in the handler.
+			channels.POST("/:id/ban", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.BanUser)
+			channels.DELETE("/:id/ban/:user_id", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.UnbanUser)
+			channels.POST("/:id/mute", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.MuteUser)
+			channels.POST("/:id/timeout", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.TimeoutUser)
+			channels.GET("/:id/moderation-log", h.Chat.GetModerationLog)
 			channels.GET("/:id/check-ban", h.Chat.CheckUserBan)
 		}
 
 		// Chat message routes
 		messages := chat.Group("/messages")
-		messages.Use(middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"))
+		messages.Use(middleware.AuthMiddleware(svcs.Auth))
 		{
 			messages.DELETE("/:id", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.DeleteMessage)
 		}

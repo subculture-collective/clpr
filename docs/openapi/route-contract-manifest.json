@@ -1033,147 +1033,147 @@
     "path": "/api/v1/chat/channels",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).ListChannels-fm",
     "operation_id": "getApiV1ChatChannels",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/chat/channels",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).CreateChannel-fm",
     "operation_id": "postApiV1ChatChannels",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/chat/channels/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).DeleteChannel-fm",
     "operation_id": "deleteApiV1ChatChannelsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).GetChannel-fm",
     "operation_id": "getApiV1ChatChannelsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/chat/channels/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).UpdateChannel-fm",
     "operation_id": "patchApiV1ChatChannelsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/chat/channels/{id}/ban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).BanUser-fm",
     "operation_id": "postApiV1ChatChannelsIdBan",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/chat/channels/{id}/ban/{user_id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).UnbanUser-fm",
     "operation_id": "deleteApiV1ChatChannelsIdBanUserId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}/check-ban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).CheckUserBan-fm",
     "operation_id": "getApiV1ChatChannelsIdCheckBan",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}/members",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).ListChannelMembers-fm",
     "operation_id": "getApiV1ChatChannelsIdMembers",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/chat/channels/{id}/members",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).AddChannelMember-fm",
     "operation_id": "postApiV1ChatChannelsIdMembers",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/chat/channels/{id}/members/{user_id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).RemoveChannelMember-fm",
     "operation_id": "deleteApiV1ChatChannelsIdMembersUserId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/chat/channels/{id}/members/{user_id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).UpdateChannelMemberRole-fm",
     "operation_id": "patchApiV1ChatChannelsIdMembersUserId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}/messages",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).GetMessageHistory-fm",
     "operation_id": "getApiV1ChatChannelsIdMessages",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}/moderation-log",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).GetModerationLog-fm",
     "operation_id": "getApiV1ChatChannelsIdModerationLog",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/chat/channels/{id}/mute",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).MuteUser-fm",
     "operation_id": "postApiV1ChatChannelsIdMute",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}/role",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).GetCurrentUserRole-fm",
     "operation_id": "getApiV1ChatChannelsIdRole",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/chat/channels/{id}/timeout",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).TimeoutUser-fm",
     "operation_id": "postApiV1ChatChannelsIdTimeout",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/channels/{id}/ws",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).HandleConnection-fm",
     "operation_id": "getApiV1ChatChannelsIdWs",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/health",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).GetHealthCheck-fm",
     "operation_id": "getApiV1ChatHealth",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/chat/messages/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).DeleteMessage-fm",
     "operation_id": "deleteApiV1ChatMessagesId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/chat/stats",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).GetChannelStats-fm",
     "operation_id": "getApiV1ChatStats",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
