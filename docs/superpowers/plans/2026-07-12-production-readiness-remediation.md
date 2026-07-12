@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 316 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 313 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 316 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 313 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -515,6 +515,7 @@ Before each commit:
 | 2026-07-12 | R3.7 cache operations contracts | Partial | `85283256`; both operational cache routes now have dedicated bearer contracts and live-handler tests; counters are typed and missing/malformed Redis statistics fail degraded with 503; transitional operations reduced from 323 to 321 |
 | 2026-07-12 | R3.7 audit-log contracts | Partial | `9a2e2af0`; both admin audit routes now have route-specific contracts and live-handler tests; CSV exports are bounded at 10,000 rows, buffered before headers, and invalid ranges/pagination fail closed; transitional operations reduced from 321 to 319 |
 | 2026-07-12 | R3.7 public page contracts | Partial | `abd8989e`; all three streamer/game page routes now have HTML contracts and live-handler tests; missing entities remain 404 while dependency failures return non-cacheable 500 instead of indexable empty pages; transitional operations reduced from 319 to 316 |
+| 2026-07-12 | R3.7 documentation contracts | Partial | `6d82e9a2`; all documentation routes now have route-specific contracts and bounded tests; nested documents are retrievable, real-path containment blocks symlink escape, and missing sources fail unavailable; registered routes increased to 480 and transitional operations reduced from 316 to 313 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
