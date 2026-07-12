@@ -3764,7 +3764,7 @@ type UpdateCollaboratorRequest struct {
 // TrackShareRequest represents the request to track a share event
 type TrackShareRequest struct {
 	Platform string  `json:"platform" binding:"required,oneof=twitter facebook discord embed link"`
-	Referrer *string `json:"referrer,omitempty"`
+	Referrer *string `json:"referrer,omitempty" binding:"omitempty,max=255"`
 }
 
 // ============================================================================

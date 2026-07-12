@@ -1054,6 +1054,47 @@ func (r *PlaylistRepository) UpdateShareToken(ctx context.Context, playlistID uu
 	return nil
 }
 
+// GetOrCreateShareToken atomically returns the canonical token under concurrent callers.
+func (r *PlaylistRepository) GetOrCreateShareToken(ctx context.Context, playlistID uuid.UUID, candidate string) (string, error) {
+	var token string
+	err := r.pool.QueryRow(ctx, `
+		UPDATE playlists
+		SET share_token = COALESCE(NULLIF(share_token, ''), $2), updated_at = NOW()
+		WHERE id = $1 AND deleted_at IS NULL
+		RETURNING share_token
+	`, playlistID, candidate).Scan(&token)
+	if err == pgx.ErrNoRows {
+		return "", fmt.Errorf("playlist not found")
+	}
+	if err != nil {
+		return "", fmt.Errorf("get or create playlist share token: %w", err)
+	}
+	return token, nil
+}
+
+// TrackShareAndIncrement atomically records analytics and updates the denormalized counter.
+func (r *PlaylistRepository) TrackShareAndIncrement(ctx context.Context, share *models.PlaylistShare) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin playlist share transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, `INSERT INTO playlist_shares (id, playlist_id, platform, referrer, shared_at) VALUES ($1, $2, $3, $4, $5)`, share.ID, share.PlaylistID, share.Platform, share.Referrer, share.SharedAt); err != nil {
+		return fmt.Errorf("insert playlist share: %w", err)
+	}
+	result, err := tx.Exec(ctx, `UPDATE playlists SET share_count = share_count + 1 WHERE id = $1 AND deleted_at IS NULL`, share.PlaylistID)
+	if err != nil {
+		return fmt.Errorf("increment playlist share count: %w", err)
+	}
+	if result.RowsAffected() != 1 {
+		return fmt.Errorf("playlist not found")
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit playlist share transaction: %w", err)
+	}
+	return nil
+}
+
 // IncrementViewCount increments the view count for a playlist
 func (r *PlaylistRepository) IncrementViewCount(ctx context.Context, playlistID uuid.UUID) error {
 	query := `

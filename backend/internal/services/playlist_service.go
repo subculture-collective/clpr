@@ -79,7 +79,7 @@ func (s *PlaylistService) CopyPlaylist(ctx context.Context, playlistID, userID u
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if source == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check view permissions if playlist is private
@@ -89,7 +89,7 @@ func (s *PlaylistService) CopyPlaylist(ctx context.Context, playlistID, userID u
 			return nil, fmt.Errorf("failed to check permissions: %w", err)
 		}
 		if permission == "" {
-			return nil, fmt.Errorf("unauthorized: user does not have permission to copy this playlist")
+			return nil, ErrPlaylistPrivate
 		}
 	}
 
@@ -581,7 +581,7 @@ func (s *PlaylistService) GetShareLink(ctx context.Context, playlistID, userID u
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check permissions: owner or collaborator with edit/admin permission
@@ -614,8 +614,7 @@ func (s *PlaylistService) GetShareLink(ctx context.Context, playlistID, userID u
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate share token: %w", err)
 			}
-			if err = s.playlistRepo.UpdateShareToken(ctx, playlistID, candidate); err == nil {
-				shareToken = candidate
+			if shareToken, err = s.playlistRepo.GetOrCreateShareToken(ctx, playlistID, candidate); err == nil {
 				break
 			}
 			lastErr = err
@@ -643,17 +642,16 @@ func (s *PlaylistService) TrackShare(ctx context.Context, playlistID uuid.UUID, 
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	// Only track shares for public/unlisted playlists
 	if playlist.Visibility == models.PlaylistVisibilityPrivate {
-		return fmt.Errorf("cannot track shares for private playlists")
+		return ErrPlaylistPrivate
 	}
 
-	// Validate referrer length (database constraint is VARCHAR(255))
 	if len(referrer) > 255 {
-		referrer = referrer[:255]
+		return fmt.Errorf("%w: referrer is too long", ErrPlaylistValidation)
 	}
 
 	// Track the share event
@@ -667,15 +665,8 @@ func (s *PlaylistService) TrackShare(ctx context.Context, playlistID uuid.UUID, 
 		share.Referrer = &referrer
 	}
 
-	err = s.playlistRepo.TrackShare(ctx, share)
-	if err != nil {
-		return fmt.Errorf("failed to track share: %w", err)
-	}
-
-	// Increment share count
-	err = s.playlistRepo.IncrementShareCount(ctx, playlistID)
-	if err != nil {
-		return fmt.Errorf("failed to increment share count: %w", err)
+	if err = s.playlistRepo.TrackShareAndIncrement(ctx, share); err != nil {
+		return fmt.Errorf("failed to persist playlist share: %w", err)
 	}
 
 	return nil

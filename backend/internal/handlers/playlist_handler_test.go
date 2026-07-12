@@ -134,3 +134,28 @@ func TestPlaylistSocialRoutesRejectMalformedIdentity(t *testing.T) {
 		})
 	}
 }
+
+func TestPlaylistSharingInputsFailClosed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	id := uuid.New()
+	for _, tc := range []struct {
+		name, method, body string
+		identity           interface{}
+		invoke             func(*PlaylistHandler, *gin.Context)
+		status             int
+	}{
+		{"copy identity", http.MethodPost, `{}`, "bad", func(h *PlaylistHandler, c *gin.Context) { h.CopyPlaylist(c) }, http.StatusUnauthorized},
+		{"share identity", http.MethodGet, "", "bad", func(h *PlaylistHandler, c *gin.Context) { h.GetShareLink(c) }, http.StatusUnauthorized},
+		{"share platform", http.MethodPost, `{"platform":"carrier-pigeon"}`, nil, func(h *PlaylistHandler, c *gin.Context) { h.TrackShare(c) }, http.StatusBadRequest},
+		{"share referrer", http.MethodPost, `{"platform":"link","referrer":"` + strings.Repeat("x", 256) + `"}`, nil, func(h *PlaylistHandler, c *gin.Context) { h.TrackShare(c) }, http.StatusBadRequest},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, w := playlistTestContext(tc.method, "/api/v1/playlists/"+id.String(), []byte(tc.body), tc.identity)
+			c.Params = gin.Params{{Key: "id", Value: id.String()}}
+			tc.invoke(NewPlaylistHandler(nil), c)
+			if w.Code != tc.status {
+				t.Fatalf("expected %d, got %d: %s", tc.status, w.Code, w.Body.String())
+			}
+		})
+	}
+}

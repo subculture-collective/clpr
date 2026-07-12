@@ -10124,26 +10124,29 @@ paths:
 
   /api/v1/playlists/{id}/copy:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlists/{id}/copy
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistsIdCopy
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Atomically copy a visible playlist and its ordered clips
+      description: Copies default to private. Private source playlists are concealed unless the caller owns or collaborates on them. Rate limited to 10 per hour.
+      operationId: copyPlaylist
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CopyPlaylistRequest'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201':
+          description: Playlist copied
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/{id}/like:
     post:
@@ -10184,49 +10187,49 @@ paths:
 
   /api/v1/playlists/{id}/share-link:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/playlists/{id}/share-link
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistsIdShareLink
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Get or atomically create the canonical share link
+      description: Requires owner or edit/admin collaborator permission. Concurrent requests converge on the same token. Rate limited to 10 per hour.
+      operationId: getPlaylistShareLink
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Canonical share URL and embed markup
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistShareLinkResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/{id}/track-share:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlists/{id}/track-share
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistsIdTrackShare
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Atomically record a public playlist share event
+      description: Private playlists are concealed as not found. Event insertion and share_count increment commit together. Rate limited to 60 per minute.
+      operationId: trackPlaylistShare
+      security: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TrackPlaylistShareRequest'}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Share recorded
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/queue:
     delete:
@@ -13667,6 +13670,35 @@ components:
         description: {type: string, maxLength: 500}
         cover_url: {type: string, format: uri, maxLength: 255}
         visibility: {type: string, enum: [private, public, unlisted]}
+
+    CopyPlaylistRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        title: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        cover_url: {type: string, format: uri, maxLength: 255}
+        visibility: {type: string, enum: [private, public, unlisted]}
+
+    PlaylistShareLinkResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [share_url, embed_code]
+          properties:
+            share_url: {type: string, format: uri}
+            embed_code: {type: string}
+
+    TrackPlaylistShareRequest:
+      type: object
+      additionalProperties: false
+      required: [platform]
+      properties:
+        platform: {type: string, enum: [twitter, facebook, discord, embed, link]}
+        referrer: {type: string, maxLength: 255}
 
     PlaylistPaginationMeta:
       type: object

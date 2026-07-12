@@ -2299,8 +2299,8 @@
     "method": "POST",
     "path": "/api/v1/playlists/{id}/copy",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).CopyPlaylist-fm",
-    "operation_id": "postApiV1PlaylistsIdCopy",
-    "contract_level": "transitional"
+    "operation_id": "copyPlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
@@ -2320,15 +2320,15 @@
     "method": "GET",
     "path": "/api/v1/playlists/{id}/share-link",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetShareLink-fm",
-    "operation_id": "getApiV1PlaylistsIdShareLink",
-    "contract_level": "transitional"
+    "operation_id": "getPlaylistShareLink",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlists/{id}/track-share",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).TrackShare-fm",
-    "operation_id": "postApiV1PlaylistsIdTrackShare",
-    "contract_level": "transitional"
+    "operation_id": "trackPlaylistShare",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",

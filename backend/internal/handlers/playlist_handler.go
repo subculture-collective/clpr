@@ -288,7 +288,7 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "At least one playlist field is required"}})
 			return
 		}
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -327,28 +327,8 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 
 // CopyPlaylist handles POST /api/playlists/:id/copy
 func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -373,7 +353,7 @@ func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -381,22 +361,12 @@ func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
 
 	playlist, err := h.playlistService.CopyPlaylist(c.Request.Context(), playlistID, userID, &req)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "NOT_FOUND",
 					Message: "Playlist not found",
-				},
-			})
-			return
-		}
-		if strings.Contains(err.Error(), "unauthorized") {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "You don't have permission to copy this playlist",
 				},
 			})
 			return
@@ -962,28 +932,8 @@ func (h *PlaylistHandler) UnlikePlaylist(c *gin.Context) {
 
 // GetShareLink handles GET /api/playlists/:id/share-link
 func (h *PlaylistHandler) GetShareLink(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1004,7 +954,7 @@ func (h *PlaylistHandler) GetShareLink(c *gin.Context) {
 	// Get share link
 	shareLink, err := h.playlistService.GetShareLink(c.Request.Context(), playlistID, userID)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1063,7 +1013,7 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -1076,7 +1026,7 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 	}
 	err = h.playlistService.TrackShare(c.Request.Context(), playlistID, req.Platform, referrer)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1084,6 +1034,10 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 					Message: "Playlist not found",
 				},
 			})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistValidation) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid share event"}})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
