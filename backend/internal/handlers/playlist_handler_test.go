@@ -182,3 +182,30 @@ func TestPlaylistDiscoveryReadsFailClosed(t *testing.T) {
 		})
 	}
 }
+
+func TestPlaylistCollaboratorInputsFailClosed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	playlistID, collaboratorID := uuid.New(), uuid.New()
+	for _, tc := range []struct {
+		name, method, body string
+		identity           interface{}
+		invoke             func(*PlaylistHandler, *gin.Context)
+		status             int
+	}{
+		{"add identity", http.MethodPost, `{}`, "bad", func(h *PlaylistHandler, c *gin.Context) { h.AddCollaborator(c) }, http.StatusUnauthorized},
+		{"list identity", http.MethodGet, "", "bad", func(h *PlaylistHandler, c *gin.Context) { h.GetCollaborators(c) }, http.StatusUnauthorized},
+		{"remove identity", http.MethodDelete, "", "bad", func(h *PlaylistHandler, c *gin.Context) { h.RemoveCollaborator(c) }, http.StatusUnauthorized},
+		{"update identity", http.MethodPatch, `{}`, "bad", func(h *PlaylistHandler, c *gin.Context) { h.UpdateCollaboratorPermission(c) }, http.StatusUnauthorized},
+		{"add permission", http.MethodPost, `{"user_id":"` + collaboratorID.String() + `","permission":"owner"}`, uuid.New(), func(h *PlaylistHandler, c *gin.Context) { h.AddCollaborator(c) }, http.StatusBadRequest},
+		{"update permission", http.MethodPatch, `{"permission":"owner"}`, uuid.New(), func(h *PlaylistHandler, c *gin.Context) { h.UpdateCollaboratorPermission(c) }, http.StatusBadRequest},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, w := playlistTestContext(tc.method, "/api/v1/playlists/"+playlistID.String()+"/collaborators/"+collaboratorID.String(), []byte(tc.body), tc.identity)
+			c.Params = gin.Params{{Key: "id", Value: playlistID.String()}, {Key: "user_id", Value: collaboratorID.String()}}
+			tc.invoke(NewPlaylistHandler(nil), c)
+			if w.Code != tc.status {
+				t.Fatalf("expected %d, got %d: %s", tc.status, w.Code, w.Body.String())
+			}
+		})
+	}
+}

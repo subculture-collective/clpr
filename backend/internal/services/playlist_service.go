@@ -14,13 +14,14 @@ import (
 )
 
 var (
-	ErrPlaylistValidation         = errors.New("invalid playlist request")
-	ErrPlaylistNotFound           = errors.New("playlist not found")
-	ErrPlaylistPrivate            = errors.New("playlist is private")
-	ErrPlaylistClipNotFound       = repository.ErrPlaylistClipNotFound
-	ErrPlaylistClipLimit          = repository.ErrPlaylistClipLimit
-	ErrPlaylistMembershipMismatch = repository.ErrPlaylistMembershipMismatch
-	ErrPlaylistOfTheDayNotFound   = repository.ErrPlaylistOfTheDayNotFound
+	ErrPlaylistValidation           = errors.New("invalid playlist request")
+	ErrPlaylistNotFound             = errors.New("playlist not found")
+	ErrPlaylistPrivate              = errors.New("playlist is private")
+	ErrPlaylistClipNotFound         = repository.ErrPlaylistClipNotFound
+	ErrPlaylistClipLimit            = repository.ErrPlaylistClipLimit
+	ErrPlaylistMembershipMismatch   = repository.ErrPlaylistMembershipMismatch
+	ErrPlaylistOfTheDayNotFound     = repository.ErrPlaylistOfTheDayNotFound
+	ErrPlaylistCollaboratorNotFound = repository.ErrPlaylistCollaboratorNotFound
 )
 
 type playlistMembershipWriter interface {
@@ -695,7 +696,7 @@ func (s *PlaylistService) AddCollaborator(ctx context.Context, playlistID, userI
 
 	// Cannot add the owner as a collaborator
 	if collaboratorUserID == playlist.UserID {
-		return fmt.Errorf("cannot add playlist owner as a collaborator")
+		return fmt.Errorf("%w: owner cannot be a collaborator", ErrPlaylistValidation)
 	}
 
 	// Create collaborator
@@ -743,7 +744,7 @@ func (s *PlaylistService) GetCollaborators(ctx context.Context, playlistID, user
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check if user has permission to view collaborators
@@ -763,7 +764,7 @@ func (s *PlaylistService) GetCollaborators(ctx context.Context, playlistID, user
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("unauthorized: user does not have permission to view collaborators")
+		return nil, ErrPlaylistPrivate
 	}
 
 	collaborators, err := s.playlistRepo.GetCollaborators(ctx, playlistID)

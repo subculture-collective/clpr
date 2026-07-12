@@ -11053,101 +11053,152 @@ paths:
   /api/v1/playlists/{id}/collaborators:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/playlists/{id}/collaborators
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1PlaylistsIdCollaborators
-      x-clpr-router-derived: true
+        - Playlists
+      summary: List collaborators for a visible playlist
+      description: Public and unlisted collaborators are public; private playlists require owner or collaborator access and otherwise return 404.
+      operationId: listPlaylistCollaborators
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Playlist collaborators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistCollaboratorListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: Optional authentication context is malformed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
       tags:
-        - Generated Route Contracts
-      summary: POST /api/v1/playlists/{id}/collaborators
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistsIdCollaborators
-      x-clpr-router-derived: true
+        - Playlists
+      summary: Add or replace a collaborator permission
+      description: Requires owner or admin collaborator permission. The playlist owner cannot be added. Rate limited to 20 per hour.
+      operationId: addPlaylistCollaborator
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPlaylistCollaboratorRequest'
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+        '201':
+          description: Collaborator permission created or replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/playlists/{id}/collaborators/{user_id}:
-    delete:
-      tags:
-        - Generated Route Contracts
-      summary: DELETE /api/v1/playlists/{id}/collaborators/{user_id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1PlaylistsIdCollaboratorsUserId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     patch:
       tags:
-        - Generated Route Contracts
-      summary: PATCH /api/v1/playlists/{id}/collaborators/{user_id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: patchApiV1PlaylistsIdCollaboratorsUserId
-      x-clpr-router-derived: true
+        - Playlists
+      summary: Update an existing collaborator permission
+      operationId: updatePlaylistCollaborator
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
         - name: user_id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlaylistCollaboratorRequest'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Collaborator permission updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Playlists
+      summary: Remove an existing collaborator
+      operationId: removePlaylistCollaborator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Collaborator removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistMutationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/playlists/{id}/copy:
@@ -16480,6 +16531,102 @@ components:
         referrer:
           type: string
           maxLength: 255
+    PlaylistCollaborator:
+      type: object
+      required:
+        - id
+        - playlist_id
+        - user_id
+        - permission
+        - invited_at
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        playlist_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        permission:
+          type: string
+          enum:
+            - view
+            - edit
+            - admin
+        invited_by:
+          type: string
+          format: uuid
+        invited_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        user:
+          type: object
+          required:
+            - id
+            - username
+            - display_name
+          properties:
+            id:
+              type: string
+              format: uuid
+            username:
+              type: string
+            display_name:
+              type: string
+            avatar_url:
+              type: string
+              format: uri
+    PlaylistCollaboratorListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaylistCollaborator'
+    AddPlaylistCollaboratorRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - user_id
+        - permission
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        permission:
+          type: string
+          enum:
+            - view
+            - edit
+            - admin
+    UpdatePlaylistCollaboratorRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - permission
+      properties:
+        permission:
+          type: string
+          enum:
+            - view
+            - edit
+            - admin
     PlaylistPaginationMeta:
       type: object
       required:

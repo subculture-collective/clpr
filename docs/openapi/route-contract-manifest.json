@@ -2271,29 +2271,29 @@
     "method": "GET",
     "path": "/api/v1/playlists/{id}/collaborators",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetCollaborators-fm",
-    "operation_id": "getApiV1PlaylistsIdCollaborators",
-    "contract_level": "transitional"
+    "operation_id": "listPlaylistCollaborators",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlists/{id}/collaborators",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).AddCollaborator-fm",
-    "operation_id": "postApiV1PlaylistsIdCollaborators",
-    "contract_level": "transitional"
+    "operation_id": "addPlaylistCollaborator",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/playlists/{id}/collaborators/{user_id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).RemoveCollaborator-fm",
-    "operation_id": "deleteApiV1PlaylistsIdCollaboratorsUserId",
-    "contract_level": "transitional"
+    "operation_id": "removePlaylistCollaborator",
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/playlists/{id}/collaborators/{user_id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UpdateCollaboratorPermission-fm",
-    "operation_id": "patchApiV1PlaylistsIdCollaboratorsUserId",
-    "contract_level": "transitional"
+    "operation_id": "updatePlaylistCollaborator",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",

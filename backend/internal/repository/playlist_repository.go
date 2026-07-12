@@ -13,6 +13,7 @@ import (
 )
 
 var ErrPlaylistOfTheDayNotFound = errors.New("playlist of the day not found")
+var ErrPlaylistCollaboratorNotFound = errors.New("playlist collaborator not found")
 
 // PlaylistRepository handles database operations for playlists
 type PlaylistRepository struct {
@@ -1170,7 +1171,7 @@ func (r *PlaylistRepository) UpdateCollaboratorPermission(ctx context.Context, p
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("collaborator not found")
+		return ErrPlaylistCollaboratorNotFound
 	}
 
 	return nil
@@ -1189,7 +1190,7 @@ func (r *PlaylistRepository) RemoveCollaborator(ctx context.Context, playlistID,
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("collaborator not found")
+		return ErrPlaylistCollaboratorNotFound
 	}
 
 	return nil
@@ -1216,7 +1217,7 @@ func (r *PlaylistRepository) GetCollaborators(ctx context.Context, playlistID uu
 	var collaborators []*models.PlaylistCollaborator
 	for rows.Next() {
 		var collab models.PlaylistCollaborator
-		collab.User = &models.User{}
+		collab.User = &models.PlaylistCollaboratorUser{}
 
 		err := rows.Scan(
 			&collab.ID,
@@ -1236,6 +1237,9 @@ func (r *PlaylistRepository) GetCollaborators(ctx context.Context, playlistID uu
 			return nil, fmt.Errorf("failed to scan collaborator: %w", err)
 		}
 		collaborators = append(collaborators, &collab)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed while iterating playlist collaborators: %w", err)
 	}
 
 	return collaborators, nil

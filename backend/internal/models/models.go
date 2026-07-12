@@ -3724,15 +3724,22 @@ const (
 
 // PlaylistCollaborator represents a collaborator on a playlist
 type PlaylistCollaborator struct {
-	ID         uuid.UUID  `json:"id" db:"id"`
-	PlaylistID uuid.UUID  `json:"playlist_id" db:"playlist_id"`
-	UserID     uuid.UUID  `json:"user_id" db:"user_id"`
-	User       *User      `json:"user,omitempty"`
-	Permission string     `json:"permission" db:"permission"` // view, edit, admin
-	InvitedBy  *uuid.UUID `json:"invited_by,omitempty" db:"invited_by"`
-	InvitedAt  time.Time  `json:"invited_at" db:"invited_at"`
-	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
+	ID         uuid.UUID                 `json:"id" db:"id"`
+	PlaylistID uuid.UUID                 `json:"playlist_id" db:"playlist_id"`
+	UserID     uuid.UUID                 `json:"user_id" db:"user_id"`
+	User       *PlaylistCollaboratorUser `json:"user,omitempty"`
+	Permission string                    `json:"permission" db:"permission"` // view, edit, admin
+	InvitedBy  *uuid.UUID                `json:"invited_by,omitempty" db:"invited_by"`
+	InvitedAt  time.Time                 `json:"invited_at" db:"invited_at"`
+	CreatedAt  time.Time                 `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time                 `json:"updated_at" db:"updated_at"`
+}
+
+type PlaylistCollaboratorUser struct {
+	ID          uuid.UUID `json:"id"`
+	Username    string    `json:"username"`
+	DisplayName string    `json:"display_name"`
+	AvatarURL   *string   `json:"avatar_url,omitempty"`
 }
 
 // PlaylistShare represents a share event for analytics
