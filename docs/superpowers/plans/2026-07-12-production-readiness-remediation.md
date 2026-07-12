@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 256 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 252 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 256 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 252 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -531,6 +531,7 @@ Before each commit:
 | 2026-07-12 | R2.4/R3.7 playlist scripts | Partial | `46132c52`; all five user-owned script operations now have route-specific contracts and focused handler/service tests; malformed identity, binder details, empty updates, advanced user strategies, and unbounded filters fail closed; concurrent generation is serialized and playlist metadata, ordered clips, history, prior retirement, and last-run state commit atomically; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 272 to 267 |
 | 2026-07-12 | R2.4/R3.7 core playlists | Partial | `cbbaf23d`; eight owned/public/bookmarked/share-token/core CRUD operations now have route-specific contracts and focused handler/service tests; malformed required and optional identities cannot panic, invalid pagination and empty updates fail closed, binder details are redacted, private reads conceal existence with 404, and list iteration errors propagate; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 267 to 259 |
 | 2026-07-12 | R2.4/R3.7 playlist membership | Partial | `afa29256`; all three clip add/remove/reorder operations now have route-specific contracts and focused handler/service tests; malformed identity, binder details, duplicate IDs, missing clips, and oversized requests fail closed; playlist row locks serialize changes, multi-add and remove/reindex are atomic, and reorder requires the complete unique current membership; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 259 to 256 |
+| 2026-07-12 | R2.4/R3.7 playlist social state | Partial | `136bd126`; all four like/unlike/bookmark/unbookmark operations now have route-specific contracts and focused handler tests; malformed identity cannot panic, private resources are concealed on creation, and insert/delete operations remain idempotent so retries cannot inflate trigger-maintained counters; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 256 to 252 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
