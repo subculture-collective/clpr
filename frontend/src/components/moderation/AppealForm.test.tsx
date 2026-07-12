@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppealForm } from './AppealForm';
 import * as moderationApi from '../../lib/moderation-api';
@@ -17,8 +17,8 @@ describe('AppealForm', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
-  afterEach(() => {
-    vi.runOnlyPendingTimers();
+  afterEach(async () => {
+    await act(async () => vi.runOnlyPendingTimers());
     vi.useRealTimers();
   });
 

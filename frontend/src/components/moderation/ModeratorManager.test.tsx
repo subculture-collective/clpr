@@ -59,9 +59,11 @@ describe('ModeratorManager', () => {
 
             expect(screen.getByText('Moderators')).toBeInTheDocument();
             expect(screen.getByText('Manage moderators for this channel')).toBeInTheDocument();
+            await screen.findByText('John Doe');
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(moderationApi.listChannelModerators).mockReturnValue(new Promise(() => {}));
             render(<ModeratorManager channelId={mockChannelId} />);
 
             expect(screen.getByLabelText('Loading moderators')).toBeInTheDocument();
@@ -91,16 +93,18 @@ describe('ModeratorManager', () => {
             expect(screen.getByText('owner')).toBeInTheDocument();
         });
 
-        it('does not show Add Moderator button when canManage is false', () => {
+        it('does not show Add Moderator button when canManage is false', async () => {
             render(<ModeratorManager channelId={mockChannelId} canManage={false} />);
 
             expect(screen.queryByLabelText('Add new moderator')).not.toBeInTheDocument();
+            await screen.findByText('John Doe');
         });
 
-        it('shows Add Moderator button when canManage is true', () => {
+        it('shows Add Moderator button when canManage is true', async () => {
             render(<ModeratorManager channelId={mockChannelId} canManage={true} />);
 
             expect(screen.getByLabelText('Add new moderator')).toBeInTheDocument();
+            await screen.findByText('John Doe');
         });
 
         it('does not show action buttons when canManage is false', async () => {
