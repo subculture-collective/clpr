@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,6 +42,7 @@ func TestJSONRecoveryMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create router with recovery middleware
 			r := gin.New()
+			r.Use(requestid.New())
 			r.Use(JSONRecoveryMiddleware())
 			r.GET("/test", tt.handler)
 
@@ -72,6 +74,9 @@ func TestJSONRecoveryMiddleware(t *testing.T) {
 				}
 				if _, ok := response["message"]; !ok {
 					t.Error("message field missing in response")
+				}
+				if response["request_id"] == "" {
+					t.Error("request_id field missing in response")
 				}
 
 				// Check content type

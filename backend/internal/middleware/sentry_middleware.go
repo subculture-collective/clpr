@@ -3,10 +3,10 @@ package middleware
 import (
 	"time"
 
+	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
-	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 )
 
 // SentryMiddleware adds Sentry error tracking to Gin
@@ -82,9 +82,13 @@ func RecoverWithSentry() gin.HandlerFunc {
 					}
 				}
 
-				// Return 500 error
+				requestID := requestid.Get(c)
+				// Return the same user-safe contract as the non-Sentry recovery path.
 				c.AbortWithStatusJSON(500, gin.H{
-					"error": "Internal server error",
+					"error":      "Internal server error",
+					"code":       "INTERNAL_ERROR",
+					"message":    "An unexpected error occurred. Please try again later.",
+					"request_id": requestID,
 				})
 			}
 		}()
