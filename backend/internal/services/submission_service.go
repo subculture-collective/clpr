@@ -1217,6 +1217,28 @@ func (s *SubmissionService) createClipFromSubmission(ctx context.Context, submis
 	return clip.ID, nil
 }
 
+func (s *SubmissionService) runApprovedSubmissionSideEffects(ctx context.Context, submission *models.ClipSubmission) {
+	if submission.ClipID == nil {
+		return
+	}
+	if s.voteRepo != nil {
+		if err := s.voteRepo.UpsertVote(ctx, submission.UserID, *submission.ClipID, 1); err != nil {
+			s.logger.Warn("Failed to auto-upvote approved clip", map[string]interface{}{"user_id": submission.UserID, "clip_id": *submission.ClipID, "error": err.Error()})
+		}
+	}
+	if s.cacheService != nil {
+		empty := ""
+		title := utils.StringOrDefault(submission.CustomTitle, submission.Title)
+		creator := utils.StringOrDefault(submission.CreatorName, &empty)
+		broadcasterFallback := utils.StringOrDefault(submission.BroadcasterName, &empty)
+		broadcaster := utils.StringOrDefault(submission.BroadcasterNameOverride, &broadcasterFallback)
+		clip := &models.Clip{ID: *submission.ClipID, TwitchClipID: submission.TwitchClipID, TwitchClipURL: submission.TwitchClipURL, Title: title, CreatorName: creator, CreatorID: submission.CreatorID, BroadcasterName: broadcaster, BroadcasterID: submission.BroadcasterID, GameID: submission.GameID, GameName: submission.GameName, ThumbnailURL: submission.ThumbnailURL, Duration: submission.Duration, ViewCount: submission.ViewCount, IsNSFW: submission.IsNSFW, SubmittedByUserID: &submission.UserID, SubmittedAt: &submission.CreatedAt}
+		if err := s.cacheService.InvalidateOnNewClip(ctx, clip); err != nil {
+			s.logger.Warn("Failed to invalidate feed caches for approved clip", map[string]interface{}{"clip_id": *submission.ClipID, "error": err.Error()})
+		}
+	}
+}
+
 // awardKarma awards karma points to a user
 func (s *SubmissionService) awardKarma(ctx context.Context, userID uuid.UUID, points int) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
@@ -1241,52 +1263,12 @@ func getClipTitle(submission *models.ClipSubmission) string {
 
 // ApproveSubmission approves a submission and creates the clip
 func (s *SubmissionService) ApproveSubmission(ctx context.Context, submissionID, reviewerID uuid.UUID) error {
-	submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+	submissions, err := s.submissionRepo.ModerateAtomically(ctx, []uuid.UUID{submissionID}, reviewerID, true, nil)
 	if err != nil {
-		return fmt.Errorf("failed to get submission: %w", err)
+		return fmt.Errorf("failed to approve submission: %w", err)
 	}
-
-	if submission.Status != "pending" {
-		return fmt.Errorf("submission is not pending")
-	}
-
-	// Create clip
-	clipID, err := s.createClipFromSubmission(ctx, submission)
-	if err != nil {
-		return fmt.Errorf("failed to create clip: %w", err)
-	}
-
-	// Update submission status and clip ID
-	if err := s.submissionRepo.UpdateStatus(ctx, submissionID, "approved", reviewerID, nil); err != nil {
-		return fmt.Errorf("failed to update submission status: %w", err)
-	}
-
-	// Update submission with clip ID
-	if err := s.submissionRepo.UpdateClipID(ctx, submissionID, clipID); err != nil {
-		return fmt.Errorf("failed to update submission clip ID: %w", err)
-	}
-
-	// Create audit log
-	if s.auditLogRepo != nil {
-		auditLog := &models.ModerationAuditLog{
-			ID:          uuid.New(),
-			Action:      "approve",
-			EntityType:  "clip_submission",
-			EntityID:    submissionID,
-			ModeratorID: reviewerID,
-			CreatedAt:   time.Now(),
-		}
-		if err := s.auditLogRepo.Create(ctx, auditLog); err != nil {
-			// Log error but don't fail
-			fmt.Printf("Failed to create audit log: %v\n", err)
-		}
-	}
-
-	// Award karma to submitter
-	if err := s.awardKarma(ctx, submission.UserID, 10); err != nil {
-		// Log error but don't fail
-		fmt.Printf("Failed to award karma: %v\n", err)
-	}
+	submission := submissions[0]
+	s.runApprovedSubmissionSideEffects(ctx, submission)
 
 	// Send notification to submitter
 	if s.notificationService != nil {
@@ -1321,42 +1303,11 @@ func (s *SubmissionService) ApproveSubmission(ctx context.Context, submissionID,
 
 // RejectSubmission rejects a submission
 func (s *SubmissionService) RejectSubmission(ctx context.Context, submissionID, reviewerID uuid.UUID, reason string) error {
-	submission, err := s.submissionRepo.GetByID(ctx, submissionID)
+	submissions, err := s.submissionRepo.ModerateAtomically(ctx, []uuid.UUID{submissionID}, reviewerID, false, &reason)
 	if err != nil {
-		return fmt.Errorf("failed to get submission: %w", err)
+		return fmt.Errorf("failed to reject submission: %w", err)
 	}
-
-	if submission.Status != "pending" {
-		return fmt.Errorf("submission is not pending")
-	}
-
-	// Update submission status
-	if err := s.submissionRepo.UpdateStatus(ctx, submissionID, "rejected", reviewerID, &reason); err != nil {
-		return fmt.Errorf("failed to update submission status: %w", err)
-	}
-
-	// Create audit log
-	if s.auditLogRepo != nil {
-		auditLog := &models.ModerationAuditLog{
-			ID:          uuid.New(),
-			Action:      "reject",
-			EntityType:  "clip_submission",
-			EntityID:    submissionID,
-			ModeratorID: reviewerID,
-			Reason:      &reason,
-			CreatedAt:   time.Now(),
-		}
-		if err := s.auditLogRepo.Create(ctx, auditLog); err != nil {
-			// Log error but don't fail
-			fmt.Printf("Failed to create audit log: %v\n", err)
-		}
-	}
-
-	// Penalize karma
-	if err := s.awardKarma(ctx, submission.UserID, -5); err != nil {
-		// Log error but don't fail
-		fmt.Printf("Failed to penalize karma: %v\n", err)
-	}
+	submission := submissions[0]
 
 	// Send notification to submitter
 	if s.notificationService != nil {
@@ -1392,113 +1343,22 @@ func (s *SubmissionService) RejectSubmission(ctx context.Context, submissionID, 
 
 // BulkApproveSubmissions approves multiple submissions
 func (s *SubmissionService) BulkApproveSubmissions(ctx context.Context, submissionIDs []uuid.UUID, reviewerID uuid.UUID) error {
-	// Get submissions to validate they're all pending
-	submissions, err := s.submissionRepo.GetByIDs(ctx, submissionIDs)
+	submissions, err := s.submissionRepo.ModerateAtomically(ctx, submissionIDs, reviewerID, true, nil)
 	if err != nil {
-		return fmt.Errorf("failed to get submissions: %w", err)
+		return fmt.Errorf("failed to bulk approve submissions: %w", err)
 	}
-
-	// Validate all are pending
 	for _, submission := range submissions {
-		if submission.Status != "pending" {
-			return fmt.Errorf("submission %s is not pending", submission.ID)
-		}
+		s.runApprovedSubmissionSideEffects(ctx, submission)
 	}
-
-	// Create clips for all submissions
-	for _, submission := range submissions {
-		if _, err := s.createClipFromSubmission(ctx, submission); err != nil {
-			return fmt.Errorf("failed to create clip for submission %s: %w", submission.ID, err)
-		}
-	}
-
-	// Bulk update status
-	if err := s.submissionRepo.BulkUpdateStatus(ctx, submissionIDs, "approved", reviewerID, nil); err != nil {
-		return fmt.Errorf("failed to bulk update submission status: %w", err)
-	}
-
-	// Create audit log
-	if s.auditLogRepo != nil {
-		metadata := map[string]interface{}{
-			"submission_count": len(submissionIDs),
-			"submission_ids":   submissionIDs,
-		}
-		auditLog := &models.ModerationAuditLog{
-			ID:          uuid.New(),
-			Action:      "bulk_approve",
-			EntityType:  "clip_submission",
-			EntityID:    uuid.Nil, // Use uuid.Nil as entity ID for bulk actions
-			ModeratorID: reviewerID,
-			Metadata:    metadata,
-			CreatedAt:   time.Now(),
-		}
-		if err := s.auditLogRepo.Create(ctx, auditLog); err != nil {
-			// Log error but don't fail
-			fmt.Printf("Failed to create audit log: %v\n", err)
-		}
-	}
-
-	// Award karma to submitters
-	for _, submission := range submissions {
-		if err := s.awardKarma(ctx, submission.UserID, 10); err != nil {
-			// Log error but don't fail
-			fmt.Printf("Failed to award karma: %v\n", err)
-		}
-	}
-
 	return nil
 }
 
 // BulkRejectSubmissions rejects multiple submissions
 func (s *SubmissionService) BulkRejectSubmissions(ctx context.Context, submissionIDs []uuid.UUID, reviewerID uuid.UUID, reason string) error {
-	// Get submissions to validate they're all pending
-	submissions, err := s.submissionRepo.GetByIDs(ctx, submissionIDs)
+	_, err := s.submissionRepo.ModerateAtomically(ctx, submissionIDs, reviewerID, false, &reason)
 	if err != nil {
-		return fmt.Errorf("failed to get submissions: %w", err)
+		return fmt.Errorf("failed to bulk reject submissions: %w", err)
 	}
-
-	// Validate all are pending
-	for _, submission := range submissions {
-		if submission.Status != "pending" {
-			return fmt.Errorf("submission %s is not pending", submission.ID)
-		}
-	}
-
-	// Bulk update status
-	if err := s.submissionRepo.BulkUpdateStatus(ctx, submissionIDs, "rejected", reviewerID, &reason); err != nil {
-		return fmt.Errorf("failed to bulk update submission status: %w", err)
-	}
-
-	// Create audit log
-	if s.auditLogRepo != nil {
-		metadata := map[string]interface{}{
-			"submission_count": len(submissionIDs),
-			"submission_ids":   submissionIDs,
-		}
-		auditLog := &models.ModerationAuditLog{
-			ID:          uuid.New(),
-			Action:      "bulk_reject",
-			EntityType:  "clip_submission",
-			EntityID:    uuid.Nil, // No single entity; use Nil UUID for bulk actions
-			ModeratorID: reviewerID,
-			Reason:      &reason,
-			Metadata:    metadata,
-			CreatedAt:   time.Now(),
-		}
-		if err := s.auditLogRepo.Create(ctx, auditLog); err != nil {
-			// Log error but don't fail
-			fmt.Printf("Failed to create audit log: %v\n", err)
-		}
-	}
-
-	// Penalize karma
-	for _, submission := range submissions {
-		if err := s.awardKarma(ctx, submission.UserID, -5); err != nil {
-			// Log error but don't fail
-			fmt.Printf("Failed to penalize karma: %v\n", err)
-		}
-	}
-
 	return nil
 }
 

@@ -571,42 +571,42 @@
     "path": "/api/v1/admin/submissions",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).ListPendingSubmissions-fm",
     "operation_id": "getApiV1AdminSubmissions",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/submissions/bulk-approve",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).BulkApproveSubmissions-fm",
     "operation_id": "postApiV1AdminSubmissionsBulkApprove",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/submissions/bulk-reject",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).BulkRejectSubmissions-fm",
     "operation_id": "postApiV1AdminSubmissionsBulkReject",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/submissions/rejection-reasons",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).GetRejectionReasonTemplates-fm",
     "operation_id": "getApiV1AdminSubmissionsRejectionReasons",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/submissions/{id}/approve",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).ApproveSubmission-fm",
     "operation_id": "postApiV1AdminSubmissionsIdApprove",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/submissions/{id}/reject",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).RejectSubmission-fm",
     "operation_id": "postApiV1AdminSubmissionsIdReject",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",

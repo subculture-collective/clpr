@@ -7127,14 +7127,23 @@ paths:
 
   /api/v1/admin/submissions:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/submissions
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Submissions]
+      summary: List pending clip submissions
+      description: Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or administrator MFA.
       operationId: getApiV1AdminSubmissions
-      x-clpr-router-derived: true
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: is_nsfw, in: query, schema: {type: boolean}}
+        - {name: broadcaster, in: query, schema: {type: string, maxLength: 100}}
+        - {name: creator, in: query, schema: {type: string, maxLength: 100}}
+        - {name: tags, in: query, description: Up to 20 unique comma-separated tags of at most 50 characters., schema: {type: string}}
+        - {name: start_date, in: query, schema: {type: string, format: date-time}}
+        - {name: end_date, in: query, schema: {type: string, format: date-time}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Pending submissions
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminSubmissionListResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7144,48 +7153,56 @@ paths:
 
   /api/v1/admin/submissions/bulk-approve:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/submissions/bulk-approve
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Submissions]
+      summary: Approve multiple submissions
+      description: Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminSubmissionsBulkApprove
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BulkSubmissionRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Submissions approved
+          content: {application/json: {schema: {$ref: '#/components/schemas/SubmissionModerationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/submissions/bulk-reject:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/submissions/bulk-reject
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Submissions]
+      summary: Reject multiple submissions
+      description: Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminSubmissionsBulkReject
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BulkRejectSubmissionRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Submissions rejected
+          content: {application/json: {schema: {$ref: '#/components/schemas/SubmissionModerationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/submissions/rejection-reasons:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/submissions/rejection-reasons
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Submissions]
+      summary: List rejection-reason templates
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminSubmissionsRejectionReasons
-      x-clpr-router-derived: true
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Rejection-reason templates
+          content: {application/json: {schema: {$ref: '#/components/schemas/RejectionReasonTemplateResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7195,47 +7212,56 @@ paths:
 
   /api/v1/admin/submissions/{id}/approve:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/submissions/{id}/approve
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Submissions]
+      summary: Approve a pending submission
+      description: Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminSubmissionsIdApprove
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Submission approved
+          content: {application/json: {schema: {$ref: '#/components/schemas/SubmissionModerationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/submissions/{id}/reject:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/submissions/{id}/reject
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Submissions]
+      summary: Reject a pending submission
+      description: Atomically commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminSubmissionsIdReject
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RejectSubmissionRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Submission rejected
+          content: {application/json: {schema: {$ref: '#/components/schemas/SubmissionModerationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -11806,6 +11832,105 @@ components:
           maxItems: 100
           items: {$ref: '#/components/schemas/CommentSuspensionHistoryEntry'}
         count: {type: integer, minimum: 0, maximum: 100}
+
+    AdminSubmissionListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/AdminClipSubmission'}
+        meta:
+          type: object
+          required: [page, limit, total, total_pages]
+          properties:
+            page: {type: integer, minimum: 1}
+            limit: {type: integer, minimum: 1, maximum: 100}
+            total: {type: integer, minimum: 0}
+            total_pages: {type: integer, minimum: 0}
+
+    AdminClipSubmission:
+      type: object
+      required: [id, user_id, twitch_clip_id, twitch_clip_url, is_nsfw, status, created_at, updated_at, view_count]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        clip_id: {type: string, format: uuid}
+        twitch_clip_id: {type: string}
+        twitch_clip_url: {type: string, format: uri}
+        title: {type: string}
+        custom_title: {type: string}
+        broadcaster_name_override: {type: string}
+        tags: {type: array, items: {type: string}}
+        is_nsfw: {type: boolean}
+        submission_reason: {type: string}
+        status: {type: string, enum: [pending, approved, rejected]}
+        rejection_reason: {type: string}
+        reviewed_by: {type: string, format: uuid}
+        reviewed_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        creator_name: {type: string}
+        creator_id: {type: string}
+        broadcaster_name: {type: string}
+        broadcaster_id: {type: string}
+        game_id: {type: string}
+        game_name: {type: string}
+        thumbnail_url: {type: string, format: uri}
+        duration: {type: number, minimum: 0}
+        view_count: {type: integer, minimum: 0}
+        user: {$ref: '#/components/schemas/User'}
+
+    BulkSubmissionRequest:
+      type: object
+      required: [submission_ids]
+      additionalProperties: false
+      properties:
+        submission_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: {type: string, format: uuid}
+
+    BulkRejectSubmissionRequest:
+      type: object
+      required: [submission_ids, reason]
+      additionalProperties: false
+      properties:
+        submission_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: {type: string, format: uuid}
+        reason: {type: string, minLength: 3, maxLength: 1000}
+
+    RejectSubmissionRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: {type: string, minLength: 3, maxLength: 1000}
+
+    SubmissionModerationResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success: {type: boolean, const: true}
+        message: {type: string}
+        count: {type: integer, minimum: 1, maximum: 100}
+
+    RejectionReasonTemplateResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {type: string, minLength: 1, maxLength: 1000}
 
     AccountTypeConversion:
       type: object
