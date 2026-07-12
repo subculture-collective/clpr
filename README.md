@@ -133,10 +133,17 @@ We welcome contributions! Please see our [Contributing Guide](docs/contributing.
 1. Fork the repository
 2. Create a feature branch (\`git checkout -b feature/amazing-feature\`)
 3. Make your changes and add tests
-4. Run linters and tests (\`make test\`)
+4. Run linters and tests (\`task test\`; \`make test\` remains as a compatibility wrapper)
 5. Commit your changes (\`git commit -m 'Add amazing feature'\`)
 6. Push to the branch (\`git push origin feature/amazing-feature\`)
 7. Open a Pull Request
+
+### Task runner
+
+Common development commands live in `Taskfile.yml`. Use `task --list` to see
+organized targets such as `task test:backend`, `task test:frontend`,
+`task docker:build`, and `task migrate:up`. The root `Makefile` is intentionally
+small and delegates legacy `make <target>` calls to the matching Task target.
 
 ## 📝 License
 

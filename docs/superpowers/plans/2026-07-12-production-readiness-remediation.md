@@ -104,7 +104,7 @@ flowchart LR
 
 ### R1.1 — Repair the task-runner contract
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Developer experience
 - **Depends on:** R0.1
 - **Work:** Reconcile `Taskfile.yml` and the compatibility `Makefile` with files that actually exist. Remove unsupported targets or implement their assets. Replace silent `|| true` behavior for required setup with explicit failure. Add a side-effect-free target verifier.
@@ -453,3 +453,4 @@ Before each commit:
 | 2026-07-12 | R0.1 plan and branch | Done | Branch created; `git diff --check` and Markdown lint pass |
 | 2026-07-12 | R0.2-R0.3 feature/key containment | Done | Focused route/key tests, full `go test ./...`, and `go vet ./...` pass |
 | 2026-07-12 | R0.4 truthful release scope | Done | README/inventory corrected; Markdown lint and `git diff --check` pass |
+| 2026-07-12 | R1.1 task-runner contract | Done | `task contract`, list/summary/dry-run checks, Make compatibility help, and whitespace checks pass |
