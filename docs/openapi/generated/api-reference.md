@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T17:04:58.952Z
+generated: 2026-07-12T17:08:30.880Z
 ---
 
 # Clipper API
@@ -18876,6 +18876,216 @@ import (
 
 func main() {
     req, err := http.NewRequest("GET", "/internal/operations/webhooks", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Get typed Redis operational statistics
+
+`GET /internal/operations/cache`
+
+Requires the dedicated operational bearer token. Missing or malformed required Redis counters return degraded 503 instead of a healthy response.
+
+**Tags:** Operations
+
+🔒 **Authentication Required**
+
+#### Responses
+
+**200** - Complete typed cache statistics
+
+**401** - Success
+
+**503** - Redis unavailable or statistics incomplete
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/internal/operations/cache" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/internal/operations/cache', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+try:
+    response = requests.get(
+        '/internal/operations/cache',
+        headers=headers
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/internal/operations/cache", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Check Redis connectivity
+
+`GET /internal/operations/cache/check`
+
+Requires the dedicated operational bearer token.
+
+**Tags:** Operations
+
+🔒 **Authentication Required**
+
+#### Responses
+
+**200** - Redis is accessible
+
+**401** - Success
+
+**503** - Redis is unavailable
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/internal/operations/cache/check" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/internal/operations/cache/check', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+try:
+    response = requests.get(
+        '/internal/operations/cache/check',
+        headers=headers
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/internal/operations/cache/check", nil)
     if err != nil {
         // Handle error
         return
@@ -51542,202 +51752,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("GET", "/health", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /internal/operations/cache
-
-`GET /internal/operations/cache`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/internal/operations/cache"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/internal/operations/cache', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/internal/operations/cache'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/internal/operations/cache", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /internal/operations/cache/check
-
-`GET /internal/operations/cache/check`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/internal/operations/cache/check"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/internal/operations/cache/check', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/internal/operations/cache/check'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/internal/operations/cache/check", nil)
     if err != nil {
         // Handle error
         return

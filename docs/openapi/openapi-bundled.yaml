@@ -5195,6 +5195,54 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /internal/operations/cache:
+    get:
+      tags:
+        - Operations
+      summary: Get typed Redis operational statistics
+      description: Requires the dedicated operational bearer token. Missing or malformed required Redis counters return degraded 503 instead of a healthy response.
+      operationId: getInternalOperationsCache
+      security:
+        - OperationalAuth: []
+      responses:
+        '200':
+          description: Complete typed cache statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CacheStatsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Redis unavailable or statistics incomplete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CacheDegradedResponse'
+  /internal/operations/cache/check:
+    get:
+      tags:
+        - Operations
+      summary: Check Redis connectivity
+      description: Requires the dedicated operational bearer token.
+      operationId: getInternalOperationsCacheCheck
+      security:
+        - OperationalAuth: []
+      responses:
+        '200':
+          description: Redis is accessible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CacheHealthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Redis is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CacheUnhealthyResponse'
   /api/v1/admin/ads/campaigns:
     get:
       tags:
@@ -11780,40 +11828,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /internal/operations/cache:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /internal/operations/cache
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getInternalOperationsCache
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /internal/operations/cache/check:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /internal/operations/cache/check
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getInternalOperationsCacheCheck
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /internal/operations/database:
     get:
       tags:
@@ -13935,6 +13949,107 @@ components:
             - string
             - 'null'
           format: date-time
+    CacheStatsResponse:
+      type: object
+      required:
+        - status
+        - cache
+      properties:
+        status:
+          type: string
+          const: healthy
+        cache:
+          type: object
+          required:
+            - hit_rate
+            - keyspace_hits
+            - keyspace_misses
+            - used_memory
+            - used_memory_peak
+            - total_commands
+            - instantaneous_ops
+            - connected_clients
+            - evicted_keys
+            - expired_keys
+          properties:
+            hit_rate:
+              type: number
+              minimum: 0
+              maximum: 100
+            keyspace_hits:
+              type: integer
+              format: int64
+              minimum: 0
+            keyspace_misses:
+              type: integer
+              format: int64
+              minimum: 0
+            used_memory:
+              type: integer
+              format: int64
+              minimum: 0
+            used_memory_human:
+              type: string
+            used_memory_peak:
+              type: integer
+              format: int64
+              minimum: 0
+            used_memory_peak_human:
+              type: string
+            total_commands:
+              type: integer
+              format: int64
+              minimum: 0
+            instantaneous_ops:
+              type: integer
+              format: int64
+              minimum: 0
+            connected_clients:
+              type: integer
+              format: int64
+              minimum: 0
+            evicted_keys:
+              type: integer
+              format: int64
+              minimum: 0
+            expired_keys:
+              type: integer
+              format: int64
+              minimum: 0
+    CacheDegradedResponse:
+      type: object
+      required:
+        - status
+        - error
+      properties:
+        status:
+          type: string
+          const: degraded
+        error:
+          type: string
+    CacheHealthResponse:
+      type: object
+      required:
+        - status
+        - cache
+      properties:
+        status:
+          type: string
+          const: healthy
+        cache:
+          type: string
+          const: ok
+    CacheUnhealthyResponse:
+      type: object
+      required:
+        - status
+        - error
+      properties:
+        status:
+          type: string
+          const: unhealthy
+        error:
+          type: string
     Appeal:
       type: object
       required:

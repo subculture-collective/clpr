@@ -3308,14 +3308,14 @@
     "path": "/internal/operations/cache",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MonitoringHandler).GetCacheStats-fm",
     "operation_id": "getInternalOperationsCache",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/internal/operations/cache/check",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MonitoringHandler).GetCacheHealth-fm",
     "operation_id": "getInternalOperationsCacheCheck",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
