@@ -16,21 +16,31 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
+const (
+	maxSendGridWebhookBytes  = 1 << 20
+	maxSendGridWebhookEvents = 1000
+)
+
+type emailLogRepository interface {
+	GetEmailLogByMessageID(context.Context, string) (*models.EmailLog, error)
+	UpdateEmailLog(context.Context, *models.EmailLog) error
+	CreateEmailLog(context.Context, *models.EmailLog) error
+}
+
 // SendGridWebhookHandler handles incoming SendGrid webhook events
 type SendGridWebhookHandler struct {
-	emailLogRepo *repository.EmailLogRepository
+	emailLogRepo emailLogRepository
 	publicKey    *ecdsa.PublicKey
 	logger       *utils.StructuredLogger
 }
 
 // NewSendGridWebhookHandler creates a new SendGrid webhook handler
-func NewSendGridWebhookHandler(emailLogRepo *repository.EmailLogRepository, sendgridPublicKey string) *SendGridWebhookHandler {
+func NewSendGridWebhookHandler(emailLogRepo emailLogRepository, sendgridPublicKey string) *SendGridWebhookHandler {
 	logger := utils.GetLogger()
 
 	var publicKey *ecdsa.PublicKey
@@ -72,9 +82,14 @@ func (h *SendGridWebhookHandler) HandleWebhook(c *gin.Context) {
 		return
 	}
 	// Read request body
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxSendGridWebhookBytes)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		h.logger.Error("Failed to read webhook body", err)
+		if _, ok := err.(*http.MaxBytesError); ok {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Webhook payload exceeds 1 MiB"})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
 		return
 	}
@@ -104,15 +119,35 @@ func (h *SendGridWebhookHandler) HandleWebhook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event format"})
 		return
 	}
+	if len(events) == 0 || len(events) > maxSendGridWebhookEvents {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Webhook must contain between 1 and 1000 events"})
+		return
+	}
+	for _, event := range events {
+		if event.Email == "" || event.Event == "" || event.Timestamp <= 0 || event.SgMessageID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Each event requires email, event, timestamp, and sg_message_id"})
+			return
+		}
+	}
 
 	h.logger.Info("Received SendGrid webhook events", map[string]interface{}{"event_count": len(events)})
 
 	// Process each event
+	failedCount := 0
 	for _, event := range events {
 		if err := h.processEvent(c.Request.Context(), &event); err != nil {
 			// Log error but continue processing other events
 			h.logger.Error("Failed to process event", err, map[string]interface{}{"event_type": event.Event})
+			failedCount++
 		}
+	}
+	if failedCount > 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":           "One or more events could not be processed",
+			"processed_count": len(events) - failedCount,
+			"failed_count":    failedCount,
+		})
+		return
 	}
 
 	// Return 200 OK immediately as per requirements
@@ -135,6 +170,7 @@ func (h *SendGridWebhookHandler) processEvent(ctx context.Context, event *models
 		existingLog, err = h.emailLogRepo.GetEmailLogByMessageID(ctx, event.SgMessageID)
 		if err != nil {
 			h.logger.Error("Failed to check for existing email log", err, map[string]interface{}{"message_id": event.SgMessageID})
+			return fmt.Errorf("failed to look up email log: %w", err)
 		}
 	}
 

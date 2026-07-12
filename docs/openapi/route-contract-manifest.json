@@ -3126,7 +3126,7 @@
     "path": "/api/v1/webhooks/sendgrid",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SendGridWebhookHandler).HandleWebhook-fm",
     "operation_id": "postApiV1WebhooksSendgrid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
