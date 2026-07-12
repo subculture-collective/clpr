@@ -286,7 +286,7 @@ function main() {
             }
             
             const outputFile = path.join(OUTPUT_DIR, 'api-baseline.md');
-            fs.writeFileSync(outputFile, md, 'utf8');
+            fs.writeFileSync(outputFile, `${md.trimEnd()}\n`, 'utf8');
             
             console.log(`✅ Baseline changelog generated!`);
             console.log(`📄 Output: ${outputFile}`);
