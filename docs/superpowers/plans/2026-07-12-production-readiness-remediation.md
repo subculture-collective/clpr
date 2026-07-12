@@ -187,7 +187,11 @@ flowchart LR
 
 ### R2.2 — Upgrade vulnerable dependencies and automate policy
 
-- **State:** TODO
+- **State:** IN PROGRESS — npm production audit is clean and mandatory in CI;
+  Go 1.26.5 plus pgx, Goldmark, QUIC, x/net, and OpenTelemetry upgrades reduce
+  reachable `govulncheck` findings from 14 to zero, with the scan mandatory in
+  CI. Gosec baseline remediation, secret scanning, SBOM/image scanning, and
+  signed-artifact policy remain.
 - **Owner role:** Frontend + security
 - **Depends on:** R1.4
 - **Work:** Upgrade Axios, React Router, DOMPurify, form-data/picomatch dependency paths, and any new findings. Install/run `govulncheck`; add `gosec`, secret scanning, dependency review, SBOM, image scanning, and signed-artifact support.
