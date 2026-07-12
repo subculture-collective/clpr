@@ -65,4 +65,15 @@ grep -q '"status":"not ready"' /tmp/clpr-chaos-response.json
 "${compose[@]}" start postgres-test >/dev/null
 wait_for_status 200
 
+# The disposable PostgreSQL service uses tmpfs, so a restart intentionally
+# simulates total node loss. Reapply migrations before the following CI suites.
+for _ in {1..30}; do
+    if "${compose[@]}" exec -T postgres-test pg_isready -U clpr -d clpr_test >/dev/null 2>&1; then
+        migrate -path "$repo_root/backend/migrations" \
+            -database 'postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable' up
+        break
+    fi
+    sleep 1
+done
+
 echo "Dependency chaos contract passed: optional OpenSearch degrades; required Redis/PostgreSQL fail readiness and recover"
