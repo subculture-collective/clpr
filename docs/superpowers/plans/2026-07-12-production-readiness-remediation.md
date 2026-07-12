@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 339 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 336 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 339 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 336 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -504,6 +504,7 @@ Before each commit:
 | 2026-07-12 | R3.7 webhook subscription contracts | Partial | `de79235d`; eight outbound subscription routes now have route-specific contracts and live-handler tests; malformed identity context returns 401 instead of panicking; transitional operations reduced from 353 to 345 |
 | 2026-07-12 | R3.7 watch-history contracts | Partial | `b96969e5`; all three watch-history routes now have route-specific contracts and live-handler tests; zero-second progress is accepted while impossible progress, filters, and limits are rejected; transitional operations reduced from 345 to 342 |
 | 2026-07-12 | R3.7 contact contracts | Partial | `4bee0cca`; all three contact/support routes now have route-specific contracts and live-handler tests; malformed identity no longer panics, invalid filters fail closed, and missing status targets return 404; transitional operations reduced from 342 to 339 |
+| 2026-07-12 | R3.7 report contracts | Partial | `fc233f73`; all three admin report routes now have route-specific contracts, the public submission contract matches live fields, and placeholder or incompatible moderation actions fail closed; transitional operations reduced from 339 to 336 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
