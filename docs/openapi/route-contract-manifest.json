@@ -564,7 +564,7 @@
     "path": "/api/v1/admin/revenue",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RevenueHandler).GetRevenueMetrics-fm",
     "operation_id": "getApiV1AdminRevenue",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

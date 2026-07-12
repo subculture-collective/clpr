@@ -1,20 +1,25 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
+
+type revenueMetricsService interface {
+	GetRevenueMetrics(context.Context) (*models.RevenueMetrics, error)
+}
 
 // RevenueHandler handles revenue reporting HTTP requests
 type RevenueHandler struct {
-	revenueService *services.RevenueService
+	revenueService revenueMetricsService
 }
 
 // NewRevenueHandler creates a new revenue handler
-func NewRevenueHandler(revenueService *services.RevenueService) *RevenueHandler {
+func NewRevenueHandler(revenueService revenueMetricsService) *RevenueHandler {
 	return &RevenueHandler{
 		revenueService: revenueService,
 	}
