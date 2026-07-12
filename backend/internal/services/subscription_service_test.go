@@ -1,11 +1,80 @@
 package services
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/webhook"
 )
+
+type atomicClaimSubscriptionRepo struct {
+	*MockSubscriptionRepository
+	claimed   bool
+	completed int
+	released  int
+}
+
+func (r *atomicClaimSubscriptionRepo) ClaimStripeWebhookEvent(context.Context, string, string, time.Duration) (bool, error) {
+	if r.claimed {
+		return false, nil
+	}
+	r.claimed = true
+	return true, nil
+}
+
+func (r *atomicClaimSubscriptionRepo) CompleteStripeWebhookEvent(context.Context, string) error {
+	r.completed++
+	return nil
+}
+
+func (r *atomicClaimSubscriptionRepo) ReleaseStripeWebhookEvent(context.Context, string) error {
+	r.released++
+	r.claimed = false
+	return nil
+}
+
+func TestStripeWebhookAtomicClaimSkipsDuplicateDelivery(t *testing.T) {
+	const secret = "whsec_atomic_claim_test"
+	payload := []byte(`{"id":"evt_atomic","object":"event","api_version":"2025-02-24.acacia","type":"unsupported.test","data":{"object":{}}}`)
+	signed := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{Payload: payload, Secret: secret})
+	repo := &atomicClaimSubscriptionRepo{MockSubscriptionRepository: new(MockSubscriptionRepository)}
+	service := NewSubscriptionService(repo, nil, nil, &config.Config{Stripe: config.StripeConfig{WebhookSecrets: []string{secret}}}, nil, nil, nil)
+
+	require.NoError(t, service.HandleWebhook(context.Background(), payload, signed.Header))
+	require.NoError(t, service.HandleWebhook(context.Background(), payload, signed.Header))
+	assert.Equal(t, 1, repo.completed)
+	assert.Equal(t, 0, repo.released)
+}
+
+func TestStripeWebhookAtomicClaimReleasesFailedDeliveryForRetry(t *testing.T) {
+	const secret = "whsec_atomic_release_test"
+	payload := []byte(`{"id":"evt_retry","object":"event","api_version":"2025-02-24.acacia","type":"customer.subscription.updated","data":{"object":{}}}`)
+	signed := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{Payload: payload, Secret: secret})
+	repo := &atomicClaimSubscriptionRepo{MockSubscriptionRepository: new(MockSubscriptionRepository)}
+	repo.On("GetByStripeSubscriptionID", context.Background(), "").Return(nil, errors.New("temporary database failure")).Twice()
+	service := NewSubscriptionService(repo, nil, nil, &config.Config{Stripe: config.StripeConfig{WebhookSecrets: []string{secret}}}, nil, nil, nil)
+
+	err := service.HandleWebhook(context.Background(), payload, signed.Header)
+	require.Error(t, err)
+	assert.Equal(t, 0, repo.completed)
+	assert.Equal(t, 1, repo.released)
+	require.Error(t, service.HandleWebhook(context.Background(), payload, signed.Header))
+	assert.Equal(t, 2, repo.released)
+}
+
+func TestStaleSubscriptionEvent(t *testing.T) {
+	sub := &models.Subscription{LastStripeEventCreated: 200}
+	assert.True(t, staleSubscriptionEvent(sub, stripe.Event{Created: 199}))
+	assert.False(t, staleSubscriptionEvent(sub, stripe.Event{Created: 200}))
+	assert.False(t, staleSubscriptionEvent(sub, stripe.Event{Created: 201}))
+}
 
 // TestInvoiceFinalizedNotificationType tests the invoice finalized notification type
 func TestInvoiceFinalizedNotificationType(t *testing.T) {

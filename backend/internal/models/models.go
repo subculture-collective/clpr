@@ -1069,22 +1069,23 @@ type CreatorAudienceInsights struct {
 
 // Subscription represents a user's subscription status
 type Subscription struct {
-	ID                   uuid.UUID  `json:"id" db:"id"`
-	UserID               uuid.UUID  `json:"user_id" db:"user_id"`
-	StripeCustomerID     string     `json:"stripe_customer_id" db:"stripe_customer_id"`
-	StripeSubscriptionID *string    `json:"stripe_subscription_id,omitempty" db:"stripe_subscription_id"`
-	StripePriceID        *string    `json:"stripe_price_id,omitempty" db:"stripe_price_id"`
-	Status               string     `json:"status" db:"status"` // inactive, active, trialing, past_due, canceled, unpaid
-	Tier                 string     `json:"tier" db:"tier"`     // free, pro
-	CurrentPeriodStart   *time.Time `json:"current_period_start,omitempty" db:"current_period_start"`
-	CurrentPeriodEnd     *time.Time `json:"current_period_end,omitempty" db:"current_period_end"`
-	CancelAtPeriodEnd    bool       `json:"cancel_at_period_end" db:"cancel_at_period_end"`
-	CanceledAt           *time.Time `json:"canceled_at,omitempty" db:"canceled_at"`
-	TrialStart           *time.Time `json:"trial_start,omitempty" db:"trial_start"`
-	TrialEnd             *time.Time `json:"trial_end,omitempty" db:"trial_end"`
-	GracePeriodEnd       *time.Time `json:"grace_period_end,omitempty" db:"grace_period_end"`
-	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
+	ID                     uuid.UUID  `json:"id" db:"id"`
+	UserID                 uuid.UUID  `json:"user_id" db:"user_id"`
+	StripeCustomerID       string     `json:"stripe_customer_id" db:"stripe_customer_id"`
+	StripeSubscriptionID   *string    `json:"stripe_subscription_id,omitempty" db:"stripe_subscription_id"`
+	StripePriceID          *string    `json:"stripe_price_id,omitempty" db:"stripe_price_id"`
+	Status                 string     `json:"status" db:"status"` // inactive, active, trialing, past_due, canceled, unpaid
+	Tier                   string     `json:"tier" db:"tier"`     // free, pro
+	CurrentPeriodStart     *time.Time `json:"current_period_start,omitempty" db:"current_period_start"`
+	CurrentPeriodEnd       *time.Time `json:"current_period_end,omitempty" db:"current_period_end"`
+	CancelAtPeriodEnd      bool       `json:"cancel_at_period_end" db:"cancel_at_period_end"`
+	CanceledAt             *time.Time `json:"canceled_at,omitempty" db:"canceled_at"`
+	TrialStart             *time.Time `json:"trial_start,omitempty" db:"trial_start"`
+	TrialEnd               *time.Time `json:"trial_end,omitempty" db:"trial_end"`
+	GracePeriodEnd         *time.Time `json:"grace_period_end,omitempty" db:"grace_period_end"`
+	LastStripeEventCreated int64      `json:"-" db:"last_stripe_event_created"`
+	CreatedAt              time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // SubscriptionEvent represents an event in subscription lifecycle for audit logging
@@ -2151,18 +2152,18 @@ type FollowerUser struct {
 
 // Category represents a high-level content category
 type Category struct {
-	ID          uuid.UUID `json:"id" db:"id"`
-	Name        string    `json:"name" db:"name"`
-	Slug        string    `json:"slug" db:"slug"`
-	Description *string   `json:"description,omitempty" db:"description"`
-	Icon        *string   `json:"icon,omitempty" db:"icon"`
-	Position    int       `json:"position" db:"position"`
-	CategoryType string   `json:"category_type" db:"category_type"`
-	IsFeatured   bool     `json:"is_featured" db:"is_featured"`
-	IsCustom     bool     `json:"is_custom" db:"is_custom"`
+	ID              uuid.UUID  `json:"id" db:"id"`
+	Name            string     `json:"name" db:"name"`
+	Slug            string     `json:"slug" db:"slug"`
+	Description     *string    `json:"description,omitempty" db:"description"`
+	Icon            *string    `json:"icon,omitempty" db:"icon"`
+	Position        int        `json:"position" db:"position"`
+	CategoryType    string     `json:"category_type" db:"category_type"`
+	IsFeatured      bool       `json:"is_featured" db:"is_featured"`
+	IsCustom        bool       `json:"is_custom" db:"is_custom"`
 	CreatedByUserID *uuid.UUID `json:"created_by_user_id,omitempty" db:"created_by_user_id"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // GameEntity represents a full game entity from Twitch (with database fields)
@@ -3495,26 +3496,26 @@ const (
 
 // Playlist represents a user-created collection of clips
 type Playlist struct {
-	ID             uuid.UUID  `json:"id" db:"id"`
-	UserID         uuid.UUID  `json:"user_id" db:"user_id"`
-	Title          string     `json:"title" db:"title"`
-	Description    *string    `json:"description,omitempty" db:"description"`
-	CoverURL       *string    `json:"cover_url,omitempty" db:"cover_url"`
-	Visibility     string     `json:"visibility" db:"visibility"` // private, public, unlisted
-	ShareToken     *string    `json:"share_token,omitempty" db:"share_token"`
-	ViewCount      int        `json:"view_count" db:"view_count"`
-	ShareCount     int        `json:"share_count" db:"share_count"`
-	LikeCount      int        `json:"like_count" db:"like_count"`
-	FollowerCount  int        `json:"follower_count" db:"follower_count"`
-	BookmarkCount  int        `json:"bookmark_count" db:"bookmark_count"`
-	IsCurated      bool       `json:"is_curated" db:"is_curated"`
-	IsFeatured     bool       `json:"is_featured" db:"is_featured"`
-	DisplayOrder   int        `json:"display_order" db:"display_order"`
-	ScriptID       *uuid.UUID `json:"script_id,omitempty" db:"script_id"`
-	Slug           *string    `json:"slug,omitempty" db:"slug"`
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at" db:"updated_at"`
-	DeletedAt      *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+	ID            uuid.UUID  `json:"id" db:"id"`
+	UserID        uuid.UUID  `json:"user_id" db:"user_id"`
+	Title         string     `json:"title" db:"title"`
+	Description   *string    `json:"description,omitempty" db:"description"`
+	CoverURL      *string    `json:"cover_url,omitempty" db:"cover_url"`
+	Visibility    string     `json:"visibility" db:"visibility"` // private, public, unlisted
+	ShareToken    *string    `json:"share_token,omitempty" db:"share_token"`
+	ViewCount     int        `json:"view_count" db:"view_count"`
+	ShareCount    int        `json:"share_count" db:"share_count"`
+	LikeCount     int        `json:"like_count" db:"like_count"`
+	FollowerCount int        `json:"follower_count" db:"follower_count"`
+	BookmarkCount int        `json:"bookmark_count" db:"bookmark_count"`
+	IsCurated     bool       `json:"is_curated" db:"is_curated"`
+	IsFeatured    bool       `json:"is_featured" db:"is_featured"`
+	DisplayOrder  int        `json:"display_order" db:"display_order"`
+	ScriptID      *uuid.UUID `json:"script_id,omitempty" db:"script_id"`
+	Slug          *string    `json:"slug,omitempty" db:"slug"`
+	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at" db:"updated_at"`
+	DeletedAt     *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
 // PlaylistItem represents a clip in a playlist
@@ -3594,24 +3595,24 @@ type GeneratedPlaylist struct {
 // PlaylistListItem represents a playlist in list views with clip count
 type PlaylistListItem struct {
 	Playlist
-	ClipCount           int    `json:"clip_count" db:"clip_count"`
-	HasProcessingClips  bool   `json:"has_processing_clips" db:"has_processing_clips"`
-	IsLiked             bool   `json:"is_liked"`
-	IsBookmarked        bool   `json:"is_bookmarked"`
-	PreviewClips        []Clip `json:"preview_clips,omitempty"`
+	ClipCount          int    `json:"clip_count" db:"clip_count"`
+	HasProcessingClips bool   `json:"has_processing_clips" db:"has_processing_clips"`
+	IsLiked            bool   `json:"is_liked"`
+	IsBookmarked       bool   `json:"is_bookmarked"`
+	PreviewClips       []Clip `json:"preview_clips,omitempty"`
 }
 
 // PlaylistWithClips represents a playlist with its clips
 type PlaylistWithClips struct {
 	Playlist
-	ClipCount    int               `json:"clip_count" db:"clip_count"`
-	Clips        []PlaylistClipRef `json:"clips,omitempty"`
-	PreviewClips []Clip            `json:"preview_clips,omitempty"`
-	IsLiked      bool              `json:"is_liked"`
-	IsFollowed   bool              `json:"is_followed"`
-	IsBookmarked bool              `json:"is_bookmarked"`
-	Creator      *User             `json:"creator,omitempty"`
-	CurrentUserPermission *string  `json:"current_user_permission,omitempty"`
+	ClipCount             int               `json:"clip_count" db:"clip_count"`
+	Clips                 []PlaylistClipRef `json:"clips,omitempty"`
+	PreviewClips          []Clip            `json:"preview_clips,omitempty"`
+	IsLiked               bool              `json:"is_liked"`
+	IsFollowed            bool              `json:"is_followed"`
+	IsBookmarked          bool              `json:"is_bookmarked"`
+	Creator               *User             `json:"creator,omitempty"`
+	CurrentUserPermission *string           `json:"current_user_permission,omitempty"`
 }
 
 // PlaylistClipRef represents a clip reference in a playlist with ordering

@@ -70,6 +70,12 @@ type SubscriptionService struct {
 	emailService   *EmailService
 }
 
+type stripeWebhookEventClaimer interface {
+	ClaimStripeWebhookEvent(context.Context, string, string, time.Duration) (bool, error)
+	CompleteStripeWebhookEvent(context.Context, string) error
+	ReleaseStripeWebhookEvent(context.Context, string) error
+}
+
 // NewSubscriptionService creates a new subscription service
 func NewSubscriptionService(
 	repo repository.SubscriptionRepositoryInterface,
@@ -296,19 +302,35 @@ func (s *SubscriptionService) HandleWebhook(ctx context.Context, payload []byte,
 		"event_type": event.Type,
 	})
 
-	// Check for duplicate event (idempotency)
-	existingEvent, err := s.repo.GetEventByStripeEventID(ctx, event.ID)
-	if err == nil && existingEvent != nil {
-		logWebhookInfo("Duplicate webhook event detected, skipping", map[string]interface{}{
-			"event_id":   event.ID,
-			"event_type": event.Type,
-		})
-		return nil
+	claimer, hasAtomicClaim := s.repo.(stripeWebhookEventClaimer)
+	if hasAtomicClaim {
+		claimed, claimErr := claimer.ClaimStripeWebhookEvent(ctx, event.ID, string(event.Type), 5*time.Minute)
+		if claimErr != nil {
+			return fmt.Errorf("failed to claim webhook event: %w", claimErr)
+		}
+		if !claimed {
+			logWebhookInfo("Duplicate or concurrently processed webhook event detected, skipping", map[string]interface{}{
+				"event_id": event.ID, "event_type": event.Type,
+			})
+			return nil
+		}
+	} else {
+		// Test doubles and auxiliary repositories retain the legacy lookup. The
+		// production repository always implements the atomic cross-instance claim.
+		existingEvent, lookupErr := s.repo.GetEventByStripeEventID(ctx, event.ID)
+		if lookupErr == nil && existingEvent != nil {
+			return nil
+		}
 	}
 
 	// Process the webhook with retry mechanism
 	err = s.processWebhookWithRetry(ctx, event)
 	if err != nil {
+		if hasAtomicClaim {
+			if releaseErr := claimer.ReleaseStripeWebhookEvent(ctx, event.ID); releaseErr != nil {
+				logWebhookError("Failed to release webhook event claim", releaseErr, map[string]interface{}{"event_id": event.ID})
+			}
+		}
 		logWebhookError("Failed to process webhook event", err, map[string]interface{}{
 			"event_id":   event.ID,
 			"event_type": event.Type,
@@ -329,6 +351,11 @@ func (s *SubscriptionService) HandleWebhook(ctx context.Context, payload []byte,
 			}
 		}
 		return err
+	}
+	if hasAtomicClaim {
+		if err := claimer.CompleteStripeWebhookEvent(ctx, event.ID); err != nil {
+			return fmt.Errorf("failed to complete webhook event claim: %w", err)
+		}
 	}
 
 	logWebhookInfo("Successfully processed webhook event", map[string]interface{}{
@@ -388,6 +415,10 @@ func (s *SubscriptionService) processWebhookWithRetry(ctx context.Context, event
 	}
 }
 
+func staleSubscriptionEvent(sub *models.Subscription, event stripe.Event) bool {
+	return event.Created > 0 && sub.LastStripeEventCreated > event.Created
+}
+
 // handleSubscriptionCreated processes subscription.created events
 func (s *SubscriptionService) handleSubscriptionCreated(ctx context.Context, event stripe.Event) error {
 	var stripeSubscription stripe.Subscription
@@ -416,6 +447,10 @@ func (s *SubscriptionService) handleSubscriptionCreated(ctx context.Context, eve
 		})
 		return fmt.Errorf("failed to find subscription by customer ID: %w", err)
 	}
+	if staleSubscriptionEvent(sub, event) {
+		logWebhookWarn("Ignoring out-of-order subscription.created event", map[string]interface{}{"event_id": event.ID})
+		return nil
+	}
 
 	// Determine tier from price ID
 	tier := s.getTierFromPriceID(stripeSubscription.Items.Data[0].Price.ID)
@@ -428,6 +463,7 @@ func (s *SubscriptionService) handleSubscriptionCreated(ctx context.Context, eve
 	sub.CurrentPeriodStart = timePtr(time.Unix(stripeSubscription.CurrentPeriodStart, 0))
 	sub.CurrentPeriodEnd = timePtr(time.Unix(stripeSubscription.CurrentPeriodEnd, 0))
 	sub.CancelAtPeriodEnd = stripeSubscription.CancelAtPeriodEnd
+	sub.LastStripeEventCreated = event.Created
 
 	if stripeSubscription.CanceledAt > 0 {
 		sub.CanceledAt = timePtr(time.Unix(stripeSubscription.CanceledAt, 0))
@@ -507,6 +543,10 @@ func (s *SubscriptionService) handleSubscriptionUpdated(ctx context.Context, eve
 		})
 		return fmt.Errorf("failed to find subscription: %w", err)
 	}
+	if staleSubscriptionEvent(sub, event) {
+		logWebhookWarn("Ignoring out-of-order subscription.updated event", map[string]interface{}{"event_id": event.ID})
+		return nil
+	}
 
 	// Determine tier from price ID
 	tier := s.getTierFromPriceID(stripeSubscription.Items.Data[0].Price.ID)
@@ -518,6 +558,7 @@ func (s *SubscriptionService) handleSubscriptionUpdated(ctx context.Context, eve
 	sub.CurrentPeriodStart = timePtr(time.Unix(stripeSubscription.CurrentPeriodStart, 0))
 	sub.CurrentPeriodEnd = timePtr(time.Unix(stripeSubscription.CurrentPeriodEnd, 0))
 	sub.CancelAtPeriodEnd = stripeSubscription.CancelAtPeriodEnd
+	sub.LastStripeEventCreated = event.Created
 
 	if stripeSubscription.CanceledAt > 0 {
 		sub.CanceledAt = timePtr(time.Unix(stripeSubscription.CanceledAt, 0))
@@ -587,11 +628,16 @@ func (s *SubscriptionService) handleSubscriptionDeleted(ctx context.Context, eve
 		})
 		return fmt.Errorf("failed to find subscription: %w", err)
 	}
+	if staleSubscriptionEvent(sub, event) {
+		logWebhookWarn("Ignoring out-of-order subscription.deleted event", map[string]interface{}{"event_id": event.ID})
+		return nil
+	}
 
 	// Update subscription to canceled/inactive
 	sub.Status = "canceled"
 	sub.Tier = "free"
 	sub.CanceledAt = timePtr(time.Now())
+	sub.LastStripeEventCreated = event.Created
 
 	if err := s.repo.Update(ctx, sub); err != nil {
 		logWebhookError("Failed to update subscription to canceled", err, map[string]interface{}{

@@ -3,12 +3,65 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// ClaimStripeWebhookEvent atomically leases an event for one worker. Expired
+// processing leases may be reclaimed after a crash; completed events cannot.
+func (r *SubscriptionRepository) ClaimStripeWebhookEvent(ctx context.Context, eventID, eventType string, lease time.Duration) (bool, error) {
+	query := `
+		INSERT INTO stripe_webhook_receipts (event_id, event_type, status, locked_until)
+		VALUES ($1, $2, 'processing', NOW() + $3::interval)
+		ON CONFLICT (event_id) DO UPDATE
+		SET event_type = EXCLUDED.event_type,
+		    status = 'processing',
+		    locked_until = EXCLUDED.locked_until,
+		    received_at = NOW(),
+		    completed_at = NULL
+		WHERE stripe_webhook_receipts.status = 'processing'
+		  AND stripe_webhook_receipts.locked_until < NOW()
+		RETURNING event_id
+	`
+	var claimedID string
+	err := r.db.QueryRow(ctx, query, eventID, eventType, lease.String()).Scan(&claimedID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *SubscriptionRepository) CompleteStripeWebhookEvent(ctx context.Context, eventID string) error {
+	result, err := r.db.Exec(ctx, `
+		UPDATE stripe_webhook_receipts
+		SET status = 'completed', completed_at = NOW(), locked_until = NOW()
+		WHERE event_id = $1 AND status = 'processing'
+	`, eventID)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() != 1 {
+		return fmt.Errorf("stripe webhook event %s has no active claim", eventID)
+	}
+	return nil
+}
+
+func (r *SubscriptionRepository) ReleaseStripeWebhookEvent(ctx context.Context, eventID string) error {
+	_, err := r.db.Exec(ctx, `
+		DELETE FROM stripe_webhook_receipts
+		WHERE event_id = $1 AND status = 'processing'
+	`, eventID)
+	return err
+}
 
 // SubscriptionRepository handles database operations for subscriptions
 type SubscriptionRepository struct {
@@ -25,7 +78,7 @@ func (r *SubscriptionRepository) GetByUserID(ctx context.Context, userID uuid.UU
 	query := `
 		SELECT id, user_id, stripe_customer_id, stripe_subscription_id, stripe_price_id,
 		       status, tier, current_period_start, current_period_end, cancel_at_period_end,
-		       canceled_at, trial_start, trial_end, grace_period_end, created_at, updated_at
+		       canceled_at, trial_start, trial_end, grace_period_end, last_stripe_event_created, created_at, updated_at
 		FROM subscriptions
 		WHERE user_id = $1
 	`
@@ -34,7 +87,7 @@ func (r *SubscriptionRepository) GetByUserID(ctx context.Context, userID uuid.UU
 	err := r.db.QueryRow(ctx, query, userID).Scan(
 		&sub.ID, &sub.UserID, &sub.StripeCustomerID, &sub.StripeSubscriptionID, &sub.StripePriceID,
 		&sub.Status, &sub.Tier, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd, &sub.CancelAtPeriodEnd,
-		&sub.CanceledAt, &sub.TrialStart, &sub.TrialEnd, &sub.GracePeriodEnd, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.CanceledAt, &sub.TrialStart, &sub.TrialEnd, &sub.GracePeriodEnd, &sub.LastStripeEventCreated, &sub.CreatedAt, &sub.UpdatedAt,
 	)
 
 	if err != nil {
@@ -49,7 +102,7 @@ func (r *SubscriptionRepository) GetByStripeCustomerID(ctx context.Context, cust
 	query := `
 		SELECT id, user_id, stripe_customer_id, stripe_subscription_id, stripe_price_id,
 		       status, tier, current_period_start, current_period_end, cancel_at_period_end,
-		       canceled_at, trial_start, trial_end, grace_period_end, created_at, updated_at
+		       canceled_at, trial_start, trial_end, grace_period_end, last_stripe_event_created, created_at, updated_at
 		FROM subscriptions
 		WHERE stripe_customer_id = $1
 	`
@@ -58,7 +111,7 @@ func (r *SubscriptionRepository) GetByStripeCustomerID(ctx context.Context, cust
 	err := r.db.QueryRow(ctx, query, customerID).Scan(
 		&sub.ID, &sub.UserID, &sub.StripeCustomerID, &sub.StripeSubscriptionID, &sub.StripePriceID,
 		&sub.Status, &sub.Tier, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd, &sub.CancelAtPeriodEnd,
-		&sub.CanceledAt, &sub.TrialStart, &sub.TrialEnd, &sub.GracePeriodEnd, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.CanceledAt, &sub.TrialStart, &sub.TrialEnd, &sub.GracePeriodEnd, &sub.LastStripeEventCreated, &sub.CreatedAt, &sub.UpdatedAt,
 	)
 
 	if err != nil {
@@ -73,7 +126,7 @@ func (r *SubscriptionRepository) GetByStripeSubscriptionID(ctx context.Context, 
 	query := `
 		SELECT id, user_id, stripe_customer_id, stripe_subscription_id, stripe_price_id,
 		       status, tier, current_period_start, current_period_end, cancel_at_period_end,
-		       canceled_at, trial_start, trial_end, grace_period_end, created_at, updated_at
+		       canceled_at, trial_start, trial_end, grace_period_end, last_stripe_event_created, created_at, updated_at
 		FROM subscriptions
 		WHERE stripe_subscription_id = $1
 	`
@@ -82,7 +135,7 @@ func (r *SubscriptionRepository) GetByStripeSubscriptionID(ctx context.Context, 
 	err := r.db.QueryRow(ctx, query, subscriptionID).Scan(
 		&sub.ID, &sub.UserID, &sub.StripeCustomerID, &sub.StripeSubscriptionID, &sub.StripePriceID,
 		&sub.Status, &sub.Tier, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd, &sub.CancelAtPeriodEnd,
-		&sub.CanceledAt, &sub.TrialStart, &sub.TrialEnd, &sub.GracePeriodEnd, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.CanceledAt, &sub.TrialStart, &sub.TrialEnd, &sub.GracePeriodEnd, &sub.LastStripeEventCreated, &sub.CreatedAt, &sub.UpdatedAt,
 	)
 
 	if err != nil {
@@ -118,7 +171,8 @@ func (r *SubscriptionRepository) Update(ctx context.Context, sub *models.Subscri
 		UPDATE subscriptions
 		SET stripe_subscription_id = $2, stripe_price_id = $3, status = $4, tier = $5,
 		    current_period_start = $6, current_period_end = $7, cancel_at_period_end = $8,
-		    canceled_at = $9, trial_start = $10, trial_end = $11
+		    canceled_at = $9, trial_start = $10, trial_end = $11,
+		    last_stripe_event_created = GREATEST(last_stripe_event_created, $12)
 		WHERE id = $1
 		RETURNING updated_at
 	`
@@ -126,7 +180,7 @@ func (r *SubscriptionRepository) Update(ctx context.Context, sub *models.Subscri
 	err := r.db.QueryRow(ctx, query,
 		sub.ID, sub.StripeSubscriptionID, sub.StripePriceID, sub.Status, sub.Tier,
 		sub.CurrentPeriodStart, sub.CurrentPeriodEnd, sub.CancelAtPeriodEnd,
-		sub.CanceledAt, sub.TrialStart, sub.TrialEnd,
+		sub.CanceledAt, sub.TrialStart, sub.TrialEnd, sub.LastStripeEventCreated,
 	).Scan(&sub.UpdatedAt)
 
 	return err
