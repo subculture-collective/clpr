@@ -27,14 +27,14 @@ describe('KarmaBreakdownChart', () => {
         render(<KarmaBreakdownChart breakdown={mockBreakdown} />);
 
         expect(screen.getByText('500')).toBeInTheDocument();
-        expect(screen.getByText('📹 Clip Karma')).toBeInTheDocument();
+        expect(screen.getByText('Clip Karma')).toBeInTheDocument();
     });
 
     it('displays comment karma amount', () => {
         render(<KarmaBreakdownChart breakdown={mockBreakdown} />);
 
         expect(screen.getByText('734')).toBeInTheDocument();
-        expect(screen.getByText('💬 Comment Karma')).toBeInTheDocument();
+        expect(screen.getByText('Comment Karma')).toBeInTheDocument();
     });
 
     it('calculates percentages correctly', () => {
@@ -103,7 +103,7 @@ describe('KarmaStats', () => {
     it('renders three stat cards', () => {
         const { container } = render(<KarmaStats breakdown={mockBreakdown} />);
 
-        const statCards = container.querySelectorAll('.bg-gray-800');
+        const statCards = container.querySelectorAll('.bg-surface-raised');
         expect(statCards.length).toBe(3);
     });
 });

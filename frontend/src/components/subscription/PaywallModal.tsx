@@ -24,9 +24,13 @@ export interface PaywallModalProps {
   description?: string;
   /** Callback when upgrade is initiated */
   onUpgradeClick?: () => void;
+  /** Checkout price IDs; injectable for tests and runtime configuration. */
+  priceIds?: Partial<Record<'monthly' | 'yearly', string>>;
+  /** Redirect boundary used after checkout creation. */
+  onCheckoutRedirect?: (url: string) => void;
 }
 
-const PRICE_IDS = {
+const DEFAULT_PRICE_IDS = {
   monthly: import.meta.env.VITE_STRIPE_PRO_MONTHLY_PRICE_ID || '',
   yearly: import.meta.env.VITE_STRIPE_PRO_YEARLY_PRICE_ID || '',
 };
@@ -52,6 +56,10 @@ export function PaywallModal({
   title,
   description,
   onUpgradeClick,
+  priceIds,
+  onCheckoutRedirect = url => {
+    window.location.href = url;
+  },
 }: PaywallModalProps): React.ReactElement | null {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -91,7 +99,7 @@ export function PaywallModal({
     setIsLoading(period);
 
     try {
-      const priceId = PRICE_IDS[period];
+      const priceId = priceIds?.[period] ?? DEFAULT_PRICE_IDS[period];
       if (!priceId) {
         setIsLoading(null);
         alert('Subscription not configured. Please contact support.');
@@ -106,7 +114,7 @@ export function PaywallModal({
       });
 
       const response = await createCheckoutSession(priceId);
-      window.location.href = response.session_url;
+      onCheckoutRedirect(response.session_url);
     } catch (error) {
       console.error('Failed to create checkout session:', error);
       alert('Failed to start checkout. Please try again.');
@@ -148,7 +156,7 @@ export function PaywallModal({
   const savingsPercent = calculateSavingsPercent(monthlyPrice, yearlyPrice);
 
   const modalTitle = title || `${featureName ? `${featureName} is` : 'This feature is'} a Pro Feature`;
-  const modalDescription = description || 'Upgrade to clpr Pro to unlock this feature and many more.';
+  const modalDescription = description || 'Upgrade to Clipper Pro to unlock this feature and many more.';
 
   return (
     <>

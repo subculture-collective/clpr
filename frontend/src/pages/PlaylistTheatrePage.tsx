@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -23,22 +23,25 @@ export function PlaylistTheatrePage() {
     const reorderClips = useReorderPlaylistClips();
     const queryClient = useQueryClient();
 
-    const [currentItemId, setCurrentItemId] = useState<string | null>(null);
+    const [selectedItemId, setCurrentItemId] = useState<string | null>(null);
 
     // Convert playlist clips to playlist items format
     const playlistData = playlist?.data;
-    const playlistItems: PlaylistItem[] =
-        playlistData?.clips?.map(clip => ({
-            id: `${playlistData.id}-${clip.id}`, // Composite ID
-            clip,
-            clip_id: clip.id,
-            order: clip.order,
-        })) || [];
-
-    // Set first item as current if none selected
-    if (!currentItemId && playlistItems.length > 0) {
-        setCurrentItemId(playlistItems[0].id);
-    }
+    const playlistItems: PlaylistItem[] = useMemo(
+        () =>
+            playlistData?.clips?.map(clip => ({
+                id: `${playlistData.id}-${clip.id}`, // Composite ID
+                clip,
+                clip_id: clip.id,
+                order: clip.order,
+            })) ?? [],
+        [playlistData],
+    );
+    const currentItemId =
+        selectedItemId &&
+        playlistItems.some(item => item.id === selectedItemId)
+            ? selectedItemId
+            : (playlistItems[0]?.id ?? null);
 
     const handleItemClick = useCallback((item: PlaylistItem) => {
         setCurrentItemId(item.id);

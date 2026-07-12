@@ -6,7 +6,6 @@ import {
     useClearQueue,
     useReorderQueue,
 } from '@/hooks/useQueue';
-import { cn } from '@/lib/utils';
 import {
     Trash2,
     ListPlus,

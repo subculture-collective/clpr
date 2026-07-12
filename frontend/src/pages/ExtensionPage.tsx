@@ -190,7 +190,7 @@ export function ExtensionPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <Button variant="secondary">View on GitHub</Button>
+                                <Button variant="secondary">View source</Button>
                             </a>
                             <Link to="/about">
                                 <Button variant="ghost">About Clipper</Button>

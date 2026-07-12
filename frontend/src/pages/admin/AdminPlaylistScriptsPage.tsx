@@ -16,9 +16,9 @@ import { playlistScriptApi } from '@/lib/playlist-script-api';
 import { STRATEGY_META, SCHEDULE_LABELS } from '@/lib/playlist-script-utils';
 import {
     PlaylistScriptForm,
-    scriptToFormValues,
     type PlaylistScriptFormValues,
 } from '@/components/admin/PlaylistScriptForm';
+import { scriptToFormValues } from '@/lib/playlist-script-form';
 import type {
     PlaylistScript,
     CreatePlaylistScriptRequest,

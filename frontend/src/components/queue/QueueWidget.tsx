@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { VideoPlayer } from '@/components/video';
 import {
@@ -19,7 +19,6 @@ import {
     Maximize2,
     ExternalLink,
     ListMusic,
-    Trash2,
     GripVertical,
     Repeat,
     Shuffle,
@@ -44,7 +43,7 @@ export function QueueWidget() {
     const [loopEnabled, setLoopEnabled] = useState(false);
     const [shuffleEnabled, setShuffleEnabled] = useState(false);
 
-    const queueItems = queue?.items || [];
+    const queueItems = useMemo(() => queue?.items ?? [], [queue?.items]);
 
     // Compute next/prev availability
     const currentIndex = queueItems.findIndex(item => item.id === currentItemId);
@@ -113,14 +112,6 @@ export function QueueWidget() {
     const handleExpand = useCallback(() => {
         setWidgetState('expanded');
     }, []);
-
-    const handleMinimizeToPlayer = useCallback(() => {
-        if (currentClip) {
-            setWidgetState('playing');
-        } else {
-            setWidgetState('collapsed');
-        }
-    }, [currentClip]);
 
     const handleDragStart = useCallback((id: string) => {
         setDraggedId(id);

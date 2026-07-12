@@ -60,7 +60,7 @@ export default defineConfig(({ mode }) => ({
     },
     build: {
         // Only generate source maps when Sentry will upload them (hidden = no sourceMappingURL comment in output)
-        sourcemap: !!process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false,
+        sourcemap: process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false,
         // Eliminate React init races by bundling entry as a single JS file
         // so React and ReactDOM initialize in the same execution unit.
         rollupOptions: {

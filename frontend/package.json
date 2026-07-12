@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:analyze": "vite build --mode analyze",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

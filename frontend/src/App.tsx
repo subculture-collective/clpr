@@ -28,9 +28,6 @@ const ScrapedClipsPage = lazy(() =>
         default: m.ScrapedClipsPage,
     })),
 );
-const LiveFeedPage = lazy(() =>
-    import('./pages/LiveFeedPage').then(m => ({ default: m.LiveFeedPage })),
-);
 const ClipDetailPage = lazy(() =>
     import('./pages/ClipDetailPage').then(m => ({ default: m.ClipDetailPage })),
 );
@@ -365,25 +362,6 @@ const WebhookSubscriptionsPage = lazy(() =>
         default: m.WebhookSubscriptionsPage,
     })),
 );
-const WatchPartyPage = lazy(() =>
-    import('./pages/WatchPartyPage').then(m => ({ default: m.WatchPartyPage })),
-);
-const WatchPartyBrowsePage = lazy(() =>
-    import('./pages/WatchPartyBrowsePage').then(m => ({
-        default: m.WatchPartyBrowsePage,
-    })),
-);
-const WatchPartyCreatePage = lazy(() =>
-    import('./pages/WatchPartyCreatePage').then(m => ({
-        default: m.WatchPartyCreatePage,
-    })),
-);
-const WatchPartySettingsPage = lazy(() =>
-    import('./pages/WatchPartySettingsPage').then(m => ({
-        default: m.WatchPartySettingsPage,
-    })),
-);
-
 // Loading fallback component
 function LoadingFallback() {
     return (

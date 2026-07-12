@@ -71,16 +71,13 @@ export function ForumIndex() {
     setSort(newSort);
   };
 
-  const threads = data?.threads || [];
-
   const sortedThreads = useMemo(() => {
-    if (!threads) return [];
-    return [...threads].sort((a, b) => {
+    return [...(data?.threads ?? [])].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
       return 0;
     });
-  }, [threads]);
+  }, [data?.threads]);
 
   return (
     <>

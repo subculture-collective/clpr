@@ -81,8 +81,9 @@ describe('Button', () => {
       const button = screen.getByRole('button', { name: 'Small' });
       
       expect(button.className).toContain('px-3');
-      expect(button.className).toContain('py-1.5');
-      expect(button.className).toContain('text-sm');
+      expect(button.className).toContain('py-2');
+      expect(button.className).toContain('text-xs');
+      expect(button.className).toContain('min-h-[44px]');
     });
 
     it('applies medium size classes by default', () => {
@@ -90,8 +91,9 @@ describe('Button', () => {
       const button = screen.getByRole('button', { name: 'Medium' });
       
       expect(button.className).toContain('px-4');
-      expect(button.className).toContain('py-2');
-      expect(button.className).toContain('text-base');
+      expect(button.className).toContain('py-2.5');
+      expect(button.className).toContain('text-sm');
+      expect(button.className).toContain('min-h-[44px]');
     });
 
     it('applies large size classes', () => {
@@ -100,7 +102,8 @@ describe('Button', () => {
       
       expect(button.className).toContain('px-6');
       expect(button.className).toContain('py-3');
-      expect(button.className).toContain('text-lg');
+      expect(button.className).toContain('text-base');
+      expect(button.className).toContain('min-h-[48px]');
     });
   });
 

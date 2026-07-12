@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -224,9 +224,18 @@ export function StreamerClipRoomPage() {
 
     const room = data?.room;
     const roomId = room?.id;
-    const approvedItems = data?.approved_items ?? [];
-    const pendingItems = data?.pending_items ?? [];
-    const skippedItems = data?.skipped_items ?? [];
+    const approvedItems = useMemo(
+        () => data?.approved_items ?? [],
+        [data?.approved_items],
+    );
+    const pendingItems = useMemo(
+        () => data?.pending_items ?? [],
+        [data?.pending_items],
+    );
+    const skippedItems = useMemo(
+        () => data?.skipped_items ?? [],
+        [data?.skipped_items],
+    );
 
     const startRoom = useStartStreamerClipRoom();
     const stopRoom = useStopStreamerClipRoom();
@@ -258,24 +267,12 @@ export function StreamerClipRoomPage() {
         [approvedItems],
     );
 
-    const [currentItemId, setCurrentItemId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (theatreItems.length === 0) {
-            if (currentItemId !== null) {
-                setCurrentItemId(null);
-            }
-            return;
-        }
-
-        const currentExists = currentItemId
-            ? theatreItems.some(item => item.id === currentItemId)
-            : false;
-
-        if (!currentExists) {
-            setCurrentItemId(theatreItems[0].id);
-        }
-    }, [currentItemId, theatreItems]);
+    const [selectedItemId, setCurrentItemId] = useState<string | null>(null);
+    const currentItemId =
+        selectedItemId &&
+        theatreItems.some(item => item.id === selectedItemId)
+            ? selectedItemId
+            : (theatreItems[0]?.id ?? null);
 
     const currentItem = useMemo(
         () => theatreItems.find(item => item.id === currentItemId) ?? null,

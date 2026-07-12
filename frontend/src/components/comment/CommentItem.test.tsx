@@ -491,8 +491,8 @@ describe('CommentItem - Collapse/Expand Badge', () => {
 
       // Check for expected classes
       expect(link).toHaveClass('text-sm');
-      expect(link).toHaveClass('text-primary-500');
-      expect(link).toHaveClass('hover:text-primary-600');
+      expect(link).toHaveClass('text-brand');
+      expect(link).toHaveClass('hover:text-brand-hover');
       expect(link).toHaveClass('inline-block');
     });
 

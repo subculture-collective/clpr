@@ -55,27 +55,27 @@ describe('UserRoleBadge', () => {
       render(<UserRoleBadge role="admin" size="sm" />);
       const badge = screen.getByText('Admin');
       
-      expect(badge.className).toContain('px-2');
+      expect(badge.className).toContain('px-1.5');
       expect(badge.className).toContain('py-0.5');
-      expect(badge.className).toContain('text-xs');
+      expect(badge.className).toContain('text-[11px]');
     });
 
     it('renders medium badge correctly', () => {
       render(<UserRoleBadge role="admin" size="md" />);
       const badge = screen.getByText('Admin');
       
-      expect(badge.className).toContain('px-2.5');
-      expect(badge.className).toContain('py-1');
-      expect(badge.className).toContain('text-sm');
+      expect(badge.className).toContain('px-2');
+      expect(badge.className).toContain('py-0.5');
+      expect(badge.className).toContain('text-xs');
     });
 
     it('renders large badge correctly', () => {
       render(<UserRoleBadge role="admin" size="lg" />);
       const badge = screen.getByText('Admin');
       
-      expect(badge.className).toContain('px-3');
-      expect(badge.className).toContain('py-1.5');
-      expect(badge.className).toContain('text-base');
+      expect(badge.className).toContain('px-2.5');
+      expect(badge.className).toContain('py-1');
+      expect(badge.className).toContain('text-sm');
     });
   });
 

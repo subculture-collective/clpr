@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { server } from './mocks/server';
 import 'fake-indexeddb/auto';
+
+// Full-document navigation is intentionally not emulated by jsdom. Components
+// with redirect behavior expose injectable boundaries in unit tests; actual
+// browser navigation belongs to the Playwright smoke suite.
 
 // Node.js 22+ introduces built-in localStorage/sessionStorage globals that require
 // --localstorage-file to function. These broken globals shadow jsdom's working
@@ -43,8 +47,8 @@ if (typeof sessionStorage === 'undefined' || typeof sessionStorage.getItem !== '
     Object.defineProperty(window, 'sessionStorage', { value: ss, writable: true, configurable: true });
 }
 
-// Establish API mocking before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+// Unhandled application requests indicate incomplete test setup and must fail.
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
 // Reset any request handlers that we may add during the tests,
 // so they don't affect other tests
@@ -99,3 +103,33 @@ class MockResizeObserver {
 
 globalThis.ResizeObserver =
     MockResizeObserver as unknown as typeof globalThis.ResizeObserver;
+
+Object.defineProperty(window, 'scrollTo', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(),
+});
+
+const nativeGetComputedStyle = window.getComputedStyle.bind(window);
+Object.defineProperty(window, 'getComputedStyle', {
+    configurable: true,
+    writable: true,
+    // jsdom does not implement pseudo-element styles. Axe only needs the base
+    // computed style for these component tests.
+    value: (element: Element) => nativeGetComputedStyle(element),
+});
+
+// jsdom intentionally omits canvas rendering. Tests only need a stable context
+// boundary for libraries that perform feature detection.
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+    configurable: true,
+    value: () => ({
+        getImageData: () => ({ data: new Uint8ClampedArray(4) }),
+        measureText: () => ({ width: 0 }),
+        save: () => {},
+        restore: () => {},
+        scale: () => {},
+        clearRect: () => {},
+        fillRect: () => {},
+    }),
+});

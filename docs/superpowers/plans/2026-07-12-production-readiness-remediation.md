@@ -122,7 +122,7 @@ flowchart LR
 
 ### R1.3 — Resolve frontend lint errors
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Frontend
 - **Depends on:** R1.2 can run in parallel
 - **Work:** Correct all 13 errors, including set-state-in-effect, impure render, render-time ref access, and invalid Vite configuration. Triage warnings and establish a warning budget that trends to zero.
@@ -131,7 +131,7 @@ flowchart LR
 
 ### R1.4 — Repair frontend unit/component tests
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Frontend + QA
 - **Depends on:** R1.3
 - **Work:** Classify all 69 failures as implementation defects or stale tests. Repair analytics configuration injection, provider-aware render helpers, modal state restoration, accessibility primitives, and order-dependent search-state tests. Replace exact Tailwind assertions with accessible/behavioral outcomes.
@@ -454,3 +454,4 @@ Before each commit:
 | 2026-07-12 | R0.2-R0.3 feature/key containment | Done | Focused route/key tests, full `go test ./...`, and `go vet ./...` pass |
 | 2026-07-12 | R0.4 truthful release scope | Done | README/inventory corrected; Markdown lint and `git diff --check` pass |
 | 2026-07-12 | R1.1 task-runner contract | Done | `task contract`, list/summary/dry-run checks, Make compatibility help, and whitespace checks pass |
+| 2026-07-12 | R1.3-R1.4 frontend quality gate | Done | Lint has zero warnings; build passes; two full runs each pass 1,644/1,644 tests |

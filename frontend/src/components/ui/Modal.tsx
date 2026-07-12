@@ -68,22 +68,21 @@ export const Modal: React.FC<ModalProps> = ({
 
   // Handle escape key
   useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && open) {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
 
-    if (open) {
-      document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
-    }
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
 
-    // Always clean up - restore overflow even if component unmounts while open
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
     };
   }, [open, onClose]);
 
@@ -108,7 +107,7 @@ export const Modal: React.FC<ModalProps> = ({
         ref={modalRef}
         className={cn(
           'relative w-full bg-card rounded-xl shadow-2xl animate-slide-in-down',
-          'flex flex-col max-h-[90vh]',
+          'flex flex-col max-h-[90vh] overscroll-contain',
           sizeClasses[size],
           className
         )}

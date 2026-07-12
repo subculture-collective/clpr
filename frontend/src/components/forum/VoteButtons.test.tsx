@@ -78,7 +78,7 @@ describe('VoteButtons', () => {
     );
 
     const upvoteButton = screen.getByLabelText('Upvote');
-    expect(upvoteButton).toHaveClass('text-green-500');
+    expect(upvoteButton).toHaveClass('text-upvote', 'bg-upvote/10');
   });
 
   it('highlights downvote button when user has downvoted', () => {
@@ -97,7 +97,7 @@ describe('VoteButtons', () => {
     );
 
     const downvoteButton = screen.getByLabelText('Downvote');
-    expect(downvoteButton).toHaveClass('text-red-500');
+    expect(downvoteButton).toHaveClass('text-downvote', 'bg-downvote/10');
   });
 
   it('disables buttons when disabled prop is true', () => {

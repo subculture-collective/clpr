@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
 import { ShareButton } from '@/components/clip/ShareButton';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function ClipDetailPage() {
     const { id } = useParams<{ id: string }>();

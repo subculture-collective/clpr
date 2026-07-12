@@ -117,8 +117,8 @@ describe('CommentTree', () => {
         <CommentTree comments={comments} clipId="clip-1" depth={1} />
       );
 
-      // Nested level should have ml-4, border-l-2, and pl-4 classes
-      const treeContainer = container.querySelector('.ml-4.border-l-2.pl-4');
+      // Nested level should use the expanded indentation and thread border.
+      const treeContainer = container.querySelector('.ml-3.border-l-2.pl-3');
       expect(treeContainer).toBeInTheDocument();
     });
 

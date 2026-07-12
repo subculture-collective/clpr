@@ -193,8 +193,8 @@ describe('StreamerClipRoomPage', () => {
         expect(
             screen.getByRole('heading', { name: 'teststreamer' }),
         ).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /start listener/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /stop listener/i })).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: /start listener/i })).not.toHaveLength(0);
+        expect(screen.getAllByRole('button', { name: /stop listener/i })).not.toHaveLength(0);
         expect(screen.getByText(/pending approvals/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /reject/i })).toBeInTheDocument();
@@ -225,7 +225,9 @@ describe('StreamerClipRoomPage', () => {
         );
 
         expect(screen.getByTestId('playlist-theatre-mode')).toBeInTheDocument();
-        expect(screen.getByText('Approved clip title')).toBeInTheDocument();
+        expect(screen.getByTestId('approved-items')).toHaveTextContent(
+            'Approved clip title',
+        );
         expect(screen.getByText(/approved clips/i)).toBeInTheDocument();
         expect(screen.getByText(/discussion/i)).toBeInTheDocument();
         expect(screen.getByText('Approvals')).toBeInTheDocument();

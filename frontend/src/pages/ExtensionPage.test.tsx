@@ -31,17 +31,17 @@ describe('ExtensionPage', () => {
     it('renders the page heading', () => {
         renderPage();
         expect(
-            screen.getByRole('heading', { name: /clpr browser extension/i }),
+            screen.getByRole('heading', { name: /clipper browser extension/i }),
         ).toBeInTheDocument();
     });
 
     it('renders Chrome and Firefox download links', () => {
         renderPage();
         expect(
-            screen.getByRole('link', { name: /get clpr for chrome/i }),
+            screen.getByRole('link', { name: /get clipper for chrome/i }),
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /get clpr for firefox/i }),
+            screen.getByRole('link', { name: /get clipper for firefox/i }),
         ).toBeInTheDocument();
     });
 
@@ -72,13 +72,15 @@ describe('ExtensionPage', () => {
         expect(rows.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders the open source section with GitHub link', () => {
+    it('renders the open source section with repository link', () => {
         renderPage();
-        const githubLink = screen.getByRole('link', { name: /view on github/i });
-        expect(githubLink).toBeInTheDocument();
-        expect(githubLink).toHaveAttribute(
+        const repositoryLink = screen.getByRole('link', {
+            name: /view source/i,
+        });
+        expect(repositoryLink).toBeInTheDocument();
+        expect(repositoryLink).toHaveAttribute(
             'href',
-            expect.stringContaining('github.com'),
+            expect.stringContaining('git.subcult.tv'),
         );
     });
 });

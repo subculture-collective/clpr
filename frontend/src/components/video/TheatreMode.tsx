@@ -5,7 +5,7 @@ import {
     useQualityPreference,
     useKeyboardControls,
 } from '@/hooks';
-import { usePlaybackControl } from '@/context/PlaybackContext';
+import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import type { VideoQuality } from '@/lib/adaptive-bitrate';
 import { HlsPlayer } from './HlsPlayer';
 import { QualitySelector } from './QualitySelector';

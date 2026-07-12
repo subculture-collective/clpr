@@ -1,4 +1,4 @@
-import { Badge, Button } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import { useAuth, useIsAuthenticated, useToast } from '@/hooks';
 import {
     usePlaylist,
@@ -24,7 +24,7 @@ import {
 import { cn, formatRelativeTimestamp } from '@/lib/utils';
 import { PlaylistTheatreMode } from './PlaylistTheatreMode';
 import type { PlaylistItem } from './PlaylistTheatreMode';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ShareButton } from '../clip/ShareButton';
 import { CollaboratorManager } from './CollaboratorManager';
@@ -45,11 +45,12 @@ export function PlaylistDetail() {
     const updatePlaylist = useUpdatePlaylist();
     const copyPlaylist = useCopyPlaylist();
     const toast = useToast();
-    const [currentItemId, setCurrentItemId] = useState<string | null>(null);
+    const [selectedItemId, setCurrentItemId] = useState<string | null>(null);
     const [showCopyModal, setShowCopyModal] = useState(false);
-    const [visibility, setVisibility] = useState<
-        'private' | 'public' | 'unlisted'
-    >('private');
+    const [visibilityOverride, setVisibilityOverride] = useState<{
+        playlistId: string;
+        value: 'private' | 'public' | 'unlisted';
+    } | null>(null);
     const queryClient = useQueryClient();
 
     // Convert playlist clips to playlist items format
@@ -63,18 +64,15 @@ export function PlaylistDetail() {
         }));
     }, [data]);
 
-    // Set first item as current if none selected
-    useEffect(() => {
-        if (!currentItemId && playlistItems.length > 0) {
-            setCurrentItemId(playlistItems[0].id);
-        }
-    }, [currentItemId, playlistItems]);
-
-    useEffect(() => {
-        if (data?.data?.visibility) {
-            setVisibility(data.data.visibility);
-        }
-    }, [data?.data?.visibility]);
+    const currentItemId =
+        selectedItemId &&
+        playlistItems.some(item => item.id === selectedItemId)
+            ? selectedItemId
+            : (playlistItems[0]?.id ?? null);
+    const visibility =
+        visibilityOverride?.playlistId === id
+            ? visibilityOverride.value
+            : (data?.data?.visibility ?? 'private');
 
     const handleItemClick = useCallback((item: PlaylistItem) => {
         setCurrentItemId(item.id);
@@ -175,29 +173,25 @@ export function PlaylistDetail() {
         queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     }, [id, queryClient]);
 
-    const copyInitialValues = useMemo(
-        () =>
-            data?.data ?
-                {
-                    title: `Copy of ${data.data.title}`,
-                    description: data.data.description || '',
-                    cover_url: data.data.cover_url || '',
-                    visibility: 'private' as const,
-                }
-            :   {
-                    title: '',
-                    description: '',
-                    cover_url: '',
-                    visibility: 'private' as const,
-                },
-        [data?.data?.title, data?.data?.description, data?.data?.cover_url],
-    );
+    const copyInitialValues = data?.data
+        ? {
+              title: `Copy of ${data.data.title}`,
+              description: data.data.description || '',
+              cover_url: data.data.cover_url || '',
+              visibility: 'private' as const,
+          }
+        : {
+              title: '',
+              description: '',
+              cover_url: '',
+              visibility: 'private' as const,
+          };
 
     const handleVisibilityChange = useCallback(
         async (nextVisibility: 'private' | 'public' | 'unlisted') => {
             if (!id) return;
             const previous = visibility;
-            setVisibility(nextVisibility);
+            setVisibilityOverride({ playlistId: id, value: nextVisibility });
             try {
                 await updatePlaylist.mutateAsync({
                     id,
@@ -205,7 +199,7 @@ export function PlaylistDetail() {
                 });
                 toast.success('Visibility updated');
             } catch {
-                setVisibility(previous);
+                setVisibilityOverride({ playlistId: id, value: previous });
                 toast.error('Failed to update visibility');
             }
         },

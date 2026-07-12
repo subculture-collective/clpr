@@ -11,7 +11,6 @@ export function AuthCallbackPage() {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const hasProcessedRef = useRef(false);
 
@@ -49,9 +48,6 @@ export function AuthCallbackPage() {
       // Check if we have PKCE parameters (code and state)
       const code = searchParams.get('code');
       const state = searchParams.get('state');
-
-      // Only show processing state when we're actually processing
-      setIsProcessing(true);
 
       try {
         // If we have code and state, try PKCE flow

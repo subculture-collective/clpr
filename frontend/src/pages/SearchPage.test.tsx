@@ -7,6 +7,10 @@ import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { searchApi } from '../lib/search-api';
 import { ToastProvider } from '../context/ToastContext';
 
+vi.mock('../context/AuthContext', () => ({
+    useAuth: () => ({ isAuthenticated: false }),
+}));
+
 vi.mock('../lib/search-api', () => {
     const search = vi.fn();
     return {

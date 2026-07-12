@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback, useId } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import { useVolumePreference } from '@/hooks';
-import { usePlaybackControl } from '@/context/PlaybackContext';
+import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { MutedIcon } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +89,8 @@ export function VideoPlayer({
     onPause,
 }: VideoPlayerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const embedIdRef = useRef(`twitch-embed-${clipId}-${Date.now()}`);
+    const reactId = useId();
+    const embedId = `twitch-embed-${clipId}-${reactId.replaceAll(':', '')}`;
     const embedRef = useRef<TwitchEmbed | null>(null);
     const [useJsEmbed, setUseJsEmbed] = useState(false);
     const [showMutedIndicator, setShowMutedIndicator] = useState(true);
@@ -133,12 +134,12 @@ export function VideoPlayer({
     useEffect(() => {
         if (!useJsEmbed || !twitchClipId || !window.Twitch?.Embed) return;
 
+        let active = true;
         // Clear container
         const container = containerRef.current;
         if (!container) return;
 
         const embedDiv = document.createElement('div');
-        const embedId = embedIdRef.current;
         embedDiv.id = embedId;
         embedDiv.style.width = '100%';
         embedDiv.style.height = '100%';
@@ -176,15 +177,18 @@ export function VideoPlayer({
             });
         } catch {
             // If JS embed fails, fall back to iframe
-            setUseJsEmbed(false);
+            queueMicrotask(() => {
+                if (active) setUseJsEmbed(false);
+            });
         }
 
         return () => {
+            active = false;
             embedRef.current = null;
             const el = document.getElementById(embedId);
             if (el) el.remove();
         };
-    }, [useJsEmbed, twitchClipId, embedMuted]);
+    }, [embedId, useJsEmbed, twitchClipId, embedMuted, requestPlayback]);
 
     // Auto-hide muted indicator after 3 seconds
     useEffect(() => {
