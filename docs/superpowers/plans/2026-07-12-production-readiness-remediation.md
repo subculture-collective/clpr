@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 284 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — all 480 registered launch routes have matching operations and schema-bearing responses (485 total documented operations, including spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 283 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 284 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 283 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -526,6 +526,7 @@ Before each commit:
 | 2026-07-12 | R2.4/R3.7 discovery membership | Partial | `52ad72c4`; all four administrative discovery-list membership/reorder operations now have route-specific contracts and live-handler tests; list locks serialize concurrent changes, add/remove plus timestamps are atomic, missing/duplicate resources have explicit 404/409 semantics, and reorder requires the complete unique current membership set; transitional operations reduced from 291 to 287 |
 | 2026-07-12 | R3.7 broadcaster ranking refresh | Partial | `44d8f22d`; the admin ranking refresh now has a dedicated contract and live-handler tests, executes under a 30-second deadline, and distinguishes dependency failure from 504 timeout; transitional operations reduced from 287 to 286 |
 | 2026-07-12 | R2.4/R3.7 public reputation | Partial | `943e7660`; public badge definitions and both leaderboard modes now have route-specific contracts and live-handler/service tests; leaderboard and karma-history pagination fail closed before dependency work, badge ordering is stable, unsupported content negotiation returns 406, and lint warnings remain at baseline; transitional operations reduced from 286 to 284 |
+| 2026-07-12 | R3.6/R3.7 community-ban creation | Partial | `9d325f8a`; membership removal, ban creation, and moderation audit insertion now commit atomically; the handler cannot panic on malformed identity, bounds and redacts invalid input, returns the created ban directly with 201, and has a route-specific contract; full Go test/vet and the 85-warning OpenAPI baseline pass; transitional operations reduced from 284 to 283 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
