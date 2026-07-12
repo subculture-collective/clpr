@@ -70,6 +70,8 @@ tags:
     description: Content reporting
   - name: Moderation
     description: Moderation and appeals
+  - name: Notifications
+    description: In-app, email, and push notification management
   - name: Users
     description: User profiles and social features
   - name: Creators
@@ -90,8 +92,6 @@ tags:
     description: Content feeds
   - name: Recommendations
     description: Personalized recommendations
-  - name: Notifications
-    description: User notifications
   - name: Verification
     description: Creator verification
   - name: Subscriptions
@@ -10086,14 +10086,40 @@ paths:
   /api/v1/notifications:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/notifications
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1Notifications
-      x-clpr-router-derived: true
+        - Notifications
+      summary: List notifications for the authenticated user
+      operationId: listNotifications
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum:
+              - all
+              - unread
+              - read
+            default: all
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000000
+            default: 1
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Paginated notifications and unread count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10103,16 +10129,16 @@ paths:
   /api/v1/notifications/count:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/notifications/count
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1NotificationsCount
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Get the authenticated user's unread notification count
+      operationId: getUnreadNotificationCount
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationCountResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -10120,30 +10146,40 @@ paths:
   /api/v1/notifications/preferences:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/notifications/preferences
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1NotificationsPreferences
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Get notification preferences
+      operationId: getNotificationPreferences
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Current notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
       tags:
-        - Generated Route Contracts
-      summary: PUT /api/v1/notifications/preferences
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1NotificationsPreferences
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Replace notification preferences
+      operationId: updateNotificationPreferences
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencesUpdate'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10153,16 +10189,18 @@ paths:
   /api/v1/notifications/preferences/reset:
     post:
       tags:
-        - Generated Route Contracts
-      summary: POST /api/v1/notifications/preferences/reset
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1NotificationsPreferencesReset
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Reset notification preferences to defaults
+      operationId: resetNotificationPreferences
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Preferences reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesMutationResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -10170,16 +10208,18 @@ paths:
   /api/v1/notifications/read-all:
     put:
       tags:
-        - Generated Route Contracts
-      summary: PUT /api/v1/notifications/read-all
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1NotificationsReadAll
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Mark every notification as read
+      operationId: markAllNotificationsRead
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMutationResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -10187,14 +10227,24 @@ paths:
   /api/v1/notifications/register:
     post:
       tags:
-        - Generated Route Contracts
-      summary: POST /api/v1/notifications/register
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1NotificationsRegister
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Register a push-notification device token
+      operationId: registerNotificationDevice
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterNotificationDeviceRequest'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10204,14 +10254,24 @@ paths:
   /api/v1/notifications/unregister:
     delete:
       tags:
-        - Generated Route Contracts
-      summary: DELETE /api/v1/notifications/unregister
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1NotificationsUnregister
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Unregister the matching push-notification device token
+      operationId: unregisterNotificationDevice
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnregisterNotificationDeviceRequest'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Matching device token unregistered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10221,64 +10281,86 @@ paths:
   /api/v1/notifications/unsubscribe:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/notifications/unsubscribe
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1NotificationsUnsubscribe
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Consume a one-time email unsubscribe token
+      description: Atomically updates the corresponding email preference and consumes an unused, unexpired token.
+      operationId: unsubscribeNotificationEmail
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 256
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Unsubscribe confirmation page
+          content:
+            text/html:
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/notifications/{id}:
     delete:
       tags:
-        - Generated Route Contracts
-      summary: DELETE /api/v1/notifications/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1NotificationsId
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Delete an owned notification
+      operationId: deleteNotification
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Notification deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/notifications/{id}/read:
     put:
       tags:
-        - Generated Route Contracts
-      summary: PUT /api/v1/notifications/{id}/read
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1NotificationsIdRead
-      x-clpr-router-derived: true
+        - Notifications
+      summary: Mark an owned notification as read
+      operationId: markNotificationRead
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMutationResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/playlist-scripts:
@@ -15504,6 +15586,219 @@ components:
         bannedAt:
           type: string
           format: date-time
+    Notification:
+      type: object
+      required:
+        - id
+        - user_id
+        - type
+        - title
+        - message
+        - is_read
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        link:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        source_user_id:
+          type: string
+          format: uuid
+        source_content_id:
+          type: string
+          format: uuid
+        source_content_type:
+          type: string
+        source_username:
+          type: string
+        source_display_name:
+          type: string
+        source_avatar_url:
+          type: string
+          format: uri
+    NotificationListResponse:
+      type: object
+      required:
+        - notifications
+        - unread_count
+        - page
+        - limit
+        - has_more
+      properties:
+        notifications:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Notification'
+        unread_count:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        has_more:
+          type: boolean
+    NotificationCountResponse:
+      type: object
+      required:
+        - unread_count
+      properties:
+        unread_count:
+          type: integer
+          minimum: 0
+    NotificationPreferencesUpdate:
+      type: object
+      required:
+        - email_digest
+      properties:
+        in_app_enabled:
+          type: boolean
+        email_enabled:
+          type: boolean
+        email_digest:
+          type: string
+          enum:
+            - immediate
+            - daily
+            - weekly
+            - never
+        notify_login_new_device:
+          type: boolean
+        notify_failed_login:
+          type: boolean
+        notify_password_changed:
+          type: boolean
+        notify_email_changed:
+          type: boolean
+        notify_replies:
+          type: boolean
+        notify_mentions:
+          type: boolean
+        notify_submission_approved:
+          type: boolean
+        notify_submission_rejected:
+          type: boolean
+        notify_content_trending:
+          type: boolean
+        notify_content_flagged:
+          type: boolean
+        notify_votes:
+          type: boolean
+        notify_favorited_clip_comment:
+          type: boolean
+        notify_moderator_message:
+          type: boolean
+        notify_user_followed:
+          type: boolean
+        notify_comment_on_content:
+          type: boolean
+        notify_discussion_reply:
+          type: boolean
+        notify_badges:
+          type: boolean
+        notify_rank_up:
+          type: boolean
+        notify_moderation:
+          type: boolean
+        notify_clip_approved:
+          type: boolean
+        notify_clip_rejected:
+          type: boolean
+        notify_clip_comments:
+          type: boolean
+        notify_clip_threshold:
+          type: boolean
+        notify_broadcaster_live:
+          type: boolean
+        notify_stream_live:
+          type: boolean
+        notify_marketing:
+          type: boolean
+        notify_policy_updates:
+          type: boolean
+        notify_platform_announcements:
+          type: boolean
+    NotificationPreferences:
+      allOf:
+        - $ref: '#/components/schemas/NotificationPreferencesUpdate'
+        - type: object
+          required:
+            - user_id
+            - updated_at
+          properties:
+            user_id:
+              type: string
+              format: uuid
+            updated_at:
+              type: string
+              format: date-time
+    NotificationPreferencesMutationResponse:
+      type: object
+      required:
+        - message
+        - preferences
+      properties:
+        message:
+          type: string
+        preferences:
+          $ref: '#/components/schemas/NotificationPreferences'
+    NotificationMutationResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+    RegisterNotificationDeviceRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - device_token
+        - device_platform
+      properties:
+        device_token:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        device_platform:
+          type: string
+          enum:
+            - ios
+            - android
+            - web
+    UnregisterNotificationDeviceRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - device_token
+      properties:
+        device_token:
+          type: string
+          minLength: 1
+          maxLength: 4096
     Appeal:
       type: object
       required:

@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 var (
@@ -631,14 +631,14 @@ func (r *UserRepository) UpdateDeviceToken(ctx context.Context, userID uuid.UUID
 }
 
 // ClearDeviceToken clears a user's device token
-func (r *UserRepository) ClearDeviceToken(ctx context.Context, userID uuid.UUID) error {
+func (r *UserRepository) ClearDeviceToken(ctx context.Context, userID uuid.UUID, deviceToken string) error {
 	query := `
 		UPDATE users
 		SET device_token = NULL, device_platform = NULL, updated_at = NOW()
-		WHERE id = $1
+		WHERE id = $1 AND device_token = $2
 	`
 
-	_, err := r.db.Exec(ctx, query, userID)
+	_, err := r.db.Exec(ctx, query, userID, deviceToken)
 	return err
 }
 

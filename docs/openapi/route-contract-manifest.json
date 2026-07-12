@@ -2047,78 +2047,78 @@
     "method": "GET",
     "path": "/api/v1/notifications",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).ListNotifications-fm",
-    "operation_id": "getApiV1Notifications",
-    "contract_level": "transitional"
+    "operation_id": "listNotifications",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/notifications/count",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).GetUnreadCount-fm",
-    "operation_id": "getApiV1NotificationsCount",
-    "contract_level": "transitional"
+    "operation_id": "getUnreadNotificationCount",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/notifications/preferences",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).GetPreferences-fm",
-    "operation_id": "getApiV1NotificationsPreferences",
-    "contract_level": "transitional"
+    "operation_id": "getNotificationPreferences",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/notifications/preferences",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).UpdatePreferences-fm",
-    "operation_id": "putApiV1NotificationsPreferences",
-    "contract_level": "transitional"
+    "operation_id": "updateNotificationPreferences",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/notifications/preferences/reset",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).ResetPreferences-fm",
-    "operation_id": "postApiV1NotificationsPreferencesReset",
-    "contract_level": "transitional"
+    "operation_id": "resetNotificationPreferences",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/notifications/read-all",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).MarkAllAsRead-fm",
-    "operation_id": "putApiV1NotificationsReadAll",
-    "contract_level": "transitional"
+    "operation_id": "markAllNotificationsRead",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/notifications/register",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).RegisterDeviceToken-fm",
-    "operation_id": "postApiV1NotificationsRegister",
-    "contract_level": "transitional"
+    "operation_id": "registerNotificationDevice",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/notifications/unregister",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).UnregisterDeviceToken-fm",
-    "operation_id": "deleteApiV1NotificationsUnregister",
-    "contract_level": "transitional"
+    "operation_id": "unregisterNotificationDevice",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/notifications/unsubscribe",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).Unsubscribe-fm",
-    "operation_id": "getApiV1NotificationsUnsubscribe",
-    "contract_level": "transitional"
+    "operation_id": "unsubscribeNotificationEmail",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/notifications/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).DeleteNotification-fm",
-    "operation_id": "deleteApiV1NotificationsId",
-    "contract_level": "transitional"
+    "operation_id": "deleteNotification",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/notifications/{id}/read",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).MarkAsRead-fm",
-    "operation_id": "putApiV1NotificationsIdRead",
-    "contract_level": "transitional"
+    "operation_id": "markNotificationRead",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

@@ -2,14 +2,17 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var ErrNotificationNotFound = errors.New("notification not found")
 
 // NotificationRepository handles database operations for notifications
 type NotificationRepository struct {
@@ -90,7 +93,7 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("notification not found")
+			return nil, ErrNotificationNotFound
 		}
 		return nil, fmt.Errorf("failed to get notification: %w", err)
 	}
@@ -155,6 +158,9 @@ func (r *NotificationRepository) ListByUserID(ctx context.Context, userID uuid.U
 		}
 		notifications = append(notifications, notification)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed while iterating notifications: %w", err)
+	}
 
 	return notifications, nil
 }
@@ -190,7 +196,7 @@ func (r *NotificationRepository) MarkAsRead(ctx context.Context, id, userID uuid
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("notification not found or not owned by user")
+		return ErrNotificationNotFound
 	}
 
 	return nil
@@ -225,7 +231,7 @@ func (r *NotificationRepository) Delete(ctx context.Context, id, userID uuid.UUI
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("notification not found or not owned by user")
+		return ErrNotificationNotFound
 	}
 
 	return nil
@@ -257,6 +263,7 @@ func (r *NotificationRepository) GetPreferences(ctx context.Context, userID uuid
 			notify_moderator_message, notify_user_followed, notify_comment_on_content, notify_discussion_reply,
 			notify_badges, notify_rank_up, notify_moderation,
 			notify_clip_approved, notify_clip_rejected, notify_clip_comments, notify_clip_threshold,
+			notify_broadcaster_live, notify_stream_live,
 			notify_marketing, notify_policy_updates, notify_platform_announcements,
 			updated_at
 		FROM notification_preferences
@@ -292,6 +299,8 @@ func (r *NotificationRepository) GetPreferences(ctx context.Context, userID uuid
 		&prefs.NotifyClipRejected,
 		&prefs.NotifyClipComments,
 		&prefs.NotifyClipThreshold,
+		&prefs.NotifyBroadcasterLive,
+		&prefs.NotifyStreamLive,
 		&prefs.NotifyMarketing,
 		&prefs.NotifyPolicyUpdates,
 		&prefs.NotifyPlatformAnnouncements,
@@ -323,6 +332,7 @@ func (r *NotificationRepository) CreateDefaultPreferences(ctx context.Context, u
 			notify_moderator_message, notify_user_followed, notify_comment_on_content, notify_discussion_reply,
 			notify_badges, notify_rank_up, notify_moderation,
 			notify_clip_approved, notify_clip_rejected, notify_clip_comments, notify_clip_threshold,
+			notify_broadcaster_live, notify_stream_live,
 			notify_marketing, notify_policy_updates, notify_platform_announcements,
 			updated_at
 	`
@@ -356,6 +366,8 @@ func (r *NotificationRepository) CreateDefaultPreferences(ctx context.Context, u
 		&prefs.NotifyClipRejected,
 		&prefs.NotifyClipComments,
 		&prefs.NotifyClipThreshold,
+		&prefs.NotifyBroadcasterLive,
+		&prefs.NotifyStreamLive,
 		&prefs.NotifyMarketing,
 		&prefs.NotifyPolicyUpdates,
 		&prefs.NotifyPlatformAnnouncements,
@@ -400,9 +412,11 @@ func (r *NotificationRepository) UpdatePreferences(ctx context.Context, prefs *m
 			notify_clip_rejected = $25,
 			notify_clip_comments = $26,
 			notify_clip_threshold = $27,
-			notify_marketing = $28,
-			notify_policy_updates = $29,
-			notify_platform_announcements = $30,
+			notify_broadcaster_live = $28,
+			notify_stream_live = $29,
+			notify_marketing = $30,
+			notify_policy_updates = $31,
+			notify_platform_announcements = $32,
 			updated_at = NOW()
 		WHERE user_id = $1
 	`
@@ -435,6 +449,8 @@ func (r *NotificationRepository) UpdatePreferences(ctx context.Context, prefs *m
 		prefs.NotifyClipRejected,
 		prefs.NotifyClipComments,
 		prefs.NotifyClipThreshold,
+		prefs.NotifyBroadcasterLive,
+		prefs.NotifyStreamLive,
 		prefs.NotifyMarketing,
 		prefs.NotifyPolicyUpdates,
 		prefs.NotifyPlatformAnnouncements,
@@ -445,9 +461,11 @@ func (r *NotificationRepository) UpdatePreferences(ctx context.Context, prefs *m
 	}
 
 	if result.RowsAffected() == 0 {
-		// If no rows were updated, create default preferences
-		_, err = r.CreateDefaultPreferences(ctx, prefs.UserID)
-		return err
+		// Create the row, then apply the caller's values instead of silently returning defaults.
+		if _, err = r.CreateDefaultPreferences(ctx, prefs.UserID); err != nil {
+			return err
+		}
+		return r.UpdatePreferences(ctx, prefs)
 	}
 
 	prefs.UpdatedAt = time.Now()
@@ -456,12 +474,21 @@ func (r *NotificationRepository) UpdatePreferences(ctx context.Context, prefs *m
 
 // ResetPreferences resets notification preferences to defaults for a user
 func (r *NotificationRepository) ResetPreferences(ctx context.Context, userID uuid.UUID) (*models.NotificationPreferences, error) {
-	// Delete existing preferences
-	_, err := r.pool.Exec(ctx, "DELETE FROM notification_preferences WHERE user_id = $1", userID)
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin preference reset: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx, "DELETE FROM notification_preferences WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete existing preferences: %w", err)
 	}
-
-	// Create new default preferences
-	return r.CreateDefaultPreferences(ctx, userID)
+	if _, err = tx.Exec(ctx, "INSERT INTO notification_preferences (user_id) VALUES ($1)", userID); err != nil {
+		return nil, fmt.Errorf("failed to recreate default preferences: %w", err)
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit preference reset: %w", err)
+	}
+	return r.GetPreferences(ctx, userID)
 }

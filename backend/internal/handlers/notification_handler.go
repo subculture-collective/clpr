@@ -1,45 +1,59 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
+
+type notificationService interface {
+	GetUserNotifications(context.Context, uuid.UUID, string, int, int) ([]models.NotificationWithSource, error)
+	GetUnreadCount(context.Context, uuid.UUID) (int, error)
+	MarkAsRead(context.Context, uuid.UUID, uuid.UUID) error
+	MarkAllAsRead(context.Context, uuid.UUID) error
+	DeleteNotification(context.Context, uuid.UUID, uuid.UUID) error
+	GetPreferences(context.Context, uuid.UUID) (*models.NotificationPreferences, error)
+	UpdatePreferences(context.Context, *models.NotificationPreferences) error
+	ResetPreferences(context.Context, uuid.UUID) (*models.NotificationPreferences, error)
+	RegisterDeviceToken(context.Context, uuid.UUID, string, string) error
+	UnregisterDeviceToken(context.Context, uuid.UUID, string) error
+}
 
 // NotificationHandler handles notification-related HTTP requests
 type NotificationHandler struct {
-	notificationService *services.NotificationService
+	notificationService notificationService
 	emailService        *services.EmailService
 }
 
 // NewNotificationHandler creates a new NotificationHandler
-func NewNotificationHandler(notificationService *services.NotificationService, emailService *services.EmailService) *NotificationHandler {
+func NewNotificationHandler(notificationService notificationService, emailService *services.EmailService) *NotificationHandler {
 	return &NotificationHandler{
 		notificationService: notificationService,
 		emailService:        emailService,
 	}
 }
 
+func notificationUserID(c *gin.Context) (uuid.UUID, bool) {
+	value, exists := c.Get("user_id")
+	userID, valid := value.(uuid.UUID)
+	if !exists || !valid || userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return uuid.Nil, false
+	}
+	return userID, true
+}
+
 // ListNotifications handles GET /notifications
 func (h *NotificationHandler) ListNotifications(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -48,14 +62,19 @@ func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "50")
 	pageStr := c.DefaultQuery("page", "1")
 
+	if filter != "all" && filter != "unread" && filter != "read" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid filter"})
+		return
+	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 || limit > 100 {
-		limit = 50
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
+		return
 	}
-
 	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		page = 1
+	if err != nil || page < 1 || page > 1000000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page"})
+		return
 	}
 
 	offset := (page - 1) * limit
@@ -65,7 +84,7 @@ func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 		c.Request.Context(),
 		userID,
 		filter,
-		limit,
+		limit+1,
 		offset,
 	)
 	if err != nil {
@@ -84,31 +103,23 @@ func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 		return
 	}
 
+	hasMore := len(notifications) > limit
+	if hasMore {
+		notifications = notifications[:limit]
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"notifications": notifications,
 		"unread_count":  unreadCount,
 		"page":          page,
 		"limit":         limit,
-		"has_more":      len(notifications) == limit,
+		"has_more":      hasMore,
 	})
 }
 
 // GetUnreadCount handles GET /notifications/count
 func (h *NotificationHandler) GetUnreadCount(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -128,20 +139,8 @@ func (h *NotificationHandler) GetUnreadCount(c *gin.Context) {
 
 // MarkAsRead handles PUT /notifications/:id/read
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -158,6 +157,10 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	// Mark as read
 	err = h.notificationService.MarkAsRead(c.Request.Context(), notificationID, userID)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotificationNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to mark notification as read",
 		})
@@ -171,20 +174,8 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 
 // MarkAllAsRead handles PUT /notifications/read-all
 func (h *NotificationHandler) MarkAllAsRead(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -204,20 +195,8 @@ func (h *NotificationHandler) MarkAllAsRead(c *gin.Context) {
 
 // DeleteNotification handles DELETE /notifications/:id
 func (h *NotificationHandler) DeleteNotification(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -234,6 +213,10 @@ func (h *NotificationHandler) DeleteNotification(c *gin.Context) {
 	// Delete notification
 	err = h.notificationService.DeleteNotification(c.Request.Context(), notificationID, userID)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotificationNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete notification",
 		})
@@ -247,20 +230,8 @@ func (h *NotificationHandler) DeleteNotification(c *gin.Context) {
 
 // GetPreferences handles GET /notifications/preferences
 func (h *NotificationHandler) GetPreferences(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -278,20 +249,8 @@ func (h *NotificationHandler) GetPreferences(c *gin.Context) {
 
 // UpdatePreferences handles PUT /notifications/preferences
 func (h *NotificationHandler) UpdatePreferences(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -301,6 +260,10 @@ func (h *NotificationHandler) UpdatePreferences(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request body",
 		})
+		return
+	}
+	if prefs.EmailDigest != "immediate" && prefs.EmailDigest != "daily" && prefs.EmailDigest != "weekly" && prefs.EmailDigest != "never" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email_digest"})
 		return
 	}
 
@@ -324,20 +287,8 @@ func (h *NotificationHandler) UpdatePreferences(c *gin.Context) {
 
 // ResetPreferences handles POST /notifications/preferences/reset
 func (h *NotificationHandler) ResetPreferences(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -359,7 +310,7 @@ func (h *NotificationHandler) ResetPreferences(c *gin.Context) {
 // Unsubscribe handles GET /notifications/unsubscribe (email unsubscribe)
 func (h *NotificationHandler) Unsubscribe(c *gin.Context) {
 	token := c.Query("token")
-	if token == "" {
+	if token == "" || len(token) > 256 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Missing unsubscribe token",
 		})
@@ -373,52 +324,10 @@ func (h *NotificationHandler) Unsubscribe(c *gin.Context) {
 		return
 	}
 
-	// Validate token
-	tokenRecord, err := h.emailService.ValidateUnsubscribeToken(c.Request.Context(), token)
+	err := h.emailService.Unsubscribe(c.Request.Context(), token)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid or expired unsubscribe token",
-		})
-		return
-	}
-
-	// Get current preferences
-	prefs, err := h.notificationService.GetPreferences(c.Request.Context(), tokenRecord.UserID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to get notification preferences",
-		})
-		return
-	}
-
-	// Update preferences based on token type
-	if tokenRecord.NotificationType == nil {
-		// Unsubscribe from all email notifications
-		prefs.EmailEnabled = false
-	} else {
-		// Unsubscribe from specific notification type
-		switch *tokenRecord.NotificationType {
-		case models.NotificationTypeReply:
-			prefs.NotifyReplies = false
-		case models.NotificationTypeMention:
-			prefs.NotifyMentions = false
-		}
-	}
-
-	// Save updated preferences
-	err = h.notificationService.UpdatePreferences(c.Request.Context(), prefs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update preferences",
-		})
-		return
-	}
-
-	// Mark token as used
-	err = h.emailService.UseUnsubscribeToken(c.Request.Context(), token)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to process unsubscribe",
 		})
 		return
 	}
@@ -488,20 +397,8 @@ func (h *NotificationHandler) Unsubscribe(c *gin.Context) {
 
 // RegisterDeviceToken handles POST /notifications/register
 func (h *NotificationHandler) RegisterDeviceToken(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 
@@ -530,20 +427,8 @@ func (h *NotificationHandler) RegisterDeviceToken(c *gin.Context) {
 
 // UnregisterDeviceToken handles DELETE /notifications/unregister
 func (h *NotificationHandler) UnregisterDeviceToken(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := notificationUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID",
-		})
 		return
 	}
 

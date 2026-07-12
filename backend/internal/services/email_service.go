@@ -619,6 +619,10 @@ func (s *EmailService) UseUnsubscribeToken(ctx context.Context, token string) er
 	return s.repo.MarkTokenUsed(ctx, token)
 }
 
+func (s *EmailService) Unsubscribe(ctx context.Context, token string) error {
+	return s.repo.ConsumeUnsubscribeToken(ctx, token)
+}
+
 // checkRateLimit checks if a user has exceeded the email rate limit
 func (s *EmailService) checkRateLimit(ctx context.Context, userID uuid.UUID) (bool, error) {
 	windowStart := time.Now().Truncate(time.Hour)
