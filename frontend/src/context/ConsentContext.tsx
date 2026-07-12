@@ -7,12 +7,10 @@ import React, {
     useCallback,
 } from 'react';
 import {
-    initGoogleAnalytics,
     disableGoogleAnalytics,
     enableGoogleAnalytics,
 } from '../lib/google-analytics';
 import {
-    initPostHog,
     disablePostHog,
     enablePostHog,
 } from '../lib/posthog-analytics';
@@ -202,6 +200,20 @@ async function loadConsentFromBackend(): Promise<ConsentPreferences | null> {
     }
 }
 
+function applyAnalyticsConsent(allowed: boolean): void {
+    if (allowed) {
+        enableGoogleAnalytics();
+        enablePostHog();
+        configureAnalytics({ enabled: true });
+        enableUnifiedAnalytics();
+        return;
+    }
+
+    disableGoogleAnalytics();
+    disablePostHog();
+    disableUnifiedAnalytics();
+}
+
 /**
  * Consent Provider component
  * Manages user consent for tracking, analytics, and personalized ads
@@ -240,12 +252,9 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
 
     // Initialize analytics if consent already stored and DNT disabled
     useEffect(() => {
-        if (hasConsented && consent.analytics && !doNotTrack) {
-            initGoogleAnalytics();
-            initPostHog();
-            configureAnalytics({ enabled: true });
-            enableUnifiedAnalytics();
-        }
+        applyAnalyticsConsent(
+            hasConsented && consent.analytics && !doNotTrack,
+        );
     }, [hasConsented, consent.analytics, doNotTrack]);
 
     // Load consent from backend for logged-in users
@@ -261,13 +270,9 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
                     setShowConsentBanner(false);
                     saveConsent(backendConsent); // Sync to local storage
 
-                    // Initialize analytics if consented
-                    if (backendConsent.analytics && !doNotTrack) {
-                        initGoogleAnalytics();
-                        initPostHog();
-                        configureAnalytics({ enabled: true });
-                        enableUnifiedAnalytics();
-                    }
+                    applyAnalyticsConsent(
+                        backendConsent.analytics && !doNotTrack,
+                    );
                 });
             }
         });
@@ -305,16 +310,9 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
             }
 
             // Handle analytics based on analytics consent
-            if (updatedPreferences.analytics && !doNotTrack) {
-                enableGoogleAnalytics();
-                enablePostHog();
-                configureAnalytics({ enabled: true });
-                enableUnifiedAnalytics();
-            } else {
-                disableGoogleAnalytics();
-                disablePostHog();
-                disableUnifiedAnalytics();
-            }
+            applyAnalyticsConsent(
+                updatedPreferences.analytics && !doNotTrack,
+            );
         },
         [consent, doNotTrack, user],
     );
@@ -354,6 +352,7 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
         // Disable analytics when consent is reset
         disableGoogleAnalytics();
         disablePostHog();
+        disableUnifiedAnalytics();
 
         setConsent(DEFAULT_CONSENT);
         setHasConsented(false);

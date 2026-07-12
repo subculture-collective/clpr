@@ -1,6 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ConsentProvider, useConsent } from './ConsentContext';
+import { disableGoogleAnalytics } from '../lib/google-analytics';
+import { disablePostHog } from '../lib/posthog-analytics';
+import { disableAnalytics } from '../lib/telemetry';
+
+vi.mock('../lib/google-analytics', () => ({
+    disableGoogleAnalytics: vi.fn(),
+    enableGoogleAnalytics: vi.fn(),
+}));
+vi.mock('../lib/posthog-analytics', () => ({
+    disablePostHog: vi.fn(),
+    enablePostHog: vi.fn(),
+}));
+vi.mock('../lib/telemetry', () => ({
+    configureAnalytics: vi.fn(),
+    disableAnalytics: vi.fn(),
+    enableAnalytics: vi.fn(),
+}));
 
 // Mock useAuth hook from AuthContext
 vi.mock('./AuthContext', async () => {
@@ -62,6 +79,7 @@ function TestConsumer() {
 
 describe('ConsentContext', () => {
     beforeEach(() => {
+        vi.clearAllMocks();
         // Clear localStorage before each test
         localStorage.clear();
         // Reset navigator.doNotTrack
@@ -133,6 +151,9 @@ describe('ConsentContext', () => {
         expect(screen.getByTestId('analytics')).toHaveTextContent('false');
         expect(screen.getByTestId('advertising')).toHaveTextContent('false');
         expect(screen.getByTestId('functional')).toHaveTextContent('false');
+        expect(disableGoogleAnalytics).toHaveBeenCalled();
+        expect(disablePostHog).toHaveBeenCalled();
+        expect(disableAnalytics).toHaveBeenCalled();
     });
 
     it('should update individual consent preference', () => {
@@ -233,6 +254,9 @@ describe('ConsentContext', () => {
         expect(screen.getByTestId('has-consented')).toHaveTextContent('false');
         expect(screen.getByTestId('show-banner')).toHaveTextContent('true');
         expect(localStorage.getItem('clpr_consent_preferences')).toBeNull();
+        expect(disableGoogleAnalytics).toHaveBeenCalled();
+        expect(disablePostHog).toHaveBeenCalled();
+        expect(disableAnalytics).toHaveBeenCalled();
     });
 
     it('should detect Do Not Track signal', () => {
