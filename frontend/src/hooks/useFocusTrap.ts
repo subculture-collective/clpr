@@ -54,6 +54,8 @@ export function useFocusTrap<T extends HTMLElement>(isActive: boolean) {
     const focusableElements = getFocusableElements();
     if (focusableElements.length > 0) {
       focusableElements[0].focus();
+    } else {
+      container.focus();
     }
 
     // Handle tab key to trap focus
@@ -86,7 +88,7 @@ export function useFocusTrap<T extends HTMLElement>(isActive: boolean) {
     // Cleanup: restore focus to previously focused element
     return () => {
       container.removeEventListener('keydown', handleKeyDown);
-      if (previouslyFocusedElement.current) {
+      if (previouslyFocusedElement.current?.isConnected) {
         previouslyFocusedElement.current.focus();
       }
     };

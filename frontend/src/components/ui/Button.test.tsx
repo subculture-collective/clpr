@@ -108,6 +108,11 @@ describe('Button', () => {
   });
 
   describe('State classes', () => {
+    it('does not submit a form unless explicitly requested', () => {
+      render(<Button>Safe default</Button>);
+      expect(screen.getByRole('button', { name: 'Safe default' })).toHaveAttribute('type', 'button');
+    });
+
     it('applies disabled state classes', () => {
       render(<Button disabled>Disabled</Button>);
       const button = screen.getByRole('button', { name: 'Disabled' });
@@ -122,7 +127,9 @@ describe('Button', () => {
       const button = screen.getByRole('button', { name: 'Loading' });
       
       expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('aria-busy', 'true');
       expect(button.querySelector('svg.animate-spin')).toBeInTheDocument();
+      expect(button.querySelector('svg.animate-spin')).toHaveAttribute('aria-hidden', 'true');
     });
   });
 

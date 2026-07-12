@@ -27,6 +27,38 @@ describe('Modal', () => {
 
         expect(screen.getByText('Test Modal')).toBeInTheDocument();
         expect(screen.getByText('Modal content')).toBeInTheDocument();
+        expect(screen.getByRole('dialog', { name: 'Test Modal' })).toBeInTheDocument();
+    });
+
+    it('has an accessible fallback name and focus target without a title or controls', () => {
+        render(
+            <Modal open={true} onClose={mockOnClose} showCloseButton={false}>
+                <p>Informational content</p>
+            </Modal>
+        );
+
+        const dialog = screen.getByRole('dialog', { name: 'Dialog' });
+        expect(dialog).toHaveFocus();
+        expect(dialog).toHaveAttribute('tabindex', '-1');
+    });
+
+    it('restores focus to the invoking control after close', () => {
+        const trigger = document.createElement('button');
+        document.body.appendChild(trigger);
+        trigger.focus();
+        const { rerender } = render(
+            <Modal open={true} onClose={mockOnClose} title="Focus modal">
+                <button>Inside</button>
+            </Modal>
+        );
+
+        rerender(
+            <Modal open={false} onClose={mockOnClose} title="Focus modal">
+                <button>Inside</button>
+            </Modal>
+        );
+        expect(trigger).toHaveFocus();
+        trigger.remove();
     });
 
     it('does not render when open is false', () => {

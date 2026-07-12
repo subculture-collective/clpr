@@ -48,6 +48,11 @@ export function OptimizedImage({
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  const intrinsicAspectRatio =
+    typeof props.width === 'number' && typeof props.height === 'number'
+      ? `${props.width} / ${props.height}`
+      : undefined;
+
   useEffect(() => {
     // For priority images, start loading immediately
     if (priority && imgRef.current?.complete) {
@@ -66,8 +71,8 @@ export function OptimizedImage({
   };
 
   // Container styles with aspect ratio to prevent layout shift
-  const containerStyles = aspectRatio
-    ? { aspectRatio }
+  const containerStyles = aspectRatio || intrinsicAspectRatio
+    ? { aspectRatio: aspectRatio ?? intrinsicAspectRatio }
     : undefined;
 
   return (
@@ -100,7 +105,7 @@ export function OptimizedImage({
           onLoad={handleLoad}
           onError={handleError}
           className={cn(
-            'w-full h-full object-cover transition-opacity duration-300',
+            'w-full h-full object-cover transition-opacity duration-300 motion-reduce:transition-none',
             isLoaded ? 'opacity-100' : 'opacity-0'
           )}
           {...props}

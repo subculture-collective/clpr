@@ -15,6 +15,8 @@ export interface ModalProps {
    * Modal title
    */
   title?: string;
+  /** Accessible name used when no visible title is supplied. */
+  ariaLabel?: string;
   /**
    * Modal size
    * @default 'md'
@@ -55,6 +57,7 @@ export const Modal: React.FC<ModalProps> = ({
   open,
   onClose,
   title,
+  ariaLabel,
   size = 'md',
   closeOnBackdrop = true,
   showCloseButton = true,
@@ -100,13 +103,13 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+      <div aria-hidden="true" className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in motion-reduce:animate-none" />
 
       {/* Modal content */}
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full bg-card rounded-xl shadow-2xl animate-slide-in-down',
+          'relative w-full bg-card rounded-xl shadow-2xl animate-slide-in-down motion-reduce:animate-none',
           'flex flex-col max-h-[90vh] overscroll-contain',
           sizeClasses[size],
           className
@@ -114,6 +117,8 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel ?? 'Dialog'}
+        tabIndex={-1}
       >
         {/* Header */}
         {(title || showCloseButton) && (
@@ -126,7 +131,7 @@ export const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto p-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                className="ml-auto min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg hover:bg-muted transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 aria-label="Close modal"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
