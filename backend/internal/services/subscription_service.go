@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v81"
 	portalsession "github.com/stripe/stripe-go/v81/billingportal/session"
@@ -16,10 +20,6 @@ import (
 	"github.com/stripe/stripe-go/v81/invoice"
 	"github.com/stripe/stripe-go/v81/subscription"
 	"github.com/stripe/stripe-go/v81/webhook"
-	"git.subcult.tv/subculture-collective/clpr/config"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
-	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 var (
@@ -29,6 +29,8 @@ var (
 	ErrInvalidPriceID = errors.New("invalid price ID")
 	// ErrStripeCustomerNotFound indicates the Stripe customer was not found
 	ErrStripeCustomerNotFound = errors.New("stripe customer not found")
+	// ErrSubscriptionsUnavailable indicates checkout is intentionally disabled.
+	ErrSubscriptionsUnavailable = errors.New("subscriptions are unavailable")
 )
 
 const webhookLogComponent = "stripe_webhook"
@@ -151,16 +153,11 @@ func (s *SubscriptionService) GetOrCreateCustomer(ctx context.Context, user *mod
 
 // CreateCheckoutSession creates a Stripe Checkout session for subscription
 func (s *SubscriptionService) CreateCheckoutSession(ctx context.Context, user *models.User, priceID string, couponCode *string) (*models.CreateCheckoutSessionResponse, error) {
-	// If Stripe is not configured or premium feature flag is off, return a mock session
-	if s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
-		mockURL := s.cfg.Stripe.SuccessURL
-		if mockURL == "" {
-			mockURL = "http://localhost:5173/subscription/success"
-		}
-		return &models.CreateCheckoutSessionResponse{
-			SessionID:  "cs_test_mock",
-			SessionURL: fmt.Sprintf("%s?session_id=cs_test_mock", mockURL),
-		}, nil
+	// Checkout must never fabricate success. Development tests should inject a
+	// Stripe client; disabled or incomplete deployments return an explicit
+	// service-unavailable error just like production.
+	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
+		return nil, ErrSubscriptionsUnavailable
 	}
 
 	// Validate price ID
@@ -240,13 +237,8 @@ func (s *SubscriptionService) CreateCheckoutSession(ctx context.Context, user *m
 
 // CreatePortalSession creates a Stripe Customer Portal session
 func (s *SubscriptionService) CreatePortalSession(ctx context.Context, user *models.User) (*models.CreatePortalSessionResponse, error) {
-	// If Stripe is not configured or premium feature flag is off, return a mock portal URL
-	if s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
-		mockURL := s.cfg.Stripe.SuccessURL
-		if mockURL == "" {
-			mockURL = "http://localhost:5173/subscription"
-		}
-		return &models.CreatePortalSessionResponse{PortalURL: mockURL}, nil
+	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
+		return nil, ErrSubscriptionsUnavailable
 	}
 
 	// Get subscription to find customer ID

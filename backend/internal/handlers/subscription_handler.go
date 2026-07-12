@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
 )
 
 // SubscriptionHandler handles subscription-related HTTP requests
@@ -70,6 +70,10 @@ func (h *SubscriptionHandler) CreateCheckoutSession(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid price ID"})
 			return
 		}
+		if err == services.ErrSubscriptionsUnavailable {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Subscriptions are currently unavailable"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create checkout session"})
 		return
 	}
@@ -107,6 +111,10 @@ func (h *SubscriptionHandler) CreatePortalSession(c *gin.Context) {
 		log.Printf("Failed to create portal session: %v", err)
 		if err == services.ErrSubscriptionNotFound || err == services.ErrStripeCustomerNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
+			return
+		}
+		if err == services.ErrSubscriptionsUnavailable {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Subscriptions are currently unavailable"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create portal session"})

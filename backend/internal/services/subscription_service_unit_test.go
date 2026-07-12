@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 // newTestSubscriptionService creates a subscription service with mock dependencies for testing
@@ -458,7 +458,7 @@ func TestCreateCheckoutSessionWithMocks(t *testing.T) {
 		Email:    &email,
 	}
 
-	t.Run("returns mock session when Stripe not configured", func(t *testing.T) {
+	t.Run("fails closed when Stripe is not configured", func(t *testing.T) {
 		mockSubRepo := new(MockSubscriptionRepository)
 		mockUserRepo := new(MockUserRepository)
 		mockWebhookRepo := new(MockWebhookRepository)
@@ -485,13 +485,11 @@ func TestCreateCheckoutSessionWithMocks(t *testing.T) {
 		priceID := "price_test_monthly"
 		result, err := service.CreateCheckoutSession(ctx, user, priceID, nil)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "cs_test_mock", result.SessionID)
-		assert.Contains(t, result.SessionURL, "success")
+		assert.ErrorIs(t, err, ErrSubscriptionsUnavailable)
+		assert.Nil(t, result)
 	})
 
-	t.Run("returns mock session when premium feature flag is off", func(t *testing.T) {
+	t.Run("fails closed when premium feature flag is off", func(t *testing.T) {
 		mockSubRepo := new(MockSubscriptionRepository)
 		mockUserRepo := new(MockUserRepository)
 		mockWebhookRepo := new(MockWebhookRepository)
@@ -518,9 +516,8 @@ func TestCreateCheckoutSessionWithMocks(t *testing.T) {
 		priceID := "price_test_monthly"
 		result, err := service.CreateCheckoutSession(ctx, user, priceID, nil)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "cs_test_mock", result.SessionID)
+		assert.ErrorIs(t, err, ErrSubscriptionsUnavailable)
+		assert.Nil(t, result)
 	})
 }
 
@@ -535,7 +532,7 @@ func TestCreatePortalSessionWithMocks(t *testing.T) {
 		Email:    &email,
 	}
 
-	t.Run("returns mock portal URL when Stripe not configured", func(t *testing.T) {
+	t.Run("fails closed when Stripe is not configured", func(t *testing.T) {
 		mockSubRepo := new(MockSubscriptionRepository)
 		mockUserRepo := new(MockUserRepository)
 		mockWebhookRepo := new(MockWebhookRepository)
@@ -561,9 +558,8 @@ func TestCreatePortalSessionWithMocks(t *testing.T) {
 
 		result, err := service.CreatePortalSession(ctx, user)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "http://localhost:5173/subscription", result.PortalURL)
+		assert.ErrorIs(t, err, ErrSubscriptionsUnavailable)
+		assert.Nil(t, result)
 	})
 
 	t.Run("returns error when subscription not found", func(t *testing.T) {
