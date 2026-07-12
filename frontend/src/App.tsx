@@ -4,10 +4,12 @@ import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConsentProvider } from './context/ConsentContext';
-import { AppLayout } from './components/layout';
-import { ProtectedRoute, AdminRoute, GuestRoute } from './components/guards';
+import { AppLayout } from './components/layout/AppLayout';
+import { ProtectedRoute } from './components/guards/ProtectedRoute';
+import { AdminRoute } from './components/guards/AdminRoute';
+import { GuestRoute } from './components/guards/GuestRoute';
 import { Spinner } from './components/ui/Spinner';
-import { ConsentBanner } from './components/consent';
+import { ConsentBanner } from './components/consent/ConsentBanner';
 
 // Lazy load page components for code splitting
 const HomePage = lazy(() =>
