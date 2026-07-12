@@ -48,6 +48,7 @@ servers:
     description: Production API server
 security:
   - BearerAuth: []
+  - CookieAuth: []
 tags:
   - name: Health
     description: Health check and monitoring endpoints
@@ -3960,58 +3961,99 @@ paths:
   /api/v1/admin/account-types/conversions:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/admin/account-types/conversions
-      description: Router-derived operation pending a route-specific response schema.
+        - Admin
+      summary: List recent account-type conversions
+      description: Requires an administrator session with MFA. Results are ordered from newest to oldest.
       operationId: getApiV1AdminAccountTypesConversions
-      x-clpr-router-derived: true
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Recent conversions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTypeConversionsResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/account-types/stats:
     get:
       tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/admin/account-types/stats
-      description: Router-derived operation pending a route-specific response schema.
+        - Admin
+      summary: Get account-type totals
+      description: Requires an administrator session with MFA.
       operationId: getApiV1AdminAccountTypesStats
-      x-clpr-router-derived: true
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Counts for every supported account type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTypeStatsResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/account-types/users/{id}/convert-to-moderator:
     post:
       tags:
-        - Generated Route Contracts
-      summary: POST /api/v1/admin/account-types/users/{id}/convert-to-moderator
-      description: Router-derived operation pending a route-specific response schema.
+        - Admin
+      summary: Convert a user to a moderator account
+      description: Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
       operationId: postApiV1AdminAccountTypesUsersIdConvertToModerator
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 500
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: User converted to moderator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTypeConversionResult'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/ads/campaigns:
@@ -11307,7 +11349,21 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token obtained from authentication endpoints
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: HttpOnly JWT session cookie. State-changing requests authenticated this way also require the csrf_token cookie value in X-CSRF-Token.
   parameters:
+    CSRFToken:
+      name: X-CSRF-Token
+      in: header
+      required: false
+      description: Required for POST, PUT, PATCH, and DELETE when authentication uses the access_token cookie; not required with BearerAuth.
+      schema:
+        type: string
+        minLength: 43
+        maxLength: 64
     Page:
       name: page
       in: query
@@ -11398,6 +11454,151 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    AccountTypeConversion:
+      type: object
+      required:
+        - id
+        - user_id
+        - old_type
+        - new_type
+        - converted_at
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        old_type:
+          type: string
+          enum:
+            - member
+            - broadcaster
+            - moderator
+            - admin
+        new_type:
+          type: string
+          enum:
+            - member
+            - broadcaster
+            - moderator
+            - admin
+        reason:
+          type:
+            - string
+            - 'null'
+        converted_by:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        converted_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+    AccountTypeInfo:
+      type: object
+      required:
+        - account_type
+        - permissions
+      properties:
+        account_type:
+          type: string
+          enum:
+            - member
+            - broadcaster
+            - moderator
+            - admin
+        updated_at:
+          type: string
+          format: date-time
+        permissions:
+          type: array
+          items:
+            type: string
+        conversion_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountTypeConversion'
+    AccountTypeStatsResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - member
+            - broadcaster
+            - moderator
+            - admin
+          properties:
+            member:
+              type: integer
+              minimum: 0
+            broadcaster:
+              type: integer
+              minimum: 0
+            moderator:
+              type: integer
+              minimum: 0
+            admin:
+              type: integer
+              minimum: 0
+    AccountTypeConversionsResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - conversions
+            - total
+            - limit
+            - offset
+          properties:
+            conversions:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountTypeConversion'
+            total:
+              type: integer
+              minimum: 0
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+            offset:
+              type: integer
+              minimum: 0
+    AccountTypeConversionResult:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AccountTypeInfo'
     TwitchModerationResult:
       type: object
       required:

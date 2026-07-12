@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -17,6 +18,14 @@ import (
 var ginParameter = regexp.MustCompile(`[:*]([A-Za-z0-9_]+)`)
 var openAPIParameter = regexp.MustCompile(`\{([A-Za-z0-9_]+)\}`)
 var operationIDPart = regexp.MustCompile(`[^A-Za-z0-9]+`)
+
+type routeContractManifestEntry struct {
+	Method        string `json:"method"`
+	Path          string `json:"path"`
+	Handler       string `json:"handler"`
+	OperationID   string `json:"operation_id"`
+	ContractLevel string `json:"contract_level"`
+}
 
 func zeroHandlers() *Handlers {
 	handlers := &Handlers{}
@@ -155,6 +164,75 @@ func TestOpenAPIOperationsHaveResponseSchemas(t *testing.T) {
 	sort.Strings(violations)
 	if len(violations) > 0 {
 		t.Fatalf("%d OpenAPI responses lack schemas:\n%s", len(violations), strings.Join(violations, "\n"))
+	}
+}
+
+func TestOpenAPIRouteContractManifestIsCurrent(t *testing.T) {
+	const specFilename = "../../../docs/openapi/openapi.yaml"
+	const manifestFilename = "../../../docs/openapi/route-contract-manifest.json"
+	contents, err := os.ReadFile(specFilename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document struct {
+		Paths map[string]map[string]map[string]any `yaml:"paths"`
+	}
+	if err := yaml.Unmarshal(contents, &document); err != nil {
+		t.Fatal(err)
+	}
+
+	entries := make([]routeContractManifestEntry, 0, len(supportedRouter().Routes()))
+	for _, route := range supportedRouter().Routes() {
+		path := ginParameter.ReplaceAllString(route.Path, `{$1}`)
+		if path != "/" {
+			path = strings.TrimSuffix(path, "/")
+		}
+		operation := document.Paths[path][strings.ToLower(route.Method)]
+		operationID, _ := operation["operationId"].(string)
+		level := "route-specific"
+		if derived, _ := operation["x-clpr-router-derived"].(bool); derived {
+			level = "transitional"
+		}
+		entries = append(entries, routeContractManifestEntry{
+			Method: route.Method, Path: path, Handler: route.Handler,
+			OperationID: operationID, ContractLevel: level,
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Path == entries[j].Path {
+			return entries[i].Method < entries[j].Method
+		}
+		return entries[i].Path < entries[j].Path
+	})
+	generated, err := json.MarshalIndent(entries, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated = append(generated, '\n')
+	if os.Getenv("UPDATE_OPENAPI_MANIFEST") == "1" {
+		if err := os.WriteFile(manifestFilename, generated, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	existing, err := os.ReadFile(manifestFilename)
+	if err != nil {
+		t.Fatalf("route contract manifest missing; run UPDATE_OPENAPI_MANIFEST=1 go test ./cmd/api -run TestOpenAPIRouteContractManifestIsCurrent: %v", err)
+	}
+	if string(existing) != string(generated) {
+		t.Fatal("route contract manifest is stale; regenerate with UPDATE_OPENAPI_MANIFEST=1")
+	}
+}
+
+func TestOpenAPITransitionalContractBudget(t *testing.T) {
+	const maximumTransitionalContracts = 356
+	contents, err := os.ReadFile("../../../docs/openapi/openapi.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := strings.Count(string(contents), "x-clpr-router-derived: true")
+	if count > maximumTransitionalContracts {
+		t.Fatalf("transitional OpenAPI contracts increased from budget %d to %d", maximumTransitionalContracts, count)
 	}
 }
 

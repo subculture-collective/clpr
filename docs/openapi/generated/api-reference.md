@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T15:38:35.790Z
+generated: 2026-07-12T16:03:43.131Z
 ---
 
 # Clipper API
@@ -63,6 +63,7 @@ The API uses standard HTTP status codes:
 - [Moderation](#moderation)
 - [Users](#users)
 - [Watch History](#watch-history)
+- [Admin](#admin)
 
 ## Health
 
@@ -13555,23 +13556,32 @@ func main() {
 
 ---
 
-## Generated Route Contracts
+## Admin
 
-### GET /api/v1/admin/account-types/conversions
+Administrative operations
+
+### List recent account-type conversions
 
 `GET /api/v1/admin/account-types/conversions`
 
-Router-derived operation pending a route-specific response schema.
+Requires an administrator session with MFA. Results are ordered from newest to oldest.
 
-**Tags:** Generated Route Contracts
+**Tags:** Admin
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| limit | query | integer |  |  |
+| offset | query | integer |  |  |
 
 #### Responses
 
-**200** - Success
-
-**400** - Success
+**200** - Recent conversions
 
 **401** - Success
+
+**403** - Success
 
 **500** - Success
 
@@ -13655,21 +13665,21 @@ func main() {
 
 ---
 
-### GET /api/v1/admin/account-types/stats
+### Get account-type totals
 
 `GET /api/v1/admin/account-types/stats`
 
-Router-derived operation pending a route-specific response schema.
+Requires an administrator session with MFA.
 
-**Tags:** Generated Route Contracts
+**Tags:** Admin
 
 #### Responses
 
-**200** - Success
-
-**400** - Success
+**200** - Counts for every supported account type
 
 **401** - Success
+
+**403** - Success
 
 **500** - Success
 
@@ -13753,27 +13763,36 @@ func main() {
 
 ---
 
-### POST /api/v1/admin/account-types/users/{id}/convert-to-moderator
+### Convert a user to a moderator account
 
 `POST /api/v1/admin/account-types/users/{id}/convert-to-moderator`
 
-Router-derived operation pending a route-specific response schema.
+Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
 
-**Tags:** Generated Route Contracts
+**Tags:** Admin
 
 #### Parameters
 
 | Name | In | Type | Required | Description |
 |------|-------|------|----------|-------------|
 | id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
 
 #### Responses
 
-**200** - Success
+**200** - User converted to moderator
 
 **400** - Success
 
 **401** - Success
+
+**403** - Success
+
+**404** - Success
 
 **500** - Success
 
@@ -13782,7 +13801,9 @@ Router-derived operation pending a route-specific response schema.
 ##### cURL
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/admin/account-types/users/{id}/convert-to-moderator"
+curl -X POST "http://localhost:8080/api/v1/admin/account-types/users/{id}/convert-to-moderator" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
 ```
 
 ##### JavaScript
@@ -13792,6 +13813,12 @@ curl -X POST "http://localhost:8080/api/v1/admin/account-types/users/{id}/conver
 try {
   const response = await fetch('/api/v1/admin/account-types/users/{id}/convert-to-moderator', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
   });
 
   if (!response.ok) {
@@ -13812,7 +13839,8 @@ import requests
 
 try:
     response = requests.post(
-        '/api/v1/admin/account-types/users/{id}/convert-to-moderator'
+        '/api/v1/admin/account-types/users/{id}/convert-to-moderator',
+        json={}  # Your request data
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -13829,14 +13857,27 @@ package main
 import (
     "net/http"
     "io"
+    "bytes"
+    "encoding/json"
 )
 
 func main() {
-    req, err := http.NewRequest("POST", "/api/v1/admin/account-types/users/{id}/convert-to-moderator", nil)
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
     if err != nil {
         // Handle error
         return
     }
+
+    req, err := http.NewRequest("POST", "/api/v1/admin/account-types/users/{id}/convert-to-moderator", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
 
     client := &http.Client{}
     resp, err := client.Do(req)
@@ -13856,6 +13897,8 @@ func main() {
 ```
 
 ---
+
+## Generated Route Contracts
 
 ### GET /api/v1/admin/ads/campaigns
 
