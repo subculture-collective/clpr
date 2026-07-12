@@ -638,7 +638,7 @@ Use the search relevance dataset (`backend/testdata/search_relevance_dataset.yam
 
 For zero-downtime index rebuilds, rollbacks, and version management, see:
 
-- **[Index Versioning Documentation](./INDEX_VERSIONING.md)** - Complete guide to index versioning scheme, rebuild workflows, and rollback procedures
+- **Index Versioning Documentation** - Complete guide to index versioning scheme, rebuild workflows, and rollback procedures
 
 ### Key Features
 

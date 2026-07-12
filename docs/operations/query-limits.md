@@ -384,10 +384,10 @@ k6 run backend/tests/load/scenarios/search.js
 
 ## Related Documentation
 
-- [Threat Model](./product/threat-model.md)
-- [Database Schema](./database.md)
-- [Search Architecture](./SEARCH.md)
-- [API Rate Limiting](./API.md#rate-limiting)
+- [Security testing runbook](security-testing-runbook.md)
+- [Database developer guide](../backend/DEVELOPER_GUIDE.md#database-schema--migrations)
+- [Search architecture](../backend/semantic-search-arch.md)
+- [API rate limiting](../openapi/generated/api-reference.md#rate-limiting)
 
 ## References
 

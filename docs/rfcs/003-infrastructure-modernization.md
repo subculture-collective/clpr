@@ -535,7 +535,7 @@ Layer 5: Application (Backend)
 - Dashboard showing blocked attacks by type
 - Alerts for high attack volumes (>100 requests/min)
 
-See: [WAF Protection Documentation](../operations/waf-protection.md)
+See: WAF Protection Documentation
 
 ### DDoS Protection
 
@@ -557,7 +557,7 @@ See: [WAF Protection Documentation](../operations/waf-protection.md)
 - IP reputation scoring
 - Documented runbook for manual intervention
 
-See: [DDoS Protection Documentation](../operations/ddos-protection.md)
+See: DDoS Protection Documentation
 
 ### Secrets Management
 
@@ -607,7 +607,7 @@ spec:
       property: secret
 ```
 
-See: [Secrets Management Documentation](../operations/secrets-management.md)
+See: Secrets Management Documentation
 
 ### RBAC (Role-Based Access Control)
 
@@ -761,7 +761,7 @@ spec:
    - Resource quotas and limits
    - PersistentVolume usage
 
-See: [Monitoring Documentation](../operations/monitoring.md)
+See: [Monitoring dashboards](../operations/runbook.md#monitoring-dashboards)
 
 ### Logging (Loki)
 
@@ -834,7 +834,7 @@ groups:
       description: "Error rate is {{ $value | humanizePercentage }} over last 5 minutes"
 ```
 
-See: [Alerting Configuration](../operations/monitoring.md#alerting)
+See: [Service level objectives](../operations/slos.md#release-policy)
 
 ### Distributed Tracing (Optional)
 
@@ -902,7 +902,7 @@ spec:
           restartPolicy: OnFailure
 ```
 
-See: [Backup Setup Documentation](../infrastructure/k8s/base/BACKUP_SETUP.md)
+See: Backup Setup Documentation
 
 ### Point-in-Time Recovery (PITR)
 
@@ -927,7 +927,7 @@ archive_timeout = 300  # 5 minutes
 
 **Recovery Point Objective (RPO)**: < 15 minutes (determined by WAL archiving frequency)
 
-See: [PITR Configuration](../infrastructure/k8s/base/postgres-pitr-config.yaml)
+See: PITR Configuration
 
 ### Disaster Recovery
 
@@ -963,7 +963,7 @@ See: [PITR Configuration](../infrastructure/k8s/base/postgres-pitr-config.yaml)
 
 **Monthly DR Drills**: Automated restore testing verifies RTO/RPO targets
 
-See: [Disaster Recovery Documentation](../operations/kubernetes-disaster-recovery.md)
+See: Disaster Recovery Documentation
 
 ## Migration Plan & Rollout Strategy
 
@@ -1274,7 +1274,7 @@ See: [Disaster Recovery Documentation](../operations/kubernetes-disaster-recover
 
 **Estimated Optimized Cost**: $1,200-2,000/month (35% reduction from initial estimate)
 
-See: [Cost Optimization Documentation](../operations/kubernetes-cost-optimization.md)
+See: Cost Optimization Documentation
 
 ## Rollback Plan
 
@@ -1461,17 +1461,17 @@ Rollback to previous infrastructure if:
 
 All documentation complete and linked in this RFC:
 
-- ✅ [Kubernetes Infrastructure README](../../infrastructure/k8s/README.md)
-- ✅ [Kubernetes Deployment Guide](../deployment/kubernetes.md)
-- ✅ [Infrastructure Overview](../deployment/infra.md)
-- ✅ [Operations Runbook](../operations/kubernetes-runbook.md)
-- ✅ [Disaster Recovery](../operations/kubernetes-disaster-recovery.md)
-- ✅ [Secrets Management](../operations/secrets-management.md)
-- ✅ [Monitoring](../operations/monitoring.md)
+- ✅ Kubernetes Infrastructure README
+- ✅ Kubernetes Deployment Guide
+- ✅ Infrastructure Overview
+- ✅ Operations Runbook
+- ✅ Disaster Recovery
+- ✅ Secrets Management
+- ✅ [Operations monitoring](../operations/runbook.md#monitoring-dashboards)
 - ✅ [SLOs](../operations/slos.md)
-- ✅ [WAF Protection](../operations/waf-protection.md)
-- ✅ [DDoS Protection](../operations/ddos-protection.md)
-- ✅ [Backup Setup](../../infrastructure/k8s/base/BACKUP_SETUP.md)
+- ✅ WAF Protection
+- ✅ DDoS Protection
+- ✅ Backup Setup
 
 ## Related Issues & References
 

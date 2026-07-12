@@ -218,7 +218,7 @@ Contains:
 
 ## Rollout Plan
 
-See [HYBRID_SEARCH_ROLLOUT.md](../docs/HYBRID_SEARCH_ROLLOUT.md) for detailed rollout strategy including:
+See [HYBRID_SEARCH_ROLLOUT.md](./HYBRID_SEARCH_ROLLOUT.md) for detailed rollout strategy including:
 
 - Phased deployment (Staging → Canary → Full)
 - Success criteria and KPIs
@@ -378,10 +378,10 @@ When adding new features:
 
 ## References
 
-- [Search Architecture](../docs/search-architecture.md)
-- [Evaluation Framework](../docs/search-evaluation.md)
-- [Configuration Management](../docs/configuration.md)
-- [Deployment Guide](../docs/deployment.md)
+- Search Architecture
+- Evaluation Framework
+- Configuration Management
+- Deployment Guide
 
 ## Support
 

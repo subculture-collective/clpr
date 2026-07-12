@@ -14,17 +14,28 @@ symptoms also page the security owner.
    report optional dependency degradation. Never return fabricated success.
 5. Validate recovery with both synthetic traffic and the journey smoke test.
 
-## Availability breach
+## Availability SLO breach
 
 Group failures by status and route template. Check database saturation and
 timeouts, Redis availability, external-provider errors, panics, and rate-limit
 configuration. Do not classify expected `4xx` responses as downtime.
 
-## Latency breach
+## Error rate SLO breach
+
+Follow the availability procedure, grouping `5xx` by route and error code and
+checking whether a single dependency or release accounts for the increase.
+
+## Latency SLO breach
 
 Inspect p50/p95/p99, in-flight requests, database acquire duration, slow-query
 logs, and downstream latency. Prefer shedding optional work or disabling an
 optional feature over allowing unbounded queues or database waits.
+
+## Security alerts
+
+Page the security owner, preserve relevant audit evidence, rotate exposed
+credentials, and contain the affected feature. Do not copy secrets, tokens, or
+personal data into the incident channel.
 
 ## Resolution
 
@@ -32,4 +43,3 @@ Resolve only after the alert is green for 15 minutes and the critical smoke
 passes. Record start/end time, user impact, failed SLI, mitigation, rollback or
 release digest, remaining error budget, and follow-up owner/due date. A breach
 caused by a release blocks promotion until its corrective test is merged.
-

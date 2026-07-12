@@ -1124,11 +1124,11 @@ const { data: comments } = useQuery({
 
 ## Related Documentation
 
-- [Comment API Reference](../backend/comment-api.md) - Complete API documentation
+- Comment API Reference - Complete API documentation
 - [Comment Repository Methods](../../backend/internal/repository/COMMENT_REPOSITORY.md) - Database layer documentation
-- [Backend Architecture](../backend/architecture.md) - Overall system architecture
-- [Frontend Testing Guide](../frontend/testing.md) - Component testing strategies
-- [Load Testing Guide](../backend/testing-performance.md) - Performance testing with k6
+- Backend Architecture - Overall system architecture
+- Frontend Testing Guide - Component testing strategies
+- Load Testing Guide - Performance testing with k6
 
 ## Support
 

@@ -1403,11 +1403,11 @@ logger.Warn("Channel scope violation", map[string]interface{}{
 
 ## Related Documentation
 
-- [RBAC](./rbac.md) - Role-based access control implementation
+- RBAC - Role-based access control implementation
 - [Authorization Framework](./authorization-framework.md) - IDOR prevention and authorization
-- [Authentication](./authentication.md) - Authentication flow and JWT
+- Authentication - Authentication flow and JWT
 - [Moderation API](./moderation-api.md) - Moderation endpoints and features
-- [Security](./security.md) - General security practices
+- Security - General security practices
 - [Audit Logging](./AUDIT_LOG_SERVICE.md) - Audit log implementation
 
 ## Support

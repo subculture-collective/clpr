@@ -428,7 +428,7 @@ export WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
 
 ## Rollback
 
-See [Blue/Green Rollback Procedures](./BLUE_GREEN_ROLLBACK.md) for detailed rollback documentation.
+See Blue/Green Rollback Procedures for detailed rollback documentation.
 
 ### Quick Rollback
 
@@ -567,11 +567,11 @@ wget -O- http://localhost:8080/health
 
 ## Related Documentation
 
-- [Rollback Procedures](./BLUE_GREEN_ROLLBACK.md)
-- [Database Migrations](../backend/migrations/README.md)
-- [Deployment Guide](./deployment.md)
+- Rollback Procedures
+- Database Migrations
+- Deployment Guide
 - [Runbook](./runbook.md)
-- [Monitoring](./monitoring.md)
+- Monitoring
 
 ## Support
 

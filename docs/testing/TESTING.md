@@ -25,7 +25,7 @@ last_reviewed: 2026-01-29
 - [Feature-Specific Testing](#feature-specific-testing)
 - [Writing Tests](#writing-tests)
 - [Troubleshooting](#troubleshooting)
-- [Related Issues](#related-issues)
+- [Related Issues](#related-issues-roadmap-50)
 
 ## Strategic Overview
 
@@ -807,7 +807,7 @@ Alert rules monitor scheduler health:
 - `SchedulerJobStuckFor15Minutes`: No executions in 15+ minutes
 - `SchedulerJobDurationHigh`: p95 > 60s
 
-See [Monitoring Documentation](../../monitoring/README.md) for dashboard setup.
+See Monitoring Documentation for dashboard setup.
 
 ### Moderation Workflow E2E Tests
 
@@ -1080,7 +1080,7 @@ Alert rules:
 
 **Diagnosing Failover Issues:**
 
-See [CDN Failover Runbook](../../operations/CDN_FAILOVER_RUNBOOK.md) for:
+See [CDN Failover Runbook](../operations/CDN_FAILOVER_RUNBOOK.md) for:
 - Investigation steps
 - Common causes and fixes
 - Resolution criteria
@@ -1533,10 +1533,10 @@ restore_drill_rpo_met              # 1 = RPO met, 0 = not met
 
 ### Related Documentation
 
-- [Backup & Recovery Runbook](../operations/backup-recovery-runbook.md) - Complete operational procedures
-- [Kubernetes Backup CronJobs](../../infrastructure/k8s/base/backup-cronjobs.yaml) - K8s configuration
-- [Backup Script](../../scripts/backup.sh) - Docker-based backup script
-- [Monitoring Alerts](../../monitoring/alerts.yml) - Alert configurations
+- Backup & Recovery Runbook - Complete operational procedures
+- Kubernetes Backup CronJobs - K8s configuration
+- Backup Script - Docker-based backup script
+- Monitoring Alerts - Alert configurations
 
 ## Troubleshooting
 
@@ -1573,10 +1573,10 @@ When tests fail:
 - [Integration & E2E Testing Guide](./integration-e2e-guide.md)
 - [Testing Guide](./testing-guide.md)
 - [Feature Test Coverage](../product/feature-test-coverage.md)
-- [Backend Integration Tests README](../../backend/tests/integration/README.md)
-- [Monitoring & Observability](../../monitoring/README.md)
-- [Distributed Tracing Setup](../../monitoring/TRACING.md)
-- [Load Testing Documentation](../../backend/tests/load/README.md)
+- Backend Integration Tests README
+- Monitoring & Observability
+- Distributed Tracing Setup
+- Load Testing Documentation
 
 ## Related Issues (Roadmap 5.0)
 

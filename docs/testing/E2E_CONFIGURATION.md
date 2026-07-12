@@ -241,6 +241,6 @@ npx playwright show-report
 
 ## See Also
 
--   [PLAYWRIGHT_SETUP_GUIDE.md](PLAYWRIGHT_SETUP_GUIDE.md) - Complete Playwright setup
--   [FRONTEND_TEST_SETUP_SUMMARY.md](FRONTEND_TEST_SETUP_SUMMARY.md) - Infrastructure overview
+-   PLAYWRIGHT_SETUP_GUIDE.md - Complete Playwright setup
+-   FRONTEND_TEST_SETUP_SUMMARY.md - Infrastructure overview
 -   [Playwright Documentation](https://playwright.dev)

@@ -15,7 +15,7 @@ This directory contains incident response playbooks and operational procedures f
 
 ## Quick Links
 
-- 🚨 **[On-Call Quick Reference](../ON_CALL_QUICK_REFERENCE.md)** - Essential info for on-call engineers
+- 🚨 **On-Call Quick Reference** - Essential info for on-call engineers
 - 📊 **[SLO Definitions](../slos.md)** - Service level objectives and targets
 - 🔧 **[Operations Runbook](../runbook.md)** - Common tasks and procedures
 
@@ -230,10 +230,10 @@ After every incident:
 ### Internal Documentation
 
 - [SLO Documentation](../slos.md)
-- [Monitoring Setup](../../monitoring/README.md)
-- [Alert Configuration](../../monitoring/alerts.yml)
-- [Deployment Guide](../deployment.md)
-- [Security Procedures](../break-glass-procedures.md)
+- Monitoring Setup
+- Alert Configuration
+- Deployment Guide
+- Security Procedures
 
 ### External Resources
 

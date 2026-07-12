@@ -274,6 +274,6 @@ If validation incorrectly flags configuration:
 
 ## See Also
 
-- [Blue-Green Deployment Guide](../docs/BLUE_GREEN_DEPLOYMENT.md)
-- [Load Testing Guide](../backend/tests/load/README.md)
-- [Production Hardening Checklist](../docs/PRODUCTION_HARDENING.md)
+- Blue-Green Deployment Guide
+- Load Testing Guide
+- Production Hardening Checklist

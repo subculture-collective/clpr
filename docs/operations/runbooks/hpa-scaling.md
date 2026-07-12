@@ -439,7 +439,7 @@ kubectl get hpa -n clpr-production -w
 - [Kubernetes HPA Documentation](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
 - [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 - [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter)
-- [Clipper Monitoring Setup](./monitoring.md)
+- Clipper Monitoring Setup
 
 ## Support
 

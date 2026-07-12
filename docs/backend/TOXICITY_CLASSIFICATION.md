@@ -297,5 +297,5 @@ For issues or questions:
 
 - [Perspective API Documentation](https://developers.perspectiveapi.com/s/docs)
 - [Perspective API Best Practices](https://developers.perspectiveapi.com/s/docs-best-practices)
-- [Moderation Queue System](./moderation-queue.md)
-- [Database Migrations](../migrations/000087_add_toxicity_classification.up.sql)
+- Moderation Queue System
+- [Database Migrations](../../backend/migrations/000087_add_toxicity_classification.up.sql)

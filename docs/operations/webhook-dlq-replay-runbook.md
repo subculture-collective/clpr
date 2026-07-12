@@ -443,7 +443,7 @@ If replay causes system issues:
 
 - [Webhook Signature Verification](../backend/webhook-signature-verification.md)
 - [Webhook Subscription Management](../backend/webhook-subscription-management.md)
-- [Webhook Retry Policy](../backend/webhook-retry.md)
+- Webhook Retry Policy
 - [Webhook Monitoring](./webhook-monitoring.md)
 
 ## Support

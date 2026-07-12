@@ -2124,9 +2124,9 @@ curl http://localhost:8080/api/v1/users/me \
 ## Additional Resources
 
 - [OpenAPI Specification](/docs/openapi/openapi.yaml)
-- [Authentication Guide](/docs/backend/authentication.md)
+- Authentication Guide
 - [Authorization Framework](/docs/backend/authorization-framework.md)
-- [Rate Limiting](/docs/backend/rate-limiting.md)
+- Rate Limiting
 - [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)
 - [API Status Page](https://status.clpr.tv)
 

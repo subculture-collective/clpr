@@ -16,6 +16,8 @@ aliases: ["home", "docs home", "documentation"]
 
 Welcome to the Clipper documentation! This is your comprehensive guide to using, developing, and deploying Clipper.
 
+For repository-backed navigation, use the [documentation reference inventory](reference-inventory.md). The [launch feature inventory](LAUNCH_FEATURE_INVENTORY.md) is authoritative when older design or implementation reports disagree with current release scope.
+
 ## 🚀 Quick Start
 
 - **New Users?** Start with the [[users/user-guide|User Guide]]
@@ -172,8 +174,8 @@ In-depth documentation for major platform features:
 - ✅ OpenSearch integration
 - ✅ Semantic vector search
 - ✅ React frontend (web)
-- ✅ React Native mobile apps
-- ✅ Premium subscription system
+- 📋 Native mobile workspace is planned and is not part of this release
+- 🚧 Premium subscriptions remain disabled until the Stripe lifecycle gate passes
 - ✅ CI/CD pipeline
 - 🚧 Production hardening
 - 🚧 Mobile app release
@@ -200,7 +202,7 @@ This documentation is structured for repository-based browsing, code review, and
 ### Markdown Conventions
 
 - **Wikilinks**: `[[page-name]]` or `[[page-name|Display Text]]`
-- **Relative Links**: `[Link Text](./relative/path.md)`
+- **Relative Links**: `Link Text`
 - **Code Blocks**: Triple backticks with language identifier
 - **Callouts**: Use `> [!note]`, `> [!warning]`, `> [!tip]` for emphasis
 - **Tables**: GitHub-flavored markdown tables for structured data
@@ -235,7 +237,7 @@ All documentation is automatically validated on every commit:
 - Configuration file documentation
 - Best practices
 
-Related: [CI Workflow](.github/workflows/docs.yml) | Issues [#803](https://git.subcult.tv/subculture-collective/clpr/issues/803), [#845](https://git.subcult.tv/subculture-collective/clpr/issues/845), [#846](https://git.subcult.tv/subculture-collective/clpr/issues/846), [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)
+Related: [CI Workflow](../.github/workflows/docs.yml) | Issues [#803](https://git.subcult.tv/subculture-collective/clpr/issues/803), [#845](https://git.subcult.tv/subculture-collective/clpr/issues/845), [#846](https://git.subcult.tv/subculture-collective/clpr/issues/846), [#805](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 
 ## 🆘 Getting Help
 

@@ -67,8 +67,17 @@ jobs:
         continue-on-error: true  # Temporarily allow failures due to ~800 legacy technical terms
 
       - name: Check links
+        run: npm run docs:links:local
+        continue-on-error: false
+
+      - name: Check external links (advisory)
         run: npm run docs:links
-        continue-on-error: true  # Temporarily allow failures for external services and legacy URLs
+        continue-on-error: true  # External sites may be transient; local references are mandatory above.
+
+      - name: Verify generated documentation inventory is current
+        run: |
+          npm run docs:inventory
+          git diff --exit-code -- docs/reference-inventory.md
 
       - name: Check anchors
         run: npm run docs:anchors

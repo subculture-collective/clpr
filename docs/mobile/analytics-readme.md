@@ -49,13 +49,13 @@ Welcome to the Clipper mobile analytics documentation. This guide helps you navi
 → Check [posthog-dashboard-queries.md](./posthog-dashboard-queries.md)
 
 **Add event tracking to the mobile app**
-→ Follow [../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md](../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md)
+→ Follow ../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md
 
 **Understand PostHog integration**
-→ Read [../../mobile/POSTHOG_ANALYTICS.md](../../mobile/POSTHOG_ANALYTICS.md)
+→ Read ../../mobile/POSTHOG_ANALYTICS.md
 
 **See implementation status**
-→ Review [DASHBOARD_IMPLEMENTATION_SUMMARY.md](./DASHBOARD_IMPLEMENTATION_SUMMARY.md)
+→ Review DASHBOARD_IMPLEMENTATION_SUMMARY.md
 
 ## 📊 Dashboard Suite
 
@@ -98,7 +98,7 @@ We have 5 core dashboards:
 ### Step-by-Step
 1. Read [analytics-dashboard-setup.md](./analytics-dashboard-setup.md)
 2. Follow dashboard creation instructions (4-6 hours)
-3. Implement event tracking using [ANALYTICS_EVENT_TRACKING_TODO.md](../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md)
+3. Implement event tracking using ANALYTICS_EVENT_TRACKING_TODO.md
 4. Test with staging environment
 5. Share dashboards with team
 6. Configure alerts for critical metrics
@@ -125,14 +125,14 @@ See [dashboard-implementation-summary.md](./dashboard-implementation-summary.md)
 - **Error events**: API errors, playback errors, crashes
 - **Performance events**: Load times, response times
 
-See [ANALYTICS_EVENT_TRACKING_TODO.md](../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md) for implementation guide.
+See ANALYTICS_EVENT_TRACKING_TODO.md for implementation guide.
 
 ## 🎓 Learning Resources
 
 ### Internal
-- [Mobile Architecture](./architecture.md)
-- [PostHog Integration](../../mobile/POSTHOG_ANALYTICS.md)
-- [Analytics Module](../../mobile/lib/analytics.ts)
+- Mobile Architecture
+- PostHog Integration
+- Analytics Module
 
 ### External
 - [PostHog Documentation](https://posthog.com/docs)
@@ -151,10 +151,10 @@ See [ANALYTICS_EVENT_TRACKING_TODO.md](../../mobile/ANALYTICS_EVENT_TRACKING_TOD
 → Refer to [posthog-dashboard-queries.md](./posthog-dashboard-queries.md)
 
 **Event Tracking**  
-→ See [ANALYTICS_EVENT_TRACKING_TODO.md](../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md)
+→ See ANALYTICS_EVENT_TRACKING_TODO.md
 
 **Technical Integration**  
-→ Review [POSTHOG_ANALYTICS.md](../../mobile/POSTHOG_ANALYTICS.md)
+→ Review POSTHOG_ANALYTICS.md
 
 ## 📝 Recent Updates
 

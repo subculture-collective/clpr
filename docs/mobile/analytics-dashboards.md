@@ -15,7 +15,7 @@ This document provides comprehensive setup instructions for PostHog dashboards t
 
 ## Overview
 
-The mobile analytics dashboards provide insights into user behavior, engagement, retention, and app stability. These dashboards are built on top of the PostHog SDK integration documented in [mobile/POSTHOG_ANALYTICS.md](../../mobile/POSTHOG_ANALYTICS.md).
+The mobile analytics dashboards provide insights into user behavior, engagement, retention, and app stability. These dashboards are built on top of the PostHog SDK integration documented in mobile/POSTHOG_ANALYTICS.md.
 
 ## Dashboard Suite
 
@@ -777,10 +777,10 @@ Set up Slack notifications:
 
 ### Documentation Links
 
-- [PostHog Analytics Integration](../../mobile/POSTHOG_ANALYTICS.md)
-- [Mobile Architecture](../../mobile/ARCHITECTURE.md)
-- [Mobile Analytics Event Schema](../../mobile/lib/analytics.ts)
-- [Sentry Integration](../../mobile/SENTRY_INTEGRATION.md)
+- PostHog Analytics Integration
+- [Mobile Architecture](../ARCHITECTURE.md)
+- Mobile Analytics Event Schema
+- Sentry Integration
 
 ### PostHog Resources
 

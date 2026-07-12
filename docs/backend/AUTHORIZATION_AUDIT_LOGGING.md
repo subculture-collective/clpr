@@ -252,7 +252,7 @@ go test -v ./internal/middleware -run TestCanAccessResource
 
 ## References
 
-- [Authorization Middleware](../internal/middleware/authorization.go)
-- [Structured Logger](../pkg/utils/logger.go)
+- [Authorization Middleware](../../backend/internal/middleware/authorization.go)
+- [Structured Logger](../../backend/pkg/utils/logger.go)
 - [GDPR Compliance Documentation](https://gdpr.eu/)
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)

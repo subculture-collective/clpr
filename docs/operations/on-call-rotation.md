@@ -335,17 +335,17 @@ Platform Team: platform@clpr.app
 **ServiceDown:**
 - **Meaning:** Service not responding
 - **Response:** Check pod status, restart or rollback
-- **Runbook:** [Service Down](runbook.md#service-down)
+- **Runbook:** [High error rate](runbook.md#high-error-rate)
 
 **DatabaseDown:**
 - **Meaning:** Database not responding
 - **Response:** Check DB status, connections, restart if needed
-- **Runbook:** [Database Down](runbook.md#database-down)
+- **Runbook:** [Database connection exhaustion](runbook.md#database-connection-exhaustion)
 
 **RedisDown:**
 - **Meaning:** Redis cache not responding
 - **Response:** Check Redis status, restart if needed
-- **Runbook:** [Redis Down](runbook.md#redis-down)
+- **Runbook:** [Cache operations](runbook.md#cache-operations)
 
 ### Warning Alerts (P2)
 
@@ -362,12 +362,12 @@ Platform Team: platform@clpr.app
 **HighMemoryUsage:**
 - **Meaning:** Memory usage > 80%
 - **Response:** Check for memory leaks, scale if needed
-- **Runbook:** [High Memory](runbook.md#high-memory-usage)
+- **Runbook:** [Scaling](runbook.md#scaling)
 
 **LowDiskSpace:**
 - **Meaning:** Disk space < 20%
 - **Response:** Clean up logs, expand volume if needed
-- **Runbook:** [Low Disk Space](runbook.md#low-disk-space)
+- **Runbook:** [Out of disk space](runbook.md#out-of-disk-space)
 
 ### Security Alerts
 
@@ -525,9 +525,9 @@ amtool silence expire <silence-id>
 
 ### Recommended Reading
 
-- [ ] [Alertmanager Setup Guide](../../monitoring/ALERTMANAGER_SETUP.md)
+- [ ] Alertmanager Setup Guide
 - [ ] [Centralized Logging](centralized-logging.md)
-- [ ] [Kubernetes Runbook](kubernetes-runbook.md)
+- [ ] Kubernetes Runbook
 - [ ] [Background Jobs Runbook](runbooks/background-jobs.md)
 
 ### Training Sessions
@@ -639,7 +639,7 @@ A: Consider silencing expected alerts. But watch dashboards closely and rollback
 ## Related Documentation
 
 - [On-Call Quick Reference Card](on-call-quick-reference.md) - Print and keep handy
-- [Alertmanager Setup Guide](../../monitoring/ALERTMANAGER_SETUP.md)
+- Alertmanager Setup Guide
 - [SLO Documentation](slos.md)
 - [Runbooks](runbooks/) and [Playbooks](playbooks/)
-- [Monitoring README](../../monitoring/README.md)
+- Monitoring README

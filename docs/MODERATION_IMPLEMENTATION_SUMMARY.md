@@ -12,7 +12,7 @@
 
 All documentation is in the `.github/` directory:
 
-- **[MODERATION_ROADMAP.md](.github/MODERATION_ROADMAP.md)** (621 lines)
+- **[MODERATION_ROADMAP.md](./MODERATION_ROADMAP.md)** (621 lines)
   - 8 epics with full breakdown
   - 5-phase implementation timeline (10 weeks)
   - Architecture overview with diagrams
@@ -22,7 +22,7 @@ All documentation is in the `.github/` directory:
   - Audit trail requirements
   - Privacy considerations
 
-- **[CHILD_ISSUES_SPECIFICATIONS.md](.github/CHILD_ISSUES_SPECIFICATIONS.md)** (1,800+ lines)
+- **[CHILD_ISSUES_SPECIFICATIONS.md](./CHILD_ISSUES_SPECIFICATIONS.md)** (1,800+ lines)
   - 38 detailed child issue specifications
   - Each includes: effort estimates, acceptance criteria, implementation details, testing strategy
   - Critical new section: Ban Visibility & Interaction Model
@@ -30,13 +30,13 @@ All documentation is in the `.github/` directory:
   - Custom hook specification: `useCheckBanStatus`
   - API contract specifications
 
-- **[MODERATION_QUICK_REFERENCE.md](.github/MODERATION_QUICK_REFERENCE.md)**
+- **[MODERATION_QUICK_REFERENCE.md](./MODERATION_QUICK_REFERENCE.md)**
   - Quick start guide for developers
   - Role matrix
   - Permission matrix
   - Common workflows
 
-- **[IMPLEMENTATION_CHECKLIST.md](.github/IMPLEMENTATION_CHECKLIST.md)**
+- **[IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md)**
   - Progress tracking spreadsheet
   - 8 epics, 38 child issues
   - Effort estimates per phase
@@ -61,7 +61,7 @@ All documentation is in the `.github/` directory:
   - **Critical:** Explains ban visibility model and interaction requirements
 
 ### Additional Issues
-Remaining 34 child issues documented in [CHILD_ISSUES_SPECIFICATIONS.md](.github/CHILD_ISSUES_SPECIFICATIONS.md) and ready to be created as needed.
+Remaining 34 child issues documented in [CHILD_ISSUES_SPECIFICATIONS.md](./CHILD_ISSUES_SPECIFICATIONS.md) and ready to be created as needed.
 
 ---
 
@@ -152,9 +152,9 @@ Community Moderator (Channel-Scoped)
 ## 🚀 Next Steps
 
 1. **Review Documentation**
-   - Read [MODERATION_ROADMAP.md](.github/MODERATION_ROADMAP.md) for overview
-   - Review [CHILD_ISSUES_SPECIFICATIONS.md](.github/CHILD_ISSUES_SPECIFICATIONS.md) for details
-   - Check [MODERATION_QUICK_REFERENCE.md](.github/MODERATION_QUICK_REFERENCE.md) for reference
+   - Read [MODERATION_ROADMAP.md](./MODERATION_ROADMAP.md) for overview
+   - Review [CHILD_ISSUES_SPECIFICATIONS.md](./CHILD_ISSUES_SPECIFICATIONS.md) for details
+   - Check [MODERATION_QUICK_REFERENCE.md](./MODERATION_QUICK_REFERENCE.md) for reference
 
 2. **Approve Architecture & Ban Scope**
    - Confirm ban scope is channel-specific only
@@ -162,7 +162,7 @@ Community Moderator (Channel-Scoped)
    - Review permission model
 
 3. **Create Remaining Child Issues**
-   - Remaining 34 issues from [CHILD_ISSUES_SPECIFICATIONS.md](.github/CHILD_ISSUES_SPECIFICATIONS.md)
+   - Remaining 34 issues from [CHILD_ISSUES_SPECIFICATIONS.md](./CHILD_ISSUES_SPECIFICATIONS.md)
    - Or use automation to batch create from specification
 
 4. **Begin Phase 1 Development**

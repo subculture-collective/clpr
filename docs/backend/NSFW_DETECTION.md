@@ -403,6 +403,6 @@ Common error responses:
 
 ## Related Documentation
 
-- [Moderation Queue API](./MODERATION_QUEUE.md)
-- [Content Moderation Guidelines](./CONTENT_MODERATION.md)
-- [Metrics & Monitoring](./METRICS.md)
+- Moderation Queue API
+- Content Moderation Guidelines
+- Metrics & Monitoring

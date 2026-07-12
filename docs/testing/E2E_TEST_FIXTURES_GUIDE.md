@@ -451,8 +451,8 @@ test('with explicit cleanup', async ({ testClip, apiUtils }) => {
 
 ## Reference
 
-- **Test Fixture Types**: Check [fixtures/index.ts](./index.ts)
-- **Test Data Factories**: Check [fixtures/test-data.ts](./test-data.ts)
-- **Multi-User Context**: Check [fixtures/multi-user-context.ts](./multi-user-context.ts)
-- **API Utilities**: Check [fixtures/api-utils.ts](./api-utils.ts)
+- **Test Fixture Types**: Check fixtures/index.ts
+- **Test Data Factories**: Check fixtures/test-data.ts
+- **Multi-User Context**: Check [fixtures/multi-user-context.ts](../../frontend/e2e/fixtures/multi-user-context.ts)
+- **API Utilities**: Check [fixtures/api-utils.ts](../../frontend/e2e/fixtures/api-utils.ts)
 - **Playwright Docs**: https://playwright.dev/docs/test-fixtures

@@ -3367,10 +3367,10 @@ export function useActionName(resourceId: string) {
 
 - **[Moderation API](./moderation-api.md)** - Complete API reference
 - **[Permission Model](./permission-model.md)** - Permission system details
-- **[Testing Guide](./testing.md)** - Testing best practices
-- **[Architecture](./architecture.md)** - System architecture overview
-- **[Database Schema](./database.md)** - Complete database schema
-- **[Authentication](./authentication.md)** - Auth implementation
+- **Testing Guide** - Testing best practices
+- **Architecture** - System architecture overview
+- **Database Schema** - Complete database schema
+- **Authentication** - Auth implementation
 - **[Authorization Framework](./authorization-framework.md)** - Authorization details
 
 ### Getting Help

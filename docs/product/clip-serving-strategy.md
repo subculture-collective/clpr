@@ -214,4 +214,4 @@ curl "http://localhost:8080/api/v1/scraped-clips?sort=new"
 
 - [Clip Management API](../backend/clip-api.md)
 - [Scraped Clips Feature](./scraped-clips.md)
-- [Discovery Lists Feature](./discovery-lists.md)
+- Discovery Lists Feature

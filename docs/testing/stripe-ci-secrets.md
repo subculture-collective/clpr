@@ -240,9 +240,9 @@ Monitor your Stripe test mode activity:
 
 ## Related Documentation
 
-- [Premium Subscription E2E Tests README](../../frontend/e2e/tests/PREMIUM_SUBSCRIPTION_TESTS.md)
-- [Stripe Webhook Testing Guide](../../backend/docs/STRIPE_WEBHOOK_TESTING.md)
-- [Stripe Integration Documentation](../../docs/premium/stripe.md)
+- Premium Subscription E2E Tests README
+- [Stripe Webhook Testing Guide](./STRIPE_WEBHOOK_TESTING.md)
+- Stripe Integration Documentation
 - [GitHub Secrets Documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Stripe Test Mode Documentation](https://stripe.com/docs/test-mode)
 

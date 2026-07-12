@@ -87,7 +87,7 @@ counts that included planned or missing artifacts.
 - **Services**: `auth_service.go`
 - **Tests**: ✅ Handler tests exist
 - **Typing**: ✅ TypeScript types defined
-- **Docs**: [Authentication Guide](../backend/authentication.md)
+- **Docs**: Authentication Guide
 - **Issue**: TBD
 
 **Features**:
@@ -112,7 +112,7 @@ counts that included planned or missing artifacts.
 - **Services**: `mfa_service.go`, `email_mfa.go`
 - **Tests**: ✅ Comprehensive unit tests
 - **Typing**: ✅ Full TypeScript coverage
-- **Docs**: [MFA Admin Guide](../MFA_ADMIN_GUIDE.md)
+- **Docs**: MFA Admin Guide
 - **Issue**: TBD
 
 **Features**:
@@ -135,7 +135,7 @@ counts that included planned or missing artifacts.
 - **Middleware**: `permission_middleware.go`, `authorization_test.go`
 - **Tests**: ✅ Extensive permission tests
 - **Typing**: ✅ Complete
-- **Docs**: [RBAC Documentation](../backend/rbac.md), [Authorization Status](../AUTHORIZATION_STATUS.md)
+- **Docs**: RBAC Documentation, Authorization Status
 - **Issue**: TBD
 
 **Features**:
@@ -189,7 +189,7 @@ counts that included planned or missing artifacts.
 - **Services**: `submission_service.go`, `submission_abuse_detection.go`
 - **Tests**: 🟡 partial
 - **Typing**: ✅ Complete
-- **Docs**: [Clip Submission API Guide](../backend/clip-submission-api-guide.md)
+- **Docs**: Clip Submission API Guide
 - **Issue**: TBD
 
 **Features**:
@@ -217,7 +217,7 @@ counts that included planned or missing artifacts.
 - **Scheduler**: `clip_sync_scheduler.go`
 - **Tests**: ⚠️ broken (scheduler tests have known issues)
 - **Typing**: ✅ Complete
-- **Docs**: [Clip Scraper README](../../backend/scripts/README_SCRAPER.md), [Scraped Clips](scraped-clips.md)
+- **Docs**: [Clip Scraper README](../README_SCRAPER.md), [Scraped Clips](scraped-clips.md)
 - **Issue**: TBD
 
 **Features**:
@@ -297,7 +297,7 @@ counts that included planned or missing artifacts.
 - **Repository**: `user_repository.go`
 - **Tests**: 🟡 partial
 - **Typing**: ✅ Complete
-- **Docs**: [User Guide](../users/user-guide.md)
+- **Docs**: User Guide
 - **Issue**: TBD
 
 **Features**:
@@ -326,7 +326,7 @@ counts that included planned or missing artifacts.
 - **Services**: `user_settings_service.go`
 - **Tests**: ✅ Unit tests exist
 - **Typing**: ✅ Complete
-- **Docs**: [User Settings](user-settings.md)
+- **Docs**: User Settings
 - **Issue**: TBD
 
 **Features**:
@@ -352,7 +352,7 @@ counts that included planned or missing artifacts.
 - **Services**: `user_settings_service.go`, `account_type_service.go`
 - **Tests**: ✅ Unit tests exist
 - **Typing**: ✅ Complete
-- **Docs**: [GDPR Compliance](../gdpr-compliance.md)
+- **Docs**: [GDPR Compliance](../compliance/gdpr-compliance.md)
 - **Issue**: TBD
 
 **Features**:
@@ -379,7 +379,7 @@ counts that included planned or missing artifacts.
 - **Scheduler**: `reputation_scheduler.go`
 - **Tests**: ✅ Unit tests exist
 - **Typing**: ✅ Complete
-- **Docs**: [Reputation System](reputation-system.md)
+- **Docs**: Reputation System
 - **Issue**: TBD
 
 **Features**:
@@ -408,7 +408,7 @@ counts that included planned or missing artifacts.
 - **Repository**: `comment_repository.go`
 - **Tests**: ✅ Comprehensive tests including nested comments
 - **Typing**: ✅ Complete
-- **Docs**: [Comment API](../backend/comment-api.md), [Comments Feature](../features/comments.md)
+- **Docs**: Comment API, [Comments Feature](../features/comments.md)
 - **Issue**: TBD
 
 **Features**:
@@ -481,7 +481,7 @@ counts that included planned or missing artifacts.
 - **Repository**: `playlist_repository.go`
 - **Tests**: 🟡 partial
 - **Typing**: ✅ Complete
-- **Docs**: [Playlists Feature](../features/feature-playlists.md), [API Playlist Sharing](../API_PLAYLIST_SHARING.md)
+- **Docs**: [Playlists Feature](../features/feature-playlists.md), API Playlist Sharing
 - **Issue**: TBD
 
 **Features**:
@@ -513,7 +513,7 @@ counts that included planned or missing artifacts.
 - **Repository**: `search_repository.go`
 - **Tests**: ✅ Unit tests exist
 - **Typing**: ✅ Complete
-- **Docs**: [Search Feature](../backend/search.md), [Semantic Search](../backend/semantic-search.md)
+- **Docs**: Search Feature, Semantic Search
 - **Issue**: TBD
 
 **Features**:
@@ -931,10 +931,10 @@ This inventory should be updated:
 ## Related Documentation
 
 - [Product Roadmap](roadmap.md)
-- [Contributing Guide](../../CONTRIBUTING.md)
-- [Testing Strategy](../TESTING.md)
-- [Architecture Documentation](../backend/architecture.md)
-- [API Documentation](../backend/api.md)
+- Contributing Guide
+- [Testing Strategy](../testing/TESTING.md)
+- Architecture Documentation
+- API Documentation
 
 ---
 

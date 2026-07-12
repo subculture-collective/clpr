@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T08:05:29.348Z
+generated: 2026-07-12T15:28:33.588Z
 ---
 
 # Clipper API
@@ -62,31 +62,7 @@ The API uses standard HTTP status codes:
 - [Reports](#reports)
 - [Moderation](#moderation)
 - [Users](#users)
-- [Creators](#creators)
-- [Broadcasters](#broadcasters)
-- [Categories](#categories)
-- [Streams](#streams)
-- [Games](#games)
-- [Discovery](#discovery)
-- [Leaderboards](#leaderboards)
-- [Feeds](#feeds)
-- [Recommendations](#recommendations)
-- [Notifications](#notifications)
-- [Verification](#verification)
-- [Subscriptions](#subscriptions)
-- [Webhooks](#webhooks)
-- [Contact](#contact)
-- [Chat](#chat)
-- [Ads](#ads)
-- [Documentation](#documentation)
-- [Communities](#communities)
-- [Playlists](#playlists)
-- [Forum](#forum)
-- [Queue](#queue)
 - [Watch History](#watch-history)
-- [Watch Parties](#watch-parties)
-- [Service Status](#service-status)
-- [Admin](#admin)
 
 ## Health
 
@@ -1214,7 +1190,7 @@ Content-Type: `application/json`
 
 #### Responses
 
-**201** - Log submitted successfully
+**204** - Log submitted successfully
 
 **400** - Success
 
@@ -3923,7 +3899,7 @@ Content-Type: `application/json`
 
 #### Responses
 
-**201** - View tracked
+**200** - View tracked
 
 **404** - Success
 
@@ -8844,7 +8820,7 @@ Content-Type: `application/json`
 
 #### Responses
 
-**201** - User banned on Twitch
+**200** - User banned on Twitch
 
 **401** - Success
 
@@ -8966,7 +8942,7 @@ Content-Type: `application/json`
 
 #### Responses
 
-**204** - User unbanned on Twitch
+**200** - User unbanned on Twitch
 
 **401** - Success
 
@@ -13585,13 +13561,13 @@ func main() {
 
 `GET /api/v1/admin/account-types/conversions`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -13683,13 +13659,13 @@ func main() {
 
 `GET /api/v1/admin/account-types/stats`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -13781,7 +13757,7 @@ func main() {
 
 `POST /api/v1/admin/account-types/users/{id}/convert-to-moderator`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -13793,7 +13769,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -13885,13 +13861,13 @@ func main() {
 
 `GET /api/v1/admin/ads/campaigns`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -13983,13 +13959,13 @@ func main() {
 
 `POST /api/v1/admin/ads/campaigns`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14081,7 +14057,7 @@ func main() {
 
 `GET /api/v1/admin/ads/campaigns/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -14093,7 +14069,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14185,7 +14161,7 @@ func main() {
 
 `PUT /api/v1/admin/ads/campaigns/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -14197,7 +14173,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14289,7 +14265,7 @@ func main() {
 
 `DELETE /api/v1/admin/ads/campaigns/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -14301,7 +14277,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14393,13 +14369,13 @@ func main() {
 
 `GET /api/v1/admin/ads/experiments`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14491,7 +14467,7 @@ func main() {
 
 `GET /api/v1/admin/ads/experiments/{id}/report`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -14503,7 +14479,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14595,13 +14571,13 @@ func main() {
 
 `GET /api/v1/admin/ads/reports/by-campaign`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14693,13 +14669,13 @@ func main() {
 
 `GET /api/v1/admin/ads/reports/by-date`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14791,13 +14767,13 @@ func main() {
 
 `GET /api/v1/admin/ads/reports/by-placement`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14889,13 +14865,13 @@ func main() {
 
 `GET /api/v1/admin/ads/reports/by-slot`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -14987,13 +14963,13 @@ func main() {
 
 `POST /api/v1/admin/ads/validate-creative`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15085,13 +15061,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/alerts`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15183,13 +15159,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/content`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15281,13 +15257,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/export`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15379,13 +15355,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/health`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15477,13 +15453,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/overview`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15575,13 +15551,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/trending`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15673,13 +15649,13 @@ func main() {
 
 `GET /api/v1/admin/analytics/trends`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15771,13 +15747,13 @@ func main() {
 
 `GET /api/v1/admin/audit-logs`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15869,13 +15845,13 @@ func main() {
 
 `GET /api/v1/admin/audit-logs/export`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -15967,13 +15943,13 @@ func main() {
 
 `POST /api/v1/admin/broadcasters/refresh-rankings`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16065,13 +16041,13 @@ func main() {
 
 `GET /api/v1/admin/contact`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16163,7 +16139,7 @@ func main() {
 
 `PUT /api/v1/admin/contact/{id}/status`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16175,7 +16151,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16267,13 +16243,13 @@ func main() {
 
 `GET /api/v1/admin/discovery-lists`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16365,13 +16341,13 @@ func main() {
 
 `POST /api/v1/admin/discovery-lists`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16463,7 +16439,7 @@ func main() {
 
 `GET /api/v1/admin/discovery-lists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16475,7 +16451,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16567,7 +16543,7 @@ func main() {
 
 `PUT /api/v1/admin/discovery-lists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16579,7 +16555,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16671,7 +16647,7 @@ func main() {
 
 `DELETE /api/v1/admin/discovery-lists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16683,7 +16659,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16775,7 +16751,7 @@ func main() {
 
 `GET /api/v1/admin/discovery-lists/{id}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16787,7 +16763,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16879,7 +16855,7 @@ func main() {
 
 `POST /api/v1/admin/discovery-lists/{id}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16891,7 +16867,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -16983,7 +16959,7 @@ func main() {
 
 `PUT /api/v1/admin/discovery-lists/{id}/clips/reorder`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -16995,7 +16971,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17087,7 +17063,7 @@ func main() {
 
 `DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -17100,7 +17076,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17192,13 +17168,13 @@ func main() {
 
 `GET /api/v1/admin/email/alerts`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17290,7 +17266,7 @@ func main() {
 
 `POST /api/v1/admin/email/alerts/{id}/acknowledge`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -17302,7 +17278,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17394,7 +17370,7 @@ func main() {
 
 `POST /api/v1/admin/email/alerts/{id}/resolve`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -17406,7 +17382,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17498,13 +17474,13 @@ func main() {
 
 `GET /api/v1/admin/email/logs`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17596,13 +17572,13 @@ func main() {
 
 `GET /api/v1/admin/email/metrics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17694,13 +17670,13 @@ func main() {
 
 `GET /api/v1/admin/email/metrics/dashboard`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17792,13 +17768,13 @@ func main() {
 
 `GET /api/v1/admin/email/metrics/templates`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17890,13 +17866,13 @@ func main() {
 
 `GET /api/v1/admin/forum/bans`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -17988,13 +17964,13 @@ func main() {
 
 `GET /api/v1/admin/forum/flagged`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18086,13 +18062,13 @@ func main() {
 
 `GET /api/v1/admin/forum/moderation-log`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18184,7 +18160,7 @@ func main() {
 
 `POST /api/v1/admin/forum/threads/{id}/delete`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -18196,7 +18172,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18288,7 +18264,7 @@ func main() {
 
 `POST /api/v1/admin/forum/threads/{id}/lock`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -18300,7 +18276,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18392,7 +18368,7 @@ func main() {
 
 `POST /api/v1/admin/forum/threads/{id}/pin`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -18404,7 +18380,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18496,7 +18472,7 @@ func main() {
 
 `POST /api/v1/admin/forum/users/{id}/ban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -18508,7 +18484,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18600,7 +18576,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/abuse/{userId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -18612,7 +18588,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18704,13 +18680,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/analytics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18802,13 +18778,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/appeals`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -18900,7 +18876,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/appeals/{id}/resolve`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -18912,7 +18888,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19004,13 +18980,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/audit`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19102,13 +19078,13 @@ func main() {
 
 `POST /api/v1/admin/moderation/bulk`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19200,13 +19176,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/events`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19298,7 +19274,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/events/{id}/process`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -19310,7 +19286,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19402,7 +19378,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/events/{id}/review`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -19414,7 +19390,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19506,7 +19482,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/events/{type}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -19518,7 +19494,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19610,13 +19586,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/queue`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19708,13 +19684,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/queue/stats`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19806,13 +19782,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/stats`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -19904,13 +19880,13 @@ func main() {
 
 `GET /api/v1/admin/moderation/toxicity/metrics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20002,7 +19978,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/{id}/approve`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -20014,7 +19990,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20106,7 +20082,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/{id}/reject`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -20118,7 +20094,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20210,13 +20186,13 @@ func main() {
 
 `POST /api/v1/admin/nsfw/batch-detect`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20308,13 +20284,13 @@ func main() {
 
 `GET /api/v1/admin/nsfw/config`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20406,13 +20382,13 @@ func main() {
 
 `POST /api/v1/admin/nsfw/detect`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20504,13 +20480,13 @@ func main() {
 
 `GET /api/v1/admin/nsfw/health`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20602,13 +20578,13 @@ func main() {
 
 `GET /api/v1/admin/nsfw/metrics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20700,13 +20676,13 @@ func main() {
 
 `POST /api/v1/admin/nsfw/scan-clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20798,13 +20774,13 @@ func main() {
 
 `GET /api/v1/admin/playlist-scripts`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20896,13 +20872,13 @@ func main() {
 
 `POST /api/v1/admin/playlist-scripts`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -20994,7 +20970,7 @@ func main() {
 
 `PUT /api/v1/admin/playlist-scripts/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -21006,7 +20982,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21098,7 +21074,7 @@ func main() {
 
 `DELETE /api/v1/admin/playlist-scripts/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -21110,7 +21086,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21202,7 +21178,7 @@ func main() {
 
 `POST /api/v1/admin/playlist-scripts/{id}/generate`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -21214,7 +21190,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21306,13 +21282,13 @@ func main() {
 
 `GET /api/v1/admin/reports`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21404,7 +21380,7 @@ func main() {
 
 `GET /api/v1/admin/reports/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -21416,7 +21392,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21508,7 +21484,7 @@ func main() {
 
 `PUT /api/v1/admin/reports/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -21520,7 +21496,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21612,13 +21588,13 @@ func main() {
 
 `GET /api/v1/admin/revenue`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21710,13 +21686,13 @@ func main() {
 
 `GET /api/v1/admin/submissions`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21808,13 +21784,13 @@ func main() {
 
 `POST /api/v1/admin/submissions/bulk-approve`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -21906,13 +21882,13 @@ func main() {
 
 `POST /api/v1/admin/submissions/bulk-reject`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22004,13 +21980,13 @@ func main() {
 
 `GET /api/v1/admin/submissions/rejection-reasons`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22102,7 +22078,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/{id}/approve`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -22114,7 +22090,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22206,7 +22182,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/{id}/reject`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -22218,7 +22194,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22310,13 +22286,13 @@ func main() {
 
 `POST /api/v1/admin/sync/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22408,13 +22384,13 @@ func main() {
 
 `GET /api/v1/admin/sync/status`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22506,13 +22482,13 @@ func main() {
 
 `POST /api/v1/admin/tags`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22604,13 +22580,13 @@ func main() {
 
 `GET /api/v1/admin/tags/blacklist`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22702,13 +22678,13 @@ func main() {
 
 `POST /api/v1/admin/tags/blacklist`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22800,7 +22776,7 @@ func main() {
 
 `DELETE /api/v1/admin/tags/blacklist/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -22812,7 +22788,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -22904,7 +22880,7 @@ func main() {
 
 `PUT /api/v1/admin/tags/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -22916,7 +22892,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23008,7 +22984,7 @@ func main() {
 
 `DELETE /api/v1/admin/tags/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23020,7 +22996,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23112,13 +23088,13 @@ func main() {
 
 `GET /api/v1/admin/users`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23210,7 +23186,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/badges`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23222,7 +23198,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23314,7 +23290,7 @@ func main() {
 
 `DELETE /api/v1/admin/users/{id}/badges/{badgeId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23327,7 +23303,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23419,7 +23395,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/ban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23431,7 +23407,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23523,7 +23499,7 @@ func main() {
 
 `GET /api/v1/admin/users/{id}/comment-suspension-history`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23535,7 +23511,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23627,7 +23603,7 @@ func main() {
 
 `PATCH /api/v1/admin/users/{id}/karma`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23639,7 +23615,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23731,7 +23707,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/lift-comment-suspension`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23743,7 +23719,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23835,7 +23811,7 @@ func main() {
 
 `PATCH /api/v1/admin/users/{id}/role`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23847,7 +23823,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -23939,7 +23915,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/suspend-comments`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -23951,7 +23927,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24043,7 +24019,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/toggle-comment-review`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -24055,7 +24031,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24147,7 +24123,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/unban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -24159,7 +24135,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24251,13 +24227,13 @@ func main() {
 
 `GET /api/v1/admin/verification/applications`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24349,7 +24325,7 @@ func main() {
 
 `GET /api/v1/admin/verification/applications/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -24361,7 +24337,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24453,7 +24429,7 @@ func main() {
 
 `POST /api/v1/admin/verification/applications/{id}/review`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -24465,7 +24441,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24557,13 +24533,13 @@ func main() {
 
 `GET /api/v1/admin/verification/audit-logs`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24655,13 +24631,13 @@ func main() {
 
 `GET /api/v1/admin/verification/stats`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24753,7 +24729,7 @@ func main() {
 
 `GET /api/v1/admin/verification/users/{user_id}/audit-logs`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -24765,7 +24741,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24857,13 +24833,13 @@ func main() {
 
 `GET /api/v1/admin/webhooks/dlq`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -24955,7 +24931,7 @@ func main() {
 
 `DELETE /api/v1/admin/webhooks/dlq/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -24967,7 +24943,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25059,7 +25035,7 @@ func main() {
 
 `POST /api/v1/admin/webhooks/dlq/{id}/replay`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -25071,7 +25047,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25163,13 +25139,13 @@ func main() {
 
 `GET /api/v1/ads/select`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25261,7 +25237,7 @@ func main() {
 
 `POST /api/v1/ads/track/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -25273,7 +25249,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25365,7 +25341,7 @@ func main() {
 
 `GET /api/v1/ads/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -25377,7 +25353,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25469,13 +25445,13 @@ func main() {
 
 `GET /api/v1/badges`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25567,13 +25543,13 @@ func main() {
 
 `GET /api/v1/broadcasters/live`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25665,13 +25641,13 @@ func main() {
 
 `GET /api/v1/broadcasters/popular`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25763,13 +25739,13 @@ func main() {
 
 `GET /api/v1/broadcasters/rankings`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25861,7 +25837,7 @@ func main() {
 
 `GET /api/v1/broadcasters/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -25873,7 +25849,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -25965,7 +25941,7 @@ func main() {
 
 `GET /api/v1/broadcasters/{id}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -25977,7 +25953,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26069,7 +26045,7 @@ func main() {
 
 `POST /api/v1/broadcasters/{id}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26081,7 +26057,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26173,7 +26149,7 @@ func main() {
 
 `DELETE /api/v1/broadcasters/{id}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26185,7 +26161,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26277,7 +26253,7 @@ func main() {
 
 `GET /api/v1/broadcasters/{id}/live-status`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26289,7 +26265,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26381,13 +26357,13 @@ func main() {
 
 `GET /api/v1/categories`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26479,7 +26455,7 @@ func main() {
 
 `GET /api/v1/categories/{slug}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26491,7 +26467,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26583,7 +26559,7 @@ func main() {
 
 `GET /api/v1/categories/{slug}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26595,7 +26571,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26687,7 +26663,7 @@ func main() {
 
 `GET /api/v1/categories/{slug}/games`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26699,7 +26675,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26791,13 +26767,13 @@ func main() {
 
 `GET /api/v1/chat/channels`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26889,13 +26865,13 @@ func main() {
 
 `POST /api/v1/chat/channels`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -26987,7 +26963,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -26999,7 +26975,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27091,7 +27067,7 @@ func main() {
 
 `PATCH /api/v1/chat/channels/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27103,7 +27079,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27195,7 +27171,7 @@ func main() {
 
 `DELETE /api/v1/chat/channels/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27207,7 +27183,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27299,7 +27275,7 @@ func main() {
 
 `POST /api/v1/chat/channels/{id}/ban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27311,7 +27287,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27403,7 +27379,7 @@ func main() {
 
 `DELETE /api/v1/chat/channels/{id}/ban/{user_id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27416,7 +27392,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27508,7 +27484,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}/check-ban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27520,7 +27496,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27612,7 +27588,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}/members`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27624,7 +27600,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27716,7 +27692,7 @@ func main() {
 
 `POST /api/v1/chat/channels/{id}/members`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27728,7 +27704,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27820,7 +27796,7 @@ func main() {
 
 `PATCH /api/v1/chat/channels/{id}/members/{user_id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27833,7 +27809,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -27925,7 +27901,7 @@ func main() {
 
 `DELETE /api/v1/chat/channels/{id}/members/{user_id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -27938,7 +27914,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28030,7 +28006,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}/messages`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28042,7 +28018,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28134,7 +28110,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}/moderation-log`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28146,7 +28122,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28238,7 +28214,7 @@ func main() {
 
 `POST /api/v1/chat/channels/{id}/mute`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28250,7 +28226,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28342,7 +28318,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}/role`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28354,7 +28330,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28446,7 +28422,7 @@ func main() {
 
 `POST /api/v1/chat/channels/{id}/timeout`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28458,7 +28434,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28550,7 +28526,7 @@ func main() {
 
 `GET /api/v1/chat/channels/{id}/ws`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28562,7 +28538,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28654,13 +28630,13 @@ func main() {
 
 `GET /api/v1/chat/health`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28752,7 +28728,7 @@ func main() {
 
 `DELETE /api/v1/chat/messages/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28764,7 +28740,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28856,13 +28832,13 @@ func main() {
 
 `GET /api/v1/chat/stats`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -28954,7 +28930,7 @@ func main() {
 
 `POST /api/v1/clips/{id}/backfill`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -28966,7 +28942,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29058,7 +29034,7 @@ func main() {
 
 `GET /api/v1/clips/{id}/media`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29070,7 +29046,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29162,7 +29138,7 @@ func main() {
 
 `GET /api/v1/clips/{id}/processing-status`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29174,7 +29150,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29266,13 +29242,13 @@ func main() {
 
 `GET /api/v1/communities`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29364,13 +29340,13 @@ func main() {
 
 `POST /api/v1/communities`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29462,13 +29438,13 @@ func main() {
 
 `GET /api/v1/communities/search`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29560,7 +29536,7 @@ func main() {
 
 `GET /api/v1/communities/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29572,7 +29548,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29664,7 +29640,7 @@ func main() {
 
 `PUT /api/v1/communities/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29676,7 +29652,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29768,7 +29744,7 @@ func main() {
 
 `DELETE /api/v1/communities/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29780,7 +29756,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29872,7 +29848,7 @@ func main() {
 
 `POST /api/v1/communities/{id}/ban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29884,7 +29860,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -29976,7 +29952,7 @@ func main() {
 
 `DELETE /api/v1/communities/{id}/ban/{userId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -29989,7 +29965,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30081,7 +30057,7 @@ func main() {
 
 `GET /api/v1/communities/{id}/bans`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30093,7 +30069,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30185,7 +30161,7 @@ func main() {
 
 `POST /api/v1/communities/{id}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30197,7 +30173,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30289,7 +30265,7 @@ func main() {
 
 `DELETE /api/v1/communities/{id}/clips/{clipId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30302,7 +30278,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30394,7 +30370,7 @@ func main() {
 
 `GET /api/v1/communities/{id}/discussions`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30406,7 +30382,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30498,7 +30474,7 @@ func main() {
 
 `POST /api/v1/communities/{id}/discussions`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30510,7 +30486,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30602,7 +30578,7 @@ func main() {
 
 `GET /api/v1/communities/{id}/discussions/{discussionId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30615,7 +30591,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30707,7 +30683,7 @@ func main() {
 
 `PUT /api/v1/communities/{id}/discussions/{discussionId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30720,7 +30696,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30812,7 +30788,7 @@ func main() {
 
 `DELETE /api/v1/communities/{id}/discussions/{discussionId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30825,7 +30801,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -30917,7 +30893,7 @@ func main() {
 
 `GET /api/v1/communities/{id}/feed`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -30929,7 +30905,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31021,7 +30997,7 @@ func main() {
 
 `POST /api/v1/communities/{id}/join`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31033,7 +31009,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31125,7 +31101,7 @@ func main() {
 
 `POST /api/v1/communities/{id}/leave`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31137,7 +31113,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31229,7 +31205,7 @@ func main() {
 
 `GET /api/v1/communities/{id}/members`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31241,7 +31217,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31333,7 +31309,7 @@ func main() {
 
 `PUT /api/v1/communities/{id}/members/{userId}/role`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31346,7 +31322,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31438,13 +31414,13 @@ func main() {
 
 `POST /api/v1/contact`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31536,7 +31512,7 @@ func main() {
 
 `GET /api/v1/creators/me/export/download/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31548,7 +31524,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31640,13 +31616,13 @@ func main() {
 
 `POST /api/v1/creators/me/export/request`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31738,7 +31714,7 @@ func main() {
 
 `GET /api/v1/creators/me/export/status/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31750,7 +31726,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31842,13 +31818,13 @@ func main() {
 
 `GET /api/v1/creators/me/exports`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -31940,7 +31916,7 @@ func main() {
 
 `GET /api/v1/creators/{creatorName}/analytics/audience`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -31952,7 +31928,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32044,7 +32020,7 @@ func main() {
 
 `GET /api/v1/creators/{creatorName}/analytics/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32056,7 +32032,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32148,7 +32124,7 @@ func main() {
 
 `GET /api/v1/creators/{creatorName}/analytics/overview`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32160,7 +32136,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32252,7 +32228,7 @@ func main() {
 
 `GET /api/v1/creators/{creatorName}/analytics/trends`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32264,7 +32240,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32356,7 +32332,7 @@ func main() {
 
 `GET /api/v1/creators/{creatorName}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32368,7 +32344,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32460,13 +32436,13 @@ func main() {
 
 `GET /api/v1/discovery-lists`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32558,7 +32534,7 @@ func main() {
 
 `GET /api/v1/discovery-lists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32570,7 +32546,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32662,7 +32638,7 @@ func main() {
 
 `POST /api/v1/discovery-lists/{id}/bookmark`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32674,7 +32650,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32766,7 +32742,7 @@ func main() {
 
 `DELETE /api/v1/discovery-lists/{id}/bookmark`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32778,7 +32754,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32870,7 +32846,7 @@ func main() {
 
 `GET /api/v1/discovery-lists/{id}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32882,7 +32858,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -32974,7 +32950,7 @@ func main() {
 
 `POST /api/v1/discovery-lists/{id}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -32986,7 +32962,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33078,7 +33054,7 @@ func main() {
 
 `DELETE /api/v1/discovery-lists/{id}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -33090,7 +33066,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33182,13 +33158,13 @@ func main() {
 
 `GET /api/v1/docs`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33280,13 +33256,13 @@ func main() {
 
 `GET /api/v1/docs/search`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33378,7 +33354,7 @@ func main() {
 
 `GET /api/v1/docs/{path}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -33390,7 +33366,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33482,13 +33458,13 @@ func main() {
 
 `POST /api/v1/events`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33580,13 +33556,13 @@ func main() {
 
 `GET /api/v1/feeds/analytics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33678,13 +33654,13 @@ func main() {
 
 `GET /api/v1/feeds/analytics/hourly`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33776,13 +33752,13 @@ func main() {
 
 `GET /api/v1/feeds/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33874,13 +33850,13 @@ func main() {
 
 `GET /api/v1/feeds/discover`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -33972,13 +33948,13 @@ func main() {
 
 `GET /api/v1/feeds/following`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34070,13 +34046,13 @@ func main() {
 
 `GET /api/v1/feeds/search`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34168,13 +34144,13 @@ func main() {
 
 `GET /api/v1/forum/analytics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34266,13 +34242,13 @@ func main() {
 
 `POST /api/v1/forum/flag`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34364,13 +34340,13 @@ func main() {
 
 `GET /api/v1/forum/helpful-replies`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34462,13 +34438,13 @@ func main() {
 
 `GET /api/v1/forum/popular`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34560,7 +34536,7 @@ func main() {
 
 `PATCH /api/v1/forum/replies/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -34572,7 +34548,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34664,7 +34640,7 @@ func main() {
 
 `DELETE /api/v1/forum/replies/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -34676,7 +34652,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34768,7 +34744,7 @@ func main() {
 
 `POST /api/v1/forum/replies/{id}/vote`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -34780,7 +34756,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34872,7 +34848,7 @@ func main() {
 
 `GET /api/v1/forum/replies/{id}/votes`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -34884,7 +34860,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -34976,13 +34952,13 @@ func main() {
 
 `GET /api/v1/forum/search`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35074,13 +35050,13 @@ func main() {
 
 `GET /api/v1/forum/threads`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35172,13 +35148,13 @@ func main() {
 
 `POST /api/v1/forum/threads`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35270,7 +35246,7 @@ func main() {
 
 `GET /api/v1/forum/threads/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -35282,7 +35258,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35374,7 +35350,7 @@ func main() {
 
 `POST /api/v1/forum/threads/{id}/replies`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -35386,7 +35362,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35478,7 +35454,7 @@ func main() {
 
 `GET /api/v1/forum/users/{id}/reputation`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -35490,7 +35466,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35582,13 +35558,13 @@ func main() {
 
 `GET /api/v1/games/trending`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35680,7 +35656,7 @@ func main() {
 
 `GET /api/v1/games/{gameId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -35692,7 +35668,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35784,7 +35760,7 @@ func main() {
 
 `GET /api/v1/games/{gameId}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -35796,7 +35772,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35888,7 +35864,7 @@ func main() {
 
 `POST /api/v1/games/{gameId}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -35900,7 +35876,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -35992,7 +35968,7 @@ func main() {
 
 `DELETE /api/v1/games/{gameId}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -36004,7 +35980,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36096,7 +36072,7 @@ func main() {
 
 `GET /api/v1/leaderboards/{type}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -36108,7 +36084,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36200,13 +36176,13 @@ func main() {
 
 `POST /api/v1/moderation/ban`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36298,13 +36274,13 @@ func main() {
 
 `GET /api/v1/notifications`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36396,13 +36372,13 @@ func main() {
 
 `GET /api/v1/notifications/count`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36494,13 +36470,13 @@ func main() {
 
 `GET /api/v1/notifications/preferences`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36592,13 +36568,13 @@ func main() {
 
 `PUT /api/v1/notifications/preferences`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36690,13 +36666,13 @@ func main() {
 
 `POST /api/v1/notifications/preferences/reset`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36788,13 +36764,13 @@ func main() {
 
 `PUT /api/v1/notifications/read-all`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36886,13 +36862,13 @@ func main() {
 
 `POST /api/v1/notifications/register`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -36984,13 +36960,13 @@ func main() {
 
 `DELETE /api/v1/notifications/unregister`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37082,13 +37058,13 @@ func main() {
 
 `GET /api/v1/notifications/unsubscribe`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37180,7 +37156,7 @@ func main() {
 
 `DELETE /api/v1/notifications/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -37192,7 +37168,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37284,7 +37260,7 @@ func main() {
 
 `PUT /api/v1/notifications/{id}/read`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -37296,7 +37272,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37388,13 +37364,13 @@ func main() {
 
 `GET /api/v1/playlist-scripts`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37486,13 +37462,13 @@ func main() {
 
 `POST /api/v1/playlist-scripts`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37584,7 +37560,7 @@ func main() {
 
 `PUT /api/v1/playlist-scripts/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -37596,7 +37572,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37688,7 +37664,7 @@ func main() {
 
 `DELETE /api/v1/playlist-scripts/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -37700,7 +37676,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37792,7 +37768,7 @@ func main() {
 
 `POST /api/v1/playlist-scripts/{id}/generate`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -37804,7 +37780,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37896,13 +37872,13 @@ func main() {
 
 `GET /api/v1/playlists`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -37994,13 +37970,13 @@ func main() {
 
 `POST /api/v1/playlists`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38092,13 +38068,13 @@ func main() {
 
 `GET /api/v1/playlists/bookmarks`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38190,13 +38166,13 @@ func main() {
 
 `GET /api/v1/playlists/featured`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38288,13 +38264,13 @@ func main() {
 
 `GET /api/v1/playlists/public`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38386,7 +38362,7 @@ func main() {
 
 `GET /api/v1/playlists/share/{token}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -38398,7 +38374,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38490,13 +38466,13 @@ func main() {
 
 `GET /api/v1/playlists/today`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38588,7 +38564,7 @@ func main() {
 
 `GET /api/v1/playlists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -38600,7 +38576,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38692,7 +38668,7 @@ func main() {
 
 `PATCH /api/v1/playlists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -38704,7 +38680,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38796,7 +38772,7 @@ func main() {
 
 `DELETE /api/v1/playlists/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -38808,7 +38784,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -38900,7 +38876,7 @@ func main() {
 
 `POST /api/v1/playlists/{id}/bookmark`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -38912,7 +38888,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39004,7 +38980,7 @@ func main() {
 
 `DELETE /api/v1/playlists/{id}/bookmark`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39016,7 +38992,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39108,7 +39084,7 @@ func main() {
 
 `POST /api/v1/playlists/{id}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39120,7 +39096,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39212,7 +39188,7 @@ func main() {
 
 `PUT /api/v1/playlists/{id}/clips/order`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39224,7 +39200,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39316,7 +39292,7 @@ func main() {
 
 `DELETE /api/v1/playlists/{id}/clips/{clip_id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39329,7 +39305,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39421,7 +39397,7 @@ func main() {
 
 `GET /api/v1/playlists/{id}/collaborators`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39433,7 +39409,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39525,7 +39501,7 @@ func main() {
 
 `POST /api/v1/playlists/{id}/collaborators`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39537,7 +39513,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39629,7 +39605,7 @@ func main() {
 
 `PATCH /api/v1/playlists/{id}/collaborators/{user_id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39642,7 +39618,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39734,7 +39710,7 @@ func main() {
 
 `DELETE /api/v1/playlists/{id}/collaborators/{user_id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39747,7 +39723,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39839,7 +39815,7 @@ func main() {
 
 `POST /api/v1/playlists/{id}/copy`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39851,7 +39827,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -39943,7 +39919,7 @@ func main() {
 
 `POST /api/v1/playlists/{id}/like`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -39955,7 +39931,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40047,7 +40023,7 @@ func main() {
 
 `DELETE /api/v1/playlists/{id}/like`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -40059,7 +40035,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40151,7 +40127,7 @@ func main() {
 
 `GET /api/v1/playlists/{id}/share-link`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -40163,7 +40139,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40255,7 +40231,7 @@ func main() {
 
 `POST /api/v1/playlists/{id}/track-share`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -40267,7 +40243,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40359,13 +40335,13 @@ func main() {
 
 `GET /api/v1/queue`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40457,13 +40433,13 @@ func main() {
 
 `POST /api/v1/queue`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40555,13 +40531,13 @@ func main() {
 
 `DELETE /api/v1/queue`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40653,13 +40629,13 @@ func main() {
 
 `POST /api/v1/queue/convert-to-playlist`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40751,13 +40727,13 @@ func main() {
 
 `GET /api/v1/queue/count`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40849,13 +40825,13 @@ func main() {
 
 `PATCH /api/v1/queue/reorder`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -40947,7 +40923,7 @@ func main() {
 
 `DELETE /api/v1/queue/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -40959,7 +40935,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41051,7 +41027,7 @@ func main() {
 
 `POST /api/v1/queue/{id}/played`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -41063,7 +41039,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41155,13 +41131,13 @@ func main() {
 
 `GET /api/v1/recommendations/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41253,13 +41229,13 @@ func main() {
 
 `POST /api/v1/recommendations/feedback`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41351,13 +41327,13 @@ func main() {
 
 `POST /api/v1/recommendations/onboarding`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41449,13 +41425,13 @@ func main() {
 
 `GET /api/v1/recommendations/preferences`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41547,13 +41523,13 @@ func main() {
 
 `PUT /api/v1/recommendations/preferences`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41645,7 +41621,7 @@ func main() {
 
 `POST /api/v1/recommendations/track-view/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -41657,7 +41633,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41749,7 +41725,7 @@ func main() {
 
 `GET /api/v1/streamer-clip-rooms/{channel}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -41761,7 +41737,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41853,7 +41829,7 @@ func main() {
 
 `GET /api/v1/streamer-clip-rooms/{channel}/items`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -41865,7 +41841,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -41957,7 +41933,7 @@ func main() {
 
 `PUT /api/v1/streamer-clip-rooms/{channel}/items/order`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -41969,7 +41945,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42061,7 +42037,7 @@ func main() {
 
 `POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42074,7 +42050,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42166,7 +42142,7 @@ func main() {
 
 `POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42179,7 +42155,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42271,7 +42247,7 @@ func main() {
 
 `POST /api/v1/streamer-clip-rooms/{channel}/start`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42283,7 +42259,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42375,7 +42351,7 @@ func main() {
 
 `POST /api/v1/streamer-clip-rooms/{channel}/stop`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42387,7 +42363,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42479,7 +42455,7 @@ func main() {
 
 `GET /api/v1/streamer-clip-rooms/{channel}/ws`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42491,7 +42467,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42583,13 +42559,13 @@ func main() {
 
 `GET /api/v1/streams/following`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42681,7 +42657,7 @@ func main() {
 
 `GET /api/v1/streams/{streamer}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42693,7 +42669,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42785,7 +42761,7 @@ func main() {
 
 `POST /api/v1/streams/{streamer}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42797,7 +42773,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42889,7 +42865,7 @@ func main() {
 
 `DELETE /api/v1/streams/{streamer}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -42901,7 +42877,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -42993,7 +42969,7 @@ func main() {
 
 `GET /api/v1/streams/{streamer}/follow-status`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -43005,7 +42981,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43097,13 +43073,13 @@ func main() {
 
 `POST /api/v1/subscriptions/cancel`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43195,13 +43171,13 @@ func main() {
 
 `POST /api/v1/subscriptions/change-plan`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43293,13 +43269,13 @@ func main() {
 
 `POST /api/v1/subscriptions/checkout`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43391,13 +43367,13 @@ func main() {
 
 `GET /api/v1/subscriptions/invoices`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43489,13 +43465,13 @@ func main() {
 
 `GET /api/v1/subscriptions/me`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43587,13 +43563,13 @@ func main() {
 
 `POST /api/v1/subscriptions/portal`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43685,13 +43661,13 @@ func main() {
 
 `POST /api/v1/subscriptions/reactivate`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43783,13 +43759,13 @@ func main() {
 
 `DELETE /api/v1/twitch/auth`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43881,13 +43857,13 @@ func main() {
 
 `GET /api/v1/twitch/auth/status`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -43979,13 +43955,13 @@ func main() {
 
 `GET /api/v1/twitch/oauth/authorize`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44077,13 +44053,13 @@ func main() {
 
 `GET /api/v1/twitch/oauth/callback`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44175,13 +44151,13 @@ func main() {
 
 `POST /api/v1/users/me/convert-to-broadcaster`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44273,13 +44249,13 @@ func main() {
 
 `GET /api/v1/users/me/discovery-list-follows`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44371,7 +44347,7 @@ func main() {
 
 `GET /api/v1/users/{id}/account-type`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -44383,7 +44359,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44475,7 +44451,7 @@ func main() {
 
 `GET /api/v1/users/{id}/account-type/history`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -44487,7 +44463,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44579,7 +44555,7 @@ func main() {
 
 `GET /api/v1/users/{id}/feeds`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -44591,7 +44567,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44683,7 +44659,7 @@ func main() {
 
 `POST /api/v1/users/{id}/feeds`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -44695,7 +44671,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44787,7 +44763,7 @@ func main() {
 
 `GET /api/v1/users/{id}/feeds/{feedId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -44800,7 +44776,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44892,7 +44868,7 @@ func main() {
 
 `PUT /api/v1/users/{id}/feeds/{feedId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -44905,7 +44881,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -44997,7 +44973,7 @@ func main() {
 
 `DELETE /api/v1/users/{id}/feeds/{feedId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45010,7 +44986,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45102,7 +45078,7 @@ func main() {
 
 `GET /api/v1/users/{id}/feeds/{feedId}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45115,7 +45091,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45207,7 +45183,7 @@ func main() {
 
 `POST /api/v1/users/{id}/feeds/{feedId}/clips`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45220,7 +45196,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45312,7 +45288,7 @@ func main() {
 
 `PUT /api/v1/users/{id}/feeds/{feedId}/clips/reorder`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45325,7 +45301,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45417,7 +45393,7 @@ func main() {
 
 `DELETE /api/v1/users/{id}/feeds/{feedId}/clips/{clipId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45431,7 +45407,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45523,7 +45499,7 @@ func main() {
 
 `POST /api/v1/users/{id}/feeds/{feedId}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45536,7 +45512,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45628,7 +45604,7 @@ func main() {
 
 `DELETE /api/v1/users/{id}/feeds/{feedId}/follow`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45641,7 +45617,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45733,7 +45709,7 @@ func main() {
 
 `GET /api/v1/users/{id}/filter-presets`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45745,7 +45721,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45837,7 +45813,7 @@ func main() {
 
 `POST /api/v1/users/{id}/filter-presets`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45849,7 +45825,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -45941,7 +45917,7 @@ func main() {
 
 `GET /api/v1/users/{id}/filter-presets/{presetId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -45954,7 +45930,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46046,7 +46022,7 @@ func main() {
 
 `PUT /api/v1/users/{id}/filter-presets/{presetId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -46059,7 +46035,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46151,7 +46127,7 @@ func main() {
 
 `DELETE /api/v1/users/{id}/filter-presets/{presetId}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -46164,7 +46140,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46256,7 +46232,7 @@ func main() {
 
 `GET /api/v1/users/{id}/games/following`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -46268,7 +46244,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46360,13 +46336,13 @@ func main() {
 
 `POST /api/v1/verification/applications`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46458,13 +46434,13 @@ func main() {
 
 `GET /api/v1/verification/applications/me`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46556,13 +46532,13 @@ func main() {
 
 `GET /api/v1/watch-history`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46654,13 +46630,13 @@ func main() {
 
 `POST /api/v1/watch-history`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46752,13 +46728,13 @@ func main() {
 
 `DELETE /api/v1/watch-history`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46850,13 +46826,13 @@ func main() {
 
 `GET /api/v1/webhooks`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -46948,13 +46924,13 @@ func main() {
 
 `POST /api/v1/webhooks`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47046,13 +47022,13 @@ func main() {
 
 `GET /api/v1/webhooks/events`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47144,13 +47120,13 @@ func main() {
 
 `POST /api/v1/webhooks/sendgrid`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47242,13 +47218,13 @@ func main() {
 
 `POST /api/v1/webhooks/stripe`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47340,7 +47316,7 @@ func main() {
 
 `GET /api/v1/webhooks/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47352,7 +47328,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47444,7 +47420,7 @@ func main() {
 
 `PATCH /api/v1/webhooks/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47456,7 +47432,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47548,7 +47524,7 @@ func main() {
 
 `DELETE /api/v1/webhooks/{id}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47560,7 +47536,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47652,7 +47628,7 @@ func main() {
 
 `GET /api/v1/webhooks/{id}/deliveries`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47664,7 +47640,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47756,7 +47732,7 @@ func main() {
 
 `POST /api/v1/webhooks/{id}/regenerate-secret`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47768,7 +47744,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47860,7 +47836,7 @@ func main() {
 
 `GET /clips/best/{path}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47872,7 +47848,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -47964,7 +47940,7 @@ func main() {
 
 `GET /clips/game/{gameSlug}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -47976,7 +47952,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48068,7 +48044,7 @@ func main() {
 
 `GET /clips/streamer/{broadcasterName}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -48080,7 +48056,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48172,7 +48148,7 @@ func main() {
 
 `GET /clips/streamer/{broadcasterName}/{gameSlug}`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
@@ -48185,7 +48161,7 @@ Router-derived operation; response schemas are governed by live contract tests.
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48277,13 +48253,13 @@ func main() {
 
 `GET /debug/pprof`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48375,13 +48351,13 @@ func main() {
 
 `GET /debug/pprof/allocs`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48473,13 +48449,13 @@ func main() {
 
 `GET /debug/pprof/block`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48571,13 +48547,13 @@ func main() {
 
 `GET /debug/pprof/cmdline`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48669,13 +48645,13 @@ func main() {
 
 `GET /debug/pprof/goroutine`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48767,13 +48743,13 @@ func main() {
 
 `GET /debug/pprof/heap`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48865,13 +48841,13 @@ func main() {
 
 `GET /debug/pprof/mutex`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -48963,13 +48939,13 @@ func main() {
 
 `GET /debug/pprof/profile`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49061,13 +49037,13 @@ func main() {
 
 `GET /debug/pprof/symbol`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49159,13 +49135,13 @@ func main() {
 
 `GET /debug/pprof/threadcreate`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49257,13 +49233,13 @@ func main() {
 
 `GET /debug/pprof/trace`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49355,13 +49331,13 @@ func main() {
 
 `GET /health`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49453,13 +49429,13 @@ func main() {
 
 `GET /internal/operations/cache`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49551,13 +49527,13 @@ func main() {
 
 `GET /internal/operations/cache/check`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49649,13 +49625,13 @@ func main() {
 
 `GET /internal/operations/database`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49747,13 +49723,13 @@ func main() {
 
 `GET /internal/operations/metrics`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 
@@ -49845,13 +49821,13 @@ func main() {
 
 `GET /internal/operations/webhooks`
 
-Router-derived operation; response schemas are governed by live contract tests.
+Router-derived operation pending a route-specific response schema.
 
 **Tags:** Generated Route Contracts
 
 #### Responses
 
-**200** - Successful response
+**200** - Success
 
 **400** - Success
 

@@ -22,7 +22,7 @@ This runbook provides operational procedures for managing the Clipper moderation
 - Access to production environment
 - Admin or super-admin role
 - Valid JWT authentication token
-- Familiarity with Moderation API ([docs/backend/moderation-api.md](../backend/moderation-api.md))
+- Familiarity with Moderation API ([docs/backend/moderation-api.md](../../backend/moderation-api.md))
 
 ## Table of Contents
 

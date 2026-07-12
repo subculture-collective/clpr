@@ -560,9 +560,9 @@ Planned improvements:
 
 - [OWASP IDOR Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)
 - [OWASP Authorization Testing Guide](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/05-Authorization_Testing/README)
-- [RBAC Test Suite README](../../backend/tests/integration/rbac/README.md)
+- RBAC Test Suite README
 - [Testing Guide](../testing/TESTING.md)
-- [Integration Test README](../../backend/tests/integration/README.md)
+- Integration Test README
 - [Feature Test Coverage](../product/feature-test-coverage.md)
 - Threat Model: `docs/product/threat-model.md`
 

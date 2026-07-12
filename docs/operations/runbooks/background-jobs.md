@@ -320,6 +320,6 @@ If unable to resolve within 30 minutes:
 
 ## Related Documentation
 
-- [Operations: Monitoring](../monitoring.md)
+- Operations: Monitoring
 - [Deployment: Runbook](../runbook.md)
 - [Webhook Monitoring](../webhook-monitoring.md)

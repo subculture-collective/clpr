@@ -173,7 +173,7 @@ npm run docs:links
 **Script:** `scripts/check-anchors.js`  
 **Command:** `npm run docs:anchors`
 
-Ensures that all anchor links (e.g., `[text](#heading)`) point to existing headings.
+Ensures that all anchor links (for example, a link to a local heading) point to existing headings.
 
 **How It Works:**
 1. Extracts all headings from markdown files

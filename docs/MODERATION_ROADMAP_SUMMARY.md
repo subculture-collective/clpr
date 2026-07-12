@@ -153,7 +153,7 @@ REGULAR MEMBER
 **References:**
 - [Twitch API Docs](https://dev.twitch.tv/docs/api)
 - [Current Moderation System](./backend/CHAT_MODERATION.md)
-- [User Roles & Permissions](./backend/internal/models/roles.go)
+- [User Roles & Permissions](../backend/internal/models/roles.go)
 
 ## 💡 Key Decisions
 

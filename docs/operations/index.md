@@ -55,9 +55,9 @@ For deployment procedures, see the **[[../deployment/index|Deployment Hub]]**:
 
 ## Security & Compliance
 
-- [Security Audit Report](./SECURITY_AUDIT_REPORT.md) - Comprehensive pre-launch security audit
-- [Security Audit Executive Summary](./SECURITY_AUDIT_EXECUTIVE_SUMMARY.md) - Executive overview and key findings
-- [Security Audit Checklist](./SECURITY_AUDIT_CHECKLIST.md) - Detailed security audit checklist (250 items)
+- Security Audit Report - Comprehensive pre-launch security audit
+- Security Audit Executive Summary - Executive overview and key findings
+- Security Audit Checklist - Detailed security audit checklist (250 items)
 - [[break-glass-procedures|Break Glass Procedures]] - Emergency access procedures
 - [[credential-rotation-runbook|Credential Rotation]] - Regular credential rotation
 

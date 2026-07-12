@@ -228,6 +228,6 @@ Potential improvements:
 
 ## Related Documentation
 
-- [Submission API Documentation](../backend/api/submissions.md)
-- [E2E Testing Guide](../testing/e2e-testing.md)
-- [Rate Limiting Strategy](../decisions/rate-limiting.md)
+- Submission API Documentation
+- E2E Testing Guide
+- Rate Limiting Strategy

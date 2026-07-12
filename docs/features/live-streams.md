@@ -602,10 +602,10 @@ Set up alerts for:
 
 ## Related Documentation
 
-- [Twitch Integration Guide](../backend/twitch-integration.md)
-- [API Reference](../backend/api.md)
-- [Caching Strategy](../backend/caching-strategy.md)
-- [User Guide](../users/user-guide.md)
+- Twitch Integration Guide
+- API Reference
+- Caching Strategy
+- User Guide
 
 ## Support
 

@@ -190,8 +190,8 @@ cat .env | grep DB_
 ## Next Steps
 
 - 📖 Read full documentation: [README_SCRAPER.md](README_SCRAPER.md)
-- ⚙️ Configure systemd: [systemd/README.md](systemd/README.md)
-- 📅 Set up scheduling: [cron.example](cron.example)
+- ⚙️ Configure systemd: systemd/README.md
+- 📅 Set up scheduling: [cron.example](../backend/scripts/cron.example)
 - 🔍 Monitor performance and adjust settings
 
 ## Getting Help

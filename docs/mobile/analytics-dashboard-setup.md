@@ -38,7 +38,7 @@ This guide provides step-by-step instructions to set up the five core mobile ana
 
 ✅ **Verify Prerequisites**:
 - [ ] PostHog project exists (app.posthog.com or self-hosted)
-- [ ] Mobile app has PostHog SDK integrated ([see POSTHOG_ANALYTICS.md](../../mobile/POSTHOG_ANALYTICS.md))
+- [ ] Mobile app has PostHog SDK integrated (see POSTHOG_ANALYTICS.md)
 - [ ] Test events are flowing to PostHog (check Live Events tab)
 - [ ] You have dashboard creation permissions
 
@@ -486,7 +486,7 @@ Before considering setup complete, verify:
 5. User granted analytics consent
 
 **Solution**:
-- Review [POSTHOG_ANALYTICS.md](../../mobile/POSTHOG_ANALYTICS.md) integration guide
+- Review POSTHOG_ANALYTICS.md integration guide
 - Check mobile app logs for analytics errors
 - Verify PostHog API key configured
 

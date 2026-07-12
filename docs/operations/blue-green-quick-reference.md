@@ -390,9 +390,9 @@ alias bgstatus='docker ps --filter "name=clpr" --format "table {{.Names}}\t{{.St
 
 ## Documentation Links
 
-- **[Complete Guide](./BLUE_GREEN_DEPLOYMENT.md)** - Full documentation
-- **[Rollback Procedures](./BLUE_GREEN_ROLLBACK.md)** - Detailed rollback steps
-- **[Deployment Guide](./deployment.md)** - General deployment info
+- **Complete Guide** - Full documentation
+- **Rollback Procedures** - Detailed rollback steps
+- **Deployment Guide** - General deployment info
 - **[Runbook](./runbook.md)** - Operational procedures
 
 ## Support

@@ -255,7 +255,7 @@ test('should complete successful checkout with test card', async ({ authenticate
 
 - [Stripe Subscription Testing Guide](./stripe-subscription-testing.md) - Comprehensive testing procedures
 - [Stripe CI Secrets](./stripe-ci-secrets.md) - CI/CD configuration
-- [Premium Subscription Checkout Status](../../PREMIUM_SUBSCRIPTION_CHECKOUT_STATUS.md) - Implementation status
+- Premium Subscription Checkout Status - Implementation status
 
 ## Support
 
