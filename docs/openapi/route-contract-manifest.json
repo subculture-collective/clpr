@@ -3182,7 +3182,7 @@
     "path": "/clips/best/{path}",
     "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func1",
     "operation_id": "getClipsBestPath",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -3207,94 +3207,10 @@
   },
   {
     "method": "GET",
-    "path": "/debug/metrics",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func12",
-    "operation_id": "getMetrics",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapF.func13",
-    "operation_id": "getDebugPprof",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/allocs",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func18",
-    "operation_id": "getDebugPprofAllocs",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/block",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func19",
-    "operation_id": "getDebugPprofBlock",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/cmdline",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapF.func14",
-    "operation_id": "getDebugPprofCmdline",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/goroutine",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func20",
-    "operation_id": "getDebugPprofGoroutine",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/heap",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func21",
-    "operation_id": "getDebugPprofHeap",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/mutex",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func22",
-    "operation_id": "getDebugPprofMutex",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/profile",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapF.func15",
-    "operation_id": "getDebugPprofProfile",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/symbol",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapF.func16",
-    "operation_id": "getDebugPprofSymbol",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/threadcreate",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func23",
-    "operation_id": "getDebugPprofThreadcreate",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
-    "path": "/debug/pprof/trace",
-    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapF.func17",
-    "operation_id": "getDebugPprofTrace",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "GET",
     "path": "/health",
     "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func2",
     "operation_id": "getHealth",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -3329,14 +3245,14 @@
     "path": "/internal/operations/database",
     "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func5",
     "operation_id": "getInternalOperationsDatabase",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/internal/operations/metrics",
     "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func9",
     "operation_id": "getInternalOperationsMetrics",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

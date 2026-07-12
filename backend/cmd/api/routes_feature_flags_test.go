@@ -64,6 +64,26 @@ func TestIncompleteFeatureRoutesRequireExplicitFlags(t *testing.T) {
 	assertRoutePresent(t, router, "GET", "/api/v1/users/:id/watch-party-stats")
 }
 
+func TestProfilingRoutesAreDebugOnly(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, test := range []struct {
+		mode    string
+		present bool
+	}{{gin.ReleaseMode, false}, {gin.DebugMode, true}} {
+		t.Run(test.mode, func(t *testing.T) {
+			router := gin.New()
+			cfg := &config.Config{Server: config.ServerConfig{GinMode: test.mode}}
+			registerPublicRoutes(router, router.Group("/api/v1"), zeroHandlers(), &Services{}, &Infrastructure{Config: cfg}, cfg)
+			if test.present {
+				assertRoutePresent(t, router, "GET", "/debug/pprof/profile")
+			} else {
+				assertRouteAbsent(t, router, "GET", "/debug/pprof/profile")
+				assertRouteAbsent(t, router, "GET", "/debug/pprof/heap")
+			}
+		})
+	}
+}
+
 func assertRouteAbsent(t *testing.T, router *gin.Engine, method, path string) {
 	t.Helper()
 	for _, route := range router.Routes() {

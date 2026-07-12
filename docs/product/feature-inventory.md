@@ -728,7 +728,7 @@ counts that included planned or missing artifacts.
 #### 13.3 Monitoring & Observability
 
 - **Status**: ✅ complete | **Backend**: Prometheus, Sentry, health endpoints, application logging
-- **Features**: Metrics, error tracking, health checks, profiling, structured logging, client-side log aggregation
+- **Features**: Metrics, error tracking, health checks, structured logging, client-side log aggregation; authenticated Go profiling is registered only in explicit development debug mode and is absent from release routers
 - **Handlers**: `monitoring_handler.go`, `application_log_handler.go`
 - **Tests**: ✅ Application log handler tests exist
 - **Endpoints**: `/api/v1/logs` (POST - client log ingestion), `/api/v1/logs/stats` (GET - log analytics)

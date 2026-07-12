@@ -50,6 +50,10 @@ servers:
     description: Production API server
 
 tags:
+  - name: SEO
+    description: Server-rendered search and crawler pages
+  - name: Debug
+    description: Development-only authenticated profiler endpoints absent in release mode
   - name: Health
     description: Health check and monitoring endpoints
   - name: Authentication
@@ -10959,11 +10963,11 @@ paths:
 
   /clips/best/{path}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /clips/best/{path}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [SEO]
+      summary: Render a best-clips period page
+      description: Renders supported week/month aliases or validated year/month archives; unsupported and future periods return HTML 404.
       operationId: getClipsBestPath
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: path
           in: path
@@ -10982,11 +10986,11 @@ paths:
 
   /debug/pprof:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Open the Go profiler index in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprof
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -10999,11 +11003,11 @@ paths:
 
   /debug/pprof/allocs:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/allocs
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get allocation profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofAllocs
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11016,11 +11020,11 @@ paths:
 
   /debug/pprof/block:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/block
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get block profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofBlock
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11033,11 +11037,11 @@ paths:
 
   /debug/pprof/cmdline:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/cmdline
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get process command line in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofCmdline
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11050,11 +11054,11 @@ paths:
 
   /debug/pprof/goroutine:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/goroutine
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get goroutine profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofGoroutine
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11067,11 +11071,11 @@ paths:
 
   /debug/pprof/heap:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/heap
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get heap profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofHeap
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11084,11 +11088,11 @@ paths:
 
   /debug/pprof/mutex:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/mutex
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get mutex profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofMutex
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11101,11 +11105,11 @@ paths:
 
   /debug/pprof/profile:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/profile
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Capture CPU profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofProfile
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11118,11 +11122,11 @@ paths:
 
   /debug/pprof/symbol:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/symbol
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Resolve profiler symbols in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofSymbol
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11135,11 +11139,11 @@ paths:
 
   /debug/pprof/threadcreate:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/threadcreate
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Get thread creation profile in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofThreadcreate
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11152,11 +11156,11 @@ paths:
 
   /debug/pprof/trace:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /debug/pprof/trace
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Debug]
+      summary: Capture execution trace in debug mode
+      description: Development-only administrator endpoint; absent from release-mode routers.
       operationId: getDebugPprofTrace
-      x-clpr-router-derived: true
+      x-clpr-development-only: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11169,11 +11173,11 @@ paths:
 
   /health:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /health
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Health]
+      summary: Get process health
+      description: Minimal unauthenticated process health check used by container orchestration.
       operationId: getHealth
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11186,11 +11190,11 @@ paths:
 
   /internal/operations/database:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /internal/operations/database
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Service Status]
+      summary: Get database pool statistics
+      description: Returns connection-pool counters only to callers with the operational bearer token.
       operationId: getInternalOperationsDatabase
-      x-clpr-router-derived: true
+      security: [{OperationalAuth: []}]
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11203,11 +11207,11 @@ paths:
 
   /internal/operations/metrics:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /internal/operations/metrics
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Service Status]
+      summary: Scrape operational metrics
+      description: Returns Prometheus metrics only to callers with the operational bearer token.
       operationId: getInternalOperationsMetrics
-      x-clpr-router-derived: true
+      security: [{OperationalAuth: []}]
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
