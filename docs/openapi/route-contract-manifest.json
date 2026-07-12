@@ -2187,8 +2187,8 @@
     "method": "GET",
     "path": "/api/v1/playlists/featured",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListFeaturedPlaylists-fm",
-    "operation_id": "getApiV1PlaylistsFeatured",
-    "contract_level": "transitional"
+    "operation_id": "listFeaturedPlaylists",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -2208,8 +2208,8 @@
     "method": "GET",
     "path": "/api/v1/playlists/today",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetPlaylistOfTheDay-fm",
-    "operation_id": "getApiV1PlaylistsToday",
-    "contract_level": "transitional"
+    "operation_id": "getPlaylistOfTheDay",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",

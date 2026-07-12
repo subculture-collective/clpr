@@ -1463,25 +1463,13 @@ func (h *PlaylistHandler) UpdateCollaboratorPermission(c *gin.Context) {
 
 // ListFeaturedPlaylists handles GET /api/v1/playlists/featured
 func (h *PlaylistHandler) ListFeaturedPlaylists(c *gin.Context) {
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
-
-	page := 1
-	limit := 20
-
-	if p := c.Query("page"); p != "" {
-		if val, err := strconv.Atoi(p); err == nil && val > 0 {
-			page = val
-		}
-	}
-	if l := c.Query("limit"); l != "" {
-		if val, err := strconv.Atoi(l); err == nil && val > 0 && val <= 100 {
-			limit = val
-		}
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	playlists, total, err := h.playlistService.ListFeaturedPlaylists(c.Request.Context(), userID, page, limit)
@@ -1515,16 +1503,14 @@ func (h *PlaylistHandler) ListFeaturedPlaylists(c *gin.Context) {
 
 // GetPlaylistOfTheDay handles GET /api/v1/playlists/today
 func (h *PlaylistHandler) GetPlaylistOfTheDay(c *gin.Context) {
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
 
 	playlist, err := h.playlistService.GetPlaylistOfTheDay(c.Request.Context(), userID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, services.ErrPlaylistOfTheDayNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{

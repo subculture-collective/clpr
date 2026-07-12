@@ -20,6 +20,7 @@ var (
 	ErrPlaylistClipNotFound       = repository.ErrPlaylistClipNotFound
 	ErrPlaylistClipLimit          = repository.ErrPlaylistClipLimit
 	ErrPlaylistMembershipMismatch = repository.ErrPlaylistMembershipMismatch
+	ErrPlaylistOfTheDayNotFound   = repository.ErrPlaylistOfTheDayNotFound
 )
 
 type playlistMembershipWriter interface {

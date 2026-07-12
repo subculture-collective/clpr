@@ -159,3 +159,26 @@ func TestPlaylistSharingInputsFailClosed(t *testing.T) {
 		})
 	}
 }
+
+func TestPlaylistDiscoveryReadsFailClosed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, tc := range []struct {
+		name, target string
+		identity     interface{}
+		invoke       func(*PlaylistHandler, *gin.Context)
+		status       int
+	}{
+		{"featured identity", "/api/v1/playlists/featured", "bad", func(h *PlaylistHandler, c *gin.Context) { h.ListFeaturedPlaylists(c) }, http.StatusUnauthorized},
+		{"today identity", "/api/v1/playlists/today", "bad", func(h *PlaylistHandler, c *gin.Context) { h.GetPlaylistOfTheDay(c) }, http.StatusUnauthorized},
+		{"featured page", "/api/v1/playlists/featured?page=0", nil, func(h *PlaylistHandler, c *gin.Context) { h.ListFeaturedPlaylists(c) }, http.StatusBadRequest},
+		{"featured limit", "/api/v1/playlists/featured?limit=101", nil, func(h *PlaylistHandler, c *gin.Context) { h.ListFeaturedPlaylists(c) }, http.StatusBadRequest},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, w := playlistTestContext(http.MethodGet, tc.target, nil, tc.identity)
+			tc.invoke(NewPlaylistHandler(nil), c)
+			if w.Code != tc.status {
+				t.Fatalf("expected %d, got %d: %s", tc.status, w.Code, w.Body.String())
+			}
+		})
+	}
+}

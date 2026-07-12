@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrPlaylistOfTheDayNotFound = errors.New("playlist of the day not found")
 
 // PlaylistRepository handles database operations for playlists
 type PlaylistRepository struct {
@@ -1373,6 +1376,9 @@ func (r *PlaylistRepository) ListFeatured(ctx context.Context, currentUserID *uu
 		}
 		playlists = append(playlists, &item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating featured playlists: %w", err)
+	}
 
 	if currentUserID != nil {
 		if err := r.enrichPlaylistInteractionStates(ctx, *currentUserID, playlists); err != nil {
@@ -1478,6 +1484,9 @@ func (r *PlaylistRepository) GetPlaylistOfTheDay(ctx context.Context, currentUse
 		&item.HasProcessingClips,
 	)
 
+	if err == pgx.ErrNoRows {
+		return nil, ErrPlaylistOfTheDayNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get playlist of the day: %w", err)
 	}
