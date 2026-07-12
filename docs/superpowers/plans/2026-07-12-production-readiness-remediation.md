@@ -302,7 +302,7 @@ flowchart LR
 
 ### R3.6 — Cover account export/deletion and moderation lifecycle
 
-- **State:** IN PROGRESS — unsupported automated deletion is contained; export and moderation lifecycle evidence still under audit
+- **State:** DONE — incomplete privacy automation is absent from launch; focused authorization, scope, lifecycle, failure, and audit-log suites cover supported moderation actions
 - **Owner role:** Backend/frontend + privacy
 - **Depends on:** R1.5, R2.4
 - **Work:** Add integration and browser evidence for export completeness, deletion confirmation/grace behavior, session revocation, retained/legal data policy, moderator authorization, and destructive-action audit trails.
