@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
 
 type CommunityService struct {
@@ -55,6 +55,9 @@ func generateSlug(name string) string {
 
 // CreateCommunity creates a new community
 func (s *CommunityService) CreateCommunity(ctx context.Context, ownerID uuid.UUID, req *models.CreateCommunityRequest) (*models.Community, error) {
+	if req.IsPublic != nil && !*req.IsPublic {
+		return nil, fmt.Errorf("private communities are not available")
+	}
 	// Generate slug from name
 	slug := generateSlug(req.Name)
 
@@ -87,13 +90,7 @@ func (s *CommunityService) CreateCommunity(ctx context.Context, ownerID uuid.UUI
 		community.IsPublic = *req.IsPublic
 	}
 
-	// Create the community
-	err := s.communityRepo.CreateCommunity(ctx, community)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create community: %w", err)
-	}
-
-	// Automatically add owner as admin
+	// Create the community and automatically add its owner as admin.
 	member := &models.CommunityMember{
 		ID:          uuid.New(),
 		CommunityID: community.ID,
@@ -101,10 +98,7 @@ func (s *CommunityService) CreateCommunity(ctx context.Context, ownerID uuid.UUI
 		Role:        models.CommunityRoleAdmin,
 		JoinedAt:    time.Now(),
 	}
-	err = s.communityRepo.AddMember(ctx, member)
-	if err != nil {
-		// If adding member fails, try to clean up the community
-		_ = s.communityRepo.DeleteCommunity(ctx, community.ID)
+	if err := s.communityRepo.CreateCommunityWithOwner(ctx, community, member); err != nil {
 		return nil, fmt.Errorf("failed to add owner as member: %w", err)
 	}
 
@@ -173,6 +167,9 @@ func (s *CommunityService) SearchCommunities(ctx context.Context, query string, 
 
 // UpdateCommunity updates a community
 func (s *CommunityService) UpdateCommunity(ctx context.Context, communityID, userID uuid.UUID, req *models.UpdateCommunityRequest) (*models.Community, error) {
+	if req.IsPublic != nil && !*req.IsPublic {
+		return nil, fmt.Errorf("private communities are not available")
+	}
 	// Check if user has permission to update
 	hasPermission, err := s.HasPermission(ctx, communityID, userID, models.CommunityRoleAdmin)
 	if err != nil {
@@ -189,6 +186,9 @@ func (s *CommunityService) UpdateCommunity(ctx context.Context, communityID, use
 
 	if req.Name != nil {
 		newSlug := generateSlug(*req.Name)
+		if newSlug == "" {
+			return nil, fmt.Errorf("community name must contain at least one alphanumeric character")
+		}
 		// Check if slug already exists (and is not the current community)
 		existing, _ := s.communityRepo.GetCommunityBySlug(ctx, newSlug)
 		if existing != nil && existing.ID != communityID {
@@ -235,6 +235,13 @@ func (s *CommunityService) DeleteCommunity(ctx context.Context, communityID, use
 
 // JoinCommunity adds a user to a community
 func (s *CommunityService) JoinCommunity(ctx context.Context, communityID, userID uuid.UUID) error {
+	community, err := s.communityRepo.GetCommunityByID(ctx, communityID)
+	if err != nil {
+		return err
+	}
+	if !community.IsPublic {
+		return fmt.Errorf("private communities require an invitation")
+	}
 	// Check if user is banned
 	isBanned, err := s.communityRepo.IsBanned(ctx, communityID, userID)
 	if err != nil {
@@ -283,6 +290,18 @@ func (s *CommunityService) LeaveCommunity(ctx context.Context, communityID, user
 func (s *CommunityService) GetMembers(ctx context.Context, communityID uuid.UUID, role string, page, limit int) ([]*models.CommunityMember, int, error) {
 	offset := (page - 1) * limit
 	return s.communityRepo.ListMembers(ctx, communityID, role, limit, offset)
+}
+
+func (s *CommunityService) authorizeRead(ctx context.Context, communityID uuid.UUID, requestingUserID *uuid.UUID) error {
+	_, err := s.GetCommunity(ctx, communityID, requestingUserID)
+	return err
+}
+
+func (s *CommunityService) GetVisibleMembers(ctx context.Context, communityID uuid.UUID, requestingUserID *uuid.UUID, role string, page, limit int) ([]*models.CommunityMember, int, error) {
+	if err := s.authorizeRead(ctx, communityID, requestingUserID); err != nil {
+		return nil, 0, err
+	}
+	return s.GetMembers(ctx, communityID, role, page, limit)
 }
 
 // UpdateMemberRole updates a member's role in a community
@@ -350,10 +369,7 @@ func (s *CommunityService) BanMember(ctx context.Context, communityID, requestin
 		}
 	}
 
-	// Remove user from community if they are a member
-	_ = s.communityRepo.RemoveMember(ctx, communityID, targetUserID)
-
-	// Add to ban list
+	// Remove membership and add the restriction atomically.
 	ban := &models.CommunityBan{
 		ID:             uuid.New(),
 		CommunityID:    communityID,
@@ -363,7 +379,7 @@ func (s *CommunityService) BanMember(ctx context.Context, communityID, requestin
 		BannedAt:       time.Now(),
 	}
 
-	return s.communityRepo.BanMember(ctx, ban)
+	return s.communityRepo.BanMemberAndRemoveMembership(ctx, ban)
 }
 
 // UnbanMember unbans a user from a community
@@ -443,31 +459,19 @@ func (s *CommunityService) RemoveClipFromCommunity(ctx context.Context, communit
 		return fmt.Errorf("requesting user is not a member")
 	}
 
-	// Query to get who added this specific clip
-	clips, _, err := s.communityRepo.GetCommunityClips(ctx, communityID, "recent", 100, 0)
+	// Get the exact membership record; bounded feed scans can otherwise skip old
+	// clips and accidentally bypass role hierarchy enforcement.
+	communityClip, err := s.communityRepo.GetCommunityClip(ctx, communityID, clipID)
 	if err != nil {
-		return fmt.Errorf("failed to get community clips: %w", err)
+		return err
 	}
-
-	// Find the clip and check role hierarchy if needed
-	for _, c := range clips {
-		if c.ClipID == clipID {
-			if c.AddedByUserID != nil {
-				addedByMember, err := s.communityRepo.GetMember(ctx, communityID, *c.AddedByUserID)
-				if err != nil {
-					return err
-				}
-				if addedByMember != nil {
-					requestingRoleLevel := roleHierarchy[requestingMember.Role]
-					addedByRoleLevel := roleHierarchy[addedByMember.Role]
-
-					// Cannot remove clips added by users with equal or higher role
-					if addedByRoleLevel >= requestingRoleLevel {
-						return fmt.Errorf("cannot remove clips added by users with equal or higher role")
-					}
-				}
-			}
-			break
+	if communityClip.AddedByUserID != nil {
+		addedByMember, err := s.communityRepo.GetMember(ctx, communityID, *communityClip.AddedByUserID)
+		if err != nil {
+			return err
+		}
+		if addedByMember != nil && roleHierarchy[addedByMember.Role] >= roleHierarchy[requestingMember.Role] {
+			return fmt.Errorf("cannot remove clips added by users with equal or higher role")
 		}
 	}
 
@@ -478,6 +482,13 @@ func (s *CommunityService) RemoveClipFromCommunity(ctx context.Context, communit
 func (s *CommunityService) GetCommunityFeed(ctx context.Context, communityID uuid.UUID, sort string, page, limit int) ([]*models.CommunityClipWithClip, int, error) {
 	offset := (page - 1) * limit
 	return s.communityRepo.GetCommunityClips(ctx, communityID, sort, limit, offset)
+}
+
+func (s *CommunityService) GetVisibleCommunityFeed(ctx context.Context, communityID uuid.UUID, requestingUserID *uuid.UUID, sort string, page, limit int) ([]*models.CommunityClipWithClip, int, error) {
+	if err := s.authorizeRead(ctx, communityID, requestingUserID); err != nil {
+		return nil, 0, err
+	}
+	return s.GetCommunityFeed(ctx, communityID, sort, page, limit)
 }
 
 // CreateDiscussion creates a new discussion thread
@@ -518,17 +529,48 @@ func (s *CommunityService) GetDiscussion(ctx context.Context, discussionID uuid.
 	return s.communityRepo.GetDiscussion(ctx, discussionID)
 }
 
+func (s *CommunityService) GetVisibleDiscussion(ctx context.Context, communityID, discussionID uuid.UUID, requestingUserID *uuid.UUID) (*models.CommunityDiscussion, error) {
+	discussion, err := s.GetDiscussion(ctx, discussionID)
+	if err != nil {
+		return nil, err
+	}
+	if discussion.CommunityID != communityID {
+		return nil, fmt.Errorf("discussion not found")
+	}
+	if err := s.authorizeRead(ctx, discussion.CommunityID, requestingUserID); err != nil {
+		return nil, err
+	}
+	return discussion, nil
+}
+
 // ListDiscussions retrieves discussions for a community
 func (s *CommunityService) ListDiscussions(ctx context.Context, communityID uuid.UUID, sort string, page, limit int) ([]*models.CommunityDiscussion, int, error) {
 	offset := (page - 1) * limit
 	return s.communityRepo.ListDiscussions(ctx, communityID, sort, limit, offset)
 }
 
+func (s *CommunityService) ListVisibleDiscussions(ctx context.Context, communityID uuid.UUID, requestingUserID *uuid.UUID, sort string, page, limit int) ([]*models.CommunityDiscussion, int, error) {
+	if err := s.authorizeRead(ctx, communityID, requestingUserID); err != nil {
+		return nil, 0, err
+	}
+	return s.ListDiscussions(ctx, communityID, sort, page, limit)
+}
+
 // UpdateDiscussion updates a discussion thread
-func (s *CommunityService) UpdateDiscussion(ctx context.Context, discussionID, userID uuid.UUID, req *models.UpdateDiscussionRequest) (*models.CommunityDiscussion, error) {
+func (s *CommunityService) UpdateDiscussion(ctx context.Context, communityID, discussionID, userID uuid.UUID, req *models.UpdateDiscussionRequest) (*models.CommunityDiscussion, error) {
 	discussion, err := s.communityRepo.GetDiscussion(ctx, discussionID)
 	if err != nil {
 		return nil, err
+	}
+	if discussion.CommunityID != communityID {
+		return nil, fmt.Errorf("discussion not found")
+	}
+	isMember, err := s.communityRepo.IsMember(ctx, discussion.CommunityID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !isMember {
+		return nil, fmt.Errorf("community membership required")
 	}
 
 	// Check if user has permission to update (must be author, admin, or mod)
@@ -567,10 +609,20 @@ func (s *CommunityService) UpdateDiscussion(ctx context.Context, discussionID, u
 }
 
 // DeleteDiscussion deletes a discussion thread
-func (s *CommunityService) DeleteDiscussion(ctx context.Context, discussionID, userID uuid.UUID) error {
+func (s *CommunityService) DeleteDiscussion(ctx context.Context, communityID, discussionID, userID uuid.UUID) error {
 	discussion, err := s.communityRepo.GetDiscussion(ctx, discussionID)
 	if err != nil {
 		return err
+	}
+	if discussion.CommunityID != communityID {
+		return fmt.Errorf("discussion not found")
+	}
+	isMember, err := s.communityRepo.IsMember(ctx, discussion.CommunityID, userID)
+	if err != nil {
+		return err
+	}
+	if !isMember {
+		return fmt.Errorf("community membership required")
 	}
 
 	// Check if user has permission (must be author, admin, or mod)

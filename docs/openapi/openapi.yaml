@@ -8458,11 +8458,11 @@ paths:
 
   /api/v1/communities:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: List public communities
+      description: Returns public communities with strict pagination and supported sorting.
       operationId: getApiV1Communities
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -8473,13 +8473,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/communities
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Create a community
+      description: Creates a public community and its mandatory owner membership atomically. New private communities are unavailable until an invitation lifecycle exists.
       operationId: postApiV1Communities
-      x-clpr-router-derived: true
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -8490,11 +8489,11 @@ paths:
 
   /api/v1/communities/search:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/search
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Search public communities
+      description: Searches public community names using a bounded query and strict pagination.
       operationId: getApiV1CommunitiesSearch
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -8507,11 +8506,10 @@ paths:
 
   /api/v1/communities/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/communities/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Delete a community
+      description: Permanently deletes a community; only its owner may perform this operation.
       operationId: deleteApiV1CommunitiesId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8519,8 +8517,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+        '204':
+          description: Community deleted
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8528,11 +8526,11 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Get a visible community
+      description: Returns a public community by UUID or slug; private communities require membership and optional authentication.
       operationId: getApiV1CommunitiesId
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -8549,11 +8547,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/communities/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Update a community
+      description: Updates at least one community field; community administrator membership is required and public communities cannot be switched private at launch.
       operationId: putApiV1CommunitiesId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8572,11 +8569,10 @@ paths:
 
   /api/v1/communities/{id}/ban:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/communities/{id}/ban
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Ban a community member
+      description: Removes membership and creates or updates the ban atomically, subject to community role hierarchy.
       operationId: postApiV1CommunitiesIdBan
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8595,11 +8591,10 @@ paths:
 
   /api/v1/communities/{id}/ban/{userId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/communities/{id}/ban/{userId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Unban a community member
+      description: Removes an existing community ban; moderator or administrator membership is required.
       operationId: deleteApiV1CommunitiesIdBanUserid
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8623,11 +8618,10 @@ paths:
 
   /api/v1/communities/{id}/bans:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/{id}/bans
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: List community bans
+      description: Returns a strictly paginated ban list to community moderators and administrators.
       operationId: getApiV1CommunitiesIdBans
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8646,11 +8640,10 @@ paths:
 
   /api/v1/communities/{id}/clips:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/communities/{id}/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Add a clip to a community
+      description: Adds an existing clip to a community feed; active community membership is required.
       operationId: postApiV1CommunitiesIdClips
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8658,7 +8651,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -8669,11 +8662,10 @@ paths:
 
   /api/v1/communities/{id}/clips/{clipId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/communities/{id}/clips/{clipId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Remove a community clip
+      description: Removes the exact clip subject to moderator role hierarchy, regardless of feed position.
       operationId: deleteApiV1CommunitiesIdClipsClipid
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8697,11 +8689,11 @@ paths:
 
   /api/v1/communities/{id}/discussions:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/{id}/discussions
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: List visible community discussions
+      description: Lists discussions for a public community or an authenticated member of a private community.
       operationId: getApiV1CommunitiesIdDiscussions
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -8718,11 +8710,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/communities/{id}/discussions
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Create a community discussion
+      description: Creates a bounded discussion in a community where the authenticated user is an active member.
       operationId: postApiV1CommunitiesIdDiscussions
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8730,7 +8721,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -8741,11 +8732,10 @@ paths:
 
   /api/v1/communities/{id}/discussions/{discussionId}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/communities/{id}/discussions/{discussionId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Delete a community discussion
+      description: Deletes a discussion only when it belongs to the parent community and the active member is its author or community staff.
       operationId: deleteApiV1CommunitiesIdDiscussionsDiscussionid
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8758,8 +8748,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+        '204':
+          description: Discussion deleted
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8767,11 +8757,11 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/{id}/discussions/{discussionId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Get a visible community discussion
+      description: Returns a discussion only from the specified visible parent community.
       operationId: getApiV1CommunitiesIdDiscussionsDiscussionid
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -8793,11 +8783,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/communities/{id}/discussions/{discussionId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Update a community discussion
+      description: Updates a discussion in its specified parent community; active author or staff membership is required.
       operationId: putApiV1CommunitiesIdDiscussionsDiscussionid
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8821,11 +8810,11 @@ paths:
 
   /api/v1/communities/{id}/feed:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/{id}/feed
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Get a visible community feed
+      description: Returns visible, non-removed clips from a public community or an authenticated member's private community.
       operationId: getApiV1CommunitiesIdFeed
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -8844,11 +8833,10 @@ paths:
 
   /api/v1/communities/{id}/join:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/communities/{id}/join
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Join a public community
+      description: Adds the authenticated, non-banned user to a public community; legacy private communities cannot be self-joined.
       operationId: postApiV1CommunitiesIdJoin
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8867,11 +8855,10 @@ paths:
 
   /api/v1/communities/{id}/leave:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/communities/{id}/leave
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Leave a community
+      description: Removes the authenticated user's membership; the community owner cannot leave.
       operationId: postApiV1CommunitiesIdLeave
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8890,11 +8877,11 @@ paths:
 
   /api/v1/communities/{id}/members:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/communities/{id}/members
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: List visible community members
+      description: Lists members of a public community or a private community visible to the optional authenticated user.
       operationId: getApiV1CommunitiesIdMembers
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -8913,11 +8900,10 @@ paths:
 
   /api/v1/communities/{id}/members/{userId}/role:
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/communities/{id}/members/{userId}/role
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Communities]
+      summary: Update a community member role
+      description: Changes a non-owner member's role; community administrator membership is required.
       operationId: putApiV1CommunitiesIdMembersUseridRole
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path

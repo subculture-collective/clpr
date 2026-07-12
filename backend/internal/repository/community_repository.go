@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 type CommunityRepository struct {
@@ -31,6 +31,34 @@ func (r *CommunityRepository) CreateCommunity(ctx context.Context, community *mo
 		community.OwnerID, community.IsPublic, community.MemberCount, community.Rules,
 		community.CreatedAt, community.UpdatedAt,
 	).Scan(&community.ID, &community.CreatedAt, &community.UpdatedAt)
+}
+
+// CreateCommunityWithOwner persists the community and its mandatory owner
+// membership as one unit so a partially initialized community is never visible.
+func (r *CommunityRepository) CreateCommunityWithOwner(ctx context.Context, community *models.Community, owner *models.CommunityMember) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO communities (id, name, slug, description, icon, owner_id, is_public, member_count, rules, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING id, created_at, updated_at`,
+		community.ID, community.Name, community.Slug, community.Description, community.Icon,
+		community.OwnerID, community.IsPublic, community.MemberCount, community.Rules,
+		community.CreatedAt, community.UpdatedAt,
+	).Scan(&community.ID, &community.CreatedAt, &community.UpdatedAt); err != nil {
+		return err
+	}
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO community_members (id, community_id, user_id, role, joined_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, joined_at`, owner.ID, owner.CommunityID, owner.UserID, owner.Role, owner.JoinedAt,
+	).Scan(&owner.ID, &owner.JoinedAt); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // GetCommunityByID retrieves a community by ID
@@ -146,7 +174,7 @@ func (r *CommunityRepository) SearchCommunities(ctx context.Context, query strin
 	countQuery := `
 		SELECT COUNT(*)
 		FROM communities
-		WHERE LOWER(name) LIKE $1
+		WHERE is_public = true AND LOWER(name) LIKE $1
 	`
 	var total int
 	err := r.pool.QueryRow(ctx, countQuery, searchPattern).Scan(&total)
@@ -158,7 +186,7 @@ func (r *CommunityRepository) SearchCommunities(ctx context.Context, query strin
 	querySQL := `
 		SELECT id, name, slug, description, icon, owner_id, is_public, member_count, rules, created_at, updated_at
 		FROM communities
-		WHERE LOWER(name) LIKE $1
+		WHERE is_public = true AND LOWER(name) LIKE $1
 		ORDER BY member_count DESC, name ASC
 		LIMIT $2 OFFSET $3
 	`
@@ -219,7 +247,10 @@ func (r *CommunityRepository) AddMember(ctx context.Context, member *models.Comm
 // RemoveMember removes a member from a community
 func (r *CommunityRepository) RemoveMember(ctx context.Context, communityID, userID uuid.UUID) error {
 	query := `DELETE FROM community_members WHERE community_id = $1 AND user_id = $2`
-	_, err := r.pool.Exec(ctx, query, communityID, userID)
+	result, err := r.pool.Exec(ctx, query, communityID, userID)
+	if err == nil && result.RowsAffected() == 0 {
+		return fmt.Errorf("member not found")
+	}
 	return err
 }
 
@@ -338,6 +369,32 @@ func (r *CommunityRepository) BanMember(ctx context.Context, ban *models.Communi
 	).Scan(&ban.ID, &ban.BannedAt)
 }
 
+// BanMemberAndRemoveMembership makes the ban visible atomically with removal
+// from the active member set. Repeated bans update the existing restriction.
+func (r *CommunityRepository) BanMemberAndRemoveMembership(ctx context.Context, ban *models.CommunityBan) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, `DELETE FROM community_members WHERE community_id = $1 AND user_id = $2`, ban.CommunityID, ban.BannedUserID); err != nil {
+		return err
+	}
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO community_bans (id, community_id, banned_user_id, banned_by_user_id, reason, banned_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (community_id, banned_user_id) DO UPDATE SET
+			banned_by_user_id = EXCLUDED.banned_by_user_id,
+			reason = EXCLUDED.reason,
+			banned_at = EXCLUDED.banned_at
+		RETURNING id, banned_at`, ban.ID, ban.CommunityID, ban.BannedUserID,
+		ban.BannedByUserID, ban.Reason, ban.BannedAt,
+	).Scan(&ban.ID, &ban.BannedAt); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 // GetBanByID retrieves a ban record by its ID
 func (r *CommunityRepository) GetBanByID(ctx context.Context, banID uuid.UUID) (*models.CommunityBan, error) {
 	query := `
@@ -358,7 +415,10 @@ func (r *CommunityRepository) GetBanByID(ctx context.Context, banID uuid.UUID) (
 // UnbanMember unbans a user from a community
 func (r *CommunityRepository) UnbanMember(ctx context.Context, communityID, userID uuid.UUID) error {
 	query := `DELETE FROM community_bans WHERE community_id = $1 AND banned_user_id = $2`
-	_, err := r.pool.Exec(ctx, query, communityID, userID)
+	result, err := r.pool.Exec(ctx, query, communityID, userID)
+	if err == nil && result.RowsAffected() == 0 {
+		return fmt.Errorf("ban not found")
+	}
 	return err
 }
 
@@ -457,14 +517,29 @@ func (r *CommunityRepository) AddClipToCommunity(ctx context.Context, communityC
 // RemoveClipFromCommunity removes a clip from a community feed
 func (r *CommunityRepository) RemoveClipFromCommunity(ctx context.Context, communityID, clipID uuid.UUID) error {
 	query := `DELETE FROM community_clips WHERE community_id = $1 AND clip_id = $2`
-	_, err := r.pool.Exec(ctx, query, communityID, clipID)
+	result, err := r.pool.Exec(ctx, query, communityID, clipID)
+	if err == nil && result.RowsAffected() == 0 {
+		return fmt.Errorf("community clip not found")
+	}
 	return err
+}
+
+func (r *CommunityRepository) GetCommunityClip(ctx context.Context, communityID, clipID uuid.UUID) (*models.CommunityClip, error) {
+	item := &models.CommunityClip{}
+	err := r.pool.QueryRow(ctx, `
+		SELECT id, community_id, clip_id, added_by_user_id, added_at
+		FROM community_clips WHERE community_id = $1 AND clip_id = $2`, communityID, clipID).Scan(
+		&item.ID, &item.CommunityID, &item.ClipID, &item.AddedByUserID, &item.AddedAt)
+	if err == pgx.ErrNoRows {
+		return nil, fmt.Errorf("community clip not found")
+	}
+	return item, err
 }
 
 // GetCommunityClips retrieves clips from a community feed with full clip data
 func (r *CommunityRepository) GetCommunityClips(ctx context.Context, communityID uuid.UUID, sort string, limit, offset int) ([]*models.CommunityClipWithClip, int, error) {
 	// Count total
-	countQuery := `SELECT COUNT(*) FROM community_clips WHERE community_id = $1`
+	countQuery := `SELECT COUNT(*) FROM community_clips cc JOIN clips c ON c.id = cc.clip_id WHERE cc.community_id = $1 AND c.is_removed = false AND c.is_hidden = false`
 	var total int
 	err := r.pool.QueryRow(ctx, countQuery, communityID).Scan(&total)
 	if err != nil {
@@ -490,7 +565,7 @@ func (r *CommunityRepository) GetCommunityClips(ctx context.Context, communityID
 			c.is_removed, c.removed_reason, c.is_hidden
 		FROM community_clips cc
 		JOIN clips c ON cc.clip_id = c.id
-		WHERE cc.community_id = $1
+		WHERE cc.community_id = $1 AND c.is_removed = false AND c.is_hidden = false
 		%s
 		LIMIT $2 OFFSET $3
 	`, orderBy)

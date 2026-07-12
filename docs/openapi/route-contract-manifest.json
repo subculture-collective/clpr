@@ -1376,147 +1376,147 @@
     "path": "/api/v1/communities",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).ListCommunities-fm",
     "operation_id": "getApiV1Communities",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/communities",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).CreateCommunity-fm",
     "operation_id": "postApiV1Communities",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/search",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).SearchCommunities-fm",
     "operation_id": "getApiV1CommunitiesSearch",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/communities/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).DeleteCommunity-fm",
     "operation_id": "deleteApiV1CommunitiesId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetCommunity-fm",
     "operation_id": "getApiV1CommunitiesId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/communities/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UpdateCommunity-fm",
     "operation_id": "putApiV1CommunitiesId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/communities/{id}/ban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).BanMember-fm",
     "operation_id": "postApiV1CommunitiesIdBan",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/communities/{id}/ban/{userId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UnbanMember-fm",
     "operation_id": "deleteApiV1CommunitiesIdBanUserid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/{id}/bans",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetBannedMembers-fm",
     "operation_id": "getApiV1CommunitiesIdBans",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/communities/{id}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).AddClipToCommunity-fm",
     "operation_id": "postApiV1CommunitiesIdClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/communities/{id}/clips/{clipId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).RemoveClipFromCommunity-fm",
     "operation_id": "deleteApiV1CommunitiesIdClipsClipid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/{id}/discussions",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).ListDiscussions-fm",
     "operation_id": "getApiV1CommunitiesIdDiscussions",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/communities/{id}/discussions",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).CreateDiscussion-fm",
     "operation_id": "postApiV1CommunitiesIdDiscussions",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/communities/{id}/discussions/{discussionId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).DeleteDiscussion-fm",
     "operation_id": "deleteApiV1CommunitiesIdDiscussionsDiscussionid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/{id}/discussions/{discussionId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetDiscussion-fm",
     "operation_id": "getApiV1CommunitiesIdDiscussionsDiscussionid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/communities/{id}/discussions/{discussionId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UpdateDiscussion-fm",
     "operation_id": "putApiV1CommunitiesIdDiscussionsDiscussionid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/{id}/feed",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetCommunityFeed-fm",
     "operation_id": "getApiV1CommunitiesIdFeed",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/communities/{id}/join",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).JoinCommunity-fm",
     "operation_id": "postApiV1CommunitiesIdJoin",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/communities/{id}/leave",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).LeaveCommunity-fm",
     "operation_id": "postApiV1CommunitiesIdLeave",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/communities/{id}/members",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetMembers-fm",
     "operation_id": "getApiV1CommunitiesIdMembers",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/communities/{id}/members/{userId}/role",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UpdateMemberRole-fm",
     "operation_id": "putApiV1CommunitiesIdMembersUseridRole",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

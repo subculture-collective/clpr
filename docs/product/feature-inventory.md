@@ -657,9 +657,9 @@ counts that included planned or missing artifacts.
 
 #### 10.2 Communities
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/communities/*`
-- **Features**: Create, join, roles, banning, feed, discussions
-- **Gaps**: Categories, discovery improvements
+- **Status**: 🟡 partial/backend-only | **Backend**: `/api/v1/communities/*`
+- **Features**: Public community creation/joining, roles, banning, visible clip feeds, discussions
+- **Gaps**: No product UI, categories, discovery improvements, or private-community invitation lifecycle. Creating a private community or switching a public community private is rejected for launch; legacy private records remain member-only.
 
 ---
 
