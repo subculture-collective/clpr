@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** TODO
+- **State:** BLOCKED — fail-closed evidence workflow reports 359 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -505,3 +505,4 @@ Before each commit:
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
 | 2026-07-12 | R5.5 backup/restore | Partial/external gate | `6b6c6747`; real PostgreSQL restores from gzip plain/custom dumps pass; production RPO/RTO and deployment rollback require operator access |
 | 2026-07-12 | R5.6 docs/setup | Done | `7587a6eb`, `31c7a97c`; 201 Markdown files lint/anchor clean, 1,309 offline links with zero errors, 198 reachable docs plus two intentional plan records |
+| 2026-07-12 | R5.7 release decision | No-go | `e5287d4c`; protected evidence workflow is fail-closed and currently names all five remaining release blockers |
