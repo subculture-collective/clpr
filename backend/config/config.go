@@ -620,6 +620,9 @@ func Load() (*Config, error) {
 		},
 	}
 
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("validate configuration: %w", err)
+	}
 	return config, nil
 }
 
