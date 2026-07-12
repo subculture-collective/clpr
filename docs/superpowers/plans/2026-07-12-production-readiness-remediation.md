@@ -294,7 +294,7 @@ flowchart LR
 
 ### R3.5 — Make analytics consent testable and enforce withdrawal
 
-- **State:** TODO
+- **State:** DONE — runtime-injectable analytics config; unit and browser tests prove pre-consent blocking and post-withdrawal shutdown
 - **Owner role:** Frontend + privacy
 - **Depends on:** R1.4
 - **Work:** Inject analytics configuration through a runtime adapter instead of mocking `import.meta`. Test consent, DNT, reload, withdrawal, backend reconciliation, and PII minimization.
@@ -302,7 +302,7 @@ flowchart LR
 
 ### R3.6 — Cover account export/deletion and moderation lifecycle
 
-- **State:** TODO
+- **State:** IN PROGRESS — unsupported automated deletion is contained; export and moderation lifecycle evidence still under audit
 - **Owner role:** Backend/frontend + privacy
 - **Depends on:** R1.5, R2.4
 - **Work:** Add integration and browser evidence for export completeness, deletion confirmation/grace behavior, session revocation, retained/legal data policy, moderator authorization, and destructive-action audit trails.

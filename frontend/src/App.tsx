@@ -678,11 +678,7 @@ function App() {
                                         />
                                         <Route
                                             path='/settings/cookies'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <CookieSettingsPage />
-                                                </ProtectedRoute>
-                                            }
+                                            element={<CookieSettingsPage />}
                                         />
                                         <Route
                                             path='/settings/webhooks'

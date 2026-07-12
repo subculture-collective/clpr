@@ -5,8 +5,11 @@
  * Respects user consent preferences and DNT signals.
  */
 
+import { getAnalyticsRuntimeConfig } from './runtime-config';
+
 // Google Analytics configuration
-export const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
+export const GA_MEASUREMENT_ID =
+    getAnalyticsRuntimeConfig().googleMeasurementId;
 export interface GoogleAnalyticsConfig {
     measurementId: string;
     enabled: boolean;
@@ -15,8 +18,8 @@ export interface GoogleAnalyticsConfig {
 
 const defaultConfig: GoogleAnalyticsConfig = {
     measurementId: GA_MEASUREMENT_ID,
-    enabled: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-    domain: import.meta.env.VITE_DOMAIN || window.location.hostname,
+    enabled: getAnalyticsRuntimeConfig().enabled,
+    domain: getAnalyticsRuntimeConfig().domain,
 };
 let analyticsConfig = defaultConfig;
 

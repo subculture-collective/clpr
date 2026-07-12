@@ -21,6 +21,7 @@ import {
 } from '../lib/telemetry';
 import { useAuth } from './AuthContext';
 import axios from 'axios';
+import { getAnalyticsRuntimeConfig } from '../lib/runtime-config';
 
 /**
  * Consent categories for different types of tracking/personalization
@@ -222,7 +223,7 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
     const initialDoNotTrack = detectDoNotTrack();
     const storedConsent = loadStoredConsent();
-    const autoConsent = import.meta.env.VITE_AUTO_CONSENT === 'true';
+    const autoConsent = getAnalyticsRuntimeConfig().autoConsent;
     const nowISO = new Date().toISOString();
     // eslint-disable-next-line react-hooks/purity
     const currentTime = Date.now();
