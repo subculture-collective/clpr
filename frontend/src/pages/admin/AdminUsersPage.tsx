@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Card, CardHeader, CardBody, Button, Input } from '../../components';
 import { Search, Shield, Ban, TrendingUp, MessageSquare, MessageSquareOff, Eye } from 'lucide-react';
 import axios from 'axios';
+import { Modal } from '@/components/ui/Modal';
 
 interface User {
   id: string;
@@ -77,22 +78,18 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader>
-          <h3 className="text-xl font-semibold">{titles[actionType]}</h3>
+    <Modal open onClose={onClose} title={titles[actionType]} size="md">
           <p className="text-sm text-muted-foreground">
             User: {user.username} ({user.email})
           </p>
-        </CardHeader>
-        <CardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
             {actionType === 'karma' ? (
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label htmlFor="admin-user-karma" className="block text-sm font-medium mb-2">
                   New Karma Points
                 </label>
                 <Input
+                  id="admin-user-karma"
                   type="number"
                   value={karmaValue}
                   onChange={(e) => {
@@ -116,10 +113,11 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
             ) : actionType === 'suspend_comments' ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label htmlFor="admin-user-suspension-type" className="block text-sm font-medium mb-2">
                     Suspension Type
                   </label>
                   <select
+                    id="admin-user-suspension-type"
                     value={suspensionType}
                     onChange={(e) => setSuspensionType(e.target.value as 'warning' | 'temporary' | 'permanent')}
                     className="w-full p-2 border border-border rounded-md bg-background"
@@ -131,10 +129,11 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
                 </div>
                 {suspensionType === 'temporary' && (
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label htmlFor="admin-user-suspension-duration" className="block text-sm font-medium mb-2">
                       Duration (hours)
                     </label>
                     <Input
+                      id="admin-user-suspension-duration"
                       type="number"
                       value={durationHours}
                       onChange={(e) => {
@@ -152,10 +151,11 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label htmlFor="admin-user-suspension-reason" className="block text-sm font-medium mb-2">
                     Reason (Required)
                   </label>
                   <textarea
+                    id="admin-user-suspension-reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="w-full p-2 border border-border rounded-md min-h-[100px] bg-background"
@@ -184,10 +184,11 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label htmlFor="admin-user-review-reason" className="block text-sm font-medium mb-2">
                     Reason (Required)
                   </label>
                   <textarea
+                    id="admin-user-review-reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="w-full p-2 border border-border rounded-md min-h-[100px] bg-background"
@@ -198,10 +199,11 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
               </>
             ) : (
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label htmlFor="admin-user-action-reason" className="block text-sm font-medium mb-2">
                   {actionType === 'ban' || actionType === 'suspend_comments' ? 'Reason (Required)' : 'Action Reason'}
                 </label>
                 <textarea
+                  id="admin-user-action-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   className="w-full p-2 border border-border rounded-md min-h-[100px] bg-background"
@@ -220,9 +222,7 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
               </Button>
             </div>
           </form>
-        </CardBody>
-      </Card>
-    </div>
+    </Modal>
   );
 }
 

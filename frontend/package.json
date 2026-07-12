@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build && npm run bundle:check",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
+    "boundaries:check": "node scripts/check-ui-boundaries.mjs",
     "build:analyze": "vite build --mode analyze",
     "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",

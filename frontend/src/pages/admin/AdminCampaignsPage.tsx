@@ -23,6 +23,8 @@ import {
   MetricCard,
   BarChartComponent,
 } from '../../components/analytics';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 
 type TabType = 'campaigns' | 'reports';
 type ModalType = 'create' | 'edit' | 'delete' | null;
@@ -681,22 +683,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-
-        <div
-          className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="campaign-modal-title"
-        >
-          <h3
-            id="campaign-modal-title"
-            className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4"
-          >
-            {campaign ? 'Edit Campaign' : 'Create Campaign'}
-          </h3>
+    <Modal open={isOpen} onClose={onClose} title={campaign ? 'Edit Campaign' : 'Create Campaign'} size="xl">
 
           {error && (
             <div className="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded">
@@ -946,9 +933,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 
@@ -971,50 +956,29 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose}></div>
-
-        <div
-          className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="delete-campaign-modal-title"
-          aria-describedby="delete-campaign-modal-desc"
-        >
-          <h3
-            id="delete-campaign-modal-title"
-            className="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-2"
-          >
-            Delete Campaign
-          </h3>
+    <Modal open={isOpen} onClose={onClose} title="Delete Campaign" size="md">
           <p
-            id="delete-campaign-modal-desc"
             className="text-sm text-gray-500 dark:text-gray-400 mb-4"
           >
             Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
           </p>
 
           <div className="flex justify-end space-x-3">
-            <button
-              type="button"
+            <Button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+              variant="outline"
             >
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={onConfirm}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+              variant="danger"
             >
               {isLoading ? 'Deleting...' : 'Delete'}
-            </button>
+            </Button>
           </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

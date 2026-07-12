@@ -4,24 +4,11 @@ import { Badge } from "@/components/ui";
 import { ShareButton } from "./ShareButton";
 import { useClipVote, useClipFavorite } from "@/hooks/useClips";
 import { useIsAuthenticated, useToast } from "@/hooks";
-import { cn, formatTimestamp } from "@/lib/utils";
+import { cn, formatCompactNumber, formatDuration, formatTimestamp } from "@/lib/utils";
 import type { Clip } from "@/types/clip";
 
 interface ClipGridCardProps {
 	clip: Clip;
-}
-
-function formatNumber(num: number) {
-	if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-	if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-	return num.toString();
-}
-
-function formatDuration(seconds?: number) {
-	if (!seconds) return "0:00";
-	const mins = Math.floor(seconds / 60);
-	const secs = Math.floor(seconds % 60);
-	return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 export function ClipGridCard({ clip }: ClipGridCardProps) {
@@ -181,7 +168,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 							className={cn(clip.user_vote === 1 && "fill-current")}
 						/>
 						<span className="font-medium text-foreground/90">
-							{formatNumber(clip.vote_score)}
+							{formatCompactNumber(clip.vote_score)}
 						</span>
 					</button>
 
@@ -227,7 +214,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 							className={cn(clip.is_favorited && "fill-current text-primary-500")}
 						/>
 						<span className="font-medium text-foreground/90">
-							{formatNumber(clip.favorite_count)}
+							{formatCompactNumber(clip.favorite_count)}
 						</span>
 					</button>
 
@@ -244,7 +231,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 					{/* Views */}
 					<span className="inline-flex items-center gap-1">
 						<Eye size={14} />
-						<span>{formatNumber(clip.view_count)}</span>
+						<span>{formatCompactNumber(clip.view_count)}</span>
 					</span>
 				</div>
 

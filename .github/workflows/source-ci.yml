@@ -68,6 +68,8 @@ jobs:
       - name: Reject high or critical production dependency advisories
         run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
+      - name: Verify module and UI boundaries
+        run: npm run boundaries:check
       - name: Unit tests
         run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
       - name: Verify test pyramid and skip budget

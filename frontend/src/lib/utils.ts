@@ -396,3 +396,11 @@ export function formatDuration(seconds: number): string {
 
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
 }
+
+/** Compact, locale-stable counts for dense cards and controls. */
+export function formatCompactNumber(value: number): string {
+    if (!Number.isFinite(value)) return '0';
+    if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+    return Math.trunc(value).toString();
+}

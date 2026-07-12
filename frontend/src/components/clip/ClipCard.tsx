@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui';
 import { VerifiedBadge } from '@/components/user';
 import { useClipFavorite, useClipVote } from '@/hooks/useClips';
 import { useIsAuthenticated, useToast } from '@/hooks';
-import { cn, formatTimestamp } from '@/lib/utils';
+import { cn, formatCompactNumber, formatDuration, formatTimestamp } from '@/lib/utils';
 import type { Clip } from '@/types/clip';
 import { Link } from 'react-router-dom';
 import { TwitchEmbed } from './TwitchEmbed';
@@ -46,23 +46,6 @@ export function ClipCard({ clip }: ClipCardProps) {
             return;
         }
         favoriteMutation.mutate({ clip_id: clip.id });
-    };
-
-    const formatDuration = (seconds?: number) => {
-        if (!seconds) return '0:00';
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const formatNumber = (num: number) => {
-        if (num >= 1000000) {
-            return `${(num / 1000000).toFixed(1)}M`;
-        }
-        if (num >= 1000) {
-            return `${(num / 1000).toFixed(1)}K`;
-        }
-        return num.toString();
     };
 
     const voteColor =
@@ -110,7 +93,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                             voteColor,
                         )}
                     >
-                        {formatNumber(clip.vote_score)}
+                        {formatCompactNumber(clip.vote_score)}
                     </span>
 
                     <button
@@ -308,10 +291,10 @@ export function ClipCard({ clip }: ClipCardProps) {
                         >
                             <MessageSquare size={18} className='shrink-0' strokeWidth={1.75} />
                             <span className='hidden xs:inline'>
-                                {formatNumber(clip.comment_count)} comments
+                                {formatCompactNumber(clip.comment_count)} comments
                             </span>
                             <span className='xs:hidden'>
-                                {formatNumber(clip.comment_count)}
+                                {formatCompactNumber(clip.comment_count)}
                             </span>
                         </Link>
 
@@ -346,7 +329,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                                 fill={clip.is_favorited ? 'currentColor' : 'none'}
                                 strokeWidth={1.75}
                             />
-                            <span>{formatNumber(clip.favorite_count)}</span>
+                            <span>{formatCompactNumber(clip.favorite_count)}</span>
                         </button>
 
                         <AddToPlaylistButton clipId={clip.id} />
@@ -357,7 +340,7 @@ export function ClipCard({ clip }: ClipCardProps) {
 
                         <span className='text-muted-foreground flex items-center gap-1'>
                             <Eye size={18} strokeWidth={1.75} />
-                            <span>{formatNumber(clip.view_count)}</span>
+                            <span>{formatCompactNumber(clip.view_count)}</span>
                         </span>
                     </div>
                 </div>

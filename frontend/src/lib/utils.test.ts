@@ -1,6 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { format } from 'date-fns';
-import { formatTimestamp } from './utils';
+import { formatCompactNumber, formatTimestamp } from './utils';
+
+describe('formatCompactNumber', () => {
+    it.each([
+        [999, '999'],
+        [1_000, '1.0K'],
+        [12_500, '12.5K'],
+        [1_000_000, '1.0M'],
+        [-2_500, '-2.5K'],
+        [Number.NaN, '0'],
+    ])('formats %s as %s', (value, expected) => {
+        expect(formatCompactNumber(value)).toBe(expected);
+    });
+});
 
 describe('formatTimestamp', () => {
     beforeEach(() => {
