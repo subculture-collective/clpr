@@ -75,6 +75,20 @@ func discoveryIdentifier(c *gin.Context) (string, bool) {
 	return value, true
 }
 
+func hasDuplicateUUIDs(values []uuid.UUID) bool {
+	seen := make(map[uuid.UUID]struct{}, len(values))
+	for _, value := range values {
+		if value == uuid.Nil {
+			return true
+		}
+		if _, exists := seen[value]; exists {
+			return true
+		}
+		seen[value] = struct{}{}
+	}
+	return false
+}
+
 // NewDiscoveryListHandler creates a new handler instance
 func NewDiscoveryListHandler(repo repository.DiscoveryListRepositoryInterface, analyticsRepo *repository.AnalyticsRepository) *DiscoveryListHandler {
 	return &DiscoveryListHandler{
@@ -751,13 +765,24 @@ func (h *DiscoveryListHandler) AdminAddClipToList(c *gin.Context) {
 	// Parse request body
 	var req models.AddClipToListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	// Add clip to list
 	err = h.repo.AddClipToList(ctx, listID, req.ClipID)
 	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrDiscoveryListNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
+			return
+		case errors.Is(err, repository.ErrClipNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "Clip not found"})
+			return
+		case errors.Is(err, repository.ErrClipAlreadyInList):
+			c.JSON(http.StatusConflict, gin.H{"error": "Clip is already in this list"})
+			return
+		}
 		logger.Error("Failed to add clip to list", err, map[string]interface{}{"list_id": listID, "clip_id": req.ClipID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add clip to list"})
 		return
@@ -801,6 +826,10 @@ func (h *DiscoveryListHandler) AdminRemoveClipFromList(c *gin.Context) {
 	// Remove clip from list
 	err = h.repo.RemoveClipFromList(ctx, listID, clipID)
 	if err != nil {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
+			return
+		}
 		if errors.Is(err, repository.ErrClipNotFoundInList) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Clip not found in list"})
 			return
@@ -845,7 +874,7 @@ func (h *DiscoveryListHandler) AdminReorderListClips(c *gin.Context) {
 	// Parse request body
 	var req models.ReorderListClipsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
@@ -854,10 +883,22 @@ func (h *DiscoveryListHandler) AdminReorderListClips(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Cannot reorder more than %d clips at once", MaxReorderClipsLimit)})
 		return
 	}
+	if hasDuplicateUUIDs(req.ClipIDs) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "clip_ids must contain unique, non-zero UUIDs"})
+		return
+	}
 
 	// Reorder clips
 	err = h.repo.ReorderListClips(ctx, listID, req.ClipIDs)
 	if err != nil {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
+			return
+		}
+		if errors.Is(err, repository.ErrDiscoveryListReorderMismatch) {
+			c.JSON(http.StatusConflict, gin.H{"error": "clip_ids must exactly match current list membership"})
+			return
+		}
 		logger.Error("Failed to reorder clips", err, map[string]interface{}{"list_id": listID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reorder clips"})
 		return

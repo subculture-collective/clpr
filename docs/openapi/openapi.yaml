@@ -5713,6 +5713,114 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/admin/discovery-lists/{id}/clips:
+    get:
+      tags: [Admin Discovery Lists]
+      summary: List clips in a curated discovery list
+      operationId: adminGetDiscoveryListClips
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListIdentifier'
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000000, default: 0}
+      responses:
+        '200':
+          description: Discovery-list clips
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListClipsResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    post:
+      tags: [Admin Discovery Lists]
+      summary: Add an active clip to a curated discovery list
+      operationId: adminAddClipToDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AddClipToDiscoveryListRequest'}
+      responses:
+        '200':
+          description: Clip added
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409':
+          description: Clip is already in the list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/admin/discovery-lists/{id}/clips/{clipId}:
+    delete:
+      tags: [Admin Discovery Lists]
+      summary: Remove a clip from a curated discovery list
+      operationId: adminRemoveClipFromDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - name: clipId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Clip removed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/admin/discovery-lists/{id}/clips/reorder:
+    put:
+      tags: [Admin Discovery Lists]
+      summary: Atomically reorder every clip in a curated discovery list
+      description: clip_ids must contain each current member exactly once and no duplicates.
+      operationId: adminReorderDiscoveryListClips
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReorderDiscoveryListClipsRequest'}
+      responses:
+        '200':
+          description: Clips reordered
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409':
+          description: IDs do not exactly match current list membership
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -6061,101 +6169,6 @@ paths:
       description: Router-derived operation pending a route-specific response schema.
       operationId: postApiV1AdminBroadcastersRefreshRankings
       x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/discovery-lists/{id}/clips:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/discovery-lists/{id}/clips
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1AdminDiscoveryListsIdClips
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/discovery-lists/{id}/clips
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1AdminDiscoveryListsIdClips
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/discovery-lists/{id}/clips/reorder:
-    put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/admin/discovery-lists/{id}/clips/reorder
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1AdminDiscoveryListsIdClipsReorder
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/discovery-lists/{id}/clips/{clipId}:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1AdminDiscoveryListsIdClipsClipid
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: clipId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -13285,6 +13298,23 @@ components:
         description: {type: string, maxLength: 1000}
         is_featured: {type: boolean}
         is_active: {type: boolean}
+
+    AddClipToDiscoveryListRequest:
+      type: object
+      required: [clip_id]
+      properties:
+        clip_id: {type: string, format: uuid}
+
+    ReorderDiscoveryListClipsRequest:
+      type: object
+      required: [clip_ids]
+      properties:
+        clip_ids:
+          type: array
+          minItems: 1
+          maxItems: 200
+          uniqueItems: true
+          items: {type: string, format: uuid}
 
     Appeal:
       type: object

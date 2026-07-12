@@ -227,29 +227,29 @@
     "method": "GET",
     "path": "/api/v1/admin/discovery-lists/{id}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryListClips-fm",
-    "operation_id": "getApiV1AdminDiscoveryListsIdClips",
-    "contract_level": "transitional"
+    "operation_id": "adminGetDiscoveryListClips",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/discovery-lists/{id}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminAddClipToList-fm",
-    "operation_id": "postApiV1AdminDiscoveryListsIdClips",
-    "contract_level": "transitional"
+    "operation_id": "adminAddClipToDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/admin/discovery-lists/{id}/clips/reorder",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminReorderListClips-fm",
-    "operation_id": "putApiV1AdminDiscoveryListsIdClipsReorder",
-    "contract_level": "transitional"
+    "operation_id": "adminReorderDiscoveryListClips",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/discovery-lists/{id}/clips/{clipId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminRemoveClipFromList-fm",
-    "operation_id": "deleteApiV1AdminDiscoveryListsIdClipsClipid",
-    "contract_level": "transitional"
+    "operation_id": "adminRemoveClipFromDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

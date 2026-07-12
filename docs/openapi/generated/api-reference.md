@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T18:02:37.641Z
+generated: 2026-07-12T18:06:55.100Z
 ---
 
 # Clipper API
@@ -23035,6 +23035,494 @@ func main() {
 
 ---
 
+### List clips in a curated discovery list
+
+`GET /api/v1/admin/discovery-lists/{id}/clips`
+
+**Tags:** Admin Discovery Lists
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+|  |  | string |  |  |
+| limit | query | integer |  |  |
+| offset | query | integer |  |  |
+
+#### Responses
+
+**200** - Discovery-list clips
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/discovery-lists/{id}/clips'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/discovery-lists/{id}/clips", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Add an active clip to a curated discovery list
+
+`POST /api/v1/admin/discovery-lists/{id}/clips`
+
+**Tags:** Admin Discovery Lists
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+|  |  | string |  |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Clip added
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**409** - Clip is already in the list
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/admin/discovery-lists/{id}/clips',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/admin/discovery-lists/{id}/clips", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Remove a clip from a curated discovery list
+
+`DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}`
+
+**Tags:** Admin Discovery Lists
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+|  |  | string |  |  |
+| clipId | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Clip removed
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X DELETE "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips/{clipId}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips/{clipId}', {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.delete(
+        '/api/v1/admin/discovery-lists/{id}/clips/{clipId}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("DELETE", "/api/v1/admin/discovery-lists/{id}/clips/{clipId}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Atomically reorder every clip in a curated discovery list
+
+`PUT /api/v1/admin/discovery-lists/{id}/clips/reorder`
+
+clip_ids must contain each current member exactly once and no duplicates.
+
+**Tags:** Admin Discovery Lists
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+|  |  | string |  |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Clips reordered
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**409** - IDs do not exactly match current list membership
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X PUT "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips/reorder" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips/reorder', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.put(
+        '/api/v1/admin/discovery-lists/{id}/clips/reorder',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/admin/discovery-lists/{id}/clips/reorder", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
 ## Generated Route Contracts
 
 ### GET /api/v1/admin/ads/campaigns
@@ -24997,423 +25485,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("POST", "/api/v1/admin/broadcasters/refresh-rankings", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /api/v1/admin/discovery-lists/{id}/clips
-
-`GET /api/v1/admin/discovery-lists/{id}/clips`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/discovery-lists/{id}/clips'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/discovery-lists/{id}/clips", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### POST /api/v1/admin/discovery-lists/{id}/clips
-
-`POST /api/v1/admin/discovery-lists/{id}/clips`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/admin/discovery-lists/{id}/clips'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/admin/discovery-lists/{id}/clips", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### PUT /api/v1/admin/discovery-lists/{id}/clips/reorder
-
-`PUT /api/v1/admin/discovery-lists/{id}/clips/reorder`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X PUT "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips/reorder"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips/reorder', {
-    method: 'PUT',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.put(
-        '/api/v1/admin/discovery-lists/{id}/clips/reorder'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("PUT", "/api/v1/admin/discovery-lists/{id}/clips/reorder", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}
-
-`DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-| clipId | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X DELETE "http://localhost:8080/api/v1/admin/discovery-lists/{id}/clips/{clipId}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/discovery-lists/{id}/clips/{clipId}', {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.delete(
-        '/api/v1/admin/discovery-lists/{id}/clips/{clipId}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/admin/discovery-lists/{id}/clips/{clipId}", nil)
     if err != nil {
         // Handle error
         return

@@ -20,6 +20,12 @@ var (
 	ErrDiscoveryListConflict = errors.New("discovery list already exists")
 	// ErrClipNotFoundInList is returned when a clip is not found in a discovery list
 	ErrClipNotFoundInList = errors.New("clip not found in list")
+	// ErrClipNotFound is returned when an active clip does not exist.
+	ErrClipNotFound = errors.New("clip not found")
+	// ErrClipAlreadyInList is returned when a clip is already a member.
+	ErrClipAlreadyInList = errors.New("clip already in list")
+	// ErrDiscoveryListReorderMismatch is returned when reorder IDs do not exactly match current membership.
+	ErrDiscoveryListReorderMismatch = errors.New("reorder IDs do not match list membership")
 )
 
 // DiscoveryListRepository handles database operations for discovery lists
@@ -763,9 +769,29 @@ func (r *DiscoveryListRepository) DeleteList(ctx context.Context, listID uuid.UU
 
 // AddClipToList adds a clip to a discovery list
 func (r *DiscoveryListRepository) AddClipToList(ctx context.Context, listID, clipID uuid.UUID) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin add-clip transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var locked int
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM playlists WHERE id = $1 AND is_curated = true AND deleted_at IS NULL FOR UPDATE", listID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDiscoveryListNotFound
+		}
+		return fmt.Errorf("failed to lock discovery list: %w", err)
+	}
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM clips WHERE id = $1 AND is_removed = false", clipID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrClipNotFound
+		}
+		return fmt.Errorf("failed to verify clip: %w", err)
+	}
+
 	// Get the current max display order
 	var maxOrder int
-	err := r.db.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		"SELECT COALESCE(MAX(order_index), -1) FROM playlist_items WHERE playlist_id = $1", listID).Scan(&maxOrder)
 	if err != nil {
 		return fmt.Errorf("failed to get max display order: %w", err)
@@ -778,25 +804,44 @@ func (r *DiscoveryListRepository) AddClipToList(ctx context.Context, listID, cli
 		ON CONFLICT (playlist_id, clip_id) DO NOTHING
 	`
 
-	_, err = r.db.Exec(ctx, query, listID, clipID, maxOrder+1)
+	result, err := tx.Exec(ctx, query, listID, clipID, maxOrder+1)
 	if err != nil {
 		return fmt.Errorf("failed to add clip to list: %w", err)
 	}
+	if result.RowsAffected() == 0 {
+		return ErrClipAlreadyInList
+	}
 
 	// Update the playlists updated_at timestamp
-	_, err = r.db.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
+	_, err = tx.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
 	if err != nil {
 		return fmt.Errorf("failed to update list timestamp: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit add-clip transaction: %w", err)
+	}
 	return nil
 }
 
 // RemoveClipFromList removes a clip from a discovery list
 func (r *DiscoveryListRepository) RemoveClipFromList(ctx context.Context, listID, clipID uuid.UUID) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin remove-clip transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var locked int
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM playlists WHERE id = $1 AND is_curated = true AND deleted_at IS NULL FOR UPDATE", listID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDiscoveryListNotFound
+		}
+		return fmt.Errorf("failed to lock discovery list: %w", err)
+	}
 	query := "DELETE FROM playlist_items WHERE playlist_id = $1 AND clip_id = $2"
 
-	result, err := r.db.Exec(ctx, query, listID, clipID)
+	result, err := tx.Exec(ctx, query, listID, clipID)
 	if err != nil {
 		return fmt.Errorf("failed to remove clip from list: %w", err)
 	}
@@ -807,11 +852,14 @@ func (r *DiscoveryListRepository) RemoveClipFromList(ctx context.Context, listID
 	}
 
 	// Update the playlists updated_at timestamp
-	_, err = r.db.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
+	_, err = tx.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
 	if err != nil {
 		return fmt.Errorf("failed to update list timestamp: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit remove-clip transaction: %w", err)
+	}
 	return nil
 }
 
@@ -824,12 +872,30 @@ func (r *DiscoveryListRepository) ReorderClips(ctx context.Context, listID uuid.
 	}
 	defer tx.Rollback(ctx)
 
+	var locked int
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM playlists WHERE id = $1 AND is_curated = true AND deleted_at IS NULL FOR UPDATE", listID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDiscoveryListNotFound
+		}
+		return fmt.Errorf("failed to lock discovery list: %w", err)
+	}
+	var memberCount int
+	if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM playlist_items WHERE playlist_id = $1", listID).Scan(&memberCount); err != nil {
+		return fmt.Errorf("failed to count list membership: %w", err)
+	}
+	if memberCount != len(clipIDs) {
+		return ErrDiscoveryListReorderMismatch
+	}
+
 	// Update display order for each clip
 	for i, clipID := range clipIDs {
 		query := "UPDATE playlist_items SET order_index = $1 WHERE playlist_id = $2 AND clip_id = $3"
-		_, err := tx.Exec(ctx, query, i, listID, clipID)
+		result, err := tx.Exec(ctx, query, i, listID, clipID)
 		if err != nil {
 			return fmt.Errorf("failed to update clip order: %w", err)
+		}
+		if result.RowsAffected() != 1 {
+			return ErrDiscoveryListReorderMismatch
 		}
 	}
 

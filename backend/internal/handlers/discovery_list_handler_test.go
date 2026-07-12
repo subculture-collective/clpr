@@ -129,6 +129,86 @@ func TestAdminDiscoveryListCRUDContracts(t *testing.T) {
 	})
 }
 
+func TestAdminDiscoveryListMembershipContracts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	listID := uuid.New()
+	clipID := uuid.New()
+
+	t.Run("add maps duplicate to conflict", func(t *testing.T) {
+		repo := new(MockDiscoveryListRepository)
+		repo.On("AddClipToList", mock.Anything, listID, clipID).Return(repository.ErrClipAlreadyInList)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/discovery-lists/id/clips", bytes.NewBufferString(`{"clip_id":"`+clipID.String()+`"}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.AdminAddClipToList(ctx)
+		if recorder.Code != http.StatusConflict {
+			t.Fatalf("expected 409, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("add maps missing clip", func(t *testing.T) {
+		repo := new(MockDiscoveryListRepository)
+		repo.On("AddClipToList", mock.Anything, listID, clipID).Return(repository.ErrClipNotFound)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/discovery-lists/id/clips", bytes.NewBufferString(`{"clip_id":"`+clipID.String()+`"}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.AdminAddClipToList(ctx)
+		if recorder.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("remove distinguishes missing list", func(t *testing.T) {
+		repo := new(MockDiscoveryListRepository)
+		repo.On("RemoveClipFromList", mock.Anything, listID, clipID).Return(repository.ErrDiscoveryListNotFound)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}, {Key: "clipId", Value: clipID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/api/v1/admin/discovery-lists/id/clips/clip", http.NoBody)
+		handler.AdminRemoveClipFromList(ctx)
+		if recorder.Code != http.StatusNotFound || !strings.Contains(recorder.Body.String(), "Discovery list") {
+			t.Fatalf("expected list 404, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("reorder rejects duplicate IDs before repository", func(t *testing.T) {
+		handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+		body := `{"clip_ids":["` + clipID.String() + `","` + clipID.String() + `"]}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/discovery-lists/id/clips/reorder", bytes.NewBufferString(body))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.AdminReorderListClips(ctx)
+		if recorder.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("reorder maps stale membership to conflict", func(t *testing.T) {
+		repo := new(MockDiscoveryListRepository)
+		repo.On("ReorderListClips", mock.Anything, listID, []uuid.UUID{clipID}).Return(repository.ErrDiscoveryListReorderMismatch)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+		body := `{"clip_ids":["` + clipID.String() + `"]}`
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/discovery-lists/id/clips/reorder", bytes.NewBufferString(body))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.AdminReorderListClips(ctx)
+		if recorder.Code != http.StatusConflict {
+			t.Fatalf("expected 409, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+}
+
 func (m *MockDiscoveryListRepository) ListDiscoveryLists(ctx context.Context, featuredOnly bool, userID *uuid.UUID, limit, offset int) ([]models.DiscoveryListWithStats, error) {
 	args := m.Called(ctx, featuredOnly, userID, limit, offset)
 	if args.Get(0) == nil {
