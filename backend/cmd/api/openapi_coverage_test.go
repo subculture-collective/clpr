@@ -100,6 +100,64 @@ func TestSupportedRoutesHaveOpenAPIOperations(t *testing.T) {
 	}
 }
 
+func TestOpenAPIOperationsHaveResponseSchemas(t *testing.T) {
+	contents, err := os.ReadFile("../../../docs/openapi/openapi.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document struct {
+		Paths map[string]map[string]map[string]any `yaml:"paths"`
+	}
+	if err := yaml.Unmarshal(contents, &document); err != nil {
+		t.Fatal(err)
+	}
+
+	var violations []string
+	for path, pathItem := range document.Paths {
+		for method, operation := range pathItem {
+			switch strings.ToUpper(method) {
+			case "GET", "POST", "PUT", "PATCH", "DELETE":
+			default:
+				continue
+			}
+			responses, ok := operation["responses"].(map[string]any)
+			if !ok || len(responses) == 0 {
+				violations = append(violations, strings.ToUpper(method)+" "+path+" has no responses")
+				continue
+			}
+			for status, rawResponse := range responses {
+				response, ok := rawResponse.(map[string]any)
+				if !ok {
+					violations = append(violations, strings.ToUpper(method)+" "+path+" "+status+" is malformed")
+					continue
+				}
+				if _, referenced := response["$ref"]; referenced || status == "204" || strings.HasPrefix(status, "3") {
+					continue
+				}
+				content, ok := response["content"].(map[string]any)
+				if !ok || len(content) == 0 {
+					violations = append(violations, strings.ToUpper(method)+" "+path+" "+status+" has no response schema")
+					continue
+				}
+				for mediaType, rawMedia := range content {
+					media, ok := rawMedia.(map[string]any)
+					if !ok {
+						violations = append(violations, strings.ToUpper(method)+" "+path+" "+status+" "+mediaType+" is malformed")
+						continue
+					}
+					if _, hasSchema := media["schema"]; !hasSchema {
+						violations = append(violations, strings.ToUpper(method)+" "+path+" "+status+" "+mediaType+" has no schema")
+					}
+				}
+			}
+		}
+	}
+	sort.Strings(violations)
+	if len(violations) > 0 {
+		t.Fatalf("%d OpenAPI responses lack schemas:\n%s", len(violations), strings.Join(violations, "\n"))
+	}
+}
+
 func appendGeneratedOperations(filename string, routes []string) error {
 	contents, err := os.ReadFile(filename)
 	if err != nil {
@@ -133,7 +191,7 @@ func appendGeneratedOperations(filename string, routes []string) error {
 			generated.WriteString("    " + method + ":\n")
 			generated.WriteString("      tags: [Generated Route Contracts]\n")
 			generated.WriteString("      summary: " + upperMethod + " " + path + "\n")
-			generated.WriteString("      description: Router-derived operation; response schemas are governed by live contract tests.\n")
+			generated.WriteString("      description: Router-derived operation pending a route-specific response schema.\n")
 			generated.WriteString("      operationId: " + operationID + "\n")
 			generated.WriteString("      x-clpr-router-derived: true\n")
 			parameters := openAPIParameter.FindAllStringSubmatch(path, -1)
@@ -145,7 +203,7 @@ func appendGeneratedOperations(filename string, routes []string) error {
 				}
 			}
 			generated.WriteString("      responses:\n")
-			generated.WriteString("        '200':\n          description: Successful response\n")
+			generated.WriteString("        '200':\n          $ref: '#/components/responses/RouterDerivedSuccess'\n")
 			generated.WriteString("        '400':\n          $ref: '#/components/responses/BadRequest'\n")
 			generated.WriteString("        '401':\n          $ref: '#/components/responses/Unauthorized'\n")
 			generated.WriteString("        '500':\n          $ref: '#/components/responses/InternalServerError'\n")
