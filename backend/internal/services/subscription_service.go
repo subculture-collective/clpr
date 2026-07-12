@@ -118,11 +118,13 @@ func (s *SubscriptionService) GetOrCreateCustomer(ctx context.Context, user *mod
 
 	// Create new Stripe customer
 	params := &stripe.CustomerParams{
-		Email: stripe.String(*user.Email),
 		Metadata: map[string]string{
 			"user_id":  user.ID.String(),
 			"username": user.Username,
 		},
+	}
+	if user.Email != nil && *user.Email != "" {
+		params.Email = stripe.String(*user.Email)
 	}
 
 	if user.DisplayName != "" {

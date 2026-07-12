@@ -17,6 +17,12 @@ jobs:
   backend:
     name: Backend build, test, and vet
     runs-on: ubuntu-24.04
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock:v0.201.0
+        ports:
+          - 12111:12111
+          - 12112:12112
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -29,6 +35,11 @@ jobs:
         run: |
           set -o pipefail
           go test -count=1 -json ./... | tee test-results.json
+      - name: Verify checkout contract against Stripe SDK
+        working-directory: backend
+        env:
+          STRIPE_MOCK_PORT: 12112
+        run: go test -count=1 -tags=stripe_mock ./internal/services -run TestCreateCheckoutSessionAgainstStripeMock
       - name: Enforce owned, expiring skip budget
         run: bash scripts/verify-test-skip-policy.sh
       - name: Vet
