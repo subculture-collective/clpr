@@ -327,7 +327,7 @@ flowchart LR
 
 ### R4.1 — Repair shared accessibility primitives
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Frontend design systems
 - **Depends on:** R1.4
 - **Work:** Enforce 44 px touch targets, associated labels/errors, visible `focus-visible`, reduced motion, explicit transitions, intrinsic image dimensions/aspect ratios, focus trap/restoration, prior scroll-state restoration, and overscroll containment in shared components.
@@ -336,7 +336,7 @@ flowchart LR
 
 ### R4.2 — Validate accessible critical journeys
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** QA + accessibility
 - **Depends on:** R1.5, R4.1
 - **Work:** Run axe plus manual keyboard, screen-reader, zoom/reflow, reduced-motion, and touch checks on login, search, clip detail, submission, payment, settings, moderation, and destructive confirmations.
@@ -344,7 +344,7 @@ flowchart LR
 
 ### R4.3 — Enforce frontend performance budgets
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** Frontend performance
 - **Depends on:** R1.4
 - **Work:** Generate bundle analysis, remove broad entry barrels, fix empty/manual chunks and mixed imports, route-split expensive features, and set entry/route gzip and browser performance budgets in CI.
@@ -352,7 +352,7 @@ flowchart LR
 
 ### R4.4 — Establish maintainable module and UI boundaries
 
-- **State:** TODO
+- **State:** IN PROGRESS
 - **Owner role:** Frontend/backend architecture
 - **Depends on:** R3.7, R4.1
 - **Work:** Consolidate modal/button/input/date/number/API-state primitives, prevent broad barrel imports on entry paths, split the route surface into versioned bounded modules, and add dependency/layering checks.
@@ -360,7 +360,7 @@ flowchart LR
 
 ### R4.5 — Build the intended test pyramid
 
-- **State:** TODO
+- **State:** DONE
 - **Owner role:** QA architecture
 - **Depends on:** R1.4-R1.6, R3.7
 - **Work:** Keep pure logic in unit tests, accessible behavior in component tests, schemas in contract tests, PostgreSQL/Redis/OpenSearch behavior in containerized integration tests, and only critical user paths in real-backend browser tests.
@@ -491,3 +491,9 @@ Before each commit:
 | 2026-07-12 | R0.4 truthful release scope | Done | README/inventory corrected; Markdown lint and `git diff --check` pass |
 | 2026-07-12 | R1.1 task-runner contract | Done | `task contract`, list/summary/dry-run checks, Make compatibility help, and whitespace checks pass |
 | 2026-07-12 | R1.3-R1.4 frontend quality gate | Done | Lint has zero warnings; build passes; two full runs each pass 1,644/1,644 tests |
+| 2026-07-12 | R2 security hardening | Done | Fail-closed auth/config, dependency scanning, protected diagnostics, CSP/redaction, container and HTTP controls; backend test/vet/race and security gates pass |
+| 2026-07-12 | R3.1-R3.3 feature correctness | Done | Incomplete media/CDN/live capabilities are false-by-default, absent from launch navigation, and documented in the launch inventory |
+| 2026-07-12 | R3.5-R3.6 privacy lifecycle | Done | Consent withdrawal blocks analytics requests; unsupported deletion/export lifecycle is absent and manual contact scope is documented |
+| 2026-07-12 | R4.1-R4.2 accessibility | Done | Shared semantic tests pass; 11 Chromium journey/axe/keyboard/touch/reflow/reduced-motion checks pass; evidence in `docs/testing/accessibility-release-evidence.md` |
+| 2026-07-12 | R4.3 performance | Done | Initial JS reduced from 1,270.59 KiB to 495.49 KiB; 550/600/120 KiB app/lazy/CSS budgets fail CI on regression; build warnings removed |
+| 2026-07-12 | R4.5 test pyramid | Done | Coverage baseline 53.6/50.43/48.96/54.8 and executable tier/skip inventory: 131 frontend, 178 backend, 3 mocked-browser, 1 real-backend-browser, 1 approved skip |
