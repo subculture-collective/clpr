@@ -13,6 +13,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
+    "test:inventory": "node scripts/verify-test-pyramid.mjs",
     "test:e2e": "playwright test",
     "test:e2e:list": "playwright test --list",
     "test:e2e:mocked": "playwright test --project=mocked-chromium",

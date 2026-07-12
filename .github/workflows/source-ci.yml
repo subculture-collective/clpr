@@ -69,7 +69,9 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - name: Unit tests
-        run: npm run test -- run --reporter=default --reporter=json --outputFile=test-results.json
+        run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
+      - name: Verify test pyramid and skip budget
+        run: npm run test:inventory
       - run: npm run build
       - name: Upload frontend evidence
         if: always()
@@ -78,6 +80,7 @@ jobs:
           name: frontend-test-and-build
           path: |
             frontend/test-results.json
+            frontend/coverage/coverage-final.json
             frontend/dist
           if-no-files-found: error
 
