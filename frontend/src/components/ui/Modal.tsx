@@ -21,7 +21,7 @@ export interface ModalProps {
    * Modal size
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
   /**
    * Whether clicking backdrop closes the modal
    * @default true
@@ -47,6 +47,7 @@ const sizeClasses = {
   md: 'max-w-md',
   lg: 'max-w-lg',
   xl: 'max-w-xl',
+  '2xl': 'max-w-4xl',
   full: 'max-w-full mx-4',
 };
 

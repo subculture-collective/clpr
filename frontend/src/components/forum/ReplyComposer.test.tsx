@@ -14,8 +14,9 @@ describe('ReplyComposer', () => {
   it('renders textarea and buttons', () => {
     render(<ReplyComposer onSubmit={mockOnSubmit} />);
 
-    expect(screen.getByPlaceholderText(/Write your reply/i)).toBeInTheDocument();
-    expect(screen.getByText('Post Reply')).toBeInTheDocument();
+    const textarea = screen.getByRole('textbox', { name: 'Reply' });
+    expect(textarea).toHaveAccessibleDescription(/Markdown formatting is supported/i);
+    expect(screen.getByRole('button', { name: 'Post Reply' })).toBeInTheDocument();
   });
 
   it('allows typing in textarea', () => {
@@ -107,11 +108,26 @@ describe('ReplyComposer', () => {
 
     expect(screen.getByText('Posting...')).toBeInTheDocument();
     expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveAttribute('aria-busy', 'true');
 
     // Wait for the async operation to complete to prevent unmount during state update
     await waitFor(() => {
       expect(screen.getByText('Post Reply')).toBeInTheDocument();
     });
+  });
+
+  it('announces submission errors and associates them with the textarea', async () => {
+    mockOnSubmit.mockRejectedValue(new Error('network unavailable'));
+    render(<ReplyComposer onSubmit={mockOnSubmit} />);
+
+    const textarea = screen.getByRole('textbox', { name: 'Reply' });
+    fireEvent.change(textarea, { target: { value: 'Test reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post Reply' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/could not be posted/i);
+    expect(textarea).toHaveAttribute('aria-invalid', 'true');
+    expect(textarea).toHaveAccessibleDescription(/could not be posted/i);
   });
 
   it('uses custom placeholder when provided', () => {

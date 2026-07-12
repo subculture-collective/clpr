@@ -55,6 +55,11 @@ function NavigateButton({
     );
 }
 
+function BackButton() {
+    const navigate = useNavigate();
+    return <button onClick={() => navigate(-1)}>Go back</button>;
+}
+
 describe('AppLayout', () => {
     beforeEach(() => {
         // Reset body overflow before each test
@@ -133,6 +138,37 @@ describe('AppLayout', () => {
 
         // Restore original scrollTo
         window.scrollTo = originalScrollTo;
+    });
+
+    it('restores scroll position when navigating back', async () => {
+        const scrollToMock = vi.fn();
+        const originalScrollTo = window.scrollTo;
+        window.scrollTo = scrollToMock;
+        let scrollY = 0;
+        vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+
+        const user = userEvent.setup();
+        const { getByText } = render(
+            <MemoryRouter initialEntries={['/']}>
+                <Routes>
+                    <Route element={<AppLayout />}>
+                        <Route path='/' element={<NavigateButton to='/about'>Go to About</NavigateButton>} />
+                        <Route path='/about' element={<BackButton />} />
+                    </Route>
+                </Routes>
+            </MemoryRouter>
+        );
+
+        scrollY = 480;
+        await user.click(getByText('Go to About'));
+        await waitFor(() => expect(scrollToMock).toHaveBeenLastCalledWith(0, 0));
+
+        scrollY = 0;
+        await user.click(getByText('Go back'));
+        await waitFor(() => expect(scrollToMock).toHaveBeenLastCalledWith(0, 480));
+
+        window.scrollTo = originalScrollTo;
+        vi.restoreAllMocks();
     });
 
     it('resets body overflow on route change', async () => {

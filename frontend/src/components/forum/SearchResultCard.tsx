@@ -50,7 +50,8 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
       to={link}
       className={cn(
         'block p-4 bg-surface border border-border rounded-lg',
-        'hover:bg-surface-hover hover:border-subtle transition-all duration-200',
+        'hover:bg-surface-hover hover:border-subtle transition-all duration-200 motion-reduce:transition-none',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
         className
       )}
     >
@@ -63,19 +64,19 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
           )}
           <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-1">
-              <User className="w-4 h-4" />
+              <User aria-hidden="true" className="w-4 h-4" />
               <span>{result.author_name}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(result.created_at)}</span>
+              <Calendar aria-hidden="true" className="w-4 h-4" />
+              <time dateTime={result.created_at}>{formatDate(result.created_at)}</time>
             </div>
             {result.vote_count !== 0 && (
               <>
                 <span>•</span>
                 <div className="flex items-center gap-1">
-                  <ThumbsUp className="w-4 h-4" />
+                  <ThumbsUp aria-hidden="true" className="w-4 h-4" />
                   <span>{result.vote_count} votes</span>
                 </div>
               </>
@@ -93,12 +94,12 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
           >
             {result.type === 'thread' ? (
               <>
-                <MessageSquare className="w-3 h-3" />
+                <MessageSquare aria-hidden="true" className="w-3 h-3" />
                 <span>Thread</span>
               </>
             ) : (
               <>
-                <MessageSquare className="w-3 h-3" />
+                <MessageSquare aria-hidden="true" className="w-3 h-3" />
                 <span>Reply</span>
               </>
             )}
