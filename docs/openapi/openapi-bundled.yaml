@@ -4056,6 +4056,107 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/users/me/convert-to-broadcaster:
+    post:
+      tags:
+        - Users
+      summary: Convert the current account to broadcaster
+      description: Converts the authenticated member account to broadcaster. Cookie-authenticated requests must also send the CSRF token.
+      operationId: postApiV1UsersMeConvertToBroadcaster
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 500
+      responses:
+        '200':
+          description: Account converted to broadcaster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTypeConversionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/users/{id}/account-type:
+    get:
+      tags:
+        - Users
+      summary: Get a user's account type
+      description: Returns the account type, permissions, and any included conversion history for the requested user.
+      operationId: getApiV1UsersIdAccountType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account-type information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTypeInfoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/users/{id}/account-type/history:
+    get:
+      tags:
+        - Users
+      summary: List a user's account-type conversion history
+      description: Returns account-type conversions for the requested user, ordered from newest to oldest.
+      operationId: getApiV1UsersIdAccountTypeHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Conversion history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTypeConversionsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/ads/campaigns:
     get:
       tags:
@@ -10148,23 +10249,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /api/v1/users/me/convert-to-broadcaster:
-    post:
-      tags:
-        - Generated Route Contracts
-      summary: POST /api/v1/users/me/convert-to-broadcaster
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1UsersMeConvertToBroadcaster
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /api/v1/users/me/discovery-list-follows:
     get:
       tags:
@@ -10173,52 +10257,6 @@ paths:
       description: Router-derived operation pending a route-specific response schema.
       operationId: getApiV1UsersMeDiscoveryListFollows
       x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/users/{id}/account-type:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/users/{id}/account-type
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1UsersIdAccountType
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/users/{id}/account-type/history:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/users/{id}/account-type/history
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1UsersIdAccountTypeHistory
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -11555,6 +11593,17 @@ components:
             admin:
               type: integer
               minimum: 0
+    AccountTypeInfoResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/AccountTypeInfo'
     AccountTypeConversionsResponse:
       type: object
       required:

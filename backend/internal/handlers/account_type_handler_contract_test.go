@@ -126,3 +126,87 @@ func TestAccountTypeAdminResponseContracts(t *testing.T) {
 		require.Equal(t, models.AccountTypeModerator, body.Data.AccountType)
 	})
 }
+
+func TestAccountTypeUserResponseContracts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	userID := uuid.New()
+	conversionID := uuid.New()
+	service := &accountTypeServiceStub{
+		info: &models.AccountTypeResponse{
+			AccountType: models.AccountTypeBroadcaster,
+			Permissions: []string{"create_streams"},
+		},
+		conversions: []models.AccountTypeConversion{{
+			ID: conversionID, UserID: userID, OldType: models.AccountTypeMember,
+			NewType: models.AccountTypeBroadcaster, ConvertedAt: time.Now(), CreatedAt: time.Now(),
+		}},
+		total: 1,
+	}
+	handler := NewAccountTypeHandler(service, nil)
+
+	t.Run("get account type", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: userID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/users/"+userID.String()+"/account-type", nil)
+		handler.GetAccountType(ctx)
+		require.Equal(t, http.StatusOK, recorder.Code)
+		var body struct {
+			Success bool                        `json:"success"`
+			Data    *models.AccountTypeResponse `json:"data"`
+		}
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &body))
+		require.True(t, body.Success)
+		require.Equal(t, models.AccountTypeBroadcaster, body.Data.AccountType)
+	})
+
+	t.Run("conversion history pagination", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: userID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/users/"+userID.String()+"/account-type/history?limit=10&offset=2", nil)
+		handler.GetConversionHistory(ctx)
+		require.Equal(t, http.StatusOK, recorder.Code)
+		var body struct {
+			Success bool `json:"success"`
+			Data    struct {
+				Conversions []models.AccountTypeConversion `json:"conversions"`
+				Total       int                            `json:"total"`
+				Limit       int                            `json:"limit"`
+				Offset      int                            `json:"offset"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &body))
+		require.True(t, body.Success)
+		require.Equal(t, conversionID, body.Data.Conversions[0].ID)
+		require.Equal(t, 10, body.Data.Limit)
+		require.Equal(t, 2, body.Data.Offset)
+	})
+
+	t.Run("convert to broadcaster", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Set("user", &models.User{ID: userID})
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/users/me/convert-to-broadcaster", strings.NewReader(`{}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.ConvertToBroadcaster(ctx)
+		require.Equal(t, http.StatusOK, recorder.Code)
+		var body struct {
+			Success bool                        `json:"success"`
+			Message string                      `json:"message"`
+			Data    *models.AccountTypeResponse `json:"data"`
+		}
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &body))
+		require.True(t, body.Success)
+		require.Equal(t, models.AccountTypeBroadcaster, body.Data.AccountType)
+	})
+
+	t.Run("invalid user id", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: "not-a-uuid"}}
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/users/not-a-uuid/account-type", nil)
+		handler.GetAccountType(ctx)
+		require.Equal(t, http.StatusBadRequest, recorder.Code)
+	})
+}

@@ -2762,7 +2762,7 @@
     "path": "/api/v1/users/me/convert-to-broadcaster",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).ConvertToBroadcaster-fm",
     "operation_id": "postApiV1UsersMeConvertToBroadcaster",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -2825,14 +2825,14 @@
     "path": "/api/v1/users/{id}/account-type",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetAccountType-fm",
     "operation_id": "getApiV1UsersIdAccountType",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/users/{id}/account-type/history",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetConversionHistory-fm",
     "operation_id": "getApiV1UsersIdAccountTypeHistory",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
