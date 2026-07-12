@@ -25,84 +25,84 @@
     "path": "/api/v1/admin/ads/campaigns",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).ListCampaigns-fm",
     "operation_id": "getApiV1AdminAdsCampaigns",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/ads/campaigns",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).CreateCampaign-fm",
     "operation_id": "postApiV1AdminAdsCampaigns",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/ads/campaigns/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).DeleteCampaign-fm",
     "operation_id": "deleteApiV1AdminAdsCampaignsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/campaigns/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCampaign-fm",
     "operation_id": "getApiV1AdminAdsCampaignsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/admin/ads/campaigns/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).UpdateCampaign-fm",
     "operation_id": "putApiV1AdminAdsCampaignsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/experiments",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).ListExperiments-fm",
     "operation_id": "getApiV1AdminAdsExperiments",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/experiments/{id}/report",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetExperimentReport-fm",
     "operation_id": "getApiV1AdminAdsExperimentsIdReport",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/reports/by-campaign",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCTRReportByCampaign-fm",
     "operation_id": "getApiV1AdminAdsReportsByCampaign",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/reports/by-date",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCampaignReportByDate-fm",
     "operation_id": "getApiV1AdminAdsReportsByDate",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/reports/by-placement",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCampaignReportByPlacement-fm",
     "operation_id": "getApiV1AdminAdsReportsByPlacement",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/ads/reports/by-slot",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCTRReportBySlot-fm",
     "operation_id": "getApiV1AdminAdsReportsBySlot",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/ads/validate-creative",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).ValidateCreative-fm",
     "operation_id": "postApiV1AdminAdsValidateCreative",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

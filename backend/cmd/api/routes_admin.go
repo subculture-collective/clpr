@@ -115,6 +115,7 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 		// Ad Campaign management (admin only)
 		adminAds := admin.Group("/ads")
+		adminAds.Use(middleware.RequireRole("admin"))
 		{
 			// Campaign CRUD
 			adminAds.GET("/campaigns", h.Ad.ListCampaigns)

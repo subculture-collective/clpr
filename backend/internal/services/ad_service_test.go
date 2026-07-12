@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 func TestAdService_filterByTargeting(t *testing.T) {
@@ -956,6 +956,41 @@ func TestAdService_CreateCampaignValidation(t *testing.T) {
 			errMsg:    "content URL is required",
 		},
 		{
+			name: "Whitespace campaign name",
+			ad: &models.Ad{
+				Name:           "   ",
+				AdvertiserName: "Test Advertiser",
+				AdType:         "banner",
+				ContentURL:     "https://example.com/ad.jpg",
+			},
+			expectErr: true,
+			errMsg:    "campaign name is required",
+		},
+		{
+			name: "Insecure creative URL",
+			ad: &models.Ad{
+				Name:           "Test Campaign",
+				AdvertiserName: "Test Advertiser",
+				AdType:         "banner",
+				ContentURL:     "http://example.com/ad.jpg",
+			},
+			expectErr: true,
+			errMsg:    "absolute HTTPS URL",
+		},
+		{
+			name: "Total budget below daily budget",
+			ad: &models.Ad{
+				Name:             "Test Campaign",
+				AdvertiserName:   "Test Advertiser",
+				AdType:           "banner",
+				ContentURL:       "https://example.com/ad.jpg",
+				DailyBudgetCents: int64Ptr(2000),
+				TotalBudgetCents: int64Ptr(1000),
+			},
+			expectErr: true,
+			errMsg:    "total budget cannot be less than daily budget",
+		},
+		{
 			name: "End date before start date",
 			ad: &models.Ad{
 				Name:           "Test Campaign",
@@ -1006,8 +1041,26 @@ func TestAdService_CreateCampaignValidation(t *testing.T) {
 	}
 }
 
+func TestValidateAdDestinationRejectsLocalDestinations(t *testing.T) {
+	for _, destination := range []string{
+		"https://localhost/ad.png",
+		"https://127.0.0.1/ad.png",
+		"https://10.0.0.1/ad.png",
+		"https://user:password@example.com/ad.png",
+	} {
+		t.Run(destination, func(t *testing.T) {
+			assert.Error(t, validateAdDestination(destination))
+		})
+	}
+	assert.NoError(t, validateAdDestination("https://cdn.example.com/ad.png"))
+}
+
 // Helper function to create int pointer
 func intPtr(i int) *int {
+	return &i
+}
+
+func int64Ptr(i int64) *int64 {
 	return &i
 }
 

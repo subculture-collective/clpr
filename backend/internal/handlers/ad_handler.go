@@ -352,19 +352,19 @@ func (h *AdHandler) ListExperiments(c *gin.Context) {
 
 // CreateCampaignRequest represents the request to create a campaign
 type CreateCampaignRequest struct {
-	Name              string                 `json:"name" binding:"required"`
-	AdvertiserName    string                 `json:"advertiser_name" binding:"required"`
+	Name              string                 `json:"name" binding:"required,max=200"`
+	AdvertiserName    string                 `json:"advertiser_name" binding:"required,max=200"`
 	AdType            string                 `json:"ad_type" binding:"required,oneof=banner video native"`
 	ContentURL        string                 `json:"content_url" binding:"required,url"`
-	ClickURL          *string                `json:"click_url,omitempty"`
-	AltText           *string                `json:"alt_text,omitempty"`
-	Width             *int                   `json:"width,omitempty"`
-	Height            *int                   `json:"height,omitempty"`
-	Priority          int                    `json:"priority,omitempty"`
-	Weight            int                    `json:"weight,omitempty"`
-	DailyBudgetCents  *int64                 `json:"daily_budget_cents,omitempty"`
-	TotalBudgetCents  *int64                 `json:"total_budget_cents,omitempty"`
-	CPMCents          int                    `json:"cpm_cents,omitempty"`
+	ClickURL          *string                `json:"click_url,omitempty" binding:"omitempty,max=2048"`
+	AltText           *string                `json:"alt_text,omitempty" binding:"omitempty,max=500"`
+	Width             *int                   `json:"width,omitempty" binding:"omitempty,min=1,max=10000"`
+	Height            *int                   `json:"height,omitempty" binding:"omitempty,min=1,max=10000"`
+	Priority          int                    `json:"priority,omitempty" binding:"min=0,max=100"`
+	Weight            int                    `json:"weight,omitempty" binding:"min=0,max=10000"`
+	DailyBudgetCents  *int64                 `json:"daily_budget_cents,omitempty" binding:"omitempty,min=0,max=1000000000"`
+	TotalBudgetCents  *int64                 `json:"total_budget_cents,omitempty" binding:"omitempty,min=0,max=100000000000"`
+	CPMCents          int                    `json:"cpm_cents,omitempty" binding:"min=0,max=10000000"`
 	IsActive          bool                   `json:"is_active"`
 	StartDate         *time.Time             `json:"start_date,omitempty"`
 	EndDate           *time.Time             `json:"end_date,omitempty"`
@@ -373,23 +373,32 @@ type CreateCampaignRequest struct {
 
 // UpdateCampaignRequest represents the request to update a campaign
 type UpdateCampaignRequest struct {
-	Name              *string                `json:"name,omitempty"`
-	AdvertiserName    *string                `json:"advertiser_name,omitempty"`
-	AdType            *string                `json:"ad_type,omitempty"`
-	ContentURL        *string                `json:"content_url,omitempty"`
-	ClickURL          *string                `json:"click_url,omitempty"`
-	AltText           *string                `json:"alt_text,omitempty"`
-	Width             *int                   `json:"width,omitempty"`
-	Height            *int                   `json:"height,omitempty"`
-	Priority          *int                   `json:"priority,omitempty"`
-	Weight            *int                   `json:"weight,omitempty"`
-	DailyBudgetCents  *int64                 `json:"daily_budget_cents,omitempty"`
-	TotalBudgetCents  *int64                 `json:"total_budget_cents,omitempty"`
-	CPMCents          *int                   `json:"cpm_cents,omitempty"`
+	Name              *string                `json:"name,omitempty" binding:"omitempty,min=1,max=200"`
+	AdvertiserName    *string                `json:"advertiser_name,omitempty" binding:"omitempty,min=1,max=200"`
+	AdType            *string                `json:"ad_type,omitempty" binding:"omitempty,oneof=banner video native"`
+	ContentURL        *string                `json:"content_url,omitempty" binding:"omitempty,max=2048"`
+	ClickURL          *string                `json:"click_url,omitempty" binding:"omitempty,max=2048"`
+	AltText           *string                `json:"alt_text,omitempty" binding:"omitempty,max=500"`
+	Width             *int                   `json:"width,omitempty" binding:"omitempty,min=1,max=10000"`
+	Height            *int                   `json:"height,omitempty" binding:"omitempty,min=1,max=10000"`
+	Priority          *int                   `json:"priority,omitempty" binding:"omitempty,min=0,max=100"`
+	Weight            *int                   `json:"weight,omitempty" binding:"omitempty,min=0,max=10000"`
+	DailyBudgetCents  *int64                 `json:"daily_budget_cents,omitempty" binding:"omitempty,min=0,max=1000000000"`
+	TotalBudgetCents  *int64                 `json:"total_budget_cents,omitempty" binding:"omitempty,min=0,max=100000000000"`
+	CPMCents          *int                   `json:"cpm_cents,omitempty" binding:"omitempty,min=0,max=10000000"`
 	IsActive          *bool                  `json:"is_active,omitempty"`
 	StartDate         *time.Time             `json:"start_date,omitempty"`
 	EndDate           *time.Time             `json:"end_date,omitempty"`
 	TargetingCriteria map[string]interface{} `json:"targeting_criteria,omitempty"`
+}
+
+func hasCampaignUpdate(req UpdateCampaignRequest) bool {
+	return req.Name != nil || req.AdvertiserName != nil || req.AdType != nil ||
+		req.ContentURL != nil || req.ClickURL != nil || req.AltText != nil ||
+		req.Width != nil || req.Height != nil || req.Priority != nil ||
+		req.Weight != nil || req.DailyBudgetCents != nil || req.TotalBudgetCents != nil ||
+		req.CPMCents != nil || req.IsActive != nil || req.StartDate != nil ||
+		req.EndDate != nil || req.TargetingCriteria != nil
 }
 
 // ListCampaigns handles GET /admin/ads/campaigns
@@ -514,7 +523,7 @@ func (h *AdHandler) CreateCampaign(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Request body is invalid",
 			},
 		})
 		return
@@ -527,7 +536,7 @@ func (h *AdHandler) CreateCampaign(c *gin.Context) {
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "INVALID_CREATIVE",
-					Message: err.Error(),
+					Message: "Creative URL or dimensions are invalid",
 				},
 			})
 			return
@@ -555,11 +564,18 @@ func (h *AdHandler) CreateCampaign(c *gin.Context) {
 	}
 
 	if err := h.adService.CreateCampaign(c.Request.Context(), ad); err != nil {
+		if errors.Is(err, services.ErrInvalidCampaign) {
+			c.JSON(http.StatusBadRequest, StandardResponse{
+				Success: false,
+				Error:   &ErrorInfo{Code: "INVALID_CAMPAIGN", Message: "Campaign configuration is invalid"},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "CREATE_CAMPAIGN_FAILED",
-				Message: err.Error(),
+				Message: "Failed to create campaign",
 			},
 		})
 		return
@@ -592,8 +608,15 @@ func (h *AdHandler) UpdateCampaign(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Request body is invalid",
 			},
+		})
+		return
+	}
+	if !hasCampaignUpdate(req) {
+		c.JSON(http.StatusBadRequest, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "INVALID_REQUEST", Message: "At least one campaign field is required"},
 		})
 		return
 	}
@@ -674,7 +697,7 @@ func (h *AdHandler) UpdateCampaign(c *gin.Context) {
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "INVALID_CREATIVE",
-					Message: err.Error(),
+					Message: "Creative URL or dimensions are invalid",
 				},
 			})
 			return
@@ -682,11 +705,25 @@ func (h *AdHandler) UpdateCampaign(c *gin.Context) {
 	}
 
 	if err := h.adService.UpdateCampaign(c.Request.Context(), ad); err != nil {
+		if errors.Is(err, services.ErrCampaignNotFound) {
+			c.JSON(http.StatusNotFound, StandardResponse{
+				Success: false,
+				Error:   &ErrorInfo{Code: "CAMPAIGN_NOT_FOUND", Message: "Campaign not found"},
+			})
+			return
+		}
+		if errors.Is(err, services.ErrInvalidCampaign) {
+			c.JSON(http.StatusBadRequest, StandardResponse{
+				Success: false,
+				Error:   &ErrorInfo{Code: "INVALID_CAMPAIGN", Message: "Campaign configuration is invalid"},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "UPDATE_CAMPAIGN_FAILED",
-				Message: err.Error(),
+				Message: "Failed to update campaign",
 			},
 		})
 		return
@@ -714,11 +751,18 @@ func (h *AdHandler) DeleteCampaign(c *gin.Context) {
 	}
 
 	if err := h.adService.DeleteCampaign(c.Request.Context(), campaignID); err != nil {
+		if errors.Is(err, services.ErrCampaignNotFound) {
+			c.JSON(http.StatusNotFound, StandardResponse{
+				Success: false,
+				Error:   &ErrorInfo{Code: "CAMPAIGN_NOT_FOUND", Message: "Campaign not found"},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "DELETE_CAMPAIGN_FAILED",
-				Message: err.Error(),
+				Message: "Failed to delete campaign",
 			},
 		})
 		return
@@ -736,10 +780,10 @@ func (h *AdHandler) DeleteCampaign(c *gin.Context) {
 // Validates a creative URL and dimensions
 func (h *AdHandler) ValidateCreative(c *gin.Context) {
 	var req struct {
-		ContentURL string `json:"content_url" binding:"required"`
+		ContentURL string `json:"content_url" binding:"required,max=2048"`
 		AdType     string `json:"ad_type" binding:"required,oneof=banner video native"`
-		Width      *int   `json:"width,omitempty"`
-		Height     *int   `json:"height,omitempty"`
+		Width      *int   `json:"width,omitempty" binding:"omitempty,min=1,max=10000"`
+		Height     *int   `json:"height,omitempty" binding:"omitempty,min=1,max=10000"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -747,7 +791,7 @@ func (h *AdHandler) ValidateCreative(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Request body is invalid",
 			},
 		})
 		return
@@ -758,7 +802,7 @@ func (h *AdHandler) ValidateCreative(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_CREATIVE",
-				Message: err.Error(),
+				Message: "Creative URL or dimensions are invalid",
 			},
 		})
 		return
@@ -824,6 +868,13 @@ func (h *AdHandler) GetCampaignReportByDate(c *gin.Context) {
 			return
 		}
 		endDate = parsed
+	}
+	if endDate.Before(startDate) || endDate.Sub(startDate) > 365*24*time.Hour {
+		c.JSON(http.StatusBadRequest, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "INVALID_PARAMETER", Message: "Date range must be ordered and no longer than 365 days"},
+		})
+		return
 	}
 
 	reports, err := h.adService.GetCampaignReportByDate(c.Request.Context(), adID, startDate, endDate)
