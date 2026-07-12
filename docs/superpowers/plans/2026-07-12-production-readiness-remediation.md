@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 353 router-derived operations still use the explicitly transitional payload schema
+- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 345 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -425,7 +425,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 353 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports 345 transitional API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -501,6 +501,7 @@ Before each commit:
 | 2026-07-12 | R3.4 payment contracts | Partial/external gate | `8d23a3fd`, `49a8a575`, `4c3a75ed`; official Stripe SDK mock checkout, signed real-PostgreSQL lifecycle, dunning recovery, replay/order/signature checks, and browser return pass without touching the live key |
 | 2026-07-12 | R3.7 API contracts | Partial | `63582136`; 484/484 route parity and schema-bearing response gate pass; four live status mismatches corrected; transitional operation schemas remain |
 | 2026-07-12 | R3.7 account-type contracts | Partial | `4a714906`, `41923356`; all six account-type routes now have route-specific request/response contracts and live-handler contract tests; generated route-to-handler manifest and CI budget reduce transitional operations from 359 to 353 |
+| 2026-07-12 | R3.7 webhook subscription contracts | Partial | `de79235d`; eight outbound subscription routes now have route-specific contracts and live-handler tests; malformed identity context returns 401 instead of panicking; transitional operations reduced from 353 to 345 |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
