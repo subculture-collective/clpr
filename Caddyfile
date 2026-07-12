@@ -39,12 +39,7 @@ clpr.tv {
         X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
 
-        # Content Security Policy - REPORT-ONLY mode for 24-48h monitoring
-        # Monitor browser console for violations before switching to enforced mode
-        Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
-
-        # ENFORCED CSP - uncomment after 24-48h of monitoring report-only mode
-        # Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+        Content-Security-Policy "default-src 'self'; script-src 'self' https://embed.twitch.tv https://www.googletagmanager.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://static-cdn.jtvnw.net https://*.twitchcdn.net https://*.twitch.tv https://api.dicebear.com https://us-assets.i.posthog.com; media-src 'self' blob: https://clips-media-assets2.twitch.tv https://clips.twitch.tv https://static.twitchcdn.net; frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://checkout.stripe.com; connect-src 'self' wss: https://api.twitch.tv https://gql.twitch.tv https://*.posthog.com https://*.i.posthog.com https://*.ingest.sentry.io https://www.google-analytics.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests"
 
         # Remove server identification
         -Server

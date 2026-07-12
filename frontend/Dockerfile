@@ -17,6 +17,10 @@ COPY . .
 # Use production environment for build
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
+ARG VITE_API_BASE_URL=/api/v1
+ARG VITE_BASE_URL=/
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_BASE_URL=${VITE_BASE_URL}
 
 # Remove dev .env file so .env.production is used
 RUN rm -f .env .env.local

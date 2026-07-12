@@ -3,10 +3,11 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"github.com/gin-gonic/gin"
 )
 
 func TestSecurityHeadersMiddleware(t *testing.T) {
@@ -108,6 +109,26 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 				t.Error("Expected Permissions-Policy header, got none")
 			}
 		})
+	}
+}
+
+func TestContentSecurityPolicyAllowsRequiredProvidersAndRejectsArbitraryScripts(t *testing.T) {
+	csp := ContentSecurityPolicy()
+	for _, required := range []string{
+		"https://embed.twitch.tv",
+		"https://checkout.stripe.com",
+		"https://us-assets.i.posthog.com",
+		"https://www.googletagmanager.com",
+		"https://*.ingest.sentry.io",
+	} {
+		if !strings.Contains(csp, required) {
+			t.Errorf("CSP missing required provider %q", required)
+		}
+	}
+	for _, forbidden := range []string{"'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "https://evil.example"} {
+		if strings.Contains(csp, forbidden) {
+			t.Errorf("CSP contains forbidden script source %q", forbidden)
+		}
 	}
 }
 

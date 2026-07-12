@@ -1,7 +1,11 @@
 /**
- * Secure Storage for sensitive data in PWA
- * Uses IndexedDB with Web Crypto API for encryption on mobile/PWA
- * Falls back to sessionStorage for environments without crypto support
+ * Session-scoped browser storage for authentication data.
+ *
+ * IndexedDB values are encrypted to reduce disclosure from an offline database
+ * copy, but the exportable key lives in the same browser origin/session. This is
+ * not an XSS security boundary: injected same-origin JavaScript can access both
+ * the key and plaintext. Server-side expiry, CSP, HttpOnly cookies where used,
+ * and logout cleanup remain the actual controls.
  */
 
 const DB_NAME = 'clpr-secure-storage';

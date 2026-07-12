@@ -3,9 +3,22 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"github.com/gin-gonic/gin"
 )
+
+const contentSecurityPolicy = "default-src 'self'; " +
+	"script-src 'self' https://embed.twitch.tv https://www.googletagmanager.com https://us-assets.i.posthog.com; " +
+	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+	"font-src 'self' https://fonts.gstatic.com; " +
+	"img-src 'self' data: blob: https://static-cdn.jtvnw.net https://*.twitchcdn.net https://*.twitch.tv https://api.dicebear.com https://us-assets.i.posthog.com; " +
+	"media-src 'self' blob: https://clips-media-assets2.twitch.tv https://clips.twitch.tv https://static.twitchcdn.net; " +
+	"frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://checkout.stripe.com; " +
+	"connect-src 'self' wss: https://api.twitch.tv https://gql.twitch.tv https://*.posthog.com https://*.i.posthog.com https://*.ingest.sentry.io https://www.google-analytics.com; " +
+	"worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; " +
+	"form-action 'self' https://checkout.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests"
+
+func ContentSecurityPolicy() string { return contentSecurityPolicy }
 
 // SecurityHeadersMiddleware adds security headers to all responses
 func SecurityHeadersMiddleware(cfg *config.Config) gin.HandlerFunc {
@@ -35,21 +48,7 @@ func SecurityHeadersMiddleware(cfg *config.Config) gin.HandlerFunc {
 		// Content-Security-Policy
 		// Helps prevent XSS, clickjacking, and other code injection attacks
 		// Note: Twitch embed requires specific frame-src and media-src allowances
-		csp := "default-src 'self'; " +
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://embed.twitch.tv; " +
-			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-			"font-src 'self' https://fonts.gstatic.com; " +
-			"img-src 'self' data: https: blob:; " +
-			"media-src 'self' https://clips-media-assets2.twitch.tv https://clips.twitch.tv https://static.twitchcdn.net; " +
-			"frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv; " +
-			"connect-src 'self' https://api.twitch.tv https://gql.twitch.tv; " +
-			"object-src 'none'; " +
-			"base-uri 'self'; " +
-			"form-action 'self'; " +
-			"frame-ancestors 'none'; " +
-			"upgrade-insecure-requests; " +
-			"block-all-mixed-content"
-		c.Writer.Header().Set("Content-Security-Policy", csp)
+		c.Writer.Header().Set("Content-Security-Policy", ContentSecurityPolicy())
 
 		// Permissions-Policy (formerly Feature-Policy)
 		// Controls which browser features can be used

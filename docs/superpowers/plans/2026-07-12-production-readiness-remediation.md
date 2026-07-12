@@ -224,7 +224,14 @@ flowchart LR
 
 ### R2.5 — Harden CSP, client storage, and log redaction
 
-- **State:** TODO
+- **State:** DONE — backend, nginx, and Caddy enforce an explicit provider CSP
+  with no `unsafe-eval` or inline executable scripts. Required Twitch, Stripe,
+  analytics, Sentry, font, image, and media origins are enumerated; arbitrary
+  script origins remain denied. Built-image Chromium smoke reports no CSP
+  violations. Browser storage now documents its offline-at-rest scope rather
+  than claiming an XSS boundary. Structured logs recursively redact credentials,
+  cookies, OAuth query values, private keys, PII, nested maps, and lists; client
+  application-log URLs/stacks/context receive defense-in-depth filtering.
 - **Owner role:** Security + frontend
 - **Depends on:** R2.1
 - **Work:** Replace incompatible/report-only CSP with a tested policy for Twitch/media/analytics, remove avoidable unsafe directives, and enforce after report review. Stop describing session-storage ciphertext with a co-located key as an XSS security boundary. Redact authorization, cookies, OAuth codes, key material, and PII webhook content.
