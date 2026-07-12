@@ -286,7 +286,7 @@ flowchart LR
 
 ### R3.4 — Verify subscription lifecycle in Stripe test mode
 
-- **State:** TODO
+- **State:** BLOCKED ON TEST-MODE CREDENTIAL — official `stripe-mock` SDK checkout contract, signed PostgreSQL webhook lifecycle, dunning recovery, replay/out-of-order rejection, invalid signatures, and browser initiation/return pass; the configured credential is live and was intentionally not used
 - **Owner role:** Payments/backend/frontend
 - **Depends on:** R1.5, R2.1
 - **Work:** Add contract/integration coverage for checkout creation, signed webhooks, duplicates, out-of-order delivery, invalid signatures, cancellation, dunning/payment failure, reconciliation, and entitlement activation/revocation. Browser smoke covers initiation and return without real charges.
@@ -310,7 +310,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** TODO
+- **State:** IN PROGRESS — 484/484 launch routes have operations and schema-bearing responses; CI enforces parity and response structure, while 359 router-derived operations still use the explicitly transitional payload schema
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -377,7 +377,7 @@ flowchart LR
 
 ### R5.1 — Add resilience controls
 
-- **State:** TODO
+- **State:** DONE — atomic webhook leases, jittered retries, bounded handler workers, database statement/lock timeouts, format-safe restore, and required/optional dependency readiness policy are executable and tested
 - **Owner role:** Backend reliability
 - **Depends on:** R3.1-R3.6
 - **Work:** Add job idempotency, bounded queues, dead-letter behavior, retry jitter, database statement timeouts, feature-aware readiness/degraded states, migration compatibility policy, and restore-point objectives.
@@ -385,7 +385,7 @@ flowchart LR
 
 ### R5.2 — Define SLOs and actionable observability
 
-- **State:** TODO
+- **State:** IN PROGRESS — journey SLOs, recording/alert rules, queue/drop metrics, owners, and tested runbooks exist; systematic user-safe error-code coverage remains open
 - **Owner role:** SRE + product
 - **Depends on:** R2.3, R5.1
 - **Work:** Define SLOs for auth, feed, search, playback, submission, checkout, and moderation. Add structured error codes, trace IDs in user-safe errors, RED metrics, job lag/failure metrics, alert thresholds, runbooks, and owners.
@@ -393,7 +393,7 @@ flowchart LR
 
 ### R5.3 — Run dependency and chaos cases
 
-- **State:** TODO
+- **State:** DONE FOR ENABLED LAUNCH DEPENDENCIES — real API/container chaos proves OpenSearch degradation, Redis/PostgreSQL unready behavior, migration recovery, Stripe SDK mock behavior, and webhook/queue recovery; disabled providers remain outside launch scope
 - **Owner role:** QA reliability
 - **Depends on:** R5.1, R5.2
 - **Work:** Exercise Redis, OpenSearch, Twitch, Stripe test mode, SendGrid, storage/CDN, and database degradation. Test webhook replay, queue recovery, and partial dependency startup.
@@ -401,7 +401,7 @@ flowchart LR
 
 ### R5.4 — Restore load, stress, and soak suites
 
-- **State:** TODO
+- **State:** BLOCKED ON STAGING FIXTURES — repository-owned baseline/stress/soak profiles and thresholds cover all required journeys and pass k6 inspection; execution requires disposable staging user/admin tokens and a seeded clip ID
 - **Owner role:** Performance engineering
 - **Depends on:** R1.1, R5.1
 - **Work:** Implement or remove every advertised k6 target. Create repository-owned realistic fixtures and thresholds for feed, clip detail, search, comments, auth, submission, rate limiting, moderation, stress, and a practical pre-release soak.
@@ -409,7 +409,7 @@ flowchart LR
 
 ### R5.5 — Validate migration, backup, restore, and rollback
 
-- **State:** TODO
+- **State:** BLOCKED ON OPERATOR BACKUP/DEPLOYMENT ACCESS — local migration and plain/custom gzip restore contracts pass and scheduled workflows are executable; production RPO/RTO, image digest, canary, and rollback evidence require the operator environment
 - **Owner role:** Database/platform
 - **Depends on:** R1.2, R5.1
 - **Work:** Run up/down compatibility, backup validation, restore to isolated environment, post-restore application smoke, immutable canary deployment, graceful drain, and automated rollback using release telemetry.
@@ -417,7 +417,7 @@ flowchart LR
 
 ### R5.6 — Finish documentation and mobile disposition
 
-- **State:** TODO
+- **State:** DONE — safe backend/frontend environment templates, clean-clone validation path, honest mobile disposition, generated inventory, zero broken local links, anchor/orphan/asset gates, and mandatory local-link CI
 - **Owner role:** Product/docs
 - **Depends on:** All prior scope decisions
 - **Work:** Supply safe `.env.example` files and a tested clean-clone setup; repair every README/doc link; generate feature/workflow/test inventories where practical; align legal/privacy/API/deployment/runbooks. Record native mobile as planned or introduce a separately owned, buildable, tested workspace.
@@ -498,3 +498,10 @@ Before each commit:
 | 2026-07-12 | R4.3 performance | Done | Initial JS reduced from 1,270.59 KiB to 495.49 KiB; 550/600/120 KiB app/lazy/CSS budgets fail CI on regression; build warnings removed |
 | 2026-07-12 | R4.5 test pyramid | Done | Coverage baseline 53.6/50.43/48.96/54.8 and executable tier/skip inventory: 131 frontend, 178 backend, 3 mocked-browser, 1 real-backend-browser, 1 approved skip |
 | 2026-07-12 | R4.4 module/UI boundaries | Done | Versioned account/admin route modules, shared dialog/format primitives, route tests, ESLint import restrictions, and `boundaries:check` pass across 460 source modules |
+| 2026-07-12 | R3.4 payment contracts | Partial/external gate | `8d23a3fd`, `49a8a575`, `4c3a75ed`; official Stripe SDK mock checkout, signed real-PostgreSQL lifecycle, dunning recovery, replay/order/signature checks, and browser return pass without touching the live key |
+| 2026-07-12 | R3.7 API contracts | Partial | `63582136`; 484/484 route parity and schema-bearing response gate pass; four live status mismatches corrected; transitional operation schemas remain |
+| 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
+| 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
+| 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
+| 2026-07-12 | R5.5 backup/restore | Partial/external gate | `6b6c6747`; real PostgreSQL restores from gzip plain/custom dumps pass; production RPO/RTO and deployment rollback require operator access |
+| 2026-07-12 | R5.6 docs/setup | Done | `7587a6eb`, `31c7a97c`; 201 Markdown files lint/anchor clean, 1,309 offline links with zero errors, 198 reachable docs plus two intentional plan records |
