@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { trackConversion } from '../lib/paywall-analytics';
 import { useAuth } from '../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { getSubscription, isProUser } from '../lib/subscription-api';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     ban: <Ban size={20} strokeWidth={1.75} />,
@@ -62,17 +64,52 @@ export default function SubscriptionSuccessPage() {
     const [searchParams] = useSearchParams();
     const sessionId = searchParams.get('session_id');
     const hasTrackedConversion = useRef(false);
+    const { data: subscription, isError } = useQuery({
+        queryKey: ['subscription', 'checkout-return', sessionId],
+        queryFn: getSubscription,
+        enabled: !!user && !!sessionId,
+        refetchInterval: query =>
+            isProUser(query.state.data ?? null) ? false : 2000,
+    });
+    const entitlementConfirmed = isProUser(subscription ?? null);
 
     useEffect(() => {
-        // Track successful conversion only once
-        if (sessionId && !hasTrackedConversion.current) {
+        // A redirect parameter is not proof of payment. Track conversion only
+        // after the backend confirms an active/trialing Pro entitlement.
+        if (sessionId && entitlementConfirmed && !hasTrackedConversion.current) {
             trackConversion({
                 userId: user?.id,
                 metadata: { sessionId },
             });
             hasTrackedConversion.current = true;
         }
-    }, [sessionId, user?.id]);
+    }, [entitlementConfirmed, sessionId, user?.id]);
+
+    if (!entitlementConfirmed) {
+        return (
+            <div className='min-h-screen bg-background flex items-center justify-center px-4 py-12'>
+                <div className='max-w-xl text-center bg-surface border border-border rounded-lg p-8'>
+                    <RefreshCw className='h-12 w-12 mx-auto mb-4 animate-spin text-purple-400' />
+                    <h1 className='text-3xl font-bold text-white mb-3'>
+                        Confirming your subscription
+                    </h1>
+                    <p className='text-muted-foreground mb-6'>
+                        Checkout returned successfully, but Pro access will not
+                        be enabled until the signed Stripe webhook is processed.
+                    </p>
+                    {isError && (
+                        <p role='alert' className='text-error-400 mb-4'>
+                            We could not confirm your subscription yet. No Pro
+                            entitlement has been granted.
+                        </p>
+                    )}
+                    <Link to='/settings' className='text-purple-400 hover:text-purple-300'>
+                        Check subscription status in Settings
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className='min-h-screen bg-background flex items-center justify-center px-4 py-12'>
