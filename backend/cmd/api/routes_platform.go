@@ -261,6 +261,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 	{
 		docs.GET("", h.Docs.GetDocsList)
 		docs.GET("/search", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Docs.SearchDocs)
+		docs.GET("/content/*path", h.Docs.GetDoc)
 		// Catch-all route must be last
 		docs.GET("/:path", h.Docs.GetDoc) // Changed from /*path to /:path to avoid conflict
 	}

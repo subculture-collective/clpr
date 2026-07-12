@@ -5466,6 +5466,137 @@ paths:
           $ref: '#/components/responses/PageNotFound'
         '500':
           $ref: '#/components/responses/PageUnavailable'
+  /api/v1/docs:
+    get:
+      tags:
+        - Documentation
+      summary: List available Markdown documentation
+      description: Returns a tree of regular Markdown files, excluding hidden, archive, vault, and symlink entries.
+      operationId: getApiV1Docs
+      security: []
+      responses:
+        '200':
+          description: Documentation tree
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocsTreeResponse'
+        '406':
+          description: Client explicitly does not accept application/json
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/docs/search:
+    get:
+      tags:
+        - Documentation
+      summary: Search documentation text
+      description: Searches bounded regular Markdown files and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
+      operationId: getApiV1DocsSearch
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+      responses:
+        '200':
+          description: Ranked search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocsSearchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          description: Documentation source unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+  /api/v1/docs/{path}:
+    get:
+      tags:
+        - Documentation
+      summary: Get a top-level Markdown document
+      operationId: getApiV1DocsPath
+      security: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Document content and optional edit URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocContentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: Document exceeds 1 MiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/docs/content/{path}:
+    get:
+      tags:
+        - Documentation
+      summary: Get a nested Markdown document
+      description: Resolves the real path and rejects symlinks that escape the configured documentation root.
+      operationId: getApiV1DocsContentPath
+      security: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Nested document content and optional edit URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocContentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: Document exceeds 1 MiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/admin/ads/campaigns:
     get:
       tags:
@@ -9071,63 +9202,6 @@ paths:
       x-clpr-router-derived: true
       parameters:
         - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/docs:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/docs
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1Docs
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/docs/search:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/docs/search
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1DocsSearch
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/docs/{path}:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/docs/{path}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1DocsPath
-      x-clpr-router-derived: true
-      parameters:
-        - name: path
           in: path
           required: true
           schema:
@@ -14273,6 +14347,89 @@ components:
             total_pages:
               type: integer
               minimum: 0
+    DocNode:
+      type: object
+      required:
+        - name
+        - path
+        - type
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+        type:
+          type: string
+          enum:
+            - file
+            - directory
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocNode'
+    DocsTreeResponse:
+      type: object
+      required:
+        - docs
+      properties:
+        docs:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocNode'
+    DocContentResponse:
+      type: object
+      required:
+        - path
+        - content
+        - github_url
+      properties:
+        path:
+          type: string
+        content:
+          type: string
+          maxLength: 1048576
+        github_url:
+          type: string
+    DocsSearchResult:
+      type: object
+      required:
+        - path
+        - name
+        - matches
+        - score
+      properties:
+        path:
+          type: string
+        name:
+          type: string
+        matches:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+        score:
+          type: integer
+          minimum: 1
+    DocsSearchResponse:
+      type: object
+      required:
+        - query
+        - results
+        - count
+      properties:
+        query:
+          type: string
+          minLength: 2
+          maxLength: 100
+        results:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/DocsSearchResult'
+        count:
+          type: integer
+          minimum: 0
+          maximum: 100
     Appeal:
       type: object
       required:
