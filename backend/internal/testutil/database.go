@@ -3,6 +3,7 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,8 +14,12 @@ import (
 func SetupTestDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 
-	// Use test database configuration
-	dbURL := "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable"
+	// Use the same configurable URL as the integration harness. The fallback is
+	// local-only and intentionally cannot target a production hostname.
+	dbURL := os.Getenv("TEST_DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" // #nosec G101 -- local disposable test database only.
+	}
 
 	pool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/microcosm-cc/bluemonday"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -222,9 +222,10 @@ func (s *CommentService) CreateComment(ctx context.Context, req *CreateCommentRe
 
 	// Perform toxicity classification (async - don't block comment creation)
 	if s.toxicityClassifier != nil {
+		detachedCtx := context.WithoutCancel(ctx)
 		go func() {
 			// Create a new context with timeout for async processing
-			asyncCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			asyncCtx, cancel := context.WithTimeout(detachedCtx, 30*time.Second)
 			defer cancel()
 
 			// Classify the comment content

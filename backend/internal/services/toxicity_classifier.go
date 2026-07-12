@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -317,6 +318,9 @@ func (tc *ToxicityClassifier) loadRulesConfig() error {
 
 	var possiblePaths []string
 	if envPath != "" {
+		if filepath.IsAbs(envPath) || strings.HasPrefix(filepath.Clean(envPath), ".."+string(filepath.Separator)) {
+			return fmt.Errorf("TOXICITY_RULES_CONFIG_PATH must be a repository-relative path")
+		}
 		possiblePaths = append(possiblePaths, envPath)
 	}
 
@@ -329,8 +333,11 @@ func (tc *ToxicityClassifier) loadRulesConfig() error {
 	var configPath string
 	var found bool
 	for _, path := range possiblePaths {
-		if _, err := os.Stat(path); err == nil {
-			configPath = path
+		cleanPath := filepath.Clean(path)
+		// Paths are fixed defaults or a validated repository-relative operator
+		// setting; HTTP/user input cannot reach this startup-only loader.
+		if _, err := os.Stat(cleanPath); err == nil { // #nosec G304 G703 -- validated operator-controlled path.
+			configPath = cleanPath
 			found = true
 			break
 		}
@@ -343,7 +350,7 @@ func (tc *ToxicityClassifier) loadRulesConfig() error {
 		return fmt.Errorf("failed to find rules config in any expected location")
 	}
 
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) // #nosec G304 G703 -- path selected from validated startup configuration.
 	if err != nil {
 		return fmt.Errorf("failed to load rules config from %s: %w", configPath, err)
 	}

@@ -2,16 +2,17 @@ package services
 
 import (
 	"context"
+	cryptorand "crypto/rand"
 	"fmt"
 	"hash/fnv"
-	"math/rand/v2"
+	"math/big"
 	"sort"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/google/uuid"
 )
 
 // experimentBucketCount is the number of buckets used for A/B experiment user distribution
@@ -143,7 +144,7 @@ func (s *AdService) SelectAd(ctx context.Context, req models.AdSelectionRequest,
 	// Update frequency caps (async to not block response)
 	// Only if personalized
 	if isPersonalized {
-		go s.updateFrequencyCaps(context.Background(), selectedAd.ID, userID, req.SessionID)
+		go s.updateFrequencyCaps(context.WithoutCancel(ctx), selectedAd.ID, userID, req.SessionID)
 	}
 
 	return &models.AdSelectionResponse{
@@ -184,8 +185,9 @@ func (s *AdService) TrackImpression(ctx context.Context, req models.AdTrackingRe
 				costCents = 1 // Minimum 1 cent per impression
 			}
 			// Update ad spend (async)
+			detachedCtx := context.WithoutCancel(ctx)
 			go func() {
-				_ = s.adRepo.IncrementAdSpend(context.Background(), ad.ID, costCents)
+				_ = s.adRepo.IncrementAdSpend(detachedCtx, ad.ID, costCents)
 			}()
 		}
 	}
@@ -517,8 +519,12 @@ func (s *AdService) weightedRandomSelect(ads []models.Ad) models.Ad {
 		totalWeight += ad.Weight
 	}
 
-	// Random selection based on weight (using v2 package-level random)
-	randomWeight := rand.IntN(totalWeight)
+	// Use cryptographic randomness because delivery affects advertiser spend.
+	randomValue, err := cryptorand.Int(cryptorand.Reader, big.NewInt(int64(totalWeight)))
+	if err != nil {
+		return priorityAds[0]
+	}
+	randomWeight := int(randomValue.Int64())
 
 	cumulative := 0
 	for _, ad := range priorityAds {

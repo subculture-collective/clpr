@@ -13,13 +13,13 @@ import (
 	"sync"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/sendgrid/sendgrid-go"
 	sendgridmail "github.com/sendgrid/sendgrid-go/helpers/mail"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
-	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // EmailService handles email sending and management
@@ -789,6 +789,7 @@ func (s *EmailService) SendNotificationEmailAsync(
 	emailData map[string]interface{},
 ) {
 	s.wg.Add(1)
+	detachedCtx := context.WithoutCancel(ctx)
 	go func() {
 		defer s.wg.Done()
 
@@ -803,9 +804,7 @@ func (s *EmailService) SendNotificationEmailAsync(
 		default:
 		}
 
-		// Use a background context to avoid cancellation from parent
-		bgCtx := context.Background()
-		if err := s.SendNotificationEmail(bgCtx, user, notificationType, notificationID, emailData); err != nil {
+		if err := s.SendNotificationEmail(detachedCtx, user, notificationType, notificationID, emailData); err != nil {
 			s.logger.Error("Failed to send notification email", err, map[string]interface{}{
 				"user_id":           user.ID.String(),
 				"notification_id":   notificationID.String(),

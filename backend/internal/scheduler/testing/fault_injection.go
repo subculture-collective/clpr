@@ -39,6 +39,14 @@ func (f *FaultInjector) FailAfterN(n int) {
 
 // FailNTimes configures the injector to fail the next N calls
 func (f *FaultInjector) FailNTimes(n int) {
+	if n < 0 {
+		n = 0
+	}
+	if n > int(^uint32(0)>>1) {
+		n = int(^uint32(0) >> 1)
+	}
+	// n is explicitly bounded to the int32 range above.
+	// #nosec G115 -- bounded conversion is part of this test-only fault injector.
 	atomic.StoreInt32(&f.failCount, int32(n))
 }
 
@@ -86,7 +94,9 @@ func (f *FaultInjector) ShouldFail() (bool, error) {
 
 	if failureRate > 0 {
 		// Use hash-based pseudo-randomization for deterministic but varied patterns
-		hash := uint32(callNum * 2654435761) // Knuth's multiplicative hash
+		// The signed-to-unsigned wrap is intentional for Knuth's hash and only
+		// controls deterministic test fault distribution.
+		hash := uint32(callNum) * 2654435761 // #nosec G115 -- intentional hash wrap.
 		if float64(hash%10000)/10000.0 < failureRate {
 			return true, errors.New("injected fault: random failure")
 		}

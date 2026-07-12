@@ -37,6 +37,9 @@ jobs:
       - name: Reject reachable Go vulnerabilities
         working-directory: backend
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...
+      - name: Reject high-severity Go static-analysis findings
+        working-directory: backend
+        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.27.1 -quiet -severity high ./...
       - name: Build
         working-directory: backend
         run: go build ./cmd/api

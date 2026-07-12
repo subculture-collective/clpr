@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/google/uuid"
 )
 
 // ErrUnauthorized is returned when a user doesn't have permission to manage a clip
@@ -137,8 +137,9 @@ func (s *ClipService) GetClip(ctx context.Context, clipID uuid.UUID, userID *uui
 	}
 
 	// Increment view count and check for threshold notifications (async, don't block on errors)
+	detachedCtx := context.WithoutCancel(ctx)
 	go func() {
-		timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		timeoutCtx, cancel := context.WithTimeout(detachedCtx, 10*time.Second)
 		defer cancel()
 
 		newViewCount, err := s.clipRepo.IncrementViewCount(timeoutCtx, clipID)
@@ -202,8 +203,9 @@ func (s *ClipService) GetClipByTwitchID(ctx context.Context, twitchClipID string
 	}
 
 	// Increment view count and check for threshold notifications (async, don't block on errors)
+	detachedCtx := context.WithoutCancel(ctx)
 	go func() {
-		timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		timeoutCtx, cancel := context.WithTimeout(detachedCtx, 10*time.Second)
 		defer cancel()
 
 		newViewCount, err := s.clipRepo.IncrementViewCount(timeoutCtx, clip.ID)
@@ -498,8 +500,9 @@ func (s *ClipService) VoteOnClip(ctx context.Context, userID, clipID uuid.UUID, 
 		clip, err := s.clipRepo.GetByID(ctx, clipID)
 		if err == nil && clip.CreatorID != nil && s.notificationService != nil {
 			// Check if we reached a vote threshold (async with timeout)
+			detachedCtx := context.WithoutCancel(ctx)
 			go func() {
-				timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				timeoutCtx, cancel := context.WithTimeout(detachedCtx, 10*time.Second)
 				defer cancel()
 				_ = s.notificationService.NotifyClipVoteThreshold(timeoutCtx, clipID, clip.VoteScore, *clip.CreatorID)
 			}()
@@ -507,6 +510,7 @@ func (s *ClipService) VoteOnClip(ctx context.Context, userID, clipID uuid.UUID, 
 	}
 
 	// Update user karma (async)
+	detachedCtx := context.WithoutCancel(ctx)
 	go func() {
 		karmaChange := 0
 		if oldVote == nil {
@@ -526,7 +530,7 @@ func (s *ClipService) VoteOnClip(ctx context.Context, userID, clipID uuid.UUID, 
 		}
 
 		if karmaChange != 0 {
-			_ = s.userRepo.UpdateKarma(context.Background(), userID, karmaChange)
+			_ = s.userRepo.UpdateKarma(detachedCtx, userID, karmaChange)
 		}
 	}()
 
