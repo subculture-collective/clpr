@@ -81,8 +81,6 @@ var accountTypePermissions = map[string][]string{
 		PermissionModerateContent,
 		PermissionModerateUsers,
 		PermissionCreateDiscoveryLists,
-		// User management permissions
-		PermissionManageUsers,
 	},
 	// Community Moderator: Channel-scoped moderator with limited permissions
 	// Has exactly 4 permissions for managing their assigned channel(s):

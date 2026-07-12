@@ -109,6 +109,13 @@ func (s *ReputationService) RemoveBadge(ctx context.Context, userID uuid.UUID, b
 	return s.reputationRepo.RemoveBadge(ctx, userID, badgeID)
 }
 
+func (s *ReputationService) ApplyAdminBadgeMutation(ctx context.Context, userID, actorID uuid.UUID, badgeID string, award bool) error {
+	if !IsValidBadge(badgeID) {
+		return fmt.Errorf("invalid badge ID: %s", badgeID)
+	}
+	return s.reputationRepo.ApplyAdminBadgeMutation(ctx, userID, actorID, badgeID, award)
+}
+
 // UpdateUserStats updates user statistics and recalculates scores
 func (s *ReputationService) UpdateUserStats(ctx context.Context, userID uuid.UUID) error {
 	// Calculate trust score

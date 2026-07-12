@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -233,21 +235,14 @@ func (h *ReputationHandler) AwardBadge(c *gin.Context) {
 		return
 	}
 
-	// Get current admin user
-	currentUser, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":   "Unauthorized",
-			"code":    "UNAUTHORIZED",
-			"message": "Authentication required",
-		})
+	adminID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	adminID := currentUser.(uuid.UUID)
 
 	// Parse request body
 	var req struct {
-		BadgeID string `json:"badge_id" binding:"required"`
+		BadgeID string `json:"badge_id" binding:"required,max=100"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -260,8 +255,24 @@ func (h *ReputationHandler) AwardBadge(c *gin.Context) {
 	}
 
 	// Award badge
-	err = h.reputationService.AwardBadge(c.Request.Context(), userID, req.BadgeID, &adminID)
+	err = h.reputationService.ApplyAdminBadgeMutation(c.Request.Context(), userID, adminID, req.BadgeID, true)
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "invalid badge ID") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid badge ID", "code": "INVALID_BADGE_ID"})
+			return
+		}
+		if errors.Is(err, repository.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "code": "USER_NOT_FOUND"})
+			return
+		}
+		if errors.Is(err, repository.ErrBadgeAlreadyAwarded) {
+			c.JSON(http.StatusConflict, gin.H{"error": "Badge already awarded", "code": "BADGE_ALREADY_AWARDED"})
+			return
+		}
+		if errors.Is(err, repository.ErrAdminRequired) || errors.Is(err, repository.ErrAdminSelfMutation) || errors.Is(err, repository.ErrProtectedAdminTarget) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Badge mutation not permitted", "code": "BADGE_MUTATION_FORBIDDEN"})
+			return
+		}
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to award badge",
@@ -293,10 +304,26 @@ func (h *ReputationHandler) RemoveBadge(c *gin.Context) {
 
 	// Get badge ID from path
 	badgeID := c.Param("badgeId")
+	if len(badgeID) == 0 || len(badgeID) > 100 || !services.IsValidBadge(badgeID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid badge ID", "code": "INVALID_BADGE_ID"})
+		return
+	}
+	adminID, ok := authenticatedUserID(c)
+	if !ok {
+		return
+	}
 
 	// Remove badge
-	err = h.reputationService.RemoveBadge(c.Request.Context(), userID, badgeID)
+	err = h.reputationService.ApplyAdminBadgeMutation(c.Request.Context(), userID, adminID, badgeID, false)
 	if err != nil {
+		if errors.Is(err, repository.ErrBadgeNotFound) || errors.Is(err, repository.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User or badge award not found", "code": "BADGE_NOT_FOUND"})
+			return
+		}
+		if errors.Is(err, repository.ErrAdminRequired) || errors.Is(err, repository.ErrAdminSelfMutation) || errors.Is(err, repository.ErrProtectedAdminTarget) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Badge mutation not permitted", "code": "BADGE_MUTATION_FORBIDDEN"})
+			return
+		}
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to remove badge",
