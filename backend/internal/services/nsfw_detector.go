@@ -25,6 +25,7 @@ var (
 	nsfwErrorCounter     *prometheus.CounterVec
 
 	ErrNSFWMetricsDBUnavailable = errors.New("nsfw metrics database not configured")
+	ErrNSFWDetectorUnavailable  = errors.New("nsfw detector is disabled or provider is not configured")
 )
 
 // NSFWDetector handles NSFW detection for images/thumbnails
@@ -38,6 +39,16 @@ type NSFWDetector struct {
 	autoFlag       bool
 	maxLatencyMs   int
 	db             *pgxpool.Pool
+}
+
+// Operational reports whether real provider-backed detection is available.
+func (nd *NSFWDetector) Operational() bool {
+	return nd != nil && nd.enabled && nd.apiKey != "" && nd.apiURL != ""
+}
+
+// Enabled reports the configured feature flag without exposing provider secrets.
+func (nd *NSFWDetector) Enabled() bool {
+	return nd != nil && nd.enabled
 }
 
 // NSFWScore represents the result of NSFW detection
@@ -124,27 +135,14 @@ func (nd *NSFWDetector) DetectImage(ctx context.Context, imageURL string) (*NSFW
 func (nd *NSFWDetector) DetectImageWithID(ctx context.Context, imageURL string, contentType string, contentID uuid.UUID) (*NSFWScore, error) {
 	startTime := time.Now()
 
-	// If detector is disabled, return safe default
-	if !nd.enabled {
-		return &NSFWScore{
-			NSFW:            false,
-			ConfidenceScore: 0.0,
-			Categories:      make(map[string]float64),
-			ReasonCodes:     []string{},
-			LatencyMs:       0,
-		}, nil
+	if !nd.Operational() {
+		return nil, ErrNSFWDetectorUnavailable
 	}
 
 	var score *NSFWScore
 	var err error
 
-	// Use external API if configured
-	if nd.apiKey != "" && nd.apiURL != "" {
-		score, err = nd.detectWithAPI(ctx, imageURL)
-	} else {
-		// Fallback to rule-based detection (very basic)
-		score, err = nd.detectWithRules(imageURL)
-	}
+	score, err = nd.detectWithAPI(ctx, imageURL)
 
 	// Record latency
 	latencyMs := time.Since(startTime).Milliseconds()
@@ -314,18 +312,6 @@ func (nd *NSFWDetector) detectWithAPI(ctx context.Context, imageURL string) (*NS
 	}
 
 	return score, nil
-}
-
-// detectWithRules provides basic rule-based fallback detection
-func (nd *NSFWDetector) detectWithRules(imageURL string) (*NSFWScore, error) {
-	// Very basic fallback - just returns safe
-	// In production, you might want to implement basic heuristics
-	return &NSFWScore{
-		NSFW:            false,
-		ConfidenceScore: 0.0,
-		Categories:      make(map[string]float64),
-		ReasonCodes:     []string{},
-	}, nil
 }
 
 // FlagToModerationQueue flags NSFW content to the moderation queue

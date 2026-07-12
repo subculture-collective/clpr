@@ -8,22 +8,27 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
-func setupNSFWHandlerTest() (*gin.Engine, *NSFWHandler) {
+func setupNSFWHandlerTest(t *testing.T) (*gin.Engine, *NSFWHandler) {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"nudity":{"raw":0.01,"safe":0.99,"partial":0.01,"sexual":0.01},"offensive":{"prob":0.01}}`))
+	}))
+	t.Cleanup(provider.Close)
 
-	// Create mock NSFW detector with external API disabled to avoid network calls
 	detector := services.NewNSFWDetector(
-		"",
-		"",
-		false,
+		"test-key",
+		provider.URL,
+		true,
 		0.80,
 		true,
 		true,
@@ -37,7 +42,7 @@ func setupNSFWHandlerTest() (*gin.Engine, *NSFWHandler) {
 }
 
 func TestDetectImage_Success(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/detect", handler.DetectImage)
 
 	requestBody := map[string]interface{}{
@@ -68,7 +73,7 @@ func TestDetectImage_Success(t *testing.T) {
 }
 
 func TestDetectImage_InvalidURL(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/detect", handler.DetectImage)
 
 	requestBody := map[string]interface{}{
@@ -92,8 +97,23 @@ func TestDetectImage_InvalidURL(t *testing.T) {
 	assert.Contains(t, response, "error")
 }
 
+func TestValidateImageURLRejectsUnsafeDestinations(t *testing.T) {
+	for _, imageURL := range []string{
+		"http://example.com/image.jpg",
+		"https://localhost/image.jpg",
+		"https://127.0.0.1/image.jpg",
+		"https://[::1]/image.jpg",
+		"https://user:password@example.com/image.jpg",
+	} {
+		t.Run(imageURL, func(t *testing.T) {
+			assert.Error(t, validateImageURL(imageURL))
+		})
+	}
+	assert.NoError(t, validateImageURL("https://cdn.example.com/image.jpg"))
+}
+
 func TestDetectImage_InvalidContentType(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/detect", handler.DetectImage)
 
 	requestBody := map[string]interface{}{
@@ -112,7 +132,7 @@ func TestDetectImage_InvalidContentType(t *testing.T) {
 }
 
 func TestDetectImage_WithContentID(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/detect", handler.DetectImage)
 
 	contentID := uuid.New()
@@ -134,7 +154,7 @@ func TestDetectImage_WithContentID(t *testing.T) {
 }
 
 func TestBatchDetect_Success(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/batch-detect", handler.BatchDetect)
 
 	requestBody := map[string]interface{}{
@@ -177,7 +197,7 @@ func TestBatchDetect_Success(t *testing.T) {
 }
 
 func TestBatchDetect_EmptyImages(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/batch-detect", handler.BatchDetect)
 
 	requestBody := map[string]interface{}{
@@ -195,7 +215,7 @@ func TestBatchDetect_EmptyImages(t *testing.T) {
 }
 
 func TestBatchDetect_TooManyImages(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.POST("/batch-detect", handler.BatchDetect)
 
 	// Create more than 50 images
@@ -222,7 +242,7 @@ func TestBatchDetect_TooManyImages(t *testing.T) {
 }
 
 func TestGetMetrics_Success(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.GET("/metrics", handler.GetMetrics)
 
 	req := httptest.NewRequest("GET", "/metrics", nil)
@@ -235,11 +255,11 @@ func TestGetMetrics_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	assert.Contains(t, response["error"], "database not configured")
+	assert.Equal(t, "Failed to retrieve NSFW metrics", response["error"])
 }
 
 func TestGetMetrics_WithDateRange(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.GET("/metrics", handler.GetMetrics)
 
 	startDate := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
@@ -253,7 +273,7 @@ func TestGetMetrics_WithDateRange(t *testing.T) {
 }
 
 func TestGetMetrics_InvalidDateFormat(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.GET("/metrics", handler.GetMetrics)
 
 	req := httptest.NewRequest("GET", "/metrics?start_date=invalid-date", nil)
@@ -263,8 +283,19 @@ func TestGetMetrics_InvalidDateFormat(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
+func TestGetMetrics_RejectsReversedDateRange(t *testing.T) {
+	router, handler := setupNSFWHandlerTest(t)
+	router.GET("/metrics", handler.GetMetrics)
+
+	req := httptest.NewRequest("GET", "/metrics?start_date=2026-07-12&end_date=2026-07-01", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 func TestGetHealthCheck_Success(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.GET("/health", handler.GetHealthCheck)
 
 	req := httptest.NewRequest("GET", "/health", nil)
@@ -283,7 +314,7 @@ func TestGetHealthCheck_Success(t *testing.T) {
 }
 
 func TestGetConfig_Success(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
+	router, handler := setupNSFWHandlerTest(t)
 	router.GET("/config", handler.GetConfig)
 
 	req := httptest.NewRequest("GET", "/config", nil)
@@ -301,50 +332,4 @@ func TestGetConfig_Success(t *testing.T) {
 
 	data := response["data"].(map[string]interface{})
 	assert.Contains(t, data, "enabled")
-}
-
-func TestScanClipThumbnails_Success(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
-	router.POST("/scan-clips", handler.ScanClipThumbnails)
-
-	requestBody := map[string]interface{}{
-		"limit":     100,
-		"auto_flag": true,
-	}
-
-	body, _ := json.Marshal(requestBody)
-	req := httptest.NewRequest("POST", "/scan-clips", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusAccepted, w.Code)
-
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	require.NoError(t, err)
-
-	assert.True(t, response["success"].(bool))
-	assert.Contains(t, response, "job_id")
-	assert.Equal(t, float64(100), response["limit"])
-}
-
-func TestScanClipThumbnails_InvalidLimit(t *testing.T) {
-	router, handler := setupNSFWHandlerTest()
-	router.POST("/scan-clips", handler.ScanClipThumbnails)
-
-	requestBody := map[string]interface{}{
-		"limit":     2000, // Exceeds max of 1000
-		"auto_flag": true,
-	}
-
-	body, _ := json.Marshal(requestBody)
-	req := httptest.NewRequest("POST", "/scan-clips", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
 }

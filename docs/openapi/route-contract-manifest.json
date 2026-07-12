@@ -452,42 +452,35 @@
     "path": "/api/v1/admin/nsfw/batch-detect",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).BatchDetect-fm",
     "operation_id": "postApiV1AdminNsfwBatchDetect",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/nsfw/config",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetConfig-fm",
     "operation_id": "getApiV1AdminNsfwConfig",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/nsfw/detect",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).DetectImage-fm",
     "operation_id": "postApiV1AdminNsfwDetect",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/nsfw/health",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetHealthCheck-fm",
     "operation_id": "getApiV1AdminNsfwHealth",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/nsfw/metrics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetMetrics-fm",
     "operation_id": "getApiV1AdminNsfwMetrics",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/nsfw/scan-clips",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).ScanClipThumbnails-fm",
-    "operation_id": "postApiV1AdminNsfwScanClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

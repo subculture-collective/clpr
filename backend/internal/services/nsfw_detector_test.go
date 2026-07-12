@@ -51,11 +51,8 @@ func TestDetectImage_Disabled(t *testing.T) {
 	ctx := context.Background()
 	score, err := detector.DetectImage(ctx, "https://example.com/image.jpg")
 
-	require.NoError(t, err)
-	assert.NotNil(t, score)
-	assert.False(t, score.NSFW)
-	assert.Equal(t, 0.0, score.ConfidenceScore)
-	assert.Equal(t, int64(0), score.LatencyMs)
+	require.ErrorIs(t, err, ErrNSFWDetectorUnavailable)
+	assert.Nil(t, score)
 }
 
 func TestDetectImage_WithAPI_Safe(t *testing.T) {
@@ -253,7 +250,7 @@ func TestDetectImage_Latency(t *testing.T) {
 	assert.Less(t, score.LatencyMs, int64(200)) // Should be well under max latency
 }
 
-func TestDetectWithRules(t *testing.T) {
+func TestDetectWithoutProviderFailsClosed(t *testing.T) {
 	detector := NewNSFWDetector(
 		"", // No API key
 		"", // No API URL
@@ -269,10 +266,8 @@ func TestDetectWithRules(t *testing.T) {
 	ctx := context.Background()
 	score, err := detector.DetectImage(ctx, "https://example.com/image.jpg")
 
-	require.NoError(t, err)
-	assert.NotNil(t, score)
-	assert.False(t, score.NSFW) // Rule-based fallback returns safe
-	assert.Equal(t, 0.0, score.ConfidenceScore)
+	require.ErrorIs(t, err, ErrNSFWDetectorUnavailable)
+	assert.Nil(t, score)
 }
 
 func TestReasonCodes(t *testing.T) {

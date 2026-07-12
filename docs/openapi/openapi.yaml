@@ -6845,105 +6845,78 @@ paths:
 
   /api/v1/admin/nsfw/batch-detect:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/nsfw/batch-detect
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, NSFW]
+      summary: Detect NSFW content in an image batch
+      description: Runs provider-backed detection for up to 50 public HTTPS image URLs. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminNsfwBatchDetect
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminNSFWBatchRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Batch detection results, content: {application/json: {schema: {type: object, required: [success, data, meta], properties: {success: {type: boolean, const: true}, data: {type: array, maxItems: 50, items: {type: object, additionalProperties: true}}, meta: {type: object, additionalProperties: true}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/admin/nsfw/config:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/nsfw/config
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, NSFW]
+      summary: Get NSFW detector availability
+      description: Returns only non-sensitive feature and provider availability to administrators with MFA.
       operationId: getApiV1AdminNsfwConfig
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Detector availability, content: {application/json: {schema: {type: object, required: [success, data], properties: {success: {type: boolean, const: true}, data: {type: object, required: [enabled, operational], properties: {enabled: {type: boolean}, operational: {type: boolean}}}}}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
 
   /api/v1/admin/nsfw/detect:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/nsfw/detect
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, NSFW]
+      summary: Detect NSFW content in one image
+      description: Runs provider-backed detection for one public HTTPS image URL. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminNsfwDetect
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminNSFWDetectionRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Detection result, content: {application/json: {schema: {type: object, required: [success, data], properties: {success: {type: boolean, const: true}, data: {type: object, additionalProperties: true}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+        '502':
+          description: Detection provider failed
+          content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/admin/nsfw/health:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/nsfw/health
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, NSFW]
+      summary: Check NSFW detector readiness
+      description: Checks configured provider-backed readiness without exposing secrets. Administrator MFA is required.
       operationId: getApiV1AdminNsfwHealth
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Detector ready, content: {application/json: {schema: {type: object, required: [success, status, latency_ms], properties: {success: {type: boolean}, status: {type: string, enum: [healthy, unhealthy]}, latency_ms: {type: integer, minimum: 0}}}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/admin/nsfw/metrics:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/nsfw/metrics
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, NSFW]
+      summary: Get NSFW detection metrics
+      description: Returns an ordered metrics range of at most 366 days to administrators with MFA.
       operationId: getApiV1AdminNsfwMetrics
-      x-clpr-router-derived: true
+      parameters:
+        - {$ref: '#/components/parameters/StartDate'}
+        - {$ref: '#/components/parameters/EndDate'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/nsfw/scan-clips:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/nsfw/scan-clips
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1AdminNsfwScanClips
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Detection metrics, content: {application/json: {schema: {type: object, required: [success, data], properties: {success: {type: boolean, const: true}, data: {type: object, additionalProperties: true}}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/admin/playlist-scripts:
     get:
@@ -11573,6 +11546,35 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    AdminNSFWDetectionRequest:
+      type: object
+      required: [image_url, content_type]
+      additionalProperties: false
+      properties:
+        image_url: {type: string, format: uri, pattern: '^https://', maxLength: 2048}
+        content_type: {type: string, enum: [clip, thumbnail, submission, user]}
+        content_id: {type: string, format: uuid}
+        auto_flag: {type: boolean}
+
+    AdminNSFWBatchRequest:
+      type: object
+      required: [images]
+      additionalProperties: false
+      properties:
+        images:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [image_url, content_type]
+            additionalProperties: false
+            properties:
+              image_url: {type: string, format: uri, pattern: '^https://', maxLength: 2048}
+              content_type: {type: string, enum: [clip, thumbnail, submission, user]}
+              content_id: {type: string, format: uuid}
+        auto_flag: {type: boolean}
+
     AdminCampaign:
       type: object
       required: [id, name, advertiser_name, ad_type, content_url, is_active]

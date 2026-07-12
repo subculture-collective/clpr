@@ -192,13 +192,13 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 		// NSFW detection routes (admin only)
 		nsfw := admin.Group("/nsfw")
+		nsfw.Use(middleware.RequireRole("admin"))
 		{
 			nsfw.POST("/detect", h.NSFW.DetectImage)
 			nsfw.POST("/batch-detect", h.NSFW.BatchDetect)
 			nsfw.GET("/metrics", h.NSFW.GetMetrics)
 			nsfw.GET("/health", h.NSFW.GetHealthCheck)
 			nsfw.GET("/config", h.NSFW.GetConfig)
-			nsfw.POST("/scan-clips", h.NSFW.ScanClipThumbnails)
 		}
 
 		// Creator verification management (admin only)
