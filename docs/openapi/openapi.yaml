@@ -5499,6 +5499,82 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/discovery-lists/{id}/follow:
+    post:
+      tags: [Discovery Lists]
+      summary: Follow a discovery list
+      description: Idempotently creates a follow relationship.
+      operationId: followDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: List is followed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Discovery Lists]
+      summary: Stop following a discovery list
+      description: Idempotently removes a follow relationship, including when none exists.
+      operationId: unfollowDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Follow relationship is absent
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/discovery-lists/{id}/bookmark:
+    post:
+      tags: [Discovery Lists]
+      summary: Bookmark a discovery list
+      description: Idempotently creates a bookmark.
+      operationId: bookmarkDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: List is bookmarked
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Discovery Lists]
+      summary: Remove a discovery-list bookmark
+      description: Idempotently removes a bookmark, including when none exists.
+      operationId: unbookmarkDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Bookmark is absent
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -8746,94 +8822,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/discovery-lists/{id}/bookmark:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/discovery-lists/{id}/bookmark
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1DiscoveryListsIdBookmark
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/discovery-lists/{id}/bookmark
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1DiscoveryListsIdBookmark
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/discovery-lists/{id}/follow:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/discovery-lists/{id}/follow
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1DiscoveryListsIdFollow
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/discovery-lists/{id}/follow
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1DiscoveryListsIdFollow
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/feeds/clips:
     get:
       tags: [Generated Route Contracts]
@@ -11686,6 +11674,13 @@ components:
       description: Discovery-list UUID or slug.
       schema: {type: string, minLength: 1, maxLength: 200}
 
+    DiscoveryListUUID:
+      name: id
+      in: path
+      required: true
+      description: Discovery-list UUID.
+      schema: {type: string, format: uuid}
+
     Page:
       name: page
       in: query
@@ -13243,6 +13238,12 @@ components:
         page: {type: integer, minimum: 1}
         limit: {type: integer, minimum: 1, maximum: 100}
         has_more: {type: boolean}
+
+    DiscoveryListMutationResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
 
     Appeal:
       type: object

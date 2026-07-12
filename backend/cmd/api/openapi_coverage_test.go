@@ -225,7 +225,7 @@ func TestOpenAPIRouteContractManifestIsCurrent(t *testing.T) {
 }
 
 func TestOpenAPITransitionalContractBudget(t *testing.T) {
-	const maximumTransitionalContracts = 301
+	const maximumTransitionalContracts = 297
 	contents, err := os.ReadFile("../../../docs/openapi/openapi.yaml")
 	if err != nil {
 		t.Fatal(err)

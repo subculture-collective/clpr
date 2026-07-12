@@ -710,6 +710,81 @@ func TestUnbookmarkDiscoveryList_Unauthenticated(t *testing.T) {
 	}
 }
 
+func TestDiscoveryListMutationsRejectMalformedIdentityWithoutPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	listID := uuid.New().String()
+	tests := []struct {
+		name   string
+		method string
+		call   func(*DiscoveryListHandler, *gin.Context)
+	}{
+		{"follow", http.MethodPost, (*DiscoveryListHandler).FollowDiscoveryList},
+		{"unfollow", http.MethodDelete, (*DiscoveryListHandler).UnfollowDiscoveryList},
+		{"bookmark", http.MethodPost, (*DiscoveryListHandler).BookmarkDiscoveryList},
+		{"unbookmark", http.MethodDelete, (*DiscoveryListHandler).UnbookmarkDiscoveryList},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+			req := httptest.NewRequest(tt.method, "/api/v1/discovery-lists/"+listID, http.NoBody)
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = req
+			ctx.Params = gin.Params{{Key: "id", Value: listID}}
+			ctx.Set("user_id", "malformed")
+			tt.call(handler, ctx)
+			if recorder.Code != http.StatusUnauthorized {
+				t.Fatalf("expected 401, got %d: %s", recorder.Code, recorder.Body.String())
+			}
+		})
+	}
+}
+
+func TestDiscoveryListMutationsAreIdempotentAtHTTPBoundary(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	listID := uuid.New()
+	userID := uuid.New()
+	tests := []struct {
+		name   string
+		method string
+		setup  func(*MockDiscoveryListRepository)
+		call   func(*DiscoveryListHandler, *gin.Context)
+	}{
+		{"follow", http.MethodPost, func(repo *MockDiscoveryListRepository) {
+			repo.On("GetDiscoveryList", mock.Anything, listID.String(), &userID).Return(&models.DiscoveryListWithStats{}, nil)
+			repo.On("FollowList", mock.Anything, userID, listID).Return(nil)
+		}, (*DiscoveryListHandler).FollowDiscoveryList},
+		{"unfollow", http.MethodDelete, func(repo *MockDiscoveryListRepository) {
+			repo.On("UnfollowList", mock.Anything, userID, listID).Return(nil)
+		}, (*DiscoveryListHandler).UnfollowDiscoveryList},
+		{"bookmark", http.MethodPost, func(repo *MockDiscoveryListRepository) {
+			repo.On("GetDiscoveryList", mock.Anything, listID.String(), &userID).Return(&models.DiscoveryListWithStats{}, nil)
+			repo.On("BookmarkList", mock.Anything, userID, listID).Return(nil)
+		}, (*DiscoveryListHandler).BookmarkDiscoveryList},
+		{"unbookmark", http.MethodDelete, func(repo *MockDiscoveryListRepository) {
+			repo.On("UnbookmarkList", mock.Anything, userID, listID).Return(nil)
+		}, (*DiscoveryListHandler).UnbookmarkDiscoveryList},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := new(MockDiscoveryListRepository)
+			tt.setup(repo)
+			handler := &DiscoveryListHandler{repo: repo}
+			req := httptest.NewRequest(tt.method, "/api/v1/discovery-lists/"+listID.String(), http.NoBody)
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = req
+			ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+			ctx.Set("user_id", userID)
+			tt.call(handler, ctx)
+			if recorder.Code != http.StatusOK {
+				t.Fatalf("expected idempotent 200, got %d: %s", recorder.Code, recorder.Body.String())
+			}
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 // ==============================================================================
 // GetUserFollowedLists Tests
 // ==============================================================================

@@ -1613,15 +1613,15 @@
     "method": "DELETE",
     "path": "/api/v1/discovery-lists/{id}/bookmark",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).UnbookmarkDiscoveryList-fm",
-    "operation_id": "deleteApiV1DiscoveryListsIdBookmark",
-    "contract_level": "transitional"
+    "operation_id": "unbookmarkDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/discovery-lists/{id}/bookmark",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).BookmarkDiscoveryList-fm",
-    "operation_id": "postApiV1DiscoveryListsIdBookmark",
-    "contract_level": "transitional"
+    "operation_id": "bookmarkDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1634,15 +1634,15 @@
     "method": "DELETE",
     "path": "/api/v1/discovery-lists/{id}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).UnfollowDiscoveryList-fm",
-    "operation_id": "deleteApiV1DiscoveryListsIdFollow",
-    "contract_level": "transitional"
+    "operation_id": "unfollowDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/discovery-lists/{id}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).FollowDiscoveryList-fm",
-    "operation_id": "postApiV1DiscoveryListsIdFollow",
-    "contract_level": "transitional"
+    "operation_id": "followDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

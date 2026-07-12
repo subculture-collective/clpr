@@ -34,6 +34,20 @@ func discoveryOptionalUserID(c *gin.Context) *uuid.UUID {
 	return &userID
 }
 
+func discoveryRequiredUserID(c *gin.Context) (uuid.UUID, bool) {
+	userID := discoveryOptionalUserID(c)
+	if userID == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return uuid.Nil, false
+	}
+	return *userID, true
+}
+
+func discoveryEventMetadata(listID uuid.UUID) *string {
+	value := fmt.Sprintf(`{"list_id":%q}`, listID.String())
+	return &value
+}
+
 func discoveryPagination(c *gin.Context) (int, int, bool) {
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	if err != nil || limit < 1 || limit > 100 {
@@ -247,12 +261,10 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -264,7 +276,7 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 	// Verify list exists
 	_, err = h.repo.GetDiscoveryList(ctx, listIDStr, &userID)
 	if err != nil {
-		if err.Error() == "discovery list not found" {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 			return
 		}
@@ -289,6 +301,7 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_follow",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
 			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
 		})
@@ -315,12 +328,10 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -332,10 +343,6 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 	// Unfollow list
 	err = h.repo.UnfollowList(ctx, userID, listID)
 	if err != nil {
-		if err.Error() == "not following this list" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Not following this list"})
-			return
-		}
 		logger.Error("Failed to unfollow discovery list", err, map[string]interface{}{"user_id": userID, "list_id": listID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unfollow list"})
 		return
@@ -349,6 +356,7 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_unfollow",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
 			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
 		})
@@ -375,12 +383,10 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -392,7 +398,7 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 	// Verify list exists
 	_, err = h.repo.GetDiscoveryList(ctx, listIDStr, &userID)
 	if err != nil {
-		if err.Error() == "discovery list not found" {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 			return
 		}
@@ -417,6 +423,7 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_bookmark",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
 			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
 		})
@@ -443,12 +450,10 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -460,10 +465,6 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 	// Unbookmark list
 	err = h.repo.UnbookmarkList(ctx, userID, listID)
 	if err != nil {
-		if err.Error() == "list not bookmarked" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "List not bookmarked"})
-			return
-		}
 		logger.Error("Failed to unbookmark discovery list", err, map[string]interface{}{"user_id": userID, "list_id": listID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unbookmark list"})
 		return
@@ -477,6 +478,7 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_unbookmark",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
 			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
 		})

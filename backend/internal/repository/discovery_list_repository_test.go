@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
+	"github.com/google/uuid"
 )
 
 func TestDiscoveryListRepository_CreateList(t *testing.T) {
@@ -409,10 +409,10 @@ func TestDiscoveryListRepository_FollowAndUnfollow(t *testing.T) {
 		t.Error("Expected IsFollowing to be false")
 	}
 
-	// Unfollow again (should error)
+	// Unfollow again (idempotent)
 	err = repo.UnfollowList(ctx, followerID, list.ID)
-	if err == nil {
-		t.Error("Expected error when unfollowing a list not followed")
+	if err != nil {
+		t.Fatalf("Expected repeated unfollow to succeed: %v", err)
 	}
 }
 
@@ -475,10 +475,10 @@ func TestDiscoveryListRepository_BookmarkAndUnbookmark(t *testing.T) {
 		t.Error("Expected IsBookmarked to be false")
 	}
 
-	// Unbookmark again (should error)
+	// Unbookmark again (idempotent)
 	err = repo.UnbookmarkList(ctx, bookmarkerID, list.ID)
-	if err == nil {
-		t.Error("Expected error when unbookmarking a list not bookmarked")
+	if err != nil {
+		t.Fatalf("Expected repeated unbookmark to succeed: %v", err)
 	}
 }
 

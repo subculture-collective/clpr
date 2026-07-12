@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // Sentinel errors for discovery list operations
@@ -485,14 +485,9 @@ func (r *DiscoveryListRepository) UnfollowList(ctx context.Context, userID, list
 		WHERE user_id = $1 AND playlist_id = $2
 	`
 
-	result, err := r.db.Exec(ctx, query, userID, listID)
+	_, err := r.db.Exec(ctx, query, userID, listID)
 	if err != nil {
 		return fmt.Errorf("failed to unfollow list: %w", err)
-	}
-
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("not following this list")
 	}
 
 	return nil
@@ -521,14 +516,9 @@ func (r *DiscoveryListRepository) UnbookmarkList(ctx context.Context, userID, li
 		WHERE user_id = $1 AND playlist_id = $2
 	`
 
-	result, err := r.db.Exec(ctx, query, userID, listID)
+	_, err := r.db.Exec(ctx, query, userID, listID)
 	if err != nil {
 		return fmt.Errorf("failed to unbookmark list: %w", err)
-	}
-
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("list not bookmarked")
 	}
 
 	return nil
