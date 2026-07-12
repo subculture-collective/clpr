@@ -196,7 +196,11 @@ flowchart LR
 
 ### R2.3 — Restrict operational endpoints
 
-- **State:** TODO
+- **State:** DONE — public liveness/readiness expose status only. Database,
+  cache, webhook, and Prometheus diagnostics moved under
+  `/internal/operations/*` behind a distinct constant-time bearer-token check;
+  missing configuration fails closed. Production profiles require the token and
+  middleware tests cover anonymous, invalid, and trusted service requests.
 - **Owner role:** Backend + platform
 - **Depends on:** R2.1
 - **Work:** Keep minimal liveness/readiness public. Move Prometheus, DB pool, cache, and webhook retry details to an internal listener or protect them with service authentication and network policy. Add endpoint-specific limits.

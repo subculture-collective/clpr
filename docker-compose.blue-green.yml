@@ -28,19 +28,27 @@ services:
             start_period: 10s
         environment:
             - PORT=8080
-            - ENVIRONMENT=blue
+            - ENVIRONMENT=production
+            - DEPLOYMENT_SLOT=blue
             - DB_HOST=postgres
             - DB_PORT=5432
             - DB_USER=${POSTGRES_USER:-clpr}
             - DB_PASSWORD=${POSTGRES_PASSWORD}
             - DB_NAME=${POSTGRES_DB:-clpr_db}
+            - DB_SSLMODE=${DB_SSLMODE:-verify-full}
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - REDIS_DB=0
             - GIN_MODE=release
             - BASE_URL=${BASE_URL:-https://clpr.tv}
+            - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY is required}
+            - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY is required}
+            - OPERATIONAL_AUTH_TOKEN=${OPERATIONAL_AUTH_TOKEN:?OPERATIONAL_AUTH_TOKEN is required}
             - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
             - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
+            - TWITCH_REDIRECT_URI=${TWITCH_REDIRECT_URI:-https://clpr.tv/api/v1/auth/twitch/callback}
+            - OPENSEARCH_URL=${OPENSEARCH_URL:?OPENSEARCH_URL is required}
+            - OPENSEARCH_INSECURE_SKIP_VERIFY=false
             - CLIP_MAX_DURATION_SECONDS=${CLIP_MAX_DURATION_SECONDS}
             - CLIP_RECOMMENDED_DURATION_SECONDS=${CLIP_RECOMMENDED_DURATION_SECONDS}
             - CLIP_MAX_UPLOAD_BYTES=${CLIP_MAX_UPLOAD_BYTES}
@@ -56,6 +64,7 @@ services:
             - CLIP_STORAGE_PUBLIC_BASE_URL=${CLIP_STORAGE_PUBLIC_BASE_URL}
             - CLIP_MEDIA_PUBLIC_BASE_URL=${CLIP_MEDIA_PUBLIC_BASE_URL}
             - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://clpr.tv}
+            - WEBSOCKET_ALLOWED_ORIGINS=${WEBSOCKET_ALLOWED_ORIGINS:-https://clpr.tv}
             - LOG_LEVEL=info
         networks:
             - clpr-network
@@ -109,19 +118,27 @@ services:
             start_period: 10s
         environment:
             - PORT=8080
-            - ENVIRONMENT=green
+            - ENVIRONMENT=production
+            - DEPLOYMENT_SLOT=green
             - DB_HOST=postgres
             - DB_PORT=5432
             - DB_USER=${POSTGRES_USER:-clpr}
             - DB_PASSWORD=${POSTGRES_PASSWORD}
             - DB_NAME=${POSTGRES_DB:-clpr_db}
+            - DB_SSLMODE=${DB_SSLMODE:-verify-full}
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - REDIS_DB=0
             - GIN_MODE=release
             - BASE_URL=${BASE_URL:-https://clpr.tv}
+            - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY is required}
+            - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY is required}
+            - OPERATIONAL_AUTH_TOKEN=${OPERATIONAL_AUTH_TOKEN:?OPERATIONAL_AUTH_TOKEN is required}
             - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
             - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
+            - TWITCH_REDIRECT_URI=${TWITCH_REDIRECT_URI:-https://clpr.tv/api/v1/auth/twitch/callback}
+            - OPENSEARCH_URL=${OPENSEARCH_URL:?OPENSEARCH_URL is required}
+            - OPENSEARCH_INSECURE_SKIP_VERIFY=false
             - CLIP_MAX_DURATION_SECONDS=${CLIP_MAX_DURATION_SECONDS}
             - CLIP_RECOMMENDED_DURATION_SECONDS=${CLIP_RECOMMENDED_DURATION_SECONDS}
             - CLIP_MAX_UPLOAD_BYTES=${CLIP_MAX_UPLOAD_BYTES}
@@ -137,6 +154,7 @@ services:
             - CLIP_STORAGE_PUBLIC_BASE_URL=${CLIP_STORAGE_PUBLIC_BASE_URL}
             - CLIP_MEDIA_PUBLIC_BASE_URL=${CLIP_MEDIA_PUBLIC_BASE_URL}
             - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://clpr.tv}
+            - WEBSOCKET_ALLOWED_ORIGINS=${WEBSOCKET_ALLOWED_ORIGINS:-https://clpr.tv}
             - LOG_LEVEL=info
         networks:
             - clpr-network

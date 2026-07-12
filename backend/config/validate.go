@@ -48,6 +48,9 @@ func (c *Config) Validate() error {
 	if !validMFAKey(c.Security.MFAEncryptionKey) {
 		return fmt.Errorf("MFA_ENCRYPTION_KEY must decode to at least 32 bytes in %s", environment)
 	}
+	if len(strings.TrimSpace(c.Security.OperationalToken)) < 32 {
+		return fmt.Errorf("OPERATIONAL_AUTH_TOKEN must contain at least 32 characters in %s", environment)
+	}
 	if strings.TrimSpace(c.Database.Password) == "" || c.Database.Password == "CHANGEME_SECURE_PASSWORD_HERE" {
 		return fmt.Errorf("DB_PASSWORD must be a non-default secret in %s", environment)
 	}

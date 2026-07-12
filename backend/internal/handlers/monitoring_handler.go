@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/gin-gonic/gin"
 )
 
 // MonitoringHandler handles monitoring and health check endpoints
@@ -21,7 +21,7 @@ func NewMonitoringHandler(redis *redispkg.Client) *MonitoringHandler {
 }
 
 // GetCacheStats returns Redis cache statistics
-// GET /health/cache
+// GET /internal/operations/cache
 func (h *MonitoringHandler) GetCacheStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -69,7 +69,7 @@ func (h *MonitoringHandler) GetCacheStats(c *gin.Context) {
 }
 
 // GetCacheHealth returns a simple cache health check
-// GET /health/cache/check
+// GET /internal/operations/cache/check
 func (h *MonitoringHandler) GetCacheHealth(c *gin.Context) {
 	ctx := c.Request.Context()
 

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 	telemetrypkg "git.subcult.tv/subculture-collective/clpr/pkg/telemetry"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -82,7 +82,7 @@ func main() {
 
 	// Register routes
 	v1 := r.Group("/api/v1")
-	registerPublicRoutes(r, v1, h, svcs, infra)
+	registerPublicRoutes(r, v1, h, svcs, infra, cfg)
 	registerAuthRoutes(v1, h, svcs, infra)
 	registerClipRoutes(v1, h, svcs, infra)
 	registerContentRoutes(v1, h, svcs, infra)

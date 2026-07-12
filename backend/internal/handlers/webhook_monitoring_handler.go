@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
 )
 
 // WebhookMonitoringHandler handles webhook monitoring endpoints
@@ -31,7 +31,7 @@ func NewWebhookMonitoringHandler(
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
-// @Router /health/webhooks [get]
+// @Router /internal/operations/webhooks [get]
 func (h *WebhookMonitoringHandler) GetWebhookRetryStats(c *gin.Context) {
 	// Get retry queue stats (includes queue sizes)
 	stats, err := h.webhookRetryService.GetRetryQueueStats(c.Request.Context())
