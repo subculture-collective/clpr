@@ -5722,6 +5722,131 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/creators/{creatorName}/analytics/overview:
+    get:
+      tags:
+        - Creator Analytics
+      summary: Get public creator analytics totals
+      operationId: getCreatorAnalyticsOverview
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CreatorAnalyticsName'
+      responses:
+        '200':
+          description: Creator analytics totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorAnalyticsOverview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/creators/{creatorName}/analytics/clips:
+    get:
+      tags:
+        - Creator Analytics
+      summary: List a creator's top-performing clips
+      operationId: getCreatorTopClips
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CreatorAnalyticsName'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - views
+              - votes
+              - comments
+            default: votes
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Ranked clips
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorTopClipsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/creators/{creatorName}/analytics/trends:
+    get:
+      tags:
+        - Creator Analytics
+      summary: Get a creator metric time series
+      operationId: getCreatorAnalyticsTrends
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CreatorAnalyticsName'
+        - name: metric
+          in: query
+          schema:
+            type: string
+            enum:
+              - clip_views
+              - votes
+              - comments
+              - favorites
+              - shares
+            default: clip_views
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+      responses:
+        '200':
+          description: Daily metric values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorTrendsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/creators/{creatorName}/analytics/audience:
+    get:
+      tags:
+        - Creator Analytics
+      summary: Get aggregate creator audience device insights
+      description: Returns device categories for views in the last 90 days. Geographic results remain empty until a production GeoIP provider and accuracy policy are configured.
+      operationId: getCreatorAudienceInsights
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CreatorAnalyticsName'
+        - name: limit
+          in: query
+          description: Reserved maximum number of geographic rows once geography is supported.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Aggregate audience insights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorAudienceInsights'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/ads/campaigns:
     get:
       tags:
@@ -8992,98 +9117,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /api/v1/creators/{creatorName}/analytics/audience:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/creators/{creatorName}/analytics/audience
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsCreatornameAnalyticsAudience
-      x-clpr-router-derived: true
-      parameters:
-        - name: creatorName
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/creators/{creatorName}/analytics/clips:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/creators/{creatorName}/analytics/clips
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsCreatornameAnalyticsClips
-      x-clpr-router-derived: true
-      parameters:
-        - name: creatorName
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/creators/{creatorName}/analytics/overview:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/creators/{creatorName}/analytics/overview
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsCreatornameAnalyticsOverview
-      x-clpr-router-derived: true
-      parameters:
-        - name: creatorName
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/creators/{creatorName}/analytics/trends:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /api/v1/creators/{creatorName}/analytics/trends
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsCreatornameAnalyticsTrends
-      x-clpr-router-derived: true
-      parameters:
-        - name: creatorName
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /api/v1/creators/{creatorName}/clips:
     get:
       tags:
@@ -12122,6 +12155,14 @@ components:
         type: string
         minLength: 43
         maxLength: 64
+    CreatorAnalyticsName:
+      name: creatorName
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
     Page:
       name: page
       in: query
@@ -14578,6 +14619,166 @@ components:
             - processing
             - failed
             - expired
+    CreatorAnalyticsOverview:
+      type: object
+      required:
+        - total_clips
+        - total_views
+        - total_upvotes
+        - total_comments
+        - avg_engagement_rate
+        - follower_count
+      properties:
+        total_clips:
+          type: integer
+          minimum: 0
+        total_views:
+          type: integer
+          format: int64
+          minimum: 0
+        total_upvotes:
+          type: integer
+          format: int64
+          minimum: 0
+        total_comments:
+          type: integer
+          format: int64
+          minimum: 0
+        avg_engagement_rate:
+          type: number
+          minimum: 0
+        follower_count:
+          type: integer
+          minimum: 0
+    CreatorTopClip:
+      allOf:
+        - $ref: '#/components/schemas/Clip'
+        - type: object
+          required:
+            - views
+            - engagement_rate
+          properties:
+            views:
+              type: integer
+              format: int64
+              minimum: 0
+            engagement_rate:
+              type: number
+              minimum: 0
+    CreatorTopClipsResponse:
+      type: object
+      required:
+        - clips
+        - count
+      properties:
+        clips:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/CreatorTopClip'
+        count:
+          type: integer
+          minimum: 0
+          maximum: 100
+    TrendDataPoint:
+      type: object
+      required:
+        - date
+        - value
+      properties:
+        date:
+          type: string
+          format: date-time
+        value:
+          type: integer
+          format: int64
+          minimum: 0
+    CreatorTrendsResponse:
+      type: object
+      required:
+        - metric
+        - days
+        - data
+      properties:
+        metric:
+          type: string
+          enum:
+            - clip_views
+            - votes
+            - comments
+            - favorites
+            - shares
+        days:
+          type: integer
+          minimum: 1
+          maximum: 365
+        data:
+          type: array
+          maxItems: 365
+          items:
+            $ref: '#/components/schemas/TrendDataPoint'
+    GeographyMetric:
+      type: object
+      required:
+        - country
+        - view_count
+        - percentage
+      properties:
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+        view_count:
+          type: integer
+          format: int64
+          minimum: 0
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+    DeviceMetric:
+      type: object
+      required:
+        - device_type
+        - view_count
+        - percentage
+      properties:
+        device_type:
+          type: string
+          enum:
+            - mobile
+            - tablet
+            - desktop
+            - unknown
+        view_count:
+          type: integer
+          format: int64
+          minimum: 0
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+    CreatorAudienceInsights:
+      type: object
+      required:
+        - top_countries
+        - device_types
+        - total_views
+      properties:
+        top_countries:
+          type: array
+          maxItems: 0
+          items:
+            $ref: '#/components/schemas/GeographyMetric'
+        device_types:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/DeviceMetric'
+        total_views:
+          type: integer
+          format: int64
+          minimum: 0
     Appeal:
       type: object
       required:

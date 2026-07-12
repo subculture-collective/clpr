@@ -104,7 +104,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	reportHandler := handlers.NewReportHandler(repos.Report, repos.Clip, repos.Comment, repos.User, svcs.Auth)
 	reputationHandler := handlers.NewReputationHandler(svcs.Reputation, svcs.Auth)
 	notificationHandler := handlers.NewNotificationHandler(svcs.Notification, svcs.Email)
-	analyticsHandler := handlers.NewAnalyticsHandler(svcs.Analytics, svcs.Auth)
+	analyticsHandler := handlers.NewAnalyticsHandler(svcs.Analytics)
 	engagementHandler := handlers.NewEngagementHandler(svcs.Engagement, svcs.Auth)
 	auditLogHandler := handlers.NewAuditLogHandler(svcs.AuditLog)
 	subscriptionHandler := handlers.NewSubscriptionHandler(svcs.Subscription)

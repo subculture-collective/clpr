@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // AnalyticsRepository handles analytics data access
@@ -547,22 +547,6 @@ func parseDeviceType(userAgent string) string {
 	return "unknown"
 }
 
-// extractCountryFromIP extracts a country code from an IP address
-// This is a simplified implementation that returns "XX" (unknown) for all IPs
-// In production, this would use a GeoIP database like MaxMind GeoLite2
-func extractCountryFromIP(ipAddress string) string {
-	// Use empty string to represent invalid or missing IP addresses
-	if ipAddress == "" {
-		return "XX" // Unknown country code
-	}
-
-	// For now, return XX (unknown) for all IPs
-	// In production, you would use a GeoIP library:
-	// - github.com/oschwald/geoip2-golang with MaxMind GeoLite2 database
-	// - or use a GeoIP service API
-	return "XX"
-}
-
 // GetCreatorAudienceInsights retrieves audience insights (geography and devices) for a creator
 func (r *AnalyticsRepository) GetCreatorAudienceInsights(ctx context.Context, creatorName string, limit int) (*models.CreatorAudienceInsights, error) {
 	if limit <= 0 || limit > 50 {
@@ -605,7 +589,7 @@ func (r *AnalyticsRepository) GetCreatorAudienceInsights(ctx context.Context, cr
 
 	// Query analytics events for these clips
 	eventsQuery := `
-		SELECT user_agent, ip_address
+		SELECT user_agent
 		FROM analytics_events
 		WHERE event_type = 'clip_view'
 		  AND clip_id = ANY($1)
@@ -618,14 +602,14 @@ func (r *AnalyticsRepository) GetCreatorAudienceInsights(ctx context.Context, cr
 	}
 	defer eventsRows.Close()
 
-	// Count views by device type and country
+	// Count views by device type. Geographic claims are intentionally omitted
+	// until a real GeoIP provider and accuracy policy are configured.
 	deviceCounts := make(map[string]int64)
-	countryCounts := make(map[string]int64)
 	totalViews := int64(0)
 
 	for eventsRows.Next() {
-		var userAgent, ipAddress *string
-		if err := eventsRows.Scan(&userAgent, &ipAddress); err != nil {
+		var userAgent *string
+		if err := eventsRows.Scan(&userAgent); err != nil {
 			return nil, err
 		}
 
@@ -638,14 +622,6 @@ func (r *AnalyticsRepository) GetCreatorAudienceInsights(ctx context.Context, cr
 		}
 		deviceType := parseDeviceType(ua)
 		deviceCounts[deviceType]++
-
-		// Extract country
-		ip := ""
-		if ipAddress != nil {
-			ip = *ipAddress
-		}
-		country := extractCountryFromIP(ip)
-		countryCounts[country]++
 	}
 
 	if err := eventsRows.Err(); err != nil {
@@ -671,42 +647,8 @@ func (r *AnalyticsRepository) GetCreatorAudienceInsights(ctx context.Context, cr
 		return deviceMetrics[i].ViewCount > deviceMetrics[j].ViewCount
 	})
 
-	// Convert country counts to sorted slice (top N countries)
-	type countryCount struct {
-		country string
-		count   int64
-	}
-	countryCountsSlice := make([]countryCount, 0, len(countryCounts))
-	for country, count := range countryCounts {
-		countryCountsSlice = append(countryCountsSlice, countryCount{country, count})
-	}
-
-	// Sort by count (descending)
-	sort.Slice(countryCountsSlice, func(i, j int) bool {
-		return countryCountsSlice[i].count > countryCountsSlice[j].count
-	})
-
-	// Take top N countries
-	topN := limit
-	if topN > len(countryCountsSlice) {
-		topN = len(countryCountsSlice)
-	}
-
-	geographyMetrics := make([]models.GeographyMetric, topN)
-	for i := 0; i < topN; i++ {
-		percentage := 0.0
-		if totalViews > 0 {
-			percentage = float64(countryCountsSlice[i].count) / float64(totalViews) * 100
-		}
-		geographyMetrics[i] = models.GeographyMetric{
-			Country:    countryCountsSlice[i].country,
-			ViewCount:  countryCountsSlice[i].count,
-			Percentage: percentage,
-		}
-	}
-
 	return &models.CreatorAudienceInsights{
-		TopCountries: geographyMetrics,
+		TopCountries: []models.GeographyMetric{},
 		DeviceTypes:  deviceMetrics,
 		TotalViews:   totalViews,
 	}, nil

@@ -1062,7 +1062,7 @@ type DeviceMetric struct {
 
 // CreatorAudienceInsights represents audience insights for a creator
 type CreatorAudienceInsights struct {
-	TopCountries []GeographyMetric `json:"top_countries"` // Top countries by view count
+	TopCountries []GeographyMetric `json:"top_countries"` // Empty until a real GeoIP provider is configured
 	DeviceTypes  []DeviceMetric    `json:"device_types"`  // Distribution by device type
 	TotalViews   int64             `json:"total_views"`   // Total views analyzed
 }

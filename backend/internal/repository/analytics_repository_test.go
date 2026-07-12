@@ -88,45 +88,6 @@ func TestParseDeviceType(t *testing.T) {
 	}
 }
 
-// TestExtractCountryFromIP tests the country extraction from IP addresses
-func TestExtractCountryFromIP(t *testing.T) {
-	tests := []struct {
-		name      string
-		ipAddress string
-		expected  string
-	}{
-		{
-			name:      "Empty IP",
-			ipAddress: "",
-			expected:  "XX",
-		},
-		{
-			name:      "Invalid IP",
-			ipAddress: "invalid",
-			expected:  "XX",
-		},
-		{
-			name:      "Valid IPv4",
-			ipAddress: "192.168.1.1",
-			expected:  "XX", // Currently returns XX for all IPs (simplified implementation)
-		},
-		{
-			name:      "Valid IPv6",
-			ipAddress: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-			expected:  "XX", // Currently returns XX for all IPs (simplified implementation)
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := extractCountryFromIP(tt.ipAddress)
-			if result != tt.expected {
-				t.Errorf("extractCountryFromIP(%q) = %q, expected %q", tt.ipAddress, result, tt.expected)
-			}
-		})
-	}
-}
-
 // Note: Trivial struct field tests removed as they provide no value.
 // Integration tests with actual database operations would be more valuable
 // but are beyond the scope of this implementation.
