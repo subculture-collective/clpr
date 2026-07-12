@@ -3391,8 +3391,8 @@ type RecommendationFeedback struct {
 	UserID       uuid.UUID `json:"user_id" db:"user_id"`
 	ClipID       uuid.UUID `json:"clip_id" db:"clip_id"`
 	FeedbackType string    `json:"feedback_type" db:"feedback_type"` // 'positive', 'negative'
-	Algorithm    string    `json:"algorithm" db:"algorithm"`
-	Score        float64   `json:"score" db:"score"`
+	Algorithm    *string   `json:"algorithm,omitempty" db:"algorithm"`
+	Score        *float64  `json:"score,omitempty" db:"score"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 }
 
@@ -3400,24 +3400,35 @@ type RecommendationFeedback struct {
 type SubmitFeedbackRequest struct {
 	ClipID       uuid.UUID `json:"clip_id" binding:"required"`
 	FeedbackType string    `json:"feedback_type" binding:"required,oneof=positive negative"`
-	Algorithm    *string   `json:"algorithm,omitempty"`
-	Score        *float64  `json:"score,omitempty"`
+	Algorithm    *string   `json:"algorithm,omitempty" binding:"omitempty,oneof=content collaborative hybrid trending"`
+	Score        *float64  `json:"score,omitempty" binding:"omitempty,min=0,max=1"`
 }
 
 // UpdatePreferencesRequest represents a request to update user preferences
 type UpdatePreferencesRequest struct {
-	FavoriteGames       *[]string    `json:"favorite_games,omitempty"`
-	FollowedStreamers   *[]string    `json:"followed_streamers,omitempty"`
-	PreferredCategories *[]string    `json:"preferred_categories,omitempty"`
-	PreferredTags       *[]uuid.UUID `json:"preferred_tags,omitempty"`
+	FavoriteGames       *[]string    `json:"favorite_games,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	FollowedStreamers   *[]string    `json:"followed_streamers,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	PreferredCategories *[]string    `json:"preferred_categories,omitempty" binding:"omitempty,max=5,dive,required,max=100"`
+	PreferredTags       *[]uuid.UUID `json:"preferred_tags,omitempty" binding:"omitempty,max=10"`
+}
+
+func (r *UpdatePreferencesRequest) Validate() error {
+	if r.FavoriteGames == nil && r.FollowedStreamers == nil && r.PreferredCategories == nil && r.PreferredTags == nil {
+		return fmt.Errorf("at least one preference field must be provided")
+	}
+	return nil
+}
+
+type TrackRecommendationViewRequest struct {
+	DwellTime *int `json:"dwell_time,omitempty" binding:"omitempty,min=0,max=86400"`
 }
 
 // OnboardingPreferencesRequest represents initial onboarding preferences
 // At least one preference type (games, streamers, categories, or tags) must be provided
 type OnboardingPreferencesRequest struct {
-	FavoriteGames       []string    `json:"favorite_games,omitempty" binding:"omitempty,max=10,dive,required"`
-	FollowedStreamers   []string    `json:"followed_streamers,omitempty" binding:"omitempty,max=10,dive,required"`
-	PreferredCategories []string    `json:"preferred_categories,omitempty" binding:"omitempty,max=5,dive,required"`
+	FavoriteGames       []string    `json:"favorite_games,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	FollowedStreamers   []string    `json:"followed_streamers,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	PreferredCategories []string    `json:"preferred_categories,omitempty" binding:"omitempty,max=5,dive,required,max=100"`
 	PreferredTags       []uuid.UUID `json:"preferred_tags,omitempty" binding:"omitempty,max=10"`
 }
 

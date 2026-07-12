@@ -10343,109 +10343,80 @@ paths:
 
   /api/v1/recommendations/clips:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/recommendations/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Recommendations]
+      summary: Get personalized clip recommendations
       operationId: getApiV1RecommendationsClips
-      x-clpr-router-derived: true
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: algorithm, in: query, schema: {type: string, enum: [content, collaborative, hybrid, trending], default: hybrid}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Recommendations returned, content: {application/json: {schema: {$ref: '#/components/schemas/RecommendationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/recommendations/feedback:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/recommendations/feedback
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Recommendations]
+      summary: Record recommendation feedback
       operationId: postApiV1RecommendationsFeedback
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RecommendationFeedbackRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Feedback recorded, content: {application/json: {schema: {$ref: '#/components/schemas/RecommendationMessageResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/recommendations/onboarding:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/recommendations/onboarding
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Recommendations]
+      summary: Complete recommendation onboarding
       operationId: postApiV1RecommendationsOnboarding
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OnboardingPreferencesRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Onboarding completed, content: {application/json: {schema: {$ref: '#/components/schemas/UserPreference'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/recommendations/preferences:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/recommendations/preferences
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Recommendations]
+      summary: Get recommendation preferences
       operationId: getApiV1RecommendationsPreferences
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Preferences returned, content: {application/json: {schema: {$ref: '#/components/schemas/UserPreference'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/recommendations/preferences
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Recommendations]
+      summary: Update recommendation preferences
       operationId: putApiV1RecommendationsPreferences
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UpdateRecommendationPreferencesRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Preferences updated, content: {application/json: {schema: {$ref: '#/components/schemas/UserPreference'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/recommendations/track-view/{id}:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/recommendations/track-view/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Recommendations]
+      summary: Track a recommended clip view
       operationId: postApiV1RecommendationsTrackViewId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+      requestBody: {required: false, content: {application/json: {schema: {$ref: '#/components/schemas/TrackRecommendationViewRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: View tracked, content: {application/json: {schema: {$ref: '#/components/schemas/RecommendationMessageResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}:
     get:
@@ -13675,6 +13646,92 @@ components:
           required: [message]
           properties:
             message: {type: string}
+
+    UserPreference:
+      type: object
+      required: [user_id, favorite_games, followed_streamers, preferred_categories, preferred_tags, onboarding_completed, updated_at, created_at]
+      properties:
+        user_id: {type: string, format: uuid}
+        favorite_games: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        followed_streamers: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        preferred_categories: {type: array, maxItems: 5, items: {type: string, minLength: 1, maxLength: 100}}
+        preferred_tags: {type: array, maxItems: 10, items: {type: string, format: uuid}}
+        onboarding_completed: {type: boolean}
+        onboarding_completed_at: {type: string, format: date-time}
+        cold_start_source: {type: string, enum: [onboarding, inferred, default]}
+        updated_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+
+    RecommendationPreferenceFields:
+      type: object
+      properties:
+        favorite_games: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        followed_streamers: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        preferred_categories: {type: array, maxItems: 5, items: {type: string, minLength: 1, maxLength: 100}}
+        preferred_tags: {type: array, maxItems: 10, items: {type: string, format: uuid}}
+
+    OnboardingPreferencesRequest:
+      allOf:
+        - $ref: '#/components/schemas/RecommendationPreferenceFields'
+        - type: object
+          additionalProperties: false
+          minProperties: 1
+
+    UpdateRecommendationPreferencesRequest:
+      allOf:
+        - $ref: '#/components/schemas/RecommendationPreferenceFields'
+        - type: object
+          additionalProperties: false
+          minProperties: 1
+
+    RecommendationFeedbackRequest:
+      type: object
+      additionalProperties: false
+      required: [clip_id, feedback_type]
+      properties:
+        clip_id: {type: string, format: uuid}
+        feedback_type: {type: string, enum: [positive, negative]}
+        algorithm: {type: string, enum: [content, collaborative, hybrid, trending]}
+        score: {type: number, minimum: 0, maximum: 1}
+
+    TrackRecommendationViewRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        dwell_time: {type: integer, minimum: 0, maximum: 86400}
+
+    RecommendationMetadata:
+      type: object
+      required: [algorithm_used, diversity_applied, cold_start, cache_hit, processing_time_ms]
+      properties:
+        algorithm_used: {type: string, enum: [content, collaborative, hybrid, trending]}
+        diversity_applied: {type: boolean}
+        cold_start: {type: boolean}
+        cache_hit: {type: boolean}
+        processing_time_ms: {type: integer, minimum: 0}
+
+    ClipRecommendation:
+      allOf:
+        - $ref: '#/components/schemas/Clip'
+        - type: object
+          required: [score, reason, algorithm]
+          properties:
+            score: {type: number}
+            reason: {type: string}
+            algorithm: {type: string, enum: [content, collaborative, hybrid, trending]}
+
+    RecommendationResponse:
+      type: object
+      required: [recommendations, metadata]
+      properties:
+        recommendations: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/ClipRecommendation'}}
+        metadata: {$ref: '#/components/schemas/RecommendationMetadata'}
+
+    RecommendationMessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
 
     PlaylistListItem:
       allOf:

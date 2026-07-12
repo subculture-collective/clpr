@@ -2391,42 +2391,42 @@
     "path": "/api/v1/recommendations/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).GetRecommendations-fm",
     "operation_id": "getApiV1RecommendationsClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/recommendations/feedback",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).SubmitFeedback-fm",
     "operation_id": "postApiV1RecommendationsFeedback",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/recommendations/onboarding",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).CompleteOnboarding-fm",
     "operation_id": "postApiV1RecommendationsOnboarding",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/recommendations/preferences",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).GetPreferences-fm",
     "operation_id": "getApiV1RecommendationsPreferences",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/recommendations/preferences",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).UpdatePreferences-fm",
     "operation_id": "putApiV1RecommendationsPreferences",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/recommendations/track-view/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).TrackView-fm",
     "operation_id": "postApiV1RecommendationsTrackViewId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",

@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // RecommendationHandler handles recommendation endpoints
@@ -110,19 +110,12 @@ func (h *RecommendationHandler) SubmitFeedback(c *gin.Context) {
 		return
 	}
 
-	// Record interaction based on feedback
-	interactionType := models.InteractionTypeLike
-	if req.FeedbackType == "negative" {
-		interactionType = models.InteractionTypeDislike
+	feedback := &models.RecommendationFeedback{
+		UserID: userID, ClipID: req.ClipID, FeedbackType: req.FeedbackType,
+		Algorithm: req.Algorithm, Score: req.Score,
 	}
 
-	interaction := &models.UserClipInteraction{
-		UserID:          userID,
-		ClipID:          req.ClipID,
-		InteractionType: interactionType,
-	}
-
-	if err := h.service.RecordInteraction(c.Request.Context(), interaction); err != nil {
+	if err := h.service.RecordFeedback(c.Request.Context(), feedback); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to record feedback",
 		})
@@ -192,7 +185,6 @@ func (h *RecommendationHandler) CompleteOnboarding(c *gin.Context) {
 		})
 		return
 	}
-
 	// Validate that at least one preference type is provided
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -255,6 +247,10 @@ func (h *RecommendationHandler) UpdatePreferences(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
+		return
+	}
+	if err := req.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -323,10 +319,13 @@ func (h *RecommendationHandler) TrackView(c *gin.Context) {
 	}
 
 	// Parse request body for dwell time (optional)
-	var body struct {
-		DwellTime *int `json:"dwell_time,omitempty"`
+	var body models.TrackRecommendationViewRequest
+	if c.Request.ContentLength != 0 {
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
-	_ = c.ShouldBindJSON(&body)
 
 	// Record view interaction
 	interaction := &models.UserClipInteraction{
