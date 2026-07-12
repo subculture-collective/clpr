@@ -5575,6 +5575,31 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/users/me/discovery-list-follows:
+    get:
+      tags: [Discovery Lists]
+      summary: List discovery lists followed by the current user
+      operationId: getUserFollowedDiscoveryLists
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000000, default: 0}
+      responses:
+        '200':
+          description: Followed discovery lists
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items: {$ref: '#/components/schemas/DiscoveryListWithStats'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -10853,23 +10878,6 @@ paths:
       summary: GET /api/v1/twitch/oauth/callback
       description: Router-derived operation pending a route-specific response schema.
       operationId: getApiV1TwitchOauthCallback
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/users/me/discovery-list-follows:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/users/me/discovery-list-follows
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1UsersMeDiscoveryListFollows
       x-clpr-router-derived: true
       responses:
         '200':

@@ -503,23 +503,15 @@ func (h *DiscoveryListHandler) GetUserFollowedLists(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse query parameters
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
+	limit, offset, ok := discoveryPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get followed lists from repository

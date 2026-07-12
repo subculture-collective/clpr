@@ -2775,8 +2775,8 @@
     "method": "GET",
     "path": "/api/v1/users/me/discovery-list-follows",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetUserFollowedLists-fm",
-    "operation_id": "getApiV1UsersMeDiscoveryListFollows",
-    "contract_level": "transitional"
+    "operation_id": "getUserFollowedDiscoveryLists",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

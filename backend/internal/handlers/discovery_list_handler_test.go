@@ -812,6 +812,33 @@ func TestGetUserFollowedLists_Unauthenticated(t *testing.T) {
 	}
 }
 
+func TestGetUserFollowedListsRejectsMalformedIdentityAndPagination(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name     string
+		target   string
+		identity interface{}
+		status   int
+	}{
+		{"malformed identity", "/api/v1/users/me/discovery-list-follows", "malformed", http.StatusUnauthorized},
+		{"invalid limit", "/api/v1/users/me/discovery-list-follows?limit=many", uuid.New(), http.StatusBadRequest},
+		{"negative offset", "/api/v1/users/me/discovery-list-follows?offset=-1", uuid.New(), http.StatusBadRequest},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(http.MethodGet, tt.target, http.NoBody)
+			ctx.Set("user_id", tt.identity)
+			handler.GetUserFollowedLists(ctx)
+			if recorder.Code != tt.status {
+				t.Fatalf("expected %d, got %d: %s", tt.status, recorder.Code, recorder.Body.String())
+			}
+		})
+	}
+}
+
 func TestGetUserFollowedLists_WithPagination(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
