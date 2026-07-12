@@ -313,7 +313,7 @@ flowchart LR
 
 ### R3.7 — Bring OpenAPI coverage to supported-route parity
 
-- **State:** IN PROGRESS — all 466 registered release routes have matching operations and schema-bearing responses (482 total documented operations, including debug/spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a non-increasing transitional-contract budget; 6 router-derived operations remain, all in the administrative API family
+- **State:** DONE — all 466 registered release routes have matching explicit operations and schema-bearing responses (482 total documented operations, including debug/spec-only operations); CI enforces parity, response structure, a route-to-handler manifest, and a zero transitional-contract budget
 - **Owner role:** API/backend
 - **Depends on:** R2.4, R3.1-R3.6 scope decisions
 - **Work:** Generate a route-to-operation coverage manifest. Document every supported production route, cookie/CSRF and service auth, schemas, errors, and status codes. Exclude disabled routes explicitly rather than silently.
@@ -428,7 +428,7 @@ flowchart LR
 
 ### R5.7 — Final completion audit and release decision
 
-- **State:** BLOCKED — fail-closed evidence workflow reports 6 transitional administrative API contracts plus missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
+- **State:** BLOCKED — fail-closed evidence workflow reports missing Stripe test-mode, staging load/soak, production restore, and canary/rollback artifacts
 - **Owner role:** Release lead + security + product
 - **Depends on:** R5.1-R5.6
 - **Work:** Re-run every command and acceptance criterion from a clean checkout, inspect evidence rather than relying on prior intent, and complete the go/no-go checklist.
@@ -576,6 +576,7 @@ Before each commit:
 | 2026-07-12 | R2.4/R3.7 email administration | Partial | `0d344bd5`; all seven email-monitoring operations now have explicit administrator-only contracts; malformed pagination, status, recipient, template, and date inputs fail closed, ranges are ordered and capped, sensitive log reads are bounded, alert mutations validate identity and map missing/already-transitioned state to 404, CSRF is documented, and dashboard dependency failures can no longer masquerade as successful partial data. Focused Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 24 to 17 |
 | 2026-07-12 | R2.4/R3.7 NSFW administration | Partial | `d43a5d27`; all five supported NSFW operations now have explicit administrator-only contracts; public HTTPS image destinations are length-bounded and reject credentials, local names, and private/special IPv4/IPv6 literals; provider and metrics failures are redacted; metrics ranges are ordered and capped; moderation flagging failure cannot be reported as success; readiness/config reflect real provider-backed availability; and disabled or unconfigured detection now fails closed instead of returning synthetic safe scores. The advertised scan-clips endpoint generated an inert UUID without scheduling work, so it and the no-op rules fallback are removed from release scope; release routes decrease from 467 to 466 and transitional operations from 17 to 11. Focused Go test/vet and the 84-warning OpenAPI baseline pass |
 | 2026-07-12 | R2.4/R3.7 playlist-script administration | Partial | `7aa7ade6`; all five playlist-script operations now have explicit administrator-only contracts; list queries are bounded at 500 rows, malformed limits fail before repository work, create/update validation errors map to 400, whitespace names fail closed, and strategies that require a seed clip, game list, game, or broadcaster cannot be persisted incomplete. Generation remains real and atomically creates the new playlist, records it, retires the prior generation, and updates run metadata under a script lock. Focused Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 11 to 6 |
+| 2026-07-12 | R2.4/R3.7 verification administration | Done | `80f720bb`; all six creator-verification operations now have explicit administrator-only contracts; malformed status/boolean/pagination/identity/body inputs fail closed, application reads map missing records to 404, repeated or racing decisions map to 409, optional notifications cannot panic, and the status transition, verified-badge trigger, and decision audit row commit together under a row lock. Full Go test/vet and the 84-warning OpenAPI baseline pass; transitional operations reduced from 6 to zero, completing supported-route contract parity |
 | 2026-07-12 | R5.1/R5.3 reliability | Done | `79a38448`, `411580da`, `dd153df9`, `f6395751`; 20-run concurrent lease proof, bounded workers, database timeouts, and real dependency chaos/recovery pass |
 | 2026-07-12 | R5.2 SLOs/runbooks | Partial | `f9d76778`; promtool validates 17 recording/alert rules; seven critical journey SLOs link to repository-owned runbooks |
 | 2026-07-12 | R5.4 performance suites | Implemented/external gate | `53cb599b`; k6 validates baseline/stress/soak scenarios and thresholds; staging execution awaits disposable fixtures |
