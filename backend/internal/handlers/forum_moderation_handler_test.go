@@ -115,6 +115,53 @@ func TestLockThread_Unauthorized(t *testing.T) {
 	}
 }
 
+func TestForumAdminMutationsRejectMalformedIdentity(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, tc := range []struct {
+		path string
+		body string
+		call func(*ForumModerationHandler, *gin.Context)
+	}{
+		{"/api/v1/admin/forum/threads/" + uuid.NewString() + "/lock", `{"locked":true}`, (*ForumModerationHandler).LockThread},
+		{"/api/v1/admin/forum/threads/" + uuid.NewString() + "/pin", `{"pinned":true}`, (*ForumModerationHandler).PinThread},
+		{"/api/v1/admin/forum/threads/" + uuid.NewString() + "/delete", `{"reason":"remove thread"}`, (*ForumModerationHandler).DeleteThread},
+	} {
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(tc.body))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		ctx.Params = gin.Params{{Key: "id", Value: uuid.NewString()}}
+		ctx.Set("user_id", "not-a-uuid")
+		tc.call(&ForumModerationHandler{}, ctx)
+		if recorder.Code != http.StatusUnauthorized {
+			t.Fatalf("%s: expected 401, got %d", tc.path, recorder.Code)
+		}
+	}
+}
+
+func TestForumAdminListsRejectMalformedFilters(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, tc := range []struct {
+		path string
+		call func(*ForumModerationHandler, *gin.Context)
+	}{
+		{"/api/v1/admin/forum/flagged?status=unknown", (*ForumModerationHandler).GetFlaggedContent},
+		{"/api/v1/admin/forum/flagged?limit=zero", (*ForumModerationHandler).GetFlaggedContent},
+		{"/api/v1/admin/forum/moderation-log?action_type=delete_all", (*ForumModerationHandler).GetModerationLog},
+		{"/api/v1/admin/forum/moderation-log?target_type=clip", (*ForumModerationHandler).GetModerationLog},
+		{"/api/v1/admin/forum/bans?active=yes", (*ForumModerationHandler).GetUserBans},
+		{"/api/v1/admin/forum/bans?limit=101", (*ForumModerationHandler).GetUserBans},
+	} {
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = httptest.NewRequest(http.MethodGet, tc.path, http.NoBody)
+		tc.call(&ForumModerationHandler{}, ctx)
+		if recorder.Code != http.StatusBadRequest {
+			t.Fatalf("%s: expected 400, got %d", tc.path, recorder.Code)
+		}
+	}
+}
+
 // TestBanUser_InvalidUserID tests that invalid user IDs are rejected
 func TestBanUser_InvalidUserID(t *testing.T) {
 	gin.SetMode(gin.TestMode)

@@ -6416,14 +6416,17 @@ paths:
 
   /api/v1/admin/forum/bans:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/forum/bans
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Forum]
+      summary: List legacy forum moderation bans
+      description: Returns existing forum moderation records; creation is excluded from launch because scoped enforcement is unavailable. Requires moderator or administrator MFA.
       operationId: getApiV1AdminForumBans
-      x-clpr-router-derived: true
+      parameters:
+        - {name: active, in: query, schema: {type: boolean, default: true}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Ban records
+          content: {application/json: {schema: {$ref: '#/components/schemas/ForumBanListResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6433,14 +6436,17 @@ paths:
 
   /api/v1/admin/forum/flagged:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/forum/flagged
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Forum]
+      summary: List visible flagged forum content
+      description: Excludes deleted, hidden, and spam targets. Requires moderator or administrator MFA.
       operationId: getApiV1AdminForumFlagged
-      x-clpr-router-derived: true
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending, reviewed, resolved, dismissed], default: pending}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Flagged content
+          content: {application/json: {schema: {$ref: '#/components/schemas/ForumFlaggedListResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6450,14 +6456,18 @@ paths:
 
   /api/v1/admin/forum/moderation-log:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/forum/moderation-log
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Forum]
+      summary: List forum moderation actions
+      description: Requires moderator or administrator MFA.
       operationId: getApiV1AdminForumModerationLog
-      x-clpr-router-derived: true
+      parameters:
+        - {name: action_type, in: query, schema: {type: string, enum: [lock_thread, unlock_thread, pin_thread, unpin_thread, delete_thread, ban_user, unban_user]}}
+        - {name: target_type, in: query, schema: {type: string, enum: [thread, reply, user]}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Moderation actions
+          content: {application/json: {schema: {$ref: '#/components/schemas/ForumModerationLogResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6467,93 +6477,82 @@ paths:
 
   /api/v1/admin/forum/threads/{id}/delete:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/forum/threads/{id}/delete
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Forum]
+      summary: Soft-delete a forum thread
+      description: Atomically deletes a visible thread and records the moderation action. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminForumThreadsIdDelete
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ForumDeleteThreadRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Thread deleted
+          content: {application/json: {schema: {$ref: '#/components/schemas/ForumModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/forum/threads/{id}/lock:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/forum/threads/{id}/lock
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Forum]
+      summary: Set forum thread lock state
+      description: Atomically changes lock state and records the moderation action. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminForumThreadsIdLock
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ForumLockThreadRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Lock state updated
+          content: {application/json: {schema: {$ref: '#/components/schemas/ForumModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/forum/threads/{id}/pin:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/forum/threads/{id}/pin
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Forum]
+      summary: Set forum thread pin state
+      description: Atomically changes pin state and records the moderation action. Requires moderator or administrator MFA and CSRF protection.
       operationId: postApiV1AdminForumThreadsIdPin
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ForumPinThreadRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Pin state updated
+          content: {application/json: {schema: {$ref: '#/components/schemas/ForumModerationMutationResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/forum/users/{id}/ban:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/forum/users/{id}/ban
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1AdminForumUsersIdBan
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -12008,6 +12007,107 @@ components:
       properties:
         success: {type: boolean, const: true}
         data: {type: array, items: {$ref: '#/components/schemas/BlacklistedTag'}}
+
+    ForumModerationMutationResponse:
+      type: object
+      required: [success, status]
+      properties:
+        success: {type: boolean, const: true}
+        status: {type: string, enum: [lock_thread, unlock_thread, pin_thread, unpin_thread, deleted]}
+
+    ForumLockThreadRequest:
+      type: object
+      required: [locked]
+      additionalProperties: false
+      properties:
+        locked: {type: boolean}
+        reason: {type: string, maxLength: 1000}
+
+    ForumPinThreadRequest:
+      type: object
+      required: [pinned]
+      additionalProperties: false
+      properties:
+        pinned: {type: boolean}
+        reason: {type: string, maxLength: 1000}
+
+    ForumDeleteThreadRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: {type: string, minLength: 3, maxLength: 1000}
+
+    ForumFlaggedContent:
+      type: object
+      required: [id, target_type, target_id, reason, status, user_id, username, content, flag_count, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        target_type: {type: string, enum: [thread, reply]}
+        target_id: {type: string, format: uuid}
+        reason: {type: string}
+        details: {type: string}
+        status: {type: string, enum: [pending, reviewed, resolved, dismissed]}
+        user_id: {type: string, format: uuid}
+        username: {type: string}
+        title: {type: string}
+        content: {type: string}
+        flag_count: {type: integer, minimum: 0}
+        created_at: {type: string, format: date-time}
+        reviewed_by: {type: string, format: uuid}
+        reviewed_at: {type: string, format: date-time}
+
+    ForumFlaggedListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/ForumFlaggedContent'}}
+        meta: {type: object, additionalProperties: true}
+
+    ForumModerationAction:
+      type: object
+      required: [id, moderator_id, moderator, action_type, target_type, target_id, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        moderator_id: {type: string, format: uuid}
+        moderator: {type: string}
+        action_type: {type: string}
+        target_type: {type: string, enum: [thread, reply, user]}
+        target_id: {type: string, format: uuid}
+        reason: {type: string}
+        metadata: {type: string}
+        created_at: {type: string, format: date-time}
+
+    ForumModerationLogResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/ForumModerationAction'}}
+        meta: {type: object, additionalProperties: true}
+
+    ForumBanRecord:
+      type: object
+      required: [id, user_id, username, banned_by, moderator, reason, active, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        username: {type: string}
+        banned_by: {type: string, format: uuid}
+        moderator: {type: string}
+        reason: {type: string}
+        expires_at: {type: string, format: date-time}
+        active: {type: boolean}
+        created_at: {type: string, format: date-time}
+
+    ForumBanListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/ForumBanRecord'}}
+        meta: {type: object, additionalProperties: true}
 
     AccountTypeConversion:
       type: object

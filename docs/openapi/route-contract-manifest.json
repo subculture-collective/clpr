@@ -305,49 +305,42 @@
     "path": "/api/v1/admin/forum/bans",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).GetUserBans-fm",
     "operation_id": "getApiV1AdminForumBans",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/forum/flagged",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).GetFlaggedContent-fm",
     "operation_id": "getApiV1AdminForumFlagged",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/forum/moderation-log",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).GetModerationLog-fm",
     "operation_id": "getApiV1AdminForumModerationLog",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/forum/threads/{id}/delete",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).DeleteThread-fm",
     "operation_id": "postApiV1AdminForumThreadsIdDelete",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/forum/threads/{id}/lock",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).LockThread-fm",
     "operation_id": "postApiV1AdminForumThreadsIdLock",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/forum/threads/{id}/pin",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).PinThread-fm",
     "operation_id": "postApiV1AdminForumThreadsIdPin",
-    "contract_level": "transitional"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/forum/users/{id}/ban",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).BanUser-fm",
-    "operation_id": "postApiV1AdminForumUsersIdBan",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

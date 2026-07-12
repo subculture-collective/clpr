@@ -241,7 +241,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminForum.POST("/threads/:id/lock", h.ForumModeration.LockThread)
 			adminForum.POST("/threads/:id/pin", h.ForumModeration.PinThread)
 			adminForum.POST("/threads/:id/delete", h.ForumModeration.DeleteThread)
-			adminForum.POST("/users/:id/ban", h.ForumModeration.BanUser)
 			adminForum.GET("/moderation-log", h.ForumModeration.GetModerationLog)
 			adminForum.GET("/bans", h.ForumModeration.GetUserBans)
 		}

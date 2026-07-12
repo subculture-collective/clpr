@@ -652,6 +652,7 @@ counts that included planned or missing artifacts.
 #### 10.1 Forum System
 
 - **Status**: 🟡 partial | **Backend**: `/api/v1/forum/*` | **Frontend**: forum pages and components
+- **Launch limitation**: Forum-scoped user bans are unavailable. The previous administrative route changed the platform-wide account ban flag while the separate forum-ban records were not enforced, so it is excluded from release routing until scoped enforcement and unban lifecycle tests exist. Platform account bans remain available through administrator-only user management.
 - **Features**: Threads, replies, voting, search, analytics, moderation
 - **Gaps**: Categories, thread subscriptions
 
