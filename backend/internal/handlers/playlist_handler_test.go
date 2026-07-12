@@ -87,3 +87,27 @@ func TestPlaylistUpdateRejectsEmptyBody(t *testing.T) {
 		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
 	}
 }
+
+func TestPlaylistMembershipInputsFailClosed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	playlistID, clipID := uuid.New(), uuid.New()
+	for _, tc := range []struct {
+		name, method, body string
+		identity           interface{}
+		invoke             func(*PlaylistHandler, *gin.Context)
+		status             int
+	}{
+		{"identity", http.MethodPost, `{"clip_ids":["` + clipID.String() + `"]}`, "bad", func(h *PlaylistHandler, c *gin.Context) { h.AddClipsToPlaylist(c) }, http.StatusUnauthorized},
+		{"duplicate add", http.MethodPost, `{"clip_ids":["` + clipID.String() + `","` + clipID.String() + `"]}`, uuid.New(), func(h *PlaylistHandler, c *gin.Context) { h.AddClipsToPlaylist(c) }, http.StatusBadRequest},
+		{"duplicate reorder", http.MethodPut, `{"clip_ids":["` + clipID.String() + `","` + clipID.String() + `"]}`, uuid.New(), func(h *PlaylistHandler, c *gin.Context) { h.ReorderPlaylistClips(c) }, http.StatusBadRequest},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, w := playlistTestContext(tc.method, "/api/v1/playlists/"+playlistID.String()+"/clips", []byte(tc.body), tc.identity)
+			c.Params = gin.Params{{Key: "id", Value: playlistID.String()}}
+			tc.invoke(NewPlaylistHandler(nil), c)
+			if w.Code != tc.status {
+				t.Fatalf("expected %d, got %d: %s", tc.status, w.Code, w.Body.String())
+			}
+		})
+	}
+}

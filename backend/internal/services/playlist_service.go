@@ -14,24 +14,35 @@ import (
 )
 
 var (
-	ErrPlaylistValidation = errors.New("invalid playlist request")
-	ErrPlaylistNotFound   = errors.New("playlist not found")
-	ErrPlaylistPrivate    = errors.New("playlist is private")
+	ErrPlaylistValidation         = errors.New("invalid playlist request")
+	ErrPlaylistNotFound           = errors.New("playlist not found")
+	ErrPlaylistPrivate            = errors.New("playlist is private")
+	ErrPlaylistClipNotFound       = repository.ErrPlaylistClipNotFound
+	ErrPlaylistClipLimit          = repository.ErrPlaylistClipLimit
+	ErrPlaylistMembershipMismatch = repository.ErrPlaylistMembershipMismatch
 )
+
+type playlistMembershipWriter interface {
+	Add(context.Context, uuid.UUID, []uuid.UUID) error
+	Remove(context.Context, uuid.UUID, uuid.UUID) error
+	Reorder(context.Context, uuid.UUID, []uuid.UUID) error
+}
 
 // PlaylistService handles business logic for playlists
 type PlaylistService struct {
-	playlistRepo *repository.PlaylistRepository
-	clipRepo     *repository.ClipRepository
-	baseURL      string
+	playlistRepo     *repository.PlaylistRepository
+	clipRepo         *repository.ClipRepository
+	baseURL          string
+	membershipWriter playlistMembershipWriter
 }
 
 // NewPlaylistService creates a new PlaylistService
 func NewPlaylistService(playlistRepo *repository.PlaylistRepository, clipRepo *repository.ClipRepository, baseURL string) *PlaylistService {
 	return &PlaylistService{
-		playlistRepo: playlistRepo,
-		clipRepo:     clipRepo,
-		baseURL:      baseURL,
+		playlistRepo:     playlistRepo,
+		clipRepo:         clipRepo,
+		baseURL:          baseURL,
+		membershipWriter: repository.NewPlaylistMembershipWriter(playlistRepo),
 	}
 }
 
@@ -400,6 +411,9 @@ func (s *PlaylistService) GetPlaylistOfTheDay(ctx context.Context, userID *uuid.
 
 // AddClipsToPlaylist adds multiple clips to a playlist
 func (s *PlaylistService) AddClipsToPlaylist(ctx context.Context, playlistID, userID uuid.UUID, clipIDs []uuid.UUID) error {
+	if len(clipIDs) == 0 || hasDuplicateUUIDs(clipIDs) {
+		return ErrPlaylistMembershipMismatch
+	}
 	// Get the playlist to verify ownership
 	playlist, err := s.playlistRepo.GetByID(ctx, playlistID)
 	if err != nil {
@@ -418,49 +432,7 @@ func (s *PlaylistService) AddClipsToPlaylist(ctx context.Context, playlistID, us
 		return fmt.Errorf("unauthorized: user does not have permission to edit this playlist")
 	}
 
-	// Get current clip count
-	currentCount, err := s.playlistRepo.GetClipCount(ctx, playlistID)
-	if err != nil {
-		return fmt.Errorf("failed to get clip count: %w", err)
-	}
-
-	// Add clips one by one, checking for duplicates and existence
-	addedCount := 0
-	for _, clipID := range clipIDs {
-		// Check if clip exists
-		clip, err := s.clipRepo.GetByID(ctx, clipID)
-		if err != nil {
-			return fmt.Errorf("failed to check clip existence: %w", err)
-		}
-		if clip == nil {
-			return fmt.Errorf("clip %s not found", clipID)
-		}
-
-		// Check if clip is already in playlist
-		exists, err := s.playlistRepo.HasClip(ctx, playlistID, clipID)
-		if err != nil {
-			return fmt.Errorf("failed to check if clip exists in playlist: %w", err)
-		}
-		if exists {
-			// Skip duplicate clips
-			continue
-		}
-
-		// Check if adding this clip would exceed the limit
-		if currentCount+addedCount >= 1000 {
-			return fmt.Errorf("playlist cannot exceed 1000 clips")
-		}
-
-		// Add clip with order index based on actual position
-		orderIndex := currentCount + addedCount
-		err = s.playlistRepo.AddClip(ctx, playlistID, clipID, orderIndex)
-		if err != nil {
-			return fmt.Errorf("failed to add clip to playlist: %w", err)
-		}
-		addedCount++
-	}
-
-	return nil
+	return s.membershipWriter.Add(ctx, playlistID, clipIDs)
 }
 
 // RemoveClipFromPlaylist removes a clip from a playlist
@@ -483,16 +455,14 @@ func (s *PlaylistService) RemoveClipFromPlaylist(ctx context.Context, playlistID
 		return fmt.Errorf("unauthorized: user does not have permission to edit this playlist")
 	}
 
-	err = s.playlistRepo.RemoveClip(ctx, playlistID, clipID)
-	if err != nil {
-		return fmt.Errorf("failed to remove clip from playlist: %w", err)
-	}
-
-	return nil
+	return s.membershipWriter.Remove(ctx, playlistID, clipID)
 }
 
 // ReorderPlaylistClips updates the order of clips in a playlist
 func (s *PlaylistService) ReorderPlaylistClips(ctx context.Context, playlistID, userID uuid.UUID, clipIDs []uuid.UUID) error {
+	if len(clipIDs) == 0 || hasDuplicateUUIDs(clipIDs) {
+		return ErrPlaylistMembershipMismatch
+	}
 	// Get the playlist to verify ownership
 	playlist, err := s.playlistRepo.GetByID(ctx, playlistID)
 	if err != nil {
@@ -511,23 +481,21 @@ func (s *PlaylistService) ReorderPlaylistClips(ctx context.Context, playlistID, 
 		return fmt.Errorf("unauthorized: user does not have permission to edit this playlist")
 	}
 
-	// Verify all clips exist in the playlist
-	for _, clipID := range clipIDs {
-		exists, err := s.playlistRepo.HasClip(ctx, playlistID, clipID)
-		if err != nil {
-			return fmt.Errorf("failed to check if clip exists in playlist: %w", err)
-		}
-		if !exists {
-			return fmt.Errorf("clip %s not found in playlist", clipID)
-		}
-	}
+	return s.membershipWriter.Reorder(ctx, playlistID, clipIDs)
+}
 
-	err = s.playlistRepo.ReorderClips(ctx, playlistID, clipIDs)
-	if err != nil {
-		return fmt.Errorf("failed to reorder clips: %w", err)
+func hasDuplicateUUIDs(ids []uuid.UUID) bool {
+	seen := make(map[uuid.UUID]struct{}, len(ids))
+	for _, id := range ids {
+		if id == uuid.Nil {
+			return true
+		}
+		if _, exists := seen[id]; exists {
+			return true
+		}
+		seen[id] = struct{}{}
 	}
-
-	return nil
+	return false
 }
 
 // LikePlaylist adds a like to a playlist

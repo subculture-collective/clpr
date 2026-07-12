@@ -2250,22 +2250,22 @@
     "method": "POST",
     "path": "/api/v1/playlists/{id}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).AddClipsToPlaylist-fm",
-    "operation_id": "postApiV1PlaylistsIdClips",
-    "contract_level": "transitional"
+    "operation_id": "addPlaylistClips",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/playlists/{id}/clips/order",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ReorderPlaylistClips-fm",
-    "operation_id": "putApiV1PlaylistsIdClipsOrder",
-    "contract_level": "transitional"
+    "operation_id": "reorderPlaylistClips",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/playlists/{id}/clips/{clip_id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).RemoveClipFromPlaylist-fm",
-    "operation_id": "deleteApiV1PlaylistsIdClipsClipId",
-    "contract_level": "transitional"
+    "operation_id": "removePlaylistClip",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

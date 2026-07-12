@@ -614,28 +614,8 @@ func (h *PlaylistHandler) ListBookmarkedPlaylists(c *gin.Context) {
 
 // AddClipsToPlaylist handles POST /api/playlists/:id/clips
 func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -660,7 +640,7 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -689,7 +669,7 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "playlist cannot exceed 1000 clips" {
+		if errors.Is(err, services.ErrPlaylistClipLimit) {
 			c.JSON(http.StatusBadRequest, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -697,6 +677,10 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 					Message: "Playlist cannot exceed 1000 clips",
 				},
 			})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistClipNotFound) || errors.Is(err, services.ErrPlaylistMembershipMismatch) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid clip membership request"}})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
@@ -719,28 +703,8 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 
 // RemoveClipFromPlaylist handles DELETE /api/playlists/:id/clips/:clip_id
 func (h *PlaylistHandler) RemoveClipFromPlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -795,7 +759,7 @@ func (h *PlaylistHandler) RemoveClipFromPlaylist(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "clip not found in playlist" {
+		if errors.Is(err, services.ErrPlaylistClipNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -825,28 +789,8 @@ func (h *PlaylistHandler) RemoveClipFromPlaylist(c *gin.Context) {
 
 // ReorderPlaylistClips handles PUT /api/playlists/:id/clips/order
 func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -871,7 +815,7 @@ func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -898,6 +842,10 @@ func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
 					Message: "You don't have permission to edit this playlist",
 				},
 			})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistMembershipMismatch) {
+			c.JSON(http.StatusConflict, StandardResponse{Success: false, Error: &ErrorInfo{Code: "MEMBERSHIP_MISMATCH", Message: "Clip IDs must exactly match playlist membership"}})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{

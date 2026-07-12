@@ -3700,12 +3700,12 @@ type UpdatePlaylistScriptRequest struct {
 
 // AddClipsToPlaylistRequest represents the request to add clips to a playlist
 type AddClipsToPlaylistRequest struct {
-	ClipIDs []uuid.UUID `json:"clip_ids" binding:"required,min=1,max=100"`
+	ClipIDs []uuid.UUID `json:"clip_ids" binding:"required,min=1,max=100,unique"`
 }
 
 // ReorderPlaylistClipsRequest represents the request to reorder clips in a playlist
 type ReorderPlaylistClipsRequest struct {
-	ClipIDs []uuid.UUID `json:"clip_ids" binding:"required,min=1"`
+	ClipIDs []uuid.UUID `json:"clip_ids" binding:"required,min=1,max=1000,unique"`
 }
 
 // Playlist visibility constants
