@@ -192,36 +192,36 @@
     "method": "GET",
     "path": "/api/v1/admin/discovery-lists",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminListDiscoveryLists-fm",
-    "operation_id": "getApiV1AdminDiscoveryLists",
-    "contract_level": "transitional"
+    "operation_id": "adminListDiscoveryLists",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/discovery-lists",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminCreateDiscoveryList-fm",
-    "operation_id": "postApiV1AdminDiscoveryLists",
-    "contract_level": "transitional"
+    "operation_id": "adminCreateDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/discovery-lists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminDeleteDiscoveryList-fm",
-    "operation_id": "deleteApiV1AdminDiscoveryListsId",
-    "contract_level": "transitional"
+    "operation_id": "adminDeleteDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/discovery-lists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryList-fm",
-    "operation_id": "getApiV1AdminDiscoveryListsId",
-    "contract_level": "transitional"
+    "operation_id": "adminGetDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/admin/discovery-lists/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminUpdateDiscoveryList-fm",
-    "operation_id": "putApiV1AdminDiscoveryListsId",
-    "contract_level": "transitional"
+    "operation_id": "adminUpdateDiscoveryList",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

@@ -131,7 +131,7 @@ func TestDiscoveryListRepository_UpdateList(t *testing.T) {
 	newDesc := "Updated description"
 	isFeatured := true
 
-	updated, err := repo.UpdateList(ctx, list.ID, &newName, &newDesc, &isFeatured)
+	updated, err := repo.UpdateList(ctx, list.ID, &newName, &newDesc, &isFeatured, nil)
 	if err != nil {
 		t.Fatalf("Failed to update discovery list: %v", err)
 	}
@@ -147,13 +147,13 @@ func TestDiscoveryListRepository_UpdateList(t *testing.T) {
 	}
 
 	// Test updating non-existent list
-	_, err = repo.UpdateList(ctx, uuid.New(), &newName, nil, nil)
+	_, err = repo.UpdateList(ctx, uuid.New(), &newName, nil, nil, nil)
 	if err != ErrDiscoveryListNotFound {
 		t.Errorf("Expected ErrDiscoveryListNotFound, got %v", err)
 	}
 
 	// Test updating with no fields (should return error)
-	_, err = repo.UpdateList(ctx, list.ID, nil, nil, nil)
+	_, err = repo.UpdateList(ctx, list.ID, nil, nil, nil, nil)
 	if err == nil {
 		t.Error("Expected error when updating with no fields, got nil")
 	}

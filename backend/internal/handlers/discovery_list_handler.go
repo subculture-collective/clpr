@@ -49,7 +49,11 @@ func discoveryEventMetadata(listID uuid.UUID) *string {
 }
 
 func discoveryPagination(c *gin.Context) (int, int, bool) {
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	return discoveryPaginationWithDefault(c, 20)
+}
+
+func discoveryPaginationWithDefault(c *gin.Context, defaultLimit int) (int, int, bool) {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultLimit)))
 	if err != nil || limit < 1 || limit > 100 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer between 1 and 100"})
 		return 0, 0, false
@@ -543,15 +547,9 @@ func (h *DiscoveryListHandler) AdminListDiscoveryLists(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse query parameters
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
+	limit, offset, ok := discoveryPaginationWithDefault(c, 50)
+	if !ok {
+		return
 	}
 
 	// Get all lists from repository
@@ -581,22 +579,25 @@ func (h *DiscoveryListHandler) AdminCreateDiscoveryList(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse request body
 	var req models.CreateDiscoveryListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+	req.Name = strings.TrimSpace(req.Name)
 
 	// Generate slug from name
 	slug := pkgutils.Slugify(req.Name)
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name must contain letters or numbers"})
+		return
+	}
 
 	// Set default for IsFeatured
 	isFeatured := false
@@ -613,6 +614,10 @@ func (h *DiscoveryListHandler) AdminCreateDiscoveryList(c *gin.Context) {
 	// Create list
 	list, err := h.repo.CreateDiscoveryList(ctx, req.Name, slug, description, isFeatured, userID)
 	if err != nil {
+		if errors.Is(err, repository.ErrDiscoveryListConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "A discovery list with this slug already exists"})
+			return
+		}
 		logger.Error("Failed to create discovery list", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create discovery list"})
 		return
@@ -649,12 +654,24 @@ func (h *DiscoveryListHandler) AdminUpdateDiscoveryList(c *gin.Context) {
 	// Parse request body
 	var req models.UpdateDiscoveryListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
+	}
+	if req.Name == nil && req.Description == nil && req.IsFeatured == nil && req.IsActive == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field must be provided"})
+		return
+	}
+	if req.Name != nil {
+		trimmed := strings.TrimSpace(*req.Name)
+		if trimmed == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Name cannot be blank"})
+			return
+		}
+		req.Name = &trimmed
 	}
 
 	// Update list
-	list, err := h.repo.UpdateDiscoveryList(ctx, listID, req.Name, req.Description, req.IsFeatured)
+	list, err := h.repo.UpdateDiscoveryList(ctx, listID, req.Name, req.Description, req.IsFeatured, req.IsActive)
 	if err != nil {
 		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})

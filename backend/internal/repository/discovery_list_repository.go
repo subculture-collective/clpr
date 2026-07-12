@@ -8,6 +8,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -15,6 +16,8 @@ import (
 var (
 	// ErrDiscoveryListNotFound is returned when a discovery list is not found
 	ErrDiscoveryListNotFound = errors.New("discovery list not found")
+	// ErrDiscoveryListConflict is returned when a list slug already exists.
+	ErrDiscoveryListConflict = errors.New("discovery list already exists")
 	// ErrClipNotFoundInList is returned when a clip is not found in a discovery list
 	ErrClipNotFoundInList = errors.New("clip not found in list")
 )
@@ -667,6 +670,10 @@ func (r *DiscoveryListRepository) CreateList(ctx context.Context, name, slug, de
 		&list.IsFeatured, &list.CreatedAt, &list.UpdatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, ErrDiscoveryListConflict
+		}
 		return nil, fmt.Errorf("failed to create discovery list: %w", err)
 	}
 
@@ -678,9 +685,9 @@ func (r *DiscoveryListRepository) CreateList(ctx context.Context, name, slug, de
 }
 
 // UpdateList updates an existing discovery list
-func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error) {
+func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error) {
 	// Check if at least one field is being updated
-	if name == nil && description == nil && isFeatured == nil {
+	if name == nil && description == nil && isFeatured == nil && isActive == nil {
 		return nil, fmt.Errorf("at least one field must be provided for update")
 	}
 
@@ -704,18 +711,26 @@ func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UU
 		args = append(args, *isFeatured)
 		argIdx++
 	}
+	if isActive != nil {
+		setClauses = append(setClauses, fmt.Sprintf("visibility = $%d", argIdx))
+		visibility := "private"
+		if *isActive {
+			visibility = "public"
+		}
+		args = append(args, visibility)
+	}
 
 	// Join all SET clauses
 	query := "UPDATE playlists SET " + setClauses[0]
 	for i := 1; i < len(setClauses); i++ {
 		query += ", " + setClauses[i]
 	}
-	query += " WHERE id = $1 AND is_curated = true RETURNING id, user_id as created_by, title as name, slug, description, is_featured, created_at, updated_at"
+	query += " WHERE id = $1 AND is_curated = true RETURNING id, user_id as created_by, title as name, slug, description, is_featured, visibility = 'public', created_at, updated_at"
 
 	var list models.DiscoveryList
 	err := r.db.QueryRow(ctx, query, args...).Scan(
 		&list.ID, &list.CreatedBy, &list.Name, &list.Slug, &list.Description,
-		&list.IsFeatured, &list.CreatedAt, &list.UpdatedAt,
+		&list.IsFeatured, &list.IsActive, &list.CreatedAt, &list.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -724,7 +739,6 @@ func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UU
 		return nil, fmt.Errorf("failed to update discovery list: %w", err)
 	}
 
-	list.IsActive = true
 	list.DisplayOrder = 0
 
 	return &list, nil
@@ -896,8 +910,8 @@ func (r *DiscoveryListRepository) CreateDiscoveryList(ctx context.Context, name,
 }
 
 // UpdateDiscoveryList is an alias for UpdateList
-func (r *DiscoveryListRepository) UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error) {
-	return r.UpdateList(ctx, listID, name, description, isFeatured)
+func (r *DiscoveryListRepository) UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error) {
+	return r.UpdateList(ctx, listID, name, description, isFeatured, isActive)
 }
 
 // DeleteDiscoveryList is an alias for DeleteList

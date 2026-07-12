@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -20,6 +22,111 @@ import (
 
 type MockDiscoveryListRepository struct {
 	mock.Mock
+}
+
+func TestAdminDiscoveryListCRUDContracts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("list rejects invalid pagination", func(t *testing.T) {
+		handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/admin/discovery-lists?limit=many", http.NoBody)
+		handler.AdminListDiscoveryLists(ctx)
+		if recorder.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("create rejects malformed identity", func(t *testing.T) {
+		handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/discovery-lists", bytes.NewBufferString(`{"name":"Featured"}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		ctx.Set("user_id", "malformed")
+		handler.AdminCreateDiscoveryList(ctx)
+		if recorder.Code != http.StatusUnauthorized {
+			t.Fatalf("expected 401, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("create rejects unusable slug", func(t *testing.T) {
+		handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/discovery-lists", bytes.NewBufferString(`{"name":"---"}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		ctx.Set("user_id", uuid.New())
+		handler.AdminCreateDiscoveryList(ctx)
+		if recorder.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("create maps duplicate slug to conflict", func(t *testing.T) {
+		userID := uuid.New()
+		repo := new(MockDiscoveryListRepository)
+		repo.On("CreateDiscoveryList", mock.Anything, "Featured", "featured", "", false, userID).Return(nil, repository.ErrDiscoveryListConflict)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/discovery-lists", bytes.NewBufferString(`{"name":"Featured"}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		ctx.Set("user_id", userID)
+		handler.AdminCreateDiscoveryList(ctx)
+		if recorder.Code != http.StatusConflict {
+			t.Fatalf("expected 409, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("update rejects empty body", func(t *testing.T) {
+		handler := &DiscoveryListHandler{repo: new(MockDiscoveryListRepository)}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: uuid.New().String()}}
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/discovery-lists/id", bytes.NewBufferString(`{}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.AdminUpdateDiscoveryList(ctx)
+		if recorder.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("update persists active state", func(t *testing.T) {
+		listID := uuid.New()
+		active := false
+		repo := new(MockDiscoveryListRepository)
+		repo.On("UpdateDiscoveryList", mock.Anything, listID, (*string)(nil), (*string)(nil), (*bool)(nil), &active).
+			Return(&models.DiscoveryList{ID: listID, IsActive: false}, nil)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/discovery-lists/"+listID.String(), bytes.NewBufferString(`{"is_active":false}`))
+		ctx.Request.Header.Set("Content-Type", "application/json")
+		handler.AdminUpdateDiscoveryList(ctx)
+		if recorder.Code != http.StatusOK || !strings.Contains(recorder.Body.String(), `"is_active":false`) {
+			t.Fatalf("expected active state response, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("delete maps missing list", func(t *testing.T) {
+		listID := uuid.New()
+		repo := new(MockDiscoveryListRepository)
+		repo.On("DeleteDiscoveryList", mock.Anything, listID).Return(repository.ErrDiscoveryListNotFound)
+		handler := &DiscoveryListHandler{repo: repo}
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Params = gin.Params{{Key: "id", Value: listID.String()}}
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/api/v1/admin/discovery-lists/"+listID.String(), http.NoBody)
+		handler.AdminDeleteDiscoveryList(ctx)
+		if recorder.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d: %s", recorder.Code, recorder.Body.String())
+		}
+	})
 }
 
 func (m *MockDiscoveryListRepository) ListDiscoveryLists(ctx context.Context, featuredOnly bool, userID *uuid.UUID, limit, offset int) ([]models.DiscoveryListWithStats, error) {
@@ -96,8 +203,8 @@ func (m *MockDiscoveryListRepository) CreateList(ctx context.Context, name, slug
 	return args.Get(0).(*models.DiscoveryList), args.Error(1)
 }
 
-func (m *MockDiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error) {
-	args := m.Called(ctx, listID, name, description, isFeatured)
+func (m *MockDiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error) {
+	args := m.Called(ctx, listID, name, description, isFeatured, isActive)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -150,8 +257,8 @@ func (m *MockDiscoveryListRepository) CreateDiscoveryList(ctx context.Context, n
 	return args.Get(0).(*models.DiscoveryList), args.Error(1)
 }
 
-func (m *MockDiscoveryListRepository) UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error) {
-	args := m.Called(ctx, listID, name, description, isFeatured)
+func (m *MockDiscoveryListRepository) UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error) {
+	args := m.Called(ctx, listID, name, description, isFeatured, isActive)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

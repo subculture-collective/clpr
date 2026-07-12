@@ -5600,6 +5600,119 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/admin/discovery-lists:
+    get:
+      tags: [Admin Discovery Lists]
+      summary: List all active and inactive curated discovery lists
+      operationId: adminListDiscoveryLists
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000000, default: 0}
+      responses:
+        '200':
+          description: Administrative discovery-list inventory
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items: {$ref: '#/components/schemas/DiscoveryListWithStats'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    post:
+      tags: [Admin Discovery Lists]
+      summary: Create a curated discovery list
+      operationId: adminCreateDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateDiscoveryListRequest'}
+      responses:
+        '201':
+          description: Discovery list created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryList'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409':
+          description: Generated slug already exists
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/admin/discovery-lists/{id}:
+    get:
+      tags: [Admin Discovery Lists]
+      summary: Get a curated discovery list
+      operationId: adminGetDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListIdentifier'
+      responses:
+        '200':
+          description: Discovery-list details and statistics
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListWithStats'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    put:
+      tags: [Admin Discovery Lists]
+      summary: Update a curated discovery list
+      description: At least one field is required. is_active maps to public or private visibility.
+      operationId: adminUpdateDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateDiscoveryListRequest'}
+      responses:
+        '200':
+          description: Updated discovery list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryList'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Admin Discovery Lists]
+      summary: Soft-delete a curated discovery list
+      operationId: adminDeleteDiscoveryList
+      parameters:
+        - $ref: '#/components/parameters/DiscoveryListUUID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Discovery list deleted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DiscoveryListMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -5948,103 +6061,6 @@ paths:
       description: Router-derived operation pending a route-specific response schema.
       operationId: postApiV1AdminBroadcastersRefreshRankings
       x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/discovery-lists:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/discovery-lists
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1AdminDiscoveryLists
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/discovery-lists
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1AdminDiscoveryLists
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/discovery-lists/{id}:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/admin/discovery-lists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1AdminDiscoveryListsId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/discovery-lists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1AdminDiscoveryListsId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/admin/discovery-lists/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: putApiV1AdminDiscoveryListsId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -13252,6 +13268,23 @@ components:
       required: [message]
       properties:
         message: {type: string}
+
+    CreateDiscoveryListRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, maxLength: 1000}
+        is_featured: {type: boolean, default: false}
+
+    UpdateDiscoveryListRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name: {type: string, minLength: 1, maxLength: 200}
+        description: {type: string, maxLength: 1000}
+        is_featured: {type: boolean}
+        is_active: {type: boolean}
 
     Appeal:
       type: object
