@@ -215,10 +215,7 @@ flowchart LR
 
 ### R2.4 — Complete object-level authorization matrix
 
-- **State:** IN PROGRESS — public, owner-scoped, community, chat, forum, and
-  administrative user lifecycles have been hardened incrementally; the remaining
-  administrative moderation/content/operations families still require the same
-  route-by-route authorization evidence before this task is `DONE`.
+- **State:** DONE — every registered release route maps to an explicit handler/API contract; centralized ownership/role rules and route-family contract/hardening tests cover public, owner, parent-child, community, chat, forum, moderator, and administrator boundaries; the authorization documentation now references only executable evidence
 - **Owner role:** Backend security
 - **Depends on:** R1.6
 - **Work:** Enumerate every `/:id` read/mutation and test owner, non-owner, moderator, admin, anonymous, deleted/banned, and cross-tenant/resource cases. Restore IDOR/security suites referenced by tasks.
