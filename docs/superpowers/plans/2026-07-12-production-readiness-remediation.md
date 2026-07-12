@@ -155,7 +155,10 @@ flowchart LR
 
 ### R1.6 — Make skip and warning debt visible
 
-- **State:** TODO
+- **State:** DONE — 80 active Go skips and the quarantined legacy browser skip
+  have owners, reasons, per-file ratchet limits, and 2026-08-15 expiries. CI
+  rejects new/unregistered/expired skips, and release-critical backend suites
+  pass with zero runtime skips against repository-owned services.
 - **Owner role:** QA + backend
 - **Depends on:** R1.2
 - **Work:** Inventory the 80 active Go skips and all frontend skipped tests. Categorize by environment, obsolete behavior, or missing coverage. Add CI output and a ratcheting budget; release-critical security/payment/migration tests may not skip.

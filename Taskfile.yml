@@ -200,6 +200,16 @@ tasks:
       - cd backend && bash run-tests-verbose.sh
       - cd frontend && npm run test -- run
 
+  test:skip-policy:
+    desc: Reject unowned, expired, or increased test skips
+    cmds:
+      - bash scripts/verify-test-skip-policy.sh
+
+  test:release-critical:
+    desc: Run security/identity/payment-facing backend tests with no skips
+    cmds:
+      - bash scripts/run-release-critical-backend-tests.sh
+
   test:backend:
     desc: Run all backend Go tests
     cmds:

@@ -1,9 +1,11 @@
 package jwt
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -149,9 +151,34 @@ func TestValidateToken_InvalidToken(t *testing.T) {
 }
 
 func TestValidateToken_ExpiredToken(t *testing.T) {
-	// This test would require manipulating time, which is complex
-	// For now, we'll skip it as the JWT library handles expiration
-	t.Skip("Expiration testing requires time manipulation")
+	privateKey, _, err := GenerateRSAKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateRSAKeyPair() error = %v", err)
+	}
+	manager, err := NewManager(privateKey)
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+
+	now := time.Now()
+	token := jwtlib.NewWithClaims(jwtlib.SigningMethodRS256, Claims{
+		UserID: uuid.New(),
+		Role:   "user",
+		JTI:    uuid.NewString(),
+		RegisteredClaims: jwtlib.RegisteredClaims{
+			IssuedAt:  jwtlib.NewNumericDate(now.Add(-2 * time.Hour)),
+			NotBefore: jwtlib.NewNumericDate(now.Add(-2 * time.Hour)),
+			ExpiresAt: jwtlib.NewNumericDate(now.Add(-time.Hour)),
+		},
+	})
+	signed, err := token.SignedString(manager.privateKey)
+	if err != nil {
+		t.Fatalf("SignedString() error = %v", err)
+	}
+
+	if _, err := manager.ValidateToken(signed); !errors.Is(err, ErrTokenExpired) {
+		t.Fatalf("ValidateToken() error = %v, want %v", err, ErrTokenExpired)
+	}
 }
 
 func TestHashToken(t *testing.T) {

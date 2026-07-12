@@ -29,6 +29,8 @@ jobs:
         run: |
           set -o pipefail
           go test -count=1 -json ./... | tee test-results.json
+      - name: Enforce owned, expiring skip budget
+        run: bash scripts/verify-test-skip-policy.sh
       - name: Vet
         working-directory: backend
         run: go vet ./...
@@ -101,6 +103,8 @@ jobs:
         run: bash scripts/verify-playwright-manifest.sh
       - name: Start repository services and migrate
         run: task test:setup
+      - name: Run release-critical backend suites without skips
+        run: bash scripts/run-release-critical-backend-tests.sh
       - name: Run real-backend smoke
         run: bash scripts/run-real-e2e.sh
       - name: Stop repository services
@@ -115,4 +119,5 @@ jobs:
             frontend/playwright-report
             frontend/test-results
             .tmp/backend-e2e.log
+            .tmp/release-critical-tests.json
           if-no-files-found: warn
