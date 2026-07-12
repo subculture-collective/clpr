@@ -567,6 +567,10 @@ func (h *ClipHandler) GetClip(c *gin.Context) {
 // It redirects to the resolved direct media object URL instead of proxying bytes through Go.
 func (h *ClipHandler) GetClipMedia(c *gin.Context) {
 	clipIDParam := c.Param("id")
+	if clipIDParam == "" || len(clipIDParam) > 128 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CLIP_ID", Message: "Invalid clip ID"}})
+		return
+	}
 
 	var clip *services.ClipWithUserData
 	var err error
@@ -594,6 +598,7 @@ func (h *ClipHandler) GetClipMedia(c *gin.Context) {
 		return
 	}
 
+	c.Header("Cache-Control", "private, no-store")
 	c.Redirect(http.StatusTemporaryRedirect, mediaURL)
 }
 
@@ -748,6 +753,10 @@ func (h *ClipHandler) GetHLSMasterPlaylist(c *gin.Context) {
 // Returns live processing status from Redis when available.
 func (h *ClipHandler) GetClipProcessingStatus(c *gin.Context) {
 	clipIDParam := c.Param("id")
+	if clipIDParam == "" || len(clipIDParam) > 128 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CLIP_ID", Message: "Invalid clip ID"}})
+		return
+	}
 
 	var clip *services.ClipWithUserData
 	var err error
@@ -798,11 +807,9 @@ func (h *ClipHandler) GetClipProcessingStatus(c *gin.Context) {
 
 	jobStatus, err := h.jobService.GetJobStatus(c.Request.Context(), clip.ID.String())
 	if err != nil {
-		c.JSON(http.StatusOK, StandardResponse{
-			Success: true,
-			Data: map[string]interface{}{
-				"status": "not_queued",
-			},
+		c.JSON(http.StatusServiceUnavailable, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "PROCESSING_STATUS_UNAVAILABLE", Message: "Clip processing status is unavailable"},
 		})
 		return
 	}
@@ -823,7 +830,6 @@ func (h *ClipHandler) GetClipProcessingStatus(c *gin.Context) {
 		Success: true,
 		Data: map[string]interface{}{
 			"status": statusValue,
-			"job":    jobStatus,
 		},
 	})
 }
@@ -840,6 +846,10 @@ func (h *ClipHandler) RequestClipBackfill(c *gin.Context) {
 	}
 
 	clipIDParam := c.Param("id")
+	if clipIDParam == "" || len(clipIDParam) > 128 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CLIP_ID", Message: "Invalid clip ID"}})
+		return
+	}
 
 	var clip *services.ClipWithUserData
 	var err error

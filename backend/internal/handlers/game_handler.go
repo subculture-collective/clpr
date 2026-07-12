@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -34,6 +35,10 @@ func NewGameHandler(
 // GetGame handles GET /api/v1/games/:gameId
 func (h *GameHandler) GetGame(c *gin.Context) {
 	gameIDStr := c.Param("gameId")
+	if gameIDStr == "" || len(gameIDStr) > 128 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
+		return
+	}
 
 	// Try to parse as UUID first (internal ID)
 	gameID, err := uuid.Parse(gameIDStr)
@@ -73,21 +78,27 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 // ListGameClips handles GET /api/v1/games/:gameId/clips
 func (h *GameHandler) ListGameClips(c *gin.Context) {
 	gameIDStr := c.Param("gameId")
-
-	// Parse pagination and filter parameters
-	limitStr := c.DefaultQuery("limit", "20")
-	pageStr := c.DefaultQuery("page", "1")
-	sort := c.DefaultQuery("sort", "hot")
-	timeframe := c.Query("timeframe")
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 1 || limit > 100 {
-		limit = 20
+	if gameIDStr == "" || len(gameIDStr) > 128 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
+		return
 	}
 
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		page = 1
+	// Parse pagination and filter parameters
+	sort := c.DefaultQuery("sort", "hot")
+	timeframe := c.Query("timeframe")
+	validSorts := map[string]bool{"hot": true, "new": true, "top": true, "rising": true, "discussed": true, "trending": true, "popular": true}
+	if !validSorts[sort] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sort"})
+		return
+	}
+	validTimeframes := map[string]bool{"": true, "hour": true, "day": true, "week": true, "month": true, "year": true, "all": true}
+	if !validTimeframes[timeframe] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid timeframe"})
+		return
+	}
+	page, limit, ok := parseCommunityPagination(c, 20)
+	if !ok {
+		return
 	}
 
 	offset := (page - 1) * limit
@@ -106,8 +117,12 @@ func (h *GameHandler) ListGameClips(c *gin.Context) {
 		}
 		twitchGameID = game.TwitchGameID
 	} else {
-		// Assume it's a Twitch game ID
-		twitchGameID = gameIDStr
+		game, lookupErr := h.gameRepo.GetByTwitchGameID(c.Request.Context(), gameIDStr)
+		if lookupErr != nil || game == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+			return
+		}
+		twitchGameID = game.TwitchGameID
 	}
 
 	// Build filters for clips
@@ -137,17 +152,9 @@ func (h *GameHandler) ListGameClips(c *gin.Context) {
 // GetTrendingGames handles GET /api/v1/games/trending
 func (h *GameHandler) GetTrendingGames(c *gin.Context) {
 	// Parse pagination parameters
-	limitStr := c.DefaultQuery("limit", "20")
-	pageStr := c.DefaultQuery("page", "1")
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 1 || limit > 100 {
-		limit = 20
-	}
-
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		page = 1
+	page, limit, ok := parseCommunityPagination(c, 20)
+	if !ok {
+		return
 	}
 
 	offset := (page - 1) * limit
@@ -171,16 +178,15 @@ func (h *GameHandler) GetTrendingGames(c *gin.Context) {
 // FollowGame handles POST /api/v1/games/:gameId/follow
 func (h *GameHandler) FollowGame(c *gin.Context) {
 	// Get authenticated user
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-
-	currentUser := user.(*models.User)
 	gameIDStr := c.Param("gameId")
+	if gameIDStr == "" || len(gameIDStr) > 128 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
+		return
+	}
 
 	// Parse game ID
 	gameID, err := uuid.Parse(gameIDStr)
@@ -194,10 +200,13 @@ func (h *GameHandler) FollowGame(c *gin.Context) {
 			return
 		}
 		gameID = game.ID
+	} else if _, err := h.gameRepo.GetByID(c.Request.Context(), gameID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
 	}
 
 	// Follow the game
-	err = h.gameRepo.FollowGame(c.Request.Context(), currentUser.ID, gameID)
+	err = h.gameRepo.FollowGame(c.Request.Context(), userID, gameID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to follow game",
@@ -213,16 +222,15 @@ func (h *GameHandler) FollowGame(c *gin.Context) {
 // UnfollowGame handles DELETE /api/v1/games/:gameId/follow
 func (h *GameHandler) UnfollowGame(c *gin.Context) {
 	// Get authenticated user
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-
-	currentUser := user.(*models.User)
 	gameIDStr := c.Param("gameId")
+	if gameIDStr == "" || len(gameIDStr) > 128 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
+		return
+	}
 
 	// Parse game ID
 	gameID, err := uuid.Parse(gameIDStr)
@@ -236,11 +244,18 @@ func (h *GameHandler) UnfollowGame(c *gin.Context) {
 			return
 		}
 		gameID = game.ID
+	} else if _, err := h.gameRepo.GetByID(c.Request.Context(), gameID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
 	}
 
 	// Unfollow the game
-	err = h.gameRepo.UnfollowGame(c.Request.Context(), currentUser.ID, gameID)
+	err = h.gameRepo.UnfollowGame(c.Request.Context(), userID, gameID)
 	if err != nil {
+		if errors.Is(err, repository.ErrGameFollowNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Game follow not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to unfollow game",
 		})

@@ -1416,6 +1416,30 @@ type Ad struct {
 	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }
 
+// PublicAd is the creative payload exposed to viewers. Campaign budgets,
+// spend, targeting rules, and experiment assignments remain administrative.
+type PublicAd struct {
+	ID             uuid.UUID `json:"id"`
+	Name           string    `json:"name"`
+	AdvertiserName string    `json:"advertiser_name"`
+	AdType         string    `json:"ad_type"`
+	ContentURL     string    `json:"content_url"`
+	ClickURL       *string   `json:"click_url,omitempty"`
+	AltText        *string   `json:"alt_text,omitempty"`
+	Width          *int      `json:"width,omitempty"`
+	Height         *int      `json:"height,omitempty"`
+	Priority       int       `json:"priority"`
+	Weight         int       `json:"weight"`
+}
+
+func (a Ad) Public() PublicAd {
+	return PublicAd{
+		ID: a.ID, Name: a.Name, AdvertiserName: a.AdvertiserName, AdType: a.AdType,
+		ContentURL: a.ContentURL, ClickURL: a.ClickURL, AltText: a.AltText,
+		Width: a.Width, Height: a.Height, Priority: a.Priority, Weight: a.Weight,
+	}
+}
+
 // AdImpression represents a tracked ad impression
 type AdImpression struct {
 	ID                uuid.UUID  `json:"id" db:"id"`
@@ -1465,33 +1489,33 @@ type AdFrequencyLimit struct {
 // AdSelectionRequest represents a request to select an ad
 type AdSelectionRequest struct {
 	Platform  string  `json:"platform" form:"platform" binding:"required,oneof=web ios android"`
-	PageURL   *string `json:"page_url,omitempty" form:"page_url"`
-	AdType    *string `json:"ad_type,omitempty" form:"ad_type"` // Filter by ad type
-	Width     *int    `json:"width,omitempty" form:"width"`     // Filter by dimensions
-	Height    *int    `json:"height,omitempty" form:"height"`
-	SessionID *string `json:"session_id,omitempty" form:"session_id"` // For anonymous users
-	GameID    *string `json:"game_id,omitempty" form:"game_id"`       // For targeting
-	Language  *string `json:"language,omitempty" form:"language"`
+	PageURL   *string `json:"page_url,omitempty" form:"page_url" binding:"omitempty,max=2048"`
+	AdType    *string `json:"ad_type,omitempty" form:"ad_type" binding:"omitempty,max=50"` // Filter by ad type
+	Width     *int    `json:"width,omitempty" form:"width" binding:"omitempty,min=1,max=10000"`
+	Height    *int    `json:"height,omitempty" form:"height" binding:"omitempty,min=1,max=10000"`
+	SessionID *string `json:"session_id,omitempty" form:"session_id" binding:"omitempty,max=128"`
+	GameID    *string `json:"game_id,omitempty" form:"game_id" binding:"omitempty,max=128"`
+	Language  *string `json:"language,omitempty" form:"language" binding:"omitempty,min=2,max=16"`
 	// Enhanced targeting fields
-	SlotID     *string  `json:"slot_id,omitempty" form:"slot_id"`         // Ad placement slot identifier
-	Country    *string  `json:"country,omitempty" form:"country"`         // ISO 3166-1 alpha-2 country code
-	DeviceType *string  `json:"device_type,omitempty" form:"device_type"` // desktop, mobile, tablet
-	Interests  []string `json:"interests,omitempty" form:"interests"`     // User interest categories
+	SlotID     *string  `json:"slot_id,omitempty" form:"slot_id" binding:"omitempty,max=100"`
+	Country    *string  `json:"country,omitempty" form:"country" binding:"omitempty,len=2"`
+	DeviceType *string  `json:"device_type,omitempty" form:"device_type" binding:"omitempty,oneof=desktop mobile tablet"`
+	Interests  []string `json:"interests,omitempty" form:"interests" binding:"max=20,dive,min=1,max=50"`
 	// Privacy/consent fields
 	Personalized *bool `json:"personalized,omitempty" form:"personalized"` // Whether user consented to personalized ads
 }
 
 // AdSelectionResponse represents a selected ad for display
 type AdSelectionResponse struct {
-	Ad           *Ad    `json:"ad,omitempty"`
-	ImpressionID string `json:"impression_id,omitempty"` // UUID for tracking
-	TrackingURL  string `json:"tracking_url,omitempty"`  // URL to call for viewability
+	Ad           *PublicAd `json:"ad,omitempty"`
+	ImpressionID string    `json:"impression_id,omitempty"` // UUID for tracking
+	TrackingURL  string    `json:"tracking_url,omitempty"`  // URL to call for viewability
 }
 
 // AdTrackingRequest represents a tracking update for an impression
 type AdTrackingRequest struct {
-	ImpressionID      string `json:"impression_id" binding:"required"`
-	ViewabilityTimeMs int    `json:"viewability_time_ms"`
+	ImpressionID      string `json:"-"`
+	ViewabilityTimeMs int    `json:"viewability_time_ms" binding:"min=0,max=86400000"`
 	IsViewable        bool   `json:"is_viewable"`
 	IsClicked         bool   `json:"is_clicked"`
 }

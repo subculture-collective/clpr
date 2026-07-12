@@ -7672,11 +7672,11 @@ paths:
 
   /api/v1/ads/select:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/ads/select
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Ads]
+      summary: Select an eligible advertisement
+      description: Selects an active creative using bounded contextual or consented personalized inputs and returns no campaign financial or targeting internals.
       operationId: getApiV1AdsSelect
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -7689,11 +7689,11 @@ paths:
 
   /api/v1/ads/track/{id}:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/ads/track/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Ads]
+      summary: Track an ad impression
+      description: Applies monotonic view/click state and charges the advertiser exactly once when the impression first becomes viewable.
       operationId: postApiV1AdsTrackId
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -7712,11 +7712,11 @@ paths:
 
   /api/v1/ads/{id}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/ads/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Ads]
+      summary: Get an available ad creative
+      description: Returns only viewer-safe creative fields for a currently active, in-budget ad.
       operationId: getApiV1AdsId
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -7735,11 +7735,11 @@ paths:
 
   /api/v1/broadcasters/popular:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/broadcasters/popular
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Broadcasters]
+      summary: List popular broadcasters
+      description: Returns visible broadcasters ranked by clip activity with a strict limit.
       operationId: getApiV1BroadcastersPopular
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -7752,11 +7752,11 @@ paths:
 
   /api/v1/broadcasters/rankings:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/broadcasters/rankings
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Broadcasters]
+      summary: List broadcaster rankings
+      description: Returns a strictly paginated broadcaster ranking and total count.
       operationId: getApiV1BroadcastersRankings
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -7769,11 +7769,11 @@ paths:
 
   /api/v1/broadcasters/{id}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/broadcasters/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Broadcasters]
+      summary: Get a visible broadcaster profile
+      description: Returns visible clip/follower statistics and optional authenticated follow state for a bounded Twitch broadcaster ID.
       operationId: getApiV1BroadcastersId
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -7792,11 +7792,11 @@ paths:
 
   /api/v1/broadcasters/{id}/clips:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/broadcasters/{id}/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Broadcasters]
+      summary: List visible broadcaster clips
+      description: Returns strictly paginated, sorted, non-hidden submitted clips for a bounded Twitch broadcaster ID.
       operationId: getApiV1BroadcastersIdClips
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -7815,11 +7815,10 @@ paths:
 
   /api/v1/broadcasters/{id}/follow:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/broadcasters/{id}/follow
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Broadcasters]
+      summary: Unfollow a broadcaster
+      description: Removes the authenticated user's broadcaster follow; a missing relationship returns 404.
       operationId: deleteApiV1BroadcastersIdFollow
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -7836,11 +7835,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/broadcasters/{id}/follow
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Broadcasters]
+      summary: Follow a broadcaster
+      description: Idempotently follows an existing visible broadcaster for the authenticated user.
       operationId: postApiV1BroadcastersIdFollow
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -7859,11 +7857,11 @@ paths:
 
   /api/v1/categories:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/categories
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Categories]
+      summary: List categories
+      description: Lists categories filtered by a validated game/topic type and optional featured state.
       operationId: getApiV1Categories
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -7876,11 +7874,11 @@ paths:
 
   /api/v1/categories/{slug}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/categories/{slug}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Categories]
+      summary: Get a category
+      description: Returns a category by bounded slug.
       operationId: getApiV1CategoriesSlug
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: slug
           in: path
@@ -7899,11 +7897,11 @@ paths:
 
   /api/v1/categories/{slug}/clips:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/categories/{slug}/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Categories]
+      summary: List category clips
+      description: Uses one exact category-membership query to return visible clips with strict filters and database-backed pagination; empty categories do not fall back to unrelated clips.
       operationId: getApiV1CategoriesSlugClips
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: slug
           in: path
@@ -7922,11 +7920,11 @@ paths:
 
   /api/v1/categories/{slug}/games:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/categories/{slug}/games
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Categories]
+      summary: List category games
+      description: Returns strictly paginated games and visible clip counts, with optional authenticated follow state.
       operationId: getApiV1CategoriesSlugGames
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: slug
           in: path
@@ -8389,11 +8387,10 @@ paths:
 
   /api/v1/clips/{id}/backfill:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/clips/{id}/backfill
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Clips]
+      summary: Request clip media backfill
+      description: Returns ready/processing state or queues a bounded visible clip for configured media processing.
       operationId: postApiV1ClipsIdBackfill
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
@@ -8412,11 +8409,11 @@ paths:
 
   /api/v1/clips/{id}/media:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/clips/{id}/media
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Clips]
+      summary: Resolve direct clip media
+      description: Redirects without caching to available direct media for a bounded visible clip ID.
       operationId: getApiV1ClipsIdMedia
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -8424,8 +8421,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+        '307':
+          description: Redirect to direct media
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8435,11 +8432,11 @@ paths:
 
   /api/v1/clips/{id}/processing-status:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/clips/{id}/processing-status
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Clips]
+      summary: Get clip processing status
+      description: Returns a minimal status without internal job payloads and reports dependency failure as 503.
       operationId: getApiV1ClipsIdProcessingStatus
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: id
           in: path
@@ -9259,11 +9256,11 @@ paths:
 
   /api/v1/games/trending:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/games/trending
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Games]
+      summary: List trending games
+      description: Returns strictly paginated game rankings calculated from visible clips.
       operationId: getApiV1GamesTrending
-      x-clpr-router-derived: true
+      security: []
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -9276,11 +9273,11 @@ paths:
 
   /api/v1/games/{gameId}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/games/{gameId}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Games]
+      summary: Get a game
+      description: Returns a game by bounded internal UUID or Twitch game ID, including visible statistics and optional follow state.
       operationId: getApiV1GamesGameid
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: gameId
           in: path
@@ -9299,11 +9296,11 @@ paths:
 
   /api/v1/games/{gameId}/clips:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/games/{gameId}/clips
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Games]
+      summary: List visible game clips
+      description: Validates the game and returns strictly paginated visible clips with supported sorting and timeframe filters.
       operationId: getApiV1GamesGameidClips
-      x-clpr-router-derived: true
+      security: []
       parameters:
         - name: gameId
           in: path
@@ -9322,11 +9319,10 @@ paths:
 
   /api/v1/games/{gameId}/follow:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/games/{gameId}/follow
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Games]
+      summary: Unfollow a game
+      description: Removes the authenticated user's follow from an existing game; a missing relationship returns 404.
       operationId: deleteApiV1GamesGameidFollow
-      x-clpr-router-derived: true
       parameters:
         - name: gameId
           in: path
@@ -9343,11 +9339,10 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/games/{gameId}/follow
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Games]
+      summary: Follow a game
+      description: Idempotently follows an existing game for the authenticated user.
       operationId: postApiV1GamesGameidFollow
-      x-clpr-router-derived: true
       parameters:
         - name: gameId
           in: path

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -10,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrGameFollowNotFound = errors.New("game follow not found")
 
 // GameRepository handles database operations for games
 type GameRepository struct {
@@ -108,7 +111,7 @@ func (r *GameRepository) GetWithStats(ctx context.Context, gameID uuid.UUID, use
 			COALESCE(COUNT(DISTINCT gf.id), 0) as follower_count,
 			BOOL_OR(ugf.id IS NOT NULL) as is_following
 		FROM games g
-		LEFT JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false
+		LEFT JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false AND c.is_hidden = false
 		LEFT JOIN game_follows gf ON gf.game_id = g.id
 		LEFT JOIN game_follows ugf ON ugf.game_id = g.id AND ugf.user_id = $2
 		WHERE g.id = $1
@@ -191,9 +194,12 @@ func (r *GameRepository) UnfollowGame(ctx context.Context, userID, gameID uuid.U
 		WHERE user_id = $1 AND game_id = $2
 	`
 
-	_, err := r.pool.Exec(ctx, query, userID, gameID)
+	result, err := r.pool.Exec(ctx, query, userID, gameID)
 	if err != nil {
 		return fmt.Errorf("failed to unfollow game: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrGameFollowNotFound
 	}
 
 	return nil
@@ -228,7 +234,7 @@ func (r *GameRepository) GetFollowedGames(ctx context.Context, userID uuid.UUID,
 			true as is_following
 		FROM games g
 		INNER JOIN game_follows ugf ON ugf.game_id = g.id AND ugf.user_id = $1
-		LEFT JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false
+		LEFT JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false AND c.is_hidden = false
 		LEFT JOIN game_follows gf ON gf.game_id = g.id
 		GROUP BY g.id, g.twitch_game_id, g.name, g.slug, g.box_art_url, g.igdb_id, g.created_at, g.updated_at
 		ORDER BY ugf.followed_at DESC
@@ -295,7 +301,7 @@ func (r *GameRepository) ListAllWithClipCounts(ctx context.Context, limit, offse
 			0 as follower_count,
 			false as is_following
 		FROM games g
-		INNER JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false
+		INNER JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false AND c.is_hidden = false
 		GROUP BY g.id, g.twitch_game_id, g.name, g.slug, g.box_art_url, g.igdb_id, g.created_at, g.updated_at
 		HAVING COUNT(DISTINCT c.id) >= 10
 		ORDER BY clip_count DESC
@@ -332,7 +338,7 @@ func (r *GameRepository) ListTopBroadcastersForGame(ctx context.Context, gameID 
 	query := `
 		SELECT broadcaster_id, broadcaster_name, COUNT(*) as clip_count, COALESCE(SUM(view_count), 0) as total_views
 		FROM clips
-		WHERE game_id = $1 AND is_removed = false AND broadcaster_id IS NOT NULL
+		WHERE game_id = $1 AND is_removed = false AND is_hidden = false AND broadcaster_id IS NOT NULL
 		GROUP BY broadcaster_id, broadcaster_name
 		ORDER BY clip_count DESC
 		LIMIT $2

@@ -1,14 +1,16 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // AdHandler handles ad delivery endpoints
@@ -63,7 +65,7 @@ func (h *AdHandler) SelectAd(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid ad selection parameters",
 			},
 		})
 		return
@@ -71,10 +73,17 @@ func (h *AdHandler) SelectAd(c *gin.Context) {
 
 	// Get user ID if authenticated
 	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
+	if value, exists := c.Get("user_id"); exists {
+		uid, ok := value.(uuid.UUID)
+		if !ok || uid == uuid.Nil {
+			c.JSON(http.StatusUnauthorized, StandardResponse{Success: false, Error: &ErrorInfo{Code: "UNAUTHORIZED", Message: "Unauthorized"}})
+			return
 		}
+		userID = &uid
+	}
+	if req.Personalized != nil && *req.Personalized && userID == nil && (req.SessionID == nil || *req.SessionID == "") {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "PERSONALIZATION_ID_REQUIRED", Message: "Personalized ads require an authenticated user or session_id"}})
+		return
 	}
 
 	// Get IP address for fraud prevention
@@ -157,10 +166,16 @@ func (h *AdHandler) TrackImpression(c *gin.Context) {
 
 	// Track the impression
 	if err := h.adService.TrackImpression(c.Request.Context(), req); err != nil {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
+		status := http.StatusInternalServerError
+		code := "TRACKING_FAILED"
+		if errors.Is(err, pgx.ErrNoRows) {
+			status = http.StatusNotFound
+			code = "IMPRESSION_NOT_FOUND"
+		}
+		c.JSON(status, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
-				Code:    "TRACKING_FAILED",
+				Code:    code,
 				Message: "Failed to track impression",
 			},
 		})
@@ -190,7 +205,7 @@ func (h *AdHandler) GetAd(c *gin.Context) {
 		return
 	}
 
-	ad, err := h.adService.GetAdByID(c.Request.Context(), adID)
+	ad, err := h.adService.GetPublicAdByID(c.Request.Context(), adID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, StandardResponse{
 			Success: false,

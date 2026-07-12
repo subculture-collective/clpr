@@ -147,8 +147,9 @@ func (s *AdService) SelectAd(ctx context.Context, req models.AdSelectionRequest,
 		go s.updateFrequencyCaps(context.WithoutCancel(ctx), selectedAd.ID, userID, req.SessionID)
 	}
 
+	publicAd := selectedAd.Public()
 	return &models.AdSelectionResponse{
-		Ad:           &selectedAd,
+		Ad:           &publicAd,
 		ImpressionID: impressionID.String(),
 		TrackingURL:  fmt.Sprintf("/api/v1/ads/track/%s", impressionID.String()),
 	}, nil
@@ -161,38 +162,7 @@ func (s *AdService) TrackImpression(ctx context.Context, req models.AdTrackingRe
 		return fmt.Errorf("invalid impression ID: %w", err)
 	}
 
-	// Get the impression to validate it exists
-	impression, err := s.adRepo.GetImpressionByID(ctx, impressionID)
-	if err != nil {
-		return fmt.Errorf("impression not found: %w", err)
-	}
-
-	// Determine if viewability threshold is met (IAB standard: 50% visible for 1s)
-	isViewable := req.ViewabilityTimeMs >= models.ViewabilityThresholdMs
-
-	// Update the impression
-	if err := s.adRepo.UpdateImpression(ctx, impressionID, req.ViewabilityTimeMs, isViewable, req.IsClicked); err != nil {
-		return fmt.Errorf("failed to update impression: %w", err)
-	}
-
-	// If viewable, charge the advertiser (CPM based)
-	if isViewable && !impression.IsViewable {
-		// Calculate cost (CPM / 1000 = cost per impression)
-		ad, err := s.adRepo.GetAdByID(ctx, impression.AdID)
-		if err == nil {
-			costCents := ad.CPMCents / 1000 // Cost per single impression
-			if costCents < 1 {
-				costCents = 1 // Minimum 1 cent per impression
-			}
-			// Update ad spend (async)
-			detachedCtx := context.WithoutCancel(ctx)
-			go func() {
-				_ = s.adRepo.IncrementAdSpend(detachedCtx, ad.ID, costCents)
-			}()
-		}
-	}
-
-	return nil
+	return s.adRepo.TrackImpression(ctx, impressionID, req.ViewabilityTimeMs, req.IsClicked)
 }
 
 // filterByTargeting filters ads based on targeting criteria
@@ -578,6 +548,22 @@ func (s *AdService) calculateWindowStart(windowType string) time.Time {
 // GetAdByID retrieves an ad by its ID
 func (s *AdService) GetAdByID(ctx context.Context, id uuid.UUID) (*models.Ad, error) {
 	return s.adRepo.GetAdByID(ctx, id)
+}
+
+func (s *AdService) GetPublicAdByID(ctx context.Context, id uuid.UUID) (*models.PublicAd, error) {
+	ad, err := s.adRepo.GetAdByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	if !ad.IsActive || (ad.StartDate != nil && ad.StartDate.After(now)) ||
+		(ad.EndDate != nil && !ad.EndDate.After(now)) ||
+		(ad.DailyBudgetCents != nil && ad.SpentTodayCents >= *ad.DailyBudgetCents) ||
+		(ad.TotalBudgetCents != nil && ad.SpentTotalCents >= *ad.TotalBudgetCents) {
+		return nil, fmt.Errorf("ad not available")
+	}
+	publicAd := ad.Public()
+	return &publicAd, nil
 }
 
 // ResetDailySpend resets daily spend for all ads

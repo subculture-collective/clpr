@@ -809,21 +809,21 @@
     "path": "/api/v1/ads/select",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).SelectAd-fm",
     "operation_id": "getApiV1AdsSelect",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/ads/track/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).TrackImpression-fm",
     "operation_id": "postApiV1AdsTrackId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/ads/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetAd-fm",
     "operation_id": "getApiV1AdsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
@@ -956,42 +956,42 @@
     "path": "/api/v1/broadcasters/popular",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).ListPopularBroadcasters-fm",
     "operation_id": "getApiV1BroadcastersPopular",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/broadcasters/rankings",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).GetBroadcasterRankings-fm",
     "operation_id": "getApiV1BroadcastersRankings",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/broadcasters/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).GetBroadcasterProfile-fm",
     "operation_id": "getApiV1BroadcastersId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/broadcasters/{id}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).ListBroadcasterClips-fm",
     "operation_id": "getApiV1BroadcastersIdClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/broadcasters/{id}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).UnfollowBroadcaster-fm",
     "operation_id": "deleteApiV1BroadcastersIdFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/broadcasters/{id}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).FollowBroadcaster-fm",
     "operation_id": "postApiV1BroadcastersIdFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1005,28 +1005,28 @@
     "path": "/api/v1/categories",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).ListCategories-fm",
     "operation_id": "getApiV1Categories",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/categories/{slug}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).GetCategory-fm",
     "operation_id": "getApiV1CategoriesSlug",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/categories/{slug}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).ListCategoryClips-fm",
     "operation_id": "getApiV1CategoriesSlugClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/categories/{slug}/games",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).ListCategoryGames-fm",
     "operation_id": "getApiV1CategoriesSlugGames",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1229,7 +1229,7 @@
     "path": "/api/v1/clips/{id}/backfill",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).RequestClipBackfill-fm",
     "operation_id": "postApiV1ClipsIdBackfill",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1271,7 +1271,7 @@
     "path": "/api/v1/clips/{id}/media",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetClipMedia-fm",
     "operation_id": "getApiV1ClipsIdMedia",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
@@ -1285,7 +1285,7 @@
     "path": "/api/v1/clips/{id}/processing-status",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetClipProcessingStatus-fm",
     "operation_id": "getApiV1ClipsIdProcessingStatus",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1831,35 +1831,35 @@
     "path": "/api/v1/games/trending",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetTrendingGames-fm",
     "operation_id": "getApiV1GamesTrending",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/games/{gameId}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetGame-fm",
     "operation_id": "getApiV1GamesGameid",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/games/{gameId}/clips",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).ListGameClips-fm",
     "operation_id": "getApiV1GamesGameidClips",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/games/{gameId}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).UnfollowGame-fm",
     "operation_id": "deleteApiV1GamesGameidFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/games/{gameId}/follow",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).FollowGame-fm",
     "operation_id": "postApiV1GamesGameidFollow",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

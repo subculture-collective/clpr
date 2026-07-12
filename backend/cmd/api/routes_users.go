@@ -152,7 +152,7 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		// Public category endpoints
 		categories.GET("", h.Category.ListCategories)
 		categories.GET("/:slug", h.Category.GetCategory)
-		categories.GET("/:slug/games", h.Category.ListCategoryGames)
+		categories.GET("/:slug/games", middleware.OptionalAuthMiddleware(svcs.Auth), h.Category.ListCategoryGames)
 		categories.GET("/:slug/clips", h.Category.ListCategoryClips)
 	}
 }

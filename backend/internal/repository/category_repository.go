@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // CategoryRepository handles database operations for categories
@@ -140,7 +140,7 @@ func (r *CategoryRepository) GetGamesInCategory(ctx context.Context, categoryID 
 			BOOL_OR(ugf.id IS NOT NULL) as is_following
 		FROM games g
 		INNER JOIN category_games cg ON g.id = cg.game_id
-		LEFT JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false
+		LEFT JOIN clips c ON c.game_id = g.twitch_game_id AND c.is_removed = false AND c.is_hidden = false
 		LEFT JOIN game_follows gf ON gf.game_id = g.id
 		LEFT JOIN game_follows ugf ON ugf.game_id = g.id AND ugf.user_id = $2
 		WHERE cg.category_id = $1

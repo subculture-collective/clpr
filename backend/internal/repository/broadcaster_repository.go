@@ -90,7 +90,7 @@ func (r *BroadcasterRepository) GetBroadcasterStats(ctx context.Context, broadca
 			COALESCE(SUM(view_count), 0) as total_views,
 			COALESCE(AVG(vote_score), 0) as avg_vote_score
 		FROM clips
-		WHERE broadcaster_id = $1 AND is_removed = false
+		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false
 	`
 	err = r.pool.QueryRow(ctx, query, broadcasterID).Scan(&totalClips, &totalViews, &avgVoteScore)
 	if err != nil && err != pgx.ErrNoRows {
@@ -124,7 +124,7 @@ func (r *BroadcasterRepository) GetBroadcasterByID(ctx context.Context, broadcas
 	query := `
 		SELECT broadcaster_name
 		FROM clips
-		WHERE broadcaster_id = $1
+		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false
 		LIMIT 1
 	`
 	err = r.pool.QueryRow(ctx, query, broadcasterID).Scan(&broadcasterName)
