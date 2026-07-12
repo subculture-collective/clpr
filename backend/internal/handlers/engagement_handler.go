@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
@@ -190,67 +189,4 @@ func (h *EngagementHandler) CheckAlerts(c *gin.Context) {
 		"alerts": alerts,
 		"count":  len(alerts),
 	})
-}
-
-// ExportEngagementData exports engagement metrics data
-// GET /api/v1/admin/analytics/export?metrics=dau,mau,engagement&format=csv&start_date=2025-11-01&end_date=2025-12-01
-func (h *EngagementHandler) ExportEngagementData(c *gin.Context) {
-	// Verify admin role
-	userInterface, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	user, ok := userInterface.(*models.User)
-	if !ok || user.Role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
-		return
-	}
-
-	// Get query parameters
-	metricsParam := c.DefaultQuery("metrics", "dau,mau")
-	format := c.DefaultQuery("format", "csv")
-	startDate := c.Query("start_date")
-	endDate := c.Query("end_date")
-
-	// Validate format
-	if format != "csv" && format != "json" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "format must be csv or json"})
-		return
-	}
-
-	// Parse metrics
-	metrics := parseMetricsList(metricsParam)
-	if len(metrics) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one metric must be specified"})
-		return
-	}
-
-	// For now, return a simple response indicating export functionality
-	// In a full implementation, this would generate CSV/JSON export
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "Export functionality",
-		"metrics":    metrics,
-		"format":     format,
-		"start_date": startDate,
-		"end_date":   endDate,
-		"note":       "Full export implementation pending",
-	})
-}
-
-// Helper function to parse comma-separated metrics list
-func parseMetricsList(metricsParam string) []string {
-	if metricsParam == "" {
-		return []string{}
-	}
-
-	var metrics []string
-	for _, m := range strings.Split(metricsParam, ",") {
-		m = strings.TrimSpace(m)
-		if m != "" {
-			metrics = append(metrics, m)
-		}
-	}
-	return metrics
 }
