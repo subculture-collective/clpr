@@ -262,7 +262,7 @@ flowchart LR
 
 ### R3.1 — Implement or formally disable stream clip creation
 
-- **State:** TODO
+- **State:** DONE — formally disabled for launch; see `docs/LAUNCH_FEATURE_INVENTORY.md`
 - **Owner role:** Media/backend
 - **Depends on:** R0.2, R2.1
 - **Work:** Replace placeholder VOD/media URLs with real source resolution and a durable idempotent job state machine (`queued`, `processing`, `ready`, `failed`, `retrying`, `cancelled`), or keep the feature entirely disabled for launch. Enqueue and record creation must be transactional or compensating.
@@ -270,7 +270,7 @@ flowchart LR
 
 ### R3.2 — Implement or formally disable CDN and mirroring
 
-- **State:** TODO
+- **State:** DONE — formally disabled and absent from launch registration; see `docs/LAUNCH_FEATURE_INVENTORY.md`
 - **Owner role:** Media/platform
 - **Depends on:** R0.2, R2.1
 - **Work:** Replace fabricated URLs, zero metrics, no-op purge, and placeholder distribution/host values with provider API calls, object verification, explicit unsupported errors, and cost/health telemetry—or remove providers from launch registration.
@@ -278,7 +278,7 @@ flowchart LR
 
 ### R3.3 — Define live feed and watch-party launch contract
 
-- **State:** TODO
+- **State:** DONE — formally disabled for launch; see `docs/LAUNCH_FEATURE_INVENTORY.md`
 - **Owner role:** Product + frontend/backend
 - **Depends on:** R0.2, R0.4
 - **Work:** Keep both out of launch scope by default and gate frontend routes plus backend route registration from one feature source. If promoted later, require dedicated privacy, authorization, rate-limit, WebSocket resilience, and E2E acceptance evidence.
