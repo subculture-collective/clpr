@@ -2236,15 +2236,15 @@
     "method": "DELETE",
     "path": "/api/v1/playlists/{id}/bookmark",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UnbookmarkPlaylist-fm",
-    "operation_id": "deleteApiV1PlaylistsIdBookmark",
-    "contract_level": "transitional"
+    "operation_id": "unbookmarkPlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlists/{id}/bookmark",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).BookmarkPlaylist-fm",
-    "operation_id": "postApiV1PlaylistsIdBookmark",
-    "contract_level": "transitional"
+    "operation_id": "bookmarkPlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
@@ -2306,15 +2306,15 @@
     "method": "DELETE",
     "path": "/api/v1/playlists/{id}/like",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UnlikePlaylist-fm",
-    "operation_id": "deleteApiV1PlaylistsIdLike",
-    "contract_level": "transitional"
+    "operation_id": "unlikePlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/playlists/{id}/like",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).LikePlaylist-fm",
-    "operation_id": "postApiV1PlaylistsIdLike",
-    "contract_level": "transitional"
+    "operation_id": "likePlaylist",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

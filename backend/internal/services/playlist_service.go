@@ -345,7 +345,7 @@ func (s *PlaylistService) DeletePlaylist(ctx context.Context, playlistID, userID
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	// Verify ownership
@@ -506,12 +506,12 @@ func (s *PlaylistService) LikePlaylist(ctx context.Context, playlistID, userID u
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	// Can't like private playlists unless you own them
 	if playlist.Visibility == models.PlaylistVisibilityPrivate && playlist.UserID != userID {
-		return fmt.Errorf("cannot like private playlists")
+		return ErrPlaylistPrivate
 	}
 
 	err = s.playlistRepo.LikePlaylist(ctx, userID, playlistID)
@@ -539,11 +539,11 @@ func (s *PlaylistService) BookmarkPlaylist(ctx context.Context, playlistID, user
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	if playlist.Visibility == models.PlaylistVisibilityPrivate && playlist.UserID != userID {
-		return fmt.Errorf("cannot bookmark private playlists")
+		return ErrPlaylistPrivate
 	}
 
 	err = s.playlistRepo.BookmarkPlaylist(ctx, userID, playlistID)

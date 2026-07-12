@@ -9909,48 +9909,41 @@ paths:
         '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/{id}/bookmark:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/playlists/{id}/bookmark
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1PlaylistsIdBookmark
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlists/{id}/bookmark
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistsIdBookmark
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Idempotently bookmark a visible playlist
+      description: Private playlists not owned by the caller are concealed as not found. Rate limited to 30 per minute.
+      operationId: bookmarkPlaylist
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Playlist bookmarked or already bookmarked
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Playlists]
+      summary: Idempotently remove the caller's playlist bookmark
+      operationId: unbookmarkPlaylist
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Bookmark absent after the request
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/{id}/clips:
     post:
@@ -10153,48 +10146,41 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/playlists/{id}/like:
-    delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/playlists/{id}/like
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: deleteApiV1PlaylistsIdLike
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/playlists/{id}/like
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1PlaylistsIdLike
-      x-clpr-router-derived: true
+      tags: [Playlists]
+      summary: Idempotently like a visible playlist
+      description: Private playlists not owned by the caller are concealed as not found. Rate limited to 30 per minute.
+      operationId: likePlaylist
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Playlist liked or already liked
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+    delete:
+      tags: [Playlists]
+      summary: Idempotently remove the caller's playlist like
+      operationId: unlikePlaylist
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Like absent after the request
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PlaylistMutationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/playlists/{id}/share-link:
     get:

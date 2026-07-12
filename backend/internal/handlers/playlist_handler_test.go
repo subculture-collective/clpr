@@ -111,3 +111,26 @@ func TestPlaylistMembershipInputsFailClosed(t *testing.T) {
 		})
 	}
 }
+
+func TestPlaylistSocialRoutesRejectMalformedIdentity(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	id := uuid.New()
+	for _, tc := range []struct {
+		name, method string
+		invoke       func(*PlaylistHandler, *gin.Context)
+	}{
+		{"like", http.MethodPost, func(h *PlaylistHandler, c *gin.Context) { h.LikePlaylist(c) }},
+		{"unlike", http.MethodDelete, func(h *PlaylistHandler, c *gin.Context) { h.UnlikePlaylist(c) }},
+		{"bookmark", http.MethodPost, func(h *PlaylistHandler, c *gin.Context) { h.BookmarkPlaylist(c) }},
+		{"unbookmark", http.MethodDelete, func(h *PlaylistHandler, c *gin.Context) { h.UnbookmarkPlaylist(c) }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, w := playlistTestContext(tc.method, "/api/v1/playlists/"+id.String(), nil, "bad")
+			c.Params = gin.Params{{Key: "id", Value: id.String()}}
+			tc.invoke(NewPlaylistHandler(nil), c)
+			if w.Code != http.StatusUnauthorized {
+				t.Fatalf("expected 401, got %d: %s", w.Code, w.Body.String())
+			}
+		})
+	}
+}

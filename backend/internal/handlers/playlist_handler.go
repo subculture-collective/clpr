@@ -868,28 +868,8 @@ func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
 
 // LikePlaylist handles POST /api/playlists/:id/like
 func (h *PlaylistHandler) LikePlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -910,22 +890,12 @@ func (h *PlaylistHandler) LikePlaylist(c *gin.Context) {
 	// Like playlist
 	err = h.playlistService.LikePlaylist(c.Request.Context(), playlistID, userID)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "NOT_FOUND",
 					Message: "Playlist not found",
-				},
-			})
-			return
-		}
-		if err.Error() == "cannot like private playlists" {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "Cannot like private playlists",
 				},
 			})
 			return
@@ -950,28 +920,8 @@ func (h *PlaylistHandler) LikePlaylist(c *gin.Context) {
 
 // UnlikePlaylist handles DELETE /api/playlists/:id/like
 func (h *PlaylistHandler) UnlikePlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1648,21 +1598,8 @@ func (h *PlaylistHandler) GetPlaylistOfTheDay(c *gin.Context) {
 
 // BookmarkPlaylist handles POST /api/playlists/:id/bookmark
 func (h *PlaylistHandler) BookmarkPlaylist(c *gin.Context) {
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error:   &ErrorInfo{Code: "UNAUTHORIZED", Message: "Authentication required"},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error:   &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Invalid user ID format"},
-		})
 		return
 	}
 
@@ -1677,17 +1614,10 @@ func (h *PlaylistHandler) BookmarkPlaylist(c *gin.Context) {
 
 	err = h.playlistService.BookmarkPlaylist(c.Request.Context(), playlistID, userID)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error:   &ErrorInfo{Code: "NOT_FOUND", Message: "Playlist not found"},
-			})
-			return
-		}
-		if err.Error() == "cannot bookmark private playlists" {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error:   &ErrorInfo{Code: "FORBIDDEN", Message: "Cannot bookmark private playlists"},
 			})
 			return
 		}
@@ -1706,21 +1636,8 @@ func (h *PlaylistHandler) BookmarkPlaylist(c *gin.Context) {
 
 // UnbookmarkPlaylist handles DELETE /api/playlists/:id/bookmark
 func (h *PlaylistHandler) UnbookmarkPlaylist(c *gin.Context) {
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error:   &ErrorInfo{Code: "UNAUTHORIZED", Message: "Authentication required"},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error:   &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Invalid user ID format"},
-		})
 		return
 	}
 
