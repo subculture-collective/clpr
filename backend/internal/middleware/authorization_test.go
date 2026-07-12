@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // MockChecker is a mock ResourceOwnershipChecker for testing
@@ -361,6 +361,21 @@ func TestCanAccessResource_NoRuleFound(t *testing.T) {
 	assert.False(t, result.Allowed)
 	assert.Contains(t, err.Error(), "no permission rule found")
 	assert.Equal(t, "no_permission_rule", result.Reason)
+}
+
+func TestCanAccessResourceFailsClosedWithoutOwnershipChecker(t *testing.T) {
+	user := &models.User{ID: uuid.New(), Role: models.RoleUser}
+	result, err := CanAccessResource(&AuthorizationContext{
+		UserID:       user.ID,
+		User:         user,
+		ResourceID:   uuid.New(),
+		Action:       ActionUpdate,
+		ResourceType: ResourceTypeComment,
+	}, nil)
+
+	assert.Error(t, err)
+	assert.False(t, result.Allowed)
+	assert.Equal(t, "ownership_checker_unavailable", result.Reason)
 }
 
 func TestLogAuthorizationDecision(t *testing.T) {

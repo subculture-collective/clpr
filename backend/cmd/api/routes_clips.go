@@ -26,7 +26,7 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 
 		// Clip analytics (public)
 		clips.GET("/:id/analytics", h.Analytics.GetClipAnalytics)
-		clips.POST("/:id/track-view", h.Analytics.TrackClipView)
+		clips.POST("/:id/track-view", middleware.RateLimitMiddleware(infra.Redis, 120, time.Minute), h.Analytics.TrackClipView)
 
 		// Clip engagement score (public)
 		clips.GET("/:id/engagement", h.Engagement.GetContentEngagementScore)

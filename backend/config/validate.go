@@ -98,8 +98,9 @@ func (c *Config) validateEnabledFeatures(releaseProfile bool) error {
 			return err
 		}
 	}
-	if c.Email.Enabled && (strings.TrimSpace(c.Email.SendGridAPIKey) == "" || strings.TrimSpace(c.Email.FromEmail) == "") {
-		return fmt.Errorf("email notifications require SENDGRID_API_KEY and EMAIL_FROM_ADDRESS")
+	if c.Email.Enabled && (strings.TrimSpace(c.Email.SendGridAPIKey) == "" || strings.TrimSpace(c.Email.FromEmail) == "" ||
+		(releaseProfile && strings.TrimSpace(c.Email.SendGridWebhookPublicKey) == "")) {
+		return fmt.Errorf("email notifications require SENDGRID_API_KEY, EMAIL_FROM_ADDRESS, and a release-profile webhook public key")
 	}
 	if c.Embedding.Enabled && (strings.TrimSpace(c.Embedding.OpenAIAPIKey) == "" || strings.TrimSpace(c.Embedding.APIBaseURL) == "") {
 		return fmt.Errorf("embeddings require an API key and EMBEDDING_API_BASE_URL")

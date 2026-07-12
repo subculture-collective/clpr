@@ -15,11 +15,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // SendGridWebhookHandler handles incoming SendGrid webhook events
@@ -66,6 +66,11 @@ func NewSendGridWebhookHandler(emailLogRepo *repository.EmailLogRepository, send
 // @Failure 500 {object} map[string]string
 // @Router /api/v1/webhooks/sendgrid [post]
 func (h *SendGridWebhookHandler) HandleWebhook(c *gin.Context) {
+	if h.publicKey == nil {
+		h.logger.Error("Rejected SendGrid webhook because signature verification is unavailable", nil)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Webhook verification unavailable"})
+		return
+	}
 	// Read request body
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -74,8 +79,8 @@ func (h *SendGridWebhookHandler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// Verify webhook signature if public key is configured
-	if h.publicKey != nil {
+	// Verify webhook signature
+	{
 		signature := c.GetHeader("X-Twilio-Email-Event-Webhook-Signature")
 		timestamp := c.GetHeader("X-Twilio-Email-Event-Webhook-Timestamp")
 

@@ -10,13 +10,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // generateTestKeyPair generates an ECDSA key pair for testing
@@ -328,6 +331,21 @@ func TestWebhookSignatureVerification_NoPublicKey(t *testing.T) {
 
 	// Verify that handler was created but publicKey is nil
 	assert.Nil(t, handler.publicKey, "Handler should have nil publicKey when empty string is provided")
+}
+
+func TestSendGridWebhookFailsClosedWithoutVerificationKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	handler := NewSendGridWebhookHandler(nil, "")
+	router := gin.New()
+	router.POST("/webhook", handler.HandleWebhook)
+
+	request := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(`[]`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
 }
 
 func TestWebhookSignatureVerification_InvalidPublicKey(t *testing.T) {
