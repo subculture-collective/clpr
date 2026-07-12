@@ -10695,71 +10695,49 @@ paths:
 
   /api/v1/twitch/auth:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/twitch/auth
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Twitch OAuth]
+      summary: Revoke stored Twitch authentication
       operationId: deleteApiV1TwitchAuth
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Authentication revoked, content: {application/json: {schema: {$ref: '#/components/schemas/TwitchAuthMutationResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/twitch/auth/status:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/twitch/auth/status
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Twitch OAuth]
+      summary: Get Twitch authentication status
       operationId: getApiV1TwitchAuthStatus
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Authentication status returned, content: {application/json: {schema: {$ref: '#/components/schemas/TwitchAuthStatus'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/twitch/oauth/authorize:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/twitch/oauth/authorize
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Twitch OAuth]
+      summary: Begin user-bound Twitch OAuth
       operationId: getApiV1TwitchOauthAuthorize
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '307': {$ref: '#/components/responses/OAuthRedirect'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/twitch/oauth/callback:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/twitch/oauth/callback
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Twitch OAuth]
+      summary: Complete user-bound Twitch OAuth
       operationId: getApiV1TwitchOauthCallback
-      x-clpr-router-derived: true
+      parameters:
+        - {name: code, in: query, schema: {type: string, maxLength: 2048}}
+        - {name: state, in: query, schema: {type: string, maxLength: 4096}}
+        - {name: error, in: query, schema: {type: string}}
+        - {name: error_description, in: query, schema: {type: string}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '302': {$ref: '#/components/responses/OAuthRedirect'}
+        '307': {$ref: '#/components/responses/OAuthRedirect'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
 
   /api/v1/users/{id}/feeds:
     get:
@@ -11662,6 +11640,13 @@ components:
 
     WebSocketUpgrade:
       description: WebSocket protocol upgrade accepted
+
+    OAuthRedirect:
+      description: Browser redirected to the OAuth provider or application result page
+      headers:
+        Location:
+          required: true
+          schema: {type: string, format: uri-reference}
 
     BadRequest:
       description: Bad Request - Invalid input parameters
@@ -13830,6 +13815,22 @@ components:
         portal_url: {type: string, format: uri}
 
     SubscriptionMessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+
+    TwitchAuthStatus:
+      type: object
+      required: [authenticated, connected]
+      properties:
+        authenticated: {type: boolean}
+        connected: {type: boolean}
+        twitch_user_id: {type: string}
+        twitch_username: {type: string, pattern: '^[A-Za-z0-9_]{1,25}$'}
+        expires_at: {type: string, format: date-time}
+
+    TwitchAuthMutationResponse:
       type: object
       required: [message]
       properties:
