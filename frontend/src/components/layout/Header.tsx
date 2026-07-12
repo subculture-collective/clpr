@@ -82,21 +82,21 @@ export function Header() {
                         aria-label='Main navigation'
                         data-testid='main-nav'
                     >
-                        <Link to='/' className={`relative ${location.pathname === '/' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
-                            <Button variant='ghost' size='sm'>
+                        <Button asChild variant='ghost' size='sm'>
+                            <Link to='/' className={`relative ${location.pathname === '/' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
                                 <Home size={16} strokeWidth={1.75} className='mr-1.5' /> Feed
-                            </Button>
-                        </Link>
-                        <Link to='/discover' className={`relative ${location.pathname === '/discover' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
-                            <Button variant='ghost' size='sm'>
+                            </Link>
+                        </Button>
+                        <Button asChild variant='ghost' size='sm'>
+                            <Link to='/discover' className={`relative ${location.pathname === '/discover' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
                                 <Search size={16} strokeWidth={1.75} className='mr-1.5' /> Discover
-                            </Button>
-                        </Link>
-                        <Link to='/forum' className={`relative ${location.pathname.startsWith('/forum') ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
-                            <Button variant='ghost' size='sm'>
+                            </Link>
+                        </Button>
+                        <Button asChild variant='ghost' size='sm'>
+                            <Link to='/forum' className={`relative ${location.pathname.startsWith('/forum') ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
                                 <MessageSquare size={16} strokeWidth={1.75} className='mr-1.5' /> Forum
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
 
                         {/* More dropdown */}
                         <div className='relative' ref={moreMenuRef}>
@@ -168,24 +168,23 @@ export function Header() {
                         {/* User Menu or Login */}
                         {isAuthenticated ?
                             <div className='hidden md:flex items-center gap-2'>
-                                <Link to='/submit'>
-                                    <Button variant='primary' size='sm'>
+                                <Button asChild variant='primary' size='sm'>
+                                    <Link to='/submit'>
                                         {t('nav.submit')}
-                                    </Button>
-                                </Link>
+                                    </Link>
+                                </Button>
                                 <NotificationBell />
                                 <UserMenu />
                             </div>
-                        :   <Link to='/login' className='hidden md:block'>
-                                <Button
-                                    variant='primary'
-                                    size='sm'
+                        :   <Button asChild variant='primary' size='sm' className='hidden md:inline-flex'>
+                                <Link
+                                    to='/login'
                                     data-testid='login-button'
                                     aria-label='Login'
                                 >
                                     {t('nav.login')}
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                         }
 
                         {/* Mobile Menu Button */}
@@ -213,73 +212,53 @@ export function Header() {
                         aria-label='Mobile navigation'
                     >
                         <nav className='flex flex-col gap-1 mb-4'>
-                            <Link
-                                to='/'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='w-full justify-start'
+                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                <Link
+                                    to='/'
+                                    onClick={() => setMobileMenuOpen(false)}
                                     data-testid='mobile-nav-home'
                                 >
                                     <Home size={16} strokeWidth={1.75} className='mr-2' /> Feed
-                                </Button>
-                            </Link>
-                            <Link
-                                to='/discover'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='w-full justify-start'
+                                </Link>
+                            </Button>
+                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                <Link
+                                    to='/discover'
+                                    onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <Search size={16} strokeWidth={1.75} className='mr-2' /> Discover
-                                </Button>
-                            </Link>
-                            <Link
-                                to='/forum'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='w-full justify-start'
+                                </Link>
+                            </Button>
+                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                <Link
+                                    to='/forum'
+                                    onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <MessageSquare size={16} strokeWidth={1.75} className='mr-2' /> Forum
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
 
                             <div className='border-t border-border my-2'></div>
                             <p className='px-3 text-xs text-muted-foreground uppercase tracking-wide'>
                                 Explore
                             </p>
 
-                            <Link
-                                to='/leaderboards'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='w-full justify-start'
+                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                <Link
+                                    to='/leaderboards'
+                                    onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <Trophy size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.leaderboards')}
-                                </Button>
-                            </Link>
-                            <Link
-                                to='/playlists/discover'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='w-full justify-start'
+                                </Link>
+                            </Button>
+                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                <Link
+                                    to='/playlists/discover'
+                                    onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <ListMusic size={16} strokeWidth={1.75} className='mr-2' /> Playlists
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                             {/* Watch Parties - Hidden until after launch */}
                             {/* <Link
                                 to='/watch-parties/browse'
@@ -317,84 +296,60 @@ export function Header() {
                                     Your Stuff
                                 </p>
 
-                                <Link
-                                    to='/submit'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='primary'
-                                        size='sm'
-                                        className='w-full'
+                                <Button asChild variant='primary' size='sm' className='w-full'>
+                                    <Link
+                                        to='/submit'
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Sparkles size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.submit')}
-                                    </Button>
-                                </Link>
-                                <Link
-                                    to='/favorites'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='w-full justify-start'
+                                    </Link>
+                                </Button>
+                                <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                    <Link
+                                        to='/favorites'
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Star size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.favorites')}
-                                    </Button>
-                                </Link>
-                                <Link
-                                    to='/playlists'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='w-full justify-start'
+                                    </Link>
+                                </Button>
+                                <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                    <Link
+                                        to='/playlists'
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <ClipboardList size={16} strokeWidth={1.75} className='mr-2' /> My Playlists
-                                    </Button>
-                                </Link>
-                                <Link
-                                    to='/watch-history'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='w-full justify-start'
+                                    </Link>
+                                </Button>
+                                <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                    <Link
+                                        to='/watch-history'
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Clock size={16} strokeWidth={1.75} className='mr-2' /> Watch History
-                                    </Button>
-                                </Link>
+                                    </Link>
+                                </Button>
 
                                 <div className='border-t border-border my-2'></div>
                                 <p className='px-3 text-xs text-muted-foreground uppercase tracking-wide'>
                                     Account
                                 </p>
 
-                                <Link
-                                    to='/profile'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='w-full justify-start'
+                                <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                    <Link
+                                        to='/profile'
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <User size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.profile')}
-                                    </Button>
-                                </Link>
-                                <Link
-                                    to='/settings'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='w-full justify-start'
+                                    </Link>
+                                </Button>
+                                <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                    <Link
+                                        to='/settings'
+                                        onClick={() => setMobileMenuOpen(false)}
                                     >
                                         <Settings size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.settings')}
-                                    </Button>
-                                </Link>
+                                    </Link>
+                                </Button>
                                 <Button
                                     variant='ghost'
                                     size='sm'
@@ -404,20 +359,16 @@ export function Header() {
                                     <LogOut size={16} strokeWidth={1.75} className='mr-2' /> {t('nav.logout')}
                                 </Button>
                             </div>
-                        :   <Link
-                                to='/login'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='primary'
-                                    size='sm'
-                                    className='w-full'
+                        :   <Button asChild variant='primary' size='sm' className='w-full'>
+                                <Link
+                                    to='/login'
+                                    onClick={() => setMobileMenuOpen(false)}
                                     data-testid='login-button'
                                     aria-label='Login'
                                 >
                                     {t('nav.login')}
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                         }
                     </div>
                 )}

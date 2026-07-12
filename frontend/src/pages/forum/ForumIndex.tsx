@@ -113,11 +113,14 @@ export function ForumIndex() {
           <ForumSearch onSearch={handleSearch} className="mb-4" />
 
           {/* Topic filter buttons */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <fieldset className="flex flex-wrap gap-2 mb-4">
+            <legend className="sr-only">Filter discussions by topic</legend>
             <button
+              type="button"
               onClick={() => setFilters({ ...filters, tags: [] })}
+              aria-pressed={!filters.tags || filters.tags.length === 0}
               className={cn(
-                'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer',
+                'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                 (!filters.tags || filters.tags.length === 0)
                   ? 'bg-brand text-white border-transparent'
                   : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
@@ -129,13 +132,15 @@ export function ForumIndex() {
               const isActive = filters.tags?.includes(t.value);
               return (
                 <button
+                  type="button"
                   key={t.value}
                   onClick={() => setFilters({
                     ...filters,
                     tags: isActive ? [] : [t.value],
                   })}
+                  aria-pressed={isActive}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer',
+                    'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     isActive
                       ? 'text-white border-transparent'
                       : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
@@ -146,7 +151,7 @@ export function ForumIndex() {
                 </button>
               );
             })}
-          </div>
+          </fieldset>
 
           {/* Sort */}
           <div className="flex justify-end mb-6">
@@ -155,7 +160,7 @@ export function ForumIndex() {
 
           {/* Error State */}
           {error && (
-            <div className="p-4 bg-error-900 border border-error-800 rounded-lg mb-6">
+            <div role="alert" className="p-4 bg-error-900 border border-error-800 rounded-lg mb-6">
               <p className="text-error-400">
                 Failed to load threads. Please try again later.
               </p>
@@ -166,7 +171,7 @@ export function ForumIndex() {
           <ThreadList threads={sortedThreads} loading={isLoading} />
 
           {/* Empty state for unauthenticated users */}
-          {!user && threads.length === 0 && !isLoading && (
+          {!user && sortedThreads.length === 0 && !isLoading && (
             <div className="text-center py-12 bg-card rounded-lg border border-border mt-6">
               <p className="text-muted-foreground text-lg mb-4">
                 Join the conversation

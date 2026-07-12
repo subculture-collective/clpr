@@ -108,6 +108,19 @@ describe('Button', () => {
   });
 
   describe('State classes', () => {
+    it('can style a link without creating nested interactive elements', () => {
+      render(
+        <Button asChild variant="primary">
+          <a href="/destination">Go somewhere</a>
+        </Button>
+      );
+
+      const link = screen.getByRole('link', { name: 'Go somewhere' });
+      expect(link).toHaveAttribute('href', '/destination');
+      expect(link).toHaveClass('bg-primary-500');
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
     it('does not submit a form unless explicitly requested', () => {
       render(<Button>Safe default</Button>);
       expect(screen.getByRole('button', { name: 'Safe default' })).toHaveAttribute('type', 'button');

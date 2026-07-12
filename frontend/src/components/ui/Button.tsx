@@ -29,6 +29,8 @@ export interface ButtonProps
      * Full width button
      */
     fullWidth?: boolean;
+    /** Render styling and behavior onto the single child element. */
+    asChild?: boolean;
     children?: React.ReactNode;
 }
 
@@ -66,6 +68,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             leftIcon,
             rightIcon,
             fullWidth = false,
+            asChild = false,
             disabled,
             type = 'button',
             children,
@@ -74,21 +77,34 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref
     ) => {
         const isDisabled = disabled || loading;
+        const buttonClassName = cn(
+            'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900',
+            'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+            variantClasses[variant],
+            sizeClasses[size],
+            fullWidth && 'w-full',
+            className
+        );
+
+        if (asChild) {
+            if (isDisabled) {
+                throw new Error('Button asChild does not support disabled or loading state');
+            }
+            const child = React.Children.only(children) as React.ReactElement<{
+                className?: string;
+            }>;
+            return React.cloneElement(child, {
+                className: cn(buttonClassName, child.props.className),
+            });
+        }
 
         return (
             <button
                 ref={ref}
                 type={type}
                 aria-busy={loading || undefined}
-                className={cn(
-                    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900',
-                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
-                    variantClasses[variant],
-                    sizeClasses[size],
-                    fullWidth && 'w-full',
-                    className
-                )}
+                className={buttonClassName}
                 disabled={isDisabled}
                 {...props}
             >
