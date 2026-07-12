@@ -37,8 +37,8 @@ func (h *StreamerClipRoomHandler) GetRoom(c *gin.Context) {
 	}
 
 	channel := strings.TrimSpace(c.Param("channel"))
-	if channel == "" {
-		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Channel is required"}})
+	if !validTwitchChannel(channel) {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid Twitch channel"}})
 		return
 	}
 
@@ -58,8 +58,8 @@ func (h *StreamerClipRoomHandler) StartRoom(c *gin.Context) {
 	}
 
 	channel := strings.TrimSpace(c.Param("channel"))
-	if channel == "" {
-		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Channel is required"}})
+	if !validTwitchChannel(channel) {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid Twitch channel"}})
 		return
 	}
 
@@ -114,8 +114,8 @@ func (h *StreamerClipRoomHandler) StopRoom(c *gin.Context) {
 	}
 
 	channel := strings.TrimSpace(c.Param("channel"))
-	if channel == "" {
-		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Channel is required"}})
+	if !validTwitchChannel(channel) {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid Twitch channel"}})
 		return
 	}
 
@@ -225,12 +225,18 @@ func (h *StreamerClipRoomHandler) ReorderItems(c *gin.Context) {
 	}
 
 	itemIDs := make([]uuid.UUID, 0, len(req.ItemIDs))
+	seen := make(map[uuid.UUID]struct{}, len(req.ItemIDs))
 	for _, id := range req.ItemIDs {
 		parsedID, parseErr := uuid.Parse(strings.TrimSpace(id))
 		if parseErr != nil {
 			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "One or more item IDs are invalid"}})
 			return
 		}
+		if _, exists := seen[parsedID]; exists {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Item IDs must be unique"}})
+			return
+		}
+		seen[parsedID] = struct{}{}
 		itemIDs = append(itemIDs, parsedID)
 	}
 
@@ -343,6 +349,18 @@ func parseRoomAndItemIDs(c *gin.Context) (uuid.UUID, uuid.UUID, bool) {
 	return roomID, itemID, true
 }
 
+func validTwitchChannel(channel string) bool {
+	if len(channel) < 1 || len(channel) > 25 {
+		return false
+	}
+	for _, char := range channel {
+		if (char < 'a' || char > 'z') && (char < 'A' || char > 'Z') && (char < '0' || char > '9') && char != '_' {
+			return false
+		}
+	}
+	return true
+}
+
 func parseRoomIDParam(c *gin.Context) (uuid.UUID, error) {
 	roomIDParam := strings.TrimSpace(c.Param("roomId"))
 	if roomIDParam == "" {
@@ -363,7 +381,7 @@ func handleStreamerClipRoomError(c *gin.Context, err error, message string) {
 	case errors.Is(err, services.ErrStreamerClipRoomForbidden):
 		status = http.StatusForbidden
 		code = "FORBIDDEN"
-	case strings.Contains(lowerErr, "not found"):
+	case errors.Is(err, services.ErrStreamerClipRoomNotFound), strings.Contains(lowerErr, "not found"):
 		status = http.StatusNotFound
 		code = "NOT_FOUND"
 	}

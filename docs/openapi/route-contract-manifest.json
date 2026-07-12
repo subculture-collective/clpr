@@ -2496,56 +2496,56 @@
     "path": "/api/v1/streamer-clip-rooms/{channel}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).GetRoom-fm",
     "operation_id": "getApiV1StreamerClipRoomsChannel",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/streamer-clip-rooms/{channel}/items",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).ListItems-fm",
     "operation_id": "getApiV1StreamerClipRoomsChannelItems",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/streamer-clip-rooms/{channel}/items/order",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).ReorderItems-fm",
     "operation_id": "putApiV1StreamerClipRoomsChannelItemsOrder",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).ApproveItem-fm",
     "operation_id": "postApiV1StreamerClipRoomsChannelItemsItemidApprove",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).RejectItem-fm",
     "operation_id": "postApiV1StreamerClipRoomsChannelItemsItemidReject",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/streamer-clip-rooms/{channel}/start",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).StartRoom-fm",
     "operation_id": "postApiV1StreamerClipRoomsChannelStart",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/streamer-clip-rooms/{channel}/stop",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).StopRoom-fm",
     "operation_id": "postApiV1StreamerClipRoomsChannelStop",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/streamer-clip-rooms/{channel}/ws",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).WebSocket-fm",
     "operation_id": "getApiV1StreamerClipRoomsChannelWs",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

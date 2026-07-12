@@ -10420,197 +10420,121 @@ paths:
 
   /api/v1/streamer-clip-rooms/{channel}:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/streamer-clip-rooms/{channel}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Get or create a channel clip room
       operationId: getApiV1StreamerClipRoomsChannel
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/TwitchChannel'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Room returned, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomDetailResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/items:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/streamer-clip-rooms/{channel}/items
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: List room items
+      description: For item-management routes, the shared Gin wildcard named `channel` contains the room UUID.
       operationId: getApiV1StreamerClipRoomsChannelItems
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/StreamerClipRoomIDAsChannel'}
+        - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected, skipped, all], default: all}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Items returned, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomItemsResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/items/order:
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/streamer-clip-rooms/{channel}/items/order
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Reorder every approved room item
       operationId: putApiV1StreamerClipRoomsChannelItemsOrder
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/StreamerClipRoomIDAsChannel'}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReorderStreamerClipRoomItemsRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Items reordered, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Approve a room item
       operationId: postApiV1StreamerClipRoomsChannelItemsItemidApprove
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: itemId
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/StreamerClipRoomIDAsChannel'}
+        - {$ref: '#/components/parameters/StreamerClipRoomItemID'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Item approved, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomItemResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Reject a room item
       operationId: postApiV1StreamerClipRoomsChannelItemsItemidReject
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: itemId
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/StreamerClipRoomIDAsChannel'}
+        - {$ref: '#/components/parameters/StreamerClipRoomItemID'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Item rejected, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomItemResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/start:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/streamer-clip-rooms/{channel}/start
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Start the Twitch chat listener
       operationId: postApiV1StreamerClipRoomsChannelStart
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/TwitchChannel'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Room started, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/stop:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/streamer-clip-rooms/{channel}/stop
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Stop the Twitch chat listener
       operationId: postApiV1StreamerClipRoomsChannelStop
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/TwitchChannel'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Room stopped, content: {application/json: {schema: {$ref: '#/components/schemas/StreamerClipRoomResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streamer-clip-rooms/{channel}/ws:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/streamer-clip-rooms/{channel}/ws
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Streamer Clip Rooms]
+      summary: Open the read-only room event websocket
       operationId: getApiV1StreamerClipRoomsChannelWs
-      x-clpr-router-derived: true
       parameters:
-        - name: channel
-          in: path
-          required: true
-          schema:
-            type: string
+        - {$ref: '#/components/parameters/StreamerClipRoomIDAsChannel'}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '101': {$ref: '#/components/responses/WebSocketUpgrade'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/streams/following:
     get:
@@ -11751,6 +11675,25 @@ components:
         type: string
       description: Tag slug
 
+    TwitchChannel:
+      name: channel
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[A-Za-z0-9_]{1,25}$'}
+
+    StreamerClipRoomIDAsChannel:
+      name: channel
+      in: path
+      required: true
+      description: Room UUID carried in the shared Gin wildcard.
+      schema: {type: string, format: uuid}
+
+    StreamerClipRoomItemID:
+      name: itemId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+
   responses:
     PageHTML:
       description: Complete server-rendered page
@@ -11779,6 +11722,9 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RouterDerivedPayload'
+
+    WebSocketUpgrade:
+      description: WebSocket protocol upgrade accepted
 
     BadRequest:
       description: Bad Request - Invalid input parameters
@@ -13732,6 +13678,100 @@ components:
       required: [message]
       properties:
         message: {type: string}
+
+    StreamerClipRoom:
+      type: object
+      required: [id, owner_user_id, twitch_channel, approval_mode, is_active, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        owner_user_id: {type: string, format: uuid}
+        twitch_channel: {type: string, pattern: '^[A-Za-z0-9_]{1,25}$'}
+        approval_mode: {type: string, enum: [manual, auto]}
+        is_active: {type: boolean}
+        last_listener_error: {type: string}
+        listener_started_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    StreamerClipRoomItem:
+      type: object
+      required: [id, room_id, source_url, source_type, status, detected_at, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        room_id: {type: string, format: uuid}
+        clip_id: {type: string, format: uuid}
+        clip: {$ref: '#/components/schemas/Clip'}
+        source_url: {type: string, format: uri}
+        source_type: {type: string, enum: [clpr, twitch]}
+        status: {type: string, enum: [pending, approved, rejected, skipped]}
+        position: {type: integer, minimum: 1}
+        twitch_message_id: {type: string}
+        twitch_user_id: {type: string}
+        twitch_username: {type: string}
+        message_text: {type: string}
+        skip_reason: {type: string}
+        detected_at: {type: string, format: date-time}
+        approved_at: {type: string, format: date-time}
+        approved_by_user_id: {type: string, format: uuid}
+        rejected_at: {type: string, format: date-time}
+        rejected_by_user_id: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    StreamerClipRoomWithItems:
+      type: object
+      required: [room, pending_items, approved_items, skipped_items, rejected_items]
+      properties:
+        room: {$ref: '#/components/schemas/StreamerClipRoom'}
+        pending_items: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/StreamerClipRoomItem'}}
+        approved_items: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/StreamerClipRoomItem'}}
+        skipped_items: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/StreamerClipRoomItem'}}
+        rejected_items: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/StreamerClipRoomItem'}}
+
+    ReorderStreamerClipRoomItemsRequest:
+      type: object
+      additionalProperties: false
+      required: [item_ids]
+      properties:
+        item_ids: {type: array, minItems: 1, maxItems: 500, uniqueItems: true, items: {type: string, format: uuid}}
+
+    StreamerClipRoomResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/StreamerClipRoom'}
+
+    StreamerClipRoomDetailResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/StreamerClipRoomWithItems'}
+
+    StreamerClipRoomItemsResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/StreamerClipRoomItem'}}
+
+    StreamerClipRoomItemResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/StreamerClipRoomItem'}
+
+    StreamerClipRoomMutationResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [message]
+          properties: {message: {type: string}}
 
     PlaylistListItem:
       allOf:

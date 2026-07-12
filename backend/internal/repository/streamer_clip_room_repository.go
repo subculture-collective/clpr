@@ -126,6 +126,21 @@ func (r *StreamerClipRoomRepository) GetRoomByID(ctx context.Context, roomID uui
 	return room, nil
 }
 
+func (r *StreamerClipRoomRepository) GetRoomByOwnerChannel(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
+	normalized := strings.ToLower(strings.TrimSpace(channel))
+	const query = `SELECT id, owner_user_id, twitch_channel, approval_mode, is_active,
+		last_listener_error, listener_started_at, created_at, updated_at
+		FROM streamer_clip_rooms WHERE owner_user_id = $1 AND lower(twitch_channel) = $2`
+	room, err := scanStreamerClipRoom(r.pool.QueryRow(ctx, query, ownerUserID, normalized))
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get streamer clip room: %w", err)
+	}
+	return room, nil
+}
+
 // SetRoomActive updates the active state and listener error for a room.
 func (r *StreamerClipRoomRepository) SetRoomActive(ctx context.Context, roomID uuid.UUID, active bool, listenerError *string) error {
 	const query = `
@@ -407,8 +422,8 @@ func (r *StreamerClipRoomRepository) RejectItem(ctx context.Context, roomID, ite
 
 // ReorderApprovedItems reassigns approved item positions in the provided order.
 func (r *StreamerClipRoomRepository) ReorderApprovedItems(ctx context.Context, roomID uuid.UUID, itemIDs []uuid.UUID) error {
-	if len(itemIDs) == 0 {
-		return nil
+	if len(itemIDs) == 0 || len(itemIDs) > 500 {
+		return fmt.Errorf("reorder must contain between 1 and 500 items")
 	}
 
 	seen := make(map[uuid.UUID]struct{}, len(itemIDs))
@@ -427,6 +442,32 @@ func (r *StreamerClipRoomRepository) ReorderApprovedItems(ctx context.Context, r
 
 	if _, err := tx.Exec(ctx, `SELECT id FROM streamer_clip_rooms WHERE id = $1 FOR UPDATE`, roomID); err != nil {
 		return fmt.Errorf("failed to lock streamer clip room: %w", err)
+	}
+	rows, err := tx.Query(ctx, `SELECT id FROM streamer_clip_room_items WHERE room_id = $1 AND status = 'approved' FOR UPDATE`, roomID)
+	if err != nil {
+		return fmt.Errorf("failed to lock approved items: %w", err)
+	}
+	approved := make(map[uuid.UUID]struct{})
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return fmt.Errorf("failed to scan approved item: %w", err)
+		}
+		approved[id] = struct{}{}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return fmt.Errorf("failed to iterate approved items: %w", err)
+	}
+	rows.Close()
+	if len(approved) != len(itemIDs) {
+		return fmt.Errorf("reorder must include every approved item exactly once")
+	}
+	for _, id := range itemIDs {
+		if _, ok := approved[id]; !ok {
+			return pgx.ErrNoRows
+		}
 	}
 
 	for _, itemID := range itemIDs {

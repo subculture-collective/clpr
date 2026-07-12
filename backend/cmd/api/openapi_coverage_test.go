@@ -134,7 +134,11 @@ func TestOpenAPIOperationsHaveResponseSchemas(t *testing.T) {
 				violations = append(violations, strings.ToUpper(method)+" "+path+" has no responses")
 				continue
 			}
+			hasSuccessResponse := false
 			for status, rawResponse := range responses {
+				if strings.HasPrefix(status, "2") || strings.HasPrefix(status, "3") || status == "101" {
+					hasSuccessResponse = true
+				}
 				response, ok := rawResponse.(map[string]any)
 				if !ok {
 					violations = append(violations, strings.ToUpper(method)+" "+path+" "+status+" is malformed")
@@ -158,6 +162,9 @@ func TestOpenAPIOperationsHaveResponseSchemas(t *testing.T) {
 						violations = append(violations, strings.ToUpper(method)+" "+path+" "+status+" "+mediaType+" has no schema")
 					}
 				}
+			}
+			if !hasSuccessResponse {
+				violations = append(violations, strings.ToUpper(method)+" "+path+" has no success, redirect, or WebSocket upgrade response")
 			}
 		}
 	}

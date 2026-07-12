@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,10 +14,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var ErrStreamerClipRoomForbidden = errors.New("streamer clip room forbidden")
+var (
+	ErrStreamerClipRoomForbidden = errors.New("streamer clip room forbidden")
+	ErrStreamerClipRoomNotFound  = errors.New("streamer clip room not found")
+)
+
+var twitchChannelPattern = regexp.MustCompile(`^[A-Za-z0-9_]{1,25}$`)
 
 type streamerClipRoomRepository interface {
 	GetOrCreateRoom(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error)
+	GetRoomByOwnerChannel(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error)
 	GetRoomByID(ctx context.Context, roomID uuid.UUID) (*models.StreamerClipRoom, error)
 	SetRoomActive(ctx context.Context, roomID uuid.UUID, active bool, listenerError *string) error
 	CreateItem(ctx context.Context, item *models.StreamerClipRoomItem) error
@@ -64,6 +70,9 @@ type TwitchChatClipMessage struct {
 }
 
 func (s *StreamerClipRoomService) GetOrCreateRoom(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoomWithItems, error) {
+	if !twitchChannelPattern.MatchString(strings.TrimSpace(channel)) {
+		return nil, fmt.Errorf("invalid Twitch channel")
+	}
 	room, err := s.rooms.GetOrCreateRoom(ctx, ownerUserID, channel)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get or create room: %w", err)
@@ -72,7 +81,7 @@ func (s *StreamerClipRoomService) GetOrCreateRoom(ctx context.Context, ownerUser
 		return nil, fmt.Errorf("streamer clip room not found")
 	}
 
-	items, err := s.rooms.ListItems(ctx, room.ID, "all", math.MaxInt)
+	items, err := s.rooms.ListItems(ctx, room.ID, "all", 500)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list room items: %w", err)
 	}
@@ -87,8 +96,7 @@ func (s *StreamerClipRoomService) GetOrCreateRoom(ctx context.Context, ownerUser
 		case models.StreamerClipRoomItemStatusApproved:
 			result.ApprovedItems = append(result.ApprovedItems, item)
 		case models.StreamerClipRoomItemStatusRejected:
-			// room detail view only needs pending/approved/skipped, but keep rejected data accessible via skipped bucket? no
-			result.SkippedItems = append(result.SkippedItems, item)
+			result.RejectedItems = append(result.RejectedItems, item)
 		case models.StreamerClipRoomItemStatusSkipped:
 			result.SkippedItems = append(result.SkippedItems, item)
 		default:
@@ -111,7 +119,7 @@ func (s *StreamerClipRoomService) ListItems(ctx context.Context, actorUserID, ro
 	if _, err := s.requireOwner(ctx, actorUserID, roomID); err != nil {
 		return nil, err
 	}
-	items, err := s.rooms.ListItems(ctx, roomID, status, math.MaxInt)
+	items, err := s.rooms.ListItems(ctx, roomID, status, 500)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list streamer clip room items: %w", err)
 	}
@@ -130,6 +138,9 @@ func (s *StreamerClipRoomService) GetItem(ctx context.Context, actorUserID, room
 }
 
 func (s *StreamerClipRoomService) StartRoom(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
+	if !twitchChannelPattern.MatchString(strings.TrimSpace(channel)) {
+		return nil, fmt.Errorf("invalid Twitch channel")
+	}
 	room, err := s.rooms.GetOrCreateRoom(ctx, ownerUserID, channel)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get or create room: %w", err)
@@ -150,12 +161,15 @@ func (s *StreamerClipRoomService) StartRoom(ctx context.Context, ownerUserID uui
 }
 
 func (s *StreamerClipRoomService) StopRoom(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
-	room, err := s.rooms.GetOrCreateRoom(ctx, ownerUserID, channel)
+	if !twitchChannelPattern.MatchString(strings.TrimSpace(channel)) {
+		return nil, fmt.Errorf("invalid Twitch channel")
+	}
+	room, err := s.rooms.GetRoomByOwnerChannel(ctx, ownerUserID, channel)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get or create room: %w", err)
 	}
 	if room == nil {
-		return nil, fmt.Errorf("streamer clip room not found")
+		return nil, ErrStreamerClipRoomNotFound
 	}
 
 	if err := s.rooms.SetRoomActive(ctx, room.ID, false, nil); err != nil {
