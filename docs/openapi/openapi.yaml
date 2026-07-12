@@ -3386,6 +3386,9 @@ paths:
       security: []
       parameters:
         - $ref: '#/components/parameters/IdPath'
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
       responses:
         '200':
           description: Karma data
@@ -3395,6 +3398,8 @@ paths:
                 type: object
         '404':
           $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/v1/users/{id}/badges:
     get:
@@ -5844,6 +5849,59 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/Error'}
 
+  /api/v1/badges:
+    get:
+      tags: [Reputation]
+      summary: List badge definitions
+      operationId: getBadgeDefinitions
+      security: []
+      responses:
+        '200':
+          description: Badge definitions sorted by stable badge ID
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BadgeDefinitionsResponse'}
+        '406':
+          description: Client explicitly does not accept JSON
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/leaderboards/{type}:
+    get:
+      tags: [Reputation]
+      summary: Get a public reputation leaderboard
+      operationId: getReputationLeaderboard
+      security: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: {type: string, enum: [karma, engagement]}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - name: page
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}
+      responses:
+        '200':
+          description: Ranked reputation entries
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LeaderboardResponse'}
+        '400':
+          description: Invalid leaderboard type or pagination
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReputationError'}
+        '500':
+          description: Leaderboard retrieval failed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReputationError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -7639,23 +7697,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/badges:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/badges
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1Badges
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/broadcasters/popular:
     get:
       tags: [Generated Route Contracts]
@@ -9319,29 +9360,6 @@ paths:
       x-clpr-router-derived: true
       parameters:
         - name: gameId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/leaderboards/{type}:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/leaderboards/{type}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1LeaderboardsType
-      x-clpr-router-derived: true
-      parameters:
-        - name: type
           in: path
           required: true
           schema:
@@ -13327,6 +13345,61 @@ components:
       required: [success, message]
       properties:
         success: {type: boolean, const: true}
+        message: {type: string}
+
+    BadgeDefinition:
+      type: object
+      required: [id, name, description, icon, category]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        description: {type: string}
+        icon: {type: string}
+        category: {type: string, enum: [achievement, staff, supporter, special]}
+        requirement: {type: string}
+
+    BadgeDefinitionsResponse:
+      type: object
+      required: [badges]
+      properties:
+        badges:
+          type: array
+          items: {$ref: '#/components/schemas/BadgeDefinition'}
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, user_id, username, display_name, score, user_rank]
+      properties:
+        rank: {type: integer, minimum: 1}
+        user_id: {type: string, format: uuid}
+        username: {type: string}
+        display_name: {type: string}
+        avatar_url: {type: string, format: uri}
+        score: {type: integer}
+        user_rank: {type: string}
+        account_age: {type: string}
+        total_comments: {type: integer, minimum: 0}
+        total_votes_cast: {type: integer, minimum: 0}
+        total_clips_submitted: {type: integer, minimum: 0}
+
+    LeaderboardResponse:
+      type: object
+      required: [type, page, limit, entries]
+      properties:
+        type: {type: string, enum: [karma, engagement]}
+        page: {type: integer, minimum: 1, maximum: 1000000}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        entries:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/LeaderboardEntry'}
+
+    ReputationError:
+      type: object
+      required: [error, code, message]
+      properties:
+        error: {type: string}
+        code: {type: string}
         message: {type: string}
 
     Appeal:

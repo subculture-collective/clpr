@@ -941,8 +941,8 @@
     "method": "GET",
     "path": "/api/v1/badges",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetBadgeDefinitions-fm",
-    "operation_id": "getApiV1Badges",
-    "contract_level": "transitional"
+    "operation_id": "getBadgeDefinitions",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
@@ -1872,8 +1872,8 @@
     "method": "GET",
     "path": "/api/v1/leaderboards/{type}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetLeaderboard-fm",
-    "operation_id": "getApiV1LeaderboardsType",
-    "contract_level": "transitional"
+    "operation_id": "getReputationLeaderboard",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",

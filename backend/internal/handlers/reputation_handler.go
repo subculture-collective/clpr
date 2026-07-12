@@ -3,10 +3,11 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // ReputationHandler handles reputation-related HTTP requests
@@ -64,6 +65,16 @@ func (h *ReputationHandler) GetUserKarma(c *gin.Context) {
 		})
 		return
 	}
+	limitStr := c.DefaultQuery("limit", "50")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid limit",
+			"code":    "INVALID_PAGINATION",
+			"message": "limit must be an integer between 1 and 100",
+		})
+		return
+	}
 
 	// Get karma breakdown
 	breakdown, err := h.reputationService.GetKarmaBreakdown(c.Request.Context(), userID)
@@ -75,13 +86,6 @@ func (h *ReputationHandler) GetUserKarma(c *gin.Context) {
 			"message": "Unable to retrieve karma breakdown. Please try again later.",
 		})
 		return
-	}
-
-	// Get karma history (limit from query param, default 50)
-	limitStr := c.DefaultQuery("limit", "50")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 50
 	}
 
 	history, err := h.reputationService.GetUserKarmaHistory(c.Request.Context(), userID, limit)
@@ -159,14 +163,24 @@ func (h *ReputationHandler) GetLeaderboard(c *gin.Context) {
 	// Get pagination params
 	limitStr := c.DefaultQuery("limit", "50")
 	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 50
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid limit",
+			"code":    "INVALID_PAGINATION",
+			"message": "limit must be an integer between 1 and 100",
+		})
+		return
 	}
 
 	pageStr := c.DefaultQuery("page", "1")
 	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		page = 1
+	if err != nil || page < 1 || page > 1_000_000 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid page",
+			"code":    "INVALID_PAGINATION",
+			"message": "page must be an integer between 1 and 1000000",
+		})
+		return
 	}
 	offset := (page - 1) * limit
 
@@ -300,6 +314,11 @@ func (h *ReputationHandler) RemoveBadge(c *gin.Context) {
 // GetBadgeDefinitions retrieves all badge definitions
 // GET /badges
 func (h *ReputationHandler) GetBadgeDefinitions(c *gin.Context) {
+	accept := c.GetHeader("Accept")
+	if accept != "" && !strings.Contains(accept, "application/json") && !strings.Contains(accept, "*/*") {
+		c.JSON(http.StatusNotAcceptable, gin.H{"error": "Only application/json is available"})
+		return
+	}
 	badges := services.GetAllBadgeDefinitions()
 	c.JSON(http.StatusOK, gin.H{
 		"badges": badges,

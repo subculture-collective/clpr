@@ -3,10 +3,11 @@ package services
 import (
 	"context"
 	"fmt"
+	"sort"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
 
 // ReputationService handles reputation-related business logic
@@ -323,6 +324,7 @@ func GetAllBadgeDefinitions() []models.Badge {
 	for _, badge := range badgeDefinitions {
 		badges = append(badges, badge)
 	}
+	sort.Slice(badges, func(i, j int) bool { return badges[i].ID < badges[j].ID })
 	return badges
 }
 
