@@ -126,10 +126,12 @@ export default function PricingPage() {
                     <div className='flex justify-center mb-12'>
                         <div className='bg-surface rounded-lg p-1 inline-flex'>
                             <button
+                                type='button'
                                 onClick={() =>
                                     handleBillingPeriodChange('monthly')
                                 }
-                                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                                aria-pressed={billingPeriod === 'monthly'}
+                                className={`min-h-[44px] px-6 py-2 rounded-md text-sm font-medium transition-colors motion-reduce:transition-none ${
                                     billingPeriod === 'monthly'
                                         ? 'bg-purple-600 text-white'
                                         : 'text-muted-foreground hover:text-white'
@@ -138,17 +140,19 @@ export default function PricingPage() {
                                 Monthly
                             </button>
                             <button
+                                type='button'
                                 onClick={() =>
                                     handleBillingPeriodChange('yearly')
                                 }
-                                className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                                aria-pressed={billingPeriod === 'yearly'}
+                                className={`min-h-[44px] px-6 py-2 rounded-md text-sm font-medium transition-colors motion-reduce:transition-none ${
                                     billingPeriod === 'yearly'
                                         ? 'bg-purple-600 text-white'
                                         : 'text-muted-foreground hover:text-white'
                                 }`}
                             >
                                 Yearly
-                                <span className='ml-2 text-xs bg-green-500 text-white px-2 py-0.5 rounded'>
+                                <span className='ml-2 text-xs bg-green-800 text-white px-2 py-0.5 rounded'>
                                     Save {savingsPercent}%
                                 </span>
                             </button>
@@ -260,7 +264,7 @@ export default function PricingPage() {
 
                         {/* Pro Plan */}
                         <div className='bg-linear-to-br from-purple-600 to-indigo-600 rounded-lg p-8 border-2 border-purple-400 shadow-xl relative'>
-                            <div className='absolute top-0 right-0 bg-yellow-400 text-background text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg'>
+                            <div className='absolute top-0 right-0 bg-yellow-300 text-black text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg'>
                                 POPULAR
                             </div>
 

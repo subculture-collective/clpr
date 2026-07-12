@@ -93,7 +93,7 @@ export function ForumIndex() {
               <h1 className="text-3xl font-bold text-foreground">Forum Discussions</h1>
               <Link
                 to="/forum/analytics"
-                className="text-sm text-primary-500 hover:text-primary-600 transition-colors mt-1 inline-block"
+                className="text-sm text-primary-300 hover:text-primary-200 underline underline-offset-2 transition-colors motion-reduce:transition-none mt-1 inline-block"
               >
                 View Analytics →
               </Link>

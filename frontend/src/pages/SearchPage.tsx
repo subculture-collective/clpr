@@ -475,7 +475,7 @@ export function SearchPage() {
                                 }
                                 className={`px-3 xs:px-4 py-2 font-medium transition-colors relative whitespace-nowrap touch-target text-sm xs:text-base ${
                                     activeTab === tab.id ?
-                                        'text-primary'
+                                        'text-primary-300'
                                     :   'text-muted-foreground hover:text-foreground'
                                 }`}
                                 data-testid={`tab-${tab.id}`}
@@ -494,6 +494,7 @@ export function SearchPage() {
                     </div>
 
                     <select
+                        aria-label='Sort search results'
                         value={sortParam}
                         onChange={e =>
                             handleSortChange(e.target.value as SortType)
