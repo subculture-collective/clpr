@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 // TestParseAuditLogFilters tests the filter parsing function
@@ -468,6 +469,30 @@ func TestAuditLogService_ExportAuditLogsCSV_EmptyResults(t *testing.T) {
 	assert.Contains(t, buf.String(), "ID,Action,Entity Type") // Header should still be present
 
 	mockRepo.AssertExpectations(t)
+}
+
+func TestAuditLogService_ExportAuditLogsCSV_RejectsUnboundedResult(t *testing.T) {
+	ctx := context.Background()
+	filters := repository.AuditLogFilters{}
+	logs := make([]*models.ModerationAuditLogWithUser, MaxAuditLogExportRows+1)
+	for i := range logs {
+		logs[i] = &models.ModerationAuditLogWithUser{}
+	}
+	mockRepo := new(MockAuditLogRepository)
+	mockRepo.On("Export", ctx, filters).Return(logs, nil)
+	service := NewAuditLogService(mockRepo)
+	var buf bytes.Buffer
+	err := service.ExportAuditLogsCSV(ctx, filters, &buf)
+	assert.ErrorIs(t, err, ErrAuditLogExportTooLarge)
+	assert.Empty(t, buf.String())
+}
+
+func TestParseAuditLogFiltersRejectsReversedRangeAndLongSearch(t *testing.T) {
+	now := time.Now()
+	_, err := ParseAuditLogFilters("", "", "", "", "", now.Format(time.RFC3339), now.Add(-time.Hour).Format(time.RFC3339), "")
+	assert.Error(t, err)
+	_, err = ParseAuditLogFilters("", "", "", "", "", "", "", strings.Repeat("x", 201))
+	assert.Error(t, err)
 }
 
 // TestAuditLogService_LogSubscriptionEvent tests logging subscription events
