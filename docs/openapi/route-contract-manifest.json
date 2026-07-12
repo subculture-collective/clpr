@@ -627,42 +627,42 @@
     "path": "/api/v1/admin/tags",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).CreateTag-fm",
     "operation_id": "postApiV1AdminTags",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/admin/tags/blacklist",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).ListBlacklistedTags-fm",
     "operation_id": "getApiV1AdminTagsBlacklist",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/admin/tags/blacklist",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).AddBlacklistedTag-fm",
     "operation_id": "postApiV1AdminTagsBlacklist",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/tags/blacklist/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).RemoveBlacklistedTag-fm",
     "operation_id": "deleteApiV1AdminTagsBlacklistId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/admin/tags/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).DeleteTag-fm",
     "operation_id": "deleteApiV1AdminTagsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PUT",
     "path": "/api/v1/admin/tags/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).UpdateTag-fm",
     "operation_id": "putApiV1AdminTagsId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

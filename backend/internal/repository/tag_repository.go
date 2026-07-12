@@ -2,15 +2,32 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var (
+	ErrTagNotFound            = errors.New("tag not found")
+	ErrTagConflict            = errors.New("tag already exists")
+	ErrBlacklistedTagNotFound = errors.New("blacklisted tag not found")
+	ErrBlacklistedTagConflict = errors.New("blacklisted tag already exists")
+)
+
+func tagWriteError(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return ErrTagConflict
+	}
+	return err
+}
 
 // TagRepository handles database operations for tags
 type TagRepository struct {
@@ -37,7 +54,7 @@ func (r *TagRepository) Create(ctx context.Context, tag *models.Tag) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to create tag: %w", err)
+		return fmt.Errorf("failed to create tag: %w", tagWriteError(err))
 	}
 
 	return nil
@@ -59,7 +76,7 @@ func (r *TagRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Tag,
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("tag not found")
+			return nil, ErrTagNotFound
 		}
 		return nil, fmt.Errorf("failed to get tag by ID: %w", err)
 	}
@@ -83,7 +100,7 @@ func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("tag not found")
+			return nil, ErrTagNotFound
 		}
 		return nil, fmt.Errorf("failed to get tag by slug: %w", err)
 	}
@@ -210,11 +227,11 @@ func (r *TagRepository) Update(ctx context.Context, tag *models.Tag) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to update tag: %w", err)
+		return fmt.Errorf("failed to update tag: %w", tagWriteError(err))
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("tag not found")
+		return ErrTagNotFound
 	}
 
 	return nil
@@ -222,24 +239,28 @@ func (r *TagRepository) Update(ctx context.Context, tag *models.Tag) error {
 
 // Delete deletes a tag and its associations
 func (r *TagRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
 	// Delete all clip-tag associations first
-	_, err := r.pool.Exec(ctx, "DELETE FROM clip_tags WHERE tag_id = $1", id)
+	_, err = tx.Exec(ctx, "DELETE FROM clip_tags WHERE tag_id = $1", id)
 	if err != nil {
 		return fmt.Errorf("failed to delete clip-tag associations: %w", err)
 	}
 
 	// Delete the tag
 	query := `DELETE FROM tags WHERE id = $1`
-	result, err := r.pool.Exec(ctx, query, id)
+	result, err := tx.Exec(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete tag: %w", err)
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("tag not found")
+		return ErrTagNotFound
 	}
-
-	return nil
+	return tx.Commit(ctx)
 }
 
 // AddTagToClip associates a tag with a clip
@@ -433,9 +454,12 @@ func (r *TagRepository) GetBlacklistedTags(ctx context.Context) ([]models.Blackl
 // AddBlacklistedTag adds a pattern to the blacklist
 func (r *TagRepository) AddBlacklistedTag(ctx context.Context, pattern string, reason *string, createdBy *uuid.UUID) error {
 	query := `INSERT INTO blacklisted_tags (pattern, reason, created_by) VALUES ($1, $2, $3) ON CONFLICT (pattern) DO NOTHING`
-	_, err := r.pool.Exec(ctx, query, pattern, reason, createdBy)
+	result, err := r.pool.Exec(ctx, query, pattern, reason, createdBy)
 	if err != nil {
 		return fmt.Errorf("failed to add blacklisted tag: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrBlacklistedTagConflict
 	}
 	return nil
 }
@@ -448,7 +472,7 @@ func (r *TagRepository) RemoveBlacklistedTag(ctx context.Context, id uuid.UUID) 
 		return fmt.Errorf("failed to remove blacklisted tag: %w", err)
 	}
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("blacklisted tag not found")
+		return ErrBlacklistedTagNotFound
 	}
 	return nil
 }

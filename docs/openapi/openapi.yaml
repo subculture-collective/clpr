@@ -7267,117 +7267,140 @@ paths:
 
   /api/v1/admin/tags:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/tags
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Tags]
+      summary: Create a tag
+      description: Creates a canonical, non-blacklisted tag. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminTags
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminTagRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+        '201':
+          description: Tag created
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminTagResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/tags/blacklist:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/admin/tags/blacklist
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Tags]
+      summary: List blacklisted tag slugs
+      description: Administrator MFA is required.
       operationId: getApiV1AdminTagsBlacklist
-      x-clpr-router-derived: true
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Blacklisted tags
+          content: {application/json: {schema: {$ref: '#/components/schemas/BlacklistedTagListResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
         '500':
           $ref: '#/components/responses/InternalServerError'
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/admin/tags/blacklist
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Tags]
+      summary: Blacklist a tag slug
+      description: Adds one canonical tag slug to the blacklist. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminTagsBlacklist
-      x-clpr-router-derived: true
+      parameters: [{$ref: '#/components/parameters/CSRFToken'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BlacklistedTagRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Tag blacklisted
+          content: {application/json: {schema: {$ref: '#/components/schemas/SuccessOnlyResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/tags/blacklist/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/admin/tags/blacklist/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Tags]
+      summary: Remove a blacklisted tag slug
+      description: Administrator MFA and CSRF protection are required.
       operationId: deleteApiV1AdminTagsBlacklistId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Blacklist entry removed
+          content: {application/json: {schema: {$ref: '#/components/schemas/SuccessOnlyResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/admin/tags/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/admin/tags/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Tags]
+      summary: Delete a tag
+      description: Atomically deletes the tag and its clip associations. Administrator MFA and CSRF protection are required.
       operationId: deleteApiV1AdminTagsId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Tag deleted
+          content: {application/json: {schema: {$ref: '#/components/schemas/MessageResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
         '500':
           $ref: '#/components/responses/InternalServerError'
     put:
-      tags: [Generated Route Contracts]
-      summary: PUT /api/v1/admin/tags/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Admin, Tags]
+      summary: Replace a tag
+      description: Replaces tag fields with canonical, non-blacklisted values. Administrator MFA and CSRF protection are required.
       operationId: putApiV1AdminTagsId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminTagRequest'}}}}
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Tag updated
+          content: {application/json: {schema: {$ref: '#/components/schemas/AdminTagResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -11932,6 +11955,60 @@ components:
           type: array
           items: {type: string, minLength: 1, maxLength: 1000}
 
+    SuccessOnlyResponse:
+      type: object
+      required: [success]
+      properties:
+        success: {type: boolean, const: true}
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+
+    AdminTagRequest:
+      type: object
+      required: [name, slug]
+      additionalProperties: false
+      properties:
+        name: {type: string, minLength: 2, maxLength: 50}
+        slug: {type: string, minLength: 2, maxLength: 50, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
+        description: {type: string, maxLength: 1000}
+        color: {type: string, pattern: '^#[0-9A-Fa-f]{6}$'}
+
+    AdminTagResponse:
+      type: object
+      required: [message, tag]
+      properties:
+        message: {type: string}
+        tag: {$ref: '#/components/schemas/Tag'}
+
+    BlacklistedTagRequest:
+      type: object
+      required: [pattern]
+      additionalProperties: false
+      properties:
+        pattern: {type: string, minLength: 2, maxLength: 50, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
+        reason: {type: string, maxLength: 500}
+
+    BlacklistedTag:
+      type: object
+      required: [id, pattern, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        pattern: {type: string, minLength: 2, maxLength: 50}
+        reason: {type: string, maxLength: 500}
+        created_by: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+
+    BlacklistedTagListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, items: {$ref: '#/components/schemas/BlacklistedTag'}}
+
     AccountTypeConversion:
       type: object
       required: [id, user_id, old_type, new_type, converted_at, created_at]
@@ -12551,6 +12628,9 @@ components:
           type: string
         description:
           type: [string, "null"]
+        color:
+          type: [string, "null"]
+          pattern: '^#[0-9A-Fa-f]{6}$'
         usage_count:
           type: integer
         created_at:

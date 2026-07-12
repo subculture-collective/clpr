@@ -24,6 +24,7 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 		// Admin tag management
 		adminTags := admin.Group("/tags")
+		adminTags.Use(middleware.RequireRole("admin"))
 		{
 			adminTags.POST("", h.Tag.CreateTag)
 			adminTags.PUT("/:id", h.Tag.UpdateTag)

@@ -1,16 +1,43 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+var adminTagSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+func validateAdminTagFields(name, slug string, description *string) (string, string, bool) {
+	name = strings.TrimSpace(name)
+	slug = strings.ToLower(strings.TrimSpace(slug))
+	if len(name) < 2 || len(name) > 50 || len(slug) < 2 || len(slug) > 50 || !adminTagSlugPattern.MatchString(slug) {
+		return "", "", false
+	}
+	if description != nil && len(*description) > 1000 {
+		return "", "", false
+	}
+	return name, slug, true
+}
+
+func writeAdminTagError(c *gin.Context, err error, message string) {
+	switch {
+	case errors.Is(err, repository.ErrTagNotFound), errors.Is(err, repository.ErrBlacklistedTagNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tag not found"})
+	case errors.Is(err, repository.ErrTagConflict), errors.Is(err, repository.ErrBlacklistedTagConflict):
+		c.JSON(http.StatusConflict, gin.H{"error": "Tag already exists"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
+	}
+}
 
 // TagHandler handles tag-related HTTP requests
 type TagHandler struct {
@@ -188,7 +215,6 @@ func (h *TagHandler) AddTagsToClip(c *gin.Context) {
 		})
 		return
 	}
-
 	// Validate number of tags
 	if len(req.TagSlugs) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -351,6 +377,11 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 		})
 		return
 	}
+	name, slug, valid := validateAdminTagFields(req.Name, req.Slug, req.Description)
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name and slug must be valid and description cannot exceed 1000 characters"})
+		return
+	}
 
 	// Validate color format if provided
 	if req.Color != nil && !isValidHexColor(*req.Color) {
@@ -363,24 +394,25 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 	// Create tag
 	tag := &models.Tag{
 		ID:          uuid.New(),
-		Name:        req.Name,
-		Slug:        strings.ToLower(req.Slug),
+		Name:        name,
+		Slug:        slug,
 		Description: req.Description,
 		Color:       req.Color,
 		UsageCount:  0,
 	}
 
-	err := h.tagRepo.Create(c.Request.Context(), tag)
+	blacklisted, err := h.tagRepo.IsBlacklisted(c.Request.Context(), slug)
 	if err != nil {
-		if strings.Contains(err.Error(), "unique") || strings.Contains(err.Error(), "duplicate") {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": "Tag with this name or slug already exists",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to create tag",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate tag"})
+		return
+	}
+	if blacklisted {
+		c.JSON(http.StatusConflict, gin.H{"error": "Tag slug is blacklisted"})
+		return
+	}
+	err = h.tagRepo.Create(c.Request.Context(), tag)
+	if err != nil {
+		writeAdminTagError(c, err, "Failed to create tag")
 		return
 	}
 
@@ -420,6 +452,11 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 		})
 		return
 	}
+	name, slug, valid := validateAdminTagFields(req.Name, req.Slug, req.Description)
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name and slug must be valid and description cannot exceed 1000 characters"})
+		return
+	}
 
 	// Validate color format if provided
 	if req.Color != nil && !isValidHexColor(*req.Color) {
@@ -439,22 +476,23 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 	}
 
 	// Update tag fields
-	tag.Name = req.Name
-	tag.Slug = strings.ToLower(req.Slug)
+	blacklisted, err := h.tagRepo.IsBlacklisted(c.Request.Context(), slug)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate tag"})
+		return
+	}
+	if blacklisted {
+		c.JSON(http.StatusConflict, gin.H{"error": "Tag slug is blacklisted"})
+		return
+	}
+	tag.Name = name
+	tag.Slug = slug
 	tag.Description = req.Description
 	tag.Color = req.Color
 
 	err = h.tagRepo.Update(c.Request.Context(), tag)
 	if err != nil {
-		if strings.Contains(err.Error(), "unique") || strings.Contains(err.Error(), "duplicate") {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": "Tag with this name or slug already exists",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update tag",
-		})
+		writeAdminTagError(c, err, "Failed to update tag")
 		return
 	}
 
@@ -478,15 +516,7 @@ func (h *TagHandler) DeleteTag(c *gin.Context) {
 	// Delete tag (will also delete clip associations)
 	err = h.tagRepo.Delete(c.Request.Context(), id)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Tag not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to delete tag",
-		})
+		writeAdminTagError(c, err, "Failed to delete tag")
 		return
 	}
 
@@ -532,24 +562,27 @@ func (h *TagHandler) ListBlacklistedTags(c *gin.Context) {
 // AddBlacklistedTag adds a pattern to the tag blacklist (admin only)
 func (h *TagHandler) AddBlacklistedTag(c *gin.Context) {
 	var req struct {
-		Pattern string  `json:"pattern" binding:"required"`
-		Reason  *string `json:"reason"`
+		Pattern string  `json:"pattern" binding:"required,min=2,max=50"`
+		Reason  *string `json:"reason" binding:"omitempty,max=500"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Pattern is required"})
 		return
 	}
 
-	// Get admin user ID from context
-	var createdBy *uuid.UUID
-	if userIDValue, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDValue.(uuid.UUID); ok {
-			createdBy = &uid
-		}
+	createdByID, ok := authenticatedUserID(c)
+	if !ok {
+		return
 	}
+	pattern := strings.ToLower(strings.TrimSpace(req.Pattern))
+	if !adminTagSlugPattern.MatchString(pattern) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Pattern must be a canonical tag slug"})
+		return
+	}
+	createdBy := &createdByID
 
-	if err := h.tagRepo.AddBlacklistedTag(c.Request.Context(), req.Pattern, req.Reason, createdBy); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add blacklisted tag"})
+	if err := h.tagRepo.AddBlacklistedTag(c.Request.Context(), pattern, req.Reason, createdBy); err != nil {
+		writeAdminTagError(c, err, "Failed to add blacklisted tag")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
@@ -564,11 +597,7 @@ func (h *TagHandler) RemoveBlacklistedTag(c *gin.Context) {
 		return
 	}
 	if err := h.tagRepo.RemoveBlacklistedTag(c.Request.Context(), id); err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Blacklisted tag not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove blacklisted tag"})
+		writeAdminTagError(c, err, "Failed to remove blacklisted tag")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
