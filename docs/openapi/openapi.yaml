@@ -4709,6 +4709,32 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/ContactErrorResponse'}
 
+  /internal/operations/webhooks:
+    get:
+      tags: [Operations, Webhooks]
+      summary: Get webhook delivery and retry health
+      description: Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
+      operationId: getInternalOperationsWebhooks
+      security:
+        - OperationalAuth: []
+      responses:
+        '200':
+          description: Complete webhook operational statistics
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookOperationsHealthyResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500':
+          description: Retry queue statistics unavailable
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ContactErrorResponse'}
+        '503':
+          description: Delivery statistics unavailable; partial retry statistics returned
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WebhookOperationsDegradedResponse'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -11420,23 +11446,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /internal/operations/webhooks:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /internal/operations/webhooks
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getInternalOperationsWebhooks
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
 components:
   securitySchemes:
     BearerAuth:
@@ -11449,6 +11458,10 @@ components:
       in: cookie
       name: access_token
       description: HttpOnly JWT session cookie. State-changing requests authenticated this way also require the csrf_token cookie value in X-CSRF-Token.
+    OperationalAuth:
+      type: http
+      scheme: bearer
+      description: Dedicated machine credential for internal operational diagnostics
 
   parameters:
     CSRFToken:
@@ -12436,6 +12449,39 @@ components:
       required: [message]
       properties:
         message: {type: string}
+
+    WebhookOperationsStats:
+      type: object
+      required: [pending_retries, dlq_items, timestamp]
+      properties:
+        pending_retries: {type: integer, minimum: 0}
+        dlq_items: {type: integer, minimum: 0}
+        timestamp: {type: string, format: date-time}
+        active_subscriptions: {type: integer, minimum: 0}
+        pending_deliveries: {type: integer, minimum: 0}
+        recent_deliveries:
+          type: object
+          required: [success, failed]
+          properties:
+            success: {type: integer, minimum: 0}
+            failed: {type: integer, minimum: 0}
+
+    WebhookOperationsHealthyResponse:
+      type: object
+      required: [status, webhooks]
+      properties:
+        status: {type: string, const: healthy}
+        webhooks: {$ref: '#/components/schemas/WebhookOperationsStats'}
+
+    WebhookOperationsDegradedResponse:
+      type: object
+      required: [status, webhooks, unavailable_components]
+      properties:
+        status: {type: string, const: degraded}
+        webhooks: {$ref: '#/components/schemas/WebhookOperationsStats'}
+        unavailable_components:
+          type: array
+          items: {type: string, const: delivery_stats}
 
     Appeal:
       type: object

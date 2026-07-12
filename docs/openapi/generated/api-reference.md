@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T16:38:51.618Z
+generated: 2026-07-12T16:44:47.789Z
 ---
 
 # Clipper API
@@ -17266,6 +17266,113 @@ func main() {
 
 ---
 
+### Get webhook delivery and retry health
+
+`GET /internal/operations/webhooks`
+
+Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
+
+**Tags:** Operations, Webhooks
+
+🔒 **Authentication Required**
+
+#### Responses
+
+**200** - Complete webhook operational statistics
+
+**401** - Success
+
+**500** - Retry queue statistics unavailable
+
+**503** - Delivery statistics unavailable; partial retry statistics returned
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/internal/operations/webhooks" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/internal/operations/webhooks', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+try:
+    response = requests.get(
+        '/internal/operations/webhooks',
+        headers=headers
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/internal/operations/webhooks", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
 ## Support
 
 ### Submit a contact message
@@ -17967,6 +18074,115 @@ func main() {
         // Handle error
         return
     }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+## Operations
+
+### Get webhook delivery and retry health
+
+`GET /internal/operations/webhooks`
+
+Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
+
+**Tags:** Operations, Webhooks
+
+🔒 **Authentication Required**
+
+#### Responses
+
+**200** - Complete webhook operational statistics
+
+**401** - Success
+
+**500** - Retry queue statistics unavailable
+
+**503** - Delivery statistics unavailable; partial retry statistics returned
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "http://localhost:8080/internal/operations/webhooks" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/internal/operations/webhooks', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+try:
+    response = requests.get(
+        '/internal/operations/webhooks',
+        headers=headers
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/internal/operations/webhooks", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
 
     client := &http.Client{}
     resp, err := client.Do(req)
@@ -51305,104 +51521,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("GET", "/internal/operations/metrics", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### GET /internal/operations/webhooks
-
-`GET /internal/operations/webhooks`
-
-Router-derived operation pending a route-specific response schema.
-
-**Tags:** Generated Route Contracts
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "http://localhost:8080/internal/operations/webhooks"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/internal/operations/webhooks', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/internal/operations/webhooks'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/internal/operations/webhooks", nil)
     if err != nil {
         // Handle error
         return

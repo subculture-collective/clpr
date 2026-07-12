@@ -3336,7 +3336,7 @@
     "path": "/internal/operations/webhooks",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookMonitoringHandler).GetWebhookRetryStats-fm",
     "operation_id": "getInternalOperationsWebhooks",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

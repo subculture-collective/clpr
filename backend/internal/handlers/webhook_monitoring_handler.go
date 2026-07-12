@@ -1,22 +1,30 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
+type webhookRetryStatsService interface {
+	GetRetryQueueStats(context.Context) (map[string]interface{}, error)
+}
+
+type outboundWebhookStatsService interface {
+	GetDeliveryStats(context.Context) (map[string]interface{}, error)
+}
+
 // WebhookMonitoringHandler handles webhook monitoring endpoints
 type WebhookMonitoringHandler struct {
-	webhookRetryService    *services.WebhookRetryService
-	outboundWebhookService *services.OutboundWebhookService
+	webhookRetryService    webhookRetryStatsService
+	outboundWebhookService outboundWebhookStatsService
 }
 
 // NewWebhookMonitoringHandler creates a new webhook monitoring handler
 func NewWebhookMonitoringHandler(
-	webhookRetryService *services.WebhookRetryService,
-	outboundWebhookService *services.OutboundWebhookService,
+	webhookRetryService webhookRetryStatsService,
+	outboundWebhookService outboundWebhookStatsService,
 ) *WebhookMonitoringHandler {
 	return &WebhookMonitoringHandler{
 		webhookRetryService:    webhookRetryService,
@@ -45,10 +53,10 @@ func (h *WebhookMonitoringHandler) GetWebhookRetryStats(c *gin.Context) {
 	// Get additional metrics from outbound webhook service
 	deliveryStats, err := h.outboundWebhookService.GetDeliveryStats(c.Request.Context())
 	if err != nil {
-		// Log error but don't fail the request
-		c.JSON(http.StatusOK, gin.H{
-			"status":   "healthy",
-			"webhooks": stats,
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"status":                 "degraded",
+			"webhooks":               stats,
+			"unavailable_components": []string{"delivery_stats"},
 		})
 		return
 	}

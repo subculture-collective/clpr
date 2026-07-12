@@ -700,14 +700,10 @@ func (s *OutboundWebhookService) GetDeliveryStats(ctx context.Context) (map[stri
 	// Get recent delivery stats (last hour)
 	recentStats, err := s.webhookRepo.GetRecentDeliveryStats(ctx)
 	if err != nil {
-		// Log error but don't fail
 		utils.Error("Failed to get recent webhook delivery stats", err, map[string]interface{}{
 			"component": webhookOutboundComponent,
 		})
-		recentStats = map[string]int{
-			"success": 0,
-			"failed":  0,
-		}
+		return nil, fmt.Errorf("failed to get recent delivery stats: %w", err)
 	}
 
 	stats := map[string]interface{}{
