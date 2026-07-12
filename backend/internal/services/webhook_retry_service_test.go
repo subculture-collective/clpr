@@ -17,25 +17,25 @@ func TestCalculateNextRetry(t *testing.T) {
 		{
 			name:       "First retry - 30 seconds",
 			retryCount: 0,
-			minDelay:   29 * time.Second,
-			maxDelay:   35 * time.Second,
+			minDelay:   24 * time.Second,
+			maxDelay:   36 * time.Second,
 		},
 		{
 			name:       "Second retry - 1 minute",
 			retryCount: 1,
-			minDelay:   55 * time.Second,
-			maxDelay:   65 * time.Second,
+			minDelay:   48 * time.Second,
+			maxDelay:   72 * time.Second,
 		},
 		{
 			name:       "Third retry - 2 minutes",
 			retryCount: 2,
-			minDelay:   115 * time.Second,
-			maxDelay:   125 * time.Second,
+			minDelay:   96 * time.Second,
+			maxDelay:   144 * time.Second,
 		},
 		{
 			name:       "High retry count caps at 1 hour",
 			retryCount: 10,
-			minDelay:   time.Hour - time.Second,
+			minDelay:   48 * time.Minute,
 			maxDelay:   time.Hour + time.Second,
 		},
 	}

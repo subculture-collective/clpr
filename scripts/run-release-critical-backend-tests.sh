@@ -17,6 +17,8 @@ test_status=${PIPESTATUS[0]}
 set -e
 (( test_status == 0 )) || exit "$test_status"
 
+go test -count=1 -tags=integration ./internal/repository -run TestWebhookRetryClaimsAreExclusiveAcrossWorkers
+
 if grep -q '"Action":"skip"' "$results"; then
     echo "Release-critical backend suite skipped tests:" >&2
     grep '"Action":"skip"' "$results" >&2
