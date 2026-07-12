@@ -113,7 +113,10 @@ flowchart LR
 
 ### R1.2 — Add mandatory source CI
 
-- **State:** TODO
+- **State:** IN PROGRESS — source workflow now enforces backend test/vet/build,
+  frontend audit/lint/test/build, non-zero browser discovery, and real-backend
+  cross-browser smoke with diagnostic artifacts. Hosted execution and skip-budget
+  integration remain before this task is `DONE`.
 - **Owner role:** Platform engineering
 - **Depends on:** R1.1
 - **Work:** Add a pull-request workflow for clean dependency install, backend test/race/vet, frontend lint/build/unit, Playwright discovery/smoke, OpenAPI validation/coverage, docs validation, dependency scanning, secret scanning, SBOM generation, and container build/scan.

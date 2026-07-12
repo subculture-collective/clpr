@@ -238,7 +238,7 @@ tasks:
   test:e2e:list:
     desc: Verify Playwright discovers a non-zero browser test manifest
     cmds:
-      - cd frontend && npm run test:e2e:list
+      - bash scripts/verify-playwright-manifest.sh
 
   test:e2e:mocked:
     desc: Run mocked Chromium UI smoke tests (not a release substitute)
@@ -248,7 +248,7 @@ tasks:
   test:e2e:real:
     desc: Run real-backend smoke tests in all supported browsers
     cmds:
-      - cd frontend && npm run test:e2e:real
+      - bash scripts/run-real-e2e.sh
 
   test:e2e:ui:
     desc: Run frontend Playwright E2E UI
