@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
@@ -164,9 +164,9 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 		forum.POST("/flag", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.ForumModeration.FlagContent)
 	}
 
-	// Watch party routes
-	watchParties := v1.Group("/watch-parties")
-	{
+	// Watch parties remain outside the launch API unless explicitly enabled.
+	if infra.Config.FeatureFlags.WatchParties {
+		watchParties := v1.Group("/watch-parties")
 		// NOTE: Keep static routes like "/history" registered before parameterized
 		// routes such as "/:id". If "/history" is moved below "/:id", requests to
 		// "/watch-parties/history" could be incorrectly handled by the "/:id" route.
@@ -218,8 +218,8 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 
 		// WebSocket endpoint for real-time sync (authenticated)
 		watchParties.GET("/:id/ws", middleware.AuthMiddleware(svcs.Auth), h.WatchParty.WatchPartyWebSocket)
-	}
 
-	// User watch party stats route (needs to be outside watchParties group to avoid conflict)
-	v1.GET("/users/:id/watch-party-stats", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Hour), h.WatchParty.GetUserWatchPartyStats)
+		// User watch party stats route must remain outside the grouped wildcard routes.
+		v1.GET("/users/:id/watch-party-stats", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Hour), h.WatchParty.GetUserWatchPartyStats)
+	}
 }

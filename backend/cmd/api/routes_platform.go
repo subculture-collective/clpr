@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
@@ -23,8 +23,10 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 			streams.DELETE("/:streamer/follow", middleware.AuthMiddleware(svcs.Auth), h.Stream.UnfollowStreamer)
 			streams.GET("/:streamer/follow-status", middleware.AuthMiddleware(svcs.Auth), h.Stream.GetStreamFollowStatus)
 
-			// Protected stream clip creation endpoint (authenticated, rate limited)
-			streams.POST("/:streamer/clips", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Stream.CreateClipFromStream)
+			// Stream clipping is incomplete and remains absent unless explicitly enabled.
+			if infra.Config.FeatureFlags.StreamClipCreation {
+				streams.POST("/:streamer/clips", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Stream.CreateClipFromStream)
+			}
 		}
 	}
 
@@ -122,7 +124,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 	v1.POST("/events", middleware.RateLimitMiddleware(infra.Redis, 100, time.Minute), h.Event.TrackEvent)
 
 	// Live feed (authenticated)
-	if h.LiveStatus != nil {
+	if h.LiveStatus != nil && infra.Config.FeatureFlags.LiveFeed {
 		v1.GET("/feed/live", middleware.AuthMiddleware(svcs.Auth), h.LiveStatus.GetFollowedLiveBroadcasters)
 	}
 
