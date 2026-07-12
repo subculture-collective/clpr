@@ -118,7 +118,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
 	revenueHandler := handlers.NewRevenueHandler(svcs.Revenue)
 	adHandler := handlers.NewAdHandler(svcs.Ad)
-	exportHandler := handlers.NewExportHandler(svcs.Export, svcs.Auth, repos.User)
+	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
 	webhookSubscriptionHandler := handlers.NewWebhookSubscriptionHandler(svcs.OutboundWebhook)
 	webhookDLQHandler := handlers.NewWebhookDLQHandler(svcs.OutboundWebhook)
 	configHandler := handlers.NewConfigHandler(cfg)

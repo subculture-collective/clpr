@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 // ExportRepositoryInterface defines the interface for export repository operations
@@ -504,6 +504,12 @@ func (s *ExportService) GetExportFilePath(ctx context.Context, exportID uuid.UUI
 
 	if req.Status != models.ExportStatusCompleted {
 		return "", fmt.Errorf("export is not completed yet (status: %s)", req.Status)
+	}
+	if req.ExpiresAt == nil {
+		return "", fmt.Errorf("completed export is missing expiration")
+	}
+	if !req.ExpiresAt.After(time.Now()) {
+		return "", fmt.Errorf("export has expired")
 	}
 
 	if req.FilePath == nil || *req.FilePath == "" {

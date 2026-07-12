@@ -5197,6 +5197,104 @@ paths:
         '500': {$ref: '#/components/responses/InternalServerError'}
         '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
+  /api/v1/creators/me/export/request:
+    post:
+      tags: [Creator Exports]
+      summary: Request a creator data export
+      description: Queues an authenticated creator's clip export. Limited to three requests per day.
+      operationId: requestCreatorExport
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateExportRequest'}
+      responses:
+        '201':
+          description: Export request queued
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExportCreationResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/creators/me/export/status/{id}:
+    get:
+      tags: [Creator Exports]
+      summary: Get a creator export's status
+      description: Returns only an export owned by the authenticated user. Completed, unexpired exports include a download URL.
+      operationId: getCreatorExportStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Export status
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExportRequestResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/creators/me/export/download/{id}:
+    get:
+      tags: [Creator Exports]
+      summary: Download a completed creator export
+      description: Downloads an owned, completed, unexpired export artifact.
+      operationId: downloadCreatorExport
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Export file
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+          content:
+            text/csv:
+              schema: {type: string}
+            application/json:
+              schema: {}
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '400':
+          description: Invalid ID or export is not ready
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExportDownloadError'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '410':
+          description: Export artifact has expired
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/creators/me/exports:
+    get:
+      tags: [Creator Exports]
+      summary: List the current creator's export requests
+      operationId: listCreatorExports
+      responses:
+        '200':
+          description: Export request history
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ExportRequestListResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/ads/campaigns:
     get:
       tags: [Generated Route Contracts]
@@ -8434,86 +8532,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/creators/me/export/download/{id}:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/creators/me/export/download/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsMeExportDownloadId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/creators/me/export/request:
-    post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/creators/me/export/request
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: postApiV1CreatorsMeExportRequest
-      x-clpr-router-derived: true
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/creators/me/export/status/{id}:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/creators/me/export/status/{id}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsMeExportStatusId
-      x-clpr-router-derived: true
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/creators/me/exports:
-    get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/creators/me/exports
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getApiV1CreatorsMeExports
-      x-clpr-router-derived: true
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -12952,6 +12970,57 @@ components:
           maxItems: 100
           items: {$ref: '#/components/schemas/DocsSearchResult'}
         count: {type: integer, minimum: 0, maximum: 100}
+
+    CreateExportRequest:
+      type: object
+      required: [format]
+      properties:
+        format: {type: string, enum: [csv, json]}
+
+    ExportRequest:
+      type: object
+      required: [id, user_id, creator_name, format, status, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        creator_name: {type: string}
+        format: {type: string, enum: [csv, json]}
+        status: {type: string, enum: [pending, processing, completed, failed, expired]}
+        file_size_bytes: {type: integer, format: int64, minimum: 0}
+        expires_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        completed_at: {type: string, format: date-time}
+
+    ExportRequestResponse:
+      allOf:
+        - $ref: '#/components/schemas/ExportRequest'
+        - type: object
+          properties:
+            download_url: {type: string, format: uri}
+
+    ExportCreationResponse:
+      type: object
+      required: [export_request, message]
+      properties:
+        export_request: {$ref: '#/components/schemas/ExportRequest'}
+        message: {type: string}
+
+    ExportRequestListResponse:
+      type: object
+      required: [export_requests, count]
+      properties:
+        export_requests:
+          type: array
+          items: {$ref: '#/components/schemas/ExportRequestResponse'}
+        count: {type: integer, minimum: 0}
+
+    ExportDownloadError:
+      type: object
+      required: [error]
+      properties:
+        error: {type: string}
+        status: {type: string, enum: [pending, processing, failed, expired]}
 
     Appeal:
       type: object

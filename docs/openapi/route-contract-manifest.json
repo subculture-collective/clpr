@@ -1536,29 +1536,29 @@
     "method": "GET",
     "path": "/api/v1/creators/me/export/download/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).DownloadExport-fm",
-    "operation_id": "getApiV1CreatorsMeExportDownloadId",
-    "contract_level": "transitional"
+    "operation_id": "downloadCreatorExport",
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/creators/me/export/request",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).RequestExport-fm",
-    "operation_id": "postApiV1CreatorsMeExportRequest",
-    "contract_level": "transitional"
+    "operation_id": "requestCreatorExport",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/creators/me/export/status/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).GetExportStatus-fm",
-    "operation_id": "getApiV1CreatorsMeExportStatusId",
-    "contract_level": "transitional"
+    "operation_id": "getCreatorExportStatus",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/creators/me/exports",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).ListExportRequests-fm",
-    "operation_id": "getApiV1CreatorsMeExports",
-    "contract_level": "transitional"
+    "operation_id": "listCreatorExports",
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

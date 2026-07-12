@@ -1323,11 +1323,11 @@ type ExportRequest struct {
 	CreatorName   string     `json:"creator_name" db:"creator_name"`
 	Format        string     `json:"format" db:"format"` // csv, json
 	Status        string     `json:"status" db:"status"` // pending, processing, completed, failed, expired
-	FilePath      *string    `json:"file_path,omitempty" db:"file_path"`
+	FilePath      *string    `json:"-" db:"file_path"`
 	FileSizeBytes *int64     `json:"file_size_bytes,omitempty" db:"file_size_bytes"`
-	ErrorMessage  *string    `json:"error_message,omitempty" db:"error_message"`
+	ErrorMessage  *string    `json:"-" db:"error_message"`
 	ExpiresAt     *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	EmailSent     bool       `json:"email_sent" db:"email_sent"`
+	EmailSent     bool       `json:"-" db:"email_sent"`
 	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time  `json:"updated_at" db:"updated_at"`
 	CompletedAt   *time.Time `json:"completed_at,omitempty" db:"completed_at"`
