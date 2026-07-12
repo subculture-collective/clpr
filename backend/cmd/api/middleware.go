@@ -70,6 +70,7 @@ func applyGlobalMiddleware(r *gin.Engine, cfg *config.Config, infra *Infrastruct
 	// Add custom middleware
 	// Request ID must come first to be available in other middleware
 	r.Use(requestid.New())
+	r.Use(middleware.ErrorCorrelationMiddleware())
 
 	// Add OpenTelemetry middleware (if enabled)
 	if cfg.Telemetry.Enabled {

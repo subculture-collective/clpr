@@ -20,6 +20,17 @@ Expected validation, authentication, authorization, and rate-limit responses
 are therefore not outages. Product-level correctness (for example entitlement
 activation after a Stripe webhook) remains covered by journey contract tests.
 
+## Error correlation contract
+
+Every API response includes `X-Request-ID`. Every `4xx` or `5xx` response also
+includes a stable, user-safe `X-Error-Code`; handlers may set a more specific
+domain code before writing the response. The default codes distinguish invalid
+requests, authentication, authorization, missing resources, conflicts, payload
+limits, rate limits, internal failures, unavailable services, and upstream
+failures/timeouts. CORS exposes both headers to the web client. Operators group
+errors by route and `X-Error-Code`, then use `X-Request-ID` to correlate the
+specific request with traces and redacted logs.
+
 ## Release policy
 
 - Page when the 1-hour error ratio is above 5% or p95 latency is above twice
@@ -34,4 +45,3 @@ activation after a Stripe webhook) remains covered by journey contract tests.
 The executable alert and recording rules are in
 `monitoring/prometheus/clpr-slo-rules.yml`. Respond using the
 [SLO breach playbook](playbooks/slo-breach-response.md).
-

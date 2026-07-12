@@ -385,7 +385,7 @@ flowchart LR
 
 ### R5.2 — Define SLOs and actionable observability
 
-- **State:** IN PROGRESS — journey SLOs, recording/alert rules, queue/drop metrics, owners, and tested runbooks exist; systematic user-safe error-code coverage remains open
+- **State:** DONE — journey SLOs, recording/alert rules, queue/drop metrics, owners, and tested runbooks exist; every error response carries a stable user-safe `X-Error-Code` and every response carries an exposed `X-Request-ID` for trace/log correlation, with middleware regression coverage
 - **Owner role:** SRE + product
 - **Depends on:** R2.3, R5.1
 - **Work:** Define SLOs for auth, feed, search, playback, submission, checkout, and moderation. Add structured error codes, trace IDs in user-safe errors, RED metrics, job lag/failure metrics, alert thresholds, runbooks, and owners.
