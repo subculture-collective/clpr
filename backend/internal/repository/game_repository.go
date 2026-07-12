@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
 // GameRepository handles database operations for games
@@ -66,7 +66,7 @@ func (r *GameRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Gam
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("game not found")
+			return nil, fmt.Errorf("game not found: %w", pgx.ErrNoRows)
 		}
 		return nil, fmt.Errorf("failed to get game by ID: %w", err)
 	}

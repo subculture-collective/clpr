@@ -5390,6 +5390,82 @@ paths:
                 $ref: '#/components/schemas/ContactErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /clips/game/{gameSlug}:
+    get:
+      tags:
+        - Pages
+      summary: Render a game clip collection page
+      description: Server-rendered SEO page. Missing games return 404; incomplete repository data returns a non-cacheable 500 rather than an empty indexable page.
+      operationId: getClipsGameGameslug
+      security: []
+      parameters:
+        - name: gameSlug
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/PageHTML'
+        '404':
+          $ref: '#/components/responses/PageNotFound'
+        '500':
+          $ref: '#/components/responses/PageUnavailable'
+  /clips/streamer/{broadcasterName}:
+    get:
+      tags:
+        - Pages
+      summary: Render a broadcaster clip profile page
+      description: Server-rendered SEO page. Missing broadcasters return 404; incomplete repository data returns a non-cacheable 500.
+      operationId: getClipsStreamerBroadcastername
+      security: []
+      parameters:
+        - name: broadcasterName
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/PageHTML'
+        '404':
+          $ref: '#/components/responses/PageNotFound'
+        '500':
+          $ref: '#/components/responses/PageUnavailable'
+  /clips/streamer/{broadcasterName}/{gameSlug}:
+    get:
+      tags:
+        - Pages
+      summary: Render a broadcaster-by-game clip page
+      description: Server-rendered SEO page. Missing entities return 404; incomplete repository data returns a non-cacheable 500.
+      operationId: getClipsStreamerBroadcasternameGameslug
+      security: []
+      parameters:
+        - name: broadcasterName
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+        - name: gameSlug
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/PageHTML'
+        '404':
+          $ref: '#/components/responses/PageNotFound'
+        '500':
+          $ref: '#/components/responses/PageUnavailable'
   /api/v1/admin/ads/campaigns:
     get:
       tags:
@@ -11663,80 +11739,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /clips/game/{gameSlug}:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /clips/game/{gameSlug}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getClipsGameGameslug
-      x-clpr-router-derived: true
-      parameters:
-        - name: gameSlug
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /clips/streamer/{broadcasterName}:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /clips/streamer/{broadcasterName}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getClipsStreamerBroadcastername
-      x-clpr-router-derived: true
-      parameters:
-        - name: broadcasterName
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /clips/streamer/{broadcasterName}/{gameSlug}:
-    get:
-      tags:
-        - Generated Route Contracts
-      summary: GET /clips/streamer/{broadcasterName}/{gameSlug}
-      description: Router-derived operation pending a route-specific response schema.
-      operationId: getClipsStreamerBroadcasternameGameslug
-      x-clpr-router-derived: true
-      parameters:
-        - name: broadcasterName
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: gameSlug
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /debug/pprof:
     get:
       tags:
@@ -12042,6 +12044,29 @@ components:
         type: string
       description: Tag slug
   responses:
+    PageHTML:
+      description: Complete server-rendered page
+      content:
+        text/html:
+          schema:
+            type: string
+    PageNotFound:
+      description: Requested page entity does not exist
+      content:
+        text/html:
+          schema:
+            type: string
+    PageUnavailable:
+      description: Required page data is temporarily unavailable; response includes Cache-Control no-store
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        text/html:
+          schema:
+            type: string
     RouterDerivedSuccess:
       description: Successful response from a router-derived operation whose route-specific schema remains to be documented
       content:

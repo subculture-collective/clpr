@@ -3182,21 +3182,21 @@
     "path": "/clips/game/{gameSlug}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PagesHandler).GetGamePage-fm",
     "operation_id": "getClipsGameGameslug",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/clips/streamer/{broadcasterName}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PagesHandler).GetStreamerPage-fm",
     "operation_id": "getClipsStreamerBroadcastername",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/clips/streamer/{broadcasterName}/{gameSlug}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PagesHandler).GetStreamerGamePage-fm",
     "operation_id": "getClipsStreamerBroadcasternameGameslug",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
