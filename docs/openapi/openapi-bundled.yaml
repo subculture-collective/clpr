@@ -157,7 +157,7 @@ paths:
       tags:
         - Health
       summary: Readiness check
-      description: Returns 200 if all services are ready (database, redis, etc.)
+      description: Returns 200 when required services are ready; optional dependency failures are listed as degradation
       operationId: getHealthReady
       security: []
       responses:
@@ -167,12 +167,31 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - status
+                  - degraded_dependencies
                 properties:
                   status:
                     type: string
-                    example: ok
+                    const: ready
+                  degraded_dependencies:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - opensearch
         '503':
-          $ref: '#/components/responses/ServiceUnavailable'
+          description: A required dependency is unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    const: not ready
   /health/live:
     get:
       tags:

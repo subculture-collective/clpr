@@ -70,15 +70,20 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 		}
 
 		// Check OpenSearch connection (optional)
+		degradedDependencies := make([]string, 0)
 		if infra.OpenSearch != nil {
 			osErr := infra.OpenSearch.Ping(ctx)
 
 			if osErr != nil {
 				log.Printf("OpenSearch health check failed (%T): %v", osErr, osErr)
+				degradedDependencies = append(degradedDependencies, "opensearch")
 			}
 		}
 
-		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+		c.JSON(http.StatusOK, gin.H{
+			"status":                "ready",
+			"degraded_dependencies": degradedDependencies,
+		})
 	})
 
 	// Liveness check - indicates if the application is alive

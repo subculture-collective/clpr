@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-07-12T15:28:33.588Z
+generated: 2026-07-12T15:38:35.790Z
 ---
 
 # Clipper API
@@ -256,7 +256,7 @@ func main() {
 
 `GET /health/ready`
 
-Returns 200 if all services are ready (database, redis, etc.)
+Returns 200 when required services are ready; optional dependency failures are listed as degradation
 
 **Tags:** Health
 
@@ -264,7 +264,7 @@ Returns 200 if all services are ready (database, redis, etc.)
 
 **200** - Service is ready
 
-**503** - Success
+**503** - A required dependency is unavailable
 
 #### Code Examples
 

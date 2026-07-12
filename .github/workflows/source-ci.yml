@@ -137,6 +137,8 @@ jobs:
         run: task test:setup
       - name: Run release-critical backend suites without skips
         run: bash scripts/run-release-critical-backend-tests.sh
+      - name: Run dependency readiness chaos contract
+        run: bash scripts/run-dependency-chaos.sh
       - name: Run real-backend smoke
         run: bash scripts/run-real-e2e.sh
       - name: Stop repository services
