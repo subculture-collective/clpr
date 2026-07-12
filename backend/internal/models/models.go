@@ -3817,8 +3817,8 @@ type ReorderQueueRequest struct {
 
 // ConvertQueueToPlaylistRequest represents a request to convert queue to playlist
 type ConvertQueueToPlaylistRequest struct {
-	Title        string  `json:"title" binding:"required,min=1,max=255"`
-	Description  *string `json:"description"`
+	Title        string  `json:"title" binding:"required,min=1,max=100"`
+	Description  *string `json:"description" binding:"omitempty,max=500"`
 	OnlyUnplayed bool    `json:"only_unplayed"` // If true, only convert unplayed items
 	ClearQueue   bool    `json:"clear_queue"`   // If true, clear queue after conversion
 }

@@ -49,6 +49,47 @@ func TestGetQueue_Unauthenticated(t *testing.T) {
 	}
 }
 
+func TestGetQueue_RejectsInvalidLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, limit := range []string{"abc", "0", "501", "-1"} {
+		t.Run(limit, func(t *testing.T) {
+			handler := &QueueHandler{queueService: nil}
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/queue?limit="+limit, http.NoBody)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+			c.Set("user_id", uuid.New())
+			handler.GetQueue(c)
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+			}
+			var response StandardResponse
+			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+				t.Fatal(err)
+			}
+			if response.Error == nil || response.Error.Code != "INVALID_REQUEST" {
+				t.Fatalf("expected INVALID_REQUEST, got %#v", response.Error)
+			}
+		})
+	}
+}
+
+func TestConvertToPlaylist_RejectsDatabaseOversizedTitle(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := &QueueHandler{queueService: nil}
+	body, _ := json.Marshal(map[string]interface{}{"title": string(bytes.Repeat([]byte("x"), 101))})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/queue/convert-to-playlist", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set("user_id", uuid.New())
+	handler.ConvertToPlaylist(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
+
 func TestAddToQueue_Unauthenticated(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

@@ -2335,56 +2335,56 @@
     "path": "/api/v1/queue",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).ClearQueue-fm",
     "operation_id": "deleteApiV1Queue",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/queue",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).GetQueue-fm",
     "operation_id": "getApiV1Queue",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/queue",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).AddToQueue-fm",
     "operation_id": "postApiV1Queue",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/queue/convert-to-playlist",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).ConvertToPlaylist-fm",
     "operation_id": "postApiV1QueueConvertToPlaylist",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/queue/count",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).GetQueueCount-fm",
     "operation_id": "getApiV1QueueCount",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "PATCH",
     "path": "/api/v1/queue/reorder",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).ReorderQueue-fm",
     "operation_id": "patchApiV1QueueReorder",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "DELETE",
     "path": "/api/v1/queue/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).RemoveFromQueue-fm",
     "operation_id": "deleteApiV1QueueId",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/queue/{id}/played",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).MarkAsPlayed-fm",
     "operation_id": "postApiV1QueueIdPlayed",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

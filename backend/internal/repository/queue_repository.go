@@ -2,13 +2,42 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var (
+	ErrQueueItemNotFound = errors.New("queue item not found")
+	ErrQueueFull         = errors.New("queue is full")
+	ErrQueueEmpty        = errors.New("queue is empty")
+)
+
+const lockQueue = `SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))`
+
+func normalizeQueuePositions(ctx context.Context, tx pgx.Tx, userID uuid.UUID) error {
+	if _, err := tx.Exec(ctx, `UPDATE queue_items SET position = -position WHERE user_id = $1`, userID); err != nil {
+		return fmt.Errorf("failed to stage queue positions: %w", err)
+	}
+	_, err := tx.Exec(ctx, `
+		WITH ordered AS (
+			SELECT id, ROW_NUMBER() OVER (
+				ORDER BY (played_at IS NOT NULL), ABS(position), added_at, id
+			) AS new_position
+			FROM queue_items WHERE user_id = $1
+		)
+		UPDATE queue_items qi SET position = ordered.new_position, updated_at = NOW()
+		FROM ordered WHERE qi.id = ordered.id
+	`, userID)
+	if err != nil {
+		return fmt.Errorf("failed to normalize queue positions: %w", err)
+	}
+	return nil
+}
 
 // QueueRepository handles database operations for queue items
 type QueueRepository struct {
@@ -106,29 +135,31 @@ func (r *QueueRepository) AddItem(ctx context.Context, item *models.QueueItem) e
 	}
 	defer tx.Rollback(ctx)
 
-	// Use advisory lock based on user_id to prevent concurrent inserts
-	// pg_advisory_xact_lock is automatically released at transaction end
-	// We use a hash of the user_id bytes to get a consistent int64 lock key
-	userIDBytes := item.UserID[:]
-	lockKey := int64(userIDBytes[0])<<56 | int64(userIDBytes[1])<<48 | int64(userIDBytes[2])<<40 | int64(userIDBytes[3])<<32 |
-		int64(userIDBytes[4])<<24 | int64(userIDBytes[5])<<16 | int64(userIDBytes[6])<<8 | int64(userIDBytes[7])
-	_, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lockKey)
+	_, err = tx.Exec(ctx, lockQueue, item.UserID)
 	if err != nil {
 		return fmt.Errorf("failed to acquire advisory lock: %w", err)
 	}
-
-	// Now calculate next position
-	var maxPos int
-	err = tx.QueryRow(ctx, `
-		SELECT COALESCE(MAX(position), 0)
-		FROM queue_items
-		WHERE user_id = $1
-	`, item.UserID).Scan(&maxPos)
-	if err != nil {
-		return fmt.Errorf("failed to get max position: %w", err)
+	var activeCount int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM queue_items WHERE user_id = $1 AND played_at IS NULL`, item.UserID).Scan(&activeCount); err != nil {
+		return fmt.Errorf("failed to count queue items: %w", err)
+	}
+	if activeCount >= 500 {
+		return ErrQueueFull
+	}
+	if err = normalizeQueuePositions(ctx, tx, item.UserID); err != nil {
+		return err
 	}
 
-	item.Position = maxPos + 1
+	// Reserve the slot immediately after active items, moving played history out
+	// of the way through a negative staging namespace to satisfy uniqueness.
+	if _, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position WHERE user_id = $1`, item.UserID); err != nil {
+		return fmt.Errorf("failed to stage queue positions: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `UPDATE queue_items SET position = CASE WHEN played_at IS NULL THEN -position ELSE -position + 1 END WHERE user_id = $1`, item.UserID); err != nil {
+		return fmt.Errorf("failed to reserve queue position: %w", err)
+	}
+
+	item.Position = activeCount + 1
 
 	err = tx.QueryRow(ctx, `
 		INSERT INTO queue_items (id, user_id, clip_id, position, added_at)
@@ -162,9 +193,26 @@ func (r *QueueRepository) AddItemAtTop(ctx context.Context, item *models.QueueIt
 	}
 	defer tx.Rollback(ctx)
 
-	// Shift ALL items down by 1 (including played items to avoid constraint violations)
-	_, err = tx.Exec(ctx, `UPDATE queue_items SET position = position + 1 WHERE user_id = $1`, item.UserID)
+	if _, err = tx.Exec(ctx, lockQueue, item.UserID); err != nil {
+		return fmt.Errorf("failed to acquire queue lock: %w", err)
+	}
+	var activeCount int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM queue_items WHERE user_id = $1 AND played_at IS NULL`, item.UserID).Scan(&activeCount); err != nil {
+		return fmt.Errorf("failed to count queue items: %w", err)
+	}
+	if activeCount >= 500 {
+		return ErrQueueFull
+	}
+	if err = normalizeQueuePositions(ctx, tx, item.UserID); err != nil {
+		return err
+	}
+
+	// Stage positions negative so the unique constraint cannot collide while shifting.
+	_, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position WHERE user_id = $1`, item.UserID)
 	if err != nil {
+		return fmt.Errorf("failed to stage positions: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position + 1 WHERE user_id = $1`, item.UserID); err != nil {
 		return fmt.Errorf("failed to shift positions: %w", err)
 	}
 
@@ -196,12 +244,15 @@ func (r *QueueRepository) RemoveItem(ctx context.Context, itemID uuid.UUID, user
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, lockQueue, userID); err != nil {
+		return fmt.Errorf("failed to acquire queue lock: %w", err)
+	}
 
 	// Get the position of the item being removed
 	var position int
-	err = tx.QueryRow(ctx, `SELECT position FROM queue_items WHERE id = $1 AND user_id = $2`, itemID, userID).Scan(&position)
+	err = tx.QueryRow(ctx, `SELECT position FROM queue_items WHERE id = $1 AND user_id = $2 AND played_at IS NULL`, itemID, userID).Scan(&position)
 	if err == pgx.ErrNoRows {
-		return pgx.ErrNoRows
+		return ErrQueueItemNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("failed to get item position: %w", err)
@@ -214,13 +265,11 @@ func (r *QueueRepository) RemoveItem(ctx context.Context, itemID uuid.UUID, user
 	}
 
 	if result.RowsAffected() == 0 {
-		return pgx.ErrNoRows
+		return ErrQueueItemNotFound
 	}
 
-	// Shift all items after the removed position down
-	_, err = tx.Exec(ctx, `UPDATE queue_items SET position = position - 1 WHERE user_id = $1 AND position > $2`, userID, position)
-	if err != nil {
-		return fmt.Errorf("failed to shift positions: %w", err)
+	if err = normalizeQueuePositions(ctx, tx, userID); err != nil {
+		return err
 	}
 
 	// Commit transaction
@@ -239,43 +288,51 @@ func (r *QueueRepository) ReorderItem(ctx context.Context, itemID uuid.UUID, use
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, lockQueue, userID); err != nil {
+		return fmt.Errorf("failed to acquire queue lock: %w", err)
+	}
+	if err = normalizeQueuePositions(ctx, tx, userID); err != nil {
+		return err
+	}
 
 	// Get current position
 	var oldPosition int
-	err = tx.QueryRow(ctx, `SELECT position FROM queue_items WHERE id = $1 AND user_id = $2`, itemID, userID).Scan(&oldPosition)
+	err = tx.QueryRow(ctx, `SELECT position FROM queue_items WHERE id = $1 AND user_id = $2 AND played_at IS NULL`, itemID, userID).Scan(&oldPosition)
 	if err == pgx.ErrNoRows {
-		return fmt.Errorf("queue item not found")
+		return ErrQueueItemNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("failed to get old position: %w", err)
 	}
-
-	// Shift items between old and new position
-	if oldPosition < newPosition {
-		// Moving down: shift items up
-		_, err = tx.Exec(ctx, `
-			UPDATE queue_items
-			SET position = position - 1
-			WHERE user_id = $1 AND position > $2 AND position <= $3
-		`, userID, oldPosition, newPosition)
-	} else if oldPosition > newPosition {
-		// Moving up: shift items down
-		_, err = tx.Exec(ctx, `
-			UPDATE queue_items
-			SET position = position + 1
-			WHERE user_id = $1 AND position >= $2 AND position < $3
-		`, userID, newPosition, oldPosition)
+	var activeCount int
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*) FROM queue_items WHERE user_id = $1 AND played_at IS NULL`, userID).Scan(&activeCount); err != nil {
+		return fmt.Errorf("failed to count queue items: %w", err)
+	}
+	if newPosition > activeCount {
+		newPosition = activeCount
 	}
 
+	// Move affected rows into a negative namespace before assigning final positions.
+	if _, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position WHERE user_id = $1 AND played_at IS NULL`, userID); err != nil {
+		return fmt.Errorf("failed to stage positions: %w", err)
+	}
+	if oldPosition < newPosition {
+		_, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position - 1 WHERE user_id = $1 AND played_at IS NULL AND -position > $2 AND -position <= $3`, userID, oldPosition, newPosition)
+	} else if oldPosition > newPosition {
+		_, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position + 1 WHERE user_id = $1 AND played_at IS NULL AND -position >= $2 AND -position < $3`, userID, newPosition, oldPosition)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to shift positions: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `UPDATE queue_items SET position = -position WHERE user_id = $1 AND played_at IS NULL AND position < 0 AND id <> $2`, userID, itemID); err != nil {
+		return fmt.Errorf("failed to restore positions: %w", err)
 	}
 
 	// Update item to new position
 	_, err = tx.Exec(ctx, `
 		UPDATE queue_items
 		SET position = $1, updated_at = NOW()
-		WHERE id = $2 AND user_id = $3
+		WHERE id = $2 AND user_id = $3 AND played_at IS NULL
 	`, newPosition, itemID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to update position: %w", err)
@@ -291,33 +348,56 @@ func (r *QueueRepository) ReorderItem(ctx context.Context, itemID uuid.UUID, use
 
 // MarkAsPlayed marks a queue item as played
 func (r *QueueRepository) MarkAsPlayed(ctx context.Context, itemID uuid.UUID, userID uuid.UUID) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, lockQueue, userID); err != nil {
+		return fmt.Errorf("failed to acquire queue lock: %w", err)
+	}
 	query := `
 		UPDATE queue_items
 		SET played_at = NOW(), updated_at = NOW()
 		WHERE id = $1 AND user_id = $2 AND played_at IS NULL
 	`
 
-	result, err := r.pool.Exec(ctx, query, itemID, userID)
+	result, err := tx.Exec(ctx, query, itemID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to mark as played: %w", err)
 	}
 
 	if result.RowsAffected() == 0 {
-		return pgx.ErrNoRows
+		return ErrQueueItemNotFound
 	}
-
+	if err = normalizeQueuePositions(ctx, tx, userID); err != nil {
+		return err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 	return nil
 }
 
 // ClearQueue removes all unplayed items from the queue
 func (r *QueueRepository) ClearQueue(ctx context.Context, userID uuid.UUID) error {
-	query := `DELETE FROM queue_items WHERE user_id = $1 AND played_at IS NULL`
-
-	_, err := r.pool.Exec(ctx, query, userID)
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, lockQueue, userID); err != nil {
+		return fmt.Errorf("failed to acquire queue lock: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `DELETE FROM queue_items WHERE user_id = $1 AND played_at IS NULL`, userID); err != nil {
 		return fmt.Errorf("failed to clear queue: %w", err)
 	}
-
+	if err = normalizeQueuePositions(ctx, tx, userID); err != nil {
+		return err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 	return nil
 }
 
@@ -349,6 +429,70 @@ func (r *QueueRepository) GetItemByID(ctx context.Context, itemID uuid.UUID, use
 	}
 
 	return &item, nil
+}
+
+// ConvertToPlaylist atomically snapshots eligible queue items into a private
+// playlist and optionally clears the active queue.
+func (r *QueueRepository) ConvertToPlaylist(ctx context.Context, playlist *models.Playlist, onlyUnplayed, clearQueue bool) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, lockQueue, playlist.UserID); err != nil {
+		return fmt.Errorf("failed to acquire queue lock: %w", err)
+	}
+	if err = normalizeQueuePositions(ctx, tx, playlist.UserID); err != nil {
+		return err
+	}
+
+	var eligible int
+	if err = tx.QueryRow(ctx, `
+		SELECT COUNT(*) FROM queue_items
+		WHERE user_id = $1 AND ($2 = FALSE OR played_at IS NULL)
+	`, playlist.UserID, onlyUnplayed).Scan(&eligible); err != nil {
+		return fmt.Errorf("failed to count queue items: %w", err)
+	}
+	if eligible == 0 {
+		return ErrQueueEmpty
+	}
+
+	if err = tx.QueryRow(ctx, `
+		INSERT INTO playlists (id, user_id, title, description, visibility)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING created_at, updated_at
+	`, playlist.ID, playlist.UserID, playlist.Title, playlist.Description, playlist.Visibility).Scan(&playlist.CreatedAt, &playlist.UpdatedAt); err != nil {
+		return fmt.Errorf("failed to create playlist: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, `
+		WITH eligible AS (
+			SELECT clip_id, MIN(position) AS first_position
+			FROM queue_items
+			WHERE user_id = $2 AND ($3 = FALSE OR played_at IS NULL)
+			GROUP BY clip_id
+		), ordered AS (
+			SELECT clip_id, ROW_NUMBER() OVER (ORDER BY first_position, clip_id) - 1 AS order_index
+			FROM eligible
+		)
+		INSERT INTO playlist_items (playlist_id, clip_id, order_index)
+		SELECT $1, clip_id, order_index FROM ordered
+	`, playlist.ID, playlist.UserID, onlyUnplayed); err != nil {
+		return fmt.Errorf("failed to add queue items to playlist: %w", err)
+	}
+
+	if clearQueue {
+		if _, err = tx.Exec(ctx, `DELETE FROM queue_items WHERE user_id = $1 AND played_at IS NULL`, playlist.UserID); err != nil {
+			return fmt.Errorf("failed to clear queue: %w", err)
+		}
+		if err = normalizeQueuePositions(ctx, tx, playlist.UserID); err != nil {
+			return err
+		}
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 // CleanupStaleQueues removes old inactive queues

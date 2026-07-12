@@ -10237,147 +10237,109 @@ paths:
 
   /api/v1/queue:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/queue
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Clear the active queue
       operationId: deleteApiV1Queue
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Queue cleared, content: {application/json: {schema: {$ref: '#/components/schemas/QueueMutationResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/queue
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Get the active queue
       operationId: getApiV1Queue
-      x-clpr-router-derived: true
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Queue returned, content: {application/json: {schema: {$ref: '#/components/schemas/QueueResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/queue
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Add a clip to the queue
       operationId: postApiV1Queue
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AddToQueueRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201': {description: Queue item created, content: {application/json: {schema: {$ref: '#/components/schemas/QueueItemResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/queue/convert-to-playlist:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/queue/convert-to-playlist
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Convert queue items to a private playlist
       operationId: postApiV1QueueConvertToPlaylist
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ConvertQueueToPlaylistRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '201': {description: Playlist created, content: {application/json: {schema: {$ref: '#/components/schemas/PlaylistResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/queue/count:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/queue/count
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Count active queue items
       operationId: getApiV1QueueCount
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Count returned, content: {application/json: {schema: {$ref: '#/components/schemas/QueueCountResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/queue/reorder:
     patch:
-      tags: [Generated Route Contracts]
-      summary: PATCH /api/v1/queue/reorder
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Move an active queue item
       operationId: patchApiV1QueueReorder
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReorderQueueRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Queue reordered, content: {application/json: {schema: {$ref: '#/components/schemas/QueueMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/queue/{id}:
     delete:
-      tags: [Generated Route Contracts]
-      summary: DELETE /api/v1/queue/{id}
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Remove a queue item
       operationId: deleteApiV1QueueId
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Item removed, content: {application/json: {schema: {$ref: '#/components/schemas/QueueMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/queue/{id}/played:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/queue/{id}/played
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Queue]
+      summary: Mark a queue item as played
       operationId: postApiV1QueueIdPlayed
-      x-clpr-router-derived: true
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Item marked played, content: {application/json: {schema: {$ref: '#/components/schemas/QueueMutationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/recommendations/clips:
     get:
@@ -11870,6 +11832,13 @@ components:
     
     NotFound:
       description: Not Found - Resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Conflict:
+      description: Conflict - Resource state prevents the operation
       content:
         application/json:
           schema:
@@ -13622,6 +13591,90 @@ components:
         slug: {type: string}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+
+    QueueItem:
+      type: object
+      required: [id, user_id, clip_id, position, added_at, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        clip_id: {type: string, format: uuid}
+        position: {type: integer, minimum: 1}
+        added_at: {type: string, format: date-time}
+        played_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        clip: {$ref: '#/components/schemas/Clip'}
+
+    Queue:
+      type: object
+      required: [items, total]
+      properties:
+        items: {type: array, maxItems: 500, items: {$ref: '#/components/schemas/QueueItem'}}
+        total: {type: integer, minimum: 0, maximum: 500}
+        next_clip: {$ref: '#/components/schemas/Clip'}
+
+    AddToQueueRequest:
+      type: object
+      additionalProperties: false
+      required: [clip_id]
+      properties:
+        clip_id: {type: string, format: uuid}
+        at_end: {type: boolean, default: true}
+
+    ReorderQueueRequest:
+      type: object
+      additionalProperties: false
+      required: [item_id, new_position]
+      properties:
+        item_id: {type: string, format: uuid}
+        new_position: {type: integer, minimum: 1, maximum: 500}
+
+    ConvertQueueToPlaylistRequest:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 100}
+        description: {type: string, maxLength: 500}
+        only_unplayed: {type: boolean, default: false}
+        clear_queue: {type: boolean, default: false}
+
+    QueueResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/Queue'}
+
+    QueueItemResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/QueueItem'}
+
+    QueueCountResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [count]
+          properties:
+            count: {type: integer, minimum: 0, maximum: 500}
+
+    QueueMutationResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: object
+          required: [message]
+          properties:
+            message: {type: string}
 
     PlaylistListItem:
       allOf:
