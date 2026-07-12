@@ -59,6 +59,11 @@ jobs:
           docker run --rm --entrypoint=promtool
           -v "$PWD/monitoring/prometheus/clpr-slo-rules.yml:/clpr-slo-rules.yml:ro"
           prom/prometheus:v3.5.0 check rules /clpr-slo-rules.yml
+      - name: Validate release load suite
+        run: >-
+          docker run --rm
+          -v "$PWD/backend/tests/load/release.js:/release.js:ro"
+          grafana/k6:0.57.0 inspect /release.js
       - name: Upload backend test evidence
         if: always()
         uses: actions/upload-artifact@v4
