@@ -59,6 +59,24 @@ func TestNewSubscriptionService(t *testing.T) {
 	})
 }
 
+func TestSubscriptionOutboundOperationsFailClosedWhenDisabled(t *testing.T) {
+	service := newTestSubscriptionService(new(MockSubscriptionRepository), new(MockUserRepository), new(MockWebhookRepository), &config.Config{})
+	ctx := context.Background()
+	user := &models.User{ID: uuid.New()}
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{"change plan", func() error { return service.ChangeSubscriptionPlan(ctx, user, "price_test") }},
+		{"cancel", func() error { return service.CancelSubscription(ctx, user, false) }},
+		{"reactivate", func() error { return service.ReactivateSubscription(ctx, user) }},
+		{"invoices", func() error { _, err := service.GetInvoices(ctx, user, 10); return err }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) { assert.ErrorIs(t, tt.call(), ErrSubscriptionsUnavailable) })
+	}
+}
+
 // TestGetOrCreateCustomer tests customer creation with mocked dependencies
 func TestGetOrCreateCustomer(t *testing.T) {
 	ctx := context.Background()

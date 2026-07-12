@@ -2622,49 +2622,49 @@
     "path": "/api/v1/subscriptions/cancel",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CancelSubscription-fm",
     "operation_id": "postApiV1SubscriptionsCancel",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/subscriptions/change-plan",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).ChangeSubscriptionPlan-fm",
     "operation_id": "postApiV1SubscriptionsChangePlan",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/subscriptions/checkout",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CreateCheckoutSession-fm",
     "operation_id": "postApiV1SubscriptionsCheckout",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/subscriptions/invoices",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetInvoices-fm",
     "operation_id": "getApiV1SubscriptionsInvoices",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/subscriptions/me",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetSubscription-fm",
     "operation_id": "getApiV1SubscriptionsMe",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/subscriptions/portal",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CreatePortalSession-fm",
     "operation_id": "postApiV1SubscriptionsPortal",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "POST",
     "path": "/api/v1/subscriptions/reactivate",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).ReactivateSubscription-fm",
     "operation_id": "postApiV1SubscriptionsReactivate",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",

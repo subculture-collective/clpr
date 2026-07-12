@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -150,11 +151,20 @@ func (h *SubscriptionHandler) GetSubscription(c *gin.Context) {
 	// Get subscription
 	subscription, err := h.subscriptionService.GetSubscriptionByUserID(c.Request.Context(), currentUser.ID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
+		if errors.Is(err, services.ErrSubscriptionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve subscription"})
 		return
 	}
 
-	c.JSON(http.StatusOK, subscription)
+	c.JSON(http.StatusOK, models.PublicSubscription{
+		Status: subscription.Status, Tier: subscription.Tier,
+		CurrentPeriodStart: subscription.CurrentPeriodStart, CurrentPeriodEnd: subscription.CurrentPeriodEnd,
+		CancelAtPeriodEnd: subscription.CancelAtPeriodEnd, CanceledAt: subscription.CanceledAt,
+		TrialStart: subscription.TrialStart, TrialEnd: subscription.TrialEnd, GracePeriodEnd: subscription.GracePeriodEnd,
+	})
 }
 
 // HandleWebhook handles Stripe webhook events
@@ -234,7 +244,15 @@ func (h *SubscriptionHandler) ChangeSubscriptionPlan(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid price ID"})
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errors.Is(err, services.ErrSubscriptionsUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Subscriptions are currently unavailable"})
+			return
+		}
+		if errors.Is(err, services.ErrSubscriptionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
+			return
+		}
+		c.JSON(http.StatusConflict, gin.H{"error": "Subscription plan cannot be changed"})
 		return
 	}
 
@@ -275,14 +293,22 @@ func (h *SubscriptionHandler) CancelSubscription(c *gin.Context) {
 	}
 
 	// Cancel subscription
-	if err := h.subscriptionService.CancelSubscription(c.Request.Context(), currentUser, req.Immediate); err != nil {
+	if err := h.subscriptionService.CancelSubscription(c.Request.Context(), currentUser, *req.Immediate); err != nil {
 		log.Printf("Failed to cancel subscription: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errors.Is(err, services.ErrSubscriptionsUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Subscriptions are currently unavailable"})
+			return
+		}
+		if errors.Is(err, services.ErrSubscriptionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
+			return
+		}
+		c.JSON(http.StatusConflict, gin.H{"error": "Subscription cannot be canceled"})
 		return
 	}
 
 	message := "Subscription will be canceled at the end of the billing period"
-	if req.Immediate {
+	if *req.Immediate {
 		message = "Subscription canceled immediately"
 	}
 
@@ -316,7 +342,15 @@ func (h *SubscriptionHandler) ReactivateSubscription(c *gin.Context) {
 	// Reactivate subscription
 	if err := h.subscriptionService.ReactivateSubscription(c.Request.Context(), currentUser); err != nil {
 		log.Printf("Failed to reactivate subscription: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errors.Is(err, services.ErrSubscriptionsUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Subscriptions are currently unavailable"})
+			return
+		}
+		if errors.Is(err, services.ErrSubscriptionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
+			return
+		}
+		c.JSON(http.StatusConflict, gin.H{"error": "Subscription cannot be reactivated"})
 		return
 	}
 
@@ -371,9 +405,25 @@ func (h *SubscriptionHandler) GetInvoices(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
 			return
 		}
+		if errors.Is(err, services.ErrSubscriptionsUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Subscriptions are currently unavailable"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve invoices"})
 		return
 	}
 
-	c.JSON(http.StatusOK, invoices)
+	publicInvoices := make([]models.PublicInvoice, 0, len(invoices))
+	for _, invoice := range invoices {
+		if invoice == nil {
+			continue
+		}
+		publicInvoices = append(publicInvoices, models.PublicInvoice{
+			ID: invoice.ID, Status: string(invoice.Status), Currency: string(invoice.Currency),
+			AmountDue: invoice.AmountDue, AmountPaid: invoice.AmountPaid,
+			HostedInvoiceURL: invoice.HostedInvoiceURL, InvoicePDF: invoice.InvoicePDF,
+			PeriodStart: invoice.PeriodStart, PeriodEnd: invoice.PeriodEnd, Created: invoice.Created,
+		})
+	}
+	c.JSON(http.StatusOK, publicInvoices)
 }

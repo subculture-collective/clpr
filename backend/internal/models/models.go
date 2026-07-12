@@ -1088,6 +1088,31 @@ type Subscription struct {
 	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
 }
 
+type PublicSubscription struct {
+	Status             string     `json:"status"`
+	Tier               string     `json:"tier"`
+	CurrentPeriodStart *time.Time `json:"current_period_start,omitempty"`
+	CurrentPeriodEnd   *time.Time `json:"current_period_end,omitempty"`
+	CancelAtPeriodEnd  bool       `json:"cancel_at_period_end"`
+	CanceledAt         *time.Time `json:"canceled_at,omitempty"`
+	TrialStart         *time.Time `json:"trial_start,omitempty"`
+	TrialEnd           *time.Time `json:"trial_end,omitempty"`
+	GracePeriodEnd     *time.Time `json:"grace_period_end,omitempty"`
+}
+
+type PublicInvoice struct {
+	ID               string `json:"id"`
+	Status           string `json:"status"`
+	Currency         string `json:"currency"`
+	AmountDue        int64  `json:"amount_due"`
+	AmountPaid       int64  `json:"amount_paid"`
+	HostedInvoiceURL string `json:"hosted_invoice_url,omitempty"`
+	InvoicePDF       string `json:"invoice_pdf,omitempty"`
+	PeriodStart      int64  `json:"period_start"`
+	PeriodEnd        int64  `json:"period_end"`
+	Created          int64  `json:"created"`
+}
+
 // SubscriptionEvent represents an event in subscription lifecycle for audit logging
 type SubscriptionEvent struct {
 	ID             uuid.UUID  `json:"id" db:"id"`
@@ -1132,18 +1157,18 @@ type UserWithSubscription struct {
 
 // CreateCheckoutSessionRequest represents a request to create a Stripe checkout session
 type CreateCheckoutSessionRequest struct {
-	PriceID    string  `json:"price_id" binding:"required"`
-	CouponCode *string `json:"coupon_code,omitempty"`
+	PriceID    string  `json:"price_id" binding:"required,max=255"`
+	CouponCode *string `json:"coupon_code,omitempty" binding:"omitempty,max=100"`
 }
 
 // ChangeSubscriptionPlanRequest represents a request to change subscription plan
 type ChangeSubscriptionPlanRequest struct {
-	PriceID string `json:"price_id" binding:"required"`
+	PriceID string `json:"price_id" binding:"required,max=255"`
 }
 
 // CancelSubscriptionRequest represents a request to cancel a subscription
 type CancelSubscriptionRequest struct {
-	Immediate bool `json:"immediate"` // If true, cancel immediately. Otherwise, cancel at period end.
+	Immediate *bool `json:"immediate" binding:"required"` // If true, cancel immediately. Otherwise, cancel at period end.
 }
 
 // CreateCheckoutSessionResponse represents the response with checkout session URL

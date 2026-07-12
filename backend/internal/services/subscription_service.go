@@ -13,6 +13,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stripe/stripe-go/v81"
 	portalsession "github.com/stripe/stripe-go/v81/billingportal/session"
 	"github.com/stripe/stripe-go/v81/checkout/session"
@@ -284,7 +285,18 @@ func (s *SubscriptionService) CreatePortalSession(ctx context.Context, user *mod
 
 // GetSubscriptionByUserID retrieves a user's subscription
 func (s *SubscriptionService) GetSubscriptionByUserID(ctx context.Context, userID uuid.UUID) (*models.Subscription, error) {
-	return s.repo.GetByUserID(ctx, userID)
+	sub, err := s.repo.GetByUserID(ctx, userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrSubscriptionNotFound
+	}
+	return sub, err
+}
+
+func (s *SubscriptionService) ensureSubscriptionsAvailable() error {
+	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
+		return ErrSubscriptionsUnavailable
+	}
+	return nil
 }
 
 // HandleWebhook processes Stripe webhook events
@@ -1034,6 +1046,9 @@ func (s *SubscriptionService) getTierFromPriceID(priceID string) string {
 
 // ChangeSubscriptionPlan changes a user's subscription plan with proration
 func (s *SubscriptionService) ChangeSubscriptionPlan(ctx context.Context, user *models.User, newPriceID string) error {
+	if err := s.ensureSubscriptionsAvailable(); err != nil {
+		return err
+	}
 	// Validate new price ID
 	if newPriceID != s.cfg.Stripe.ProMonthlyPriceID && newPriceID != s.cfg.Stripe.ProYearlyPriceID {
 		return ErrInvalidPriceID
@@ -1042,6 +1057,9 @@ func (s *SubscriptionService) ChangeSubscriptionPlan(ctx context.Context, user *
 	// Get existing subscription
 	sub, err := s.repo.GetByUserID(ctx, user.ID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSubscriptionNotFound
+		}
 		return fmt.Errorf("failed to get subscription: %w", err)
 	}
 
@@ -1102,9 +1120,15 @@ func (s *SubscriptionService) ChangeSubscriptionPlan(ctx context.Context, user *
 // CancelSubscription cancels a user's subscription
 // If immediate is true, cancels immediately. Otherwise, cancels at period end.
 func (s *SubscriptionService) CancelSubscription(ctx context.Context, user *models.User, immediate bool) error {
+	if err := s.ensureSubscriptionsAvailable(); err != nil {
+		return err
+	}
 	// Get existing subscription
 	sub, err := s.repo.GetByUserID(ctx, user.ID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSubscriptionNotFound
+		}
 		return fmt.Errorf("failed to get subscription: %w", err)
 	}
 
@@ -1158,6 +1182,9 @@ func (s *SubscriptionService) CancelSubscription(ctx context.Context, user *mode
 
 // GetInvoices retrieves a user's invoices from Stripe
 func (s *SubscriptionService) GetInvoices(ctx context.Context, user *models.User, limit int64) ([]*stripe.Invoice, error) {
+	if err := s.ensureSubscriptionsAvailable(); err != nil {
+		return nil, err
+	}
 	// Get subscription to find customer ID
 	sub, err := s.repo.GetByUserID(ctx, user.ID)
 	if err != nil {
@@ -1197,9 +1224,15 @@ func (s *SubscriptionService) GetInvoices(ctx context.Context, user *models.User
 
 // ReactivateSubscription reactivates a subscription that was set to cancel at period end
 func (s *SubscriptionService) ReactivateSubscription(ctx context.Context, user *models.User) error {
+	if err := s.ensureSubscriptionsAvailable(); err != nil {
+		return err
+	}
 	// Get existing subscription
 	sub, err := s.repo.GetByUserID(ctx, user.ID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSubscriptionNotFound
+		}
 		return fmt.Errorf("failed to get subscription: %w", err)
 	}
 

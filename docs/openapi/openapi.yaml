@@ -10604,122 +10604,94 @@ paths:
 
   /api/v1/subscriptions/cancel:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/subscriptions/cancel
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: Cancel the current subscription
       operationId: postApiV1SubscriptionsCancel
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CancelSubscriptionRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Cancellation applied, content: {application/json: {schema: {$ref: '#/components/schemas/SubscriptionMessageResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/subscriptions/change-plan:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/subscriptions/change-plan
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: Change the current subscription plan
       operationId: postApiV1SubscriptionsChangePlan
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ChangeSubscriptionPlanRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Plan changed, content: {application/json: {schema: {$ref: '#/components/schemas/SubscriptionMessageResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/subscriptions/checkout:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/subscriptions/checkout
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: Create a Stripe checkout session
       operationId: postApiV1SubscriptionsCheckout
-      x-clpr-router-derived: true
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateCheckoutSessionRequest'}}}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Checkout session created, content: {application/json: {schema: {$ref: '#/components/schemas/CreateCheckoutSessionResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/subscriptions/invoices:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/subscriptions/invoices
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: List public invoice summaries
       operationId: getApiV1SubscriptionsInvoices
-      x-clpr-router-derived: true
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 10}}
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Invoices returned, content: {application/json: {schema: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/PublicInvoice'}}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/subscriptions/me:
     get:
-      tags: [Generated Route Contracts]
-      summary: GET /api/v1/subscriptions/me
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: Get the public subscription state
       operationId: getApiV1SubscriptionsMe
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Subscription returned, content: {application/json: {schema: {$ref: '#/components/schemas/PublicSubscription'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/subscriptions/portal:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/subscriptions/portal
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: Create a Stripe customer portal session
       operationId: postApiV1SubscriptionsPortal
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Portal session created, content: {application/json: {schema: {$ref: '#/components/schemas/CreatePortalSessionResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
 
   /api/v1/subscriptions/reactivate:
     post:
-      tags: [Generated Route Contracts]
-      summary: POST /api/v1/subscriptions/reactivate
-      description: Router-derived operation pending a route-specific response schema.
+      tags: [Subscriptions]
+      summary: Reactivate a subscription scheduled for cancellation
       operationId: postApiV1SubscriptionsReactivate
-      x-clpr-router-derived: true
       responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        '200': {description: Subscription reactivated, content: {application/json: {schema: {$ref: '#/components/schemas/SubscriptionMessageResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
 
   /api/v1/twitch/auth:
     delete:
@@ -13792,6 +13764,76 @@ components:
       properties:
         following: {type: boolean}
         notifications_enabled: {type: boolean}
+
+    PublicSubscription:
+      type: object
+      required: [status, tier, cancel_at_period_end]
+      properties:
+        status: {type: string, enum: [inactive, active, trialing, past_due, canceled, unpaid]}
+        tier: {type: string, enum: [free, pro]}
+        current_period_start: {type: string, format: date-time}
+        current_period_end: {type: string, format: date-time}
+        cancel_at_period_end: {type: boolean}
+        canceled_at: {type: string, format: date-time}
+        trial_start: {type: string, format: date-time}
+        trial_end: {type: string, format: date-time}
+        grace_period_end: {type: string, format: date-time}
+
+    PublicInvoice:
+      type: object
+      required: [id, status, currency, amount_due, amount_paid, period_start, period_end, created]
+      properties:
+        id: {type: string}
+        status: {type: string, enum: [draft, open, paid, uncollectible, void]}
+        currency: {type: string, minLength: 3, maxLength: 3}
+        amount_due: {type: integer}
+        amount_paid: {type: integer}
+        hosted_invoice_url: {type: string, format: uri}
+        invoice_pdf: {type: string, format: uri}
+        period_start: {type: integer, format: int64}
+        period_end: {type: integer, format: int64}
+        created: {type: integer, format: int64}
+
+    CreateCheckoutSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [price_id]
+      properties:
+        price_id: {type: string, minLength: 1, maxLength: 255}
+        coupon_code: {type: string, maxLength: 100}
+
+    ChangeSubscriptionPlanRequest:
+      type: object
+      additionalProperties: false
+      required: [price_id]
+      properties:
+        price_id: {type: string, minLength: 1, maxLength: 255}
+
+    CancelSubscriptionRequest:
+      type: object
+      additionalProperties: false
+      required: [immediate]
+      properties:
+        immediate: {type: boolean}
+
+    CreateCheckoutSessionResponse:
+      type: object
+      required: [session_id, session_url]
+      properties:
+        session_id: {type: string}
+        session_url: {type: string, format: uri}
+
+    CreatePortalSessionResponse:
+      type: object
+      required: [portal_url]
+      properties:
+        portal_url: {type: string, format: uri}
+
+    SubscriptionMessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
 
     PlaylistListItem:
       allOf:
