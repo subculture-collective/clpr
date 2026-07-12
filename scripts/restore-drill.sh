@@ -225,21 +225,10 @@ restore_backup() {
     
     local restore_start=$(date +%s)
     
-    # Restore backup using pg_restore
-    # Using --no-owner and --no-acl to avoid permission issues during test
-    PGPASSWORD="${POSTGRES_PASSWORD}" pg_restore \
-        -h "$POSTGRES_HOST" \
-        -p "$POSTGRES_PORT" \
-        -U "$POSTGRES_USER" \
-        -d "$TEST_DB" \
-        -F c \
-        --no-owner \
-        --no-acl \
-        --verbose \
-        "$BACKUP_FILE" 2>&1 | tee -a "$DRILL_LOG" || {
+    if ! restore_dump_file; then
         log_error "Failed to restore backup"
         return 1
-    }
+    fi
     
     local restore_end=$(date +%s)
     RESTORE_DURATION_SECONDS=$((restore_end - restore_start))
@@ -255,6 +244,35 @@ restore_backup() {
         log_error "  ✗ RTO target exceeded (${RESTORE_DURATION_SECONDS}s > ${RTO_TARGET_SECONDS}s)"
         RTO_MET=0
     fi
+}
+
+restore_dump_file() {
+    local prefix
+    if gzip -t "$BACKUP_FILE" 2>/dev/null; then
+        prefix=$(gzip -dc "$BACKUP_FILE" | head -c 5 || true)
+        if [ "$prefix" = "PGDMP" ]; then
+            gzip -dc "$BACKUP_FILE" | PGPASSWORD="${POSTGRES_PASSWORD}" pg_restore \
+                -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$TEST_DB" \
+                --no-owner --no-acl --verbose 2>&1 | tee -a "$DRILL_LOG"
+        else
+            gzip -dc "$BACKUP_FILE" | PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+                -v ON_ERROR_STOP=1 -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
+                -U "$POSTGRES_USER" -d "$TEST_DB" 2>&1 | tee -a "$DRILL_LOG"
+        fi
+        return ${PIPESTATUS[1]}
+    fi
+
+    prefix=$(head -c 5 "$BACKUP_FILE" || true)
+    if [ "$prefix" = "PGDMP" ]; then
+        PGPASSWORD="${POSTGRES_PASSWORD}" pg_restore \
+            -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$TEST_DB" \
+            --no-owner --no-acl --verbose "$BACKUP_FILE" 2>&1 | tee -a "$DRILL_LOG"
+        return ${PIPESTATUS[0]}
+    fi
+    PGPASSWORD="${POSTGRES_PASSWORD}" psql -v ON_ERROR_STOP=1 \
+        -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$TEST_DB" \
+        -f "$BACKUP_FILE" 2>&1 | tee -a "$DRILL_LOG"
+    return ${PIPESTATUS[0]}
 }
 
 # Function to validate restored data
@@ -465,5 +483,7 @@ main() {
     return $exit_code
 }
 
-# Run main function
-main
+# Run main function unless sourced by the contract tests.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main
+fi

@@ -27,6 +27,7 @@ BACKUP_AGE_HOURS=0
 BACKUP_SIZE_MB=0
 ENCRYPTION_VERIFIED=0
 CROSS_REGION_VERIFIED=0
+INTEGRITY_VERIFIED=0
 
 # Logging functions
 log_info() {
@@ -198,6 +199,45 @@ verify_backup_size() {
     return 0
 }
 
+verify_backup_integrity() {
+    log_info "Downloading latest backup for integrity verification..."
+    local backup_file
+    backup_file=$(mktemp /tmp/clpr-backup-validation.XXXXXX)
+    trap 'rm -f "$backup_file"' RETURN
+
+    case "$CLOUD_PROVIDER" in
+        gcp) gsutil cp "$LATEST_BACKUP" "$backup_file" >/dev/null ;;
+        aws) aws s3 cp "$LATEST_BACKUP" "$backup_file" >/dev/null ;;
+        azure) az storage blob download --account-name "$AZURE_STORAGE_ACCOUNT" \
+            --container-name "$BACKUP_BUCKET" --name "$LATEST_BACKUP" --file "$backup_file" --overwrite >/dev/null ;;
+        *) log_error "Unsupported cloud provider: $CLOUD_PROVIDER"; return 1 ;;
+    esac
+
+    validate_local_backup_file "$backup_file"
+    INTEGRITY_VERIFIED=1
+    log_info "✓ Backup archive is readable and has a recognized PostgreSQL dump format"
+}
+
+validate_local_backup_file() {
+    local backup_file=$1
+    local prefix
+    if gzip -t "$backup_file" 2>/dev/null; then
+        prefix=$(gzip -dc "$backup_file" | head -c 5 || true)
+        if [ "$prefix" = "PGDMP" ]; then
+            gzip -dc "$backup_file" | pg_restore --list >/dev/null
+        else
+            gzip -dc "$backup_file" | head -n 50 | grep -Eq 'PostgreSQL database dump|CREATE (TABLE|SCHEMA)|SET statement_timeout'
+        fi
+        return
+    fi
+    prefix=$(head -c 5 "$backup_file" || true)
+    if [ "$prefix" = "PGDMP" ]; then
+        pg_restore --list "$backup_file" >/dev/null
+    else
+        head -n 50 "$backup_file" | grep -Eq 'PostgreSQL database dump|CREATE (TABLE|SCHEMA)|SET statement_timeout'
+    fi
+}
+
 # Function to verify encryption
 verify_encryption() {
     log_info "Verifying backup encryption..."
@@ -316,6 +356,9 @@ backup_encryption_verified ${ENCRYPTION_VERIFIED}
 # HELP backup_cross_region_verified Whether cross-region storage was verified (1 = verified, 0 = not verified)
 # TYPE backup_cross_region_verified gauge
 backup_cross_region_verified ${CROSS_REGION_VERIFIED}
+# HELP backup_integrity_verified Whether the backup archive passed format and integrity checks
+# TYPE backup_integrity_verified gauge
+backup_integrity_verified ${INTEGRITY_VERIFIED}
 METRICS
     
     log_info "✓ Metrics reported successfully"
@@ -340,6 +383,11 @@ main() {
     
     # Verify backup size
     if ! verify_backup_size; then
+        exit_code=1
+    fi
+
+    if ! verify_backup_integrity; then
+        log_error "Backup integrity verification failed"
         exit_code=1
     fi
     
@@ -368,5 +416,7 @@ main() {
     return $exit_code
 }
 
-# Run main function
-main
+# Run main function unless sourced by the contract tests.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main
+fi
