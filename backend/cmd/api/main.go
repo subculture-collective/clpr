@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 	telemetrypkg "git.subcult.tv/subculture-collective/clpr/pkg/telemetry"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -82,7 +82,7 @@ func main() {
 
 	// Register routes
 	v1 := r.Group("/api/v1")
-	registerPublicRoutes(r, v1, h, svcs, infra)
+	registerPublicRoutes(r, v1, h, svcs, infra, cfg)
 	registerAuthRoutes(v1, h, svcs, infra)
 	registerClipRoutes(v1, h, svcs, infra)
 	registerContentRoutes(v1, h, svcs, infra)
@@ -95,11 +95,7 @@ func main() {
 	schedulers := startSchedulers(svcs, repos, infra)
 
 	// Create HTTP server
-	srv := &http.Server{
-		Addr:              ":" + cfg.Server.Port,
-		Handler:           r,
-		ReadHeaderTimeout: 10 * time.Second, // Prevent Slowloris attacks
-	}
+	srv := newHTTPServer(cfg.Server.Port, r)
 
 	// Start server in goroutine
 	go func() {
@@ -111,4 +107,16 @@ func main() {
 
 	// Block until shutdown signal, then gracefully stop everything
 	gracefulShutdown(srv, svcs, schedulers, infra)
+}
+
+func newHTTPServer(port string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              ":" + port,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 }

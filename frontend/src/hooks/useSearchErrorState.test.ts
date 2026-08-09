@@ -9,6 +9,21 @@ vi.mock('@/lib/telemetry', () => ({
   trackEvent: vi.fn(),
 }));
 
+function invokeHook<T>(callback: () => T): T {
+  let value!: T;
+  act(() => {
+    value = callback();
+  });
+  return value;
+}
+
+async function advanceRetryTimer(milliseconds: number): Promise<void> {
+  await act(async () => {
+    vi.advanceTimersByTime(milliseconds);
+    await vi.runOnlyPendingTimersAsync();
+  });
+}
+
 describe('useSearchErrorState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,7 +62,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('failover');
@@ -68,7 +83,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('failover');
@@ -88,7 +103,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -109,7 +124,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -125,7 +140,7 @@ describe('useSearchErrorState', () => {
         message: 'Network Error',
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -136,7 +151,7 @@ describe('useSearchErrorState', () => {
     it('should handle unknown errors gracefully', async () => {
       const { result } = renderHook(() => useSearchErrorState());
       
-      result.current.handleSearchError(new Error('Unknown error'));
+      invokeHook(() => result.current.handleSearchError(new Error('Unknown error')));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -156,7 +171,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(telemetry.trackEvent).toHaveBeenCalledWith('search_error', expect.objectContaining({
@@ -173,7 +188,7 @@ describe('useSearchErrorState', () => {
       const searchFn = vi.fn().mockResolvedValue(undefined);
       
       // Start retry
-      const retryPromise = result.current.retry(searchFn);
+      const retryPromise = invokeHook(() => result.current.retry(searchFn));
       
       // Wait for retrying state
       await waitFor(() => {
@@ -182,8 +197,7 @@ describe('useSearchErrorState', () => {
       });
       
       // Fast-forward 1 second (first delay)
-      vi.advanceTimersByTime(1000);
-      await vi.runOnlyPendingTimersAsync();
+      await advanceRetryTimer(1000);
       
       // Wait for retry to complete
       await retryPromise;
@@ -196,42 +210,44 @@ describe('useSearchErrorState', () => {
       const searchFn = vi.fn().mockRejectedValue(new Error('Search failed'));
       
       // First retry
-      result.current.retry(searchFn);
-      vi.advanceTimersByTime(1000);
-      await vi.runOnlyPendingTimersAsync();
+      const firstRetry = invokeHook(() => result.current.retry(searchFn));
+      await advanceRetryTimer(1000);
+      await act(async () => firstRetry);
       await vi.waitFor(() => expect(result.current.errorState.retryCount).toBe(1));
       
       // Second retry
-      result.current.retry(searchFn);
-      vi.advanceTimersByTime(2000);
-      await vi.runOnlyPendingTimersAsync();
+      const secondRetry = invokeHook(() => result.current.retry(searchFn));
+      await advanceRetryTimer(2000);
+      await act(async () => secondRetry);
       await vi.waitFor(() => expect(result.current.errorState.retryCount).toBe(2));
       
       // Third retry
-      result.current.retry(searchFn);
-      vi.advanceTimersByTime(4000);
-      await vi.runOnlyPendingTimersAsync();
+      const thirdRetry = invokeHook(() => result.current.retry(searchFn));
+      await advanceRetryTimer(4000);
+      await act(async () => thirdRetry);
       await vi.waitFor(() => expect(result.current.errorState.retryCount).toBe(3));
       
       // Fourth retry should be blocked
-      result.current.retry(searchFn);
-      await vi.runOnlyPendingTimersAsync();
+      await act(async () => {
+        await result.current.retry(searchFn);
+      });
       
-      expect(result.current.errorState.message).toContain('Maximum retry');
+      await waitFor(() => {
+        expect(result.current.errorState.message).toContain('Maximum retry');
+      });
     });
 
     it('should track retry analytics event', async () => {
       const { result } = renderHook(() => useSearchErrorState());
       const searchFn = vi.fn().mockResolvedValue(undefined);
       
-      const retryPromise = result.current.retry(searchFn);
+      const retryPromise = invokeHook(() => result.current.retry(searchFn));
       
       expect(telemetry.trackEvent).toHaveBeenCalledWith('search_retry', expect.objectContaining({
         retry_count: 1,
       }));
       
-      vi.advanceTimersByTime(1000);
-      await vi.runOnlyPendingTimersAsync();
+      await advanceRetryTimer(1000);
       await retryPromise;
     });
 
@@ -249,12 +265,11 @@ describe('useSearchErrorState', () => {
           config: {} as unknown as InternalAxiosRequestConfig,
         },
       };
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       // Retry
-      const retryPromise = result.current.retry(searchFn);
-      vi.advanceTimersByTime(1000);
-      await vi.runOnlyPendingTimersAsync();
+      const retryPromise = invokeHook(() => result.current.retry(searchFn));
+      await advanceRetryTimer(1000);
       await retryPromise;
       
       expect(result.current.errorState.type).toBe('none');
@@ -266,9 +281,9 @@ describe('useSearchErrorState', () => {
       const { result, unmount } = renderHook(() => useSearchErrorState());
       const searchFn = vi.fn().mockResolvedValue(undefined);
       
-      result.current.retry(searchFn);
+      invokeHook(() => result.current.retry(searchFn));
       
-      unmount();
+      act(() => unmount());
       
       expect(clearTimeoutSpy).toHaveBeenCalled();
       clearTimeoutSpy.mockRestore();
@@ -290,7 +305,7 @@ describe('useSearchErrorState', () => {
       };
       
       expect(result.current.errorState.type).toBe('none');
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -310,7 +325,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -337,7 +352,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
@@ -364,7 +379,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
       });
@@ -397,7 +412,7 @@ describe('useSearchErrorState', () => {
         },
       };
       
-      result.current.handleSearchError(error);
+      invokeHook(() => result.current.handleSearchError(error));
       await waitFor(() => {
         expect(result.current.errorState.type).toBe('error');
       });
@@ -423,12 +438,12 @@ describe('useSearchErrorState', () => {
       const { result } = renderHook(() => useSearchErrorState());
       const searchFn = vi.fn().mockResolvedValue(undefined);
       
-      result.current.retry(searchFn);
+      invokeHook(() => result.current.retry(searchFn));
       await waitFor(() => {
         expect(result.current.errorState.retryCount).toBe(1);
       });
       
-      result.current.handleSearchSuccess();
+      invokeHook(() => result.current.handleSearchSuccess());
       
       expect(clearTimeoutSpy).toHaveBeenCalled();
       clearTimeoutSpy.mockRestore();
@@ -441,7 +456,7 @@ describe('useSearchErrorState', () => {
       const searchFn = vi.fn().mockResolvedValue(undefined);
       
       // Start retry
-      result.current.retry(searchFn);
+      invokeHook(() => result.current.retry(searchFn));
       await waitFor(() => {
         expect(result.current.errorState.isRetrying).toBe(true);
       });
@@ -461,7 +476,7 @@ describe('useSearchErrorState', () => {
       const { result } = renderHook(() => useSearchErrorState());
       const searchFn = vi.fn().mockResolvedValue(undefined);
       
-      result.current.retry(searchFn);
+      invokeHook(() => result.current.retry(searchFn));
       vi.clearAllMocks();
 
       act(() => {
@@ -492,7 +507,7 @@ describe('useSearchErrorState', () => {
       
       // Trigger 5 consecutive failures
       for (let i = 0; i < 5; i++) {
-        result.current.handleSearchError(error);
+        invokeHook(() => result.current.handleSearchError(error));
         await waitFor(() => {
           expect(result.current.errorState.type).toBe('error');
         });
@@ -520,7 +535,7 @@ describe('useSearchErrorState', () => {
       
       // Trigger 5 consecutive failures
       for (let i = 0; i < 5; i++) {
-        result.current.handleSearchError(error);
+        invokeHook(() => result.current.handleSearchError(error));
       }
       
       await waitFor(() => {
@@ -543,7 +558,7 @@ describe('useSearchErrorState', () => {
       
       // Trigger 5 consecutive failures to open circuit
       for (let i = 0; i < 5; i++) {
-        result.current.handleSearchError(error);
+        invokeHook(() => result.current.handleSearchError(error));
       }
       
       await waitFor(() => {
@@ -575,17 +590,19 @@ describe('useSearchErrorState', () => {
       };
       
       // Trigger 3 failures
-      for (let i = 0; i < 3; i++) {
-        result.current.handleSearchError(error);
-      }
-      
-      // Success should reset counter
-      result.current.handleSearchSuccess();
-      
-      // Another 3 failures should not open circuit (would need 5)
-      for (let i = 0; i < 3; i++) {
-        result.current.handleSearchError(error);
-      }
+      act(() => {
+        for (let i = 0; i < 3; i++) {
+          result.current.handleSearchError(error);
+        }
+
+        // Success should reset counter
+        result.current.handleSearchSuccess();
+
+        // Another 3 failures should not open circuit (would need 5)
+        for (let i = 0; i < 3; i++) {
+          result.current.handleSearchError(error);
+        }
+      });
       
       expect(result.current.errorState.isCircuitOpen).toBe(false);
     });
@@ -614,11 +631,13 @@ describe('useSearchErrorState', () => {
       };
       
       // Mix of failover (3) and error (2) = 5 total
-      result.current.handleSearchError(failoverError);
-      result.current.handleSearchError(error);
-      result.current.handleSearchError(failoverError);
-      result.current.handleSearchError(failoverError);
-      result.current.handleSearchError(error);
+      act(() => {
+        result.current.handleSearchError(failoverError);
+        result.current.handleSearchError(error);
+        result.current.handleSearchError(failoverError);
+        result.current.handleSearchError(failoverError);
+        result.current.handleSearchError(error);
+      });
       
       await waitFor(() => {
         expect(result.current.errorState.isCircuitOpen).toBe(true);

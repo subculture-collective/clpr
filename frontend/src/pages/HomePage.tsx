@@ -40,16 +40,17 @@ export function HomePage() {
     const featuredPlaylists = featuredPlaylistsResponse?.data ?? [];
 
     useEffect(() => {
-        updateCarouselControls();
         const container = carouselRef.current;
         if (!container) return;
 
         const handle = () => updateCarouselControls();
+        const initialFrame = requestAnimationFrame(handle);
         container.addEventListener('scroll', handle, { passive: true });
         const resizeObserver = new ResizeObserver(handle);
         resizeObserver.observe(container);
 
         return () => {
+            cancelAnimationFrame(initialFrame);
             container.removeEventListener('scroll', handle);
             resizeObserver.disconnect();
         };

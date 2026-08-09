@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/google/uuid"
 )
 
 // SubscriptionRepositoryInterface defines the interface for subscription repository operations
@@ -48,7 +48,7 @@ type DiscoveryListRepositoryInterface interface {
 	UnbookmarkList(ctx context.Context, userID, listID uuid.UUID) error
 	GetUserFollowedLists(ctx context.Context, userID uuid.UUID, limit, offset int) ([]models.DiscoveryListWithStats, error)
 	CreateList(ctx context.Context, name, slug, description string, isFeatured bool, createdBy uuid.UUID) (*models.DiscoveryList, error)
-	UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error)
+	UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error)
 	DeleteList(ctx context.Context, listID uuid.UUID) error
 	AddClipToList(ctx context.Context, listID, clipID uuid.UUID) error
 	RemoveClipFromList(ctx context.Context, listID, clipID uuid.UUID) error
@@ -57,6 +57,6 @@ type DiscoveryListRepositoryInterface interface {
 	GetListClipsCount(ctx context.Context, listID uuid.UUID) (int, error)
 	ListAllDiscoveryLists(ctx context.Context, limit, offset int) ([]models.DiscoveryListWithStats, error)
 	CreateDiscoveryList(ctx context.Context, name, slug, description string, isFeatured bool, createdBy uuid.UUID) (*models.DiscoveryList, error)
-	UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error)
+	UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error)
 	DeleteDiscoveryList(ctx context.Context, listID uuid.UUID) error
 }

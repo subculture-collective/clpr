@@ -383,11 +383,11 @@ AND created_at > NOW() - INTERVAL '30 days';
 
 ## Quick Reference Links
 
-- [Full Testing Guide](./STRIPE_SUBSCRIPTION_TESTING.md)
+- Full Testing Guide
 - [Stripe Dashboard](https://dashboard.stripe.com/test/dashboard)
 - [Stripe Test Cards](https://stripe.com/docs/testing#cards)
 - [Webhook Events](https://dashboard.stripe.com/test/webhooks)
-- [API Documentation](/docs/api/subscriptions.md)
+- API Documentation
 
 ## Emergency Contacts
 

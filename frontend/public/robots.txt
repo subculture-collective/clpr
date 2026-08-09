@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /settings
+Disallow: /profile
+Disallow: /favorites
+Disallow: /notifications
+Disallow: /submit
+Disallow: /submissions
+
+Sitemap: https://clpr.tv/sitemap.xml

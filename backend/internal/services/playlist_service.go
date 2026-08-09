@@ -4,27 +4,47 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
+
+var (
+	ErrPlaylistValidation           = errors.New("invalid playlist request")
+	ErrPlaylistNotFound             = errors.New("playlist not found")
+	ErrPlaylistPrivate              = errors.New("playlist is private")
+	ErrPlaylistClipNotFound         = repository.ErrPlaylistClipNotFound
+	ErrPlaylistClipLimit            = repository.ErrPlaylistClipLimit
+	ErrPlaylistMembershipMismatch   = repository.ErrPlaylistMembershipMismatch
+	ErrPlaylistOfTheDayNotFound     = repository.ErrPlaylistOfTheDayNotFound
+	ErrPlaylistCollaboratorNotFound = repository.ErrPlaylistCollaboratorNotFound
+)
+
+type playlistMembershipWriter interface {
+	Add(context.Context, uuid.UUID, []uuid.UUID) error
+	Remove(context.Context, uuid.UUID, uuid.UUID) error
+	Reorder(context.Context, uuid.UUID, []uuid.UUID) error
+}
 
 // PlaylistService handles business logic for playlists
 type PlaylistService struct {
-	playlistRepo *repository.PlaylistRepository
-	clipRepo     *repository.ClipRepository
-	baseURL      string
+	playlistRepo     *repository.PlaylistRepository
+	clipRepo         *repository.ClipRepository
+	baseURL          string
+	membershipWriter playlistMembershipWriter
 }
 
 // NewPlaylistService creates a new PlaylistService
 func NewPlaylistService(playlistRepo *repository.PlaylistRepository, clipRepo *repository.ClipRepository, baseURL string) *PlaylistService {
 	return &PlaylistService{
-		playlistRepo: playlistRepo,
-		clipRepo:     clipRepo,
-		baseURL:      baseURL,
+		playlistRepo:     playlistRepo,
+		clipRepo:         clipRepo,
+		baseURL:          baseURL,
+		membershipWriter: repository.NewPlaylistMembershipWriter(playlistRepo),
 	}
 }
 
@@ -61,7 +81,7 @@ func (s *PlaylistService) CopyPlaylist(ctx context.Context, playlistID, userID u
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if source == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check view permissions if playlist is private
@@ -71,7 +91,7 @@ func (s *PlaylistService) CopyPlaylist(ctx context.Context, playlistID, userID u
 			return nil, fmt.Errorf("failed to check permissions: %w", err)
 		}
 		if permission == "" {
-			return nil, fmt.Errorf("unauthorized: user does not have permission to copy this playlist")
+			return nil, ErrPlaylistPrivate
 		}
 	}
 
@@ -118,7 +138,7 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID uuid.UUID,
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check visibility permissions
@@ -135,10 +155,10 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID uuid.UUID,
 
 	if playlist.Visibility == models.PlaylistVisibilityPrivate {
 		if userID == nil {
-			return nil, fmt.Errorf("unauthorized: playlist is private")
+			return nil, ErrPlaylistPrivate
 		}
 		if *userID != playlist.UserID && currentPermission == nil {
-			return nil, fmt.Errorf("unauthorized: playlist is private")
+			return nil, ErrPlaylistPrivate
 		}
 	}
 
@@ -176,12 +196,12 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, playlistID uuid.UUID,
 	}
 
 	result := &models.PlaylistWithClips{
-		Playlist:  *playlist,
-		ClipCount: clipCount,
-		Clips:     clips,
-		IsLiked:   isLiked,
+		Playlist:     *playlist,
+		ClipCount:    clipCount,
+		Clips:        clips,
+		IsLiked:      isLiked,
 		IsBookmarked: isBookmarked,
-		Creator:   creator,
+		Creator:      creator,
 	}
 	result.CurrentUserPermission = currentPermission
 
@@ -195,7 +215,7 @@ func (s *PlaylistService) GetPlaylistByShareToken(ctx context.Context, shareToke
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Determine current user permission if available
@@ -244,12 +264,12 @@ func (s *PlaylistService) GetPlaylistByShareToken(ctx context.Context, shareToke
 	}
 
 	result := &models.PlaylistWithClips{
-		Playlist:  *playlist,
-		ClipCount: clipCount,
-		Clips:     clips,
-		IsLiked:   isLiked,
+		Playlist:     *playlist,
+		ClipCount:    clipCount,
+		Clips:        clips,
+		IsLiked:      isLiked,
 		IsBookmarked: isBookmarked,
-		Creator:   creator,
+		Creator:      creator,
 	}
 	result.CurrentUserPermission = currentPermission
 
@@ -258,6 +278,9 @@ func (s *PlaylistService) GetPlaylistByShareToken(ctx context.Context, shareToke
 
 // UpdatePlaylist updates a playlist
 func (s *PlaylistService) UpdatePlaylist(ctx context.Context, playlistID, userID uuid.UUID, req *models.UpdatePlaylistRequest) (*models.Playlist, error) {
+	if req == nil || (req.Title == nil && req.Description == nil && req.CoverURL == nil && req.Visibility == nil) {
+		return nil, fmt.Errorf("%w: at least one field is required", ErrPlaylistValidation)
+	}
 	// Get the playlist to verify ownership or permission
 	playlist, err := s.playlistRepo.GetByID(ctx, playlistID)
 	if err != nil {
@@ -324,7 +347,7 @@ func (s *PlaylistService) DeletePlaylist(ctx context.Context, playlistID, userID
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	// Verify ownership
@@ -390,6 +413,9 @@ func (s *PlaylistService) GetPlaylistOfTheDay(ctx context.Context, userID *uuid.
 
 // AddClipsToPlaylist adds multiple clips to a playlist
 func (s *PlaylistService) AddClipsToPlaylist(ctx context.Context, playlistID, userID uuid.UUID, clipIDs []uuid.UUID) error {
+	if len(clipIDs) == 0 || hasDuplicateUUIDs(clipIDs) {
+		return ErrPlaylistMembershipMismatch
+	}
 	// Get the playlist to verify ownership
 	playlist, err := s.playlistRepo.GetByID(ctx, playlistID)
 	if err != nil {
@@ -408,49 +434,7 @@ func (s *PlaylistService) AddClipsToPlaylist(ctx context.Context, playlistID, us
 		return fmt.Errorf("unauthorized: user does not have permission to edit this playlist")
 	}
 
-	// Get current clip count
-	currentCount, err := s.playlistRepo.GetClipCount(ctx, playlistID)
-	if err != nil {
-		return fmt.Errorf("failed to get clip count: %w", err)
-	}
-
-	// Add clips one by one, checking for duplicates and existence
-	addedCount := 0
-	for _, clipID := range clipIDs {
-		// Check if clip exists
-		clip, err := s.clipRepo.GetByID(ctx, clipID)
-		if err != nil {
-			return fmt.Errorf("failed to check clip existence: %w", err)
-		}
-		if clip == nil {
-			return fmt.Errorf("clip %s not found", clipID)
-		}
-
-		// Check if clip is already in playlist
-		exists, err := s.playlistRepo.HasClip(ctx, playlistID, clipID)
-		if err != nil {
-			return fmt.Errorf("failed to check if clip exists in playlist: %w", err)
-		}
-		if exists {
-			// Skip duplicate clips
-			continue
-		}
-
-		// Check if adding this clip would exceed the limit
-		if currentCount+addedCount >= 1000 {
-			return fmt.Errorf("playlist cannot exceed 1000 clips")
-		}
-
-		// Add clip with order index based on actual position
-		orderIndex := currentCount + addedCount
-		err = s.playlistRepo.AddClip(ctx, playlistID, clipID, orderIndex)
-		if err != nil {
-			return fmt.Errorf("failed to add clip to playlist: %w", err)
-		}
-		addedCount++
-	}
-
-	return nil
+	return s.membershipWriter.Add(ctx, playlistID, clipIDs)
 }
 
 // RemoveClipFromPlaylist removes a clip from a playlist
@@ -473,16 +457,14 @@ func (s *PlaylistService) RemoveClipFromPlaylist(ctx context.Context, playlistID
 		return fmt.Errorf("unauthorized: user does not have permission to edit this playlist")
 	}
 
-	err = s.playlistRepo.RemoveClip(ctx, playlistID, clipID)
-	if err != nil {
-		return fmt.Errorf("failed to remove clip from playlist: %w", err)
-	}
-
-	return nil
+	return s.membershipWriter.Remove(ctx, playlistID, clipID)
 }
 
 // ReorderPlaylistClips updates the order of clips in a playlist
 func (s *PlaylistService) ReorderPlaylistClips(ctx context.Context, playlistID, userID uuid.UUID, clipIDs []uuid.UUID) error {
+	if len(clipIDs) == 0 || hasDuplicateUUIDs(clipIDs) {
+		return ErrPlaylistMembershipMismatch
+	}
 	// Get the playlist to verify ownership
 	playlist, err := s.playlistRepo.GetByID(ctx, playlistID)
 	if err != nil {
@@ -501,23 +483,21 @@ func (s *PlaylistService) ReorderPlaylistClips(ctx context.Context, playlistID, 
 		return fmt.Errorf("unauthorized: user does not have permission to edit this playlist")
 	}
 
-	// Verify all clips exist in the playlist
-	for _, clipID := range clipIDs {
-		exists, err := s.playlistRepo.HasClip(ctx, playlistID, clipID)
-		if err != nil {
-			return fmt.Errorf("failed to check if clip exists in playlist: %w", err)
-		}
-		if !exists {
-			return fmt.Errorf("clip %s not found in playlist", clipID)
-		}
-	}
+	return s.membershipWriter.Reorder(ctx, playlistID, clipIDs)
+}
 
-	err = s.playlistRepo.ReorderClips(ctx, playlistID, clipIDs)
-	if err != nil {
-		return fmt.Errorf("failed to reorder clips: %w", err)
+func hasDuplicateUUIDs(ids []uuid.UUID) bool {
+	seen := make(map[uuid.UUID]struct{}, len(ids))
+	for _, id := range ids {
+		if id == uuid.Nil {
+			return true
+		}
+		if _, exists := seen[id]; exists {
+			return true
+		}
+		seen[id] = struct{}{}
 	}
-
-	return nil
+	return false
 }
 
 // LikePlaylist adds a like to a playlist
@@ -528,12 +508,12 @@ func (s *PlaylistService) LikePlaylist(ctx context.Context, playlistID, userID u
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	// Can't like private playlists unless you own them
 	if playlist.Visibility == models.PlaylistVisibilityPrivate && playlist.UserID != userID {
-		return fmt.Errorf("cannot like private playlists")
+		return ErrPlaylistPrivate
 	}
 
 	err = s.playlistRepo.LikePlaylist(ctx, userID, playlistID)
@@ -561,11 +541,11 @@ func (s *PlaylistService) BookmarkPlaylist(ctx context.Context, playlistID, user
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	if playlist.Visibility == models.PlaylistVisibilityPrivate && playlist.UserID != userID {
-		return fmt.Errorf("cannot bookmark private playlists")
+		return ErrPlaylistPrivate
 	}
 
 	err = s.playlistRepo.BookmarkPlaylist(ctx, userID, playlistID)
@@ -603,7 +583,7 @@ func (s *PlaylistService) GetShareLink(ctx context.Context, playlistID, userID u
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check permissions: owner or collaborator with edit/admin permission
@@ -636,8 +616,7 @@ func (s *PlaylistService) GetShareLink(ctx context.Context, playlistID, userID u
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate share token: %w", err)
 			}
-			if err = s.playlistRepo.UpdateShareToken(ctx, playlistID, candidate); err == nil {
-				shareToken = candidate
+			if shareToken, err = s.playlistRepo.GetOrCreateShareToken(ctx, playlistID, candidate); err == nil {
 				break
 			}
 			lastErr = err
@@ -665,17 +644,16 @@ func (s *PlaylistService) TrackShare(ctx context.Context, playlistID uuid.UUID, 
 		return fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return fmt.Errorf("playlist not found")
+		return ErrPlaylistNotFound
 	}
 
 	// Only track shares for public/unlisted playlists
 	if playlist.Visibility == models.PlaylistVisibilityPrivate {
-		return fmt.Errorf("cannot track shares for private playlists")
+		return ErrPlaylistPrivate
 	}
 
-	// Validate referrer length (database constraint is VARCHAR(255))
 	if len(referrer) > 255 {
-		referrer = referrer[:255]
+		return fmt.Errorf("%w: referrer is too long", ErrPlaylistValidation)
 	}
 
 	// Track the share event
@@ -689,15 +667,8 @@ func (s *PlaylistService) TrackShare(ctx context.Context, playlistID uuid.UUID, 
 		share.Referrer = &referrer
 	}
 
-	err = s.playlistRepo.TrackShare(ctx, share)
-	if err != nil {
-		return fmt.Errorf("failed to track share: %w", err)
-	}
-
-	// Increment share count
-	err = s.playlistRepo.IncrementShareCount(ctx, playlistID)
-	if err != nil {
-		return fmt.Errorf("failed to increment share count: %w", err)
+	if err = s.playlistRepo.TrackShareAndIncrement(ctx, share); err != nil {
+		return fmt.Errorf("failed to persist playlist share: %w", err)
 	}
 
 	return nil
@@ -725,7 +696,7 @@ func (s *PlaylistService) AddCollaborator(ctx context.Context, playlistID, userI
 
 	// Cannot add the owner as a collaborator
 	if collaboratorUserID == playlist.UserID {
-		return fmt.Errorf("cannot add playlist owner as a collaborator")
+		return fmt.Errorf("%w: owner cannot be a collaborator", ErrPlaylistValidation)
 	}
 
 	// Create collaborator
@@ -773,7 +744,7 @@ func (s *PlaylistService) GetCollaborators(ctx context.Context, playlistID, user
 		return nil, fmt.Errorf("failed to get playlist: %w", err)
 	}
 	if playlist == nil {
-		return nil, fmt.Errorf("playlist not found")
+		return nil, ErrPlaylistNotFound
 	}
 
 	// Check if user has permission to view collaborators
@@ -793,7 +764,7 @@ func (s *PlaylistService) GetCollaborators(ctx context.Context, playlistID, user
 	}
 
 	if !hasPermission {
-		return nil, fmt.Errorf("unauthorized: user does not have permission to view collaborators")
+		return nil, ErrPlaylistPrivate
 	}
 
 	collaborators, err := s.playlistRepo.GetCollaborators(ctx, playlistID)

@@ -3,14 +3,19 @@ package services
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
+
+const MaxAuditLogExportRows = 10000
+
+var ErrAuditLogExportTooLarge = errors.New("audit log export exceeds 10000 rows")
 
 // AuditLogRepository defines the interface for audit log repository operations
 type AuditLogRepository interface {
@@ -75,6 +80,9 @@ func (s *AuditLogService) ExportAuditLogsCSV(ctx context.Context, filters reposi
 	logs, err := s.auditLogRepo.Export(ctx, filters)
 	if err != nil {
 		return fmt.Errorf("failed to export audit logs: %w", err)
+	}
+	if len(logs) > MaxAuditLogExportRows {
+		return ErrAuditLogExportTooLarge
 	}
 
 	// Create CSV writer
@@ -206,8 +214,14 @@ func ParseAuditLogFilters(moderatorID, action, entityType, entityID, channelID, 
 		}
 		filters.EndDate = &t
 	}
+	if filters.StartDate != nil && filters.EndDate != nil && filters.StartDate.After(*filters.EndDate) {
+		return filters, fmt.Errorf("start_date must not be after end_date")
+	}
 
 	if search != "" {
+		if len(search) > 200 {
+			return filters, fmt.Errorf("search must not exceed 200 characters")
+		}
 		filters.Search = search
 	}
 

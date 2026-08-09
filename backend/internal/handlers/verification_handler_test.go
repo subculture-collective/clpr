@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // TestListApplications_InvalidStatus tests status parameter validation
@@ -143,6 +145,47 @@ func TestReviewVerificationApplication_InvalidDecision(t *testing.T) {
 
 	if isValid {
 		t.Errorf("Expected invalid decision but validation passed")
+	}
+}
+
+func TestVerificationAdminPaginationRejectsMalformedValuesBeforeRepositoryWork(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, target := range []string{
+		"/api/v1/admin/verification/applications?limit=invalid",
+		"/api/v1/admin/verification/applications?page=0",
+		"/api/v1/admin/verification/audit-logs?only_flagged=maybe",
+		"/api/v1/admin/verification/audit-logs?only_flagged=true&user_id=" + uuid.NewString(),
+	} {
+		t.Run(target, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodGet, target, nil)
+			handler := &VerificationHandler{}
+			if strings.Contains(target, "audit-logs") {
+				handler.GetAuditLogs(c)
+			} else {
+				handler.ListApplications(c)
+			}
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestVerificationReviewRejectsMalformedReviewerIdentity(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = gin.Params{{Key: "id", Value: uuid.NewString()}}
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/verification/applications/id/review", strings.NewReader(`{"decision":"approved"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set("user_id", "not-a-uuid")
+
+	(&VerificationHandler{}).ReviewApplication(c)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", w.Code)
 	}
 }
 

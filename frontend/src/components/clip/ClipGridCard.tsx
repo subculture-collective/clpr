@@ -4,24 +4,11 @@ import { Badge } from "@/components/ui";
 import { ShareButton } from "./ShareButton";
 import { useClipVote, useClipFavorite } from "@/hooks/useClips";
 import { useIsAuthenticated, useToast } from "@/hooks";
-import { cn, formatTimestamp } from "@/lib/utils";
+import { cn, formatCompactNumber, formatDuration, formatTimestamp } from "@/lib/utils";
 import type { Clip } from "@/types/clip";
 
 interface ClipGridCardProps {
 	clip: Clip;
-}
-
-function formatNumber(num: number) {
-	if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-	if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-	return num.toString();
-}
-
-function formatDuration(seconds?: number) {
-	if (!seconds) return "0:00";
-	const mins = Math.floor(seconds / 60);
-	const secs = Math.floor(seconds % 60);
-	return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 export function ClipGridCard({ clip }: ClipGridCardProps) {
@@ -53,18 +40,24 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 	};
 
 	return (
-		<Link
-			to={`/clip/${clip.id}`}
-			className="group flex h-full flex-col rounded-xl border border-border bg-card p-3 transition-all hover:border-primary-500/30 hover:shadow-lg"
+		<article
+			className="group flex h-full flex-col rounded-xl border border-border bg-card p-3 transition-all motion-reduce:transition-none hover:border-primary-500/30 hover:shadow-lg focus-within:border-primary-500/50"
 			data-testid="clip-grid-card"
 		>
+			<Link
+				to={`/clip/${clip.id}`}
+				className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+				aria-label={`Watch ${clip.title}`}
+			>
 			{/* Thumbnail */}
 			<div className="relative aspect-video shrink-0 overflow-hidden rounded-lg mb-3">
 				{clip.thumbnail_url ? (
 					<img
 						src={clip.thumbnail_url}
 						alt={clip.title}
-						className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+						width={640}
+						height={360}
+						className="h-full w-full object-cover transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none group-hover:scale-105"
 						loading="lazy"
 					/>
 				) : (
@@ -108,7 +101,14 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 
 				{/* Watch progress */}
 				{clip.watch_progress && (
-					<div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+					<div
+						className="absolute bottom-0 left-0 right-0 h-1 bg-black/30"
+						role="progressbar"
+						aria-label="Watch progress"
+						aria-valuemin={0}
+						aria-valuemax={100}
+						aria-valuenow={Math.min(100, Math.max(0, clip.watch_progress.progress_percent))}
+					>
 						<div
 							className="h-full bg-primary-500"
 							style={{
@@ -145,6 +145,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 					<span>{clip.comment_count} comments</span>
 				</div>
 			)}
+			</Link>
 
 			{/* Stats — pushed to bottom, aligned with thumbnail edges */}
 			<div className="-mb-3 flex-no-wrap mt-auto flex items-center justify-between gap-1.5 text-xs text-muted-foreground">
@@ -155,17 +156,19 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						onClick={(e) => handleVote(e, 1)}
 						disabled={!isAuthenticated || voteMutation.isPending}
 						className={cn(
-							"inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
 							clip.user_vote === 1 && "text-primary-500",
 						)}
 						title={isAuthenticated ? "Upvote" : "Log in to vote"}
+						aria-label={isAuthenticated ? `Upvote ${clip.title}` : "Log in to vote"}
+						aria-pressed={clip.user_vote === 1}
 					>
 						<ArrowUp
 							size={14}
 							className={cn(clip.user_vote === 1 && "fill-current")}
 						/>
 						<span className="font-medium text-foreground/90">
-							{formatNumber(clip.vote_score)}
+							{formatCompactNumber(clip.vote_score)}
 						</span>
 					</button>
 
@@ -174,10 +177,12 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						onClick={(e) => handleVote(e, -1)}
 						disabled={!isAuthenticated || voteMutation.isPending}
 						className={cn(
-							"inline-flex items-center rounded px-1 py-0.5 transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
 							clip.user_vote === -1 && "text-primary-500",
 						)}
 						title={isAuthenticated ? "Downvote" : "Log in to vote"}
+						aria-label={isAuthenticated ? `Downvote ${clip.title}` : "Log in to vote"}
+						aria-pressed={clip.user_vote === -1}
 					>
 						<ArrowDown
 							size={14}
@@ -191,7 +196,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						onClick={handleFavorite}
 						disabled={!isAuthenticated}
 						className={cn(
-							"inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
 							clip.is_favorited && "text-primary-500",
 						)}
 						title={
@@ -201,13 +206,15 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 									: "Add to favorites"
 								: "Log in to favorite clips"
 						}
+						aria-label={clip.is_favorited ? `Remove ${clip.title} from favorites` : `Add ${clip.title} to favorites`}
+						aria-pressed={clip.is_favorited}
 					>
 						<Heart
 							size={14}
 							className={cn(clip.is_favorited && "fill-current text-primary-500")}
 						/>
 						<span className="font-medium text-foreground/90">
-							{formatNumber(clip.favorite_count)}
+							{formatCompactNumber(clip.favorite_count)}
 						</span>
 					</button>
 
@@ -224,7 +231,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 					{/* Views */}
 					<span className="inline-flex items-center gap-1">
 						<Eye size={14} />
-						<span>{formatNumber(clip.view_count)}</span>
+						<span>{formatCompactNumber(clip.view_count)}</span>
 					</span>
 				</div>
 
@@ -235,6 +242,6 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 					{timestamp.display}
 				</div>
 			</div>
-		</Link>
+		</article>
 	);
 }

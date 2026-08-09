@@ -457,11 +457,11 @@ For production environments, set up periodic validation:
 
 ## Related Documentation
 
-- [Alert Validation Report](../../monitoring/docs/ALERT_VALIDATION_REPORT.md)
-- [Monitoring README](../../monitoring/README.md)
-- [Alert Testing Guide](alert-testing-staging.md)
-- [Alertmanager Setup](../../monitoring/ALERTMANAGER_SETUP.md)
-- [SLO Documentation](slos.md)
+- Alert Validation Report
+- Monitoring README
+- [Alert Testing Guide](../alert-testing-staging.md)
+- Alertmanager Setup
+- [SLO Documentation](../slos.md)
 
 ## Changelog
 

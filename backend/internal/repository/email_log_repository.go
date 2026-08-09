@@ -2,14 +2,17 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var ErrEmailAlertNotFound = errors.New("email alert not found or state already changed")
 
 // EmailLogRepository handles email log data operations
 type EmailLogRepository struct {
@@ -524,7 +527,7 @@ func (r *EmailLogRepository) AcknowledgeAlert(ctx context.Context, alertID, user
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("alert not found or already acknowledged")
+		return ErrEmailAlertNotFound
 	}
 
 	return nil
@@ -544,7 +547,7 @@ func (r *EmailLogRepository) ResolveAlert(ctx context.Context, alertID uuid.UUID
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("alert not found or already resolved")
+		return ErrEmailAlertNotFound
 	}
 
 	return nil

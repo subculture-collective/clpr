@@ -269,6 +269,6 @@ For complete backfills of existing data, use this CLI tool.
 
 For issues or questions:
 
-- Check the [Semantic Search Architecture](../../docs/SEMANTIC_SEARCH_ARCHITECTURE.md)
+- Check the Semantic Search Architecture
 - Review [OpenAI Embeddings Documentation](https://platform.openai.com/docs/guides/embeddings)
 - Open an issue in the GitHub repository

@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // ChatHandler handles chat-related requests
@@ -107,6 +108,10 @@ func (h *ChatHandler) CreateChannel(c *gin.Context) {
 
 // ListChannels returns a list of chat channels
 func (h *ChatHandler) ListChannels(c *gin.Context) {
+	userID, ok := authenticatedUserID(c)
+	if !ok {
+		return
+	}
 	// Parse query parameters
 	limitStr := c.DefaultQuery("limit", "50")
 	offsetStr := c.DefaultQuery("offset", "0")
@@ -114,12 +119,18 @@ func (h *ChatHandler) ListChannels(c *gin.Context) {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 || limit > 100 {
-		limit = 50
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil || offset < 0 {
-		offset = 0
+		c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be a non-negative integer"})
+		return
+	}
+	if channelType != "" && channelType != "public" && channelType != "private" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "type must be public or private"})
+		return
 	}
 
 	// Build query
@@ -128,10 +139,14 @@ func (h *ChatHandler) ListChannels(c *gin.Context) {
 		       max_participants, created_at, updated_at
 		FROM chat_channels
 		WHERE is_active = true
+		  AND (channel_type = 'public' OR EXISTS (
+			SELECT 1 FROM channel_members cm
+			WHERE cm.channel_id = chat_channels.id AND cm.user_id = $1
+		  ))
 	`
 
-	args := []interface{}{}
-	argIndex := 1
+	args := []interface{}{userID}
+	argIndex := 2
 
 	// Filter by channel type if provided
 	if channelType != "" && (channelType == "public" || channelType == "private") {
@@ -184,6 +199,10 @@ func (h *ChatHandler) GetChannel(c *gin.Context) {
 	channelUUID, err := uuid.Parse(channelID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
+		return
+	}
+	userID, ok := authenticatedUserID(c)
+	if !ok || !requireChatChannelAccess(c, h.db, channelUUID, userID) {
 		return
 	}
 
@@ -340,14 +359,14 @@ func joinStrings(strs []string, sep string) string {
 // BanUser bans a user from a channel
 func (h *ChatHandler) BanUser(c *gin.Context) {
 	channelID := c.Param("id")
-	if _, err := uuid.Parse(channelID); err != nil {
+	channelUUID, err := uuid.Parse(channelID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
 		return
 	}
 
-	moderatorID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok || !requireChatStaff(c, h.db, channelUUID, moderatorID) {
 		return
 	}
 
@@ -363,6 +382,12 @@ func (h *ChatHandler) BanUser(c *gin.Context) {
 		expires := time.Now().Add(time.Duration(*req.DurationMinutes) * time.Minute)
 		expiresAt = &expires
 	}
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
 
 	// Insert or update ban record
 	query := `
@@ -377,7 +402,7 @@ func (h *ChatHandler) BanUser(c *gin.Context) {
 		RETURNING id`
 
 	var banID uuid.UUID
-	err := h.db.QueryRow(c.Request.Context(), query,
+	err = tx.QueryRow(c.Request.Context(), query,
 		channelID, req.UserID, moderatorID, req.Reason, expiresAt).Scan(&banID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to ban user"})
@@ -394,11 +419,15 @@ func (h *ChatHandler) BanUser(c *gin.Context) {
 		"expires_at":       expiresAt,
 	})
 
-	_, err = h.db.Exec(c.Request.Context(), logQuery,
+	_, err = tx.Exec(c.Request.Context(), logQuery,
 		channelID, moderatorID, req.UserID, models.ChatActionBan, req.Reason, metadata)
 	if err != nil {
-		// Log error but don't fail the request
-		_ = err
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation action"})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to ban user"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -413,7 +442,8 @@ func (h *ChatHandler) UnbanUser(c *gin.Context) {
 	channelID := c.Param("id")
 	userID := c.Param("user_id")
 
-	if _, err := uuid.Parse(channelID); err != nil {
+	channelUUID, err := uuid.Parse(channelID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
 		return
 	}
@@ -423,15 +453,20 @@ func (h *ChatHandler) UnbanUser(c *gin.Context) {
 		return
 	}
 
-	moderatorID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok || !requireChatStaff(c, h.db, channelUUID, moderatorID) {
 		return
 	}
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
 
 	// Delete the ban
 	query := `DELETE FROM chat_bans WHERE channel_id = $1 AND user_id = $2`
-	result, err := h.db.Exec(c.Request.Context(), query, channelID, userID)
+	result, err := tx.Exec(c.Request.Context(), query, channelUUID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unban user"})
 		return
@@ -447,11 +482,15 @@ func (h *ChatHandler) UnbanUser(c *gin.Context) {
 		INSERT INTO chat_moderation_log (channel_id, moderator_id, target_user_id, action, reason)
 		VALUES ($1, $2, $3, $4, $5)`
 
-	_, err = h.db.Exec(c.Request.Context(), logQuery,
+	_, err = tx.Exec(c.Request.Context(), logQuery,
 		channelID, moderatorID, userID, models.ChatActionUnban, "Manual unban")
 	if err != nil {
-		// Log error but don't fail the request
-		_ = err
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation action"})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unban user"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "unbanned"})
@@ -460,14 +499,14 @@ func (h *ChatHandler) UnbanUser(c *gin.Context) {
 // MuteUser mutes a user in a channel (implemented similar to ban)
 func (h *ChatHandler) MuteUser(c *gin.Context) {
 	channelID := c.Param("id")
-	if _, err := uuid.Parse(channelID); err != nil {
+	channelUUID, err := uuid.Parse(channelID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
 		return
 	}
 
-	moderatorID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok || !requireChatStaff(c, h.db, channelUUID, moderatorID) {
 		return
 	}
 
@@ -483,6 +522,12 @@ func (h *ChatHandler) MuteUser(c *gin.Context) {
 		expires := time.Now().Add(time.Duration(*req.DurationMinutes) * time.Minute)
 		expiresAt = &expires
 	}
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
 
 	// Use same table as bans but with different action type in log
 	query := `
@@ -497,7 +542,7 @@ func (h *ChatHandler) MuteUser(c *gin.Context) {
 		RETURNING id`
 
 	var muteID uuid.UUID
-	err := h.db.QueryRow(c.Request.Context(), query,
+	err = tx.QueryRow(c.Request.Context(), query,
 		channelID, req.UserID, moderatorID, req.Reason, expiresAt).Scan(&muteID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mute user"})
@@ -514,11 +559,15 @@ func (h *ChatHandler) MuteUser(c *gin.Context) {
 		"expires_at":       expiresAt,
 	})
 
-	_, err = h.db.Exec(c.Request.Context(), logQuery,
+	_, err = tx.Exec(c.Request.Context(), logQuery,
 		channelID, moderatorID, req.UserID, models.ChatActionMute, req.Reason, metadata)
 	if err != nil {
-		// Log error but don't fail the request
-		_ = err
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation action"})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mute user"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -531,14 +580,14 @@ func (h *ChatHandler) MuteUser(c *gin.Context) {
 // TimeoutUser temporarily bans a user from a channel
 func (h *ChatHandler) TimeoutUser(c *gin.Context) {
 	channelID := c.Param("id")
-	if _, err := uuid.Parse(channelID); err != nil {
+	channelUUID, err := uuid.Parse(channelID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
 		return
 	}
 
-	moderatorID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok || !requireChatStaff(c, h.db, channelUUID, moderatorID) {
 		return
 	}
 
@@ -550,6 +599,12 @@ func (h *ChatHandler) TimeoutUser(c *gin.Context) {
 
 	// Calculate expiration time
 	expiresAt := time.Now().Add(time.Duration(req.DurationMinutes) * time.Minute)
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
 
 	// Insert or update timeout
 	query := `
@@ -564,7 +619,7 @@ func (h *ChatHandler) TimeoutUser(c *gin.Context) {
 		RETURNING id`
 
 	var timeoutID uuid.UUID
-	err := h.db.QueryRow(c.Request.Context(), query,
+	err = tx.QueryRow(c.Request.Context(), query,
 		channelID, req.UserID, moderatorID, req.Reason, expiresAt).Scan(&timeoutID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to timeout user"})
@@ -581,11 +636,15 @@ func (h *ChatHandler) TimeoutUser(c *gin.Context) {
 		"expires_at":       expiresAt,
 	})
 
-	_, err = h.db.Exec(c.Request.Context(), logQuery,
+	_, err = tx.Exec(c.Request.Context(), logQuery,
 		channelID, moderatorID, req.UserID, models.ChatActionTimeout, req.Reason, metadata)
 	if err != nil {
-		// Log error but don't fail the request
-		_ = err
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation action"})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to timeout user"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -603,9 +662,8 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	moderatorID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -625,22 +683,30 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch message"})
 		return
 	}
+	if !requireChatStaff(c, h.db, msg.ChannelID, moderatorID) {
+		return
+	}
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
 
 	// Mark message as deleted
 	now := time.Now()
-	modID, ok := moderatorID.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid moderator ID"})
-		return
-	}
 	deleteQuery := `
 		UPDATE chat_messages 
 		SET is_deleted = true, deleted_at = $1, deleted_by = $2, updated_at = $1
 		WHERE id = $3`
 
-	_, err = h.db.Exec(c.Request.Context(), deleteQuery, now, modID, messageID)
+	result, err := tx.Exec(c.Request.Context(), deleteQuery, now, moderatorID, messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete message"})
+		return
+	}
+	if result.RowsAffected() == 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Message was already deleted"})
 		return
 	}
 
@@ -654,11 +720,15 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 		"message_content": msg.Content,
 	})
 
-	_, err = h.db.Exec(c.Request.Context(), logQuery,
+	_, err = tx.Exec(c.Request.Context(), logQuery,
 		msg.ChannelID, moderatorID, msg.UserID, models.ChatActionDelete, req.Reason, metadata)
 	if err != nil {
-		// Log error but don't fail the request
-		_ = err
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation action"})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete message"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
@@ -667,8 +737,13 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // GetModerationLog retrieves the moderation log for a channel
 func (h *ChatHandler) GetModerationLog(c *gin.Context) {
 	channelID := c.Param("id")
-	if _, err := uuid.Parse(channelID); err != nil {
+	channelUUID, err := uuid.Parse(channelID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
+		return
+	}
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok || !requireChatStaff(c, h.db, channelUUID, moderatorID) {
 		return
 	}
 
@@ -700,7 +775,7 @@ func (h *ChatHandler) GetModerationLog(c *gin.Context) {
 		ORDER BY l.created_at DESC
 		LIMIT $2 OFFSET $3`
 
-	rows, err := h.db.Query(c.Request.Context(), query, channelID, limit, offset)
+	rows, err := h.db.Query(c.Request.Context(), query, channelUUID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch moderation log"})
 		return
@@ -739,13 +814,21 @@ func (h *ChatHandler) CheckUserBan(c *gin.Context) {
 	channelID := c.Param("id")
 	userID := c.Query("user_id")
 
-	if _, err := uuid.Parse(channelID); err != nil {
+	channelUUID, err := uuid.Parse(channelID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
 		return
 	}
-
-	if _, err := uuid.Parse(userID); err != nil {
+	targetID, err := uuid.Parse(userID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	requesterID, ok := authenticatedUserID(c)
+	if !ok {
+		return
+	}
+	if requesterID != targetID && !requireChatStaff(c, h.db, channelUUID, requesterID) {
 		return
 	}
 
@@ -756,7 +839,7 @@ func (h *ChatHandler) CheckUserBan(c *gin.Context) {
 		AND (expires_at IS NULL OR expires_at > NOW())`
 
 	var ban models.ChatBan
-	err := h.db.QueryRow(c.Request.Context(), query, channelID, userID).Scan(
+	err = h.db.QueryRow(c.Request.Context(), query, channelUUID, targetID).Scan(
 		&ban.ID, &ban.ExpiresAt, &ban.Reason)
 
 	if err == pgx.ErrNoRows {
@@ -906,7 +989,40 @@ func (h *ChatHandler) AddChannelMember(c *gin.Context) {
 		return
 	}
 
-	// Add member
+	// Serialize membership changes against the channel so concurrent invitations
+	// cannot exceed max_participants.
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
+	var maxParticipants *int
+	err = tx.QueryRow(c.Request.Context(), `
+		SELECT max_participants
+		FROM chat_channels
+		WHERE id = $1 AND is_active = true
+		FOR UPDATE`, channelUUID).Scan(&maxParticipants)
+	if errors.Is(err, pgx.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Channel not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify channel capacity"})
+		return
+	}
+	var participantCount int
+	if err := tx.QueryRow(c.Request.Context(),
+		`SELECT COUNT(*) FROM channel_members WHERE channel_id = $1`, channelUUID).Scan(&participantCount); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify channel capacity"})
+		return
+	}
+	if maxParticipants != nil && participantCount >= *maxParticipants {
+		c.JSON(http.StatusConflict, gin.H{"error": "Channel has reached max participants"})
+		return
+	}
+
+	// Add member.
 	query := `
 		INSERT INTO channel_members (channel_id, user_id, role, invited_by)
 		VALUES ($1, $2, $3, $4)
@@ -915,7 +1031,7 @@ func (h *ChatHandler) AddChannelMember(c *gin.Context) {
 	`
 
 	var member models.ChannelMember
-	err = h.db.QueryRow(c.Request.Context(), query,
+	err = tx.QueryRow(c.Request.Context(), query,
 		channelUUID, targetUserID, role, inviterID).Scan(&member.ID, &member.JoinedAt)
 
 	if err == pgx.ErrNoRows {
@@ -930,6 +1046,10 @@ func (h *ChatHandler) AddChannelMember(c *gin.Context) {
 	member.UserID = targetUserID
 	member.Role = role
 	member.InvitedBy = &inviterID
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add member"})
+		return
+	}
 
 	c.JSON(http.StatusCreated, member)
 }
@@ -1041,6 +1161,10 @@ func (h *ChatHandler) ListChannelMembers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid channel ID"})
 		return
 	}
+	userID, ok := authenticatedUserID(c)
+	if !ok || !requireChatChannelAccess(c, h.db, channelUUID, userID) {
+		return
+	}
 
 	// Parse pagination
 	limitStr := c.DefaultQuery("limit", "50")
@@ -1048,12 +1172,14 @@ func (h *ChatHandler) ListChannelMembers(c *gin.Context) {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 || limit > 100 {
-		limit = 50
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil || offset < 0 {
-		offset = 0
+		c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be a non-negative integer"})
+		return
 	}
 
 	query := `

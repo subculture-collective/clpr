@@ -283,7 +283,7 @@ Voting shapes what content the community sees. Use your votes responsibly to mai
 - Use `*italic*` for slight emphasis
 - Use `>` for quotes
 - Use backticks for `code`
-- Use `[text](url)` for links
+- Use `text` for links
 
 **Comment Etiquette**:
 
@@ -487,10 +487,10 @@ If you believe a moderation action was unfair:
 
 ### Resources
 
-- **[User Guide](user-guide.md)**: How to use the platform
-- **[FAQ](faq.md)**: Common questions answered
-- **[Contributing Guide](../CONTRIBUTING.md)**: How to help improve Clipper
-- **[Code of Conduct](../CODE_OF_CONDUCT.md)**: Community standards
+- **User Guide**: How to use the platform
+- **FAQ**: Common questions answered
+- **Contributing Guide**: How to help improve Clipper
+- **Code of Conduct**: Community standards
 
 ### Contact Options
 
@@ -507,7 +507,7 @@ These guidelines are living documents that evolve with the community. We welcome
 
 **Remember**: We're all here to enjoy great Twitch content and build a positive community. When in doubt, be kind, be respectful, and have fun!
 
-**Questions?** Check the [FAQ](faq.md) or contact the moderators.
+**Questions?** Check the FAQ or contact the moderators.
 
 ---
 

@@ -31,7 +31,7 @@ Go to: `Settings → Secrets and variables → Actions → New repository secret
 - **Description**: Stripe secret key for test mode (backend)
 - **Format**: Starts with `sk_test_`
 - **Where to find**: Stripe Dashboard → Developers → API keys → Test mode
-- **Example**: `sk_test_51A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6`
+- **Example**: `sk_test_<test-key-from-dashboard>`
 - **⚠️ IMPORTANT**: This is sensitive. Never commit or expose.
 
 #### 3. STRIPE_TEST_WEBHOOK_SECRET
@@ -240,9 +240,9 @@ Monitor your Stripe test mode activity:
 
 ## Related Documentation
 
-- [Premium Subscription E2E Tests README](../../frontend/e2e/tests/PREMIUM_SUBSCRIPTION_TESTS.md)
-- [Stripe Webhook Testing Guide](../../backend/docs/STRIPE_WEBHOOK_TESTING.md)
-- [Stripe Integration Documentation](../../docs/premium/stripe.md)
+- Premium Subscription E2E Tests README
+- [Stripe Webhook Testing Guide](./STRIPE_WEBHOOK_TESTING.md)
+- Stripe Integration Documentation
 - [GitHub Secrets Documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Stripe Test Mode Documentation](https://stripe.com/docs/test-mode)
 

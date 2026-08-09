@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
 
 // NotificationService handles notification business logic
@@ -210,7 +210,8 @@ func (s *NotificationService) GetUserNotifications(
 	filter string,
 	limit, offset int,
 ) ([]models.NotificationWithSource, error) {
-	if limit <= 0 || limit > 100 {
+	// Handlers may request one extra row to compute has_more accurately.
+	if limit <= 0 || limit > 101 {
 		limit = 50
 	}
 	if offset < 0 {
@@ -701,7 +702,7 @@ func (s *NotificationService) UnregisterDeviceToken(
 	deviceToken string,
 ) error {
 	// Clear user's device token from the database
-	err := s.userRepo.ClearDeviceToken(ctx, userID)
+	err := s.userRepo.ClearDeviceToken(ctx, userID, deviceToken)
 	if err != nil {
 		return fmt.Errorf("failed to unregister device token for user %s: %w", userID.String(), err)
 	}

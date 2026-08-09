@@ -306,7 +306,7 @@ Rollback if any of the following occur:
 
 ## References
 
-- [Search Evaluation Framework Docs](../docs/search-evaluation.md)
-- [Hybrid Search Architecture](../docs/hybrid-search.md)
-- [Configuration Management](../docs/configuration.md)
-- [Deployment Procedures](../docs/deployment.md)
+- Search Evaluation Framework Docs
+- Hybrid Search Architecture
+- Configuration Management
+- Deployment Procedures

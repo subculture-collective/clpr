@@ -10,14 +10,34 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+type emailLogRepositoryStub struct {
+	lookupErr error
+	created   []*models.EmailLog
+}
+
+func (s *emailLogRepositoryStub) GetEmailLogByMessageID(context.Context, string) (*models.EmailLog, error) {
+	return nil, s.lookupErr
+}
+func (s *emailLogRepositoryStub) UpdateEmailLog(context.Context, *models.EmailLog) error {
+	return nil
+}
+func (s *emailLogRepositoryStub) CreateEmailLog(_ context.Context, log *models.EmailLog) error {
+	s.created = append(s.created, log)
+	return nil
+}
 
 // generateTestKeyPair generates an ECDSA key pair for testing
 func generateTestKeyPair() (*ecdsa.PrivateKey, string, error) {
@@ -330,6 +350,80 @@ func TestWebhookSignatureVerification_NoPublicKey(t *testing.T) {
 	assert.Nil(t, handler.publicKey, "Handler should have nil publicKey when empty string is provided")
 }
 
+func TestSendGridWebhookFailsClosedWithoutVerificationKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	handler := NewSendGridWebhookHandler(nil, "")
+	router := gin.New()
+	router.POST("/webhook", handler.HandleWebhook)
+
+	request := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(`[]`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
+}
+
+func TestSendGridWebhookLiveResponseContracts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	privateKey, publicKeyPEM, err := generateTestKeyPair()
+	assert.NoError(t, err)
+
+	signedRequest := func(t *testing.T, payload []byte) *http.Request {
+		t.Helper()
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		signature, err := signPayload(privateKey, timestamp, payload)
+		assert.NoError(t, err)
+		request := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/sendgrid", strings.NewReader(string(payload)))
+		request.Header.Set("X-Twilio-Email-Event-Webhook-Signature", signature)
+		request.Header.Set("X-Twilio-Email-Event-Webhook-Timestamp", timestamp)
+		return request
+	}
+
+	t.Run("valid event", func(t *testing.T) {
+		repo := &emailLogRepositoryStub{}
+		handler := NewSendGridWebhookHandler(repo, publicKeyPEM)
+		payload, err := json.Marshal([]models.SendGridWebhookEvent{{
+			Email: "viewer@example.com", Timestamp: time.Now().Unix(), Event: "delivered",
+			SgMessageID: "message-1", SgEventID: "event-1",
+		}})
+		assert.NoError(t, err)
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = signedRequest(t, payload)
+		handler.HandleWebhook(ctx)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Len(t, repo.created, 1)
+	})
+
+	t.Run("lookup failure requests retry", func(t *testing.T) {
+		repo := &emailLogRepositoryStub{lookupErr: errors.New("database unavailable")}
+		handler := NewSendGridWebhookHandler(repo, publicKeyPEM)
+		payload, err := json.Marshal([]models.SendGridWebhookEvent{{
+			Email: "viewer@example.com", Timestamp: time.Now().Unix(), Event: "delivered",
+			SgMessageID: "message-1", SgEventID: "event-1",
+		}})
+		assert.NoError(t, err)
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = signedRequest(t, payload)
+		handler.HandleWebhook(ctx)
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), `"failed_count":1`)
+		assert.Empty(t, repo.created, "lookup failures must not be treated as missing records")
+	})
+
+	t.Run("empty signed batch", func(t *testing.T) {
+		handler := NewSendGridWebhookHandler(&emailLogRepositoryStub{}, publicKeyPEM)
+		recorder := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(recorder)
+		ctx.Request = signedRequest(t, []byte(`[]`))
+		handler.HandleWebhook(ctx)
+		assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	})
+}
+
 func TestWebhookSignatureVerification_InvalidPublicKey(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -473,6 +567,34 @@ func TestWebhookSignatureVerification_DEREncodedSignature(t *testing.T) {
 	// Test verifySignature directly with DER-encoded signature
 	err = handler.verifySignature(payload, signature, timestamp)
 	assert.NoError(t, err, "DER-encoded signature should be accepted")
+}
+
+func TestWebhookSignatureVerification_RawSignatureWithDERPrefix(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	privateKey, publicKeyPEM, err := generateTestKeyPair()
+	assert.NoError(t, err)
+	handler := NewSendGridWebhookHandler(nil, publicKeyPEM)
+	payload := []byte(`[{"email":"test@example.com"}]`)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+
+	var signature string
+	for attempt := 0; attempt < 100000; attempt++ {
+		signature, err = signPayload(privateKey, timestamp, payload)
+		assert.NoError(t, err)
+		decoded, decodeErr := base64.StdEncoding.DecodeString(signature)
+		assert.NoError(t, decodeErr)
+		if decoded[0] == 0x30 {
+			break
+		}
+		signature = ""
+	}
+	if signature == "" {
+		t.Fatal("could not generate a raw P-256 signature with a DER-like prefix")
+	}
+
+	assert.NoError(t, handler.verifySignature(payload, signature, timestamp),
+		"a valid raw signature must not be misclassified as DER")
 }
 
 func TestWebhookSignatureVerification_InvalidDERZeroLengthR(t *testing.T) {

@@ -16,22 +16,19 @@ import {
     trackCommunityJoin,
     trackFeedFollow,
     GA_MEASUREMENT_ID,
+    configureGoogleAnalytics,
 } from './google-analytics';
-
-// Mock environment variables
-vi.mock('import.meta', () => ({
-    env: {
-        VITE_GA_MEASUREMENT_ID: 'G-TEST123456',
-        VITE_ENABLE_ANALYTICS: 'true',
-        VITE_DOMAIN: 'test.clpr.tv',
-    },
-}));
 
 describe('Google Analytics Utilities', () => {
     let mockGtag: ReturnType<typeof vi.fn>;
     let mockDataLayer: unknown[];
 
     beforeEach(() => {
+        configureGoogleAnalytics({
+            measurementId: 'G-TEST123456',
+            enabled: true,
+            domain: 'test.clpr.tv',
+        });
         // Reset state
         mockDataLayer = [];
         mockGtag = vi.fn((...args: unknown[]) => {

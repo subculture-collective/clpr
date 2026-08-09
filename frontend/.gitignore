@@ -37,6 +37,7 @@ coverage
 
 # Playwright E2E Test Artifacts
 playwright-report/
+playwright-candidate-report/
 test-results/
 playwright/.cache/
 *.mp4

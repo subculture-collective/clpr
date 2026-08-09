@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -418,6 +418,7 @@ func (r *ClipRepository) GetLastSyncTime(ctx context.Context) (*time.Time, error
 
 // ClipFilters represents filters for listing clips
 type ClipFilters struct {
+	CategoryID        *uuid.UUID
 	GameID            *string
 	BroadcasterID     *string
 	Tag               *string
@@ -517,6 +518,16 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 
 	args := []interface{}{}
 	argIndex := 1
+
+	if filters.CategoryID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf(`EXISTS (
+			SELECT 1 FROM category_games cg
+			JOIN games g ON g.id = cg.game_id
+			WHERE cg.category_id = %s AND g.twitch_game_id = c.game_id
+		)`, utils.SQLPlaceholder(argIndex)))
+		args = append(args, *filters.CategoryID)
+		argIndex++
+	}
 
 	if filters.GameID != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf("c.game_id = %s", utils.SQLPlaceholder(argIndex)))

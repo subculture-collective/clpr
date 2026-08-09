@@ -2,13 +2,16 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var ErrStreamFollowNotFound = errors.New("stream follow not found")
 
 // StreamFollowRepository handles database operations for stream follows
 type StreamFollowRepository struct {
@@ -60,7 +63,7 @@ func (r *StreamFollowRepository) UnfollowStreamer(ctx context.Context, userID uu
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("follow relationship not found")
+		return ErrStreamFollowNotFound
 	}
 
 	return nil
@@ -174,7 +177,7 @@ func (r *StreamFollowRepository) GetFollow(ctx context.Context, userID uuid.UUID
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("follow relationship not found")
+			return nil, ErrStreamFollowNotFound
 		}
 		return nil, fmt.Errorf("failed to get follow: %w", err)
 	}
@@ -196,7 +199,7 @@ func (r *StreamFollowRepository) UpdateNotificationPreference(ctx context.Contex
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("follow relationship not found")
+		return ErrStreamFollowNotFound
 	}
 
 	return nil

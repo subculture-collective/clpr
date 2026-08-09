@@ -1,0 +1,15 @@
+{
+  "status": "not_executed",
+  "candidate_sha": "",
+  "backend_digest": "",
+  "frontend_digest": "",
+  "crawler_digest": "",
+  "executed_at": "",
+  "evidence_url": "",
+  "owner": "",
+  "canary_passed": false,
+  "drain_passed": false,
+  "rollback_passed": false,
+  "post_rollback_smoke_passed": false,
+  "staging_target_id": ""
+}

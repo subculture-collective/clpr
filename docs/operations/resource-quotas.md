@@ -465,10 +465,10 @@ kubectl get pod <pod-name> -n <namespace> -o yaml
 
 ## Related Documentation
 
-- [Kubernetes Scaling](./kubernetes-scaling.md)
-- [Performance Tuning](./performance.md)
-- [Monitoring Guide](./monitoring.md)
-- [Helm Charts README](../../helm/README.md)
+- Kubernetes Scaling
+- Performance Tuning
+- Monitoring Guide
+- Helm Charts README
 
 ## References
 

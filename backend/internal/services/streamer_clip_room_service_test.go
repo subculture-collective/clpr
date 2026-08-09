@@ -58,6 +58,13 @@ func (f *fakeStreamerClipRoomRepository) GetOrCreateRoom(ctx context.Context, ow
 	return f.cloneRoom(room), nil
 }
 
+func (f *fakeStreamerClipRoomRepository) GetRoomByOwnerChannel(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
+	if roomID, ok := f.roomIDsByOwnerAndKey[f.roomKey(ownerUserID, channel)]; ok {
+		return f.cloneRoom(f.roomsByID[roomID]), nil
+	}
+	return nil, nil
+}
+
 func (f *fakeStreamerClipRoomRepository) GetRoomByID(ctx context.Context, roomID uuid.UUID) (*models.StreamerClipRoom, error) {
 	room, ok := f.roomsByID[roomID]
 	if !ok {
@@ -490,5 +497,41 @@ func TestStreamerClipRoomServiceRejectsNonOwnerApproval(t *testing.T) {
 	}
 	if rooms.approveCalls != 0 {
 		t.Fatalf("expected no approve calls, got %d", rooms.approveCalls)
+	}
+}
+
+func TestStreamerClipRoomServiceStopDoesNotCreateMissingRoom(t *testing.T) {
+	rooms := newFakeStreamerClipRoomRepository()
+	svc := newStreamerClipRoomService(rooms, newFakeClipLookupRepository())
+	_, err := svc.StopRoom(context.Background(), uuid.New(), "moonmoon")
+	if !errors.Is(err, ErrStreamerClipRoomNotFound) {
+		t.Fatalf("expected not found, got %v", err)
+	}
+	if len(rooms.roomsByID) != 0 {
+		t.Fatalf("stop created %d rooms", len(rooms.roomsByID))
+	}
+}
+
+func TestStreamerClipRoomServiceSeparatesRejectedItems(t *testing.T) {
+	ownerID := uuid.New()
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual}
+	rooms := newFakeStreamerClipRoomRepository()
+	rooms.seedRoom(room)
+	item := &models.StreamerClipRoomItem{ID: uuid.New(), RoomID: room.ID, Status: models.StreamerClipRoomItemStatusRejected}
+	rooms.itemsByRoomID[room.ID][item.ID] = item
+	svc := newStreamerClipRoomService(rooms, newFakeClipLookupRepository())
+	result, err := svc.GetOrCreateRoom(context.Background(), ownerID, "moonmoon")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.RejectedItems) != 1 || len(result.SkippedItems) != 0 {
+		t.Fatalf("rejected item was misclassified: %#v", result)
+	}
+}
+
+func TestStreamerClipRoomServiceRejectsInvalidChannel(t *testing.T) {
+	svc := newStreamerClipRoomService(newFakeStreamerClipRoomRepository(), newFakeClipLookupRepository())
+	if _, err := svc.GetOrCreateRoom(context.Background(), uuid.New(), "bad-channel!"); err == nil {
+		t.Fatal("expected invalid channel error")
 	}
 }

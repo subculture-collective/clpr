@@ -1,0 +1,87 @@
+{
+    admin localhost:2019
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}
+
+clpr.tv {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Resource-Policy "same-origin"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+        Content-Security-Policy "default-src 'self'; script-src 'self' https://embed.twitch.tv https://www.googletagmanager.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://static-cdn.jtvnw.net https://*.twitchcdn.net https://*.twitch.tv https://api.dicebear.com https://us-assets.i.posthog.com; media-src 'self' blob: https://clips-media-assets2.twitch.tv https://clips.twitch.tv https://static.twitchcdn.net; frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://checkout.stripe.com; connect-src 'self' wss: https://api.twitch.tv https://gql.twitch.tv https://*.posthog.com https://*.i.posthog.com https://*.ingest.sentry.io https://www.google-analytics.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests"
+        -Server
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 10
+        }
+    }
+
+    @static path /assets/* *.js *.css *.jpg *.jpeg *.png *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    @canary_api {
+        header X-CLPR-Canary "__CANARY_TOKEN__"
+        path /api/* /health /health/* /ws/*
+    }
+    handle @canary_api {
+        header X-CLPR-Served-Slot "__CANARY_SLOT__"
+        reverse_proxy __CANARY_BACKEND__ {
+            header_up -X-CLPR-Canary
+        }
+    }
+
+    @canary_frontend header X-CLPR-Canary "__CANARY_TOKEN__"
+    handle @canary_frontend {
+        header X-CLPR-Served-Slot "__CANARY_SLOT__"
+        reverse_proxy __CANARY_FRONTEND__ {
+            header_up -X-CLPR-Canary
+        }
+    }
+
+    handle /api/* {
+        reverse_proxy __ACTIVE_BACKEND__
+    }
+
+    handle /health {
+        reverse_proxy __ACTIVE_BACKEND__
+    }
+
+    handle /health/ready {
+        reverse_proxy __ACTIVE_BACKEND__
+    }
+
+    handle /ready {
+        redir * /health/ready 308
+    }
+
+    handle /ws/* {
+        reverse_proxy __ACTIVE_BACKEND__
+    }
+
+    handle /manifest.webmanifest {
+        rewrite * /manifest.json
+        header Content-Type "application/manifest+json"
+        reverse_proxy __ACTIVE_FRONTEND__
+    }
+
+    handle /* {
+        reverse_proxy __ACTIVE_FRONTEND__
+    }
+
+    encode gzip
+}
+
+http://clpr.tv {
+    redir https://{host}{uri} permanent
+}

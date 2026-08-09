@@ -1,0 +1,178 @@
+name: Source CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend build, test, and vet
+    runs-on: ubuntu-24.04
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock:v0.201.0
+        ports:
+          - 12111:12111
+          - 12112:12112
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Test
+        working-directory: backend
+        shell: bash
+        run: |
+          set -o pipefail
+          go test -count=1 -json ./... | tee test-results.json
+      - name: Verify checkout contract against Stripe SDK
+        working-directory: backend
+        env:
+          STRIPE_MOCK_PORT: 12112
+        run: go test -count=1 -tags=stripe_mock ./internal/services -run TestCreateCheckoutSessionAgainstStripeMock
+      - name: Enforce owned, expiring skip budget
+        run: bash scripts/verify-test-skip-policy.sh
+      - name: Vet
+        working-directory: backend
+        run: go vet ./...
+      - name: Reject reachable Go vulnerabilities
+        working-directory: backend
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...
+      - name: Reject high-severity Go static-analysis findings
+        working-directory: backend
+        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.27.1 -quiet -severity high ./...
+      - name: Build
+        working-directory: backend
+        run: go build ./cmd/api
+      - name: Validate Prometheus SLO rules
+        run: >-
+          docker run --rm --entrypoint=promtool
+          -v "$PWD/monitoring/prometheus/clpr-slo-rules.yml:/clpr-slo-rules.yml:ro"
+          prom/prometheus:v3.5.0 check rules /clpr-slo-rules.yml
+      - name: Validate release load suite
+        run: >-
+          docker run --rm
+          -v "$PWD/backend/tests/load/release.js:/release.js:ro"
+          grafana/k6:0.57.0 inspect /release.js
+      - name: Upload backend test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/test-results.json
+          if-no-files-found: error
+
+  openapi:
+    name: OpenAPI zero-warning contract
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Reject unsuppressed OpenAPI warnings or exception-budget changes
+        run: npm run openapi:lint
+
+  frontend:
+    name: Frontend lint, test, and build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Reject high or critical production dependency advisories
+        run: npm audit --omit=dev --audit-level=high
+      - run: npm run lint
+      - name: Verify React and edge route parity
+        run: npm run routes:check
+      - name: Verify module and UI boundaries
+        run: npm run boundaries:check
+      - name: Unit tests
+        run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
+      - name: Verify test pyramid and skip budget
+        run: npm run test:inventory
+      - run: npm run build
+      - name: Verify edge and public metadata contracts
+        working-directory: .
+        run: |
+          bash scripts/test-edge-contracts.sh --runtime
+          bash scripts/test-blue-green-contracts.sh
+      - name: Upload frontend evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-and-build
+          path: |
+            frontend/test-results.json
+            frontend/coverage/coverage-final.json
+            frontend/dist
+          if-no-files-found: error
+
+  browser-smoke:
+    name: Real-backend browser smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install tools
+        run: |
+          npm --prefix frontend ci
+          go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b "$HOME/bin"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install supported browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Verify browser manifest
+        run: bash scripts/verify-playwright-manifest.sh
+      - name: Start repository services and migrate
+        run: task test:setup
+      - name: Run release-critical backend suites without skips
+        run: bash scripts/run-release-critical-backend-tests.sh
+      - name: Run dependency readiness chaos contract
+        run: bash scripts/run-dependency-chaos.sh
+      - name: Run real-backend smoke
+        run: bash scripts/run-real-e2e.sh
+      - name: Stop repository services
+        if: always()
+        run: task test:teardown || true
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            .tmp/backend-e2e.log
+            .tmp/release-critical-tests.json
+          if-no-files-found: warn

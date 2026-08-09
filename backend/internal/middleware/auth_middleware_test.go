@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // mockAuthService is a mock implementation that provides GetUserFromToken
@@ -32,6 +32,28 @@ type authServiceWrapper struct {
 
 func (w *authServiceWrapper) GetUserFromToken(ctx context.Context, token string) (*models.User, error) {
 	return w.mock.GetUserFromToken(ctx, token)
+}
+
+func TestAuthMiddlewareReusesAuthenticatedBoundaryContext(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	user := &models.User{ID: uuid.New(), Username: "boundary-user", Role: "user"}
+
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		attachAuthenticatedUser(c, user)
+		c.Next()
+	})
+	router.POST("/protected", AuthMiddleware(nil), func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/protected", nil)
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
 }
 
 func TestAuthMiddleware_MissingToken(t *testing.T) {

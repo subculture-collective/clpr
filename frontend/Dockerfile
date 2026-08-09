@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for React frontend
 
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS builder
 
 WORKDIR /app
 
@@ -17,31 +17,47 @@ COPY . .
 # Use production environment for build
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
+ARG VITE_API_BASE_URL=/api/v1
+ARG VITE_BASE_URL=/
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_BASE_URL=${VITE_BASE_URL}
 
 # Remove dev .env file so .env.production is used
 RUN rm -f .env .env.local
 
 # Build the application (Vite will use .env.production automatically)
-RUN npm run build
+RUN npm run routes:check && npm run routes:nginx && npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+
+ARG OCI_REVISION=unknown
+ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
+LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
+      org.opencontainers.image.source="${OCI_SOURCE}"
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/edge-routes.conf /etc/nginx/edge-routes.conf
 
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# Preserve the favicon asset's canonical source while also serving the
+# conventional root URL expected by browsers and crawlers.
+RUN cp /usr/share/nginx/html/favicon_io/favicon.ico /usr/share/nginx/html/favicon.ico
+
+# Apply security updates available for the pinned base snapshot.
+RUN apk upgrade --no-cache
+
+USER 101:101
 
 # Expose port
-EXPOSE 80
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -fsS http://localhost/health.html || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health.html || exit 1
 
 # Run nginx
 CMD ["nginx", "-g", "daemon off;"]

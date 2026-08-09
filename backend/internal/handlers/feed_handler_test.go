@@ -1,13 +1,64 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+func TestUpdateFeedRejectsEmptyUpdate(t *testing.T) {
+	userID, feedID := uuid.New(), uuid.New()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/users/"+userID.String()+"/feeds/"+feedID.String(), bytes.NewBufferString(`{}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: userID.String()}, {Key: "feedId", Value: feedID.String()}}
+	c.Set("user_id", userID)
+	(&FeedHandler{}).UpdateFeed(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestCreateFeedRejectsMismatchedRouteUser(t *testing.T) {
+	userID := uuid.New()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/users/"+uuid.NewString()+"/feeds", bytes.NewBufferString(`{"name":"feed"}`))
+	c.Params = gin.Params{{Key: "id", Value: uuid.NewString()}}
+	c.Set("user_id", userID)
+	(&FeedHandler{}).CreateFeed(c)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d", w.Code)
+	}
+}
+
+func TestFeedQueriesRejectInvalidBounds(t *testing.T) {
+	h := &FeedHandler{}
+	tests := []struct {
+		target string
+		call   func(*gin.Context)
+	}{
+		{"/api/v1/feeds/discover?limit=bad", h.DiscoverFeeds},
+		{"/api/v1/feeds/search?q=&limit=20", h.SearchFeeds},
+		{"/api/v1/feeds/clips?limit=9", h.GetFilteredClips},
+		{"/api/v1/feeds/clips?filter%5Bgame%5D=a&filter%5Bgame%5D=b", h.GetFilteredClips},
+	}
+	for _, tt := range tests {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, tt.target, nil)
+		tt.call(c)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("%s: expected 400, got %d", tt.target, w.Code)
+		}
+	}
+}
 
 func TestListUserFeeds_InvalidUserID(t *testing.T) {
 	gin.SetMode(gin.TestMode)

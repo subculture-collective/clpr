@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,7 +10,6 @@ import { PlaylistTheatreMode } from '@/components/playlist/PlaylistTheatreMode';
 import { Spinner } from '@/components/ui';
 import { SEO } from '@/components/SEO';
 import type { PlaylistItem } from '@/components/playlist/PlaylistTheatreMode';
-import type { QueueItemWithClip } from '@/types/queue';
 
 export function QueueTheatrePage() {
     const navigate = useNavigate();
@@ -19,21 +18,24 @@ export function QueueTheatrePage() {
     const reorderQueue = useReorderQueue();
     const queryClient = useQueryClient();
 
-    const [currentItemId, setCurrentItemId] = useState<string | null>(null);
+    const [selectedItemId, setCurrentItemId] = useState<string | null>(null);
 
     // Convert queue items to playlist items format
-    const playlistItems: PlaylistItem[] =
-        queue?.items.map(item => ({
-            id: item.id,
-            clip: item.clip,
-            clip_id: item.clip_id,
-            played_at: item.played_at,
-        })) || [];
-
-    // Auto-select first item
-    if (!currentItemId && playlistItems.length > 0) {
-        setCurrentItemId(playlistItems[0].id);
-    }
+    const playlistItems: PlaylistItem[] = useMemo(
+        () =>
+            queue?.items.map(item => ({
+                id: item.id,
+                clip: item.clip,
+                clip_id: item.clip_id,
+                played_at: item.played_at,
+            })) ?? [],
+        [queue?.items],
+    );
+    const currentItemId =
+        selectedItemId &&
+        playlistItems.some(item => item.id === selectedItemId)
+            ? selectedItemId
+            : (playlistItems[0]?.id ?? null);
 
     const handleItemClick = useCallback(
         (item: PlaylistItem) => {

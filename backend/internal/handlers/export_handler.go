@@ -1,43 +1,87 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
+	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/jackc/pgx/v5"
 )
+
+type exportService interface {
+	CreateExportRequest(context.Context, uuid.UUID, string, string) (*models.ExportRequest, error)
+	GetExportRequest(context.Context, uuid.UUID) (*models.ExportRequest, error)
+	GetExportFilePath(context.Context, uuid.UUID) (string, error)
+	GetUserExportRequests(context.Context, uuid.UUID) ([]*models.ExportRequest, error)
+}
+
+type exportUserRepository interface {
+	GetByID(context.Context, uuid.UUID) (*models.User, error)
+}
+
+var unsafeExportFilename = regexp.MustCompile(`[^A-Za-z0-9._-]+`)
 
 // ExportHandler handles data export HTTP requests
 type ExportHandler struct {
-	exportService *services.ExportService
-	authService   *services.AuthService
-	userRepo      *repository.UserRepository
+	exportService exportService
+	userRepo      exportUserRepository
 }
 
 // NewExportHandler creates a new export handler
-func NewExportHandler(exportService *services.ExportService, authService *services.AuthService, userRepo *repository.UserRepository) *ExportHandler {
+func NewExportHandler(exportService exportService, userRepo exportUserRepository) *ExportHandler {
 	return &ExportHandler{
 		exportService: exportService,
-		authService:   authService,
 		userRepo:      userRepo,
 	}
+}
+
+func exportUserID(c *gin.Context) (uuid.UUID, bool) {
+	value, exists := c.Get("user_id")
+	if !exists {
+		return uuid.Nil, false
+	}
+	userID, ok := value.(uuid.UUID)
+	return userID, ok && userID != uuid.Nil
+}
+
+func exportDownloadURL(c *gin.Context, req *models.ExportRequest) *string {
+	if req.Status != models.ExportStatusCompleted || req.ExpiresAt == nil || !req.ExpiresAt.After(time.Now()) {
+		return nil
+	}
+	url := fmt.Sprintf("%s/api/v1/creators/me/export/download/%s", getBaseURL(c), req.ID)
+	return &url
+}
+
+func sanitizeExportFilename(value string) string {
+	value = unsafeExportFilename.ReplaceAllString(strings.TrimSpace(value), "_")
+	value = strings.Trim(value, "._-")
+	if value == "" {
+		return "creator"
+	}
+	if len(value) > 80 {
+		value = value[:80]
+	}
+	return value
 }
 
 // RequestExport creates a new export request for the authenticated user
 // POST /api/v1/creators/me/export/request
 func (h *ExportHandler) RequestExport(c *gin.Context) {
 	// Get authenticated user
-	userID, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := exportUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	user, err := h.userRepo.GetByID(c.Request.Context(), userID.(uuid.UUID))
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user"})
 		return
@@ -58,7 +102,7 @@ func (h *ExportHandler) RequestExport(c *gin.Context) {
 		req.Format,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create export request", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create export request"})
 		return
 	}
 
@@ -72,8 +116,8 @@ func (h *ExportHandler) RequestExport(c *gin.Context) {
 // GET /api/v1/creators/me/export/status/:id
 func (h *ExportHandler) GetExportStatus(c *gin.Context) {
 	// Get authenticated user
-	userID, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := exportUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
@@ -89,13 +133,17 @@ func (h *ExportHandler) GetExportStatus(c *gin.Context) {
 	// Get export request
 	exportReq, err := h.exportService.GetExportRequest(c.Request.Context(), exportID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "export request not found"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "export request not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve export request"})
+		}
 		return
 	}
 
 	// Verify ownership
-	if exportReq.UserID != userID.(uuid.UUID) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+	if exportReq.UserID != userID {
+		c.JSON(http.StatusNotFound, gin.H{"error": "export request not found"})
 		return
 	}
 
@@ -104,14 +152,7 @@ func (h *ExportHandler) GetExportStatus(c *gin.Context) {
 		ExportRequest: *exportReq,
 	}
 
-	if exportReq.Status == models.ExportStatusCompleted && exportReq.ExpiresAt != nil {
-		baseURL := c.GetString("base_url")
-		if baseURL == "" {
-			baseURL = "http://localhost:8080"
-		}
-		downloadURL := fmt.Sprintf("%s/api/v1/creators/me/export/download/%s", baseURL, exportReq.ID)
-		response.DownloadURL = &downloadURL
-	}
+	response.DownloadURL = exportDownloadURL(c, exportReq)
 
 	c.JSON(http.StatusOK, response)
 }
@@ -120,8 +161,8 @@ func (h *ExportHandler) GetExportStatus(c *gin.Context) {
 // GET /api/v1/creators/me/export/download/:id
 func (h *ExportHandler) DownloadExport(c *gin.Context) {
 	// Get authenticated user
-	userID, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := exportUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
@@ -137,13 +178,17 @@ func (h *ExportHandler) DownloadExport(c *gin.Context) {
 	// Get export request
 	exportReq, err := h.exportService.GetExportRequest(c.Request.Context(), exportID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "export request not found"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "export request not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve export request"})
+		}
 		return
 	}
 
 	// Verify ownership
-	if exportReq.UserID != userID.(uuid.UUID) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+	if exportReq.UserID != userID {
+		c.JSON(http.StatusNotFound, gin.H{"error": "export request not found"})
 		return
 	}
 
@@ -152,11 +197,19 @@ func (h *ExportHandler) DownloadExport(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "export is not ready yet", "status": exportReq.Status})
 		return
 	}
+	if exportReq.ExpiresAt == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "export expiration is unavailable"})
+		return
+	}
+	if !exportReq.ExpiresAt.After(time.Now()) {
+		c.JSON(http.StatusGone, gin.H{"error": "export has expired"})
+		return
+	}
 
 	// Get file path
 	filePath, err := h.exportService.GetExportFilePath(c.Request.Context(), exportID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "export file not found", "details": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "export file not found"})
 		return
 	}
 
@@ -166,13 +219,13 @@ func (h *ExportHandler) DownloadExport(c *gin.Context) {
 	switch exportReq.Format {
 	case models.ExportFormatCSV:
 		contentType = "text/csv"
-		filename = fmt.Sprintf("clips_export_%s.csv", exportReq.CreatorName)
+		filename = fmt.Sprintf("clips_export_%s.csv", sanitizeExportFilename(exportReq.CreatorName))
 	case models.ExportFormatJSON:
 		contentType = "application/json"
-		filename = fmt.Sprintf("clips_export_%s.json", exportReq.CreatorName)
+		filename = fmt.Sprintf("clips_export_%s.json", sanitizeExportFilename(exportReq.CreatorName))
 	default:
 		contentType = "application/octet-stream"
-		filename = fmt.Sprintf("clips_export_%s", exportReq.CreatorName)
+		filename = fmt.Sprintf("clips_export_%s", sanitizeExportFilename(exportReq.CreatorName))
 	}
 
 	c.Header("Content-Type", contentType)
@@ -184,23 +237,17 @@ func (h *ExportHandler) DownloadExport(c *gin.Context) {
 // GET /api/v1/creators/me/exports
 func (h *ExportHandler) ListExportRequests(c *gin.Context) {
 	// Get authenticated user
-	userID, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := exportUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	// Get export requests
-	exportReqs, err := h.exportService.GetUserExportRequests(c.Request.Context(), userID.(uuid.UUID))
+	exportReqs, err := h.exportService.GetUserExportRequests(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve export requests"})
 		return
-	}
-
-	// Build response with download URLs
-	baseURL := c.GetString("base_url")
-	if baseURL == "" {
-		baseURL = "http://localhost:8080"
 	}
 
 	responses := make([]models.ExportRequestResponse, len(exportReqs))
@@ -208,10 +255,7 @@ func (h *ExportHandler) ListExportRequests(c *gin.Context) {
 		responses[i] = models.ExportRequestResponse{
 			ExportRequest: *req,
 		}
-		if req.Status == models.ExportStatusCompleted && req.ExpiresAt != nil {
-			downloadURL := fmt.Sprintf("%s/api/v1/creators/me/export/download/%s", baseURL, req.ID)
-			responses[i].DownloadURL = &downloadURL
-		}
+		responses[i].DownloadURL = exportDownloadURL(c, req)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

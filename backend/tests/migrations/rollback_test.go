@@ -8,9 +8,9 @@ import (
 	"os/exec"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"git.subcult.tv/subculture-collective/clpr/tests/integration/testutil"
 )
 
 // runMigration runs migrate command
@@ -394,4 +394,3 @@ func TestMigrationIdempotency(t *testing.T) {
 		assert.True(t, exists, "moderation_queue should still exist")
 	})
 }
-

@@ -1,0 +1,71 @@
+groups:
+  - name: clpr-journey-slos
+    interval: 30s
+    rules:
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: authentication}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/auth/.*",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/auth/.*"}[5m])), 0.000001)
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: feed}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/(feed|feeds)(/.*)?",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/(feed|feeds)(/.*)?"}[5m])), 0.000001)
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: search}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/search(/.*)?",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/search(/.*)?"}[5m])), 0.000001)
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: playback}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/clips/[^/]+",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/clips/[^/]+"}[5m])), 0.000001)
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: submission}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/submissions(/.*)?",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/submissions(/.*)?"}[5m])), 0.000001)
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: checkout}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/subscriptions/(checkout|portal)",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/subscriptions/(checkout|portal)"}[5m])), 0.000001)
+      - record: clpr:journey_availability:ratio5m
+        labels: {journey: moderation}
+        expr: sum(rate(http_requests_total{path=~"/api/v1/(moderation|admin/moderation)(/.*)?",status!~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{path=~"/api/v1/(moderation|admin/moderation)(/.*)?"}[5m])), 0.000001)
+
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: authentication}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/auth/.*"}[5m])))
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: feed}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/(feed|feeds)(/.*)?"}[5m])))
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: search}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/search(/.*)?"}[5m])))
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: playback}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/clips/[^/]+"}[5m])))
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: submission}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/submissions(/.*)?"}[5m])))
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: checkout}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/subscriptions/(checkout|portal)"}[5m])))
+      - record: clpr:journey_latency_p95:seconds5m
+        labels: {journey: moderation}
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path=~"/api/v1/(moderation|admin/moderation)(/.*)?"}[5m])))
+
+      - alert: ClprJourneyAvailabilityFastBurn
+        expr: clpr:journey_availability:ratio5m < 0.95
+        for: 10m
+        labels: {severity: page}
+        annotations:
+          summary: "clpr {{ $labels.journey }} availability is below 95%"
+          runbook_url: "docs/operations/playbooks/slo-breach-response.md#availability-breach"
+
+      - alert: ClprJourneyLatencyBreach
+        expr: (clpr:journey_latency_p95:seconds5m{journey=~"authentication|feed|playback"} > 1) or (clpr:journey_latency_p95:seconds5m{journey="search"} > 1.5) or (clpr:journey_latency_p95:seconds5m{journey=~"submission|moderation"} > 2) or (clpr:journey_latency_p95:seconds5m{journey="checkout"} > 3)
+        for: 10m
+        labels: {severity: page}
+        annotations:
+          summary: "clpr {{ $labels.journey }} p95 latency exceeds twice its SLO"
+          runbook_url: "docs/operations/playbooks/slo-breach-response.md#latency-breach"
+
+      - alert: ClprWebhookDeadLetterQueueNotEmpty
+        expr: webhook_dead_letter_queue_size > 0
+        for: 5m
+        labels: {severity: page, journey: checkout}
+        annotations:
+          summary: "Stripe/outbound webhook dead-letter queue is not empty"
+          runbook_url: "docs/operations/runbooks/webhook-dlq-replay-runbook.md"

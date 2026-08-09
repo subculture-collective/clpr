@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SyncBansModal } from './SyncBansModal';
 import * as chatApi from '../../lib/chat-api';
@@ -377,7 +377,9 @@ describe('SyncBansModal', () => {
             });
 
             // Advance timers to trigger polling
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(chatApi.checkSyncBansProgress).toHaveBeenCalledWith(
@@ -429,7 +431,9 @@ describe('SyncBansModal', () => {
             });
 
             // Advance timers to update progress
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(screen.getByText('15')).toBeInTheDocument();
@@ -475,7 +479,9 @@ describe('SyncBansModal', () => {
             await userEvent.click(confirmButton);
 
             // Advance timers to trigger polling and get completed status
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(
@@ -519,7 +525,9 @@ describe('SyncBansModal', () => {
             });
             await userEvent.click(confirmButton);
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(screen.getByText('Sync Summary')).toBeInTheDocument();
@@ -569,7 +577,9 @@ describe('SyncBansModal', () => {
             });
             await userEvent.click(confirmButton);
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(
@@ -578,7 +588,9 @@ describe('SyncBansModal', () => {
             });
 
             // Advance timers for the 2-second delay before onSuccess
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(mockOnSuccess).toHaveBeenCalled();
@@ -656,7 +668,9 @@ describe('SyncBansModal', () => {
             });
             await userEvent.click(confirmButton);
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(screen.getByText('Sync Failed')).toBeInTheDocument();
@@ -815,7 +829,9 @@ describe('SyncBansModal', () => {
             });
             await userEvent.click(confirmButton);
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await act(async () => {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            });
 
             await waitFor(() => {
                 expect(

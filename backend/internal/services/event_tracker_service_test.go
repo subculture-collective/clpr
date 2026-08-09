@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 func TestEventTracker_EventKey(t *testing.T) {
@@ -144,4 +144,14 @@ func TestEventTracker_TrackEvent_Queueing(t *testing.T) {
 
 	// TrackEvent modifies the event internally but doesn't return it,
 	// so we just verify no error occurred which means the event was queued
+}
+
+func TestEventTracker_TrackEvent_ReportsQueueSaturation(t *testing.T) {
+	et := NewEventTracker(nil, 1, time.Minute)
+	for i := 0; i < cap(et.eventBatch); i++ {
+		et.eventBatch <- models.Event{EventType: models.EventFeedViewed, SessionID: uuid.NewString()}
+	}
+
+	err := et.TrackEvent(models.Event{EventType: models.EventFeedViewed, SessionID: "overflow"})
+	assert.ErrorIs(t, err, ErrEventQueueFull)
 }

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
 // SearchIndexerService handles indexing operations for OpenSearch
@@ -447,6 +447,7 @@ func getClipIndexMapping() string {
 "is_featured": {"type": "boolean"},
 "is_nsfw": {"type": "boolean"},
 "is_removed": {"type": "boolean"},
+"submitted_by_user_id": {"type": "keyword"},
 "created_at": {"type": "date"},
 "imported_at": {"type": "date"},
 "engagement_score": {"type": "float"},

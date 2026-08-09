@@ -81,8 +81,9 @@ describe('Button', () => {
       const button = screen.getByRole('button', { name: 'Small' });
       
       expect(button.className).toContain('px-3');
-      expect(button.className).toContain('py-1.5');
-      expect(button.className).toContain('text-sm');
+      expect(button.className).toContain('py-2');
+      expect(button.className).toContain('text-xs');
+      expect(button.className).toContain('min-h-[44px]');
     });
 
     it('applies medium size classes by default', () => {
@@ -90,8 +91,9 @@ describe('Button', () => {
       const button = screen.getByRole('button', { name: 'Medium' });
       
       expect(button.className).toContain('px-4');
-      expect(button.className).toContain('py-2');
-      expect(button.className).toContain('text-base');
+      expect(button.className).toContain('py-2.5');
+      expect(button.className).toContain('text-sm');
+      expect(button.className).toContain('min-h-[44px]');
     });
 
     it('applies large size classes', () => {
@@ -100,11 +102,30 @@ describe('Button', () => {
       
       expect(button.className).toContain('px-6');
       expect(button.className).toContain('py-3');
-      expect(button.className).toContain('text-lg');
+      expect(button.className).toContain('text-base');
+      expect(button.className).toContain('min-h-[48px]');
     });
   });
 
   describe('State classes', () => {
+    it('can style a link without creating nested interactive elements', () => {
+      render(
+        <Button asChild variant="primary">
+          <a href="/destination">Go somewhere</a>
+        </Button>
+      );
+
+      const link = screen.getByRole('link', { name: 'Go somewhere' });
+      expect(link).toHaveAttribute('href', '/destination');
+      expect(link).toHaveClass('bg-primary-500');
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('does not submit a form unless explicitly requested', () => {
+      render(<Button>Safe default</Button>);
+      expect(screen.getByRole('button', { name: 'Safe default' })).toHaveAttribute('type', 'button');
+    });
+
     it('applies disabled state classes', () => {
       render(<Button disabled>Disabled</Button>);
       const button = screen.getByRole('button', { name: 'Disabled' });
@@ -119,7 +140,9 @@ describe('Button', () => {
       const button = screen.getByRole('button', { name: 'Loading' });
       
       expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('aria-busy', 'true');
       expect(button.querySelector('svg.animate-spin')).toBeInTheDocument();
+      expect(button.querySelector('svg.animate-spin')).toHaveAttribute('aria-hidden', 'true');
     });
   });
 

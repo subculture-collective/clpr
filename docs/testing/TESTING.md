@@ -25,7 +25,7 @@ last_reviewed: 2026-01-29
 - [Feature-Specific Testing](#feature-specific-testing)
 - [Writing Tests](#writing-tests)
 - [Troubleshooting](#troubleshooting)
-- [Related Issues](#related-issues)
+- [Related Issues](#related-issues-roadmap-50)
 
 ## Strategic Overview
 
@@ -482,27 +482,11 @@ go test -v -tags=integration ./tests/integration/dmca/...
 
 ### GDPR Account Deletion Lifecycle Tests
 
-The GDPR account deletion system has comprehensive test coverage including:
-
-**Integration Tests** (`backend/tests/integration/gdpr/gdpr_deletion_lifecycle_test.go`, `backend/tests/integration/gdpr/gdpr_hard_delete_test.go`):
-- Deletion request creation with 30-day grace period
-- Duplicate request prevention
-- Cancellation flow and account restoration
-- Grace period behavior (data remains accessible)
-- Hard delete execution and data removal
-- Removal of user-owned resources (favorites, votes, comments, submissions)
-- Authentication token deletion (CASCADE)
-- User settings deletion (CASCADE)
-- Export endpoint validation post-deletion
-- Scheduled deletion execution
-- Audit log entries for request, cancellation, and completion
-- Negative flows and error cases
-
-**Coverage:**
-- Full lifecycle: request → grace period → hard delete
-- Cancellation and restoration flows
-- Data erasure and anonymization
-- Auditability of all deletion lifecycle events
+Automated account deletion is disabled for launch. The repository does not yet
+contain the previously advertised hard-delete integration suites or a scheduled
+erasure executor. Current release evidence verifies that the Settings control
+and former API routes are absent. Promotion requires the lifecycle coverage
+listed in `docs/LAUNCH_FEATURE_INVENTORY.md`.
 
 **Running GDPR tests:**
 
@@ -823,7 +807,7 @@ Alert rules monitor scheduler health:
 - `SchedulerJobStuckFor15Minutes`: No executions in 15+ minutes
 - `SchedulerJobDurationHigh`: p95 > 60s
 
-See [Monitoring Documentation](../../monitoring/README.md) for dashboard setup.
+See Monitoring Documentation for dashboard setup.
 
 ### Moderation Workflow E2E Tests
 
@@ -1096,7 +1080,7 @@ Alert rules:
 
 **Diagnosing Failover Issues:**
 
-See [CDN Failover Runbook](../../operations/CDN_FAILOVER_RUNBOOK.md) for:
+See [CDN Failover Runbook](../operations/CDN_FAILOVER_RUNBOOK.md) for:
 - Investigation steps
 - Common causes and fixes
 - Resolution criteria
@@ -1549,10 +1533,10 @@ restore_drill_rpo_met              # 1 = RPO met, 0 = not met
 
 ### Related Documentation
 
-- [Backup & Recovery Runbook](../operations/backup-recovery-runbook.md) - Complete operational procedures
-- [Kubernetes Backup CronJobs](../../infrastructure/k8s/base/backup-cronjobs.yaml) - K8s configuration
-- [Backup Script](../../scripts/backup.sh) - Docker-based backup script
-- [Monitoring Alerts](../../monitoring/alerts.yml) - Alert configurations
+- Backup & Recovery Runbook - Complete operational procedures
+- Kubernetes Backup CronJobs - K8s configuration
+- Backup Script - Docker-based backup script
+- Monitoring Alerts - Alert configurations
 
 ## Troubleshooting
 
@@ -1589,10 +1573,10 @@ When tests fail:
 - [Integration & E2E Testing Guide](./integration-e2e-guide.md)
 - [Testing Guide](./testing-guide.md)
 - [Feature Test Coverage](../product/feature-test-coverage.md)
-- [Backend Integration Tests README](../../backend/tests/integration/README.md)
-- [Monitoring & Observability](../../monitoring/README.md)
-- [Distributed Tracing Setup](../../monitoring/TRACING.md)
-- [Load Testing Documentation](../../backend/tests/load/README.md)
+- Backend Integration Tests README
+- Monitoring & Observability
+- Distributed Tracing Setup
+- Load Testing Documentation
 
 ## Related Issues (Roadmap 5.0)
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppealResolutionModal } from './AppealResolutionModal';
 import * as moderationApi from '../../lib/moderation-api';
@@ -30,8 +30,8 @@ describe('AppealResolutionModal', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
-  afterEach(() => {
-    vi.runOnlyPendingTimers();
+  afterEach(async () => {
+    await act(async () => vi.runOnlyPendingTimers());
     vi.useRealTimers();
   });
 
@@ -380,7 +380,9 @@ describe('AppealResolutionModal', () => {
       });
 
       // Advance timers to trigger the delayed onClose and onSuccess
-      await vi.advanceTimersByTimeAsync(2000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
 
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalled();

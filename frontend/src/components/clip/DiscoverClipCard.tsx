@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui';
-import { cn, formatTimestamp } from '@/lib/utils';
+import { cn, formatCompactNumber, formatDuration, formatTimestamp } from '@/lib/utils';
 import type { Clip } from '@/types/clip';
 import { Link, useNavigate } from 'react-router-dom';
 import { TwitchEmbed } from './TwitchEmbed';
@@ -23,22 +23,6 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
     const navigate = useNavigate();
     const toast = useToast();
 
-    const formatDuration = (seconds?: number) => {
-        if (!seconds) return '0:00';
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const formatNumber = (num: number) => {
-        if (num >= 1000000) {
-            return `${(num / 1000000).toFixed(1)}M`;
-        }
-        if (num >= 1000) {
-            return `${(num / 1000).toFixed(1)}K`;
-        }
-        return num.toString();
-    };
 
     const timestamp = formatTimestamp(clip.created_at);
 
@@ -129,7 +113,7 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
                     {/* View count */}
                     <span className='text-muted-foreground flex items-center gap-1 text-xs xs:text-sm'>
                         <Eye className='w-4 h-4' />
-                        <span>{formatNumber(clip.view_count)} views</span>
+                        <span>{formatCompactNumber(clip.view_count)} views</span>
                     </span>
 
                     <div className='flex-1' />

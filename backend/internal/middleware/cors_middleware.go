@@ -3,8 +3,8 @@ package middleware
 import (
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"github.com/gin-gonic/gin"
 )
 
 // CORSMiddleware creates CORS middleware
@@ -24,7 +24,7 @@ func CORSMiddleware(cfg *config.Config) gin.HandlerFunc {
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, Authorization, accept, origin, Cache-Control, X-Requested-With, X-CSRF-Token")
 			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
-			c.Writer.Header().Set("Access-Control-Expose-Headers", "X-CSRF-Token")
+			c.Writer.Header().Set("Access-Control-Expose-Headers", "X-CSRF-Token, X-Request-ID, X-Error-Code")
 		}
 
 		if c.Request.Method == "OPTIONS" {

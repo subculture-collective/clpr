@@ -443,8 +443,8 @@ npx playwright show-report
 
 ## Resources
 
-- [Backend Integration Tests README](../../backend/tests/integration/README.md)
+- Backend Integration Tests README
 - [Playwright Documentation](https://playwright.dev)
-- [Testing Guide](../backend/testing.md)
-- [GitHub Actions Workflow](../../.github/workflows/ci.yml)
+- Testing Guide
+- GitHub Actions Workflow
 - [Makefile](../../Makefile)

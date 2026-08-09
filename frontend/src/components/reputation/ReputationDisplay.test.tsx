@@ -116,7 +116,7 @@ describe('RankBadge', () => {
 
   it('applies correct color for different ranks', () => {
     const { rerender } = render(<RankBadge rank="Newcomer" />);
-    expect(screen.getByText('Newcomer')).toHaveClass('text-gray-400');
+    expect(screen.getByText('Newcomer')).toHaveClass('text-muted-foreground');
     
     rerender(<RankBadge rank="Legend" />);
     expect(screen.getByText('Legend')).toHaveClass('text-red-400');

@@ -6,7 +6,7 @@ import {
 } from '@/hooks/useDiscoveryLists';
 import { useIsAuthenticated, useToast } from '@/hooks';
 import type { DiscoveryListWithStats } from '../../types/discoveryList';
-import { cn } from '../../lib/utils';
+import { cn, formatCompactNumber } from '../../lib/utils';
 
 interface DiscoveryListCardProps {
     list: DiscoveryListWithStats;
@@ -28,15 +28,6 @@ export function DiscoveryListCard({
     const unfollowMutation = useUnfollowDiscoveryList();
     const isFollowing = list.is_following;
     const isUpdating = followMutation.isPending || unfollowMutation.isPending;
-    const formatNumber = (num: number) => {
-        if (num >= 1000000) {
-            return `${(num / 1000000).toFixed(1)}M`;
-        }
-        if (num >= 1000) {
-            return `${(num / 1000).toFixed(1)}K`;
-        }
-        return num.toString();
-    };
 
     return (
         <Link
@@ -141,12 +132,12 @@ export function DiscoveryListCard({
                                     d='M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z'
                                 />
                             </svg>
-                            <span>{formatNumber(list.clip_count)} clips</span>
+                            <span>{formatCompactNumber(list.clip_count)} clips</span>
                         </div>
                         <div className='flex items-center gap-1.5'>
                             <Users className='w-4 h-4' aria-hidden='true' />
                             <span>
-                                {formatNumber(list.follower_count)} followers
+                                {formatCompactNumber(list.follower_count)} followers
                             </span>
                         </div>
                     </div>

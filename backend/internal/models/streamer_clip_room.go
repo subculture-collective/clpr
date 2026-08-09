@@ -59,10 +59,11 @@ type StreamerClipRoomWithItems struct {
 	PendingItems  []StreamerClipRoomItem `json:"pending_items"`
 	ApprovedItems []StreamerClipRoomItem `json:"approved_items"`
 	SkippedItems  []StreamerClipRoomItem `json:"skipped_items"`
+	RejectedItems []StreamerClipRoomItem `json:"rejected_items"`
 }
 
 type ReorderStreamerClipRoomItemsRequest struct {
-	ItemIDs []string `json:"item_ids" binding:"required,min=1"`
+	ItemIDs []string `json:"item_ids" binding:"required,min=1,max=500,dive,required,uuid"`
 }
 
 type StreamerClipRoomEvent struct {

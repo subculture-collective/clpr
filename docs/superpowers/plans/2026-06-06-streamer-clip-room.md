@@ -758,11 +758,11 @@ func NewTwitchChatListenerManager(service *StreamerClipRoomService) *TwitchChatL
 ```
 
 Implement `ParseTwitchIRCPrivmsg(raw string) (TwitchIRCMessage, bool)` by:
-- Returning false unless raw contains ` PRIVMSG `.
+- Returning false unless raw contains `PRIVMSG` surrounded by spaces.
 - Reading tags before the first space when raw begins with `@`.
 - Extracting `id`, `user-id`, and `display-name` from semicolon-separated tags.
-- Extracting channel after `PRIVMSG #` until `:`.
-- Extracting message text after `:`.
+- Extracting the channel after `PRIVMSG #` until the message delimiter.
+- Extracting message text after the space-colon delimiter.
 
 Add manager methods:
 

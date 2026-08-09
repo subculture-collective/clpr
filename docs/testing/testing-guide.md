@@ -661,10 +661,10 @@ npx detox test --loglevel trace
 
 ## References
 
-- [Backend Testing Guide](backend/testing.md)
-- [Load Testing Guide](backend/tests/load/README.md)
-- [Security Testing Runbook](SECURITY_TESTING_RUNBOOK.md)
-- [Integration & E2E Guide](testing/integration-e2e-guide.md)
+- Backend Testing Guide
+- Load Testing Guide
+- Security Testing Runbook
+- [Integration & E2E Guide](./integration-e2e-guide.md)
 - [Playwright Documentation](https://playwright.dev/)
 - [Detox Documentation](https://wix.github.io/Detox/)
 - [k6 Documentation](https://k6.io/docs/)

@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"time"
 
-	"github.com/stripe/stripe-go/v81"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/stripe/stripe-go/v81"
 )
 
 const webhookRetryComponent = "webhook_retry"
@@ -179,8 +180,12 @@ func (s *WebhookRetryService) processRetry(ctx context.Context, item *models.Web
 
 // calculateNextRetry calculates the next retry time using exponential backoff
 // Base delay: 30 seconds
-// Formula: base * 2^(retryCount) with max of 1 hour
+// Formula: base * 2^(retryCount), with 20% jitter and a max of 1 hour.
 func (s *WebhookRetryService) calculateNextRetry(retryCount int) time.Time {
+	return time.Now().Add(calculateRetryDelay(retryCount))
+}
+
+func calculateRetryDelay(retryCount int) time.Duration {
 	baseDelay := 30 * time.Second
 	maxDelay := 1 * time.Hour
 
@@ -192,7 +197,15 @@ func (s *WebhookRetryService) calculateNextRetry(retryCount int) time.Time {
 		delay = maxDelay
 	}
 
-	return time.Now().Add(delay)
+	// Spread retries across the window so a dependency recovery does not cause
+	// every worker to retry at once. Keep the final delay within the cap.
+	jitter := 0.8 + rand.Float64()*0.4 // #nosec G404 -- retry scheduling jitter is not used for cryptography or security decisions.
+	delay = time.Duration(float64(delay) * jitter)
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+
+	return delay
 }
 
 // GetRetryQueueStats returns statistics about the retry queue

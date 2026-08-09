@@ -17,25 +17,25 @@ func TestCalculateNextRetry(t *testing.T) {
 		{
 			name:       "First retry - 30 seconds",
 			retryCount: 0,
-			minDelay:   29 * time.Second,
-			maxDelay:   35 * time.Second,
+			minDelay:   24 * time.Second,
+			maxDelay:   36 * time.Second,
 		},
 		{
 			name:       "Second retry - 1 minute",
 			retryCount: 1,
-			minDelay:   55 * time.Second,
-			maxDelay:   65 * time.Second,
+			minDelay:   48 * time.Second,
+			maxDelay:   72 * time.Second,
 		},
 		{
 			name:       "Third retry - 2 minutes",
 			retryCount: 2,
-			minDelay:   115 * time.Second,
-			maxDelay:   125 * time.Second,
+			minDelay:   96 * time.Second,
+			maxDelay:   144 * time.Second,
 		},
 		{
 			name:       "High retry count caps at 1 hour",
 			retryCount: 10,
-			minDelay:   time.Hour - time.Second,
+			minDelay:   48 * time.Minute,
 			maxDelay:   time.Hour + time.Second,
 		},
 	}
@@ -44,13 +44,15 @@ func TestCalculateNextRetry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			nextRetry := service.calculateNextRetry(tt.retryCount)
-			delay := time.Until(nextRetry)
+			for range 100 {
+				delay := calculateRetryDelay(tt.retryCount)
 
-			assert.True(t, delay >= tt.minDelay,
-				"Expected delay >= %v, got %v", tt.minDelay, delay)
-			assert.True(t, delay <= tt.maxDelay,
-				"Expected delay <= %v, got %v", tt.maxDelay, delay)
+				assert.GreaterOrEqual(t, delay, tt.minDelay)
+				assert.LessOrEqual(t, delay, tt.maxDelay)
+			}
+
+			nextRetry := service.calculateNextRetry(tt.retryCount)
+			assert.WithinDuration(t, time.Now().Add(calculateRetryDelay(tt.retryCount)), nextRetry, tt.maxDelay-tt.minDelay)
 		})
 	}
 }

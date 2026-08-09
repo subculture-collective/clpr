@@ -98,18 +98,19 @@ export function CreateThread() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Topic */}
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+            <fieldset>
+              <legend className="block text-sm font-medium text-text-secondary mb-2">
                 Topic <span className="text-error-500">*</span>
-              </label>
+              </legend>
               <div className="flex flex-wrap gap-2">
                 {FORUM_TOPICS.map((t) => (
                   <button
                     key={t.value}
                     type="button"
                     onClick={() => setTopic(topic === t.value ? '' : t.value)}
+                    aria-pressed={topic === t.value}
                     className={cn(
-                      'px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer',
+                      'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                       topic === t.value
                         ? 'text-white border-transparent'
                         : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
@@ -125,7 +126,7 @@ export function CreateThread() {
                   Select a topic to categorize your thread
                 </p>
               )}
-            </div>
+            </fieldset>
 
             {/* Title */}
             <div>
@@ -148,8 +149,9 @@ export function CreateThread() {
                   'focus:outline-none focus:ring-2 focus:ring-brand'
                 )}
                 required
+                aria-describedby="thread-title-count"
               />
-              <p className="mt-1 text-xs text-text-tertiary">
+              <p id="thread-title-count" className="mt-1 text-xs text-text-tertiary">
                 {title.length}/200 characters
               </p>
             </div>
@@ -168,7 +170,7 @@ export function CreateThread() {
                     type="button"
                     onClick={() => setShowPreview(false)}
                     className={cn(
-                      'px-3 py-1 text-sm rounded transition-colors cursor-pointer',
+                      'min-h-[44px] px-3 py-1 text-sm rounded transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                       !showPreview
                         ? 'bg-surface-raised text-text-primary'
                         : 'text-text-tertiary hover:text-text-primary',
@@ -180,7 +182,7 @@ export function CreateThread() {
                     type="button"
                     onClick={() => setShowPreview(true)}
                     className={cn(
-                      'px-3 py-1 text-sm rounded transition-colors cursor-pointer',
+                      'min-h-[44px] px-3 py-1 text-sm rounded transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                       showPreview
                         ? 'bg-surface-raised text-text-primary'
                         : 'text-text-tertiary hover:text-text-primary',
@@ -215,9 +217,10 @@ export function CreateThread() {
                     'focus:outline-none focus:ring-2 focus:ring-brand'
                   )}
                   required
+                  aria-describedby="thread-content-count"
                 />
               )}
-              <p className="mt-1 text-xs text-text-tertiary">
+              <p id="thread-content-count" className="mt-1 text-xs text-text-tertiary">
                 {content.length}/5000 characters • Markdown formatting is supported
               </p>
             </div>
@@ -227,7 +230,7 @@ export function CreateThread() {
               <button
                 type="button"
                 onClick={() => navigate('/forum')}
-                className="px-6 py-3 bg-surface-raised hover:bg-surface-hover text-text-primary font-medium rounded-lg transition-colors cursor-pointer"
+                className="min-h-[44px] px-6 py-3 bg-surface-raised hover:bg-surface-hover text-text-primary font-medium rounded-lg transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 Cancel
               </button>
@@ -240,9 +243,10 @@ export function CreateThread() {
                   createThreadMutation.isPending
                 }
                 className={cn(
-                  'px-6 py-3 bg-brand hover:bg-brand-hover text-white font-medium rounded-lg',
-                  'transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
+                  'min-h-[44px] px-6 py-3 bg-brand hover:bg-brand-hover text-white font-medium rounded-lg',
+                  'transition-colors motion-reduce:transition-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
                 )}
+                aria-busy={createThreadMutation.isPending}
               >
                 {createThreadMutation.isPending
                   ? 'Creating...'

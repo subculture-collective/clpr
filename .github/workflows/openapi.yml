@@ -5,17 +5,34 @@ on:
     branches: [main, develop]
     paths:
       - 'docs/openapi/**'
+      - '.redocly.lint-ignore.yaml'
+      - 'redocly.yaml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/verify-openapi-lint-result.js'
+      - 'scripts/tests/verify-openapi-lint-result.test.js'
+      - 'backend/cmd/api/openapi_route_precedence_test.go'
       - '.github/workflows/openapi.yml'
   pull_request:
     branches: [main, develop]
     paths:
       - 'docs/openapi/**'
+      - '.redocly.lint-ignore.yaml'
+      - 'redocly.yaml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/verify-openapi-lint-result.js'
+      - 'scripts/tests/verify-openapi-lint-result.test.js'
+      - 'backend/cmd/api/openapi_route_precedence_test.go'
       - '.github/workflows/openapi.yml'
 
 jobs:
+  # docs/openapi/openapi.yaml is the sole supported API contract. Removed legacy
+  # specs are intentionally outside the workflow instead of being linted with a
+  # success override.
   validate:
     name: Validate OpenAPI Specs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     
     permissions:
       contents: read
@@ -28,16 +45,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
       
       - name: Validate OpenAPI spec
-        run: |
-          echo "Validating OpenAPI 3.1 specification..."
-          npx @redocly/cli lint docs/openapi/openapi.yaml --format=stylish
+        run: npm run openapi:lint
       
       - name: Check for breaking changes
         if: github.event_name == 'pull_request'
@@ -49,7 +64,7 @@ jobs:
           # Check if openapi.yaml exists in base branch
           if git show origin/${{ github.base_ref }}:docs/openapi/openapi.yaml > /tmp/base-openapi.yaml 2>/dev/null; then
             echo "Comparing with base branch..."
-            npx @redocly/cli diff /tmp/base-openapi.yaml docs/openapi/openapi.yaml || true
+            ./node_modules/.bin/redocly diff /tmp/base-openapi.yaml docs/openapi/openapi.yaml
           else
             echo "No base OpenAPI spec found - skipping diff"
           fi
@@ -57,7 +72,7 @@ jobs:
       - name: Generate API documentation
         run: |
           echo "Generating static documentation..."
-          npx @redocly/cli build-docs docs/openapi/openapi.yaml -o /tmp/api-docs.html
+          ./node_modules/.bin/redocly build-docs docs/openapi/openapi.yaml -o /tmp/api-docs.html
           echo "✓ Documentation generated successfully"
       
       - name: Upload documentation artifact
@@ -84,33 +99,3 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-
-  lint-legacy-specs:
-    name: Lint Legacy Specs
-    runs-on: ubuntu-latest
-    
-    permissions:
-      contents: read
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Lint legacy specs
-        run: |
-          echo "Linting clip-submission-api.yaml..."
-          npx @redocly/cli lint docs/openapi/clip-submission-api.yaml --format=stylish || true
-          
-          echo "Linting comments-api.yaml..."
-          npx @redocly/cli lint docs/openapi/comments-api.yaml --format=stylish || true
-          
-          echo "Note: Legacy specs are deprecated in favor of openapi.yaml"

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // ApplicationLogRepositoryInterface defines the interface for application log repository operations
@@ -101,6 +101,14 @@ func (h *ApplicationLogHandler) CreateLog(c *gin.Context) {
 		filtered := h.filterSensitiveData(*req.Error)
 		req.Error = &filtered
 	}
+	if req.Stack != nil {
+		filtered := h.filterSensitiveData(*req.Stack)
+		req.Stack = &filtered
+	}
+	if req.URL != nil {
+		filtered := h.filterSensitiveData(*req.URL)
+		req.URL = &filtered
+	}
 
 	// Filter sensitive data from context
 	if req.Context != nil {
@@ -167,6 +175,8 @@ func (h *ApplicationLogHandler) filterSensitiveData(text string) string {
 		"password", "passwd", "pwd", "secret", "token",
 		"apikey", "api_key", "access_token", "auth_token",
 		"authorization", "bearer",
+		"cookie", "private_key", "client_secret", "oauth_code",
+		"?code=", "&code=", "?state=", "&state=", "set-cookie",
 	}
 
 	lowerText := strings.ToLower(text)
@@ -194,15 +204,32 @@ func (h *ApplicationLogHandler) filterSensitiveContext(context map[string]interf
 			strings.Contains(lowerKey, "api_key") ||
 			strings.Contains(lowerKey, "apikey") ||
 			strings.Contains(lowerKey, "authorization") ||
-			lowerKey == "auth" {
+			strings.Contains(lowerKey, "cookie") ||
+			strings.Contains(lowerKey, "oauth") ||
+			lowerKey == "auth" || lowerKey == "code" || lowerKey == "state" {
 			filtered[key] = "[REDACTED]"
 			continue
 		}
 
 		// Filter nested maps recursively
-		if nestedMap, ok := value.(map[string]interface{}); ok {
-			filtered[key] = h.filterSensitiveContext(nestedMap)
-		} else {
+		switch nested := value.(type) {
+		case map[string]interface{}:
+			filtered[key] = h.filterSensitiveContext(nested)
+		case []interface{}:
+			items := make([]interface{}, len(nested))
+			for i, item := range nested {
+				if itemMap, ok := item.(map[string]interface{}); ok {
+					items[i] = h.filterSensitiveContext(itemMap)
+				} else if text, ok := item.(string); ok {
+					items[i] = h.filterSensitiveData(text)
+				} else {
+					items[i] = item
+				}
+			}
+			filtered[key] = items
+		case string:
+			filtered[key] = h.filterSensitiveData(nested)
+		default:
 			filtered[key] = value
 		}
 	}

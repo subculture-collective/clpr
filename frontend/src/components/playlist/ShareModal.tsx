@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Copy, Check, Share2 } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import apiClient from '@/lib/api';
 import type { GetShareLinkResponse, TrackShareRequest } from '@/types/playlist';
 
@@ -77,24 +78,9 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-surface rounded-lg max-w-2xl w-full border border-border shadow-xl">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-border">
-                    <div className="flex items-center gap-2">
-                        <Share2 className="h-5 w-5 text-purple-400" />
-                        <h2 className="text-xl font-bold text-white">Share Playlist</h2>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="text-muted-foreground hover:text-white transition-colors"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
+        <Modal open onClose={onClose} title="Share Playlist" size="xl">
                 {/* Content */}
-                <div className="p-6 space-y-6">
+                <div className="space-y-6">
                     {loading && (
                         <div className="text-center py-8">
                             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
@@ -112,11 +98,12 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                         <>
                             {/* Share Link */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-muted-foreground">
+                                <label htmlFor="playlist-share-url" className="block text-sm font-medium text-muted-foreground">
                                     Share Link
                                 </label>
                                 <div className="flex gap-2">
                                     <input
+                                        id="playlist-share-url"
                                         type="text"
                                         value={shareData.share_url}
                                         readOnly
@@ -124,6 +111,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                                         onClick={(e) => (e.target as HTMLInputElement).select()}
                                     />
                                     <button
+                                        type="button"
                                         onClick={() => {
                                             copyToClipboard(shareData.share_url, 'url');
                                             trackShare('link');
@@ -147,23 +135,26 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
 
                             {/* Social Share Buttons */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-muted-foreground">
+                                <p className="block text-sm font-medium text-muted-foreground">
                                     Share on Social Media
-                                </label>
+                                </p>
                                 <div className="grid grid-cols-3 gap-2">
                                     <button
+                                        type="button"
                                         onClick={() => shareToSocial('twitter')}
                                         className="px-4 py-3 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white rounded-lg transition-colors font-medium"
                                     >
                                         Twitter
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => shareToSocial('facebook')}
                                         className="px-4 py-3 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-lg transition-colors font-medium"
                                     >
                                         Facebook
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => shareToSocial('discord')}
                                         className="px-4 py-3 bg-[#5865F2] hover:bg-[#4752c4] text-white rounded-lg transition-colors font-medium"
                                     >
@@ -177,11 +168,12 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
 
                             {/* Embed Code */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-muted-foreground">
+                                <label htmlFor="playlist-embed-code" className="block text-sm font-medium text-muted-foreground">
                                     Embed Code
                                 </label>
                                 <div className="space-y-2">
                                     <textarea
+                                        id="playlist-embed-code"
                                         value={shareData.embed_code}
                                         readOnly
                                         rows={3}
@@ -189,6 +181,7 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                                         onClick={(e) => (e.target as HTMLTextAreaElement).select()}
                                     />
                                     <button
+                                        type="button"
                                         onClick={() => {
                                             copyToClipboard(shareData.embed_code, 'embed');
                                             trackShare('embed');
@@ -214,15 +207,15 @@ export function ShareModal({ playlistId, onClose }: ShareModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-border">
+                <div className="pt-4 border-t border-border">
                     <button
+                        type="button"
                         onClick={onClose}
                         className="w-full px-4 py-2 bg-surface-raised hover:bg-surface-hover text-white rounded-lg transition-colors"
                     >
                         Close
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

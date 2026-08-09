@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // EmailNotificationRepository handles email notification data operations
@@ -149,6 +149,50 @@ func (r *EmailNotificationRepository) MarkTokenUsed(ctx context.Context, token s
 		return fmt.Errorf("token not found or already used")
 	}
 
+	return nil
+}
+
+// ConsumeUnsubscribeToken atomically applies an email preference change and consumes its one-time token.
+func (r *EmailNotificationRepository) ConsumeUnsubscribeToken(ctx context.Context, token string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin unsubscribe transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var userID uuid.UUID
+	var notificationType *string
+	err = tx.QueryRow(ctx, `
+		UPDATE email_unsubscribe_tokens
+		SET used_at = NOW()
+		WHERE token = $1 AND used_at IS NULL AND expires_at > NOW()
+		RETURNING user_id, notification_type
+	`, token).Scan(&userID, &notificationType)
+	if err != nil {
+		return fmt.Errorf("consume unsubscribe token: %w", err)
+	}
+
+	query := `UPDATE notification_preferences SET email_enabled = false, updated_at = NOW() WHERE user_id = $1`
+	if notificationType != nil {
+		switch *notificationType {
+		case models.NotificationTypeReply:
+			query = `UPDATE notification_preferences SET notify_replies = false, updated_at = NOW() WHERE user_id = $1`
+		case models.NotificationTypeMention:
+			query = `UPDATE notification_preferences SET notify_mentions = false, updated_at = NOW() WHERE user_id = $1`
+		default:
+			return fmt.Errorf("unsupported unsubscribe notification type")
+		}
+	}
+	result, err := tx.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("update unsubscribe preferences: %w", err)
+	}
+	if result.RowsAffected() != 1 {
+		return fmt.Errorf("notification preferences not found")
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit unsubscribe transaction: %w", err)
+	}
 	return nil
 }
 

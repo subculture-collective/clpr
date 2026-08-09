@@ -4,10 +4,13 @@ import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConsentProvider } from './context/ConsentContext';
-import { AppLayout } from './components/layout';
-import { ProtectedRoute, AdminRoute, GuestRoute } from './components/guards';
-import { Spinner } from './components';
-import { ConsentBanner } from './components/consent';
+import { AppLayout } from './components/layout/AppLayout';
+import { ProtectedRoute } from './components/guards/ProtectedRoute';
+import { GuestRoute } from './components/guards/GuestRoute';
+import { Spinner } from './components/ui/Spinner';
+import { ConsentBanner } from './components/consent/ConsentBanner';
+import { adminRoutes } from './routes/v1/AdminRoutes';
+import { accountRoutes } from './routes/v1/AccountRoutes';
 
 // Lazy load page components for code splitting
 const HomePage = lazy(() =>
@@ -27,9 +30,6 @@ const ScrapedClipsPage = lazy(() =>
     import('./pages/ScrapedClipsPage').then(m => ({
         default: m.ScrapedClipsPage,
     })),
-);
-const LiveFeedPage = lazy(() =>
-    import('./pages/LiveFeedPage').then(m => ({ default: m.LiveFeedPage })),
 );
 const ClipDetailPage = lazy(() =>
     import('./pages/ClipDetailPage').then(m => ({ default: m.ClipDetailPage })),
@@ -365,25 +365,6 @@ const WebhookSubscriptionsPage = lazy(() =>
         default: m.WebhookSubscriptionsPage,
     })),
 );
-const WatchPartyPage = lazy(() =>
-    import('./pages/WatchPartyPage').then(m => ({ default: m.WatchPartyPage })),
-);
-const WatchPartyBrowsePage = lazy(() =>
-    import('./pages/WatchPartyBrowsePage').then(m => ({
-        default: m.WatchPartyBrowsePage,
-    })),
-);
-const WatchPartyCreatePage = lazy(() =>
-    import('./pages/WatchPartyCreatePage').then(m => ({
-        default: m.WatchPartyCreatePage,
-    })),
-);
-const WatchPartySettingsPage = lazy(() =>
-    import('./pages/WatchPartySettingsPage').then(m => ({
-        default: m.WatchPartySettingsPage,
-    })),
-);
-
 // Loading fallback component
 function LoadingFallback() {
     return (
@@ -589,195 +570,33 @@ function App() {
                                             element={<AuthCallbackPage />}
                                         />
 
-                                        {/* Protected Routes (require authentication) */}
-                                        <Route
-                                            path='/favorites'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <FavoritesPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/watch-history'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <WatchHistoryPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/queue'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <QueuePage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/queue/theatre'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <QueueTheatrePage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/streamer-tools/:channel/clips'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <StreamerClipRoomPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/playlists'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <PlaylistsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/playlists/new'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <PlaylistCreatePage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/playlists/discover'
-                                            element={<PublicPlaylistsPage />}
-                                        />
-                                        <Route
-                                            path='/playlists/smart'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <SmartPlaylistsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/playlists/bookmarks'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <BookmarkedPlaylistsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/playlists/:id'
-                                            element={<PlaylistDetailPage />}
-                                        />
-                                        <Route
-                                            path='/playlists/:id/theatre'
-                                            element={<PlaylistTheatrePage />}
-                                        />
-                                        <Route
-                                            path='/profile'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <ProfilePage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/verification/apply'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <VerificationApplicationPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/settings'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <SettingsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/settings/cookies'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <CookieSettingsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/settings/webhooks'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <WebhookSubscriptionsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/submit'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <SubmitClipPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/submissions'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <UserSubmissionsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/notifications'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <NotificationsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/notifications/preferences'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <NotificationPreferencesPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/profile/stats'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <PersonalStatsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/chat'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <ChatPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/chat/channels/:id/settings'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <ChannelSettingsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/creator/:creatorId/dashboard'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <CreatorDashboardPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
+                                        {accountRoutes({
+                                            favorites: FavoritesPage,
+                                            watchHistory: WatchHistoryPage,
+                                            queue: QueuePage,
+                                            queueTheatre: QueueTheatrePage,
+                                            streamerClipRoom: StreamerClipRoomPage,
+                                            playlists: PlaylistsPage,
+                                            playlistCreate: PlaylistCreatePage,
+                                            publicPlaylists: PublicPlaylistsPage,
+                                            smartPlaylists: SmartPlaylistsPage,
+                                            bookmarkedPlaylists: BookmarkedPlaylistsPage,
+                                            playlistDetail: PlaylistDetailPage,
+                                            playlistTheatre: PlaylistTheatrePage,
+                                            profile: ProfilePage,
+                                            verificationApplication: VerificationApplicationPage,
+                                            settings: SettingsPage,
+                                            cookieSettings: CookieSettingsPage,
+                                            webhookSubscriptions: WebhookSubscriptionsPage,
+                                            submitClip: SubmitClipPage,
+                                            submissions: UserSubmissionsPage,
+                                            notifications: NotificationsPage,
+                                            notificationPreferences: NotificationPreferencesPage,
+                                            personalStats: PersonalStatsPage,
+                                            chat: ChatPage,
+                                            channelSettings: ChannelSettingsPage,
+                                            creatorDashboard: CreatorDashboardPage,
+                                        })}
 
                                         {/* Watch Party Routes - Hidden until after launch */}
                                         {/* <Route
@@ -809,209 +628,33 @@ function App() {
                                             }
                                         /> */}
 
-                                        {/* Admin Routes (require admin role) */}
-                                        <Route
-                                            path='/admin/dashboard'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminDashboard />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/clips'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminClipsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/comments'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminCommentsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/users'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminUsersPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/reports'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminReportsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/webhooks/dlq'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminWebhookDLQPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/sync'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminSyncPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/analytics'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminAnalyticsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/revenue'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminRevenuePage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/campaigns'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminCampaignsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/submissions'
-                                            element={
-                                                <AdminRoute>
-                                                    <ModerationQueuePage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/moderation'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminModerationQueuePage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/moderation/analytics'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminModerationAnalyticsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/moderators'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminModeratorsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/bans'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminBansPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/audit-logs'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminAuditLogsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/verification'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminVerificationQueuePage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/discovery-lists'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminDiscoveryListsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/playlist-scripts'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminPlaylistScriptsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/tags'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminTagsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/discovery-lists/:id/edit'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminDiscoveryListFormPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/api-docs'
-                                            element={
-                                                <AdminRoute>
-                                                    <AdminAPIDocsPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/forum/moderation'
-                                            element={
-                                                <AdminRoute>
-                                                    <ForumModerationPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/admin/forum/moderation-log'
-                                            element={
-                                                <AdminRoute>
-                                                    <ModerationLogPage />
-                                                </AdminRoute>
-                                            }
-                                        />
-
-                                        {/* Moderation Routes (require moderator or admin role) */}
-                                        <Route
-                                            path='/moderation/users'
-                                            element={
-                                                <AdminRoute>
-                                                    <ModerationUsersPage />
-                                                </AdminRoute>
-                                            }
-                                        />
+                                        {adminRoutes({
+                                                dashboard: AdminDashboard,
+                                                clips: AdminClipsPage,
+                                                comments: AdminCommentsPage,
+                                                users: AdminUsersPage,
+                                                reports: AdminReportsPage,
+                                                webhookDlq: AdminWebhookDLQPage,
+                                                sync: AdminSyncPage,
+                                                analytics: AdminAnalyticsPage,
+                                                revenue: AdminRevenuePage,
+                                                campaigns: AdminCampaignsPage,
+                                                submissions: ModerationQueuePage,
+                                                moderation: AdminModerationQueuePage,
+                                                moderationAnalytics: AdminModerationAnalyticsPage,
+                                                moderators: AdminModeratorsPage,
+                                                bans: AdminBansPage,
+                                                auditLogs: AdminAuditLogsPage,
+                                                verification: AdminVerificationQueuePage,
+                                                discoveryLists: AdminDiscoveryListsPage,
+                                                discoveryListForm: AdminDiscoveryListFormPage,
+                                                playlistScripts: AdminPlaylistScriptsPage,
+                                                tags: AdminTagsPage,
+                                                apiDocs: AdminAPIDocsPage,
+                                                forumModeration: ForumModerationPage,
+                                                forumModerationLog: ModerationLogPage,
+                                                moderationUsers: ModerationUsersPage,
+                                            })}
 
                                         {/* 404 Not Found */}
                                         <Route

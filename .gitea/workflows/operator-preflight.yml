@@ -1,0 +1,36 @@
+name: Operator release preflight
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '.gitea/workflows/operator-preflight.yml'
+      - 'config/release/**'
+      - 'release-evidence/templates/**'
+      - 'scripts/*evidence.sh'
+      - 'scripts/seed-release-identities.sh'
+      - 'scripts/test-operator-preflight.sh'
+      - 'scripts/validate-operator-journeys.mjs'
+      - 'backend/tests/load/**'
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  contracts:
+    name: Operator and recovery source contracts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate safe dry-run orchestration
+        run: bash scripts/test-operator-preflight.sh
+      - name: Inspect versioned load profiles
+        run: >-
+          docker run --rm
+          -v "$PWD/backend/tests/load/release.js:/release.js:ro"
+          grafana/k6:0.57.0@sha256:70af91f86cd8e142e0544a4edaf79835a80033f71974b92edd5ac36fd4442a7b
+          inspect /release.js

@@ -9,10 +9,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
 // IndexRebuildService handles rebuilding search indices with zero-downtime swaps
@@ -160,7 +160,7 @@ func (s *IndexRebuildService) indexClipsToVersionedIndex(ctx context.Context, in
 			       game_id, game_name, language, thumbnail_url, duration,
 			       view_count, created_at, imported_at, vote_score,
 			       comment_count, favorite_count, is_featured, is_nsfw,
-			       is_removed, removed_reason
+			       is_removed, removed_reason, submitted_by_user_id
 			FROM clips
 			WHERE is_removed = false
 			ORDER BY id
@@ -182,6 +182,7 @@ func (s *IndexRebuildService) indexClipsToVersionedIndex(ctx context.Context, in
 				&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
 				&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
 				&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
+				&clip.SubmittedByUserID,
 			)
 			if err != nil {
 				rows.Close()
@@ -263,6 +264,9 @@ func (s *IndexRebuildService) bulkIndexClipsToIndex(ctx context.Context, indexNa
 			"imported_at":      clip.ImportedAt,
 			"engagement_score": engagementScore,
 			"recency_score":    recencyScore,
+		}
+		if clip.SubmittedByUserID != nil {
+			doc["submitted_by_user_id"] = clip.SubmittedByUserID.String()
 		}
 		docJSON, err := json.Marshal(doc)
 		if err != nil {

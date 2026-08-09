@@ -134,7 +134,7 @@ func TestExtractToken_WebSocketScenario(t *testing.T) {
 	c.Request.Header.Set("Connection", "Upgrade")
 
 	// Token passed via Sec-WebSocket-Protocol header (not in URL)
-	jwtToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+	jwtToken := "fixture-jwt-token"
 	encodedToken := base64.StdEncoding.EncodeToString([]byte(jwtToken))
 	c.Request.Header.Set("Sec-WebSocket-Protocol", "auth.bearer."+encodedToken)
 

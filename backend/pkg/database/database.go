@@ -7,10 +7,15 @@ import (
 	"log"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/config"
 	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"git.subcult.tv/subculture-collective/clpr/config"
+	"github.com/jackc/pgx/v5/stdlib"
+)
+
+const (
+	databaseStatementTimeout = "15s"
+	databaseLockTimeout      = "5s"
 )
 
 // DB holds the database connection pool
@@ -33,6 +38,8 @@ func NewDBWithTracing(cfg *config.DatabaseConfig, enableTracing bool) (*DB, erro
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse database URL: %w", err)
 	}
+
+	applyConnectionSafety(poolConfig)
 
 	// Set pool configuration
 	poolConfig.MaxConns = 25                               // Maximum number of connections
@@ -64,11 +71,7 @@ func NewDBWithTracing(cfg *config.DatabaseConfig, enableTracing bool) (*DB, erro
 
 	// Also create a database/sql DB using pgx stdlib for compatibility with
 	// code that expects database/sql interfaces (ExecContext, QueryContext, Tx, etc).
-	sqlDB, err := sql.Open("pgx", cfg.GetDatabaseURL())
-	if err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("unable to open database/sql connection: %w", err)
-	}
+	sqlDB := stdlib.OpenDB(*poolConfig.ConnConfig)
 
 	// Configure sql.DB pool settings to match pgxpool where reasonable
 	sqlDB.SetMaxOpenConns(int(poolConfig.MaxConns))
@@ -83,6 +86,14 @@ func NewDBWithTracing(cfg *config.DatabaseConfig, enableTracing bool) (*DB, erro
 	}
 
 	return &DB{Pool: pool, SQL: sqlDB}, nil
+}
+
+func applyConnectionSafety(poolConfig *pgxpool.Config) {
+	if poolConfig.ConnConfig.RuntimeParams == nil {
+		poolConfig.ConnConfig.RuntimeParams = make(map[string]string)
+	}
+	poolConfig.ConnConfig.RuntimeParams["statement_timeout"] = databaseStatementTimeout
+	poolConfig.ConnConfig.RuntimeParams["lock_timeout"] = databaseLockTimeout
 }
 
 // Close closes the database connection pool

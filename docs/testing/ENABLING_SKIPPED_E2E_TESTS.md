@@ -395,7 +395,7 @@ test('video plays in player', async ({ page, testClips }) => {
 For issues when converting tests:
 
 1. Check [E2E_TEST_FIXTURES_GUIDE.md](./E2E_TEST_FIXTURES_GUIDE.md) for detailed examples
-2. Review [fixtures/index.ts](./e2e/fixtures/index.ts) to see all available fixtures
+2. Review fixtures/index.ts to see all available fixtures
 3. Run with verbose output: `DEBUG=pw:api npm run test:e2e`
 4. Check HTML report: `npx playwright show-report`
 

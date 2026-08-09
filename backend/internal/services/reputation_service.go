@@ -3,10 +3,11 @@ package services
 import (
 	"context"
 	"fmt"
+	"sort"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
 
 // ReputationService handles reputation-related business logic
@@ -106,6 +107,13 @@ func (s *ReputationService) AwardBadge(ctx context.Context, userID uuid.UUID, ba
 // RemoveBadge removes a badge from a user
 func (s *ReputationService) RemoveBadge(ctx context.Context, userID uuid.UUID, badgeID string) error {
 	return s.reputationRepo.RemoveBadge(ctx, userID, badgeID)
+}
+
+func (s *ReputationService) ApplyAdminBadgeMutation(ctx context.Context, userID, actorID uuid.UUID, badgeID string, award bool) error {
+	if !IsValidBadge(badgeID) {
+		return fmt.Errorf("invalid badge ID: %s", badgeID)
+	}
+	return s.reputationRepo.ApplyAdminBadgeMutation(ctx, userID, actorID, badgeID, award)
 }
 
 // UpdateUserStats updates user statistics and recalculates scores
@@ -323,6 +331,7 @@ func GetAllBadgeDefinitions() []models.Badge {
 	for _, badge := range badgeDefinitions {
 		badges = append(badges, badge)
 	}
+	sort.Slice(badges, func(i, j int) bool { return badges[i].ID < badges[j].ID })
 	return badges
 }
 

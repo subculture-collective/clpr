@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // ResourceType represents the type of resource being accessed
@@ -139,13 +139,14 @@ func (u *UserOwnershipChecker) IsOwner(ctx context.Context, resourceID, userID u
 
 // AuthorizationContext holds authorization information
 type AuthorizationContext struct {
-	UserID       uuid.UUID
-	User         *models.User
-	ResourceID   uuid.UUID
-	Action       Action
-	ResourceType ResourceType
-	IPAddress    string
-	UserAgent    string
+	RequestContext context.Context
+	UserID         uuid.UUID
+	User           *models.User
+	ResourceID     uuid.UUID
+	Action         Action
+	ResourceType   ResourceType
+	IPAddress      string
+	UserAgent      string
 }
 
 // AuthorizationResult contains the result of an authorization check
@@ -180,7 +181,15 @@ func CanAccessResource(ctx *AuthorizationContext, checker ResourceOwnershipCheck
 
 	// Check if ownership is required
 	if rule.RequiresOwner {
-		isOwner, err := checker.IsOwner(context.Background(), ctx.ResourceID, ctx.UserID)
+		if checker == nil {
+			result.Reason = "ownership_checker_unavailable"
+			return result, fmt.Errorf("ownership checker is required for %s:%s", ctx.ResourceType, ctx.Action)
+		}
+		requestContext := ctx.RequestContext
+		if requestContext == nil {
+			requestContext = context.Background()
+		}
+		isOwner, err := checker.IsOwner(requestContext, ctx.ResourceID, ctx.UserID)
 		if err != nil {
 			result.Reason = "ownership_check_failed"
 			result.Metadata["error"] = err.Error()
@@ -313,13 +322,14 @@ func RequireResourceOwnership(resourceType ResourceType, action Action, checker 
 
 		// Build authorization context
 		authCtx := &AuthorizationContext{
-			UserID:       user.ID,
-			User:         user,
-			ResourceID:   resourceID,
-			Action:       action,
-			ResourceType: resourceType,
-			IPAddress:    ipAddress,
-			UserAgent:    userAgent,
+			RequestContext: c.Request.Context(),
+			UserID:         user.ID,
+			User:           user,
+			ResourceID:     resourceID,
+			Action:         action,
+			ResourceType:   resourceType,
+			IPAddress:      ipAddress,
+			UserAgent:      userAgent,
 		}
 
 		// Check access

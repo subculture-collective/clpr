@@ -313,8 +313,15 @@ function generateAPIReference(spec) {
     
     // Table of Contents by Tag
     md += `## Table of Contents\n\n`;
+	const usedTags = new Set();
+	Object.values(spec.paths || {}).forEach(pathItem => {
+		Object.values(pathItem || {}).forEach(operation => {
+			if (!operation || typeof operation !== 'object') return;
+			(operation.tags || ['Uncategorized']).forEach(tag => usedTags.add(tag));
+		});
+	});
     if (spec.tags && spec.tags.length > 0) {
-        spec.tags.forEach(tag => {
+		spec.tags.filter(tag => usedTags.has(tag.name)).forEach(tag => {
             md += `- [${tag.name}](#${tag.name.toLowerCase().replace(/\s+/g, '-')})\n`;
         });
         md += `\n`;
@@ -375,7 +382,9 @@ function main() {
         
         // Generate markdown
         console.log('📝 Generating Markdown...');
-        const markdown = generateAPIReference(spec);
+        // Keep generated documentation compatible with the repository's
+        // whitespace gate even when code-sample templates contain spacer lines.
+        const markdown = generateAPIReference(spec).replace(/[ \t]+$/gm, '');
         
         // Write to file
         fs.writeFileSync(OUTPUT_FILE, markdown, 'utf8');

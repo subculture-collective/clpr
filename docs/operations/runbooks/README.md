@@ -319,7 +319,7 @@ All contributions should:
 
 - [Operations Index](../index.md) - Operations hub
 - [Moderation API Docs](../../backend/moderation-api.md) - API reference
-- [Architecture](../../../ARCHITECTURE.md) - System architecture
+- [Architecture](../../ARCHITECTURE.md) - System architecture
 
 ### External Resources
 

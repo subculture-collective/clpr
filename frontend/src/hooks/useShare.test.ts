@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useShare } from './useShare';
 import { ToastProvider } from '@/context/ToastContext';
+import { allowTestConsole } from '@/test/setup';
 
 // Mock navigator.share and navigator.clipboard
 const mockShare = vi.fn();
@@ -105,6 +106,7 @@ describe('useShare', () => {
   });
 
   it('should handle share errors', async () => {
+    allowTestConsole('error', /Error sharing:.*Share failed/);
     mockCanShare.mockReturnValue(true);
     const error = new Error('Share failed');
     mockShare.mockRejectedValue(error);
@@ -127,6 +129,7 @@ describe('useShare', () => {
   });
 
   it('should handle clipboard write errors', async () => {
+    allowTestConsole('error', /Error sharing:.*Clipboard write failed/);
     mockCanShare.mockReturnValue(false);
     const error = new Error('Clipboard write failed');
     mockWriteText.mockRejectedValue(error);

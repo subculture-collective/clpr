@@ -29,6 +29,8 @@ export interface ButtonProps
      * Full width button
      */
     fullWidth?: boolean;
+    /** Render styling and behavior onto the single child element. */
+    asChild?: boolean;
     children?: React.ReactNode;
 }
 
@@ -48,9 +50,9 @@ const variantClasses = {
 };
 
 const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs min-h-[36px]',
-    md: 'px-4 py-2 text-sm min-h-[40px]',
-    lg: 'px-6 py-2.5 text-base min-h-[44px]',
+    sm: 'px-3 py-2 text-xs min-h-[44px]',
+    md: 'px-4 py-2.5 text-sm min-h-[44px]',
+    lg: 'px-6 py-3 text-base min-h-[48px]',
 };
 
 /**
@@ -66,32 +68,50 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             leftIcon,
             rightIcon,
             fullWidth = false,
+            asChild = false,
             disabled,
+            type = 'button',
             children,
             ...props
         },
         ref
     ) => {
         const isDisabled = disabled || loading;
+        const buttonClassName = cn(
+            'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 motion-reduce:transition-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900',
+            'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+            variantClasses[variant],
+            sizeClasses[size],
+            fullWidth && 'w-full',
+            className
+        );
+
+        if (asChild) {
+            if (isDisabled) {
+                throw new Error('Button asChild does not support disabled or loading state');
+            }
+            const child = React.Children.only(children) as React.ReactElement<{
+                className?: string;
+            }>;
+            return React.cloneElement(child, {
+                className: cn(buttonClassName, child.props.className),
+            });
+        }
 
         return (
             <button
                 ref={ref}
-                className={cn(
-                    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900',
-                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
-                    variantClasses[variant],
-                    sizeClasses[size],
-                    fullWidth && 'w-full',
-                    className
-                )}
+                type={type}
+                aria-busy={loading || undefined}
+                className={buttonClassName}
                 disabled={isDisabled}
                 {...props}
             >
                 {loading && (
                     <svg
-                        className='animate-spin h-4 w-4'
+                        className='animate-spin motion-reduce:animate-none h-4 w-4'
+                        aria-hidden='true'
                         xmlns='http://www.w3.org/2000/svg'
                         fill='none'
                         viewBox='0 0 24 24'

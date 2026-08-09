@@ -719,11 +719,11 @@ Track these metrics to assess alert quality:
 
 ## Related Documentation
 
-- [Alertmanager Setup Guide](../../monitoring/ALERTMANAGER_SETUP.md)
+- Alertmanager Setup Guide
 - [On-Call Rotation Guide](on-call-rotation.md)
 - [On-Call Quick Reference](on-call-quick-reference.md)
 - [SLO Documentation](slos.md)
-- [Monitoring README](../../monitoring/README.md)
+- Monitoring README
 
 ## Contact
 

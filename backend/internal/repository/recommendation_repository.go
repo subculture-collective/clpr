@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // RecommendationRepository handles database operations for recommendations
@@ -183,6 +183,42 @@ func (r *RecommendationRepository) RecordInteraction(ctx context.Context, intera
 		return fmt.Errorf("failed to record interaction: %w", err)
 	}
 
+	return nil
+}
+
+// RecordFeedback persists recommendation context and its derived interaction atomically.
+func (r *RecommendationRepository) RecordFeedback(ctx context.Context, feedback *models.RecommendationFeedback) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin feedback transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if feedback.ID == uuid.Nil {
+		feedback.ID = uuid.New()
+	}
+	if feedback.CreatedAt.IsZero() {
+		feedback.CreatedAt = time.Now()
+	}
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO recommendation_feedback (id, user_id, clip_id, feedback_type, algorithm, score, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, feedback.ID, feedback.UserID, feedback.ClipID, feedback.FeedbackType, feedback.Algorithm, feedback.Score, feedback.CreatedAt); err != nil {
+		return fmt.Errorf("failed to record recommendation feedback: %w", err)
+	}
+	interactionType := models.InteractionTypeLike
+	if feedback.FeedbackType == "negative" {
+		interactionType = models.InteractionTypeDislike
+	}
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO user_clip_interactions (id, user_id, clip_id, interaction_type, timestamp)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (user_id, clip_id, interaction_type) DO UPDATE SET timestamp = EXCLUDED.timestamp
+	`, uuid.New(), feedback.UserID, feedback.ClipID, interactionType, feedback.CreatedAt); err != nil {
+		return fmt.Errorf("failed to record feedback interaction: %w", err)
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit feedback transaction: %w", err)
+	}
 	return nil
 }
 

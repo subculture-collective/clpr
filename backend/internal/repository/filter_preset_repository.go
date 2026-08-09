@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 type FilterPresetRepository struct {
@@ -28,6 +28,9 @@ func (r *FilterPresetRepository) CreatePreset(ctx context.Context, preset *model
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1::text, 1))`, preset.UserID); err != nil {
+		return fmt.Errorf("failed to lock preset owner: %w", err)
+	}
 
 	// Check if user already has 10 presets (max limit) within the transaction
 	var count int

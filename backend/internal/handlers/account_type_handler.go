@@ -1,24 +1,34 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+type accountTypeService interface {
+	GetUserAccountType(context.Context, uuid.UUID) (*models.AccountTypeResponse, error)
+	ConvertToBroadcaster(context.Context, uuid.UUID, *string, bool) error
+	ConvertToModerator(context.Context, uuid.UUID, uuid.UUID, *string) error
+	GetConversionHistory(context.Context, uuid.UUID, int, int) ([]models.AccountTypeConversion, int, error)
+	GetRecentConversions(context.Context, int, int) ([]models.AccountTypeConversion, int, error)
+	GetAccountTypeStats(context.Context) (map[string]int, error)
+}
 
 // AccountTypeHandler handles account type-related HTTP requests
 type AccountTypeHandler struct {
-	accountTypeService *services.AccountTypeService
+	accountTypeService accountTypeService
 	authService        *services.AuthService
 }
 
 // NewAccountTypeHandler creates a new account type handler
 func NewAccountTypeHandler(
-	accountTypeService *services.AccountTypeService,
+	accountTypeService accountTypeService,
 	authService *services.AuthService,
 ) *AccountTypeHandler {
 	return &AccountTypeHandler{

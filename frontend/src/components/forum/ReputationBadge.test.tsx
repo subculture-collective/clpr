@@ -40,7 +40,7 @@ describe('ReputationBadge', () => {
 
   it('applies correct colors for different badges', () => {
     const { rerender } = render(<ReputationBadge badge="new" />);
-    expect(screen.getByText('New Member')).toHaveClass('bg-gray-500');
+    expect(screen.getByText('New Member')).toHaveClass('bg-muted');
 
     rerender(<ReputationBadge badge="contributor" />);
     expect(screen.getByText('Contributor')).toHaveClass('bg-blue-500');

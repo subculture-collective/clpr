@@ -66,12 +66,12 @@ Channel A Post by @StreamerA
 - Consistent with platform norms (Reddit, Twitter, etc.)
 
 ### Affected Components:
-- **[FeedCard](frontend/src/components/FeedCard.tsx)** - Check ban status before rendering interaction buttons
-- **[CommentForm](frontend/src/components/CommentForm.tsx)** - Prevent submission if user banned
-- **[FavoriteButton](frontend/src/components/FavoriteButton.tsx)** - Disable if user banned from channel
-- **[ShareButton](frontend/src/components/ShareButton.tsx)** - Disable if user banned from channel
-- **[PostDetail](frontend/src/pages/PostDetail.tsx)** - Show ban message prominently
-- **[ChannelFeed](frontend/src/pages/ChannelFeed.tsx)** - Check ban status on mount
+- **FeedCard** - Check ban status before rendering interaction buttons
+- **[CommentForm](../frontend/src/components/comment/CommentForm.tsx)** - Prevent submission if user banned
+- **FavoriteButton** - Disable if user banned from channel
+- **[ShareButton](../frontend/src/components/clip/ShareButton.tsx)** - Disable if user banned from channel
+- **PostDetail** - Show ban message prominently
+- **ChannelFeed** - Check ban status on mount
 
 ### API Contracts for Ban Checks:
 
@@ -686,10 +686,10 @@ Use these labels on all child issues:
 ## 📚 References
 
 - [Twitch API Documentation](https://dev.twitch.tv/docs/api/reference)
-- [Chat Moderation System Doc](./CHAT_MODERATION.md)
-- [Current Roles & Permissions](./backend/internal/models/roles.go)
-- [Testing Strategy](./docs/testing/testing-strategy.md)
-- [Deployment Guide](./docs/deployment/blue-green-deployment.md)
+- [Chat Moderation System Doc](./backend/CHAT_MODERATION.md)
+- [Current Roles & Permissions](../backend/internal/models/roles.go)
+- Testing Strategy
+- [Deployment Guide](./operations/blue-green-deployment.md)
 
 ---
 

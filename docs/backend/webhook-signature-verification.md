@@ -790,7 +790,7 @@ app.post('/webhook', express.text({ type: 'application/json' }), (req, res) => {
 
 ## Additional Resources
 
-- [Main Webhook Documentation](./WEBHOOK_SUBSCRIPTION_MANAGEMENT.md)
+- Main Webhook Documentation
 - [HMAC-SHA256 Specification (RFC 2104)](https://tools.ietf.org/html/rfc2104)
 - [Webhook Security Best Practices](https://webhooks.fyi/security/overview)
 

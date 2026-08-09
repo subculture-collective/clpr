@@ -101,3 +101,35 @@ func TestLoadClipConfigOverrides(t *testing.T) {
 		t.Fatalf("MediaPublicBaseURL = %q, want override", cfg.Clip.MediaPublicBaseURL)
 	}
 }
+
+func TestLoadIncompleteLaunchFeaturesDefaultDisabled(t *testing.T) {
+	t.Setenv("FEATURE_STREAM_CLIP_CREATION", "")
+	t.Setenv("FEATURE_LIVE_FEED", "")
+	t.Setenv("FEATURE_WATCH_PARTIES", "")
+	t.Setenv("CDN_ENABLED", "")
+	t.Setenv("MIRROR_ENABLED", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.FeatureFlags.StreamClipCreation || cfg.FeatureFlags.LiveFeed || cfg.FeatureFlags.WatchParties || cfg.CDN.Enabled || cfg.Mirror.Enabled {
+		t.Fatal("incomplete launch features must default to disabled")
+	}
+}
+
+func TestLoadIncompleteLaunchFeatureOverrides(t *testing.T) {
+	t.Setenv("FEATURE_STREAM_CLIP_CREATION", "true")
+	t.Setenv("FEATURE_LIVE_FEED", "true")
+	t.Setenv("FEATURE_WATCH_PARTIES", "true")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if !cfg.FeatureFlags.StreamClipCreation || !cfg.FeatureFlags.LiveFeed || !cfg.FeatureFlags.WatchParties {
+		t.Fatal("explicit feature overrides were not loaded")
+	}
+}

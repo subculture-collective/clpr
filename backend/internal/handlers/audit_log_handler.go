@@ -1,16 +1,26 @@
 package handlers
 
 import (
+	"bytes"
+	"context"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
+
+type auditLogService interface {
+	GetAuditLogs(context.Context, repository.AuditLogFilters, int, int) ([]*models.ModerationAuditLogWithUser, int, error)
+	ExportAuditLogsCSV(context.Context, repository.AuditLogFilters, io.Writer) error
+	GetAuditLogByID(context.Context, uuid.UUID) (*models.ModerationAuditLogWithUser, error)
+}
 
 // AuditLogResponse represents the API response format for audit log entries
 type AuditLogResponse struct {
@@ -67,11 +77,11 @@ func transformAuditLog(log *models.ModerationAuditLogWithUser) AuditLogResponse 
 
 // AuditLogHandler handles audit log operations
 type AuditLogHandler struct {
-	auditLogService *services.AuditLogService
+	auditLogService auditLogService
 }
 
 // NewAuditLogHandler creates a new AuditLogHandler
-func NewAuditLogHandler(auditLogService *services.AuditLogService) *AuditLogHandler {
+func NewAuditLogHandler(auditLogService auditLogService) *AuditLogHandler {
 	return &AuditLogHandler{
 		auditLogService: auditLogService,
 	}
@@ -81,14 +91,15 @@ func NewAuditLogHandler(auditLogService *services.AuditLogService) *AuditLogHand
 // GET /admin/audit-logs
 // Supports filters: moderator_id, action, entity_type, entity_id, channel_id, start_date (RFC3339), end_date (RFC3339), search
 func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-
-	if page < 1 {
-		page = 1
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	// Parse filters
@@ -153,17 +164,20 @@ func (h *AuditLogHandler) ExportAuditLogs(c *gin.Context) {
 		return
 	}
 
-	// Set response headers for CSV download
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=audit_logs.csv")
-
-	// Export to CSV
-	if err := h.auditLogService.ExportAuditLogsCSV(c.Request.Context(), filters, c.Writer); err != nil {
+	var output bytes.Buffer
+	if err := h.auditLogService.ExportAuditLogsCSV(c.Request.Context(), filters, &output); err != nil {
+		if errors.Is(err, services.ErrAuditLogExportTooLarge) {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Export exceeds 10000 rows; narrow the filters"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to export audit logs",
 		})
 		return
 	}
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment; filename=audit_logs.csv")
+	c.Data(http.StatusOK, "text/csv", output.Bytes())
 }
 
 // ListModerationAuditLogs retrieves moderation audit logs with filters and offset-based pagination
@@ -280,15 +294,16 @@ func (h *AuditLogHandler) ExportModerationAuditLogs(c *gin.Context) {
 		return
 	}
 
-	// Set response headers for CSV download before writing
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=moderation_audit_logs.csv")
-
-	// Export to CSV
-	// Note: If export fails after headers are sent, we can only set the status code.
-	// The client may receive partial CSV data followed by an incomplete response.
-	if err := h.auditLogService.ExportAuditLogsCSV(c.Request.Context(), filters, c.Writer); err != nil {
-		c.Status(http.StatusInternalServerError)
+	var output bytes.Buffer
+	if err := h.auditLogService.ExportAuditLogsCSV(c.Request.Context(), filters, &output); err != nil {
+		if errors.Is(err, services.ErrAuditLogExportTooLarge) {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Export exceeds 10000 rows; narrow the filters"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to export audit logs"})
 		return
 	}
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment; filename=moderation_audit_logs.csv")
+	c.Data(http.StatusOK, "text/csv", output.Bytes())
 }

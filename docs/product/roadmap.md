@@ -125,7 +125,7 @@ Enhanced community features.
 - Comprehensive error handling
 - Audit trail for all actions
 
-See: [Twitch Moderation Actions Docs](./twitch-moderation-actions.md)
+See: Twitch Moderation Actions Docs
 
 ## Future Considerations
 

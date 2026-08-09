@@ -1,0 +1,7 @@
+extends:
+  - recommended
+
+rules:
+  # A successful WebSocket handshake is HTTP 101, which this HTTP-oriented rule
+  # does not recognize. Route coverage and response schemas remain CI-enforced.
+  operation-2xx-response: off

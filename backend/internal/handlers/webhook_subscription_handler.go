@@ -1,39 +1,57 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // WebhookSubscriptionHandler handles webhook subscription endpoints
+type webhookSubscriptionService interface {
+	CreateSubscription(context.Context, uuid.UUID, *models.CreateWebhookSubscriptionRequest) (*models.WebhookSubscription, error)
+	GetSubscriptionsByUserID(context.Context, uuid.UUID) ([]*models.WebhookSubscription, error)
+	GetSubscriptionByID(context.Context, uuid.UUID, uuid.UUID) (*models.WebhookSubscription, error)
+	UpdateSubscription(context.Context, uuid.UUID, uuid.UUID, *models.UpdateWebhookSubscriptionRequest) error
+	DeleteSubscription(context.Context, uuid.UUID, uuid.UUID) error
+	GetDeliveriesBySubscriptionID(context.Context, uuid.UUID, uuid.UUID, int, int) ([]*models.WebhookDelivery, int, error)
+	RegenerateSecret(context.Context, uuid.UUID, uuid.UUID) (string, error)
+}
+
 type WebhookSubscriptionHandler struct {
-	webhookService *services.OutboundWebhookService
+	webhookService webhookSubscriptionService
 }
 
 // NewWebhookSubscriptionHandler creates a new webhook subscription handler
-func NewWebhookSubscriptionHandler(webhookService *services.OutboundWebhookService) *WebhookSubscriptionHandler {
+func NewWebhookSubscriptionHandler(webhookService webhookSubscriptionService) *WebhookSubscriptionHandler {
 	return &WebhookSubscriptionHandler{
 		webhookService: webhookService,
 	}
+}
+
+func webhookUserID(c *gin.Context) (uuid.UUID, bool) {
+	value, exists := c.Get("user_id")
+	if !exists {
+		return uuid.Nil, false
+	}
+	userID, ok := value.(uuid.UUID)
+	return userID, ok && userID != uuid.Nil
 }
 
 // CreateSubscription creates a new webhook subscription
 // POST /webhooks
 func (h *WebhookSubscriptionHandler) CreateSubscription(c *gin.Context) {
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	var req models.CreateWebhookSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,14 +82,13 @@ func (h *WebhookSubscriptionHandler) CreateSubscription(c *gin.Context) {
 // GET /webhooks
 func (h *WebhookSubscriptionHandler) ListSubscriptions(c *gin.Context) {
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	subscriptions, err := h.webhookService.GetSubscriptionsByUserID(c.Request.Context(), userID)
 	if err != nil {
@@ -91,14 +108,13 @@ func (h *WebhookSubscriptionHandler) ListSubscriptions(c *gin.Context) {
 // GET /webhooks/:id
 func (h *WebhookSubscriptionHandler) GetSubscription(c *gin.Context) {
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Get subscription ID from URL
 	subscriptionID, err := uuid.Parse(c.Param("id"))
@@ -127,14 +143,13 @@ func (h *WebhookSubscriptionHandler) GetSubscription(c *gin.Context) {
 // PATCH /webhooks/:id
 func (h *WebhookSubscriptionHandler) UpdateSubscription(c *gin.Context) {
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Get subscription ID from URL
 	subscriptionID, err := uuid.Parse(c.Param("id"))
@@ -170,14 +185,13 @@ func (h *WebhookSubscriptionHandler) UpdateSubscription(c *gin.Context) {
 // DELETE /webhooks/:id
 func (h *WebhookSubscriptionHandler) DeleteSubscription(c *gin.Context) {
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Get subscription ID from URL
 	subscriptionID, err := uuid.Parse(c.Param("id"))
@@ -205,14 +219,13 @@ func (h *WebhookSubscriptionHandler) DeleteSubscription(c *gin.Context) {
 // GET /webhooks/:id/deliveries
 func (h *WebhookSubscriptionHandler) GetSubscriptionDeliveries(c *gin.Context) {
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Get subscription ID from URL
 	subscriptionID, err := uuid.Parse(c.Param("id"))
@@ -269,12 +282,11 @@ func (h *WebhookSubscriptionHandler) GetSupportedEvents(c *gin.Context) {
 // RegenerateSecret regenerates the secret for a webhook subscription
 // POST /webhooks/:id/regenerate-secret
 func (h *WebhookSubscriptionHandler) RegenerateSecret(c *gin.Context) {
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
+	userID, ok := webhookUserID(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	subscriptionID, err := uuid.Parse(c.Param("id"))
 	if err != nil {

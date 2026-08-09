@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { cn, formatDuration } from '@/lib/utils';
 import { TheatreMode, VideoPlayer } from '@/components/video';
 import {
@@ -48,14 +48,101 @@ interface PlaylistTheatreModeProps {
     };
 }
 
+function AutoAdvanceCountdown({
+    duration,
+    paused,
+    onPausedChange,
+    onComplete,
+}: {
+    duration: number;
+    paused: boolean;
+    onPausedChange: (paused: boolean) => void;
+    onComplete: () => void;
+}) {
+    const [countdown, setCountdown] = useState<number | null>(() =>
+        Math.ceil(duration + 3),
+    );
+
+    useEffect(() => {
+        if (paused || countdown === null) return;
+
+        const timeout = window.setTimeout(() => {
+            if (countdown <= 1) {
+                setCountdown(null);
+                onComplete();
+                return;
+            }
+            setCountdown(countdown - 1);
+        }, 1000);
+
+        return () => window.clearTimeout(timeout);
+    }, [countdown, onComplete, paused]);
+
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.hidden) onPausedChange(true);
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () =>
+            document.removeEventListener('visibilitychange', handleVisibility);
+    }, [onPausedChange]);
+
+    if (countdown === null) return null;
+
+    return (
+        <div className='w-full px-4 py-1.5 flex items-center justify-center gap-3 bg-surface/80 text-[12px]'>
+            {paused ? (
+                <>
+                    <span className='text-text-secondary'>
+                        Auto-advance paused
+                    </span>
+                    <button
+                        onClick={() => onPausedChange(false)}
+                        className='text-cta hover:text-cta-hover transition-colors cursor-pointer font-medium'
+                    >
+                        Resume
+                    </button>
+                    <button
+                        onClick={() => setCountdown(null)}
+                        className='text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer'
+                    >
+                        Cancel
+                    </button>
+                </>
+            ) : (
+                <>
+                    <span className='text-text-secondary'>
+                        Next clip in {countdown}s
+                    </span>
+                    <button
+                        onClick={() => onPausedChange(true)}
+                        className='text-cta hover:text-cta-hover transition-colors cursor-pointer font-medium'
+                    >
+                        Pause
+                    </button>
+                    <button
+                        onClick={() => {
+                            setCountdown(null);
+                            onComplete();
+                        }}
+                        className='text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer'
+                    >
+                        Skip now
+                    </button>
+                </>
+            )}
+        </div>
+    );
+}
+
 export function PlaylistTheatreMode({
-    title,
+    title: _title,
     items,
     currentItemId,
     onItemClick,
     onItemRemove,
     onReorder,
-    onClipUpdated,
+    onClipUpdated: _onClipUpdated,
     onClose,
     isQueue = false,
     contained = false,
@@ -67,9 +154,13 @@ export function PlaylistTheatreMode({
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const [showSidebar, setShowSidebar] = useState(true);
-    const [activeTab, setActiveTab] = useState<'queue' | 'chat' | 'extra'>(
+    const [selectedTab, setSelectedTab] = useState<
+        'queue' | 'chat' | 'extra'
+    >(
         'queue',
     );
+    const activeTab =
+        selectedTab === 'extra' && !extraSidebarTab ? 'queue' : selectedTab;
     const pendingTabLabel = pendingLabel ?? (isQueue ? 'Queue' : 'Playlist');
     const commentsTabLabel = commentsLabel ?? 'Comments';
     // Find current item and clip
@@ -105,12 +196,6 @@ export function PlaylistTheatreMode({
             onItemClick(items[currentIndex - 1]);
         }
     }, [items, currentItemId, onItemClick]);
-
-    useEffect(() => {
-        if (!extraSidebarTab && activeTab === 'extra') {
-            setActiveTab('queue');
-        }
-    }, [extraSidebarTab, activeTab]);
 
     // Drag and drop handlers
     const handleDragStart = useCallback((id: string) => {
@@ -170,11 +255,11 @@ export function PlaylistTheatreMode({
             }
             if (e.key === 'c') {
                 e.preventDefault();
-                setActiveTab('chat');
+                setSelectedTab('chat');
             }
             if (e.key === 'q') {
                 e.preventDefault();
-                setActiveTab('queue');
+                setSelectedTab('queue');
             }
         };
 
@@ -182,80 +267,27 @@ export function PlaylistTheatreMode({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleSkipNext, handleSkipPrev]);
 
-    // Auto-advance countdown for Twitch iframe clips (no onEnded event available)
-    // Shows a visible countdown the user can pause/resume
-    const [countdown, setCountdown] = useState<number | null>(null);
-    const [countdownPaused, setCountdownPaused] = useState(false);
-    const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const isIframeClip = currentClip && !currentClip.video_url && !!currentClip.duration;
+    const [countdownControl, setCountdownControl] = useState<{
+        clipId: string;
+        paused: boolean;
+    } | null>(null);
+    const countdownPaused =
+        countdownControl?.clipId === currentClip?.id
+            ? countdownControl.paused
+            : false;
+    const setCountdownPaused = useCallback(
+        (paused: boolean) => {
+            if (!currentClip) return;
+            setCountdownControl({ clipId: currentClip.id, paused });
+        },
+        [currentClip],
+    );
+    const isIframeClip =
+        currentClip && !currentClip.video_url && !!currentClip.duration;
     const hasNextClip = (() => {
         const idx = items.findIndex(item => item.id === currentItemId);
         return idx >= 0 && idx < items.length - 1;
     })();
-
-    // Reset countdown when clip changes
-    useEffect(() => {
-        if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-        }
-        setCountdownPaused(false);
-
-        if (!isIframeClip || !hasNextClip) {
-            setCountdown(null);
-            return;
-        }
-
-        // Start countdown from clip duration + 3s buffer
-        const totalSeconds = Math.ceil(currentClip!.duration! + 3);
-        setCountdown(totalSeconds);
-
-        return () => {
-            if (countdownIntervalRef.current) {
-                clearInterval(countdownIntervalRef.current);
-            }
-        };
-    }, [currentClip?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Tick the countdown every second
-    useEffect(() => {
-        if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-        }
-
-        if (countdown === null || countdown <= 0 || countdownPaused) {
-            if (countdown !== null && countdown <= 0 && !countdownPaused) {
-                handleClipEnd();
-                setCountdown(null);
-            }
-            return;
-        }
-
-        countdownIntervalRef.current = setInterval(() => {
-            setCountdown(prev => {
-                if (prev === null || prev <= 1) return 0;
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => {
-            if (countdownIntervalRef.current) {
-                clearInterval(countdownIntervalRef.current);
-            }
-        };
-    }, [countdown, countdownPaused, handleClipEnd]);
-
-    // Pause countdown when tab is hidden
-    useEffect(() => {
-        const handleVisibility = () => {
-            if (document.hidden && countdown !== null && !countdownPaused) {
-                setCountdownPaused(true);
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibility);
-        return () => document.removeEventListener('visibilitychange', handleVisibility);
-    }, [countdown, countdownPaused]);
 
     return (
         <div
@@ -308,47 +340,14 @@ export function PlaylistTheatreMode({
                         }
                     </div>
 
-                    {/* Auto-advance countdown bar for Twitch iframe clips */}
-                    {isIframeClip && countdown !== null && hasNextClip && (
-                        <div className='w-full px-4 py-1.5 flex items-center justify-center gap-3 bg-surface/80 text-[12px]'>
-                            {countdownPaused ? (
-                                <>
-                                    <span className='text-text-secondary'>
-                                        Auto-advance paused
-                                    </span>
-                                    <button
-                                        onClick={() => setCountdownPaused(false)}
-                                        className='text-cta hover:text-cta-hover transition-colors cursor-pointer font-medium'
-                                    >
-                                        Resume
-                                    </button>
-                                    <button
-                                        onClick={() => setCountdown(null)}
-                                        className='text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer'
-                                    >
-                                        Cancel
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <span className='text-text-secondary'>
-                                        Next clip in {countdown}s
-                                    </span>
-                                    <button
-                                        onClick={() => setCountdownPaused(true)}
-                                        className='text-cta hover:text-cta-hover transition-colors cursor-pointer font-medium'
-                                    >
-                                        Pause
-                                    </button>
-                                    <button
-                                        onClick={() => handleClipEnd()}
-                                        className='text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer'
-                                    >
-                                        Skip now
-                                    </button>
-                                </>
-                            )}
-                        </div>
+                    {isIframeClip && hasNextClip && (
+                        <AutoAdvanceCountdown
+                            key={currentClip.id}
+                            duration={currentClip.duration!}
+                            paused={countdownPaused}
+                            onPausedChange={setCountdownPaused}
+                            onComplete={handleClipEnd}
+                        />
                     )}
                 </div>
 
@@ -418,7 +417,9 @@ export function PlaylistTheatreMode({
                             ]}
                             activeTab={activeTab}
                             onTabChange={id =>
-                                setActiveTab(id as 'queue' | 'chat' | 'extra')
+                                setSelectedTab(
+                                    id as 'queue' | 'chat' | 'extra',
+                                )
                             }
                         />
 

@@ -1,0 +1,22 @@
+# path	max	owner	reason	expires
+backend/internal/handlers/report_handler_test.go	1	backend	integration fixture requires PostgreSQL	2026-08-15
+backend/internal/handlers/reputation_handler_integration_test.go	1	backend	integration fixture requires PostgreSQL	2026-08-15
+backend/internal/handlers/twitch_oauth_handler_test.go	2	identity	database-dependent OAuth fixture	2026-08-15
+backend/internal/handlers/twitch_oauth_security_test.go	4	security	database-dependent OAuth security fixture	2026-08-15
+backend/internal/middleware/abuse_detection_middleware_test.go	12	security	Redis integration fixture is optional in unit tier	2026-08-15
+backend/internal/middleware/csrf_middleware_test.go	3	security	Redis integration fixture is optional in unit tier	2026-08-15
+backend/internal/middleware/validation_middleware_security_test.go	1	security	long-running fuzz case excluded from short tier	2026-08-15
+backend/internal/repository/clip_repository_test.go	5	backend	PostgreSQL integration fixture	2026-08-15
+backend/internal/repository/cursor_pagination_test.go	3	backend	PostgreSQL integration fixture	2026-08-15
+backend/internal/repository/discovery_list_repository_test.go	11	backend	PostgreSQL integration fixture	2026-08-15
+backend/internal/repository/reputation_repository_integration_test.go	4	backend	incomplete PostgreSQL integration fixture	2026-08-15
+backend/internal/repository/twitch_auth_repository_test.go	2	identity	PostgreSQL integration fixture	2026-08-15
+backend/internal/scheduler/framework_examples_test.go	1	backend	long-running stress case excluded from short tier	2026-08-15
+backend/internal/services/clip_extraction_job_service_test.go	2	media	Redis integration fixture	2026-08-15
+backend/internal/services/distributed_rate_limiter_test.go	1	security	Redis integration fixture	2026-08-15
+backend/internal/services/notification_integration_test.go	4	backend	unimplemented database fixture	2026-08-15
+backend/internal/services/submission_abuse_detection_test.go	1	security	Redis integration fixture	2026-08-15
+backend/internal/services/submission_metadata_integration_test.go	4	media	Twitch credentials and Redis integration fixture	2026-08-15
+backend/tests/migrations/rollback_test.go	12	platform	destructive migration drill requires dedicated database state	2026-08-15
+backend/tests/migrations/shadow_db_drills_test.go	5	platform	destructive shadow database drill	2026-08-15
+frontend/e2e/tests/integration.spec.ts	1	qa	legacy fake-UI suite quarantined pending deletion or rewrite	2026-08-15

@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 )
 
-func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
+func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure, cfg *config.Config) {
 	// SEO endpoints (sitemap, robots.txt)
 	r.GET("/sitemap.xml", h.SEO.GetSitemap)
 	r.GET("/robots.txt", h.SEO.GetRobotsTxt)
@@ -54,10 +55,8 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 		dbErr := infra.DB.HealthCheck(ctx)
 
 		if dbErr != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status": "not ready",
-				"error":  "database unavailable",
-			})
+			log.Printf("Readiness database check failed (%T): %v", dbErr, dbErr)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
 			return
 		}
 
@@ -65,33 +64,25 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 		redisErr := infra.Redis.HealthCheck(ctx)
 
 		if redisErr != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status": "not ready",
-				"error":  "redis unavailable",
-			})
+			log.Printf("Readiness Redis check failed (%T): %v", redisErr, redisErr)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
 			return
 		}
 
-		checks := gin.H{
-			"database": "ok",
-			"redis":    "ok",
-		}
-
 		// Check OpenSearch connection (optional)
+		degradedDependencies := make([]string, 0)
 		if infra.OpenSearch != nil {
 			osErr := infra.OpenSearch.Ping(ctx)
 
 			if osErr != nil {
-				checks["opensearch"] = "degraded"
 				log.Printf("OpenSearch health check failed (%T): %v", osErr, osErr)
-			} else {
-				checks["opensearch"] = "ok"
+				degradedDependencies = append(degradedDependencies, "opensearch")
 			}
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"status": "ready",
-			"checks": checks,
+			"status":                "ready",
+			"degraded_dependencies": degradedDependencies,
 		})
 	})
 
@@ -102,8 +93,11 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 		})
 	})
 
+	operational := r.Group("/internal/operations")
+	operational.Use(middleware.RequireOperationalToken(cfg.Security.OperationalToken))
+
 	// Database statistics endpoint (for monitoring)
-	r.GET("/health/stats", func(c *gin.Context) {
+	operational.GET("/database", func(c *gin.Context) {
 		stats := infra.DB.GetStats()
 		c.JSON(http.StatusOK, gin.H{
 			"database": gin.H{
@@ -118,20 +112,19 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 	})
 
 	// Cache monitoring endpoints
-	r.GET("/health/cache", h.Monitoring.GetCacheStats)
-	r.GET("/health/cache/check", h.Monitoring.GetCacheHealth)
+	operational.GET("/cache", h.Monitoring.GetCacheStats)
+	operational.GET("/cache/check", h.Monitoring.GetCacheHealth)
 
 	// Webhook monitoring endpoint
-	r.GET("/health/webhooks", h.WebhookMonitoring.GetWebhookRetryStats)
+	operational.GET("/webhooks", h.WebhookMonitoring.GetWebhookRetryStats)
 
 	// Prometheus metrics endpoint (unauthenticated, for internal scraping)
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	operational.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Profiling and metrics endpoints (for debugging and monitoring)
-	// These should be protected in production (e.g., firewall rules or internal network only)
-	debug := r.Group("/debug")
-	debug.Use(middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"))
-	{
+	// Profiling endpoints exist only in explicit debug mode and still require an admin session.
+	if cfg.Server.GinMode == gin.DebugMode {
+		debug := r.Group("/debug")
+		debug.Use(middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"))
 		// Prometheus metrics endpoint
 		debug.GET("/metrics", gin.WrapH(promhttp.Handler()))
 

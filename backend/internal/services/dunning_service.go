@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v81"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v81"
 )
 
 const (
@@ -317,6 +317,10 @@ func (s *DunningService) SendGracePeriodWarnings(ctx context.Context) error {
 
 // sendDunningNotification sends a dunning notification email to the user
 func (s *DunningService) sendDunningNotification(ctx context.Context, sub *models.Subscription, failure *models.PaymentFailure, notificationType string, attemptNumber int) error {
+	if s.emailService == nil {
+		log.Printf("[DUNNING] Email service is disabled, skipping %s notification", notificationType)
+		return nil
+	}
 	// Get user
 	user, err := s.userRepo.GetByID(ctx, sub.UserID)
 	if err != nil {

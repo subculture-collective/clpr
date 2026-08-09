@@ -541,10 +541,9 @@ To exercise any of the above rights, please:
 ### 7.4 Account Deletion
 
 To delete your account:
-1. Log in to your account
-2. Navigate to Settings > Account > Delete Account
-3. Confirm deletion by entering your password
-4. Your account and associated data will be permanently deleted within 30 days
+1. Email <privacy@clpr.gg> from the address associated with your account
+2. Complete the identity-verification steps provided by the privacy team
+3. We will confirm the request and respond within the legally required timeframe
 
 Note: Some data may be retained for legal obligations, fraud prevention, or dispute resolution (see Section 10).
 
@@ -1023,7 +1022,7 @@ For minor changes (e.g., clarifications, formatting, contact info updates), we w
 
 If you do not agree with the updated Privacy Policy:
 - You may stop using the Service
-- You may delete your account (Settings > Account > Delete Account)
+- You may request account deletion through <privacy@clpr.gg>
 - For material changes, your continued use after the effective date constitutes acceptance
 - You can contact us with questions or concerns
 

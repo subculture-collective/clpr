@@ -291,7 +291,7 @@ See [Deployment Guide](./moderation-api.md#deployment-guide) for complete setup.
 
 - [Complete API Reference](./moderation-api.md)
 - [OpenAPI Specification](../openapi/openapi.yaml)
-- [Authentication Guide](./authentication.md)
+- Authentication Guide
 - [Authorization Framework](./authorization-framework.md)
 - [Audit Log Service](./AUDIT_LOG_SERVICE.md)
 - [GitHub Issues](https://git.subcult.tv/subculture-collective/clpr/issues)

@@ -2,27 +2,50 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
+
+var (
+	ErrQueueItemNotFound = repository.ErrQueueItemNotFound
+	ErrQueueFull         = repository.ErrQueueFull
+	ErrQueueEmpty        = repository.ErrQueueEmpty
+)
+
+type queueStore interface {
+	GetUserQueue(context.Context, uuid.UUID, int) ([]models.QueueItemWithClip, error)
+	GetQueueCount(context.Context, uuid.UUID) (int, error)
+	AddItem(context.Context, *models.QueueItem) error
+	AddItemAtTop(context.Context, *models.QueueItem) error
+	RemoveItem(context.Context, uuid.UUID, uuid.UUID) error
+	GetItemByID(context.Context, uuid.UUID, uuid.UUID) (*models.QueueItem, error)
+	ReorderItem(context.Context, uuid.UUID, uuid.UUID, int) error
+	MarkAsPlayed(context.Context, uuid.UUID, uuid.UUID) error
+	ClearQueue(context.Context, uuid.UUID) error
+	ConvertToPlaylist(context.Context, *models.Playlist, bool, bool) error
+}
+
+type queueClipStore interface {
+	GetByID(context.Context, uuid.UUID) (*models.Clip, error)
+}
 
 // QueueService handles business logic for queue operations
 type QueueService struct {
-	queueRepo       *repository.QueueRepository
-	clipRepo        *repository.ClipRepository
-	playlistService *PlaylistService
+	queueRepo queueStore
+	clipRepo  queueClipStore
 }
 
 // NewQueueService creates a new QueueService
 func NewQueueService(queueRepo *repository.QueueRepository, clipRepo *repository.ClipRepository, playlistService *PlaylistService) *QueueService {
+	_ = playlistService // retained for constructor compatibility while conversion is repository-atomic
 	return &QueueService{
-		queueRepo:       queueRepo,
-		clipRepo:        clipRepo,
-		playlistService: playlistService,
+		queueRepo: queueRepo,
+		clipRepo:  clipRepo,
 	}
 }
 
@@ -77,7 +100,7 @@ func (s *QueueService) AddToQueue(ctx context.Context, userID uuid.UUID, req *mo
 		return nil, fmt.Errorf("failed to check queue size: %w", err)
 	}
 	if count >= 500 {
-		return nil, fmt.Errorf("queue is full (maximum 500 items)")
+		return nil, ErrQueueFull
 	}
 
 	// Verify clip exists
@@ -128,8 +151,8 @@ func (s *QueueService) AddToQueue(ctx context.Context, userID uuid.UUID, req *mo
 func (s *QueueService) RemoveFromQueue(ctx context.Context, userID uuid.UUID, itemID uuid.UUID) error {
 	// Remove the item (repository handles position shifting)
 	err := s.queueRepo.RemoveItem(ctx, itemID, userID)
-	if err == pgx.ErrNoRows {
-		return fmt.Errorf("queue item not found")
+	if errors.Is(err, repository.ErrQueueItemNotFound) {
+		return ErrQueueItemNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("failed to remove from queue: %w", err)
@@ -152,7 +175,7 @@ func (s *QueueService) ReorderQueue(ctx context.Context, userID uuid.UUID, req *
 		return fmt.Errorf("failed to verify item: %w", err)
 	}
 	if item == nil {
-		return fmt.Errorf("queue item not found")
+		return ErrQueueItemNotFound
 	}
 
 	// Validate new position is >= 1
@@ -173,6 +196,9 @@ func (s *QueueService) ReorderQueue(ctx context.Context, userID uuid.UUID, req *
 
 	// Perform reordering
 	err = s.queueRepo.ReorderItem(ctx, itemID, userID, req.NewPosition)
+	if errors.Is(err, repository.ErrQueueItemNotFound) {
+		return ErrQueueItemNotFound
+	}
 	if err != nil {
 		return fmt.Errorf("failed to reorder queue: %w", err)
 	}
@@ -183,6 +209,9 @@ func (s *QueueService) ReorderQueue(ctx context.Context, userID uuid.UUID, req *
 // MarkAsPlayed marks a queue item as played
 func (s *QueueService) MarkAsPlayed(ctx context.Context, userID uuid.UUID, itemID uuid.UUID) error {
 	err := s.queueRepo.MarkAsPlayed(ctx, itemID, userID)
+	if errors.Is(err, repository.ErrQueueItemNotFound) {
+		return ErrQueueItemNotFound
+	}
 	if err != nil {
 		return fmt.Errorf("failed to mark as played: %w", err)
 	}
@@ -212,66 +241,15 @@ func (s *QueueService) GetQueueCount(ctx context.Context, userID uuid.UUID) (int
 
 // ConvertQueueToPlaylist creates a new playlist from the user's queue
 func (s *QueueService) ConvertQueueToPlaylist(ctx context.Context, userID uuid.UUID, req *models.ConvertQueueToPlaylistRequest) (*models.Playlist, error) {
-	// Get all queue items
-	queueItems, err := s.queueRepo.GetUserQueue(ctx, userID, 1000) // Max 1000 items
-	if err != nil {
-		return nil, fmt.Errorf("failed to get queue items: %w", err)
+	playlist := &models.Playlist{ID: uuid.New(), UserID: userID, Title: strings.TrimSpace(req.Title), Description: req.Description, Visibility: models.PlaylistVisibilityPrivate}
+	if playlist.Title == "" {
+		return nil, fmt.Errorf("title cannot be blank")
 	}
-
-	if len(queueItems) == 0 {
-		return nil, fmt.Errorf("queue is empty, nothing to convert")
-	}
-
-	// Filter to only include unplayed items if requested
-	var itemsToConvert []models.QueueItemWithClip
-	if req.OnlyUnplayed {
-		for _, item := range queueItems {
-			if item.PlayedAt == nil {
-				itemsToConvert = append(itemsToConvert, item)
-			}
+	if err := s.queueRepo.ConvertToPlaylist(ctx, playlist, req.OnlyUnplayed, req.ClearQueue); err != nil {
+		if errors.Is(err, repository.ErrQueueEmpty) {
+			return nil, ErrQueueEmpty
 		}
-	} else {
-		itemsToConvert = queueItems
+		return nil, fmt.Errorf("failed to convert queue: %w", err)
 	}
-
-	if len(itemsToConvert) == 0 {
-		return nil, fmt.Errorf("no items to convert (all items have been played)")
-	}
-
-	// Create the playlist
-	visibility := models.PlaylistVisibilityPrivate
-	createReq := &models.CreatePlaylistRequest{
-		Title:       req.Title,
-		Description: req.Description,
-		Visibility:  &visibility,
-	}
-
-	playlist, err := s.playlistService.CreatePlaylist(ctx, userID, createReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create playlist: %w", err)
-	}
-
-	// Add clips to the playlist in queue order
-	clipIDs := make([]uuid.UUID, 0, len(itemsToConvert))
-	for _, item := range itemsToConvert {
-		clipIDs = append(clipIDs, item.ClipID)
-	}
-
-	err = s.playlistService.AddClipsToPlaylist(ctx, playlist.ID, userID, clipIDs)
-	if err != nil {
-		// If adding clips fails, we should ideally delete the playlist
-		// but for now just return the error
-		return nil, fmt.Errorf("failed to add clips to playlist: %w", err)
-	}
-
-	// Clear queue if requested
-	if req.ClearQueue {
-		err = s.queueRepo.ClearQueue(ctx, userID)
-		if err != nil {
-			// Log but don't fail - playlist was already created
-			fmt.Printf("Warning: failed to clear queue after conversion: %v\n", err)
-		}
-	}
-
 	return playlist, nil
 }

@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // QueueHandler handles queue-related requests
@@ -53,9 +54,11 @@ func (h *QueueHandler) GetQueue(c *gin.Context) {
 	limit := 100 // default
 	if limitStr := c.Query("limit"); limitStr != "" {
 		parsedLimit, err := strconv.Atoi(limitStr)
-		if err == nil && parsedLimit > 0 {
-			limit = parsedLimit
+		if err != nil || parsedLimit < 1 || parsedLimit > 500 {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "limit must be an integer between 1 and 500"}})
+			return
 		}
+		limit = parsedLimit
 	}
 
 	// Get queue
@@ -120,6 +123,10 @@ func (h *QueueHandler) AddToQueue(c *gin.Context) {
 	// Add to queue
 	item, err := h.queueService.AddToQueue(c.Request.Context(), userID, &req)
 	if err != nil {
+		if errors.Is(err, services.ErrQueueFull) {
+			c.JSON(http.StatusConflict, StandardResponse{Success: false, Error: &ErrorInfo{Code: "QUEUE_FULL", Message: "Queue is full"}})
+			return
+		}
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -180,11 +187,15 @@ func (h *QueueHandler) RemoveFromQueue(c *gin.Context) {
 	// Remove from queue
 	err = h.queueService.RemoveFromQueue(c.Request.Context(), userID, itemID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, StandardResponse{
+		if errors.Is(err, services.ErrQueueItemNotFound) {
+			c.JSON(http.StatusNotFound, StandardResponse{Success: false, Error: &ErrorInfo{Code: "NOT_FOUND", Message: "Queue item not found"}})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
-				Code:    "BAD_REQUEST",
-				Message: err.Error(),
+				Code:    "INTERNAL_ERROR",
+				Message: "Failed to remove queue item",
 			},
 		})
 		return
@@ -239,6 +250,10 @@ func (h *QueueHandler) ReorderQueue(c *gin.Context) {
 	// Reorder queue
 	err := h.queueService.ReorderQueue(c.Request.Context(), userID, &req)
 	if err != nil {
+		if errors.Is(err, services.ErrQueueItemNotFound) {
+			c.JSON(http.StatusNotFound, StandardResponse{Success: false, Error: &ErrorInfo{Code: "NOT_FOUND", Message: "Queue item not found"}})
+			return
+		}
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -345,11 +360,15 @@ func (h *QueueHandler) MarkAsPlayed(c *gin.Context) {
 	// Mark as played
 	err = h.queueService.MarkAsPlayed(c.Request.Context(), userID, itemID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, StandardResponse{
+		if errors.Is(err, services.ErrQueueItemNotFound) {
+			c.JSON(http.StatusNotFound, StandardResponse{Success: false, Error: &ErrorInfo{Code: "NOT_FOUND", Message: "Queue item not found"}})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
-				Code:    "BAD_REQUEST",
-				Message: err.Error(),
+				Code:    "INTERNAL_ERROR",
+				Message: "Failed to mark queue item as played",
 			},
 		})
 		return
@@ -450,6 +469,10 @@ func (h *QueueHandler) ConvertToPlaylist(c *gin.Context) {
 	// Convert queue to playlist
 	playlist, err := h.queueService.ConvertQueueToPlaylist(c.Request.Context(), userID, &req)
 	if err != nil {
+		if errors.Is(err, services.ErrQueueEmpty) {
+			c.JSON(http.StatusConflict, StandardResponse{Success: false, Error: &ErrorInfo{Code: "QUEUE_EMPTY", Message: "Queue has no eligible items"}})
+			return
+		}
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{

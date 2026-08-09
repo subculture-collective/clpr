@@ -79,12 +79,12 @@ export function AdminDiscoveryListsPage() {
             Create and manage curated discovery lists
           </p>
         </div>
-        <Link to="/admin/discovery-lists/new">
-          <Button>
+        <Button asChild>
+          <Link to="/admin/discovery-lists/new">
             <Plus className="w-4 h-4 mr-2" />
             Create New List
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <Card>
@@ -153,16 +153,16 @@ export function AdminDiscoveryListsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex justify-end gap-2">
-                          <Link to={`/discover/lists/${list.id}`} target="_blank">
-                            <Button variant="ghost" size="sm" title="Preview">
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to={`/discover/lists/${list.id}`} target="_blank" title="Preview" aria-label={`Preview ${list.name}`}>
                               <Eye className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                          <Link to={`/admin/discovery-lists/${list.id}/edit`}>
-                            <Button variant="ghost" size="sm" title="Edit">
+                            </Link>
+                          </Button>
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to={`/admin/discovery-lists/${list.id}/edit`} title="Edit" aria-label={`Edit ${list.name}`}>
                               <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
+                            </Link>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

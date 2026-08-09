@@ -65,12 +65,12 @@ export function StreamOfflineScreen({ channel, streamInfo }: StreamOfflineScreen
             Visit on Twitch
           </Button>
 
-          <Link to={`/clips?streamer=${channel}`}>
-            <Button variant="secondary" size="lg">
+          <Button asChild variant="secondary" size="lg">
+            <Link to={`/clips?streamer=${channel}`}>
               <Film size={16} strokeWidth={1.75} className="mr-2" />
               View Recent Clips
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
         {/* Additional Info */}

@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -253,57 +254,42 @@ func (r *RevenueRepository) GetCohortRetention(ctx context.Context, months int) 
 // GetSubscriberGrowthTrend returns subscriber growth data for the last N months
 func (r *RevenueRepository) GetSubscriberGrowthTrend(ctx context.Context, months int) ([]models.SubscriberGrowthMetric, error) {
 	query := `
-		WITH monthly_data AS (
-			SELECT 
-				DATE_TRUNC('month', created_at) as month,
-				COUNT(*) as new_subscribers
-			FROM subscriptions
-			WHERE tier = 'pro'
-			AND created_at >= NOW() - INTERVAL '1 month' * $1
-			GROUP BY DATE_TRUNC('month', created_at)
-		),
-		churned_data AS (
-			SELECT 
-				DATE_TRUNC('month', canceled_at) as month,
-				COUNT(*) as churned_subscribers
-			FROM subscriptions
-			WHERE tier = 'pro'
-			AND canceled_at IS NOT NULL
-			AND canceled_at >= NOW() - INTERVAL '1 month' * $2
-			GROUP BY DATE_TRUNC('month', canceled_at)
+		WITH months AS (
+			SELECT generate_series(
+				DATE_TRUNC('month', NOW()) - INTERVAL '1 month' * ($1 - 1),
+				DATE_TRUNC('month', NOW()), INTERVAL '1 month'
+			) AS month
 		)
-		SELECT 
-			COALESCE(m.month, c.month) as month,
-			COALESCE(m.new_subscribers, 0) as new_subscribers,
-			COALESCE(c.churned_subscribers, 0) as churned_subscribers
-		FROM monthly_data m
-		FULL OUTER JOIN churned_data c ON m.month = c.month
-		ORDER BY month
+		SELECT m.month,
+			COUNT(s.id) FILTER (WHERE s.created_at >= m.month AND s.created_at < m.month + INTERVAL '1 month') AS new_subscribers,
+			COUNT(s.id) FILTER (WHERE s.canceled_at >= m.month AND s.canceled_at < m.month + INTERVAL '1 month') AS churned_subscribers,
+			COUNT(s.id) FILTER (WHERE s.created_at < m.month + INTERVAL '1 month'
+				AND (s.canceled_at IS NULL OR s.canceled_at >= m.month + INTERVAL '1 month')) AS total_subscribers
+		FROM months m
+		LEFT JOIN subscriptions s ON s.tier = 'pro' AND s.created_at < m.month + INTERVAL '1 month'
+		GROUP BY m.month
+		ORDER BY m.month
 	`
 
-	rows, err := r.db.Query(ctx, query, months, months)
+	rows, err := r.db.Query(ctx, query, months)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query subscriber growth: %w", err)
 	}
 	defer rows.Close()
 
 	var growth []models.SubscriberGrowthMetric
-	runningTotal := 0
-
 	for rows.Next() {
 		var month time.Time
-		var newSubs, churnedSubs int
+		var newSubs, churnedSubs, totalSubs int
 
-		if err := rows.Scan(&month, &newSubs, &churnedSubs); err != nil {
+		if err := rows.Scan(&month, &newSubs, &churnedSubs, &totalSubs); err != nil {
 			return nil, fmt.Errorf("failed to scan subscriber growth row: %w", err)
 		}
 
 		netChange := newSubs - churnedSubs
-		runningTotal += netChange
-
 		growth = append(growth, models.SubscriberGrowthMetric{
 			Month:     month.Format("2006-01"),
-			Total:     runningTotal,
+			Total:     totalSubs,
 			New:       newSubs,
 			Churned:   churnedSubs,
 			NetChange: netChange,
@@ -364,19 +350,12 @@ func (r *RevenueRepository) GetGracePeriodRecoveryRate(ctx context.Context, sinc
 // GetRevenueByMonth returns revenue data grouped by month
 func (r *RevenueRepository) GetRevenueByMonth(ctx context.Context, months int, priceMapping map[string]float64) ([]models.RevenueByMonthMetric, error) {
 	query := `
-		WITH monthly_subs AS (
-			SELECT 
-				DATE_TRUNC('month', se.created_at) as month,
-				s.stripe_price_id,
-				COUNT(*) as count
-			FROM subscription_events se
-			JOIN subscriptions s ON se.subscription_id = s.id
-			WHERE se.event_type = 'invoice_paid'
-			AND se.created_at >= NOW() - INTERVAL '1 month' * $1
-			GROUP BY DATE_TRUNC('month', se.created_at), s.stripe_price_id
-		)
-		SELECT month, stripe_price_id, count
-		FROM monthly_subs
+		SELECT DATE_TRUNC('month', created_at) AS month,
+		       SUM(COALESCE(NULLIF(payload->>'amount_paid', '')::numeric, 0)) AS revenue
+		FROM subscription_events
+		WHERE event_type = 'invoice_paid'
+		  AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month' * ($1 - 1)
+		GROUP BY DATE_TRUNC('month', created_at)
 		ORDER BY month
 	`
 
@@ -386,65 +365,77 @@ func (r *RevenueRepository) GetRevenueByMonth(ctx context.Context, months int, p
 	}
 	defer rows.Close()
 
-	monthlyRevenue := make(map[string]float64)
+	monthly := make(map[string]*models.RevenueByMonthMetric)
 	for rows.Next() {
+		var month time.Time
+		var revenue float64
+		if err := rows.Scan(&month, &revenue); err != nil {
+			return nil, fmt.Errorf("failed to scan revenue by month row: %w", err)
+		}
+		monthKey := month.Format("2006-01")
+		monthly[monthKey] = &models.RevenueByMonthMetric{Month: monthKey, Revenue: revenue}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	mrrQuery := `
+		WITH months AS (
+			SELECT generate_series(DATE_TRUNC('month', NOW()) - INTERVAL '1 month' * ($1 - 1), DATE_TRUNC('month', NOW()), INTERVAL '1 month') AS month
+		)
+		SELECT m.month, s.stripe_price_id, COUNT(s.id)
+		FROM months m
+		LEFT JOIN subscriptions s ON s.tier = 'pro' AND s.created_at < m.month + INTERVAL '1 month'
+			AND (s.canceled_at IS NULL OR s.canceled_at >= m.month + INTERVAL '1 month')
+		GROUP BY m.month, s.stripe_price_id
+		ORDER BY m.month
+	`
+	mrrRows, err := r.db.Query(ctx, mrrQuery, months)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query monthly MRR: %w", err)
+	}
+	defer mrrRows.Close()
+	for mrrRows.Next() {
 		var month time.Time
 		var priceID *string
 		var count int
-
-		if err := rows.Scan(&month, &priceID, &count); err != nil {
-			return nil, fmt.Errorf("failed to scan revenue by month row: %w", err)
+		if err := mrrRows.Scan(&month, &priceID, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan monthly MRR row: %w", err)
 		}
-
-		monthKey := month.Format("2006-01")
+		key := month.Format("2006-01")
+		if monthly[key] == nil {
+			monthly[key] = &models.RevenueByMonthMetric{Month: key}
+		}
 		if priceID != nil {
-			if monthlyValue, ok := priceMapping[*priceID]; ok {
-				monthlyRevenue[monthKey] += monthlyValue * float64(count)
-			}
+			monthly[key].MRR += priceMapping[*priceID] * float64(count)
 		}
 	}
-
-	var result []models.RevenueByMonthMetric
-	for month, revenue := range monthlyRevenue {
-		result = append(result, models.RevenueByMonthMetric{
-			Month:   month,
-			Revenue: revenue,
-			MRR:     revenue, // Simplified - in reality would need end-of-month calculation
-		})
+	if err := mrrRows.Err(); err != nil {
+		return nil, err
+	}
+	keys := make([]string, 0, len(monthly))
+	for key := range monthly {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	result := make([]models.RevenueByMonthMetric, 0, len(keys))
+	for _, key := range keys {
+		result = append(result, *monthly[key])
 	}
 
-	return result, rows.Err()
+	return result, nil
 }
 
 // GetTotalRevenue returns total revenue from all paid invoices
-func (r *RevenueRepository) GetTotalRevenue(ctx context.Context, priceMapping map[string]float64) (float64, error) {
+func (r *RevenueRepository) GetTotalRevenue(ctx context.Context) (float64, error) {
 	query := `
-		SELECT s.stripe_price_id, COUNT(*) as count
-		FROM subscription_events se
-		JOIN subscriptions s ON se.subscription_id = s.id
-		WHERE se.event_type = 'invoice_paid'
-		GROUP BY s.stripe_price_id
+		SELECT COALESCE(SUM(COALESCE(NULLIF(payload->>'amount_paid', '')::numeric, 0)), 0)
+		FROM subscription_events
+		WHERE event_type = 'invoice_paid'
 	`
-
-	rows, err := r.db.Query(ctx, query)
-	if err != nil {
+	var totalRevenue float64
+	if err := r.db.QueryRow(ctx, query).Scan(&totalRevenue); err != nil {
 		return 0, fmt.Errorf("failed to query total revenue: %w", err)
 	}
-	defer rows.Close()
-
-	var totalRevenue float64
-	for rows.Next() {
-		var priceID *string
-		var count int
-		if err := rows.Scan(&priceID, &count); err != nil {
-			return 0, fmt.Errorf("failed to scan total revenue row: %w", err)
-		}
-		if priceID != nil {
-			if monthlyValue, ok := priceMapping[*priceID]; ok {
-				totalRevenue += monthlyValue * float64(count)
-			}
-		}
-	}
-
-	return totalRevenue, rows.Err()
+	return totalRevenue, nil
 }

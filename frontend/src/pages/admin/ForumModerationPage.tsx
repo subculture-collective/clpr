@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useToast } from '../../context/ToastContext';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 
 interface FlaggedContent {
   id: string;
@@ -31,8 +33,6 @@ function BanUserModal({ isOpen, onClose, onBan, userId, username }: BanUserModal
   const [reason, setReason] = useState('');
   const [durationDays, setDurationDays] = useState(0);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
@@ -45,13 +45,12 @@ function BanUserModal({ isOpen, onClose, onBan, userId, username }: BanUserModal
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-bold mb-4">Ban User: {username}</h3>
+    <Modal open={isOpen} onClose={onClose} title={`Ban User: ${username}`} size="md">
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Reason</label>
+            <label htmlFor="forum-ban-reason" className="block text-sm font-medium mb-2">Reason</label>
             <textarea
+              id="forum-ban-reason"
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               rows={4}
               value={reason}
@@ -61,8 +60,9 @@ function BanUserModal({ isOpen, onClose, onBan, userId, username }: BanUserModal
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Duration</label>
+            <label htmlFor="forum-ban-duration" className="block text-sm font-medium mb-2">Duration</label>
             <select
+              id="forum-ban-duration"
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               value={durationDays}
               onChange={(e) => setDurationDays(Number(e.target.value))}
@@ -75,23 +75,24 @@ function BanUserModal({ isOpen, onClose, onBan, userId, username }: BanUserModal
             </select>
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded"
+              variant="danger"
+              className="flex-1"
             >
               Ban User
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded"
+              variant="outline"
+              className="flex-1"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

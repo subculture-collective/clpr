@@ -1,0 +1,3257 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/account-types/conversions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetRecentConversions-fm",
+    "operation_id": "getApiV1AdminAccountTypesConversions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/account-types/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetAccountTypeStats-fm",
+    "operation_id": "getApiV1AdminAccountTypesStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/account-types/users/{id}/convert-to-moderator",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).ConvertToModerator-fm",
+    "operation_id": "postApiV1AdminAccountTypesUsersIdConvertToModerator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/campaigns",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).ListCampaigns-fm",
+    "operation_id": "getApiV1AdminAdsCampaigns",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/ads/campaigns",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).CreateCampaign-fm",
+    "operation_id": "postApiV1AdminAdsCampaigns",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/ads/campaigns/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).DeleteCampaign-fm",
+    "operation_id": "deleteApiV1AdminAdsCampaignsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/campaigns/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCampaign-fm",
+    "operation_id": "getApiV1AdminAdsCampaignsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/ads/campaigns/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).UpdateCampaign-fm",
+    "operation_id": "putApiV1AdminAdsCampaignsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/experiments",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).ListExperiments-fm",
+    "operation_id": "getApiV1AdminAdsExperiments",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/experiments/{id}/report",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetExperimentReport-fm",
+    "operation_id": "getApiV1AdminAdsExperimentsIdReport",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/reports/by-campaign",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCTRReportByCampaign-fm",
+    "operation_id": "getApiV1AdminAdsReportsByCampaign",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/reports/by-date",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCampaignReportByDate-fm",
+    "operation_id": "getApiV1AdminAdsReportsByDate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/reports/by-placement",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCampaignReportByPlacement-fm",
+    "operation_id": "getApiV1AdminAdsReportsByPlacement",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ads/reports/by-slot",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetCTRReportBySlot-fm",
+    "operation_id": "getApiV1AdminAdsReportsBySlot",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/ads/validate-creative",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).ValidateCreative-fm",
+    "operation_id": "postApiV1AdminAdsValidateCreative",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/analytics/alerts",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).CheckAlerts-fm",
+    "operation_id": "getApiV1AdminAnalyticsAlerts",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/analytics/content",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetContentMetrics-fm",
+    "operation_id": "getApiV1AdminAnalyticsContent",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/analytics/health",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).GetPlatformHealthMetrics-fm",
+    "operation_id": "getApiV1AdminAnalyticsHealth",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/analytics/overview",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetPlatformOverview-fm",
+    "operation_id": "getApiV1AdminAnalyticsOverview",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/analytics/trending",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).GetTrendingMetrics-fm",
+    "operation_id": "getApiV1AdminAnalyticsTrending",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/analytics/trends",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetPlatformTrends-fm",
+    "operation_id": "getApiV1AdminAnalyticsTrends",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/audit-logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuditLogHandler).ListAuditLogs-fm",
+    "operation_id": "getApiV1AdminAuditLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/audit-logs/export",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuditLogHandler).ExportAuditLogs-fm",
+    "operation_id": "getApiV1AdminAuditLogsExport",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/broadcasters/refresh-rankings",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).RefreshBroadcasterRankings-fm",
+    "operation_id": "refreshBroadcasterRankings",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/contact",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).GetContactMessages-fm",
+    "operation_id": "getApiV1AdminContact",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/contact/{id}/status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).UpdateContactMessageStatus-fm",
+    "operation_id": "putApiV1AdminContactIdStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/discovery-lists",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminListDiscoveryLists-fm",
+    "operation_id": "adminListDiscoveryLists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/discovery-lists",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminCreateDiscoveryList-fm",
+    "operation_id": "adminCreateDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/discovery-lists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminDeleteDiscoveryList-fm",
+    "operation_id": "adminDeleteDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/discovery-lists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryList-fm",
+    "operation_id": "adminGetDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/discovery-lists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminUpdateDiscoveryList-fm",
+    "operation_id": "adminUpdateDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/discovery-lists/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryListClips-fm",
+    "operation_id": "adminGetDiscoveryListClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/discovery-lists/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminAddClipToList-fm",
+    "operation_id": "adminAddClipToDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/discovery-lists/{id}/clips/reorder",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminReorderListClips-fm",
+    "operation_id": "adminReorderDiscoveryListClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/discovery-lists/{id}/clips/{clipId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminRemoveClipFromList-fm",
+    "operation_id": "adminRemoveClipFromDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/email/alerts",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetAlerts-fm",
+    "operation_id": "getApiV1AdminEmailAlerts",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/email/alerts/{id}/acknowledge",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).AcknowledgeAlert-fm",
+    "operation_id": "postApiV1AdminEmailAlertsIdAcknowledge",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/email/alerts/{id}/resolve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).ResolveAlert-fm",
+    "operation_id": "postApiV1AdminEmailAlertsIdResolve",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/email/logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).SearchEmailLogs-fm",
+    "operation_id": "getApiV1AdminEmailLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/email/metrics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetMetrics-fm",
+    "operation_id": "getApiV1AdminEmailMetrics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/email/metrics/dashboard",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetDashboardMetrics-fm",
+    "operation_id": "getApiV1AdminEmailMetricsDashboard",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/email/metrics/templates",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetTemplateMetrics-fm",
+    "operation_id": "getApiV1AdminEmailMetricsTemplates",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/forum/bans",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).GetUserBans-fm",
+    "operation_id": "getApiV1AdminForumBans",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/forum/flagged",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).GetFlaggedContent-fm",
+    "operation_id": "getApiV1AdminForumFlagged",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/forum/moderation-log",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).GetModerationLog-fm",
+    "operation_id": "getApiV1AdminForumModerationLog",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/forum/threads/{id}/delete",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).DeleteThread-fm",
+    "operation_id": "postApiV1AdminForumThreadsIdDelete",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/forum/threads/{id}/lock",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).LockThread-fm",
+    "operation_id": "postApiV1AdminForumThreadsIdLock",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/forum/threads/{id}/pin",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).PinThread-fm",
+    "operation_id": "postApiV1AdminForumThreadsIdPin",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/abuse/{userId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetUserAbuseStats-fm",
+    "operation_id": "getApiV1AdminModerationAbuseUserid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/analytics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationAnalytics-fm",
+    "operation_id": "getApiV1AdminModerationAnalytics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/appeals",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetAppeals-fm",
+    "operation_id": "getApiV1AdminModerationAppeals",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderation/appeals/{id}/resolve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ResolveAppeal-fm",
+    "operation_id": "postApiV1AdminModerationAppealsIdResolve",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/audit",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationAuditLogs-fm",
+    "operation_id": "getApiV1AdminModerationAudit",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderation/bulk",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).BulkModerate-fm",
+    "operation_id": "postApiV1AdminModerationBulk",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/events",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetPendingEvents-fm",
+    "operation_id": "getApiV1AdminModerationEvents",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderation/events/{id}/process",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ProcessEvent-fm",
+    "operation_id": "postApiV1AdminModerationEventsIdProcess",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderation/events/{id}/review",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).MarkEventReviewed-fm",
+    "operation_id": "postApiV1AdminModerationEventsIdReview",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/events/{type}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetEventsByType-fm",
+    "operation_id": "getApiV1AdminModerationEventsType",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/queue",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationQueue-fm",
+    "operation_id": "getApiV1AdminModerationQueue",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/queue/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationStats-fm",
+    "operation_id": "getApiV1AdminModerationQueueStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetEventStats-fm",
+    "operation_id": "getApiV1AdminModerationStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/moderation/toxicity/metrics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetToxicityMetrics-fm",
+    "operation_id": "getApiV1AdminModerationToxicityMetrics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderation/{id}/approve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ApproveContent-fm",
+    "operation_id": "postApiV1AdminModerationIdApprove",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderation/{id}/reject",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).RejectContent-fm",
+    "operation_id": "postApiV1AdminModerationIdReject",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/nsfw/batch-detect",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).BatchDetect-fm",
+    "operation_id": "postApiV1AdminNsfwBatchDetect",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/nsfw/config",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetConfig-fm",
+    "operation_id": "getApiV1AdminNsfwConfig",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/nsfw/detect",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).DetectImage-fm",
+    "operation_id": "postApiV1AdminNsfwDetect",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/nsfw/health",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetHealthCheck-fm",
+    "operation_id": "getApiV1AdminNsfwHealth",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/nsfw/metrics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetMetrics-fm",
+    "operation_id": "getApiV1AdminNsfwMetrics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/playlist-scripts",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).ListScripts-fm",
+    "operation_id": "getApiV1AdminPlaylistScripts",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/playlist-scripts",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).CreateScript-fm",
+    "operation_id": "postApiV1AdminPlaylistScripts",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/playlist-scripts/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).DeleteScript-fm",
+    "operation_id": "deleteApiV1AdminPlaylistScriptsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/playlist-scripts/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).UpdateScript-fm",
+    "operation_id": "putApiV1AdminPlaylistScriptsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/playlist-scripts/{id}/generate",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).GeneratePlaylist-fm",
+    "operation_id": "postApiV1AdminPlaylistScriptsIdGenerate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/reports",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).ListReports-fm",
+    "operation_id": "getApiV1AdminReports",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/reports/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).GetReport-fm",
+    "operation_id": "getApiV1AdminReportsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/reports/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).UpdateReport-fm",
+    "operation_id": "putApiV1AdminReportsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/revenue",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RevenueHandler).GetRevenueMetrics-fm",
+    "operation_id": "getApiV1AdminRevenue",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/submissions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).ListPendingSubmissions-fm",
+    "operation_id": "getApiV1AdminSubmissions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/submissions/bulk-approve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).BulkApproveSubmissions-fm",
+    "operation_id": "postApiV1AdminSubmissionsBulkApprove",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/submissions/bulk-reject",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).BulkRejectSubmissions-fm",
+    "operation_id": "postApiV1AdminSubmissionsBulkReject",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/submissions/rejection-reasons",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).GetRejectionReasonTemplates-fm",
+    "operation_id": "getApiV1AdminSubmissionsRejectionReasons",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/submissions/{id}/approve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).ApproveSubmission-fm",
+    "operation_id": "postApiV1AdminSubmissionsIdApprove",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/submissions/{id}/reject",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).RejectSubmission-fm",
+    "operation_id": "postApiV1AdminSubmissionsIdReject",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/sync/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipSyncHandler).TriggerSync-fm",
+    "operation_id": "postApiV1AdminSyncClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/sync/status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipSyncHandler).GetSyncStatus-fm",
+    "operation_id": "getApiV1AdminSyncStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tags",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).CreateTag-fm",
+    "operation_id": "postApiV1AdminTags",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tags/blacklist",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).ListBlacklistedTags-fm",
+    "operation_id": "getApiV1AdminTagsBlacklist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tags/blacklist",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).AddBlacklistedTag-fm",
+    "operation_id": "postApiV1AdminTagsBlacklist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/tags/blacklist/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).RemoveBlacklistedTag-fm",
+    "operation_id": "deleteApiV1AdminTagsBlacklistId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/tags/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).DeleteTag-fm",
+    "operation_id": "deleteApiV1AdminTagsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/tags/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).UpdateTag-fm",
+    "operation_id": "putApiV1AdminTagsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/users",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).ListUsers-fm",
+    "operation_id": "getApiV1AdminUsers",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/users/{id}/badges",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).AwardBadge-fm",
+    "operation_id": "postApiV1AdminUsersIdBadges",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/users/{id}/badges/{badgeId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).RemoveBadge-fm",
+    "operation_id": "deleteApiV1AdminUsersIdBadgesBadgeid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/users/{id}/ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).BanUser-fm",
+    "operation_id": "postApiV1AdminUsersIdBan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/users/{id}/comment-suspension-history",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).GetCommentSuspensionHistory-fm",
+    "operation_id": "getApiV1AdminUsersIdCommentSuspensionHistory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/users/{id}/karma",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UpdateUserKarma-fm",
+    "operation_id": "patchApiV1AdminUsersIdKarma",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/users/{id}/lift-comment-suspension",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).LiftCommentSuspension-fm",
+    "operation_id": "postApiV1AdminUsersIdLiftCommentSuspension",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/users/{id}/role",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UpdateUserRole-fm",
+    "operation_id": "patchApiV1AdminUsersIdRole",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/users/{id}/suspend-comments",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).SuspendCommentPrivileges-fm",
+    "operation_id": "postApiV1AdminUsersIdSuspendComments",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/users/{id}/toggle-comment-review",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).ToggleCommentReview-fm",
+    "operation_id": "postApiV1AdminUsersIdToggleCommentReview",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/users/{id}/unban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UnbanUser-fm",
+    "operation_id": "postApiV1AdminUsersIdUnban",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/verification/applications",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).ListApplications-fm",
+    "operation_id": "getApiV1AdminVerificationApplications",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/verification/applications/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplicationByID-fm",
+    "operation_id": "getApiV1AdminVerificationApplicationsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/verification/applications/{id}/review",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).ReviewApplication-fm",
+    "operation_id": "postApiV1AdminVerificationApplicationsIdReview",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/verification/audit-logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetAuditLogs-fm",
+    "operation_id": "getApiV1AdminVerificationAuditLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/verification/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplicationStats-fm",
+    "operation_id": "getApiV1AdminVerificationStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/verification/users/{user_id}/audit-logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetUserAuditHistory-fm",
+    "operation_id": "getApiV1AdminVerificationUsersUserIdAuditLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/webhooks/dlq",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookDLQHandler).GetDeadLetterQueue-fm",
+    "operation_id": "getApiV1AdminWebhooksDlq",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/webhooks/dlq/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookDLQHandler).DeleteDeadLetterQueueItem-fm",
+    "operation_id": "deleteApiV1AdminWebhooksDlqId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/webhooks/dlq/{id}/replay",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookDLQHandler).ReplayDeadLetterQueueItem-fm",
+    "operation_id": "postApiV1AdminWebhooksDlqIdReplay",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ads/select",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).SelectAd-fm",
+    "operation_id": "getApiV1AdsSelect",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ads/track/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).TrackImpression-fm",
+    "operation_id": "postApiV1AdsTrackId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ads/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdHandler).GetAd-fm",
+    "operation_id": "getApiV1AdsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).Logout-fm",
+    "operation_id": "logout",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).GetCurrentUser-fm",
+    "operation_id": "getCurrentUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/disable",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).DisableMFA-fm",
+    "operation_id": "disableMFA",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/enroll",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).StartEnrollment-fm",
+    "operation_id": "startMFAEnrollment",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/regenerate-backup-codes",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).RegenerateBackupCodes-fm",
+    "operation_id": "regenerateBackupCodes",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/mfa/status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).GetStatus-fm",
+    "operation_id": "getMFAStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/mfa/trusted-devices",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).GetTrustedDevices-fm",
+    "operation_id": "getTrustedDevices",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/auth/mfa/trusted-devices/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).RevokeTrustedDevice-fm",
+    "operation_id": "revokeTrustedDevice",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/verify-enrollment",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).VerifyEnrollment-fm",
+    "operation_id": "verifyMFAEnrollment",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/mfa/verify-login",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).VerifyLogin-fm",
+    "operation_id": "verifyMFALogin",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).RefreshToken-fm",
+    "operation_id": "refreshToken",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/test-login",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).TestLogin-fm",
+    "operation_id": "testLogin",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/twitch",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).InitiateOAuth-fm",
+    "operation_id": "initiateTwitchOAuth",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/twitch/callback",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).HandleCallback-fm",
+    "operation_id": "handleTwitchCallback",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/twitch/callback",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).HandlePKCECallback-fm",
+    "operation_id": "handlePKCECallback",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/twitch/reauthorize",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).ReauthorizeTwitch-fm",
+    "operation_id": "reauthorizeTwitch",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/badges",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetBadgeDefinitions-fm",
+    "operation_id": "getBadgeDefinitions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/broadcasters/live",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*LiveStatusHandler).ListLiveBroadcasters-fm",
+    "operation_id": "getApiV1BroadcastersLive",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/broadcasters/popular",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).ListPopularBroadcasters-fm",
+    "operation_id": "getApiV1BroadcastersPopular",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/broadcasters/rankings",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).GetBroadcasterRankings-fm",
+    "operation_id": "getApiV1BroadcastersRankings",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/broadcasters/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).GetBroadcasterProfile-fm",
+    "operation_id": "getApiV1BroadcastersId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/broadcasters/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).ListBroadcasterClips-fm",
+    "operation_id": "getApiV1BroadcastersIdClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/broadcasters/{id}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).UnfollowBroadcaster-fm",
+    "operation_id": "deleteApiV1BroadcastersIdFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/broadcasters/{id}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).FollowBroadcaster-fm",
+    "operation_id": "postApiV1BroadcastersIdFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/broadcasters/{id}/live-status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*LiveStatusHandler).GetBroadcasterLiveStatus-fm",
+    "operation_id": "getApiV1BroadcastersIdLiveStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/categories",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).ListCategories-fm",
+    "operation_id": "getApiV1Categories",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/categories/{slug}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).GetCategory-fm",
+    "operation_id": "getApiV1CategoriesSlug",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/categories/{slug}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).ListCategoryClips-fm",
+    "operation_id": "getApiV1CategoriesSlugClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/categories/{slug}/games",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CategoryHandler).ListCategoryGames-fm",
+    "operation_id": "getApiV1CategoriesSlugGames",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).ListChannels-fm",
+    "operation_id": "getApiV1ChatChannels",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).CreateChannel-fm",
+    "operation_id": "postApiV1ChatChannels",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chat/channels/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).DeleteChannel-fm",
+    "operation_id": "deleteApiV1ChatChannelsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).GetChannel-fm",
+    "operation_id": "getApiV1ChatChannelsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/chat/channels/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).UpdateChannel-fm",
+    "operation_id": "patchApiV1ChatChannelsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels/{id}/ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).BanUser-fm",
+    "operation_id": "postApiV1ChatChannelsIdBan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chat/channels/{id}/ban/{user_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).UnbanUser-fm",
+    "operation_id": "deleteApiV1ChatChannelsIdBanUserId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}/check-ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).CheckUserBan-fm",
+    "operation_id": "getApiV1ChatChannelsIdCheckBan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}/members",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).ListChannelMembers-fm",
+    "operation_id": "getApiV1ChatChannelsIdMembers",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels/{id}/members",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).AddChannelMember-fm",
+    "operation_id": "postApiV1ChatChannelsIdMembers",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chat/channels/{id}/members/{user_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).RemoveChannelMember-fm",
+    "operation_id": "deleteApiV1ChatChannelsIdMembersUserId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/chat/channels/{id}/members/{user_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).UpdateChannelMemberRole-fm",
+    "operation_id": "patchApiV1ChatChannelsIdMembersUserId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}/messages",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).GetMessageHistory-fm",
+    "operation_id": "getApiV1ChatChannelsIdMessages",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}/moderation-log",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).GetModerationLog-fm",
+    "operation_id": "getApiV1ChatChannelsIdModerationLog",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels/{id}/mute",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).MuteUser-fm",
+    "operation_id": "postApiV1ChatChannelsIdMute",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}/role",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).GetCurrentUserRole-fm",
+    "operation_id": "getApiV1ChatChannelsIdRole",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels/{id}/timeout",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).TimeoutUser-fm",
+    "operation_id": "postApiV1ChatChannelsIdTimeout",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{id}/ws",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).HandleConnection-fm",
+    "operation_id": "getApiV1ChatChannelsIdWs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/health",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).GetHealthCheck-fm",
+    "operation_id": "getApiV1ChatHealth",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chat/messages/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ChatHandler).DeleteMessage-fm",
+    "operation_id": "deleteApiV1ChatMessagesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebSocketHandler).GetChannelStats-fm",
+    "operation_id": "getApiV1ChatStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).ListClips-fm",
+    "operation_id": "listClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/batch-media",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).BatchGetClipMedia-fm",
+    "operation_id": "batchGetClipMedia",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/request",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipSyncHandler).RequestClip-fm",
+    "operation_id": "requestClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/clips/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).DeleteClip-fm",
+    "operation_id": "deleteClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetClip-fm",
+    "operation_id": "getClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/clips/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).UpdateClip-fm",
+    "operation_id": "updateClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/analytics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetClipAnalytics-fm",
+    "operation_id": "getClipAnalytics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/{id}/backfill",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).RequestClipBackfill-fm",
+    "operation_id": "postApiV1ClipsIdBackfill",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/comments",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).ListComments-fm",
+    "operation_id": "listClipComments",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/{id}/comments",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).CreateComment-fm",
+    "operation_id": "createComment",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/engagement",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).GetContentEngagementScore-fm",
+    "operation_id": "getClipEngagement",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/clips/{id}/favorite",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).RemoveFavorite-fm",
+    "operation_id": "removeFavorite",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/{id}/favorite",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).AddFavorite-fm",
+    "operation_id": "addFavorite",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/media",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetClipMedia-fm",
+    "operation_id": "getApiV1ClipsIdMedia",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/clips/{id}/metadata",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).UpdateClipMetadata-fm",
+    "operation_id": "updateClipMetadata",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/processing-status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetClipProcessingStatus-fm",
+    "operation_id": "getApiV1ClipsIdProcessingStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/progress",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).GetResumePosition-fm",
+    "operation_id": "getResumePosition",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/related",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetRelatedClips-fm",
+    "operation_id": "getRelatedClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/tags",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).GetClipTags-fm",
+    "operation_id": "getClipTags",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/{id}/tags",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).AddTagsToClip-fm",
+    "operation_id": "addTagsToClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/clips/{id}/tags/{slug}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).RemoveTagFromClip-fm",
+    "operation_id": "removeTagFromClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/{id}/track-view",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).TrackClipView-fm",
+    "operation_id": "trackClipView",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/clips/{id}/visibility",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).UpdateClipVisibility-fm",
+    "operation_id": "updateClipVisibility",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/clips/{id}/vote",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).VoteOnClip-fm",
+    "operation_id": "voteOnClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/comments/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).DeleteComment-fm",
+    "operation_id": "deleteComment",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/comments/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).UpdateComment-fm",
+    "operation_id": "updateComment",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/comments/{id}/replies",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).GetReplies-fm",
+    "operation_id": "getCommentReplies",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/comments/{id}/vote",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).VoteOnComment-fm",
+    "operation_id": "voteOnComment",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).ListCommunities-fm",
+    "operation_id": "getApiV1Communities",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).CreateCommunity-fm",
+    "operation_id": "postApiV1Communities",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/search",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).SearchCommunities-fm",
+    "operation_id": "getApiV1CommunitiesSearch",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).DeleteCommunity-fm",
+    "operation_id": "deleteApiV1CommunitiesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetCommunity-fm",
+    "operation_id": "getApiV1CommunitiesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/communities/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UpdateCommunity-fm",
+    "operation_id": "putApiV1CommunitiesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities/{id}/ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).BanMember-fm",
+    "operation_id": "postApiV1CommunitiesIdBan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{id}/ban/{userId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UnbanMember-fm",
+    "operation_id": "deleteApiV1CommunitiesIdBanUserid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{id}/bans",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetBannedMembers-fm",
+    "operation_id": "getApiV1CommunitiesIdBans",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).AddClipToCommunity-fm",
+    "operation_id": "postApiV1CommunitiesIdClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{id}/clips/{clipId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).RemoveClipFromCommunity-fm",
+    "operation_id": "deleteApiV1CommunitiesIdClipsClipid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{id}/discussions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).ListDiscussions-fm",
+    "operation_id": "getApiV1CommunitiesIdDiscussions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities/{id}/discussions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).CreateDiscussion-fm",
+    "operation_id": "postApiV1CommunitiesIdDiscussions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/communities/{id}/discussions/{discussionId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).DeleteDiscussion-fm",
+    "operation_id": "deleteApiV1CommunitiesIdDiscussionsDiscussionid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{id}/discussions/{discussionId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetDiscussion-fm",
+    "operation_id": "getApiV1CommunitiesIdDiscussionsDiscussionid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/communities/{id}/discussions/{discussionId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UpdateDiscussion-fm",
+    "operation_id": "putApiV1CommunitiesIdDiscussionsDiscussionid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{id}/feed",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetCommunityFeed-fm",
+    "operation_id": "getApiV1CommunitiesIdFeed",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities/{id}/join",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).JoinCommunity-fm",
+    "operation_id": "postApiV1CommunitiesIdJoin",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities/{id}/leave",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).LeaveCommunity-fm",
+    "operation_id": "postApiV1CommunitiesIdLeave",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{id}/members",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).GetMembers-fm",
+    "operation_id": "getApiV1CommunitiesIdMembers",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/communities/{id}/members/{userId}/role",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommunityHandler).UpdateMemberRole-fm",
+    "operation_id": "putApiV1CommunitiesIdMembersUseridRole",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/config",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ConfigHandler).GetPublicConfig-fm",
+    "operation_id": "getPublicConfig",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/contact",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).SubmitContactMessage-fm",
+    "operation_id": "postApiV1Contact",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/me/export/download/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).DownloadExport-fm",
+    "operation_id": "downloadCreatorExport",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/creators/me/export/request",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).RequestExport-fm",
+    "operation_id": "requestCreatorExport",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/me/export/status/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).GetExportStatus-fm",
+    "operation_id": "getCreatorExportStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/me/exports",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).ListExportRequests-fm",
+    "operation_id": "listCreatorExports",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/{creator}/analytics/audience",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorAudienceInsights-fm",
+    "operation_id": "getCreatorAudienceInsights",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/{creator}/analytics/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorTopClips-fm",
+    "operation_id": "getCreatorTopClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/{creator}/analytics/overview",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorAnalyticsOverview-fm",
+    "operation_id": "getCreatorAnalyticsOverview",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/{creator}/analytics/trends",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetCreatorTrends-fm",
+    "operation_id": "getCreatorAnalyticsTrends",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/creators/{creator}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).ListCreatorClips-fm",
+    "operation_id": "listCreatorClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/discovery-lists",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).ListDiscoveryLists-fm",
+    "operation_id": "listDiscoveryLists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/discovery-lists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryList-fm",
+    "operation_id": "getDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/discovery-lists/{id}/bookmark",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).UnbookmarkDiscoveryList-fm",
+    "operation_id": "unbookmarkDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/discovery-lists/{id}/bookmark",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).BookmarkDiscoveryList-fm",
+    "operation_id": "bookmarkDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/discovery-lists/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetDiscoveryListClips-fm",
+    "operation_id": "getDiscoveryListClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/discovery-lists/{id}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).UnfollowDiscoveryList-fm",
+    "operation_id": "unfollowDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/discovery-lists/{id}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).FollowDiscoveryList-fm",
+    "operation_id": "followDiscoveryList",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/docs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DocsHandler).GetDocsList-fm",
+    "operation_id": "getApiV1Docs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/docs/content/{path}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DocsHandler).GetDoc-fm",
+    "operation_id": "getApiV1DocsContentPath",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/docs/search",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DocsHandler).SearchDocs-fm",
+    "operation_id": "getApiV1DocsSearch",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/docs/{path}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DocsHandler).GetDoc-fm",
+    "operation_id": "getApiV1DocsPath",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/events",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EventHandler).TrackEvent-fm",
+    "operation_id": "postApiV1Events",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/favorites",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FavoriteHandler).ListUserFavorites-fm",
+    "operation_id": "listUserFavorites",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feeds/analytics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EventHandler).GetFeedMetrics-fm",
+    "operation_id": "getApiV1FeedsAnalytics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feeds/analytics/hourly",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EventHandler).GetHourlyMetrics-fm",
+    "operation_id": "getApiV1FeedsAnalyticsHourly",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feeds/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFilteredClips-fm",
+    "operation_id": "getApiV1FeedsClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feeds/discover",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).DiscoverFeeds-fm",
+    "operation_id": "getApiV1FeedsDiscover",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feeds/following",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFollowingFeed-fm",
+    "operation_id": "getApiV1FeedsFollowing",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feeds/search",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).SearchFeeds-fm",
+    "operation_id": "getApiV1FeedsSearch",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/analytics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetForumAnalytics-fm",
+    "operation_id": "getApiV1ForumAnalytics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/forum/flag",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumModerationHandler).FlagContent-fm",
+    "operation_id": "postApiV1ForumFlag",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/helpful-replies",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetMostHelpfulReplies-fm",
+    "operation_id": "getApiV1ForumHelpfulReplies",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/popular",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetPopularDiscussions-fm",
+    "operation_id": "getApiV1ForumPopular",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/forum/replies/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).DeleteReply-fm",
+    "operation_id": "deleteApiV1ForumRepliesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/forum/replies/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).UpdateReply-fm",
+    "operation_id": "patchApiV1ForumRepliesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/forum/replies/{id}/vote",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).VoteOnReply-fm",
+    "operation_id": "postApiV1ForumRepliesIdVote",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/replies/{id}/votes",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetReplyVotes-fm",
+    "operation_id": "getApiV1ForumRepliesIdVotes",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/search",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).SearchThreads-fm",
+    "operation_id": "getApiV1ForumSearch",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/threads",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).ListThreads-fm",
+    "operation_id": "getApiV1ForumThreads",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/forum/threads",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).CreateThread-fm",
+    "operation_id": "postApiV1ForumThreads",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/threads/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetThread-fm",
+    "operation_id": "getApiV1ForumThreadsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/forum/threads/{id}/replies",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).CreateReply-fm",
+    "operation_id": "postApiV1ForumThreadsIdReplies",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/forum/users/{id}/reputation",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ForumHandler).GetUserReputation-fm",
+    "operation_id": "getApiV1ForumUsersIdReputation",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/games/trending",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetTrendingGames-fm",
+    "operation_id": "getApiV1GamesTrending",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/games/{gameId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetGame-fm",
+    "operation_id": "getApiV1GamesGameid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/games/{gameId}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).ListGameClips-fm",
+    "operation_id": "getApiV1GamesGameidClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/games/{gameId}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).UnfollowGame-fm",
+    "operation_id": "deleteApiV1GamesGameidFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/games/{gameId}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).FollowGame-fm",
+    "operation_id": "postApiV1GamesGameidFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func6",
+    "operation_id": "getApiV1Health",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/leaderboards/{type}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetLeaderboard-fm",
+    "operation_id": "getReputationLeaderboard",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ApplicationLogHandler).CreateLog-fm",
+    "operation_id": "submitLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/logs/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ApplicationLogHandler).GetLogStats-fm",
+    "operation_id": "getLogStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/appeals",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetUserAppeals-fm",
+    "operation_id": "getUserAppeals",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/moderation/appeals",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).CreateAppeal-fm",
+    "operation_id": "createAppeal",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/audit-logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuditLogHandler).ListModerationAuditLogs-fm",
+    "operation_id": "listModerationAuditLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/audit-logs/export",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuditLogHandler).ExportModerationAuditLogs-fm",
+    "operation_id": "exportModerationAuditLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/audit-logs/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuditLogHandler).GetModerationAuditLog-fm",
+    "operation_id": "getModerationAuditLog",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/moderation/ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).CreateBan-fm",
+    "operation_id": "createCommunityBan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/ban-templates",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BanReasonTemplateHandler).ListTemplates-fm",
+    "operation_id": "listBanTemplates",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/moderation/ban-templates",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BanReasonTemplateHandler).CreateTemplate-fm",
+    "operation_id": "createBanTemplate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/ban-templates/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BanReasonTemplateHandler).GetUsageStats-fm",
+    "operation_id": "getBanTemplateStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/moderation/ban-templates/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BanReasonTemplateHandler).DeleteTemplate-fm",
+    "operation_id": "deleteBanTemplate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/ban-templates/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BanReasonTemplateHandler).GetTemplate-fm",
+    "operation_id": "getBanTemplate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/moderation/ban-templates/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BanReasonTemplateHandler).UpdateTemplate-fm",
+    "operation_id": "updateBanTemplate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/moderation/ban/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).RevokeBan-fm",
+    "operation_id": "revokeBan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/ban/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetBanDetails-fm",
+    "operation_id": "getBanDetails",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/bans",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetBans-fm",
+    "operation_id": "getBans",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/moderation/moderators",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).ListModerators-fm",
+    "operation_id": "listModerators",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/moderation/moderators",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).AddModerator-fm",
+    "operation_id": "addModerator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/moderation/moderators/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).RemoveModerator-fm",
+    "operation_id": "removeModerator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/moderation/moderators/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).UpdateModeratorPermissions-fm",
+    "operation_id": "updateModeratorPermissions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/moderation/sync-bans",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).SyncBans-fm",
+    "operation_id": "syncBans",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/moderation/twitch/ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).TwitchUnbanUser-fm",
+    "operation_id": "twitchUnbanUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/moderation/twitch/ban",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).TwitchBanUser-fm",
+    "operation_id": "twitchBanUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).ListNotifications-fm",
+    "operation_id": "listNotifications",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/count",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).GetUnreadCount-fm",
+    "operation_id": "getUnreadNotificationCount",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/preferences",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).GetPreferences-fm",
+    "operation_id": "getNotificationPreferences",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/notifications/preferences",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).UpdatePreferences-fm",
+    "operation_id": "updateNotificationPreferences",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/preferences/reset",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).ResetPreferences-fm",
+    "operation_id": "resetNotificationPreferences",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/notifications/read-all",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).MarkAllAsRead-fm",
+    "operation_id": "markAllNotificationsRead",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/register",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).RegisterDeviceToken-fm",
+    "operation_id": "registerNotificationDevice",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/notifications/unregister",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).UnregisterDeviceToken-fm",
+    "operation_id": "unregisterNotificationDevice",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/unsubscribe",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).Unsubscribe-fm",
+    "operation_id": "unsubscribeNotificationEmail",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/notifications/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).DeleteNotification-fm",
+    "operation_id": "deleteNotification",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/notifications/{id}/read",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NotificationHandler).MarkAsRead-fm",
+    "operation_id": "markNotificationRead",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ping",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func7",
+    "operation_id": "ping",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlist-scripts",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).ListMyScripts-fm",
+    "operation_id": "listMyPlaylistScripts",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlist-scripts",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).CreateMyScript-fm",
+    "operation_id": "createMyPlaylistScript",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/playlist-scripts/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).DeleteMyScript-fm",
+    "operation_id": "deleteMyPlaylistScript",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/playlist-scripts/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).UpdateMyScript-fm",
+    "operation_id": "updateMyPlaylistScript",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlist-scripts/{id}/generate",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistScriptHandler).GenerateMyPlaylist-fm",
+    "operation_id": "generateMyPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListUserPlaylists-fm",
+    "operation_id": "listUserPlaylists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).CreatePlaylist-fm",
+    "operation_id": "createPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/bookmarks",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListBookmarkedPlaylists-fm",
+    "operation_id": "listBookmarkedPlaylists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/featured",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListFeaturedPlaylists-fm",
+    "operation_id": "listFeaturedPlaylists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/public",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ListPublicPlaylists-fm",
+    "operation_id": "listPublicPlaylists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/share/{token}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetPlaylistByShareToken-fm",
+    "operation_id": "getPlaylistByShareToken",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/today",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetPlaylistOfTheDay-fm",
+    "operation_id": "getPlaylistOfTheDay",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/playlists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).DeletePlaylist-fm",
+    "operation_id": "deletePlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetPlaylist-fm",
+    "operation_id": "getPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/playlists/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UpdatePlaylist-fm",
+    "operation_id": "updatePlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/playlists/{id}/bookmark",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UnbookmarkPlaylist-fm",
+    "operation_id": "unbookmarkPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists/{id}/bookmark",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).BookmarkPlaylist-fm",
+    "operation_id": "bookmarkPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).AddClipsToPlaylist-fm",
+    "operation_id": "addPlaylistClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/playlists/{id}/clips/order",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).ReorderPlaylistClips-fm",
+    "operation_id": "reorderPlaylistClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/playlists/{id}/clips/{clip_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).RemoveClipFromPlaylist-fm",
+    "operation_id": "removePlaylistClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/{id}/collaborators",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetCollaborators-fm",
+    "operation_id": "listPlaylistCollaborators",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists/{id}/collaborators",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).AddCollaborator-fm",
+    "operation_id": "addPlaylistCollaborator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/playlists/{id}/collaborators/{user_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).RemoveCollaborator-fm",
+    "operation_id": "removePlaylistCollaborator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/playlists/{id}/collaborators/{user_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UpdateCollaboratorPermission-fm",
+    "operation_id": "updatePlaylistCollaborator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists/{id}/copy",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).CopyPlaylist-fm",
+    "operation_id": "copyPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/playlists/{id}/like",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).UnlikePlaylist-fm",
+    "operation_id": "unlikePlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists/{id}/like",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).LikePlaylist-fm",
+    "operation_id": "likePlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/playlists/{id}/share-link",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).GetShareLink-fm",
+    "operation_id": "getPlaylistShareLink",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/playlists/{id}/track-share",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PlaylistHandler).TrackShare-fm",
+    "operation_id": "trackPlaylistShare",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/queue",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).ClearQueue-fm",
+    "operation_id": "deleteApiV1Queue",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/queue",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).GetQueue-fm",
+    "operation_id": "getApiV1Queue",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/queue",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).AddToQueue-fm",
+    "operation_id": "postApiV1Queue",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/queue/convert-to-playlist",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).ConvertToPlaylist-fm",
+    "operation_id": "postApiV1QueueConvertToPlaylist",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/queue/count",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).GetQueueCount-fm",
+    "operation_id": "getApiV1QueueCount",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/queue/reorder",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).ReorderQueue-fm",
+    "operation_id": "patchApiV1QueueReorder",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/queue/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).RemoveFromQueue-fm",
+    "operation_id": "deleteApiV1QueueId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/queue/{id}/played",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*QueueHandler).MarkAsPlayed-fm",
+    "operation_id": "postApiV1QueueIdPlayed",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/recommendations/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).GetRecommendations-fm",
+    "operation_id": "getApiV1RecommendationsClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/recommendations/feedback",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).SubmitFeedback-fm",
+    "operation_id": "postApiV1RecommendationsFeedback",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/recommendations/onboarding",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).CompleteOnboarding-fm",
+    "operation_id": "postApiV1RecommendationsOnboarding",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/recommendations/preferences",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).GetPreferences-fm",
+    "operation_id": "getApiV1RecommendationsPreferences",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/recommendations/preferences",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).UpdatePreferences-fm",
+    "operation_id": "putApiV1RecommendationsPreferences",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/recommendations/track-view/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RecommendationHandler).TrackView-fm",
+    "operation_id": "postApiV1RecommendationsTrackViewId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/reports",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReportHandler).SubmitReport-fm",
+    "operation_id": "submitReport",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scraped-clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).ListScrapedClips-fm",
+    "operation_id": "listScrapedClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).Search-fm",
+    "operation_id": "search",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/analytics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetSearchAnalytics-fm",
+    "operation_id": "getSearchAnalytics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/failed",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetFailedSearches-fm",
+    "operation_id": "getFailedSearches",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/history",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetSearchHistory-fm",
+    "operation_id": "getSearchHistory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/scores",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).SearchWithScores-fm",
+    "operation_id": "searchWithScores",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/suggestions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetSuggestions-fm",
+    "operation_id": "getSearchSuggestions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/trending",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetTrendingSearches-fm",
+    "operation_id": "getTrendingSearches",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/streamer-clip-rooms/{channel}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).GetRoom-fm",
+    "operation_id": "getApiV1StreamerClipRoomsChannel",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/items",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).ListItems-fm",
+    "operation_id": "getApiV1StreamerClipRoomsChannelItems",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/items/order",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).ReorderItems-fm",
+    "operation_id": "putApiV1StreamerClipRoomsChannelItemsOrder",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).ApproveItem-fm",
+    "operation_id": "postApiV1StreamerClipRoomsChannelItemsItemidApprove",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).RejectItem-fm",
+    "operation_id": "postApiV1StreamerClipRoomsChannelItemsItemidReject",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/start",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).StartRoom-fm",
+    "operation_id": "postApiV1StreamerClipRoomsChannelStart",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/stop",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).StopRoom-fm",
+    "operation_id": "postApiV1StreamerClipRoomsChannelStop",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/ws",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).WebSocket-fm",
+    "operation_id": "getApiV1StreamerClipRoomsChannelWs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/streams/following",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).GetFollowedStreamers-fm",
+    "operation_id": "getApiV1StreamsFollowing",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/streams/{streamer}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).GetStreamStatus-fm",
+    "operation_id": "getApiV1StreamsStreamer",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/streams/{streamer}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).UnfollowStreamer-fm",
+    "operation_id": "deleteApiV1StreamsStreamerFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/streams/{streamer}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).FollowStreamer-fm",
+    "operation_id": "postApiV1StreamsStreamerFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/streams/{streamer}/follow-status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamHandler).GetStreamFollowStatus-fm",
+    "operation_id": "getApiV1StreamsStreamerFollowStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/submissions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).GetUserSubmissions-fm",
+    "operation_id": "getUserSubmissions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/submissions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).SubmitClip-fm",
+    "operation_id": "submitClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/submissions/check/{clip_id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).CheckClipStatus-fm",
+    "operation_id": "checkClipStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/submissions/metadata",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).GetClipMetadata-fm",
+    "operation_id": "getClipMetadata",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/submissions/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).GetSubmissionStats-fm",
+    "operation_id": "getSubmissionStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subscriptions/cancel",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CancelSubscription-fm",
+    "operation_id": "postApiV1SubscriptionsCancel",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subscriptions/change-plan",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).ChangeSubscriptionPlan-fm",
+    "operation_id": "postApiV1SubscriptionsChangePlan",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subscriptions/checkout",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CreateCheckoutSession-fm",
+    "operation_id": "postApiV1SubscriptionsCheckout",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subscriptions/invoices",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetInvoices-fm",
+    "operation_id": "getApiV1SubscriptionsInvoices",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subscriptions/me",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetSubscription-fm",
+    "operation_id": "getApiV1SubscriptionsMe",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subscriptions/portal",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CreatePortalSession-fm",
+    "operation_id": "postApiV1SubscriptionsPortal",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/subscriptions/reactivate",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).ReactivateSubscription-fm",
+    "operation_id": "postApiV1SubscriptionsReactivate",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tags",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).ListTags-fm",
+    "operation_id": "listTags",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tags/search",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).SearchTags-fm",
+    "operation_id": "searchTags",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tags/{slug}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).GetTag-fm",
+    "operation_id": "getTag",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tags/{slug}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).GetClipsByTag-fm",
+    "operation_id": "getClipsByTag",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/twitch/auth",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TwitchOAuthHandler).RevokeTwitchAuth-fm",
+    "operation_id": "deleteApiV1TwitchAuth",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/twitch/auth/status",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TwitchOAuthHandler).GetTwitchAuthStatus-fm",
+    "operation_id": "getApiV1TwitchAuthStatus",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/twitch/oauth/authorize",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TwitchOAuthHandler).InitiateTwitchOAuth-fm",
+    "operation_id": "getApiV1TwitchOauthAuthorize",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/twitch/oauth/callback",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TwitchOAuthHandler).TwitchOAuthCallback-fm",
+    "operation_id": "getApiV1TwitchOauthCallback",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/autocomplete",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).SearchUsersAutocomplete-fm",
+    "operation_id": "searchUsersAutocomplete",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/by-username/{username}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserByUsername-fm",
+    "operation_id": "getUserByUsername",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/claim-account",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).ClaimAccount-fm",
+    "operation_id": "claimAccount",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/blocked",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetBlockedUsers-fm",
+    "operation_id": "getBlockedUsers",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/consent",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ConsentHandler).GetConsent-fm",
+    "operation_id": "getConsent",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/me/consent",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ConsentHandler).SaveConsent-fm",
+    "operation_id": "saveConsent",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/me/convert-to-broadcaster",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).ConvertToBroadcaster-fm",
+    "operation_id": "postApiV1UsersMeConvertToBroadcaster",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/discovery-list-follows",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetUserFollowedLists-fm",
+    "operation_id": "getUserFollowedDiscoveryLists",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/email-logs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EmailMetricsHandler).GetUserEmailLogs-fm",
+    "operation_id": "getUserEmailLogs",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/me/profile",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserSettingsHandler).UpdateProfile-fm",
+    "operation_id": "updateProfile",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/settings",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserSettingsHandler).GetSettings-fm",
+    "operation_id": "getSettings",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/me/settings",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserSettingsHandler).UpdateSettings-fm",
+    "operation_id": "updateSettings",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/me/social-links",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserSettingsHandler).UpdateSocialLinks-fm",
+    "operation_id": "updateSocialLinks",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/stats",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AnalyticsHandler).GetUserStats-fm",
+    "operation_id": "getUserStats",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserProfile-fm",
+    "operation_id": "getUserProfile",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/account-type",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetAccountType-fm",
+    "operation_id": "getApiV1UsersIdAccountType",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/account-type/history",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetConversionHistory-fm",
+    "operation_id": "getApiV1UsersIdAccountTypeHistory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/activity",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserActivity-fm",
+    "operation_id": "getUserActivity",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/badges",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetUserBadges-fm",
+    "operation_id": "getUserBadges",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/{id}/block",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).UnblockUser-fm",
+    "operation_id": "unblockUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/{id}/block",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).BlockUser-fm",
+    "operation_id": "blockUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserClips-fm",
+    "operation_id": "getUserClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/comments",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserComments-fm",
+    "operation_id": "getUserComments",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/downvoted",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserDownvotedClips-fm",
+    "operation_id": "getUserDownvotedClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/engagement",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).GetUserEngagementScore-fm",
+    "operation_id": "getUserEngagementScore",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/feeds",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).ListUserFeeds-fm",
+    "operation_id": "getApiV1UsersIdFeeds",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/{id}/feeds",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).CreateFeed-fm",
+    "operation_id": "postApiV1UsersIdFeeds",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/{id}/feeds/{feedId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).DeleteFeed-fm",
+    "operation_id": "deleteApiV1UsersIdFeedsFeedid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/feeds/{feedId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFeed-fm",
+    "operation_id": "getApiV1UsersIdFeedsFeedid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/{id}/feeds/{feedId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).UpdateFeed-fm",
+    "operation_id": "putApiV1UsersIdFeedsFeedid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/feeds/{feedId}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).GetFeedClips-fm",
+    "operation_id": "getApiV1UsersIdFeedsFeedidClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/{id}/feeds/{feedId}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).AddClipToFeed-fm",
+    "operation_id": "postApiV1UsersIdFeedsFeedidClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/{id}/feeds/{feedId}/clips/reorder",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).ReorderFeedClips-fm",
+    "operation_id": "putApiV1UsersIdFeedsFeedidClipsReorder",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/{id}/feeds/{feedId}/clips/{clipId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).RemoveClipFromFeed-fm",
+    "operation_id": "deleteApiV1UsersIdFeedsFeedidClipsClipid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/{id}/feeds/{feedId}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).UnfollowFeed-fm",
+    "operation_id": "deleteApiV1UsersIdFeedsFeedidFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/{id}/feeds/{feedId}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FeedHandler).FollowFeed-fm",
+    "operation_id": "postApiV1UsersIdFeedsFeedidFollow",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/filter-presets",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).GetUserPresets-fm",
+    "operation_id": "getApiV1UsersIdFilterPresets",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/{id}/filter-presets",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).CreatePreset-fm",
+    "operation_id": "postApiV1UsersIdFilterPresets",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/{id}/filter-presets/{presetId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).DeletePreset-fm",
+    "operation_id": "deleteApiV1UsersIdFilterPresetsPresetid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/filter-presets/{presetId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).GetPreset-fm",
+    "operation_id": "getApiV1UsersIdFilterPresetsPresetid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/{id}/filter-presets/{presetId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*FilterPresetHandler).UpdatePreset-fm",
+    "operation_id": "putApiV1UsersIdFilterPresetsPresetid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/{id}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).UnfollowUser-fm",
+    "operation_id": "unfollowUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/{id}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).FollowUser-fm",
+    "operation_id": "followUser",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/followers",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserFollowers-fm",
+    "operation_id": "getUserFollowers",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/following",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserFollowing-fm",
+    "operation_id": "getUserFollowing",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/following/broadcasters",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetFollowedBroadcasters-fm",
+    "operation_id": "getFollowedBroadcasters",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/games/following",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetFollowedGames-fm",
+    "operation_id": "getApiV1UsersIdGamesFollowing",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/karma",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetUserKarma-fm",
+    "operation_id": "getUserKarma",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/reputation",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetUserReputation-fm",
+    "operation_id": "getUserReputation",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/upvoted",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserUpvotedClips-fm",
+    "operation_id": "getUserUpvotedClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/verification/applications",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).CreateApplication-fm",
+    "operation_id": "postApiV1VerificationApplications",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/verification/applications/me",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplication-fm",
+    "operation_id": "getApiV1VerificationApplicationsMe",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/watch-history",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).ClearWatchHistory-fm",
+    "operation_id": "deleteApiV1WatchHistory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/watch-history",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).GetWatchHistory-fm",
+    "operation_id": "getApiV1WatchHistory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/watch-history",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WatchHistoryHandler).RecordWatchProgress-fm",
+    "operation_id": "postApiV1WatchHistory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).ListSubscriptions-fm",
+    "operation_id": "getApiV1Webhooks",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).CreateSubscription-fm",
+    "operation_id": "postApiV1Webhooks",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/events",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).GetSupportedEvents-fm",
+    "operation_id": "getApiV1WebhooksEvents",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/sendgrid",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SendGridWebhookHandler).HandleWebhook-fm",
+    "operation_id": "postApiV1WebhooksSendgrid",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/stripe",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).HandleWebhook-fm",
+    "operation_id": "postApiV1WebhooksStripe",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/webhooks/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).DeleteSubscription-fm",
+    "operation_id": "deleteApiV1WebhooksId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).GetSubscription-fm",
+    "operation_id": "getApiV1WebhooksId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/webhooks/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).UpdateSubscription-fm",
+    "operation_id": "patchApiV1WebhooksId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/{id}/deliveries",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).GetSubscriptionDeliveries-fm",
+    "operation_id": "getApiV1WebhooksIdDeliveries",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/{id}/regenerate-secret",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).RegenerateSecret-fm",
+    "operation_id": "postApiV1WebhooksIdRegenerateSecret",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/clips/best/{path}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func1",
+    "operation_id": "getClipsBestPath",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/clips/game/{gameSlug}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PagesHandler).GetGamePage-fm",
+    "operation_id": "getClipsGameGameslug",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/clips/streamer/{broadcasterName}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PagesHandler).GetStreamerPage-fm",
+    "operation_id": "getClipsStreamerBroadcastername",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/clips/streamer/{broadcasterName}/{gameSlug}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*PagesHandler).GetStreamerGamePage-fm",
+    "operation_id": "getClipsStreamerBroadcasternameGameslug",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func2",
+    "operation_id": "getHealth",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/health/live",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func4",
+    "operation_id": "getHealthLive",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/health/ready",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func3",
+    "operation_id": "getHealthReady",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/internal/operations/cache",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MonitoringHandler).GetCacheStats-fm",
+    "operation_id": "getInternalOperationsCache",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/internal/operations/cache/check",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MonitoringHandler).GetCacheHealth-fm",
+    "operation_id": "getInternalOperationsCacheCheck",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/internal/operations/database",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.func5",
+    "operation_id": "getInternalOperationsDatabase",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/internal/operations/metrics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/cmd/api.registerPublicRoutes.WrapH.func9",
+    "operation_id": "getInternalOperationsMetrics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/internal/operations/webhooks",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookMonitoringHandler).GetWebhookRetryStats-fm",
+    "operation_id": "getInternalOperationsWebhooks",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/robots.txt",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SEOHandler).GetRobotsTxt-fm",
+    "operation_id": "getRobotsTxt",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/sitemap.xml",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SEOHandler).GetSitemap-fm",
+    "operation_id": "getSitemap",
+    "contract_level": "route-specific"
+  }
+]

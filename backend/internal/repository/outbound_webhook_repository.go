@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // OutboundWebhookRepository handles database operations for outbound webhooks
@@ -578,6 +579,31 @@ func (r *OutboundWebhookRepository) GetDeadLetterQueueItemByID(ctx context.Conte
 	return &item, nil
 }
 
+// ClaimDeadLetterQueueItemForReplay atomically marks an item as being replayed.
+// Successful items remain terminal; failed items may be claimed again.
+func (r *OutboundWebhookRepository) ClaimDeadLetterQueueItemForReplay(ctx context.Context, id uuid.UUID) (*models.OutboundWebhookDeadLetterQueue, error) {
+	query := `
+		UPDATE outbound_webhook_dead_letter_queue
+		SET replayed_at = NOW(), replay_successful = NULL
+		WHERE id = $1
+		  AND (replayed_at IS NULL OR replay_successful = false)
+		RETURNING id, subscription_id, delivery_id, event_type, event_id, payload,
+		          error_message, http_status_code, response_body, attempt_count,
+		          original_created_at, moved_to_dlq_at, replayed_at, replay_successful, created_at
+	`
+	var item models.OutboundWebhookDeadLetterQueue
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&item.ID, &item.SubscriptionID, &item.DeliveryID, &item.EventType, &item.EventID,
+		&item.Payload, &item.ErrorMessage, &item.HTTPStatusCode, &item.ResponseBody,
+		&item.AttemptCount, &item.OriginalCreatedAt, &item.MovedToDLQAt,
+		&item.ReplayedAt, &item.ReplaySuccessful, &item.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
 // UpdateDLQItemReplayStatus updates the replay status of a DLQ item
 func (r *OutboundWebhookRepository) UpdateDLQItemReplayStatus(ctx context.Context, id uuid.UUID, successful bool) error {
 	query := `
@@ -593,6 +619,9 @@ func (r *OutboundWebhookRepository) UpdateDLQItemReplayStatus(ctx context.Contex
 // DeleteDeadLetterQueueItem deletes a DLQ item
 func (r *OutboundWebhookRepository) DeleteDeadLetterQueueItem(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM outbound_webhook_dead_letter_queue WHERE id = $1`
-	_, err := r.db.Exec(ctx, query, id)
+	result, err := r.db.Exec(ctx, query, id)
+	if err == nil && result.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
 	return err
 }

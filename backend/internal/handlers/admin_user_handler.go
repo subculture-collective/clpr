@@ -1,15 +1,28 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+func writeAdminUserMutationError(c *gin.Context, err error, message string) {
+	switch {
+	case errors.Is(err, repository.ErrUserNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	case errors.Is(err, repository.ErrAdminRequired), errors.Is(err, repository.ErrAdminSelfMutation), errors.Is(err, repository.ErrProtectedAdminTarget):
+		c.JSON(http.StatusForbidden, gin.H{"error": "User mutation not permitted"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
+	}
+}
 
 // AdminUserHandler handles admin user management endpoints
 type AdminUserHandler struct {
@@ -34,18 +47,32 @@ func NewAdminUserHandler(
 // ListUsers handles GET /api/v1/admin/users
 func (h *AdminUserHandler) ListUsers(c *gin.Context) {
 	// Get query parameters
-	search := c.Query("search")
+	search := strings.TrimSpace(c.Query("search"))
+	if len(search) > 200 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "search cannot exceed 200 characters"})
+		return
+	}
 	role := c.Query("role")
 	status := c.Query("status")
+	if role != "" && !models.IsValidRole(role) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "role must be user, moderator, or admin"})
+		return
+	}
+	if status != "" && status != "active" && status != "banned" && status != "unclaimed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "status must be active, banned, or unclaimed"})
+		return
+	}
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {
-		page = 1
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return
 	}
 
 	perPage, err := strconv.Atoi(c.DefaultQuery("per_page", "25"))
 	if err != nil || perPage < 1 || perPage > 100 {
-		perPage = 25
+		c.JSON(http.StatusBadRequest, gin.H{"error": "per_page must be between 1 and 100"})
+		return
 	}
 
 	offset := (page - 1) * perPage
@@ -88,7 +115,7 @@ func (h *AdminUserHandler) BanUser(c *gin.Context) {
 
 	// Get reason from request body
 	var req struct {
-		Reason string `json:"reason" binding:"required"`
+		Reason string `json:"reason" binding:"required,min=3,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -98,41 +125,16 @@ func (h *AdminUserHandler) BanUser(c *gin.Context) {
 	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	// Ban the user
-	err = h.userRepo.BanUser(c.Request.Context(), userID)
+	err = h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, adminUserID, repository.AdminUserActionBan, nil, req.Reason)
 	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to ban user",
-		})
+		writeAdminUserMutationError(c, err, "Failed to ban user")
 		return
-	}
-
-	// Log audit event
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      "ban_user",
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &req.Reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -153,50 +155,30 @@ func (h *AdminUserHandler) UnbanUser(c *gin.Context) {
 
 	// Get optional reason from request body
 	var req struct {
-		Reason string `json:"reason"`
+		Reason string `json:"reason" binding:"omitempty,max=1000"`
 	}
-	_ = c.ShouldBindJSON(&req)
+	if c.Request.ContentLength != 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid unban request"})
+			return
+		}
+	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	// Unban the user
-	err = h.userRepo.UnbanUser(c.Request.Context(), userID)
-	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to unban user",
-		})
-		return
-	}
-
-	// Log audit event
 	reason := "No reason provided"
 	if req.Reason != "" {
 		reason = req.Reason
 	}
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      "unban_user",
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
+	err = h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, adminUserID, repository.AdminUserActionUnban, nil, reason)
+	if err != nil {
+		writeAdminUserMutationError(c, err, "Failed to unban user")
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -217,8 +199,8 @@ func (h *AdminUserHandler) UpdateUserRole(c *gin.Context) {
 
 	// Get role and reason from request body
 	var req struct {
-		Role   string `json:"role" binding:"required"`
-		Reason string `json:"reason"`
+		Role   string `json:"role" binding:"required,oneof=user moderator admin"`
+		Reason string `json:"reason" binding:"omitempty,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -236,45 +218,20 @@ func (h *AdminUserHandler) UpdateUserRole(c *gin.Context) {
 	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	// Update user role
-	err = h.userRepo.UpdateUserRole(c.Request.Context(), userID, req.Role)
-	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update user role",
-		})
-		return
-	}
-
-	// Log audit event
 	reason := req.Reason
 	if reason == "" {
 		reason = "Role changed to " + req.Role
 	}
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      "update_user_role",
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
+	err = h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, adminUserID, repository.AdminUserActionRole, req.Role, reason)
+	if err != nil {
+		writeAdminUserMutationError(c, err, "Failed to update user role")
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -295,7 +252,7 @@ func (h *AdminUserHandler) UpdateUserKarma(c *gin.Context) {
 
 	// Get karma points from request body
 	var req struct {
-		KarmaPoints int `json:"karma_points" binding:"required"`
+		KarmaPoints *int `json:"karma_points" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -303,49 +260,28 @@ func (h *AdminUserHandler) UpdateUserKarma(c *gin.Context) {
 		})
 		return
 	}
+	if *req.KarmaPoints < -1_000_000 || *req.KarmaPoints > 1_000_000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "karma_points must be between -1000000 and 1000000"})
+		return
+	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	// Set user karma
-	err = h.userRepo.SetUserKarma(c.Request.Context(), userID, req.KarmaPoints)
-	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update user karma",
-		})
-		return
-	}
-
-	// Log audit event
 	reason := "Karma manually adjusted by admin"
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      "update_user_karma",
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
+	err = h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, adminUserID, repository.AdminUserActionKarma, *req.KarmaPoints, reason)
+	if err != nil {
+		writeAdminUserMutationError(c, err, "Failed to update user karma")
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "User karma updated successfully",
-		"karma_points": req.KarmaPoints,
+		"karma_points": *req.KarmaPoints,
 	})
 }
 
@@ -377,11 +313,8 @@ func (h *AdminUserHandler) SuspendCommentPrivileges(c *gin.Context) {
 	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -389,37 +322,15 @@ func (h *AdminUserHandler) SuspendCommentPrivileges(c *gin.Context) {
 	err = h.userRepo.SuspendCommentPrivileges(
 		c.Request.Context(),
 		userID,
-		adminUserID.(uuid.UUID),
+		adminUserID,
 		req.SuspensionType,
 		req.Reason,
 		req.DurationHours,
 	)
 
 	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to suspend comment privileges",
-		})
+		writeAdminUserMutationError(c, err, "Failed to suspend comment privileges")
 		return
-	}
-
-	// Log audit event
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      "suspend_comment_privileges",
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &req.Reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -448,11 +359,8 @@ func (h *AdminUserHandler) LiftCommentSuspension(c *gin.Context) {
 	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -460,35 +368,13 @@ func (h *AdminUserHandler) LiftCommentSuspension(c *gin.Context) {
 	err = h.userRepo.LiftCommentSuspension(
 		c.Request.Context(),
 		userID,
-		adminUserID.(uuid.UUID),
+		adminUserID,
 		req.Reason,
 	)
 
 	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to lift comment suspension",
-		})
+		writeAdminUserMutationError(c, err, "Failed to lift comment suspension")
 		return
-	}
-
-	// Log audit event
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      "lift_comment_suspension",
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &req.Reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -509,7 +395,16 @@ func (h *AdminUserHandler) GetCommentSuspensionHistory(c *gin.Context) {
 
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	if err != nil || limit < 1 || limit > 100 {
-		limit = 50
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
+	}
+	if _, err := h.userRepo.GetByID(c.Request.Context(), userID); err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+		return
 	}
 
 	history, err := h.userRepo.GetCommentSuspensionHistory(c.Request.Context(), userID, limit)
@@ -539,7 +434,7 @@ func (h *AdminUserHandler) ToggleCommentReview(c *gin.Context) {
 
 	var req struct {
 		RequireReview bool   `json:"require_review"`
-		Reason        string `json:"reason" binding:"required"`
+		Reason        string `json:"reason" binding:"required,min=3,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -549,50 +444,18 @@ func (h *AdminUserHandler) ToggleCommentReview(c *gin.Context) {
 	}
 
 	// Get admin user ID
-	adminUserID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminUserID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
 	// Toggle review requirement via repository
-	err = h.userRepo.SetCommentReviewRequirement(
-		c.Request.Context(),
-		userID,
-		req.RequireReview,
-	)
+	action := repository.AdminUserActionReview
+	err = h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, adminUserID, action, req.RequireReview, req.Reason)
 
 	if err != nil {
-		if err == repository.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "User not found",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update comment review requirement",
-		})
+		writeAdminUserMutationError(c, err, "Failed to update comment review requirement")
 		return
-	}
-
-	// Log audit event
-	action := "enable_comment_review"
-	if !req.RequireReview {
-		action = "disable_comment_review"
-	}
-	auditLog := &models.ModerationAuditLog{
-		ID:          uuid.New(),
-		Action:      action,
-		EntityType:  "user",
-		EntityID:    userID,
-		ModeratorID: adminUserID.(uuid.UUID),
-		Reason:      &req.Reason,
-	}
-	if err := h.auditLogRepo.Create(c.Request.Context(), auditLog); err != nil {
-		// Record audit log failure without affecting the main operation
-		_ = c.Error(err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth, useToast } from '@/hooks';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 import type { WatchHistoryEntry } from '@/types/watchHistory';
 
 type FilterType = 'all' | 'completed' | 'in-progress';
@@ -13,11 +14,6 @@ export function WatchHistoryPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
-  const modalRef = useRef<HTMLDivElement>(null);
-  const clearButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Apply focus trap to modal when open
-  useFocusTrap(modalRef, showClearConfirm);
 
   // Fetch watch history
   useEffect(() => {
@@ -69,10 +65,6 @@ export function WatchHistoryPage() {
       setShowClearConfirm(false);
       showToast('Watch history cleared successfully', 'success');
 
-      // Return focus to the clear button
-      if (clearButtonRef.current) {
-        clearButtonRef.current.focus();
-      }
     } catch (error) {
       showToast('Error clearing watch history', 'error');
       console.error('Error clearing watch history:', error);
@@ -129,7 +121,7 @@ export function WatchHistoryPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Watch History</h1>
         <button
-          ref={clearButtonRef}
+          type="button"
           onClick={() => setShowClearConfirm(true)}
           className="px-4 py-2 text-red-500 hover:text-red-400 transition-colors"
         >
@@ -190,48 +182,30 @@ export function WatchHistoryPage() {
       )}
 
       {/* Clear History Confirmation Modal */}
-      {showClearConfirm && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="clear-history-title"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setShowClearConfirm(false);
-              if (clearButtonRef.current) {
-                clearButtonRef.current.focus();
-              }
-            }
-          }}
-        >
-          <div ref={modalRef} className="bg-background rounded-lg p-6 max-w-md w-full">
-            <h2 id="clear-history-title" className="text-xl font-bold mb-4">Clear Watch History?</h2>
+      <Modal
+        open={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        title="Clear Watch History?"
+        size="md"
+      >
             <p className="text-muted-foreground mb-6">
               This will permanently delete your entire watch history. This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => {
-                  setShowClearConfirm(false);
-                  if (clearButtonRef.current) {
-                    clearButtonRef.current.focus();
-                  }
-                }}
-                className="px-4 py-2 bg-surface text-white rounded hover:bg-surface-hover transition-colors"
+              <Button
+                variant="outline"
+                onClick={() => setShowClearConfirm(false)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleClearHistory}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               >
                 Clear History
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
 import { Translation } from 'react-i18next';
+import { captureBoundaryError } from '@/lib/sentry-client';
 
 interface Props {
   children: ReactNode;
@@ -33,12 +33,7 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     // Send error to Sentry
-    Sentry.withScope((scope) => {
-      scope.setContext('errorBoundary', {
-        componentStack: errorInfo.componentStack,
-      });
-      Sentry.captureException(error);
-    });
+    captureBoundaryError(error, errorInfo.componentStack);
   }
 
   render(): ReactNode {

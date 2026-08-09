@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,8 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 // ClipRepositoryForPages defines clip repo methods needed by PagesHandler.
@@ -58,7 +61,7 @@ const pagesClipLimit = 50
 // GetStreamerPage renders the streamer profile pSEO page.
 func (h *PagesHandler) GetStreamerPage(c *gin.Context) {
 	broadcasterName := c.Param("broadcasterName")
-	if broadcasterName == "" {
+	if broadcasterName == "" || len(broadcasterName) > 100 {
 		h.render404(c)
 		return
 	}
@@ -68,18 +71,31 @@ func (h *PagesHandler) GetStreamerPage(c *gin.Context) {
 
 	broadcasterID, err := h.broadcasterRepo.GetBroadcasterByName(ctx, broadcasterName)
 	if err != nil {
-		h.render404(c)
+		h.renderLookupError(c, err)
 		return
 	}
 
-	totalClips, totalViews, avgScore, _ := h.broadcasterRepo.GetBroadcasterStats(ctx, broadcasterID)
-	followerCount, _ := h.broadcasterRepo.GetFollowerCount(ctx, broadcasterID)
-	games, _ := h.broadcasterRepo.ListBroadcasterGames(ctx, broadcasterID)
+	totalClips, totalViews, avgScore, err := h.broadcasterRepo.GetBroadcasterStats(ctx, broadcasterID)
+	if err != nil {
+		h.renderPageError(c, err)
+		return
+	}
+	followerCount, err := h.broadcasterRepo.GetFollowerCount(ctx, broadcasterID)
+	if err != nil {
+		h.renderPageError(c, err)
+		return
+	}
+	games, err := h.broadcasterRepo.ListBroadcasterGames(ctx, broadcasterID)
+	if err != nil {
+		h.renderPageError(c, err)
+		return
+	}
 
 	clips, _, err := h.clipRepo.ListClipsByBroadcaster(ctx, broadcasterID, "popular", pagesClipLimit, 0)
 	if err != nil {
 		log.Printf("Error listing broadcaster clips: %v", err)
-		clips = nil
+		h.renderPageError(c, err)
+		return
 	}
 
 	ogImage := ""
@@ -114,7 +130,7 @@ func (h *PagesHandler) GetStreamerPage(c *gin.Context) {
 // GetGamePage renders the game pSEO page.
 func (h *PagesHandler) GetGamePage(c *gin.Context) {
 	gameSlug := c.Param("gameSlug")
-	if gameSlug == "" {
+	if gameSlug == "" || len(gameSlug) > 100 {
 		h.render404(c)
 		return
 	}
@@ -124,17 +140,21 @@ func (h *PagesHandler) GetGamePage(c *gin.Context) {
 
 	game, err := h.gameRepo.GetBySlug(ctx, gameSlug)
 	if err != nil {
-		h.render404(c)
+		h.renderLookupError(c, err)
 		return
 	}
 
-	topBroadcasters, _ := h.gameRepo.ListTopBroadcastersForGame(ctx, game.TwitchGameID, 20)
+	topBroadcasters, err := h.gameRepo.ListTopBroadcastersForGame(ctx, game.TwitchGameID, 20)
+	if err != nil {
+		h.renderPageError(c, err)
+		return
+	}
 
 	clips, total, err := h.clipRepo.ListClipsByGame(ctx, game.TwitchGameID, pagesClipLimit, 0)
 	if err != nil {
 		log.Printf("Error listing game clips: %v", err)
-		clips = nil
-		total = 0
+		h.renderPageError(c, err)
+		return
 	}
 
 	ogImage := ""
@@ -177,7 +197,8 @@ func (h *PagesHandler) GetBestOfPage(c *gin.Context) {
 	clips, total, err := h.clipRepo.ListClipsForBestOf(ctx, start, end, pagesClipLimit, 0)
 	if err != nil {
 		log.Printf("Error listing best-of clips: %v", err)
-		clips = nil
+		h.renderPageError(c, err)
+		return
 	}
 
 	ogImage := ""
@@ -224,6 +245,10 @@ func (h *PagesHandler) GetBestOfMonthPage(c *gin.Context) {
 	}
 
 	start := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	if start.After(time.Now().UTC()) {
+		h.render404(c)
+		return
+	}
 	end := start.AddDate(0, 1, 0)
 	label := start.Format("January 2006")
 
@@ -233,7 +258,8 @@ func (h *PagesHandler) GetBestOfMonthPage(c *gin.Context) {
 	clips, total, err := h.clipRepo.ListClipsForBestOf(ctx, start, end, pagesClipLimit, 0)
 	if err != nil {
 		log.Printf("Error listing monthly best-of clips: %v", err)
-		clips = nil
+		h.renderPageError(c, err)
+		return
 	}
 
 	ogImage := ""
@@ -268,7 +294,7 @@ func (h *PagesHandler) GetBestOfMonthPage(c *gin.Context) {
 func (h *PagesHandler) GetStreamerGamePage(c *gin.Context) {
 	broadcasterName := c.Param("broadcasterName")
 	gameSlug := c.Param("gameSlug")
-	if broadcasterName == "" || gameSlug == "" {
+	if broadcasterName == "" || gameSlug == "" || len(broadcasterName) > 100 || len(gameSlug) > 100 {
 		h.render404(c)
 		return
 	}
@@ -278,20 +304,21 @@ func (h *PagesHandler) GetStreamerGamePage(c *gin.Context) {
 
 	broadcasterID, err := h.broadcasterRepo.GetBroadcasterByName(ctx, broadcasterName)
 	if err != nil {
-		h.render404(c)
+		h.renderLookupError(c, err)
 		return
 	}
 
 	game, err := h.gameRepo.GetBySlug(ctx, gameSlug)
 	if err != nil {
-		h.render404(c)
+		h.renderLookupError(c, err)
 		return
 	}
 
 	clips, total, err := h.clipRepo.ListClipsForStreamerGame(ctx, broadcasterID, game.TwitchGameID, pagesClipLimit, 0)
 	if err != nil {
 		log.Printf("Error listing streamer+game clips: %v", err)
-		clips = nil
+		h.renderPageError(c, err)
+		return
 	}
 
 	ogImage := ""
@@ -325,6 +352,20 @@ func (h *PagesHandler) render404(c *gin.Context) {
 		Title:       "Page Not Found",
 		Description: "The page you're looking for doesn't exist.",
 	})
+}
+
+func (h *PagesHandler) renderLookupError(c *gin.Context, err error) {
+	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
+		h.render404(c)
+		return
+	}
+	h.renderPageError(c, err)
+}
+
+func (h *PagesHandler) renderPageError(c *gin.Context, err error) {
+	log.Printf("Error rendering public page: %v", err)
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusInternalServerError, "text/html; charset=utf-8", []byte("<!doctype html><html><head><title>Page temporarily unavailable</title></head><body><h1>Page temporarily unavailable</h1><p>Please try again later.</p></body></html>"))
 }
 
 // getBaseURL extracts the base URL from gin context.
@@ -370,9 +411,9 @@ func buildProfileSchema(name, baseURL string, totalClips int, totalViews int64) 
 		"name":     name + " Clips",
 		"url":      fmt.Sprintf("%s/clips/streamer/%s", baseURL, name),
 		"mainEntity": map[string]interface{}{
-			"@type":               "Person",
-			"name":                name,
-			"url":                 fmt.Sprintf("https://twitch.tv/%s", name),
+			"@type": "Person",
+			"name":  name,
+			"url":   fmt.Sprintf("https://twitch.tv/%s", name),
 			"interactionStatistic": []map[string]interface{}{
 				{"@type": "InteractionCounter", "interactionType": "https://schema.org/WatchAction", "userInteractionCount": totalViews},
 			},
@@ -384,10 +425,10 @@ func buildProfileSchema(name, baseURL string, totalClips int, totalViews int64) 
 
 func buildCollectionSchema(name, baseURL string, totalItems int) string {
 	schema := map[string]interface{}{
-		"@context":         "https://schema.org",
-		"@type":            "CollectionPage",
-		"name":             name,
-		"numberOfItems":    totalItems,
+		"@context":      "https://schema.org",
+		"@type":         "CollectionPage",
+		"name":          name,
+		"numberOfItems": totalItems,
 	}
 	b, _ := json.Marshal(schema)
 	return string(b)
@@ -415,4 +456,3 @@ func buildItemListSchema(clips []models.Clip, baseURL string) string {
 	b, _ := json.Marshal(schema)
 	return string(b)
 }
-

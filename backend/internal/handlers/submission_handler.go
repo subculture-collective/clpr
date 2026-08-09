@@ -1,17 +1,46 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+func writeSubmissionModerationError(c *gin.Context, err error, message string) {
+	switch {
+	case errors.Is(err, repository.ErrSubmissionNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found"})
+	case errors.Is(err, repository.ErrSubmissionNotPending):
+		c.JSON(http.StatusConflict, gin.H{"error": "Submission is no longer pending"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
+	}
+}
+
+func parseUniqueSubmissionIDs(values []string) ([]uuid.UUID, error) {
+	ids := make([]uuid.UUID, 0, len(values))
+	seen := make(map[uuid.UUID]struct{}, len(values))
+	for _, value := range values {
+		id, err := uuid.Parse(value)
+		if err != nil {
+			return nil, errors.New("invalid submission ID")
+		}
+		if _, exists := seen[id]; exists {
+			return nil, errors.New("duplicate submission ID")
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
 
 // SubmissionHandler handles clip submission operations
 type SubmissionHandler struct {
@@ -270,36 +299,63 @@ func (h *SubmissionHandler) CheckClipStatus(c *gin.Context) {
 // GET /admin/submissions
 // Supports filters: is_nsfw, broadcaster, creator, tags (comma-separated), start_date (RFC3339), end_date (RFC3339)
 func (h *SubmissionHandler) ListPendingSubmissions(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	if page < 1 {
-		page = 1
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	// Parse filters
 	filters := repository.SubmissionFilters{}
 
 	if isNSFWStr := c.Query("is_nsfw"); isNSFWStr != "" {
-		isNSFW := isNSFWStr == "true"
+		isNSFW, err := strconv.ParseBool(isNSFWStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "is_nsfw must be true or false"})
+			return
+		}
 		filters.IsNSFW = &isNSFW
 	}
 
 	if broadcaster := c.Query("broadcaster"); broadcaster != "" {
+		if len(broadcaster) > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "broadcaster cannot exceed 100 characters"})
+			return
+		}
 		filters.BroadcasterName = &broadcaster
 	}
 
 	if creator := c.Query("creator"); creator != "" {
+		if len(creator) > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "creator cannot exceed 100 characters"})
+			return
+		}
 		filters.CreatorName = &creator
 	}
 
 	if tagsStr := c.Query("tags"); tagsStr != "" {
 		tags := strings.Split(tagsStr, ",")
+		if len(tags) > 20 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no more than 20 tags may be supplied"})
+			return
+		}
+		seen := make(map[string]struct{}, len(tags))
 		for i := range tags {
 			tags[i] = strings.TrimSpace(tags[i])
+			if tags[i] == "" || len(tags[i]) > 50 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "tags must be 1 to 50 characters"})
+				return
+			}
+			if _, ok := seen[tags[i]]; ok {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "tags must be unique"})
+				return
+			}
+			seen[tags[i]] = struct{}{}
 		}
 		filters.Tags = tags
 	}
@@ -324,6 +380,10 @@ func (h *SubmissionHandler) ListPendingSubmissions(c *gin.Context) {
 			return
 		}
 		filters.EndDate = &endDate
+	}
+	if filters.StartDate != nil && filters.EndDate != nil && (filters.EndDate.Before(*filters.StartDate) || filters.EndDate.Sub(*filters.StartDate) > 366*24*time.Hour) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "date range must be ordered and no longer than 366 days"})
+		return
 	}
 
 	submissions, total, err := h.submissionService.GetPendingSubmissionsWithFilters(c.Request.Context(), filters, page, limit)
@@ -361,19 +421,13 @@ func (h *SubmissionHandler) ApproveSubmission(c *gin.Context) {
 	}
 
 	// Get reviewer ID from context
-	reviewerIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	reviewerID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
 
 	if err := h.submissionService.ApproveSubmission(c.Request.Context(), submissionID, reviewerID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to approve submission: " + err.Error(),
-		})
+		writeSubmissionModerationError(c, err, "Failed to approve submission")
 		return
 	}
 
@@ -396,17 +450,13 @@ func (h *SubmissionHandler) RejectSubmission(c *gin.Context) {
 	}
 
 	// Get reviewer ID from context
-	reviewerIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	reviewerID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
 
 	var req struct {
-		Reason string `json:"reason" binding:"required"`
+		Reason string `json:"reason" binding:"required,min=3,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -416,9 +466,7 @@ func (h *SubmissionHandler) RejectSubmission(c *gin.Context) {
 	}
 
 	if err := h.submissionService.RejectSubmission(c.Request.Context(), submissionID, reviewerID, req.Reason); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to reject submission: " + err.Error(),
-		})
+		writeSubmissionModerationError(c, err, "Failed to reject submission")
 		return
 	}
 
@@ -432,17 +480,13 @@ func (h *SubmissionHandler) RejectSubmission(c *gin.Context) {
 // POST /admin/submissions/bulk-approve
 func (h *SubmissionHandler) BulkApproveSubmissions(c *gin.Context) {
 	// Get reviewer ID from context
-	reviewerIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	reviewerID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
 
 	var req struct {
-		SubmissionIDs []string `json:"submission_ids" binding:"required"`
+		SubmissionIDs []string `json:"submission_ids" binding:"required,min=1,max=100"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -458,23 +502,14 @@ func (h *SubmissionHandler) BulkApproveSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Parse UUIDs
-	submissionIDs := make([]uuid.UUID, 0, len(req.SubmissionIDs))
-	for _, idStr := range req.SubmissionIDs {
-		id, err := uuid.Parse(idStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid submission ID: " + idStr,
-			})
-			return
-		}
-		submissionIDs = append(submissionIDs, id)
+	submissionIDs, err := parseUniqueSubmissionIDs(req.SubmissionIDs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "submission_ids must contain 1 to 100 unique UUIDs"})
+		return
 	}
 
 	if err := h.submissionService.BulkApproveSubmissions(c.Request.Context(), submissionIDs, reviewerID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to bulk approve submissions: " + err.Error(),
-		})
+		writeSubmissionModerationError(c, err, "Failed to bulk approve submissions")
 		return
 	}
 
@@ -489,18 +524,14 @@ func (h *SubmissionHandler) BulkApproveSubmissions(c *gin.Context) {
 // POST /admin/submissions/bulk-reject
 func (h *SubmissionHandler) BulkRejectSubmissions(c *gin.Context) {
 	// Get reviewer ID from context
-	reviewerIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	reviewerID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
 
 	var req struct {
-		SubmissionIDs []string `json:"submission_ids" binding:"required"`
-		Reason        string   `json:"reason" binding:"required"`
+		SubmissionIDs []string `json:"submission_ids" binding:"required,min=1,max=100"`
+		Reason        string   `json:"reason" binding:"required,min=3,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -516,23 +547,14 @@ func (h *SubmissionHandler) BulkRejectSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Parse UUIDs
-	submissionIDs := make([]uuid.UUID, 0, len(req.SubmissionIDs))
-	for _, idStr := range req.SubmissionIDs {
-		id, err := uuid.Parse(idStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid submission ID: " + idStr,
-			})
-			return
-		}
-		submissionIDs = append(submissionIDs, id)
+	submissionIDs, err := parseUniqueSubmissionIDs(req.SubmissionIDs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "submission_ids must contain 1 to 100 unique UUIDs"})
+		return
 	}
 
 	if err := h.submissionService.BulkRejectSubmissions(c.Request.Context(), submissionIDs, reviewerID, req.Reason); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to bulk reject submissions: " + err.Error(),
-		})
+		writeSubmissionModerationError(c, err, "Failed to bulk reject submissions")
 		return
 	}
 

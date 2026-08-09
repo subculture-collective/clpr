@@ -1,13 +1,5 @@
-import { createContext, useContext, useCallback, useRef } from 'react';
-
-interface PlaybackContextType {
-    /** Call this when a player starts playing. Returns a unique player ID. */
-    requestPlayback: (playerId: string) => void;
-    /** Register a pause callback for a player. Returns unregister function. */
-    registerPlayer: (playerId: string, pauseFn: () => void) => () => void;
-}
-
-const PlaybackContext = createContext<PlaybackContextType | null>(null);
+import { useCallback, useRef } from 'react';
+import { PlaybackContext } from './playback-context';
 
 export function PlaybackProvider({ children }: { children: React.ReactNode }) {
     // Map of player IDs to their pause functions
@@ -39,20 +31,4 @@ export function PlaybackProvider({ children }: { children: React.ReactNode }) {
             {children}
         </PlaybackContext.Provider>
     );
-}
-
-/** Hook to integrate a player with the global playback system. */
-export function usePlaybackControl(playerId: string) {
-    const ctx = useContext(PlaybackContext);
-    if (!ctx) {
-        // Graceful fallback if provider is missing
-        return {
-            requestPlayback: () => {},
-            registerPlayer: (_pauseFn: () => void) => () => {},
-        };
-    }
-    return {
-        requestPlayback: () => ctx.requestPlayback(playerId),
-        registerPlayer: (pauseFn: () => void) => ctx.registerPlayer(playerId, pauseFn),
-    };
 }

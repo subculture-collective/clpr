@@ -505,7 +505,7 @@ curl https://api.clpr.gg/v1/mirrors/stats?region=all
 
 ## Related Documentation
 
-- [Mirror Hosting Guide](MIRROR_HOSTING.md)
-- [CDN Integration Guide](CDN_INTEGRATION.md)
-- [Database Operations](database.md)
-- [Deployment Guide](../operations/deployment.md)
+- Mirror Hosting Guide
+- CDN Integration Guide
+- Database Operations
+- Deployment Guide

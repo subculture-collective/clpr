@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -40,6 +41,21 @@ func TestRedactPII(t *testing.T) {
 			name:     "No PII",
 			input:    "This is a normal log message",
 			expected: "This is a normal log message",
+		},
+		{
+			name:     "Redact OAuth callback query",
+			input:    "GET /callback?code=oauth-value&state=session-state",
+			expected: "GET /callback?code=[REDACTED]&state=[REDACTED]",
+		},
+		{
+			name:     "Redact cookie header",
+			input:    "Cookie: access_token=secret; csrf=value",
+			expected: "Cookie: [REDACTED]",
+		},
+		{
+			name:     "Redact private key material",
+			input:    "key=-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----",
+			expected: "key=[REDACTED_PRIVATE_KEY]",
 		},
 	}
 
@@ -101,6 +117,17 @@ func TestRedactPIIFromFields(t *testing.T) {
 				"user_id": 123,
 			},
 		},
+		{
+			name: "Redact nested and list credentials",
+			input: map[string]interface{}{
+				"nested": map[string]interface{}{"cookie": "session=secret"},
+				"events": []interface{}{map[string]interface{}{"code": "oauth-code"}, "user@example.com"},
+			},
+			expected: map[string]interface{}{
+				"nested": map[string]interface{}{"cookie": "[REDACTED]"},
+				"events": []interface{}{map[string]interface{}{"code": "[REDACTED]"}, "[REDACTED_EMAIL]"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -116,7 +143,7 @@ func TestRedactPIIFromFields(t *testing.T) {
 				}
 
 				// Compare values
-				if actualValue != expectedValue {
+				if !reflect.DeepEqual(actualValue, expectedValue) {
 					t.Errorf("Field %s = %v, want %v", key, actualValue, expectedValue)
 				}
 			}

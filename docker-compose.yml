@@ -33,6 +33,15 @@ services:
       start_period: 10s
     labels:
       - com.centurylinklabs.watchtower.enable=false
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/exports:rw,noexec,nosuid,size=256m,uid=10001,gid=10001
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 768m
+    cpus: 1.5
     restart: unless-stopped
 
   clpr-crawler:
@@ -49,6 +58,14 @@ services:
       - SCRAPE_BROADCASTERS=xQc,pokimane,caseoh_,Agent00,BotezLive,Maximilian_DOOD,ohnePixel,ExtraEmily,Zoil,Elajjaz,itmeJP,APPLESHAMPOO,Bonnie,Pamaj,ashswag,shindigwow
     labels:
       - com.centurylinklabs.watchtower.enable=false
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 0.5
     restart: unless-stopped
 
   clpr-frontend:
@@ -62,4 +79,12 @@ services:
         condition: service_healthy
     labels:
       - com.centurylinklabs.watchtower.enable=false
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,uid=101,gid=101
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 0.5
     restart: unless-stopped

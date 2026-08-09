@@ -5,18 +5,27 @@ import (
 	"errors"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // Sentinel errors for discovery list operations
 var (
 	// ErrDiscoveryListNotFound is returned when a discovery list is not found
 	ErrDiscoveryListNotFound = errors.New("discovery list not found")
+	// ErrDiscoveryListConflict is returned when a list slug already exists.
+	ErrDiscoveryListConflict = errors.New("discovery list already exists")
 	// ErrClipNotFoundInList is returned when a clip is not found in a discovery list
 	ErrClipNotFoundInList = errors.New("clip not found in list")
+	// ErrClipNotFound is returned when an active clip does not exist.
+	ErrClipNotFound = errors.New("clip not found")
+	// ErrClipAlreadyInList is returned when a clip is already a member.
+	ErrClipAlreadyInList = errors.New("clip already in list")
+	// ErrDiscoveryListReorderMismatch is returned when reorder IDs do not exactly match current membership.
+	ErrDiscoveryListReorderMismatch = errors.New("reorder IDs do not match list membership")
 )
 
 // DiscoveryListRepository handles database operations for discovery lists
@@ -485,14 +494,9 @@ func (r *DiscoveryListRepository) UnfollowList(ctx context.Context, userID, list
 		WHERE user_id = $1 AND playlist_id = $2
 	`
 
-	result, err := r.db.Exec(ctx, query, userID, listID)
+	_, err := r.db.Exec(ctx, query, userID, listID)
 	if err != nil {
 		return fmt.Errorf("failed to unfollow list: %w", err)
-	}
-
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("not following this list")
 	}
 
 	return nil
@@ -521,14 +525,9 @@ func (r *DiscoveryListRepository) UnbookmarkList(ctx context.Context, userID, li
 		WHERE user_id = $1 AND playlist_id = $2
 	`
 
-	result, err := r.db.Exec(ctx, query, userID, listID)
+	_, err := r.db.Exec(ctx, query, userID, listID)
 	if err != nil {
 		return fmt.Errorf("failed to unbookmark list: %w", err)
-	}
-
-	rowsAffected := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("list not bookmarked")
 	}
 
 	return nil
@@ -677,6 +676,10 @@ func (r *DiscoveryListRepository) CreateList(ctx context.Context, name, slug, de
 		&list.IsFeatured, &list.CreatedAt, &list.UpdatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, ErrDiscoveryListConflict
+		}
 		return nil, fmt.Errorf("failed to create discovery list: %w", err)
 	}
 
@@ -688,9 +691,9 @@ func (r *DiscoveryListRepository) CreateList(ctx context.Context, name, slug, de
 }
 
 // UpdateList updates an existing discovery list
-func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error) {
+func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error) {
 	// Check if at least one field is being updated
-	if name == nil && description == nil && isFeatured == nil {
+	if name == nil && description == nil && isFeatured == nil && isActive == nil {
 		return nil, fmt.Errorf("at least one field must be provided for update")
 	}
 
@@ -714,18 +717,26 @@ func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UU
 		args = append(args, *isFeatured)
 		argIdx++
 	}
+	if isActive != nil {
+		setClauses = append(setClauses, fmt.Sprintf("visibility = $%d", argIdx))
+		visibility := "private"
+		if *isActive {
+			visibility = "public"
+		}
+		args = append(args, visibility)
+	}
 
 	// Join all SET clauses
 	query := "UPDATE playlists SET " + setClauses[0]
 	for i := 1; i < len(setClauses); i++ {
 		query += ", " + setClauses[i]
 	}
-	query += " WHERE id = $1 AND is_curated = true RETURNING id, user_id as created_by, title as name, slug, description, is_featured, created_at, updated_at"
+	query += " WHERE id = $1 AND is_curated = true RETURNING id, user_id as created_by, title as name, slug, description, is_featured, visibility = 'public', created_at, updated_at"
 
 	var list models.DiscoveryList
 	err := r.db.QueryRow(ctx, query, args...).Scan(
 		&list.ID, &list.CreatedBy, &list.Name, &list.Slug, &list.Description,
-		&list.IsFeatured, &list.CreatedAt, &list.UpdatedAt,
+		&list.IsFeatured, &list.IsActive, &list.CreatedAt, &list.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -734,7 +745,6 @@ func (r *DiscoveryListRepository) UpdateList(ctx context.Context, listID uuid.UU
 		return nil, fmt.Errorf("failed to update discovery list: %w", err)
 	}
 
-	list.IsActive = true
 	list.DisplayOrder = 0
 
 	return &list, nil
@@ -759,9 +769,29 @@ func (r *DiscoveryListRepository) DeleteList(ctx context.Context, listID uuid.UU
 
 // AddClipToList adds a clip to a discovery list
 func (r *DiscoveryListRepository) AddClipToList(ctx context.Context, listID, clipID uuid.UUID) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin add-clip transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var locked int
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM playlists WHERE id = $1 AND is_curated = true AND deleted_at IS NULL FOR UPDATE", listID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDiscoveryListNotFound
+		}
+		return fmt.Errorf("failed to lock discovery list: %w", err)
+	}
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM clips WHERE id = $1 AND is_removed = false", clipID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrClipNotFound
+		}
+		return fmt.Errorf("failed to verify clip: %w", err)
+	}
+
 	// Get the current max display order
 	var maxOrder int
-	err := r.db.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		"SELECT COALESCE(MAX(order_index), -1) FROM playlist_items WHERE playlist_id = $1", listID).Scan(&maxOrder)
 	if err != nil {
 		return fmt.Errorf("failed to get max display order: %w", err)
@@ -774,25 +804,44 @@ func (r *DiscoveryListRepository) AddClipToList(ctx context.Context, listID, cli
 		ON CONFLICT (playlist_id, clip_id) DO NOTHING
 	`
 
-	_, err = r.db.Exec(ctx, query, listID, clipID, maxOrder+1)
+	result, err := tx.Exec(ctx, query, listID, clipID, maxOrder+1)
 	if err != nil {
 		return fmt.Errorf("failed to add clip to list: %w", err)
 	}
+	if result.RowsAffected() == 0 {
+		return ErrClipAlreadyInList
+	}
 
 	// Update the playlists updated_at timestamp
-	_, err = r.db.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
+	_, err = tx.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
 	if err != nil {
 		return fmt.Errorf("failed to update list timestamp: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit add-clip transaction: %w", err)
+	}
 	return nil
 }
 
 // RemoveClipFromList removes a clip from a discovery list
 func (r *DiscoveryListRepository) RemoveClipFromList(ctx context.Context, listID, clipID uuid.UUID) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin remove-clip transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var locked int
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM playlists WHERE id = $1 AND is_curated = true AND deleted_at IS NULL FOR UPDATE", listID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDiscoveryListNotFound
+		}
+		return fmt.Errorf("failed to lock discovery list: %w", err)
+	}
 	query := "DELETE FROM playlist_items WHERE playlist_id = $1 AND clip_id = $2"
 
-	result, err := r.db.Exec(ctx, query, listID, clipID)
+	result, err := tx.Exec(ctx, query, listID, clipID)
 	if err != nil {
 		return fmt.Errorf("failed to remove clip from list: %w", err)
 	}
@@ -803,11 +852,14 @@ func (r *DiscoveryListRepository) RemoveClipFromList(ctx context.Context, listID
 	}
 
 	// Update the playlists updated_at timestamp
-	_, err = r.db.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
+	_, err = tx.Exec(ctx, "UPDATE playlists SET updated_at = NOW() WHERE id = $1", listID)
 	if err != nil {
 		return fmt.Errorf("failed to update list timestamp: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit remove-clip transaction: %w", err)
+	}
 	return nil
 }
 
@@ -820,12 +872,30 @@ func (r *DiscoveryListRepository) ReorderClips(ctx context.Context, listID uuid.
 	}
 	defer tx.Rollback(ctx)
 
+	var locked int
+	if err := tx.QueryRow(ctx, "SELECT 1 FROM playlists WHERE id = $1 AND is_curated = true AND deleted_at IS NULL FOR UPDATE", listID).Scan(&locked); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrDiscoveryListNotFound
+		}
+		return fmt.Errorf("failed to lock discovery list: %w", err)
+	}
+	var memberCount int
+	if err := tx.QueryRow(ctx, "SELECT COUNT(*) FROM playlist_items WHERE playlist_id = $1", listID).Scan(&memberCount); err != nil {
+		return fmt.Errorf("failed to count list membership: %w", err)
+	}
+	if memberCount != len(clipIDs) {
+		return ErrDiscoveryListReorderMismatch
+	}
+
 	// Update display order for each clip
 	for i, clipID := range clipIDs {
 		query := "UPDATE playlist_items SET order_index = $1 WHERE playlist_id = $2 AND clip_id = $3"
-		_, err := tx.Exec(ctx, query, i, listID, clipID)
+		result, err := tx.Exec(ctx, query, i, listID, clipID)
 		if err != nil {
 			return fmt.Errorf("failed to update clip order: %w", err)
+		}
+		if result.RowsAffected() != 1 {
+			return ErrDiscoveryListReorderMismatch
 		}
 	}
 
@@ -906,8 +976,8 @@ func (r *DiscoveryListRepository) CreateDiscoveryList(ctx context.Context, name,
 }
 
 // UpdateDiscoveryList is an alias for UpdateList
-func (r *DiscoveryListRepository) UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured *bool) (*models.DiscoveryList, error) {
-	return r.UpdateList(ctx, listID, name, description, isFeatured)
+func (r *DiscoveryListRepository) UpdateDiscoveryList(ctx context.Context, listID uuid.UUID, name, description *string, isFeatured, isActive *bool) (*models.DiscoveryList, error) {
+	return r.UpdateList(ctx, listID, name, description, isFeatured, isActive)
 }
 
 // DeleteDiscoveryList is an alias for DeleteList

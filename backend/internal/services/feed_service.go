@@ -2,12 +2,20 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+)
+
+var (
+	ErrFeedNotFound           = repository.ErrFeedNotFound
+	ErrFeedForbidden          = errors.New("feed operation forbidden")
+	ErrFeedClipNotFound       = repository.ErrFeedClipNotFound
+	ErrFeedMembershipMismatch = repository.ErrFeedMembershipMismatch
 )
 
 type FeedService struct {
@@ -73,7 +81,7 @@ func (s *FeedService) GetFeed(ctx context.Context, feedID uuid.UUID, requestingU
 	// Check if the requesting user has access to this feed
 	if !feed.IsPublic {
 		if requestingUserID == nil || *requestingUserID != feed.UserID {
-			return nil, fmt.Errorf("unauthorized access to private feed")
+			return nil, ErrFeedNotFound
 		}
 	}
 
@@ -94,7 +102,7 @@ func (s *FeedService) UpdateFeed(ctx context.Context, feedID, userID uuid.UUID, 
 	}
 
 	if feed.UserID != userID {
-		return nil, fmt.Errorf("unauthorized to update this feed")
+		return nil, ErrFeedForbidden
 	}
 
 	if req.Name != nil {
@@ -126,7 +134,7 @@ func (s *FeedService) DeleteFeed(ctx context.Context, feedID, userID uuid.UUID) 
 	}
 
 	if feed.UserID != userID {
-		return fmt.Errorf("unauthorized to delete this feed")
+		return ErrFeedForbidden
 	}
 
 	return s.feedRepo.DeleteFeed(ctx, feedID)
@@ -140,13 +148,16 @@ func (s *FeedService) AddClipToFeed(ctx context.Context, feedID, userID, clipID 
 	}
 
 	if feed.UserID != userID {
-		return nil, fmt.Errorf("unauthorized to add clips to this feed")
+		return nil, ErrFeedForbidden
 	}
 
 	// Verify clip exists
-	_, err = s.clipRepo.GetByID(ctx, clipID)
+	clip, err := s.clipRepo.GetByID(ctx, clipID)
 	if err != nil {
-		return nil, fmt.Errorf("clip not found")
+		return nil, fmt.Errorf("failed to verify clip: %w", err)
+	}
+	if clip == nil || clip.IsRemoved || clip.IsHidden {
+		return nil, ErrFeedClipNotFound
 	}
 
 	feedItem := &models.FeedItem{
@@ -172,23 +183,26 @@ func (s *FeedService) RemoveClipFromFeed(ctx context.Context, feedID, userID, cl
 	}
 
 	if feed.UserID != userID {
-		return fmt.Errorf("unauthorized to remove clips from this feed")
+		return ErrFeedForbidden
 	}
 
 	return s.feedRepo.RemoveClipFromFeed(ctx, feedID, clipID)
 }
 
 // GetFeedClips retrieves all clips in a feed
-func (s *FeedService) GetFeedClips(ctx context.Context, feedID uuid.UUID, requestingUserID *uuid.UUID) ([]*models.FeedItemWithClip, error) {
+func (s *FeedService) GetFeedClips(ctx context.Context, feedID, expectedOwnerID uuid.UUID, requestingUserID *uuid.UUID) ([]*models.FeedItemWithClip, error) {
 	feed, err := s.feedRepo.GetFeedByID(ctx, feedID)
 	if err != nil {
 		return nil, err
+	}
+	if feed.UserID != expectedOwnerID {
+		return nil, ErrFeedNotFound
 	}
 
 	// Check if the requesting user has access to this feed
 	if !feed.IsPublic {
 		if requestingUserID == nil || *requestingUserID != feed.UserID {
-			return nil, fmt.Errorf("unauthorized access to private feed")
+			return nil, ErrFeedNotFound
 		}
 	}
 
@@ -203,21 +217,24 @@ func (s *FeedService) ReorderFeedClips(ctx context.Context, feedID, userID uuid.
 	}
 
 	if feed.UserID != userID {
-		return fmt.Errorf("unauthorized to reorder clips in this feed")
+		return ErrFeedForbidden
 	}
 
 	return s.feedRepo.ReorderFeedClips(ctx, feedID, clipIDs)
 }
 
 // FollowFeed adds a follow relationship
-func (s *FeedService) FollowFeed(ctx context.Context, userID, feedID uuid.UUID) error {
+func (s *FeedService) FollowFeed(ctx context.Context, userID, expectedOwnerID, feedID uuid.UUID) error {
 	feed, err := s.feedRepo.GetFeedByID(ctx, feedID)
 	if err != nil {
 		return err
 	}
+	if feed.UserID != expectedOwnerID {
+		return ErrFeedNotFound
+	}
 
 	if !feed.IsPublic {
-		return fmt.Errorf("cannot follow a private feed")
+		return ErrFeedNotFound
 	}
 
 	feedFollow := &models.FeedFollow{
@@ -231,7 +248,14 @@ func (s *FeedService) FollowFeed(ctx context.Context, userID, feedID uuid.UUID) 
 }
 
 // UnfollowFeed removes a follow relationship
-func (s *FeedService) UnfollowFeed(ctx context.Context, userID, feedID uuid.UUID) error {
+func (s *FeedService) UnfollowFeed(ctx context.Context, userID, expectedOwnerID, feedID uuid.UUID) error {
+	feed, err := s.feedRepo.GetFeedByID(ctx, feedID)
+	if err != nil {
+		return err
+	}
+	if feed.UserID != expectedOwnerID {
+		return ErrFeedNotFound
+	}
 	return s.feedRepo.UnfollowFeed(ctx, userID, feedID)
 }
 

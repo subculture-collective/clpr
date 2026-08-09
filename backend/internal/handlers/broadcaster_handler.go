@@ -1,27 +1,32 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
 )
 
 // BroadcasterHandler handles broadcaster-related HTTP requests
 type BroadcasterHandler struct {
-	broadcasterRepo *repository.BroadcasterRepository
-	clipRepo        *repository.ClipRepository
-	twitchClient    *twitch.Client
-	authService     *services.AuthService
+	broadcasterRepo  *repository.BroadcasterRepository
+	rankingRefresher broadcasterRankingRefresher
+	clipRepo         *repository.ClipRepository
+	twitchClient     *twitch.Client
+	authService      *services.AuthService
+}
+
+type broadcasterRankingRefresher interface {
+	RefreshRankings(context.Context) error
 }
 
 // NewBroadcasterHandler creates a new broadcaster handler
@@ -32,10 +37,11 @@ func NewBroadcasterHandler(
 	authService *services.AuthService,
 ) *BroadcasterHandler {
 	return &BroadcasterHandler{
-		broadcasterRepo: broadcasterRepo,
-		clipRepo:        clipRepo,
-		twitchClient:    twitchClient,
-		authService:     authService,
+		broadcasterRepo:  broadcasterRepo,
+		rankingRefresher: broadcasterRepo,
+		clipRepo:         clipRepo,
+		twitchClient:     twitchClient,
+		authService:      authService,
 	}
 }
 
@@ -43,7 +49,7 @@ func NewBroadcasterHandler(
 // GET /api/v1/broadcasters/:id
 func (h *BroadcasterHandler) GetBroadcasterProfile(c *gin.Context) {
 	broadcasterID := c.Param("id")
-	if broadcasterID == "" {
+	if broadcasterID == "" || len(broadcasterID) > 128 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "broadcaster_id is required"})
 		return
 	}
@@ -77,17 +83,21 @@ func (h *BroadcasterHandler) GetBroadcasterProfile(c *gin.Context) {
 	followerCount, err := h.broadcasterRepo.GetFollowerCount(ctx, broadcasterID)
 	if err != nil {
 		utils.GetLogger().Error("Failed to get follower count", err, map[string]interface{}{"broadcaster_id": broadcasterID})
-		// Don't fail the whole request for this
-		followerCount = 0
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get follower count"})
+		return
 	}
 
 	// Check if current user is following (if authenticated)
 	isFollowing := false
-	userID, exists := c.Get("user_id")
-	if exists {
-		userUUID, ok := userID.(uuid.UUID)
-		if ok {
-			isFollowing, _ = h.broadcasterRepo.IsFollowing(ctx, userUUID, broadcasterID)
+	userID, ok := optionalCommunityUserID(c)
+	if !ok {
+		return
+	}
+	if userID != nil {
+		isFollowing, err = h.broadcasterRepo.IsFollowing(ctx, *userID, broadcasterID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get follow status"})
+			return
 		}
 	}
 
@@ -126,20 +136,14 @@ func (h *BroadcasterHandler) GetBroadcasterProfile(c *gin.Context) {
 // POST /api/v1/broadcasters/:id/follow
 func (h *BroadcasterHandler) FollowBroadcaster(c *gin.Context) {
 	broadcasterID := c.Param("id")
-	if broadcasterID == "" {
+	if broadcasterID == "" || len(broadcasterID) > 128 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "broadcaster_id is required"})
 		return
 	}
 
 	// Get authenticated user
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
-		return
-	}
-	userUUID, ok := userID.(uuid.UUID)
+	userUUID, ok := authenticatedUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID"})
 		return
 	}
 
@@ -171,20 +175,14 @@ func (h *BroadcasterHandler) FollowBroadcaster(c *gin.Context) {
 // DELETE /api/v1/broadcasters/:id/follow
 func (h *BroadcasterHandler) UnfollowBroadcaster(c *gin.Context) {
 	broadcasterID := c.Param("id")
-	if broadcasterID == "" {
+	if broadcasterID == "" || len(broadcasterID) > 128 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "broadcaster_id is required"})
 		return
 	}
 
 	// Get authenticated user
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
-		return
-	}
-	userUUID, ok := userID.(uuid.UUID)
+	userUUID, ok := authenticatedUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID"})
 		return
 	}
 
@@ -209,9 +207,12 @@ func (h *BroadcasterHandler) UnfollowBroadcaster(c *gin.Context) {
 func (h *BroadcasterHandler) ListPopularBroadcasters(c *gin.Context) {
 	limit := 15
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed >= 1 && parsed <= 50 {
-			limit = parsed
+		parsed, err := strconv.Atoi(l)
+		if err != nil || parsed < 1 || parsed > 50 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 50"})
+			return
 		}
+		limit = parsed
 	}
 
 	broadcasters, err := h.broadcasterRepo.ListPopularBroadcasters(c.Request.Context(), limit)
@@ -230,14 +231,20 @@ func (h *BroadcasterHandler) GetBroadcasterRankings(c *gin.Context) {
 	limit := 20
 	offset := 0
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
-			limit = parsed
+		parsed, err := strconv.Atoi(l)
+		if err != nil || parsed < 1 || parsed > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+			return
 		}
+		limit = parsed
 	}
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
-			offset = parsed
+		parsed, err := strconv.Atoi(o)
+		if err != nil || parsed < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be a non-negative integer"})
+			return
 		}
+		offset = parsed
 	}
 
 	rankings, total, err := h.broadcasterRepo.GetRankedBroadcasters(c.Request.Context(), limit, offset)
@@ -259,7 +266,13 @@ func (h *BroadcasterHandler) GetBroadcasterRankings(c *gin.Context) {
 // RefreshBroadcasterRankings triggers a refresh of the rankings materialized view (admin only)
 // POST /api/v1/admin/broadcasters/refresh-rankings
 func (h *BroadcasterHandler) RefreshBroadcasterRankings(c *gin.Context) {
-	if err := h.broadcasterRepo.RefreshRankings(c.Request.Context()); err != nil {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+	if err := h.rankingRefresher.RefreshRankings(ctx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Ranking refresh timed out"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh rankings"})
 		return
 	}
@@ -270,7 +283,7 @@ func (h *BroadcasterHandler) RefreshBroadcasterRankings(c *gin.Context) {
 // GET /api/v1/broadcasters/:id/clips
 func (h *BroadcasterHandler) ListBroadcasterClips(c *gin.Context) {
 	broadcasterID := c.Param("id")
-	if broadcasterID == "" {
+	if broadcasterID == "" || len(broadcasterID) > 128 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "broadcaster_id is required"})
 		return
 	}

@@ -2,14 +2,18 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+var ErrPlaylistOfTheDayNotFound = errors.New("playlist of the day not found")
+var ErrPlaylistCollaboratorNotFound = errors.New("playlist collaborator not found")
 
 // PlaylistRepository handles database operations for playlists
 type PlaylistRepository struct {
@@ -317,6 +321,9 @@ func (r *PlaylistRepository) ListByUserID(ctx context.Context, userID uuid.UUID,
 		}
 		playlists = append(playlists, &item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating user playlists: %w", err)
+	}
 
 	if currentUserID != nil {
 		if err := r.enrichPlaylistInteractionStates(ctx, *currentUserID, playlists); err != nil {
@@ -442,6 +449,9 @@ func (r *PlaylistRepository) ListPublic(ctx context.Context, currentUserID *uuid
 			return nil, 0, fmt.Errorf("failed to scan playlist: %w", err)
 		}
 		playlists = append(playlists, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating public playlists: %w", err)
 	}
 
 	if currentUserID != nil {
@@ -570,6 +580,9 @@ func (r *PlaylistRepository) ListBookmarkedByUser(ctx context.Context, userID uu
 			return nil, 0, fmt.Errorf("failed to scan playlist: %w", err)
 		}
 		playlists = append(playlists, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating bookmarked playlists: %w", err)
 	}
 
 	if currentUserID != nil {
@@ -1045,6 +1058,47 @@ func (r *PlaylistRepository) UpdateShareToken(ctx context.Context, playlistID uu
 	return nil
 }
 
+// GetOrCreateShareToken atomically returns the canonical token under concurrent callers.
+func (r *PlaylistRepository) GetOrCreateShareToken(ctx context.Context, playlistID uuid.UUID, candidate string) (string, error) {
+	var token string
+	err := r.pool.QueryRow(ctx, `
+		UPDATE playlists
+		SET share_token = COALESCE(NULLIF(share_token, ''), $2), updated_at = NOW()
+		WHERE id = $1 AND deleted_at IS NULL
+		RETURNING share_token
+	`, playlistID, candidate).Scan(&token)
+	if err == pgx.ErrNoRows {
+		return "", fmt.Errorf("playlist not found")
+	}
+	if err != nil {
+		return "", fmt.Errorf("get or create playlist share token: %w", err)
+	}
+	return token, nil
+}
+
+// TrackShareAndIncrement atomically records analytics and updates the denormalized counter.
+func (r *PlaylistRepository) TrackShareAndIncrement(ctx context.Context, share *models.PlaylistShare) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin playlist share transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err = tx.Exec(ctx, `INSERT INTO playlist_shares (id, playlist_id, platform, referrer, shared_at) VALUES ($1, $2, $3, $4, $5)`, share.ID, share.PlaylistID, share.Platform, share.Referrer, share.SharedAt); err != nil {
+		return fmt.Errorf("insert playlist share: %w", err)
+	}
+	result, err := tx.Exec(ctx, `UPDATE playlists SET share_count = share_count + 1 WHERE id = $1 AND deleted_at IS NULL`, share.PlaylistID)
+	if err != nil {
+		return fmt.Errorf("increment playlist share count: %w", err)
+	}
+	if result.RowsAffected() != 1 {
+		return fmt.Errorf("playlist not found")
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit playlist share transaction: %w", err)
+	}
+	return nil
+}
+
 // IncrementViewCount increments the view count for a playlist
 func (r *PlaylistRepository) IncrementViewCount(ctx context.Context, playlistID uuid.UUID) error {
 	query := `
@@ -1117,7 +1171,7 @@ func (r *PlaylistRepository) UpdateCollaboratorPermission(ctx context.Context, p
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("collaborator not found")
+		return ErrPlaylistCollaboratorNotFound
 	}
 
 	return nil
@@ -1136,7 +1190,7 @@ func (r *PlaylistRepository) RemoveCollaborator(ctx context.Context, playlistID,
 	}
 
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("collaborator not found")
+		return ErrPlaylistCollaboratorNotFound
 	}
 
 	return nil
@@ -1163,7 +1217,7 @@ func (r *PlaylistRepository) GetCollaborators(ctx context.Context, playlistID uu
 	var collaborators []*models.PlaylistCollaborator
 	for rows.Next() {
 		var collab models.PlaylistCollaborator
-		collab.User = &models.User{}
+		collab.User = &models.PlaylistCollaboratorUser{}
 
 		err := rows.Scan(
 			&collab.ID,
@@ -1183,6 +1237,9 @@ func (r *PlaylistRepository) GetCollaborators(ctx context.Context, playlistID uu
 			return nil, fmt.Errorf("failed to scan collaborator: %w", err)
 		}
 		collaborators = append(collaborators, &collab)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed while iterating playlist collaborators: %w", err)
 	}
 
 	return collaborators, nil
@@ -1323,6 +1380,9 @@ func (r *PlaylistRepository) ListFeatured(ctx context.Context, currentUserID *uu
 		}
 		playlists = append(playlists, &item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed while iterating featured playlists: %w", err)
+	}
 
 	if currentUserID != nil {
 		if err := r.enrichPlaylistInteractionStates(ctx, *currentUserID, playlists); err != nil {
@@ -1428,6 +1488,9 @@ func (r *PlaylistRepository) GetPlaylistOfTheDay(ctx context.Context, currentUse
 		&item.HasProcessingClips,
 	)
 
+	if err == pgx.ErrNoRows {
+		return nil, ErrPlaylistOfTheDayNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get playlist of the day: %w", err)
 	}

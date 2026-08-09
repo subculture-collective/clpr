@@ -259,13 +259,13 @@ curl http://localhost:8080/health
 
 ## Related Documentation
 
-- [CDN Failover Runbook](docs/operations/CDN_FAILOVER_RUNBOOK.md) - Operational procedures
-- [Testing Guide](docs/testing/TESTING.md) - Full testing documentation
+- [CDN Failover Runbook](../operations/CDN_FAILOVER_RUNBOOK.md) - Operational procedures
+- [Testing Guide](./TESTING.md) - Full testing documentation
 
 ## Support
 
 If you encounter issues:
-1. Check the [CDN Failover Runbook](docs/operations/CDN_FAILOVER_RUNBOOK.md)
+1. Check the [CDN Failover Runbook](../operations/CDN_FAILOVER_RUNBOOK.md)
 2. Review test logs for error details
 3. Verify test infrastructure is running
 4. Check that environment variables are set correctly

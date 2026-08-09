@@ -1,0 +1,489 @@
+version: '3'
+
+silent: false
+
+vars:
+  PROJECT_NAME:
+    sh: 'printf "%s" "${COMPOSE_PROJECT_NAME:-$(basename "$PWD")}"'
+  DEV_NETWORK: '{{.PROJECT_NAME}}_default'
+  COMPOSE: 'docker compose -p {{.PROJECT_NAME}} -f docker-compose.yml'
+  TEST_COMPOSE: 'docker compose -f docker-compose.test.yml'
+  DB_URL: 'postgresql://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable'
+  TEST_DB_URL: 'postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable'
+  MIGRATIONS_PATH: 'backend/migrations'
+  BACKEND_BIN_DIR:
+    sh: 'if [ -d backend/bin ] && [ ! -w backend/bin ]; then echo .tmp/bin; else echo backend/bin; fi'
+
+tasks:
+  default:
+    aliases: [help]
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  doctor:
+    desc: Check local tool availability
+    cmds:
+      - command -v go >/dev/null && go version
+      - command -v npm >/dev/null && npm --version
+      - command -v docker >/dev/null && docker --version
+      - command -v task >/dev/null && task --version
+
+  contract:
+    desc: Verify public task prerequisites without external side effects
+    cmds:
+      - bash scripts/verify-task-contract.sh
+
+  install:
+    desc: Install backend and frontend dependencies
+    cmds:
+      - cd backend && go mod download
+      - cd frontend && npm ci
+
+  build:
+    desc: Build backend and frontend
+    deps: [backend:build, frontend:build]
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf .tmp/bin frontend/dist backend/coverage*.out backend/coverage*.html
+
+  lint:
+    desc: Format backend and lint frontend
+    cmds:
+      - cd backend && go fmt ./...
+      - cd frontend && npm run lint
+
+  dev:
+    desc: Start the Docker development stack
+    aliases: [docker-dev, docker-up, docker-dev-up]
+    cmds:
+      - task: docker:up
+
+  backend-dev:
+    desc: Run backend locally against local Docker services
+    cmds:
+      - bash -c 'until pg_isready -h localhost -p 5436 -U clpr -d clpr_db >/dev/null 2>&1; do sleep 1; done'
+      - cd backend && go run ./cmd/api
+
+  frontend-dev:
+    desc: Run frontend dev server
+    cmds:
+      - cd frontend && npm run dev
+
+  backend:build:
+    desc: Build backend binary
+    aliases: [backend-build]
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/api ./cmd/api
+
+  frontend:build:
+    desc: Build frontend bundle
+    aliases: [frontend-build]
+    cmds:
+      - cd frontend && npm run build
+
+  docker:ensure-network:
+    internal: true
+    cmds:
+      - |
+        if docker network inspect {{.DEV_NETWORK}} >/dev/null 2>&1; then
+          PROJECT_LABEL=$(docker network inspect -f '{{`{{ index .Labels "com.docker.compose.project" }}`}}' {{.DEV_NETWORK}})
+          NETWORK_LABEL=$(docker network inspect -f '{{`{{ index .Labels "com.docker.compose.network" }}`}}' {{.DEV_NETWORK}})
+          if [ "$PROJECT_LABEL" != "{{.PROJECT_NAME}}" ] || [ "$NETWORK_LABEL" != "default" ]; then
+            echo "Found stale network {{.DEV_NETWORK}} with mismatched labels ($PROJECT_LABEL/$NETWORK_LABEL); recreating..."
+            docker network rm {{.DEV_NETWORK}}
+            docker network create --label com.docker.compose.project={{.PROJECT_NAME}} --label com.docker.compose.network=default {{.DEV_NETWORK}}
+          fi
+        else
+          docker network create --label com.docker.compose.project={{.PROJECT_NAME}} --label com.docker.compose.network=default {{.DEV_NETWORK}}
+        fi
+
+  docker:up:
+    desc: Start Docker services
+    deps: [docker:ensure-network]
+    aliases: [docker-up]
+    cmds:
+      - '{{.COMPOSE}} up -d'
+
+  docker:build:
+    desc: Build and start Docker services
+    deps: [docker:ensure-network]
+    aliases: [docker-build, docker-dev-build]
+    cmds:
+      - '{{.COMPOSE}} down --remove-orphans >/dev/null 2>&1 || true'
+      - '{{.COMPOSE}} up -d --build --remove-orphans'
+
+  docker:down:
+    desc: Stop Docker services
+    aliases: [docker-down, docker-dev-down]
+    cmds:
+      - '{{.COMPOSE}} down'
+
+  docker:logs:
+    desc: Tail Docker service logs
+    aliases: [docker-logs, docker-dev-logs]
+    cmds:
+      - '{{.COMPOSE}} logs -f --tail 500'
+
+  docker:logs:backend:
+    desc: Tail backend container logs
+    aliases: [docker-logs-backend]
+    cmds:
+      - docker logs -f clpr-backend
+
+  docker:logs:frontend:
+    desc: Tail frontend container logs
+    aliases: [docker-logs-frontend]
+    cmds:
+      - docker logs -f clpr-frontend
+
+  docker:logs:postgres:
+    desc: Tail postgres container logs
+    aliases: [docker-logs-postgres]
+    cmds:
+      - docker logs -f clpr-postgres
+
+  docker:logs:redis:
+    desc: Tail redis container logs
+    aliases: [docker-logs-redis]
+    cmds:
+      - docker logs -f clpr-redis
+
+  test:setup:
+    desc: Set up test containers and migrations
+    aliases: [test-setup]
+    cmds:
+      - cd backend && bash setup-test-env.sh
+      - '{{.TEST_COMPOSE}} up -d'
+      - bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T redis-test redis-cli ping >/dev/null 2>&1; then echo "Redis is ready"; exit 0; fi; sleep 1; done; echo "Redis failed to become ready"; exit 1'
+      - bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T postgres-test pg_isready -U clpr -d clpr_test >/dev/null 2>&1; then echo "PostgreSQL is ready"; exit 0; fi; sleep 1; done; echo "PostgreSQL failed to become ready"; exit 1'
+      - task: migrate:test:up
+      - bash -c 'for i in {1..60}; do if curl -f -s http://localhost:9201/_cluster/health >/dev/null 2>&1; then echo "OpenSearch is ready"; exit 0; fi; sleep 1; done; echo "OpenSearch failed to become ready"; exit 1'
+
+  test:teardown:
+    desc: Stop test containers
+    aliases: [test-teardown]
+    cmds:
+      - '{{.TEST_COMPOSE}} down'
+
+  test:
+    desc: Run backend tests; set INTEGRATION=1 and/or E2E=1 for broader suites
+    cmds:
+      - cd backend && INTEGRATION=${INTEGRATION:-} E2E=${E2E:-} bash run-tests-verbose.sh
+      - |
+        if [ "${E2E:-}" = "1" ]; then
+          mkdir -p .tmp
+          (bash -c '
+            cd backend &&
+            set -a && source .env.test && set +a &&
+            PORT=18088 GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
+            DB_HOST=localhost DB_PORT=5437 DB_USER=clpr DB_PASSWORD=clpr_password DB_NAME=clpr_test \
+            REDIS_HOST=localhost REDIS_PORT=6380 OPENSEARCH_URL=http://localhost:9201 \
+            CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 RATE_LIMIT_WHITELIST_IPS=127.0.0.1 \
+            FEATURE_ANALYTICS=false go run ./cmd/api
+          ') > .tmp/backend-e2e.log 2>&1 & echo $! > .tmp/backend-e2e.pid
+          sleep 5
+          cd frontend && PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18088 npm run test:e2e
+          cd ..
+          kill $(cat .tmp/backend-e2e.pid) || true
+          rm -f .tmp/backend-e2e.pid
+        fi
+      - 'if [ "${INTEGRATION:-}" = "1" ] || [ "${E2E:-}" = "1" ]; then task test:teardown; fi'
+
+  test:unit:
+    desc: Run backend and frontend unit tests
+    aliases: [test-unit]
+    cmds:
+      - cd backend && bash run-tests-verbose.sh
+      - cd frontend && npm run test -- run
+
+  test:skip-policy:
+    desc: Reject unowned, expired, or increased test skips
+    cmds:
+      - bash scripts/verify-test-skip-policy.sh
+
+  test:release-critical:
+    desc: Run security/identity/payment-facing backend tests with no skips
+    cmds:
+      - bash scripts/run-release-critical-backend-tests.sh
+
+  test:edge:
+    desc: Validate edge configuration, route parity, headers, health routes, and public metadata
+    cmds:
+      - bash scripts/test-edge-contracts.sh
+
+  test:blue-green:
+    desc: Validate immutable blue/green, canary, bake, and rollback contracts
+    cmds:
+      - bash scripts/test-blue-green-contracts.sh
+
+  test:operator-preflight:
+    desc: Validate fail-closed hosted, provider, staging, and recovery harnesses
+    cmds:
+      - bash scripts/test-operator-preflight.sh
+
+  test:source-convergence-contract:
+    desc: Validate deterministic source-gate orchestration and Gitea workflow structure
+    cmds:
+      - bash scripts/test-source-convergence-contract.sh
+
+  release:source-convergence:
+    desc: Run the complete fail-closed source gate from a clean checkout
+    cmds:
+      - bash scripts/source-convergence.sh --all
+
+  release:source-convergence:phase:
+    desc: Run one explicit source-gate phase (set PHASE=backend, frontend, api-docs, docs, contracts, or images)
+    cmds:
+      - 'test -n "{{.PHASE}}" || (echo "Set PHASE to a named convergence phase"; exit 1)'
+      - bash scripts/source-convergence.sh --phase "{{.PHASE}}"
+
+  test:backend:
+    desc: Run all backend Go tests
+    cmds:
+      - cd backend && go test ./...
+
+  test:frontend:
+    desc: Run frontend unit tests
+    aliases: [test-frontend]
+    cmds:
+      - cd frontend && npm run test -- run
+
+  test:frontend:headed:
+    desc: Run frontend unit tests in headed/watch mode
+    aliases: [test-frontend-headed]
+    cmds:
+      - cd frontend && npm run test
+
+  test:frontend:ui:
+    desc: Open Vitest UI
+    aliases: [test-frontend-ui]
+    cmds:
+      - cd frontend && npm run test:ui
+
+  test:frontend:coverage:
+    desc: Run frontend coverage report
+    aliases: [test-frontend-coverage]
+    cmds:
+      - cd frontend && npm run test:coverage
+
+  test:e2e:
+    desc: Run all mocked and real-backend Playwright projects
+    aliases: [test-e2e, test-frontend-e2e]
+    cmds:
+      - cd frontend && npm run test:e2e
+
+  test:e2e:list:
+    desc: Verify Playwright discovers a non-zero browser test manifest
+    cmds:
+      - bash scripts/verify-playwright-manifest.sh
+
+  test:e2e:mocked:
+    desc: Run mocked Chromium UI smoke tests (not a release substitute)
+    cmds:
+      - cd frontend && npm run test:e2e:mocked
+
+  test:e2e:real:
+    desc: Run real-backend smoke tests in all supported browsers
+    cmds:
+      - bash scripts/run-real-e2e.sh
+
+  test:e2e:ui:
+    desc: Run frontend Playwright E2E UI
+    aliases: [test-frontend-e2e-ui]
+    cmds:
+      - cd frontend && npm run test:e2e:ui
+
+  test:e2e:report:
+    desc: View latest Playwright report
+    aliases: [test-frontend-e2e-report]
+    cmds:
+      - cd frontend && npx playwright show-report
+
+  test:frontend:all:
+    desc: Run frontend unit and E2E tests
+    aliases: [test-frontend-all]
+    cmds:
+      - task: test:frontend
+      - task: test:e2e
+
+  test:coverage:
+    desc: Run backend tests with coverage report
+    aliases: [test-coverage]
+    cmds:
+      - cd backend && go test -coverprofile=coverage.out -covermode=atomic ./...
+      - cd backend && go tool cover -html=coverage.out -o coverage.html
+
+  test:integration:
+    desc: Run all integration tests
+    aliases: [test-integration]
+    cmds:
+      - task: test:setup
+      - cd backend && go test -v -tags=integration -race -parallel=4 ./tests/integration/...
+      - task: test:teardown
+
+  test:integration:coverage:
+    desc: Run integration tests with coverage report
+    aliases: [test-integration-coverage]
+    cmds:
+      - task: test:setup
+      - cd backend && go test -v -tags=integration -race -parallel=4 -coverprofile=coverage-integration.out -covermode=atomic ./tests/integration/...
+      - cd backend && go tool cover -html=coverage-integration.out -o coverage-integration.html
+      - |
+        cd backend && go tool cover -func=coverage-integration.out | grep total | awk '{print "Integration test coverage: " $3}'
+      - task: test:teardown
+
+  test:integration:pkg:
+    desc: Run an existing integration package (currently PKG=premium)
+    cmds:
+      - 'test -n "{{.PKG}}" || (echo "Set PKG=premium"; exit 1)'
+      - 'test -d "backend/tests/integration/{{.PKG}}" || (echo "Integration package does not exist: {{.PKG}}"; exit 1)'
+      - task: test:setup
+      - cd backend && go test -v -tags=integration ./tests/integration/{{.PKG}}/...
+      - task: test:teardown
+
+  test-integration-premium:
+    desc: Run premium integration tests
+    cmds:
+      - task test:integration:pkg PKG=premium
+  test-integration-stripe:
+    desc: Run Stripe-focused premium integration tests
+    cmds:
+      - task: test:setup
+      - cd backend && go test -v -tags=integration ./tests/integration/premium/... -run 'TestWebhook.*|TestEntitlement.*|TestProration.*|TestPaymentFailure.*'
+      - task: test:teardown
+
+  migrate:up:
+    desc: Run database migrations up
+    aliases: [migrate-up]
+    cmds:
+      - 'command -v migrate >/dev/null || (echo "Install golang-migrate first"; exit 1)'
+      - migrate -path {{.MIGRATIONS_PATH}} -database '{{.DB_URL}}' up
+
+  migrate:down:
+    desc: Roll back one migration
+    aliases: [migrate-down]
+    cmds:
+      - migrate -path {{.MIGRATIONS_PATH}} -database '{{.DB_URL}}' down 1
+
+  migrate:down:all:
+    desc: Roll back all migrations
+    aliases: [migrate-down-all]
+    cmds:
+      - migrate -path {{.MIGRATIONS_PATH}} -database '{{.DB_URL}}' down
+
+  migrate:create:
+    desc: Create migration (set NAME=add_new_feature)
+    aliases: [migrate-create]
+    cmds:
+      - 'test -n "{{.NAME}}" || (echo "Set NAME=migration_name"; exit 1)'
+      - migrate create -ext sql -dir {{.MIGRATIONS_PATH}} -seq {{.NAME}}
+
+  migrate:status:
+    desc: Show migration version
+    aliases: [migrate-status]
+    cmds:
+      - migrate -path {{.MIGRATIONS_PATH}} -database '{{.DB_URL}}' version
+
+  migrate:test:up:
+    internal: true
+    cmds:
+      - 'command -v migrate >/dev/null || (echo "Install golang-migrate before test:setup"; exit 1)'
+      - migrate -path {{.MIGRATIONS_PATH}} -database '{{.TEST_DB_URL}}' up
+
+  migrate:seed:
+    desc: Seed local database
+    aliases: [migrate-seed]
+    cmds:
+      - PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f {{.MIGRATIONS_PATH}}/seed.sql
+
+  migrate:seed:load-test:
+    desc: Seed local database with load test data
+    aliases: [migrate-seed-load-test]
+    cmds:
+      - PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f {{.MIGRATIONS_PATH}}/seed.sql
+      - PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f {{.MIGRATIONS_PATH}}/seed_load_test.sql
+
+  migrate:seed:moderation-perf-test:
+    desc: Seed local database with moderation performance data
+    aliases: [migrate-seed-moderation-perf-test]
+    cmds:
+      - PGPASSWORD=clpr_password psql -h localhost -p 5436 -U clpr -d clpr_db -f {{.MIGRATIONS_PATH}}/seed_moderation_perf_test.sql
+
+  site-freshness-seed:
+    desc: Ensure default site freshness playlist rules exist
+    cmds:
+      - cd backend && go run ./cmd/seed-site-freshness
+
+  site-freshness-generate:
+    desc: Ensure site freshness rules exist and generate playlists now
+    cmds:
+      - cd backend && go run ./cmd/seed-site-freshness -generate-now
+
+  evaluate:search:
+    desc: Run search quality evaluation
+    aliases: [evaluate-search]
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-search ./cmd/evaluate-search
+      - ./{{.BACKEND_BIN_DIR}}/evaluate-search -verbose
+  evaluate-search-json:
+    desc: Run search evaluation and output JSON
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-search ./cmd/evaluate-search
+      - ./{{.BACKEND_BIN_DIR}}/evaluate-search -output backend/evaluation-results.json
+  evaluate:recommendations:
+    desc: Run recommendation quality evaluation
+    aliases: [evaluate-recommendations]
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-recommendations ./cmd/evaluate-recommendations
+      - ./{{.BACKEND_BIN_DIR}}/evaluate-recommendations -verbose
+  evaluate-recommendations-json:
+    desc: Run recommendation evaluation and output JSON
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-recommendations ./cmd/evaluate-recommendations
+      - ./{{.BACKEND_BIN_DIR}}/evaluate-recommendations -output backend/recommendation-evaluation-results.json
+  grid-search-recommendations:
+    desc: Run quick recommendation parameter grid search
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/grid-search-recommendations ./cmd/grid-search-recommendations
+      - ./{{.BACKEND_BIN_DIR}}/grid-search-recommendations -quick -verbose
+  grid-search-recommendations-full:
+    desc: Run full recommendation parameter grid search
+    cmds:
+      - mkdir -p {{.BACKEND_BIN_DIR}}
+      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/grid-search-recommendations ./cmd/grid-search-recommendations
+      - ./{{.BACKEND_BIN_DIR}}/grid-search-recommendations -output backend/grid-search-results.json
+
+  openapi:validate:
+    desc: Validate OpenAPI specification
+    aliases: [openapi-validate]
+    cmds:
+      - npm run openapi:validate
+  openapi:serve:
+    desc: Start Swagger UI server on http://localhost:8081
+    aliases: [openapi-serve]
+    cmds:
+      - npm run openapi:serve
+  openapi:build:
+    desc: Build static API docs
+    aliases: [openapi-build]
+    cmds:
+      - npm run openapi:build
+  openapi:preview:
+    desc: Preview OpenAPI docs with live reload
+    aliases: [openapi-preview]
+    cmds:
+      - npm run openapi:preview
+  openapi:stats:
+    desc: Show OpenAPI spec stats
+    aliases: [openapi-stats]
+    cmds:
+      - npm run openapi:stats

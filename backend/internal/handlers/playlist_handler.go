@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // PlaylistHandler handles playlist-related requests
@@ -26,30 +26,47 @@ func NewPlaylistHandler(playlistService *services.PlaylistService) *PlaylistHand
 	}
 }
 
+func requiredPlaylistUserID(c *gin.Context) (uuid.UUID, bool) {
+	value, exists := c.Get("user_id")
+	userID, valid := value.(uuid.UUID)
+	if !exists || !valid || userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, StandardResponse{Success: false, Error: &ErrorInfo{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return uuid.Nil, false
+	}
+	return userID, true
+}
+
+func optionalPlaylistUserID(c *gin.Context) (*uuid.UUID, bool) {
+	value, exists := c.Get("user_id")
+	if !exists {
+		return nil, true
+	}
+	userID, valid := value.(uuid.UUID)
+	if !valid || userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, StandardResponse{Success: false, Error: &ErrorInfo{Code: "UNAUTHORIZED", Message: "Authentication required"}})
+		return nil, false
+	}
+	return &userID, true
+}
+
+func playlistPagination(c *gin.Context) (page, limit int, ok bool) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 || page > 1000000 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid page"}})
+		return 0, 0, false
+	}
+	limit, err = strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid limit"}})
+		return 0, 0, false
+	}
+	return page, limit, true
+}
+
 // CreatePlaylist handles POST /api/playlists
 func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
-	// Get user ID from context (set by auth middleware)
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -60,7 +77,7 @@ func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -102,29 +119,21 @@ func (h *PlaylistHandler) GetPlaylist(c *gin.Context) {
 	}
 
 	// Get optional user ID from context
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get playlist with clips
 	playlist, err := h.playlistService.GetPlaylist(c.Request.Context(), playlistID, userID, page, limit)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -134,12 +143,12 @@ func (h *PlaylistHandler) GetPlaylist(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "unauthorized: playlist is private" {
-			c.JSON(http.StatusForbidden, StandardResponse{
+		if errors.Is(err, services.ErrPlaylistPrivate) {
+			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "This playlist is private",
+					Code:    "NOT_FOUND",
+					Message: "Playlist not found",
 				},
 			})
 			return
@@ -175,7 +184,7 @@ func (h *PlaylistHandler) GetPlaylist(c *gin.Context) {
 // GetPlaylistByShareToken handles GET /api/playlists/share/:token
 func (h *PlaylistHandler) GetPlaylistByShareToken(c *gin.Context) {
 	shareToken := c.Param("token")
-	if shareToken == "" {
+	if shareToken == "" || len(shareToken) > 256 {
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -187,28 +196,20 @@ func (h *PlaylistHandler) GetPlaylistByShareToken(c *gin.Context) {
 	}
 
 	// Get optional user ID from context
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	playlist, err := h.playlistService.GetPlaylistByShareToken(c.Request.Context(), shareToken, userID, page, limit)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -248,28 +249,8 @@ func (h *PlaylistHandler) GetPlaylistByShareToken(c *gin.Context) {
 
 // UpdatePlaylist handles PATCH /api/playlists/:id
 func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -294,7 +275,7 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -303,7 +284,11 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 	// Update playlist
 	playlist, err := h.playlistService.UpdatePlaylist(c.Request.Context(), playlistID, userID, &req)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistValidation) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "At least one playlist field is required"}})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -342,28 +327,8 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 
 // CopyPlaylist handles POST /api/playlists/:id/copy
 func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -388,7 +353,7 @@ func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -396,22 +361,12 @@ func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
 
 	playlist, err := h.playlistService.CopyPlaylist(c.Request.Context(), playlistID, userID, &req)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "NOT_FOUND",
 					Message: "Playlist not found",
-				},
-			})
-			return
-		}
-		if strings.Contains(err.Error(), "unauthorized") {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "You don't have permission to copy this playlist",
 				},
 			})
 			return
@@ -434,28 +389,8 @@ func (h *PlaylistHandler) CopyPlaylist(c *gin.Context) {
 
 // DeletePlaylist handles DELETE /api/playlists/:id
 func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -516,41 +451,15 @@ func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 
 // ListUserPlaylists handles GET /api/playlists
 func (h *PlaylistHandler) ListUserPlaylists(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get user's playlists
@@ -586,23 +495,15 @@ func (h *PlaylistHandler) ListUserPlaylists(c *gin.Context) {
 
 // ListPublicPlaylists handles GET /api/playlists/public
 func (h *PlaylistHandler) ListPublicPlaylists(c *gin.Context) {
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get public playlists
@@ -638,18 +539,15 @@ func (h *PlaylistHandler) ListPublicPlaylists(c *gin.Context) {
 
 // ListBookmarkedPlaylists handles GET /api/playlists/bookmarks
 func (h *PlaylistHandler) ListBookmarkedPlaylists(c *gin.Context) {
-	userID := c.MustGet("user_id").(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
+	if !ok {
+		return
+	}
 
 	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get bookmarked playlists
@@ -686,28 +584,8 @@ func (h *PlaylistHandler) ListBookmarkedPlaylists(c *gin.Context) {
 
 // AddClipsToPlaylist handles POST /api/playlists/:id/clips
 func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -732,7 +610,7 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -761,7 +639,7 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "playlist cannot exceed 1000 clips" {
+		if errors.Is(err, services.ErrPlaylistClipLimit) {
 			c.JSON(http.StatusBadRequest, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -769,6 +647,10 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 					Message: "Playlist cannot exceed 1000 clips",
 				},
 			})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistClipNotFound) || errors.Is(err, services.ErrPlaylistMembershipMismatch) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid clip membership request"}})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
@@ -791,28 +673,8 @@ func (h *PlaylistHandler) AddClipsToPlaylist(c *gin.Context) {
 
 // RemoveClipFromPlaylist handles DELETE /api/playlists/:id/clips/:clip_id
 func (h *PlaylistHandler) RemoveClipFromPlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -867,7 +729,7 @@ func (h *PlaylistHandler) RemoveClipFromPlaylist(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "clip not found in playlist" {
+		if errors.Is(err, services.ErrPlaylistClipNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -897,28 +759,8 @@ func (h *PlaylistHandler) RemoveClipFromPlaylist(c *gin.Context) {
 
 // ReorderPlaylistClips handles PUT /api/playlists/:id/clips/order
 func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -943,7 +785,7 @@ func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -972,6 +814,10 @@ func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
 			})
 			return
 		}
+		if errors.Is(err, services.ErrPlaylistMembershipMismatch) {
+			c.JSON(http.StatusConflict, StandardResponse{Success: false, Error: &ErrorInfo{Code: "MEMBERSHIP_MISMATCH", Message: "Clip IDs must exactly match playlist membership"}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -992,28 +838,8 @@ func (h *PlaylistHandler) ReorderPlaylistClips(c *gin.Context) {
 
 // LikePlaylist handles POST /api/playlists/:id/like
 func (h *PlaylistHandler) LikePlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1034,22 +860,12 @@ func (h *PlaylistHandler) LikePlaylist(c *gin.Context) {
 	// Like playlist
 	err = h.playlistService.LikePlaylist(c.Request.Context(), playlistID, userID)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "NOT_FOUND",
 					Message: "Playlist not found",
-				},
-			})
-			return
-		}
-		if err.Error() == "cannot like private playlists" {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "Cannot like private playlists",
 				},
 			})
 			return
@@ -1074,28 +890,8 @@ func (h *PlaylistHandler) LikePlaylist(c *gin.Context) {
 
 // UnlikePlaylist handles DELETE /api/playlists/:id/like
 func (h *PlaylistHandler) UnlikePlaylist(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1136,28 +932,8 @@ func (h *PlaylistHandler) UnlikePlaylist(c *gin.Context) {
 
 // GetShareLink handles GET /api/playlists/:id/share-link
 func (h *PlaylistHandler) GetShareLink(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1178,7 +954,7 @@ func (h *PlaylistHandler) GetShareLink(c *gin.Context) {
 	// Get share link
 	shareLink, err := h.playlistService.GetShareLink(c.Request.Context(), playlistID, userID)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1237,7 +1013,7 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -1250,7 +1026,7 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 	}
 	err = h.playlistService.TrackShare(c.Request.Context(), playlistID, req.Platform, referrer)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1258,6 +1034,10 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 					Message: "Playlist not found",
 				},
 			})
+			return
+		}
+		if errors.Is(err, services.ErrPlaylistValidation) {
+			c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid share event"}})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
@@ -1280,28 +1060,8 @@ func (h *PlaylistHandler) TrackShare(c *gin.Context) {
 
 // AddCollaborator handles POST /api/playlists/:id/collaborators
 func (h *PlaylistHandler) AddCollaborator(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1326,7 +1086,7 @@ func (h *PlaylistHandler) AddCollaborator(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -1368,7 +1128,7 @@ func (h *PlaylistHandler) AddCollaborator(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "cannot add playlist owner as a collaborator" {
+		if errors.Is(err, services.ErrPlaylistValidation) {
 			c.JSON(http.StatusBadRequest, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1398,12 +1158,9 @@ func (h *PlaylistHandler) AddCollaborator(c *gin.Context) {
 
 // GetCollaborators handles GET /api/playlists/:id/collaborators
 func (h *PlaylistHandler) GetCollaborators(c *gin.Context) {
-	// Get user ID from context (optional for public playlists)
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
 
 	// Parse playlist ID
@@ -1430,22 +1187,12 @@ func (h *PlaylistHandler) GetCollaborators(c *gin.Context) {
 	}
 
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
 					Code:    "NOT_FOUND",
 					Message: "Playlist not found",
-				},
-			})
-			return
-		}
-		if err.Error() == "unauthorized: user does not have permission to view collaborators" {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "You don't have permission to view collaborators",
 				},
 			})
 			return
@@ -1468,28 +1215,8 @@ func (h *PlaylistHandler) GetCollaborators(c *gin.Context) {
 
 // RemoveCollaborator handles DELETE /api/playlists/:id/collaborators/:user_id
 func (h *PlaylistHandler) RemoveCollaborator(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1544,7 +1271,7 @@ func (h *PlaylistHandler) RemoveCollaborator(c *gin.Context) {
 			})
 			return
 		}
-		if err.Error() == "collaborator not found" {
+		if errors.Is(err, services.ErrPlaylistCollaboratorNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1574,28 +1301,8 @@ func (h *PlaylistHandler) RemoveCollaborator(c *gin.Context) {
 
 // UpdateCollaboratorPermission handles PATCH /api/playlists/:id/collaborators/:user_id
 func (h *PlaylistHandler) UpdateCollaboratorPermission(c *gin.Context) {
-	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "UNAUTHORIZED",
-				Message: "Authentication required",
-			},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{
-				Code:    "INTERNAL_ERROR",
-				Message: "Invalid user ID format",
-			},
-		})
 		return
 	}
 
@@ -1634,7 +1341,7 @@ func (h *PlaylistHandler) UpdateCollaboratorPermission(c *gin.Context) {
 			Success: false,
 			Error: &ErrorInfo{
 				Code:    "INVALID_REQUEST",
-				Message: err.Error(),
+				Message: "Invalid request body",
 			},
 		})
 		return
@@ -1643,6 +1350,10 @@ func (h *PlaylistHandler) UpdateCollaboratorPermission(c *gin.Context) {
 	// Update collaborator permission
 	err = h.playlistService.UpdateCollaboratorPermission(c.Request.Context(), playlistID, userID, collaboratorUserID, req.Permission)
 	if err != nil {
+		if errors.Is(err, services.ErrPlaylistCollaboratorNotFound) {
+			c.JSON(http.StatusNotFound, StandardResponse{Success: false, Error: &ErrorInfo{Code: "NOT_FOUND", Message: "Collaborator not found"}})
+			return
+		}
 		if err.Error() == "playlist not found" {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
@@ -1683,25 +1394,13 @@ func (h *PlaylistHandler) UpdateCollaboratorPermission(c *gin.Context) {
 
 // ListFeaturedPlaylists handles GET /api/v1/playlists/featured
 func (h *PlaylistHandler) ListFeaturedPlaylists(c *gin.Context) {
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
-
-	page := 1
-	limit := 20
-
-	if p := c.Query("page"); p != "" {
-		if val, err := strconv.Atoi(p); err == nil && val > 0 {
-			page = val
-		}
-	}
-	if l := c.Query("limit"); l != "" {
-		if val, err := strconv.Atoi(l); err == nil && val > 0 && val <= 100 {
-			limit = val
-		}
+	page, limit, ok := playlistPagination(c)
+	if !ok {
+		return
 	}
 
 	playlists, total, err := h.playlistService.ListFeaturedPlaylists(c.Request.Context(), userID, page, limit)
@@ -1735,16 +1434,14 @@ func (h *PlaylistHandler) ListFeaturedPlaylists(c *gin.Context) {
 
 // GetPlaylistOfTheDay handles GET /api/v1/playlists/today
 func (h *PlaylistHandler) GetPlaylistOfTheDay(c *gin.Context) {
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if uid, ok := userIDVal.(uuid.UUID); ok {
-			userID = &uid
-		}
+	userID, ok := optionalPlaylistUserID(c)
+	if !ok {
+		return
 	}
 
 	playlist, err := h.playlistService.GetPlaylistOfTheDay(c.Request.Context(), userID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, services.ErrPlaylistOfTheDayNotFound) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
 				Error: &ErrorInfo{
@@ -1772,21 +1469,8 @@ func (h *PlaylistHandler) GetPlaylistOfTheDay(c *gin.Context) {
 
 // BookmarkPlaylist handles POST /api/playlists/:id/bookmark
 func (h *PlaylistHandler) BookmarkPlaylist(c *gin.Context) {
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{Code: "UNAUTHORIZED", Message: "Authentication required"},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Invalid user ID format"},
-		})
 		return
 	}
 
@@ -1794,57 +1478,37 @@ func (h *PlaylistHandler) BookmarkPlaylist(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
-			Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid playlist ID"},
+			Error:   &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid playlist ID"},
 		})
 		return
 	}
 
 	err = h.playlistService.BookmarkPlaylist(c.Request.Context(), playlistID, userID)
 	if err != nil {
-		if err.Error() == "playlist not found" {
+		if errors.Is(err, services.ErrPlaylistNotFound) || errors.Is(err, services.ErrPlaylistPrivate) {
 			c.JSON(http.StatusNotFound, StandardResponse{
 				Success: false,
-				Error: &ErrorInfo{Code: "NOT_FOUND", Message: "Playlist not found"},
-			})
-			return
-		}
-		if err.Error() == "cannot bookmark private playlists" {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{Code: "FORBIDDEN", Message: "Cannot bookmark private playlists"},
+				Error:   &ErrorInfo{Code: "NOT_FOUND", Message: "Playlist not found"},
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
-			Error: &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Failed to bookmark playlist"},
+			Error:   &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Failed to bookmark playlist"},
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, StandardResponse{
 		Success: true,
-		Data: map[string]string{"message": "Playlist bookmarked successfully"},
+		Data:    map[string]string{"message": "Playlist bookmarked successfully"},
 	})
 }
 
 // UnbookmarkPlaylist handles DELETE /api/playlists/:id/bookmark
 func (h *PlaylistHandler) UnbookmarkPlaylist(c *gin.Context) {
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{Code: "UNAUTHORIZED", Message: "Authentication required"},
-		})
-		return
-	}
-
-	userID, ok := userIDVal.(uuid.UUID)
+	userID, ok := requiredPlaylistUserID(c)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, StandardResponse{
-			Success: false,
-			Error: &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Invalid user ID format"},
-		})
 		return
 	}
 
@@ -1852,7 +1516,7 @@ func (h *PlaylistHandler) UnbookmarkPlaylist(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
-			Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid playlist ID"},
+			Error:   &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid playlist ID"},
 		})
 		return
 	}
@@ -1861,13 +1525,13 @@ func (h *PlaylistHandler) UnbookmarkPlaylist(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
-			Error: &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Failed to unbookmark playlist"},
+			Error:   &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Failed to unbookmark playlist"},
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, StandardResponse{
 		Success: true,
-		Data: map[string]string{"message": "Playlist unbookmarked successfully"},
+		Data:    map[string]string{"message": "Playlist unbookmarked successfully"},
 	})
 }

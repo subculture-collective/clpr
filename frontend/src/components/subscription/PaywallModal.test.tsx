@@ -37,6 +37,7 @@ const createWrapper = () => {
 describe('PaywallModal', () => {
     const mockOnClose = vi.fn();
     const mockOnUpgradeClick = vi.fn();
+    const mockCheckoutRedirect = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -66,9 +67,14 @@ describe('PaywallModal', () => {
     });
 
     it('should render modal when isOpen is true', () => {
-        render(<PaywallModal isOpen={true} onClose={mockOnClose} />, {
-            wrapper: createWrapper(),
-        });
+        render(
+            <PaywallModal
+                isOpen={true}
+                onClose={mockOnClose}
+                priceIds={{ yearly: 'price_yearly_test' }}
+            />,
+            { wrapper: createWrapper() },
+        );
 
         expect(
             screen.getByText(/This feature is a Pro Feature/i)
@@ -192,6 +198,7 @@ describe('PaywallModal', () => {
                 isOpen={true}
                 onClose={mockOnClose}
                 onUpgradeClick={mockOnUpgradeClick}
+                onCheckoutRedirect={mockCheckoutRedirect}
             />,
             { wrapper: createWrapper() }
         );
@@ -210,27 +217,30 @@ describe('PaywallModal', () => {
         const user = userEvent.setup();
 
         // Create a promise that we can control
+        let resolveCheckout!: (value: {
+            session_id: string;
+            session_url: string;
+        }) => void;
         const controlledPromise = new Promise<{
             session_id: string;
             session_url: string;
         }>(resolve => {
-            setTimeout(
-                () =>
-                    resolve({
-                        session_id: 'test-id',
-                        session_url: 'https://test.com',
-                    }),
-                100
-            );
+            resolveCheckout = resolve;
         });
 
         vi.mocked(subscriptionApi.createCheckoutSession).mockReturnValue(
             controlledPromise
         );
 
-        render(<PaywallModal isOpen={true} onClose={mockOnClose} />, {
-            wrapper: createWrapper(),
-        });
+        render(
+            <PaywallModal
+                isOpen={true}
+                onClose={mockOnClose}
+                priceIds={{ yearly: 'price_yearly_test' }}
+                onCheckoutRedirect={mockCheckoutRedirect}
+            />,
+            { wrapper: createWrapper() },
+        );
 
         const upgradeButton = screen.getByRole('button', {
             name: /^Upgrade to Pro$/i,
@@ -245,13 +255,13 @@ describe('PaywallModal', () => {
         // The button should be disabled
         expect(upgradeButton).toBeDisabled();
 
-        // Wait for the promise to resolve to avoid unhandled rejections
-        await waitFor(() => {
-            expect(subscriptionApi.createCheckoutSession).toHaveBeenCalled();
+        resolveCheckout({
+            session_id: 'test-id',
+            session_url: 'https://test.com',
         });
-
-        // Wait a bit more for the async operation to complete
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await waitFor(() =>
+            expect(subscriptionApi.createCheckoutSession).toHaveBeenCalled(),
+        );
     });
 
     it('should display savings percentage for yearly plan', () => {

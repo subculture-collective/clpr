@@ -400,7 +400,7 @@ For assistance with rollbacks:
 
 ## Related Documentation
 
-- [Blue/Green Deployment Guide](./BLUE_GREEN_DEPLOYMENT.md)
-- [Deployment Procedures](./deployment.md)
+- Blue/Green Deployment Guide
+- Deployment Procedures
 - [Runbook](./runbook.md)
-- [Database Migrations](../backend/migrations/README.md)
+- Database Migrations

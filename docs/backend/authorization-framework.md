@@ -6,7 +6,7 @@ area: "backend"
 status: "stable"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2026-01-29
+last_reviewed: 2026-07-12
 ---
 
 # Authorization Framework Documentation
@@ -38,10 +38,10 @@ This document describes the comprehensive authorization framework implemented to
    - `RequireResourceOwnership()` - Gin middleware for route protection
    - `LogAuthorizationFailure()` - Security event logging
 
-4. **Automated Testing** (`tests/security/idor_test.go`)
-   - Comprehensive IDOR vulnerability tests
-   - Tests for all resource types and actions
-   - Validates ownership checks and role-based access
+4. **Automated evidence**
+   - `internal/middleware/authorization_test.go` covers the centralized resource matrix.
+   - Route-family contract and hardening tests under `internal/handlers/` cover ownership, parent-child membership, role elevation, malformed identity, and concealment behavior used by live handlers.
+   - `docs/openapi/route-contract-manifest.json` maps every registered release route to its explicit API operation and handler. It is a route-coverage artifact, not proof of object ownership by itself.
 
 ## Resource Types
 
@@ -171,32 +171,24 @@ router.PUT("/comments/:id",
 ### Running Security Tests
 
 ```bash
-# Run all IDOR tests
+# Run the centralized authorization matrix tests
 cd backend
-go test -v ./tests/security/
+go test -v ./internal/middleware -run 'Authorization|Ownership|PermissionMatrix'
 
-# Run specific test suite
-go test -v ./tests/security/ -run TestIDORComment
+# Run the route-family contract and hardening suites
+go test -v ./internal/handlers -run 'Contract|Hardening|Authorization|Ownership'
 
-# Run with coverage
-go test -coverprofile=coverage.out ./tests/security/
+# Run all backend tests and inspect coverage
+go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
 
 ### Test Coverage
 
-The IDOR test suite includes:
-- ✅ Comment ownership tests (create, read, update, delete)
-- ✅ User settings access tests
-- ✅ Clip operation tests
-- ✅ Favorite operation tests
-- ✅ Subscription access tests
-- ✅ Role-based permission tests
-- ✅ Account type permission tests
-
-**Total Test Cases:** 31  
-**Test Suites:** 6  
-**Pass Rate:** 100%
+Authorization evidence includes the centralized comment, clip, user, favorite,
+subscription, role, and account-type rules plus route-specific tests for the
+larger product surface. Do not publish fixed test counts here: the executable
+test inventory and CI results are authoritative and change as routes evolve.
 
 ## Authorization Best Practices
 
@@ -560,9 +552,9 @@ Planned improvements:
 
 - [OWASP IDOR Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)
 - [OWASP Authorization Testing Guide](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/05-Authorization_Testing/README)
-- [RBAC Test Suite README](../../backend/tests/integration/rbac/README.md)
+- RBAC Test Suite README
 - [Testing Guide](../testing/TESTING.md)
-- [Integration Test README](../../backend/tests/integration/README.md)
+- Integration Test README
 - [Feature Test Coverage](../product/feature-test-coverage.md)
 - Threat Model: `docs/product/threat-model.md`
 

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // AdRepository handles database operations for ads
@@ -177,6 +177,57 @@ func (r *AdRepository) UpdateImpression(ctx context.Context, impressionID uuid.U
 	}
 
 	return nil
+}
+
+// TrackImpression atomically applies monotonic tracking state and charges the
+// advertiser exactly once when an impression first becomes viewable.
+func (r *AdRepository) TrackImpression(ctx context.Context, impressionID uuid.UUID, viewabilityTimeMs int, isClicked bool) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start impression transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var adID uuid.UUID
+	var wasViewable bool
+	var cpmCents int
+	err = tx.QueryRow(ctx, `
+		SELECT ai.ad_id, ai.is_viewable, a.cpm_cents
+		FROM ad_impressions ai
+		JOIN ads a ON a.id = ai.ad_id
+		WHERE ai.id = $1
+		FOR UPDATE OF ai, a`, impressionID).Scan(&adID, &wasViewable, &cpmCents)
+	if err != nil {
+		return fmt.Errorf("impression not found: %w", err)
+	}
+
+	isViewable := viewabilityTimeMs >= models.ViewabilityThresholdMs
+	costCents := 0
+	if isViewable && !wasViewable {
+		costCents = cpmCents / 1000
+		if costCents < 1 {
+			costCents = 1
+		}
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE ad_impressions
+		SET viewability_time_ms = GREATEST(viewability_time_ms, $2),
+			is_viewable = is_viewable OR $3,
+			is_clicked = is_clicked OR $4,
+			clicked_at = CASE WHEN $4 AND clicked_at IS NULL THEN NOW() ELSE clicked_at END,
+			cost_cents = cost_cents + $5
+		WHERE id = $1`, impressionID, viewabilityTimeMs, isViewable, isClicked, costCents); err != nil {
+		return fmt.Errorf("failed to update impression: %w", err)
+	}
+	if costCents > 0 {
+		if _, err := tx.Exec(ctx, `
+			UPDATE ads SET spent_today_cents = spent_today_cents + $2,
+				spent_total_cents = spent_total_cents + $2
+			WHERE id = $1`, adID, costCents); err != nil {
+			return fmt.Errorf("failed to increment ad spend: %w", err)
+		}
+	}
+	return tx.Commit(ctx)
 }
 
 // GetImpressionByID retrieves an impression by ID

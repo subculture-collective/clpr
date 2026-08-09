@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
@@ -23,8 +23,10 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 			streams.DELETE("/:streamer/follow", middleware.AuthMiddleware(svcs.Auth), h.Stream.UnfollowStreamer)
 			streams.GET("/:streamer/follow-status", middleware.AuthMiddleware(svcs.Auth), h.Stream.GetStreamFollowStatus)
 
-			// Protected stream clip creation endpoint (authenticated, rate limited)
-			streams.POST("/:streamer/clips", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Stream.CreateClipFromStream)
+			// Stream clipping is incomplete and remains absent unless explicitly enabled.
+			if infra.Config.FeatureFlags.StreamClipCreation {
+				streams.POST("/:streamer/clips", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Stream.CreateClipFromStream)
+			}
 		}
 	}
 
@@ -122,7 +124,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 	v1.POST("/events", middleware.RateLimitMiddleware(infra.Redis, 100, time.Minute), h.Event.TrackEvent)
 
 	// Live feed (authenticated)
-	if h.LiveStatus != nil {
+	if h.LiveStatus != nil && infra.Config.FeatureFlags.LiveFeed {
 		v1.GET("/feed/live", middleware.AuthMiddleware(svcs.Auth), h.LiveStatus.GetFollowedLiveBroadcasters)
 	}
 
@@ -247,7 +249,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 	ads := v1.Group("/ads")
 	{
 		// Ad selection endpoint - rate limited to prevent abuse
-		ads.GET("/select", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Ad.SelectAd)
+		ads.GET("/select", middleware.OptionalAuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Ad.SelectAd)
 		// Ad tracking endpoint - higher rate limit for tracking callbacks
 		ads.POST("/track/:id", middleware.RateLimitMiddleware(infra.Redis, 120, time.Minute), h.Ad.TrackImpression)
 		// Get ad by ID (public)
@@ -259,6 +261,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 	{
 		docs.GET("", h.Docs.GetDocsList)
 		docs.GET("/search", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Docs.SearchDocs)
+		docs.GET("/content/*path", h.Docs.GetDoc)
 		// Catch-all route must be last
 		docs.GET("/:path", h.Docs.GetDoc) // Changed from /*path to /:path to avoid conflict
 	}

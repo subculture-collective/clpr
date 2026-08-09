@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // AuditLogRepository handles database operations for moderation audit logs
@@ -225,7 +225,8 @@ type AuditLogFilters struct {
 	Search      string // Search term for filtering by reason
 }
 
-// Export retrieves all audit logs matching filters for export (no pagination)
+// Export retrieves a bounded audit-log result for export. The extra row lets
+// the service detect that the caller must narrow its filters.
 func (r *AuditLogRepository) Export(ctx context.Context, filters AuditLogFilters) ([]*models.ModerationAuditLogWithUser, error) {
 	// Build query with filters
 	whereClause := "WHERE 1=1"
@@ -290,7 +291,8 @@ func (r *AuditLogRepository) Export(ctx context.Context, filters AuditLogFilters
 		FROM moderation_audit_logs mal
 		JOIN users u ON mal.moderator_id = u.id
 		%s
-		ORDER BY mal.created_at DESC`, whereClause)
+		ORDER BY mal.created_at DESC
+		LIMIT 10001`, whereClause)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {

@@ -244,9 +244,12 @@ Go models for all database tables are defined in `internal/models/models.go`:
 ### Health Check
 
 - `GET /health` - Basic server health check
-- `GET /health/ready` - Readiness check (includes database and Redis connectivity)
+- `GET /health/ready` - Minimal readiness status (dependency details remain private)
 - `GET /health/live` - Liveness check
-- `GET /health/stats` - Database connection pool statistics
+- `GET /internal/operations/database` - Database pool statistics (operational bearer token required)
+- `GET /internal/operations/cache` - Cache statistics (operational bearer token required)
+- `GET /internal/operations/webhooks` - Webhook retry statistics (operational bearer token required)
+- `GET /internal/operations/metrics` - Prometheus metrics (operational bearer token required)
 
 ### Authentication
 

@@ -1,13 +1,19 @@
 package services
 
 import (
+	"strings"
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+func TestClipIndexMappingSupportsSubmittedClipVisibility(t *testing.T) {
+	mapping := getClipIndexMapping()
+	assert.True(t, strings.Contains(mapping, `"submitted_by_user_id": {"type": "keyword"}`))
+}
 
 func TestCalculateEngagementScore(t *testing.T) {
 	tests := []struct {

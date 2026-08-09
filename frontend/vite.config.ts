@@ -10,10 +10,6 @@ export default defineConfig(({ mode }) => ({
     optimizeDeps: {
         include: ['lucide-react', '@tanstack/react-query', 'react-router-dom'],
     },
-    define: {
-        // Polyfill for gray-matter which uses Buffer
-        global: 'globalThis',
-    },
     plugins: [
         react(),
         // Upload source maps to Sentry on production builds
@@ -37,7 +33,7 @@ export default defineConfig(({ mode }) => ({
         // Bundle analyzer - only in analyze mode
         ...(mode === 'analyze' ? [visualizer({
             filename: './dist/stats.html',
-            open: true,
+            open: false,
             gzipSize: true,
             brotliSize: true,
         }) as Plugin] : []),
@@ -45,7 +41,6 @@ export default defineConfig(({ mode }) => ({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
-            buffer: 'buffer/',
         },
     },
     server: {
@@ -60,14 +55,13 @@ export default defineConfig(({ mode }) => ({
     },
     build: {
         // Only generate source maps when Sentry will upload them (hidden = no sourceMappingURL comment in output)
-        sourcemap: !!process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false,
+        sourcemap: process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false,
         // Eliminate React init races by bundling entry as a single JS file
         // so React and ReactDOM initialize in the same execution unit.
         rollupOptions: {
             output: {
                 // Create vendor chunks for better caching and preloading
                 manualChunks: {
-                    'react-vendor': ['react', 'react-dom'],
                     'query-vendor': ['@tanstack/react-query'],
                     'router-vendor': ['react-router-dom'],
                     'icons-vendor': ['lucide-react'],

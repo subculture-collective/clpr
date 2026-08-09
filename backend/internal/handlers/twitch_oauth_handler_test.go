@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
 func setupTwitchOAuthTestHandler(t *testing.T) (*TwitchOAuthHandler, *pgxpool.Pool, func()) {
@@ -211,9 +211,11 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 
 	// Set environment variables for testing
 	os.Setenv("TWITCH_CLIENT_ID", "test_client_id")
+	os.Setenv("TWITCH_CLIENT_SECRET", "test_client_secret")
 	os.Setenv("TWITCH_REDIRECT_URI", "http://localhost:8080/api/v1/twitch/oauth/callback")
 	defer func() {
 		os.Unsetenv("TWITCH_CLIENT_ID")
+		os.Unsetenv("TWITCH_CLIENT_SECRET")
 		os.Unsetenv("TWITCH_REDIRECT_URI")
 	}()
 
@@ -224,6 +226,7 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	// Create a mock request
 	req, _ := http.NewRequest("GET", "/api/v1/twitch/oauth/authorize", nil)
 	c.Request = req
+	c.Set("user_id", uuid.New())
 
 	handler.InitiateTwitchOAuth(c)
 
@@ -248,6 +251,9 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	}
 
 	query := parsed.Query()
+	if query.Get("state") == "" {
+		t.Error("Expected signed OAuth state")
+	}
 	scope := query.Get("scope")
 	if scope == "" {
 		t.Error("Expected scope parameter in redirect URL")

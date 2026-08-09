@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Flag, Lock, MessageSquare } from 'lucide-react';
@@ -27,26 +27,6 @@ export function ThreadDetail() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState<FlagContentRequest['reason']>('spam');
   const [reportDetails, setReportDetails] = useState('');
-
-  // Handle mobile drawer keyboard and scroll
-  useEffect(() => {
-    if (showMobileComposer) {
-      const handleEscape = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-          setShowMobileComposer(false);
-        }
-      };
-
-      document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        document.removeEventListener('keydown', handleEscape);
-        document.body.style.overflow = 'unset';
-      };
-    }
-  }, [showMobileComposer]);
 
   // Fetch thread with replies
   const { data, isLoading, error } = useQuery({
@@ -333,22 +313,20 @@ export function ThreadDetail() {
       </Container>
 
       {/* Mobile reply composer drawer */}
-      {isMobile && showMobileComposer && user && !thread.locked && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end"
-          onClick={() => setShowMobileComposer(false)}
+      {isMobile && user && !thread.locked && (
+        <Modal
+          open={showMobileComposer}
+          onClose={() => setShowMobileComposer(false)}
+          title="Reply to thread"
+          size="full"
+          className="mt-auto"
         >
-          <div
-            className="bg-background w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
             <ReplyComposer
               onSubmit={handleSubmitReply}
               onCancel={() => setShowMobileComposer(false)}
               isMobile={true}
             />
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Report modal */}
@@ -359,10 +337,11 @@ export function ThreadDetail() {
         size="sm"
       >
         <div className="p-6">
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label htmlFor="report-reason" className="block text-sm font-medium text-foreground mb-2">
             Reason
           </label>
           <select
+            id="report-reason"
             value={reportReason}
             onChange={(e) => setReportReason(e.target.value as FlagContentRequest['reason'])}
             className="w-full bg-surface text-white rounded-lg p-2.5 border border-border focus:border-primary-500 focus:outline-none mb-4"
@@ -374,10 +353,11 @@ export function ThreadDetail() {
             <option value="other">Other</option>
           </select>
 
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label htmlFor="report-details" className="block text-sm font-medium text-foreground mb-2">
             Additional details (optional)
           </label>
           <textarea
+            id="report-details"
             value={reportDetails}
             onChange={(e) => setReportDetails(e.target.value)}
             className="w-full bg-surface text-white rounded-lg p-3 border border-border focus:border-primary-500 focus:outline-none resize-none mb-4"
@@ -387,15 +367,18 @@ export function ThreadDetail() {
 
           <div className="flex gap-3 justify-end">
             <button
+              type="button"
               onClick={() => setShowReportModal(false)}
-              className="px-4 py-2 bg-surface hover:bg-surface-hover text-white rounded-lg transition-colors"
+              className="min-h-[44px] px-4 py-2 bg-surface hover:bg-surface-hover text-white rounded-lg transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleReportThread}
               disabled={flagContentMutation.isPending}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              className="min-h-[44px] px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              aria-busy={flagContentMutation.isPending}
             >
               {flagContentMutation.isPending ? 'Submitting...' : 'Submit Report'}
             </button>

@@ -3,38 +3,25 @@ import { PlaylistCard } from '../components/playlist/PlaylistCard';
 import { Button } from '../components/ui';
 import { FeedLayout } from '../components/layout/FeedLayout';
 import { FeedSidebar } from '../components/layout/FeedSidebar';
-import { useEffect, useState } from 'react';
-import { useFeaturedPlaylists } from '../hooks/usePlaylist';
-import type { Playlist } from '../types/playlist';
+import { useMemo } from 'react';
+import { useInfiniteFeaturedPlaylists } from '../hooks/usePlaylist';
 
 export function DiscoveryListsPage() {
-  const [page, setPage] = useState(1);
-  const [lists, setLists] = useState<Playlist[]>([]);
   const pageSize = 12;
 
-  const { data: response, isLoading, isFetching } = useFeaturedPlaylists(
-    page,
-    pageSize,
-  );
-
-  useEffect(() => {
-    if (!response?.data) {
-      return;
-    }
-
-    setLists((current) => {
-      if (page === 1) {
-        return response.data;
-      }
-
-      const existingIds = new Set(current.map((list) => list.id));
-      const nextLists = response.data.filter((list) => !existingIds.has(list.id));
-      return [...current, ...nextLists];
-    });
-  }, [page, response]);
-
-  const total = response?.meta.total ?? 0;
-  const hasMore = lists.length < total;
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteFeaturedPlaylists(pageSize);
+  const lists = useMemo(() => {
+    const uniqueLists = new Map(
+      data?.pages.flatMap((page) => page.data).map((list) => [list.id, list]),
+    );
+    return [...(uniqueLists?.values() ?? [])];
+  }, [data?.pages]);
 
   return (
     <>
@@ -73,15 +60,15 @@ export function DiscoveryListsPage() {
               </div>
 
               {/* Load More Button */}
-              {hasMore && (
+              {hasNextPage && (
                 <div className="text-center pt-8">
                   <Button
-                    onClick={() => setPage((current) => current + 1)}
+                    onClick={() => void fetchNextPage()}
                     variant="outline"
                     size="lg"
-                    disabled={isFetching}
+                    disabled={isFetchingNextPage}
                   >
-                    {isFetching ? 'Loading…' : 'Load More Lists'}
+                    {isFetchingNextPage ? 'Loading…' : 'Load More Lists'}
                   </Button>
                 </div>
               )}

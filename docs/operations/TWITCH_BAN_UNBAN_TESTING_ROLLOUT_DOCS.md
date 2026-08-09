@@ -291,11 +291,11 @@ All tests follow established patterns from:
 
 All documentation properly cross-linked:
 
-- [Twitch OAuth Scopes Implementation](../TWITCH_OAUTH_BAN_SCOPES_IMPLEMENTATION.md)
-- [Twitch Ban/Unban Endpoints Implementation](../TWITCH_BAN_UNBAN_ENDPOINTS_IMPLEMENTATION.md)
-- [Twitch Ban/Unban UX Implementation](../TWITCH_BAN_UNBAN_UX_IMPLEMENTATION.md)
-- [Feature Flags Guide](./docs/operations/feature-flags.md)
-- [Moderation API Reference](./docs/backend/api.md)
+- Twitch OAuth Scopes Implementation
+- Twitch Ban/Unban Endpoints Implementation
+- Twitch Ban/Unban UX Implementation
+- Feature Flags Guide
+- Moderation API Reference
 
 ---
 

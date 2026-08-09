@@ -10,6 +10,7 @@ import {
   trackBillingPeriodChange,
 } from '../../lib/paywall-analytics';
 import { PRICING, PRO_FEATURES, calculateYearlyMonthlyPrice, calculateSavingsPercent } from '../../constants/pricing';
+import { Modal } from '../ui/Modal';
 
 export interface PaywallModalProps {
   /** Whether the modal is open */
@@ -24,9 +25,13 @@ export interface PaywallModalProps {
   description?: string;
   /** Callback when upgrade is initiated */
   onUpgradeClick?: () => void;
+  /** Checkout price IDs; injectable for tests and runtime configuration. */
+  priceIds?: Partial<Record<'monthly' | 'yearly', string>>;
+  /** Redirect boundary used after checkout creation. */
+  onCheckoutRedirect?: (url: string) => void;
 }
 
-const PRICE_IDS = {
+const DEFAULT_PRICE_IDS = {
   monthly: import.meta.env.VITE_STRIPE_PRO_MONTHLY_PRICE_ID || '',
   yearly: import.meta.env.VITE_STRIPE_PRO_YEARLY_PRICE_ID || '',
 };
@@ -52,6 +57,10 @@ export function PaywallModal({
   title,
   description,
   onUpgradeClick,
+  priceIds,
+  onCheckoutRedirect = url => {
+    window.location.href = url;
+  },
 }: PaywallModalProps): React.ReactElement | null {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -91,7 +100,7 @@ export function PaywallModal({
     setIsLoading(period);
 
     try {
-      const priceId = PRICE_IDS[period];
+      const priceId = priceIds?.[period] ?? DEFAULT_PRICE_IDS[period];
       if (!priceId) {
         setIsLoading(null);
         alert('Subscription not configured. Please contact support.');
@@ -106,7 +115,7 @@ export function PaywallModal({
       });
 
       const response = await createCheckoutSession(priceId);
-      window.location.href = response.session_url;
+      onCheckoutRedirect(response.session_url);
     } catch (error) {
       console.error('Failed to create checkout session:', error);
       alert('Failed to start checkout. Please try again.');
@@ -148,41 +157,17 @@ export function PaywallModal({
   const savingsPercent = calculateSavingsPercent(monthlyPrice, yearlyPrice);
 
   const modalTitle = title || `${featureName ? `${featureName} is` : 'This feature is'} a Pro Feature`;
-  const modalDescription = description || 'Upgrade to clpr Pro to unlock this feature and many more.';
+  const modalDescription = description || 'Upgrade to Clipper Pro to unlock this feature and many more.';
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 transition-opacity"
-        onClick={handleClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal */}
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-        role="dialog"
-        aria-modal="true"
-      >
-        <div
-          className="relative bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-800"
-          onClick={(e) => e.stopPropagation()}
-          role="document"
-          aria-labelledby="paywall-modal-title"
-        >
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-            aria-label="Close modal"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          {/* Header */}
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title={modalTitle}
+      size="2xl"
+      className="bg-gray-900 border border-gray-800"
+    >
+          {/* Header illustration and description */}
           <div className="text-center pt-8 pb-6 px-6 border-b border-gray-800">
             <div className="mb-4">
               <svg
@@ -199,7 +184,6 @@ export function PaywallModal({
                 />
               </svg>
             </div>
-            <h2 id="paywall-modal-title" className="text-3xl font-bold text-white mb-2">{modalTitle}</h2>
             <p className="text-gray-400 text-lg">{modalDescription}</p>
           </div>
 
@@ -208,8 +192,10 @@ export function PaywallModal({
             <div className="flex justify-center">
               <div className="bg-gray-800 rounded-lg p-1 inline-flex">
                 <button
+                  type="button"
                   onClick={() => handleBillingPeriodChange('monthly')}
-                  className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                  aria-pressed={billingPeriod === 'monthly'}
+                  className={`min-h-[44px] px-6 py-2 rounded-md text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 ${
                     billingPeriod === 'monthly'
                       ? 'bg-purple-600 text-white'
                       : 'text-gray-400 hover:text-white'
@@ -218,8 +204,10 @@ export function PaywallModal({
                   Monthly
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleBillingPeriodChange('yearly')}
-                  className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+                  aria-pressed={billingPeriod === 'yearly'}
+                  className={`min-h-[44px] px-6 py-2 rounded-md text-sm font-medium transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 ${
                     billingPeriod === 'yearly'
                       ? 'bg-purple-600 text-white'
                       : 'text-gray-400 hover:text-white'
@@ -280,9 +268,11 @@ export function PaywallModal({
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleSubscribe(billingPeriod)}
                   disabled={isLoading !== null}
-                  className="w-full py-3 px-6 rounded-md bg-white text-purple-600 font-bold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                  aria-busy={isLoading !== null || undefined}
+                  className="w-full min-h-[44px] py-3 px-6 rounded-md bg-white text-purple-600 font-bold hover:bg-gray-100 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
                 >
                   {isLoading === billingPeriod ? 'Processing...' : 'Upgrade to Pro'}
                 </button>
@@ -313,15 +303,14 @@ export function PaywallModal({
                 Cancel anytime • No hidden fees • Secure payment with Stripe
               </p>
               <button
+                type="button"
                 onClick={handleViewPricing}
-                className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                className="min-h-[44px] px-3 text-sm text-purple-400 hover:text-purple-300 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded"
               >
                 View full pricing details →
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 }

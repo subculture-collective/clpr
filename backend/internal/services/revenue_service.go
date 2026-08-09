@@ -112,38 +112,37 @@ func (s *RevenueService) GetRevenueMetrics(ctx context.Context) (*models.Revenue
 	// Get cohort retention (last 6 months)
 	cohortRetention, err := s.repo.GetCohortRetention(ctx, 6)
 	if err != nil {
-		// Non-critical, continue with empty data
-		cohortRetention = []models.CohortRetentionMetric{}
+		return nil, err
 	}
 
 	// Get trial conversion rate (last 30 days)
 	trialConversionRate, err := s.repo.GetTrialConversionRate(ctx, startOfMonth)
 	if err != nil {
-		trialConversionRate = 0
+		return nil, err
 	}
 
 	// Get grace period recovery rate
 	gracePeriodRecovery, err := s.repo.GetGracePeriodRecoveryRate(ctx, startOfLastMonth)
 	if err != nil {
-		gracePeriodRecovery = 0
+		return nil, err
 	}
 
 	// Get total revenue
-	totalRevenue, err := s.repo.GetTotalRevenue(ctx, s.priceMapping)
+	totalRevenue, err := s.repo.GetTotalRevenue(ctx)
 	if err != nil {
-		totalRevenue = 0
+		return nil, err
 	}
 
 	// Get revenue by month (last 12 months)
 	revenueByMonth, err := s.repo.GetRevenueByMonth(ctx, 12, s.priceMapping)
 	if err != nil {
-		revenueByMonth = []models.RevenueByMonthMetric{}
+		return nil, err
 	}
 
 	// Get subscriber growth trend (last 12 months)
 	subscriberGrowth, err := s.repo.GetSubscriberGrowthTrend(ctx, 12)
 	if err != nil {
-		subscriberGrowth = []models.SubscriberGrowthMetric{}
+		return nil, err
 	}
 
 	// Calculate average lifetime value (simplified)

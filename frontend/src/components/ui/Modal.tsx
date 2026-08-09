@@ -15,11 +15,13 @@ export interface ModalProps {
    * Modal title
    */
   title?: string;
+  /** Accessible name used when no visible title is supplied. */
+  ariaLabel?: string;
   /**
    * Modal size
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
   /**
    * Whether clicking backdrop closes the modal
    * @default true
@@ -45,6 +47,7 @@ const sizeClasses = {
   md: 'max-w-md',
   lg: 'max-w-lg',
   xl: 'max-w-xl',
+  '2xl': 'max-w-4xl',
   full: 'max-w-full mx-4',
 };
 
@@ -55,6 +58,7 @@ export const Modal: React.FC<ModalProps> = ({
   open,
   onClose,
   title,
+  ariaLabel,
   size = 'md',
   closeOnBackdrop = true,
   showCloseButton = true,
@@ -68,22 +72,21 @@ export const Modal: React.FC<ModalProps> = ({
 
   // Handle escape key
   useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && open) {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
 
-    if (open) {
-      document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
-    }
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
 
-    // Always clean up - restore overflow even if component unmounts while open
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
     };
   }, [open, onClose]);
 
@@ -101,20 +104,22 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+      <div aria-hidden="true" className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in motion-reduce:animate-none" />
 
       {/* Modal content */}
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full bg-card rounded-xl shadow-2xl animate-slide-in-down',
-          'flex flex-col max-h-[90vh]',
+          'relative w-full bg-card rounded-xl shadow-2xl animate-slide-in-down motion-reduce:animate-none',
+          'flex flex-col max-h-[90vh] overscroll-contain',
           sizeClasses[size],
           className
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel ?? 'Dialog'}
+        tabIndex={-1}
       >
         {/* Header */}
         {(title || showCloseButton) && (
@@ -127,7 +132,7 @@ export const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto p-1 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                className="ml-auto min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg hover:bg-muted transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 aria-label="Close modal"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

@@ -97,6 +97,27 @@ func TestCreateBan_Unauthorized(t *testing.T) {
 	}
 }
 
+func TestCreateBan_InvalidAuthenticationContext(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	body, _ := json.Marshal(map[string]interface{}{
+		"channelId": uuid.New().String(),
+		"userId":    uuid.New().String(),
+	})
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/ban", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set("user_id", "not-a-uuid")
+
+	handler.CreateBan(c)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
+
 // TestCreateBan_InvalidJSON tests that creating a ban validates JSON
 func TestCreateBan_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -114,6 +135,31 @@ func TestCreateBan_InvalidJSON(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status %d for invalid JSON, got %d", http.StatusBadRequest, w.Code)
+	}
+	if bytes.Contains(w.Body.Bytes(), []byte("invalid character")) {
+		t.Errorf("response leaked parser details: %s", w.Body.String())
+	}
+}
+
+func TestCreateBan_ReasonTooLong(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	body, _ := json.Marshal(map[string]interface{}{
+		"channelId": uuid.New().String(),
+		"userId":    uuid.New().String(),
+		"reason":    string(make([]byte, 1001)),
+	})
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/ban", bytes.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Set("user_id", uuid.New())
+
+	handler.CreateBan(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 	}
 }
 

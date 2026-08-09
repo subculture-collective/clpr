@@ -1,0 +1,18 @@
+{
+  "status": "not_executed",
+  "candidate_sha": "",
+  "backend_digest": "",
+  "frontend_digest": "",
+  "crawler_digest": "",
+  "executed_at": "",
+  "evidence_url": "",
+  "owner": "",
+  "mode": "test",
+  "checkout_passed": false,
+  "signed_webhooks_passed": false,
+  "duplicate_and_out_of_order_webhooks_passed": false,
+  "dunning_recovery_passed": false,
+  "cancellation_passed": false,
+  "reconciliation_passed": false,
+  "entitlement_activation_and_revocation_passed": false
+}

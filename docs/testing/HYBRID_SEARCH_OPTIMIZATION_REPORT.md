@@ -431,9 +431,9 @@ The framework follows established patterns, integrates seamlessly with existing 
 
 - [Issue #837 - Search Relevance Evaluation Framework](https://git.subcult.tv/subculture-collective/clpr/issues/837)
 - [Issue #805 - Related Search Improvements](https://git.subcult.tv/subculture-collective/clpr/issues/805)
-- [Rollout Plan](docs/HYBRID_SEARCH_ROLLOUT.md)
-- [Usage Guide](docs/GRID_SEARCH_README.md)
-- [Implementation Summary](docs/HYBRID_SEARCH_OPTIMIZATION_SUMMARY.md)
+- [Rollout Plan](./HYBRID_SEARCH_ROLLOUT.md)
+- [Usage Guide](./GRID_SEARCH_README.md)
+- Implementation Summary
 
 ---
 

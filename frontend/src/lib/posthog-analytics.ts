@@ -8,11 +8,12 @@
  * when consent is given, without adding it as a dependency.
  */
 
+import { getAnalyticsRuntimeConfig } from './runtime-config';
+
 // PostHog configuration
-export const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY || '';
-export const POSTHOG_HOST =
-    import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
-const ANALYTICS_ENABLED = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+export const POSTHOG_API_KEY = getAnalyticsRuntimeConfig().postHogApiKey;
+export const POSTHOG_HOST = getAnalyticsRuntimeConfig().postHogHost;
+const ANALYTICS_ENABLED = getAnalyticsRuntimeConfig().enabled;
 
 // Track if PostHog is initialized
 let posthogInitialized = false;

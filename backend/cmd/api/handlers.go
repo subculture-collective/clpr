@@ -104,7 +104,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	reportHandler := handlers.NewReportHandler(repos.Report, repos.Clip, repos.Comment, repos.User, svcs.Auth)
 	reputationHandler := handlers.NewReputationHandler(svcs.Reputation, svcs.Auth)
 	notificationHandler := handlers.NewNotificationHandler(svcs.Notification, svcs.Email)
-	analyticsHandler := handlers.NewAnalyticsHandler(svcs.Analytics, svcs.Auth)
+	analyticsHandler := handlers.NewAnalyticsHandler(svcs.Analytics)
 	engagementHandler := handlers.NewEngagementHandler(svcs.Engagement, svcs.Auth)
 	auditLogHandler := handlers.NewAuditLogHandler(svcs.AuditLog)
 	subscriptionHandler := handlers.NewSubscriptionHandler(svcs.Subscription)
@@ -112,13 +112,13 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	adminUserHandler := handlers.NewAdminUserHandler(repos.User, repos.AuditLog, svcs.Auth)
 	userSettingsHandler := handlers.NewUserSettingsHandler(svcs.UserSettings, svcs.Auth)
 	consentHandler := handlers.NewConsentHandler(repos.Consent)
-	contactHandler := handlers.NewContactHandler(repos.Contact, svcs.Auth)
+	contactHandler := handlers.NewContactHandler(repos.Contact)
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
 	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
 	revenueHandler := handlers.NewRevenueHandler(svcs.Revenue)
 	adHandler := handlers.NewAdHandler(svcs.Ad)
-	exportHandler := handlers.NewExportHandler(svcs.Export, svcs.Auth, repos.User)
+	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
 	webhookSubscriptionHandler := handlers.NewWebhookSubscriptionHandler(svcs.OutboundWebhook)
 	webhookDLQHandler := handlers.NewWebhookDLQHandler(svcs.OutboundWebhook)
 	configHandler := handlers.NewConfigHandler(cfg)
@@ -157,11 +157,11 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	var twitchOAuthHandler *handlers.TwitchOAuthHandler
 
 	if svcs.ClipSync != nil {
-		clipSyncHandler = handlers.NewClipSyncHandler(svcs.ClipSync, cfg)
+		clipSyncHandler = handlers.NewClipSyncHandler(svcs.ClipSync)
 	}
 
 	if svcs.LiveStatus != nil {
-		liveStatusHandler = handlers.NewLiveStatusHandler(svcs.LiveStatus, svcs.Auth)
+		liveStatusHandler = handlers.NewLiveStatusHandler(svcs.LiveStatus)
 	}
 
 	// Initialize Twitch-related handlers

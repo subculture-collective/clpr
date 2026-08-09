@@ -121,6 +121,11 @@ export const handlers = [
         return HttpResponse.json({ clip });
     }),
 
+    // GET /api/clips/:id/tags - Clip cards request associated tags.
+    http.get(`${API_BASE_URL}/clips/:id/tags`, () => {
+        return HttpResponse.json({ data: [] });
+    }),
+
     // POST /api/clips/:id/vote - Vote on clip
     http.post(`${API_BASE_URL}/clips/:id/vote`, () => {
         return HttpResponse.json({ success: true });

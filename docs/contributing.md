@@ -12,7 +12,7 @@ aliases: ["contribute", "contributing guide"]
 
 # Contributing to Clipper
 
-See the main [Contributing Guide](../CONTRIBUTING.md) in the repository root for:
+See the main Contributing Guide in the repository root for:
 
 - Development workflow
 - Code standards

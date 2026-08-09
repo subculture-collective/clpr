@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gin-contrib/requestid"
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-contrib/requestid"
+	"github.com/gin-gonic/gin"
 )
 
 func applyGlobalMiddleware(r *gin.Engine, cfg *config.Config, infra *Infrastructure, svcs *Services, logger *utils.StructuredLogger) {
@@ -70,6 +70,7 @@ func applyGlobalMiddleware(r *gin.Engine, cfg *config.Config, infra *Infrastruct
 	// Add custom middleware
 	// Request ID must come first to be available in other middleware
 	r.Use(requestid.New())
+	r.Use(middleware.ErrorCorrelationMiddleware())
 
 	// Add OpenTelemetry middleware (if enabled)
 	if cfg.Telemetry.Enabled {
@@ -92,6 +93,10 @@ func applyGlobalMiddleware(r *gin.Engine, cfg *config.Config, infra *Infrastruct
 
 	// Apply CORS middleware
 	r.Use(middleware.CORSMiddleware(cfg))
+
+	// Authentication is fail-closed by default for all state-changing routes;
+	// reviewed public callbacks and telemetry endpoints are explicit exceptions.
+	r.Use(middleware.MutationAuthorizationBoundary(svcs.Auth))
 
 	// Apply security headers middleware
 	r.Use(middleware.SecurityHeadersMiddleware(cfg))

@@ -295,10 +295,10 @@ From Epic requirements:
 ## References
 
 ### Documentation
-- [ENABLING_SKIPPED_E2E_TESTS.md](./docs/testing/ENABLING_SKIPPED_E2E_TESTS.md)
-- [SKIPPED_E2E_TESTS_STATUS.md](./docs/testing/SKIPPED_E2E_TESTS_STATUS.md) ← Created in this PR
-- [ENABLING_PREMIUM_SUBSCRIPTION_TESTS.md](./docs/testing/ENABLING_PREMIUM_SUBSCRIPTION_TESTS.md)
-- [E2E_TEST_FIXTURES_GUIDE.md](./docs/testing/E2E_TEST_FIXTURES_GUIDE.md)
+- [ENABLING_SKIPPED_E2E_TESTS.md](./testing/ENABLING_SKIPPED_E2E_TESTS.md)
+- [SKIPPED_E2E_TESTS_STATUS.md](./testing/SKIPPED_E2E_TESTS_STATUS.md) ← Created in this PR
+- [ENABLING_PREMIUM_SUBSCRIPTION_TESTS.md](./testing/ENABLING_PREMIUM_SUBSCRIPTION_TESTS.md)
+- [E2E_TEST_FIXTURES_GUIDE.md](./testing/E2E_TEST_FIXTURES_GUIDE.md)
 
 ### Child Issues
 1. [#1143 - Premium Subscription Checkout Implementation](https://git.subcult.tv/subculture-collective/clpr/issues/1143)
@@ -331,4 +331,4 @@ The remaining 18 tests require legitimate external service mocking (Stripe) or t
 **Next Steps**: 
 1. Review and merge this PR
 2. Proceed with Phase 2: Stripe mock infrastructure (#1143, #1149, #1147)
-3. Track progress in [SKIPPED_E2E_TESTS_STATUS.md](./docs/testing/SKIPPED_E2E_TESTS_STATUS.md)
+3. Track progress in [SKIPPED_E2E_TESTS_STATUS.md](./testing/SKIPPED_E2E_TESTS_STATUS.md)

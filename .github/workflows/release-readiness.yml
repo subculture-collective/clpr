@@ -1,0 +1,66 @@
+name: Release readiness evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: Workflow run ID containing the immutable release-candidate-manifest artifact
+        required: true
+        type: string
+      evidence_run_id:
+        description: Workflow run ID containing the protected release-evidence artifact
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: release-readiness-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test the fail-closed evidence verifier
+        run: node --test scripts/tests/verify-release-evidence.test.js
+      - name: Download immutable candidate manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: release-candidate-manifest
+          path: .release-candidate
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+      - name: Download protected release evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: release-evidence
+          path: release-evidence
+          run-id: ${{ inputs.evidence_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify evidence and API completion
+        shell: bash
+        env:
+          RELEASE_CANDIDATE_MANIFEST: .release-candidate/candidate-manifest.json
+          RELEASE_EVIDENCE_DIR: release-evidence
+          RELEASE_EXPECTED_CANDIDATE_SHA: ${{ github.sha }}
+        run: |
+          set -o pipefail
+          node scripts/verify-release-evidence.js 2>&1 | tee release-evidence-verification.txt
+      - name: Upload verification record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence-verification-${{ github.sha }}
+          path: release-evidence-verification.txt
+          if-no-files-found: error
+          retention-days: 30

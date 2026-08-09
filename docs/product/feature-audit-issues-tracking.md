@@ -177,7 +177,7 @@ Milestone: All issues are part of Roadmap 5.0 execution (Q1-Q2 2026)
 
 - **Master Tracker**: [#805 Roadmap 5.0 Master Tracker](https://git.subcult.tv/subculture-collective/clpr/issues/805)
 - **Issue Index Comment**: [Full issue listing with phase/epic organization](https://git.subcult.tv/subculture-collective/clpr/issues/805#issuecomment-3690769015)
-- **Roadmap Document**: [docs/product/roadmap-5.0.md](roadmap-5.0.md)
+- **Roadmap Document**: docs/product/roadmap-5.0.md
 - **Feature Inventory**: [docs/product/feature-inventory.md](feature-inventory.md)
 
 ---

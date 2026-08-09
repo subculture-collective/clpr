@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    useInfiniteQuery,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
 import apiClient from '@/lib/api';
 import type {
     Playlist,
@@ -150,10 +155,11 @@ const unbookmarkPlaylist = async (id: string): Promise<void> => {
 };
 
 // React Query hooks
-export const usePlaylists = (page = 1, limit = 20) => {
+export const usePlaylists = (page = 1, limit = 20, enabled = true) => {
     return useQuery({
         queryKey: ['playlists', page, limit],
         queryFn: () => fetchPlaylists(page, limit),
+        enabled,
     });
 };
 
@@ -168,6 +174,16 @@ export const useFeaturedPlaylists = (page = 1, limit = 20) => {
     return useQuery({
         queryKey: ['playlists', 'featured', page, limit],
         queryFn: () => fetchFeaturedPlaylists(page, limit),
+    });
+};
+
+export const useInfiniteFeaturedPlaylists = (limit = 20) => {
+    return useInfiniteQuery({
+        queryKey: ['playlists', 'featured', 'infinite', limit],
+        queryFn: ({ pageParam }) => fetchFeaturedPlaylists(pageParam, limit),
+        initialPageParam: 1,
+        getNextPageParam: lastPage =>
+            lastPage.meta.has_next ? lastPage.meta.page + 1 : undefined,
     });
 };
 

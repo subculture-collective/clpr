@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // MockCommunityRepository is a mock implementation of CommunityRepository
@@ -97,6 +97,15 @@ type MockModerationAuditLogRepository struct {
 
 func (m *MockModerationAuditLogRepository) Create(ctx context.Context, log *models.ModerationAuditLog) error {
 	args := m.Called(ctx, log)
+	return args.Error(0)
+}
+
+type MockModerationBanUnitOfWork struct {
+	mock.Mock
+}
+
+func (m *MockModerationBanUnitOfWork) CreateBanWithAudit(ctx context.Context, ban *models.CommunityBan, audit *models.ModerationAuditLog) error {
+	args := m.Called(ctx, ban, audit)
 	return args.Error(0)
 }
 
@@ -919,11 +928,75 @@ func TestModerationService_BanUser_AuditLogError(t *testing.T) {
 
 	err := service.BanUser(ctx, communityID, moderatorID, targetUserID, nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to create audit log")
+	assert.Contains(t, err.Error(), "failed to create ban and audit log")
 
 	mockUserRepo.AssertExpectations(t)
 	mockCommunityRepo.AssertExpectations(t)
 	mockAuditLogRepo.AssertExpectations(t)
+}
+
+func TestModerationService_BanUserWithResult_UsesAtomicWriter(t *testing.T) {
+	ctx := context.Background()
+	communityID := uuid.New()
+	moderatorID := uuid.New()
+	targetUserID := uuid.New()
+	reason := "repeated harassment"
+
+	communityRepo := new(MockCommunityRepository)
+	userRepo := new(MockModerationUserRepository)
+	banWriter := new(MockModerationBanUnitOfWork)
+	moderator := &models.User{
+		ID:             moderatorID,
+		AccountType:    models.AccountTypeModerator,
+		ModeratorScope: models.ModeratorScopeSite,
+	}
+
+	userRepo.On("GetByID", ctx, moderatorID).Return(moderator, nil)
+	communityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
+	banWriter.On("CreateBanWithAudit", ctx, mock.AnythingOfType("*models.CommunityBan"), mock.AnythingOfType("*models.ModerationAuditLog")).Return(nil)
+
+	service := &ModerationService{communityRepo: communityRepo, userRepo: userRepo, banWriter: banWriter}
+	created, err := service.BanUserWithResult(ctx, communityID, moderatorID, targetUserID, &reason)
+
+	assert.NoError(t, err)
+	if assert.NotNil(t, created) {
+		assert.Equal(t, communityID, created.CommunityID)
+		assert.Equal(t, targetUserID, created.BannedUserID)
+		assert.Equal(t, moderatorID, *created.BannedByUserID)
+		assert.Equal(t, reason, *created.Reason)
+	}
+	communityRepo.AssertNotCalled(t, "RemoveMember", mock.Anything, mock.Anything, mock.Anything)
+	communityRepo.AssertNotCalled(t, "BanMember", mock.Anything, mock.Anything)
+	banWriter.AssertExpectations(t)
+}
+
+func TestModerationService_BanUserWithResult_AtomicWriterFailureReturnsNoBan(t *testing.T) {
+	ctx := context.Background()
+	communityID := uuid.New()
+	moderatorID := uuid.New()
+	targetUserID := uuid.New()
+
+	communityRepo := new(MockCommunityRepository)
+	userRepo := new(MockModerationUserRepository)
+	banWriter := new(MockModerationBanUnitOfWork)
+	moderator := &models.User{
+		ID:             moderatorID,
+		AccountType:    models.AccountTypeModerator,
+		ModeratorScope: models.ModeratorScopeSite,
+	}
+
+	userRepo.On("GetByID", ctx, moderatorID).Return(moderator, nil)
+	communityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
+	banWriter.On("CreateBanWithAudit", ctx, mock.AnythingOfType("*models.CommunityBan"), mock.AnythingOfType("*models.ModerationAuditLog")).Return(errors.New("audit insert failed"))
+
+	service := &ModerationService{communityRepo: communityRepo, userRepo: userRepo, banWriter: banWriter}
+	created, err := service.BanUserWithResult(ctx, communityID, moderatorID, targetUserID, nil)
+
+	assert.Nil(t, created)
+	assert.ErrorContains(t, err, "failed to create ban and audit log")
+	communityRepo.AssertNotCalled(t, "RemoveMember", mock.Anything, mock.Anything, mock.Anything)
+	communityRepo.AssertNotCalled(t, "BanMember", mock.Anything, mock.Anything)
+	banWriter.AssertExpectations(t)
 }
 
 // TestModerationService_UnbanUser_GetModeratorError tests error when fetching moderator for unban

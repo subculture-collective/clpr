@@ -13,9 +13,7 @@ export function NotFoundPage() {
         <p className="text-muted-foreground mb-8">
           {t('error.notFoundDescription')}
         </p>
-        <Link to="/">
-          <Button variant="primary">{t('common.goHome')}</Button>
-        </Link>
+        <Button asChild variant="primary"><Link to="/">{t('common.goHome')}</Link></Button>
       </div>
     </Container>
   );

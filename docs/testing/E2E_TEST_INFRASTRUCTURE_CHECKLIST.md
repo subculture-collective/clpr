@@ -223,16 +223,16 @@ Fixtures handle cleanup automatically:
 **Complete Guides:**
 - [E2E_TEST_FIXTURES_GUIDE.md](./E2E_TEST_FIXTURES_GUIDE.md) - Comprehensive fixture documentation
 - [ENABLING_SKIPPED_E2E_TESTS.md](./ENABLING_SKIPPED_E2E_TESTS.md) - Step-by-step conversion guide
-- [E2E_TEST_INFRASTRUCTURE_SUMMARY.md](./E2E_TEST_INFRASTRUCTURE_SUMMARY.md) - Technical architecture
+- E2E_TEST_INFRASTRUCTURE_SUMMARY.md - Technical architecture
 
 **Fixture Implementation:**
-- [e2e/fixtures/index.ts](./e2e/fixtures/index.ts) - Main fixture definitions
-- [e2e/fixtures/test-data.ts](./e2e/fixtures/test-data.ts) - Test data factories
-- [e2e/fixtures/multi-user-context.ts](./e2e/fixtures/multi-user-context.ts) - Multi-user setup
-- [e2e/fixtures/api-utils.ts](./e2e/fixtures/api-utils.ts) - API utilities
+- e2e/fixtures/index.ts - Main fixture definitions
+- e2e/fixtures/test-data.ts - Test data factories
+- [e2e/fixtures/multi-user-context.ts](../../frontend/e2e/fixtures/multi-user-context.ts) - Multi-user setup
+- [e2e/fixtures/api-utils.ts](../../frontend/e2e/fixtures/api-utils.ts) - API utilities
 
 **Configuration:**
-- [playwright.config.ts](./playwright.config.ts) - Playwright setup
+- [playwright.config.ts](../../frontend/playwright.config.ts) - Playwright setup
 
 ## ✨ Success Criteria
 

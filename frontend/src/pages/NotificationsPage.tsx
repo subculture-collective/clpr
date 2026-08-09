@@ -127,11 +127,11 @@ export function NotificationsPage() {
                     Mark all as read
                   </Button>
                 )}
-                <Link to="/notifications/preferences">
-                  <Button variant="ghost" size="sm">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/notifications/preferences">
                     <Settings size={16} strokeWidth={1.75} className='mr-1.5 inline' /> Preferences
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

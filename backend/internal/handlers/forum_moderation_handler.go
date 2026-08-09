@@ -74,9 +74,14 @@ type UserBan struct {
 // GET /api/admin/forum/flagged
 func (h *ForumModerationHandler) GetFlaggedContent(c *gin.Context) {
 	status := c.DefaultQuery("status", "pending")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	if status != "pending" && status != "reviewed" && status != "resolved" && status != "dismissed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "status must be pending, reviewed, resolved, or dismissed"})
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	query := `
@@ -101,7 +106,9 @@ func (h *ForumModerationHandler) GetFlaggedContent(c *gin.Context) {
 		JOIN users u ON cf.user_id = u.id
 		LEFT JOIN forum_threads ft ON cf.target_type = 'thread' AND cf.target_id = ft.id
 		LEFT JOIN forum_replies fr ON cf.target_type = 'reply' AND cf.target_id = fr.id
-		WHERE cf.status = $1
+			WHERE cf.status = $1
+			  AND ((cf.target_type = 'thread' AND ft.id IS NOT NULL AND ft.is_deleted = FALSE)
+			    OR (cf.target_type = 'reply' AND fr.id IS NOT NULL AND fr.is_deleted = FALSE AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE))
 		ORDER BY cf.created_at DESC
 		LIMIT $2
 	`
@@ -111,6 +118,10 @@ func (h *ForumModerationHandler) GetFlaggedContent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to retrieve flagged content",
 		})
+		return
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve flagged content"})
 		return
 	}
 	defer rows.Close()
@@ -145,7 +156,7 @@ func (h *ForumModerationHandler) GetFlaggedContent(c *gin.Context) {
 
 // LockThreadRequest represents the request to lock a thread
 type LockThreadRequest struct {
-	Reason string `json:"reason"`
+	Reason string `json:"reason" binding:"omitempty,max=1000"`
 	Locked bool   `json:"locked"`
 }
 
@@ -160,11 +171,8 @@ func (h *ForumModerationHandler) LockThread(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -237,7 +245,7 @@ func (h *ForumModerationHandler) LockThread(c *gin.Context) {
 
 // PinThreadRequest represents the request to pin a thread
 type PinThreadRequest struct {
-	Reason string `json:"reason"`
+	Reason string `json:"reason" binding:"omitempty,max=1000"`
 	Pinned bool   `json:"pinned"`
 }
 
@@ -252,11 +260,8 @@ func (h *ForumModerationHandler) PinThread(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -329,7 +334,7 @@ func (h *ForumModerationHandler) PinThread(c *gin.Context) {
 
 // DeleteThreadRequest represents the request to delete a thread
 type DeleteThreadRequest struct {
-	Reason string `json:"reason" binding:"required"`
+	Reason string `json:"reason" binding:"required,min=3,max=1000"`
 }
 
 // DeleteThread soft deletes a forum thread
@@ -343,11 +348,8 @@ func (h *ForumModerationHandler) DeleteThread(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -569,13 +571,23 @@ func (h *ForumModerationHandler) BanUser(c *gin.Context) {
 // GetModerationLog retrieves the moderation action log
 // GET /api/admin/forum/moderation-log
 func (h *ForumModerationHandler) GetModerationLog(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	actionType := c.Query("action_type")
 	targetType := c.Query("target_type")
+	validActions := map[string]bool{"": true, "lock_thread": true, "unlock_thread": true, "pin_thread": true, "unpin_thread": true, "delete_thread": true, "ban_user": true, "unban_user": true}
+	if !validActions[actionType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid action_type"})
+		return
+	}
+	if targetType != "" && targetType != "thread" && targetType != "reply" && targetType != "user" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target_type"})
+		return
+	}
 
 	// Use parameterized query with OR clauses to avoid dynamic SQL construction
 	args := []interface{}{actionType, targetType, limit}
@@ -598,6 +610,10 @@ func (h *ForumModerationHandler) GetModerationLog(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to retrieve moderation log",
 		})
+		return
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve moderation log"})
 		return
 	}
 	defer rows.Close()
@@ -638,20 +654,17 @@ func (h *ForumModerationHandler) GetModerationLog(c *gin.Context) {
 
 // FlagContentRequest represents the request to flag content
 type FlagContentRequest struct {
-	TargetType string  `json:"target_type" binding:"required"`
-	TargetID   string  `json:"target_id" binding:"required"`
-	Reason     string  `json:"reason" binding:"required"`
-	Details    *string `json:"details"`
+	TargetType string  `json:"target_type" binding:"required,oneof=thread reply"`
+	TargetID   string  `json:"target_id" binding:"required,uuid"`
+	Reason     string  `json:"reason" binding:"required,oneof=spam harassment off-topic misinformation other"`
+	Details    *string `json:"details" binding:"omitempty,max=2000"`
 }
 
 // FlagContent allows authenticated users to flag a thread or reply
 // POST /api/v1/forum/flag
 func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
-		})
+	userID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
 
@@ -673,11 +686,11 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 
 	// Validate reason
 	validReasons := map[string]bool{
-		"spam":            true,
-		"harassment":      true,
-		"off-topic":       true,
-		"misinformation":  true,
-		"other":           true,
+		"spam":           true,
+		"harassment":     true,
+		"off-topic":      true,
+		"misinformation": true,
+		"other":          true,
 	}
 	if !validReasons[req.Reason] {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -694,9 +707,35 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 		})
 		return
 	}
+	tx, err := h.db.Begin(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
+	var authorID uuid.UUID
+	if req.TargetType == "thread" {
+		err = tx.QueryRow(c.Request.Context(),
+			`SELECT user_id FROM forum_threads WHERE id = $1 AND is_deleted = FALSE FOR UPDATE`, targetID).Scan(&authorID)
+	} else {
+		err = tx.QueryRow(c.Request.Context(),
+			`SELECT user_id FROM forum_replies WHERE id = $1 AND is_deleted = FALSE AND hidden = FALSE AND flagged_as_spam = FALSE FOR UPDATE`, targetID).Scan(&authorID)
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Content not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify content"})
+		return
+	}
+	if authorID == userID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot flag your own content"})
+		return
+	}
 
 	// Insert flag, handling duplicates gracefully
-	_, err = h.db.Exec(c.Request.Context(),
+	_, err = tx.Exec(c.Request.Context(),
 		`INSERT INTO content_flags (user_id, target_type, target_id, reason, details, status)
 		VALUES ($1, $2, $3, $4, $5, 'pending')
 		ON CONFLICT (user_id, target_type, target_id) DO NOTHING`,
@@ -705,6 +744,10 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to flag content",
 		})
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to flag content"})
 		return
 	}
 
@@ -717,12 +760,16 @@ func (h *ForumModerationHandler) FlagContent(c *gin.Context) {
 // GetUserBans retrieves active user bans
 // GET /api/admin/forum/bans
 func (h *ForumModerationHandler) GetUserBans(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
-
-	activeOnly := c.DefaultQuery("active", "true") == "true"
+	activeOnly, err := strconv.ParseBool(c.DefaultQuery("active", "true"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "active must be true or false"})
+		return
+	}
 
 	query := `
 		SELECT 
@@ -735,9 +782,8 @@ func (h *ForumModerationHandler) GetUserBans(c *gin.Context) {
 	`
 
 	if activeOnly {
-		query += ` WHERE ub.active = TRUE`
+		query += ` WHERE ub.active = TRUE AND (ub.expires_at IS NULL OR ub.expires_at > NOW())`
 	}
-
 	query += ` ORDER BY ub.created_at DESC LIMIT $1`
 
 	rows, err := h.db.Query(c.Request.Context(), query, limit)
@@ -764,6 +810,10 @@ func (h *ForumModerationHandler) GetUserBans(c *gin.Context) {
 			return
 		}
 		bans = append(bans, ban)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve bans"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

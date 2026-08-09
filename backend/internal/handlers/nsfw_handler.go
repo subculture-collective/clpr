@@ -3,42 +3,37 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // validateImageURL checks if the URL is safe and uses allowed protocols
 func validateImageURL(imageURL string) error {
+	if len(imageURL) == 0 || len(imageURL) > 2048 {
+		return fmt.Errorf("URL must be between 1 and 2048 characters")
+	}
 	parsedURL, err := url.Parse(imageURL)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
 	}
 
-	// Only allow HTTPS and HTTP protocols
-	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
-		return fmt.Errorf("only http and https protocols are allowed")
+	if parsedURL.Scheme != "https" || parsedURL.Hostname() == "" || parsedURL.User != nil {
+		return fmt.Errorf("only absolute HTTPS URLs without credentials are allowed")
 	}
 
 	// Block private IP ranges and localhost to prevent SSRF
-	host := strings.ToLower(parsedURL.Hostname())
-	if host == "localhost" || host == "127.0.0.1" || host == "0.0.0.0" ||
-		strings.HasPrefix(host, "192.168.") ||
-		strings.HasPrefix(host, "10.") ||
-		strings.HasPrefix(host, "172.16.") || strings.HasPrefix(host, "172.17.") ||
-		strings.HasPrefix(host, "172.18.") || strings.HasPrefix(host, "172.19.") ||
-		strings.HasPrefix(host, "172.20.") || strings.HasPrefix(host, "172.21.") ||
-		strings.HasPrefix(host, "172.22.") || strings.HasPrefix(host, "172.23.") ||
-		strings.HasPrefix(host, "172.24.") || strings.HasPrefix(host, "172.25.") ||
-		strings.HasPrefix(host, "172.26.") || strings.HasPrefix(host, "172.27.") ||
-		strings.HasPrefix(host, "172.28.") || strings.HasPrefix(host, "172.29.") ||
-		strings.HasPrefix(host, "172.30.") || strings.HasPrefix(host, "172.31.") ||
-		strings.HasPrefix(host, "169.254.") {
+	host := strings.ToLower(strings.TrimSuffix(parsedURL.Hostname(), "."))
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".local") {
+		return fmt.Errorf("private IP addresses and localhost are not allowed")
+	}
+	if ip := net.ParseIP(host); ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() || ip.IsMulticast()) {
 		return fmt.Errorf("private IP addresses and localhost are not allowed")
 	}
 
@@ -69,7 +64,7 @@ func (h *NSFWHandler) DetectImage(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
+			"error": "Invalid request body",
 		})
 		return
 	}
@@ -79,6 +74,10 @@ func (h *NSFWHandler) DetectImage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid image URL: " + err.Error(),
 		})
+		return
+	}
+	if !h.nsfwDetector.Operational() {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "NSFW detector is unavailable"})
 		return
 	}
 
@@ -95,8 +94,8 @@ func (h *NSFWHandler) DetectImage(c *gin.Context) {
 	}
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to detect NSFW content: " + err.Error(),
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error": "Failed to detect NSFW content",
 		})
 		return
 	}
@@ -111,8 +110,9 @@ func (h *NSFWHandler) DetectImage(c *gin.Context) {
 		if autoFlag {
 			err = h.nsfwDetector.FlagToModerationQueue(ctx, req.ContentType, *req.ContentID, score)
 			if err != nil {
-				// Log error but don't fail the request
 				c.Error(fmt.Errorf("failed to flag to moderation queue: %w", err))
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Detection succeeded but moderation flagging failed"})
+				return
 			}
 		}
 	}
@@ -143,7 +143,7 @@ func (h *NSFWHandler) BatchDetect(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
+			"error": "Invalid request body",
 		})
 		return
 	}
@@ -156,6 +156,10 @@ func (h *NSFWHandler) BatchDetect(c *gin.Context) {
 			})
 			return
 		}
+	}
+	if !h.nsfwDetector.Operational() {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "NSFW detector is unavailable"})
+		return
 	}
 
 	ctx := c.Request.Context()
@@ -192,7 +196,7 @@ func (h *NSFWHandler) BatchDetect(c *gin.Context) {
 		}
 
 		if err != nil {
-			errMsg := err.Error()
+			errMsg := "Detection failed"
 			res.Error = &errMsg
 		} else {
 			res.NSFW = score.NSFW
@@ -277,6 +281,10 @@ func (h *NSFWHandler) GetMetrics(c *gin.Context) {
 		}
 		endDate = parsed.Add(24 * time.Hour) // Include the end date
 	}
+	if endDate.Before(startDate) || endDate.Sub(startDate) > 366*24*time.Hour {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Date range must be ordered and no longer than 366 days"})
+		return
+	}
 
 	metrics, err := h.nsfwDetector.GetMetrics(ctx, startDate, endDate)
 	if err != nil {
@@ -285,9 +293,7 @@ func (h *NSFWHandler) GetMetrics(c *gin.Context) {
 			status = http.StatusServiceUnavailable
 		}
 
-		c.JSON(status, gin.H{
-			"error": "Failed to retrieve metrics: " + err.Error(),
-		})
+		c.JSON(status, gin.H{"error": "Failed to retrieve NSFW metrics"})
 		return
 	}
 
@@ -303,7 +309,7 @@ func (h *NSFWHandler) GetHealthCheck(c *gin.Context) {
 	startTime := time.Now()
 
 	// Check internal service state without relying on external services
-	healthy := h.nsfwDetector != nil
+	healthy := h.nsfwDetector != nil && h.nsfwDetector.Operational()
 	latency := time.Since(startTime).Milliseconds()
 
 	status := "healthy"
@@ -318,7 +324,7 @@ func (h *NSFWHandler) GetHealthCheck(c *gin.Context) {
 	}
 
 	if !healthy {
-		response["error"] = "NSFW detector is not initialized"
+		response["error"] = "NSFW detector is unavailable"
 		c.JSON(http.StatusServiceUnavailable, response)
 		return
 	}
@@ -333,40 +339,10 @@ func (h *NSFWHandler) GetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"enabled": h.nsfwDetector != nil,
+			"enabled":     h.nsfwDetector != nil && h.nsfwDetector.Enabled(),
+			"operational": h.nsfwDetector != nil && h.nsfwDetector.Operational(),
 			// Note: Don't expose threshold, API keys, or other sensitive config
 			// These should be retrieved through secure admin APIs only
 		},
-	})
-}
-
-// ScanClipThumbnails scans existing clip thumbnails for NSFW content
-// POST /admin/nsfw/scan-clips
-func (h *NSFWHandler) ScanClipThumbnails(c *gin.Context) {
-	var req struct {
-		Limit    int  `json:"limit" binding:"omitempty,min=1,max=1000"`
-		AutoFlag bool `json:"auto_flag" binding:"omitempty"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
-		return
-	}
-
-	if req.Limit == 0 {
-		req.Limit = 100
-	}
-
-	// This would trigger a background job to scan clips
-	// For now, return a job ID that can be polled
-	jobID := uuid.New()
-
-	c.JSON(http.StatusAccepted, gin.H{
-		"success": true,
-		"job_id":  jobID,
-		"message": "Scan job started",
-		"limit":   req.Limit,
 	})
 }

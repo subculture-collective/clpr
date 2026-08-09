@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "target_environment": "disposable-staging",
+  "roles": [
+    {
+      "name": "user",
+      "database_role": "user",
+      "storage_state_env": "E2E_USER_STORAGE_STATE"
+    },
+    {
+      "name": "moderator",
+      "database_role": "moderator",
+      "storage_state_env": "E2E_MODERATOR_STORAGE_STATE"
+    },
+    {
+      "name": "administrator",
+      "database_role": "admin",
+      "storage_state_env": "E2E_ADMIN_STORAGE_STATE"
+    }
+  ],
+  "browser_projects": ["real-chromium", "real-firefox", "real-webkit"],
+  "journeys": [
+    { "id": "oauth-login", "role": "user", "required": true },
+    { "id": "public-search-empty-and-populated", "role": "anonymous", "required": true },
+    { "id": "clip-playback", "role": "user", "required": true },
+    { "id": "submission", "role": "user", "required": true },
+    { "id": "settings-and-privacy", "role": "user", "required": true },
+    { "id": "moderation-allow-and-deny", "role": "moderator", "required": true },
+    { "id": "administration-boundary", "role": "administrator", "required": true },
+    { "id": "logout-and-session-expiry", "role": "user", "required": true }
+  ],
+  "required_secret_names": [
+    "STRIPE_TEST_SECRET_KEY",
+    "STRIPE_TEST_WEBHOOK_SECRET",
+    "STRIPE_TEST_MONTHLY_PRICE_ID",
+    "STRIPE_TEST_YEARLY_PRICE_ID",
+    "STAGING_BASE_URL",
+    "E2E_USER_STORAGE_STATE",
+    "E2E_MODERATOR_STORAGE_STATE",
+    "E2E_ADMIN_STORAGE_STATE",
+    "STAGING_AUTH_TOKEN",
+    "STAGING_ADMIN_TOKEN",
+    "RESTORE_BACKUP_URI",
+    "GHCR_USERNAME",
+    "GHCR_TOKEN",
+    "COSIGN_PRIVATE_KEY",
+    "COSIGN_PASSWORD",
+    "COSIGN_PUBLIC_KEY",
+    "RELEASE_CANDIDATE_MANIFEST_URL",
+    "RELEASE_EVIDENCE_BASE_URL",
+    "RELEASE_EVIDENCE_TOKEN"
+  ]
+}

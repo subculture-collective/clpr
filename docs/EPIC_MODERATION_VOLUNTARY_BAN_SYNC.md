@@ -174,9 +174,9 @@ This epic has 38 child issues organized into 8 sub-epics. See `.github/MODERATIO
 ### References
 
 - [Twitch API Docs](https://dev.twitch.tv/docs/api)
-- [Chat Moderation System](./CHAT_MODERATION.md)
-- [Roles & Permissions Model](./backend/internal/models/roles.go)
-- [Testing Strategy](./docs/testing/testing-strategy.md)
+- [Chat Moderation System](./backend/CHAT_MODERATION.md)
+- [Roles & Permissions Model](../backend/internal/models/roles.go)
+- Testing Strategy
 
 ---
 

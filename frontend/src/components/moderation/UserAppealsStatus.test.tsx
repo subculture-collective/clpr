@@ -71,6 +71,9 @@ describe('UserAppealsStatus', () => {
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(moderationApi.getUserAppeals).mockImplementation(
+                () => new Promise(() => {}),
+            );
             render(<UserAppealsStatus />);
 
             // The spinner div exists with the animate-spin class
@@ -395,6 +398,9 @@ describe('UserAppealsStatus', () => {
         });
 
         it('displays spinner with proper role during loading', () => {
+            vi.mocked(moderationApi.getUserAppeals).mockImplementation(
+                () => new Promise(() => {}),
+            );
             render(<UserAppealsStatus />);
 
             const spinners = screen.getAllByRole('generic', { hidden: true });

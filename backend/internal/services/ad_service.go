@@ -2,21 +2,50 @@ package services
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/fnv"
-	"math/rand/v2"
+	"math/big"
+	"net"
+	"net/url"
 	"sort"
+	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/google/uuid"
 )
+
+func validateAdDestination(raw string) error {
+	if len(raw) == 0 || len(raw) > 2048 {
+		return fmt.Errorf("URL must be between 1 and 2048 characters")
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil {
+		return fmt.Errorf("URL must be an absolute HTTPS URL")
+	}
+	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".local") {
+		return fmt.Errorf("local destinations are not allowed")
+	}
+	if ip := net.ParseIP(host); ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() || ip.IsMulticast()) {
+		return fmt.Errorf("private destinations are not allowed")
+	}
+	return nil
+}
 
 // experimentBucketCount is the number of buckets used for A/B experiment user distribution
 // A higher number provides finer-grained distribution but 10000 provides adequate precision
 const experimentBucketCount = 10000
+
+var (
+	ErrCampaignNotFound = errors.New("campaign not found")
+	ErrInvalidCampaign  = errors.New("invalid campaign")
+)
 
 // AdService handles business logic for ad delivery
 type AdService struct {
@@ -143,11 +172,12 @@ func (s *AdService) SelectAd(ctx context.Context, req models.AdSelectionRequest,
 	// Update frequency caps (async to not block response)
 	// Only if personalized
 	if isPersonalized {
-		go s.updateFrequencyCaps(context.Background(), selectedAd.ID, userID, req.SessionID)
+		go s.updateFrequencyCaps(context.WithoutCancel(ctx), selectedAd.ID, userID, req.SessionID)
 	}
 
+	publicAd := selectedAd.Public()
 	return &models.AdSelectionResponse{
-		Ad:           &selectedAd,
+		Ad:           &publicAd,
 		ImpressionID: impressionID.String(),
 		TrackingURL:  fmt.Sprintf("/api/v1/ads/track/%s", impressionID.String()),
 	}, nil
@@ -160,37 +190,7 @@ func (s *AdService) TrackImpression(ctx context.Context, req models.AdTrackingRe
 		return fmt.Errorf("invalid impression ID: %w", err)
 	}
 
-	// Get the impression to validate it exists
-	impression, err := s.adRepo.GetImpressionByID(ctx, impressionID)
-	if err != nil {
-		return fmt.Errorf("impression not found: %w", err)
-	}
-
-	// Determine if viewability threshold is met (IAB standard: 50% visible for 1s)
-	isViewable := req.ViewabilityTimeMs >= models.ViewabilityThresholdMs
-
-	// Update the impression
-	if err := s.adRepo.UpdateImpression(ctx, impressionID, req.ViewabilityTimeMs, isViewable, req.IsClicked); err != nil {
-		return fmt.Errorf("failed to update impression: %w", err)
-	}
-
-	// If viewable, charge the advertiser (CPM based)
-	if isViewable && !impression.IsViewable {
-		// Calculate cost (CPM / 1000 = cost per impression)
-		ad, err := s.adRepo.GetAdByID(ctx, impression.AdID)
-		if err == nil {
-			costCents := ad.CPMCents / 1000 // Cost per single impression
-			if costCents < 1 {
-				costCents = 1 // Minimum 1 cent per impression
-			}
-			// Update ad spend (async)
-			go func() {
-				_ = s.adRepo.IncrementAdSpend(context.Background(), ad.ID, costCents)
-			}()
-		}
-	}
-
-	return nil
+	return s.adRepo.TrackImpression(ctx, impressionID, req.ViewabilityTimeMs, req.IsClicked)
 }
 
 // filterByTargeting filters ads based on targeting criteria
@@ -517,8 +517,12 @@ func (s *AdService) weightedRandomSelect(ads []models.Ad) models.Ad {
 		totalWeight += ad.Weight
 	}
 
-	// Random selection based on weight (using v2 package-level random)
-	randomWeight := rand.IntN(totalWeight)
+	// Use cryptographic randomness because delivery affects advertiser spend.
+	randomValue, err := cryptorand.Int(cryptorand.Reader, big.NewInt(int64(totalWeight)))
+	if err != nil {
+		return priorityAds[0]
+	}
+	randomWeight := int(randomValue.Int64())
 
 	cumulative := 0
 	for _, ad := range priorityAds {
@@ -574,6 +578,22 @@ func (s *AdService) GetAdByID(ctx context.Context, id uuid.UUID) (*models.Ad, er
 	return s.adRepo.GetAdByID(ctx, id)
 }
 
+func (s *AdService) GetPublicAdByID(ctx context.Context, id uuid.UUID) (*models.PublicAd, error) {
+	ad, err := s.adRepo.GetAdByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	if !ad.IsActive || (ad.StartDate != nil && ad.StartDate.After(now)) ||
+		(ad.EndDate != nil && !ad.EndDate.After(now)) ||
+		(ad.DailyBudgetCents != nil && ad.SpentTodayCents >= *ad.DailyBudgetCents) ||
+		(ad.TotalBudgetCents != nil && ad.SpentTotalCents >= *ad.TotalBudgetCents) {
+		return nil, fmt.Errorf("ad not available")
+	}
+	publicAd := ad.Public()
+	return &publicAd, nil
+}
+
 // ResetDailySpend resets daily spend for all ads
 func (s *AdService) ResetDailySpend(ctx context.Context) error {
 	return s.adRepo.ResetDailySpend(ctx)
@@ -586,9 +606,7 @@ func (s *AdService) filterByTargetingRules(ctx context.Context, ads []models.Ad,
 	for _, ad := range ads {
 		rules, err := s.adRepo.GetTargetingRules(ctx, ad.ID)
 		if err != nil {
-			// If we can't get rules, include the ad (fail open)
-			filtered = append(filtered, ad)
-			continue
+			return nil, fmt.Errorf("get targeting rules for ad %s: %w", ad.ID, err)
 		}
 
 		if len(rules) == 0 {
@@ -633,9 +651,7 @@ func (s *AdService) filterByContextualTargetingRules(ctx context.Context, ads []
 	for _, ad := range ads {
 		rules, err := s.adRepo.GetTargetingRules(ctx, ad.ID)
 		if err != nil {
-			// If we can't get rules, include the ad (fail open)
-			filtered = append(filtered, ad)
-			continue
+			return nil, fmt.Errorf("get contextual targeting rules for ad %s: %w", ad.ID, err)
 		}
 
 		if len(rules) == 0 {
@@ -851,28 +867,60 @@ func (s *AdService) ListCampaigns(ctx context.Context, page, limit int, status *
 // ValidateCampaign validates campaign data without creating it
 func (s *AdService) ValidateCampaign(ad *models.Ad) error {
 	// Validate required fields
-	if ad.Name == "" {
-		return fmt.Errorf("campaign name is required")
+	if strings.TrimSpace(ad.Name) == "" {
+		return fmt.Errorf("%w: campaign name is required", ErrInvalidCampaign)
 	}
-	if ad.AdvertiserName == "" {
-		return fmt.Errorf("advertiser name is required")
+	if strings.TrimSpace(ad.AdvertiserName) == "" {
+		return fmt.Errorf("%w: advertiser name is required", ErrInvalidCampaign)
 	}
 	if ad.AdType == "" {
-		return fmt.Errorf("ad type is required")
+		return fmt.Errorf("%w: ad type is required", ErrInvalidCampaign)
 	}
 	if ad.ContentURL == "" {
-		return fmt.Errorf("content URL is required")
+		return fmt.Errorf("%w: content URL is required", ErrInvalidCampaign)
+	}
+	if len(strings.TrimSpace(ad.Name)) > 200 || len(strings.TrimSpace(ad.AdvertiserName)) > 200 {
+		return fmt.Errorf("%w: campaign names cannot exceed 200 characters", ErrInvalidCampaign)
+	}
+	if err := validateAdDestination(ad.ContentURL); err != nil {
+		return fmt.Errorf("%w: invalid content URL: %v", ErrInvalidCampaign, err)
+	}
+	if ad.ClickURL != nil {
+		if err := validateAdDestination(*ad.ClickURL); err != nil {
+			return fmt.Errorf("%w: invalid click URL: %v", ErrInvalidCampaign, err)
+		}
+	}
+	if ad.AltText != nil && len(*ad.AltText) > 500 {
+		return fmt.Errorf("%w: alt text cannot exceed 500 characters", ErrInvalidCampaign)
+	}
+	if ad.Priority < 0 || ad.Priority > 100 || ad.Weight < 0 || ad.Weight > 10000 {
+		return fmt.Errorf("%w: priority or weight is out of range", ErrInvalidCampaign)
+	}
+	if ad.CPMCents < 0 || ad.CPMCents > 10_000_000 {
+		return fmt.Errorf("%w: CPM is out of range", ErrInvalidCampaign)
+	}
+	if ad.DailyBudgetCents != nil && (*ad.DailyBudgetCents < 0 || *ad.DailyBudgetCents > 1_000_000_000) {
+		return fmt.Errorf("%w: daily budget is out of range", ErrInvalidCampaign)
+	}
+	if ad.TotalBudgetCents != nil && (*ad.TotalBudgetCents < 0 || *ad.TotalBudgetCents > 100_000_000_000) {
+		return fmt.Errorf("%w: total budget is out of range", ErrInvalidCampaign)
+	}
+	if ad.DailyBudgetCents != nil && ad.TotalBudgetCents != nil && *ad.TotalBudgetCents < *ad.DailyBudgetCents {
+		return fmt.Errorf("%w: total budget cannot be less than daily budget", ErrInvalidCampaign)
+	}
+	if payload, err := json.Marshal(ad.TargetingCriteria); err != nil || len(payload) > 16*1024 {
+		return fmt.Errorf("%w: targeting criteria is invalid or exceeds 16 KiB", ErrInvalidCampaign)
 	}
 
 	// Validate ad type
 	validAdTypes := map[string]bool{"banner": true, "video": true, "native": true}
 	if !validAdTypes[ad.AdType] {
-		return fmt.Errorf("invalid ad type: must be banner, video, or native")
+		return fmt.Errorf("%w: invalid ad type; must be banner, video, or native", ErrInvalidCampaign)
 	}
 
 	// Validate dates if both provided
-	if ad.StartDate != nil && ad.EndDate != nil && ad.EndDate.Before(*ad.StartDate) {
-		return fmt.Errorf("end date must be after start date")
+	if ad.StartDate != nil && ad.EndDate != nil && !ad.EndDate.After(*ad.StartDate) {
+		return fmt.Errorf("%w: end date must be after start date", ErrInvalidCampaign)
 	}
 
 	return nil
@@ -904,22 +952,14 @@ func (s *AdService) UpdateCampaign(ctx context.Context, ad *models.Ad) error {
 	// Verify campaign exists
 	existing, err := s.adRepo.GetAdByID(ctx, ad.ID)
 	if err != nil {
-		return fmt.Errorf("campaign not found")
+		return ErrCampaignNotFound
 	}
 
-	// Validate ad type if changed
-	if ad.AdType != "" {
-		validAdTypes := map[string]bool{"banner": true, "video": true, "native": true}
-		if !validAdTypes[ad.AdType] {
-			return fmt.Errorf("invalid ad type: must be banner, video, or native")
-		}
-	} else {
+	if ad.AdType == "" {
 		ad.AdType = existing.AdType
 	}
-
-	// Validate dates if both provided
-	if ad.StartDate != nil && ad.EndDate != nil && ad.EndDate.Before(*ad.StartDate) {
-		return fmt.Errorf("end date must be after start date")
+	if err := s.ValidateCampaign(ad); err != nil {
+		return err
 	}
 
 	return s.adRepo.UpdateCampaign(ctx, ad)
@@ -930,7 +970,7 @@ func (s *AdService) DeleteCampaign(ctx context.Context, id uuid.UUID) error {
 	// Verify campaign exists
 	_, err := s.adRepo.GetAdByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("campaign not found")
+		return ErrCampaignNotFound
 	}
 
 	return s.adRepo.DeleteCampaign(ctx, id)
@@ -951,6 +991,9 @@ func (s *AdService) ValidateCreative(ctx context.Context, contentURL string, adT
 	// Validate content URL is not empty
 	if contentURL == "" {
 		return fmt.Errorf("content URL is required")
+	}
+	if err := validateAdDestination(contentURL); err != nil {
+		return err
 	}
 
 	// Validate ad type

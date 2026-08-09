@@ -2,14 +2,20 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+)
+
+var (
+	ErrSubmissionNotFound   = errors.New("submission not found")
+	ErrSubmissionNotPending = errors.New("submission is not pending")
 )
 
 // SubmissionRepository handles database operations for clip submissions
@@ -107,13 +113,116 @@ func (r *SubmissionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 	)
 
 	if err == pgx.ErrNoRows {
-		return nil, fmt.Errorf("submission not found")
+		return nil, ErrSubmissionNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	return &submission, nil
+}
+
+// ModerateAtomically locks every requested submission and commits the decision,
+// resulting clip (for approvals), karma adjustment, and audit records together.
+func (r *SubmissionRepository) ModerateAtomically(ctx context.Context, ids []uuid.UUID, reviewerID uuid.UUID, approve bool, reason *string) ([]*models.ClipSubmission, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	rows, err := tx.Query(ctx, `
+		SELECT id, user_id, twitch_clip_id, twitch_clip_url, title, custom_title,
+			tags, is_nsfw, submission_reason, status, rejection_reason,
+			reviewed_by, reviewed_at, created_at, updated_at,
+			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			game_id, game_name, thumbnail_url, duration, view_count
+		FROM clip_submissions WHERE id = ANY($1) ORDER BY id FOR UPDATE`, ids)
+	if err != nil {
+		return nil, err
+	}
+	var submissions []*models.ClipSubmission
+	for rows.Next() {
+		var s models.ClipSubmission
+		if err := rows.Scan(&s.ID, &s.UserID, &s.TwitchClipID, &s.TwitchClipURL, &s.Title, &s.CustomTitle,
+			&s.Tags, &s.IsNSFW, &s.SubmissionReason, &s.Status, &s.RejectionReason,
+			&s.ReviewedBy, &s.ReviewedAt, &s.CreatedAt, &s.UpdatedAt,
+			&s.CreatorName, &s.CreatorID, &s.BroadcasterName, &s.BroadcasterID, &s.BroadcasterNameOverride,
+			&s.GameID, &s.GameName, &s.ThumbnailURL, &s.Duration, &s.ViewCount); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		submissions = append(submissions, &s)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	rows.Close()
+	if len(submissions) != len(ids) {
+		return nil, ErrSubmissionNotFound
+	}
+	for _, s := range submissions {
+		if s.Status != "pending" {
+			return nil, ErrSubmissionNotPending
+		}
+	}
+
+	status, action, karmaDelta := "rejected", "reject", -5
+	if approve {
+		status, action, karmaDelta = "approved", "approve", 10
+	}
+	now := time.Now()
+	for _, s := range submissions {
+		var clipID *uuid.UUID
+		if approve {
+			id := uuid.New()
+			clipID = &id
+			title := ""
+			if s.Title != nil {
+				title = *s.Title
+			}
+			if s.CustomTitle != nil && *s.CustomTitle != "" {
+				title = *s.CustomTitle
+			}
+			creatorName := ""
+			if s.CreatorName != nil {
+				creatorName = *s.CreatorName
+			}
+			broadcasterName := ""
+			if s.BroadcasterName != nil {
+				broadcasterName = *s.BroadcasterName
+			}
+			if s.BroadcasterNameOverride != nil && *s.BroadcasterNameOverride != "" {
+				broadcasterName = *s.BroadcasterNameOverride
+			}
+			if _, err := tx.Exec(ctx, `
+				INSERT INTO clips (id, twitch_clip_id, twitch_clip_url, embed_url, title,
+					creator_name, creator_id, broadcaster_name, broadcaster_id, game_id, game_name,
+					language, thumbnail_url, duration, view_count, created_at, imported_at,
+					vote_score, comment_count, favorite_count, is_featured, is_nsfw, is_removed,
+					is_hidden, submitted_by_user_id, submitted_at)
+				VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'',$12,$13,$14,$15,$15,0,0,0,false,$16,false,false,$17,$18)`,
+				id, s.TwitchClipID, s.TwitchClipURL, fmt.Sprintf("https://clips.twitch.tv/embed?clip=%s", s.TwitchClipID),
+				title, creatorName, s.CreatorID, broadcasterName, s.BroadcasterID, s.GameID, s.GameName,
+				s.ThumbnailURL, s.Duration, s.ViewCount, now, s.IsNSFW, s.UserID, s.CreatedAt); err != nil {
+				return nil, err
+			}
+		}
+		if _, err := tx.Exec(ctx, `UPDATE clip_submissions SET status=$2, reviewed_by=$3, reviewed_at=$4, rejection_reason=$5, clip_id=$6, updated_at=$4 WHERE id=$1`, s.ID, status, reviewerID, now, reason, clipID); err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE users SET karma_points=karma_points+$2, updated_at=NOW() WHERE id=$1`, s.UserID, karmaDelta); err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO moderation_audit_logs (id, action, entity_type, entity_id, moderator_id, actor_id, target_user_id, reason, created_at) VALUES ($1,$2,'clip_submission',$3,$4,$4,$5,$6,NOW())`, uuid.New(), action, s.ID, reviewerID, s.UserID, reason); err != nil {
+			return nil, err
+		}
+		s.ClipID, s.Status = clipID, status
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return submissions, nil
 }
 
 // GetByTwitchClipID checks if a submission with the given Twitch clip ID exists

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // WebhookRepository handles database operations for webhook retry and dead-letter queue
@@ -61,20 +61,29 @@ func (r *WebhookRepository) GetRetryQueueItem(ctx context.Context, stripeEventID
 	return &item, nil
 }
 
-// GetPendingRetries retrieves all webhook events ready for retry
-// Uses FOR UPDATE SKIP LOCKED to prevent concurrent processing by multiple instances
+// GetPendingRetries atomically leases webhook events that are ready for retry.
+// The lease makes a claimed item temporarily ineligible on every replica. If a
+// worker crashes, the item becomes eligible again after five minutes.
 func (r *WebhookRepository) GetPendingRetries(ctx context.Context, limit int) ([]*models.WebhookRetryQueue, error) {
 	query := `
-		SELECT id, stripe_event_id, event_type, payload, retry_count, max_retries,
-		       next_retry_at, last_error, created_at, updated_at
-		FROM webhook_retry_queue
-		WHERE next_retry_at <= $1 AND retry_count < max_retries
-		ORDER BY next_retry_at ASC
-		LIMIT $2
-		FOR UPDATE SKIP LOCKED
+		WITH candidates AS (
+			SELECT id
+			FROM webhook_retry_queue
+			WHERE next_retry_at <= NOW() AND retry_count < max_retries
+			ORDER BY next_retry_at ASC
+			LIMIT $1
+			FOR UPDATE SKIP LOCKED
+		)
+		UPDATE webhook_retry_queue AS queue
+		SET next_retry_at = NOW() + INTERVAL '5 minutes', updated_at = NOW()
+		FROM candidates
+		WHERE queue.id = candidates.id
+		RETURNING queue.id, queue.stripe_event_id, queue.event_type, queue.payload,
+		          queue.retry_count, queue.max_retries, queue.next_retry_at,
+		          queue.last_error, queue.created_at, queue.updated_at
 	`
 
-	rows, err := r.db.Query(ctx, query, time.Now(), limit)
+	rows, err := r.db.Query(ctx, query, limit)
 	if err != nil {
 		return nil, err
 	}

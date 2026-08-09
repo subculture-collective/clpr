@@ -2,15 +2,17 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // VerificationHandler handles creator verification operations
@@ -18,6 +20,28 @@ type VerificationHandler struct {
 	verificationRepo    *repository.VerificationRepository
 	notificationService *services.NotificationService
 	db                  *pgxpool.Pool
+}
+
+func parseVerificationPage(c *gin.Context) (int, int, bool) {
+	limit := 50
+	page := 1
+	if value := c.Query("limit"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+			return 0, 0, false
+		}
+		limit = parsed
+	}
+	if value := c.Query("page"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > 10000 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "page must be between 1 and 10000"})
+			return 0, 0, false
+		}
+		page = parsed
+	}
+	return limit, page, true
 }
 
 // NewVerificationHandler creates a new VerificationHandler
@@ -46,96 +70,21 @@ func (h *VerificationHandler) CreateApplication(c *gin.Context) {
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := userIDVal.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authenticated user"})
+		return
+	}
 
 	var req models.CreateVerificationApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error": "Invalid request body",
 		})
 		return
 	}
-
-	// === ABUSE PREVENTION CHECKS ===
-
-	// 0. Check if user is already verified
-	isVerified, err := h.verificationRepo.IsUserVerified(ctx, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check verification status",
-		})
-		return
-	}
-
-	if isVerified {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You are already verified",
-		})
-		return
-	}
-
-	// 1. Check if user already has a pending application
-	existing, err := h.verificationRepo.GetApplicationByUserID(ctx, userID, models.VerificationStatusPending)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check for existing application",
-		})
-		return
-	}
-
-	if existing != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You already have a pending verification application",
-		})
-		return
-	}
-
-	// 2. Check for recently rejected applications (30-day cooldown)
-	recentRejection, err := h.verificationRepo.GetRecentRejectedApplicationByUserID(ctx, userID, 30)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check application history",
-		})
-		return
-	}
-
-	if recentRejection != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":       "You must wait 30 days after a rejection before reapplying",
-			"rejected_at": recentRejection.ReviewedAt,
-		})
-		return
-	}
-
-	// 3. Check total application count to detect potential abuse
-	totalApps, err := h.verificationRepo.GetApplicationCountByUserID(ctx, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to check application history",
-		})
-		return
-	}
-
-	if totalApps >= 5 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "You have reached the maximum number of verification applications",
-		})
-		return
-	}
-
-	// 4. Check for duplicate Twitch URLs from other users
-	duplicateApps, err := h.verificationRepo.GetApplicationsByTwitchURL(ctx, req.TwitchChannelURL, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to validate Twitch channel",
-		})
-		return
-	}
-
-	if len(duplicateApps) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "This Twitch channel is already associated with another verification application",
-		})
+	if err := req.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -157,8 +106,16 @@ func (h *VerificationHandler) CreateApplication(c *gin.Context) {
 		app.SocialMediaLinks[k] = v
 	}
 
-	err = h.verificationRepo.CreateApplication(ctx, app)
+	err := h.verificationRepo.CreateApplicationGuarded(ctx, app)
 	if err != nil {
+		if errors.Is(err, repository.ErrVerificationAlreadyVerified) || errors.Is(err, repository.ErrVerificationPending) || errors.Is(err, repository.ErrVerificationLimit) || errors.Is(err, repository.ErrVerificationDuplicateChannel) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, repository.ErrVerificationCooldown) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "You must wait 30 days after a rejection before reapplying"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to create verification application",
 		})
@@ -185,7 +142,11 @@ func (h *VerificationHandler) GetApplication(c *gin.Context) {
 		})
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
+	userID, ok := userIDVal.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authenticated user"})
+		return
+	}
 
 	// Get latest application regardless of status (empty string means no status filter)
 	app, err := h.verificationRepo.GetApplicationByUserID(ctx, userID, "")
@@ -216,8 +177,10 @@ func (h *VerificationHandler) ListApplications(c *gin.Context) {
 
 	// Parse query parameters
 	status := c.DefaultQuery("status", models.VerificationStatusPending)
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, page, ok := parseVerificationPage(c)
+	if !ok {
+		return
+	}
 
 	// Validate status parameter
 	validStatuses := map[string]bool{
@@ -231,13 +194,6 @@ func (h *VerificationHandler) ListApplications(c *gin.Context) {
 			"error": "Invalid status. Must be one of: pending, approved, rejected",
 		})
 		return
-	}
-
-	if limit < 1 || limit > 100 {
-		limit = 50
-	}
-	if page < 1 {
-		page = 1
 	}
 
 	offset := (page - 1) * limit
@@ -277,6 +233,10 @@ func (h *VerificationHandler) GetApplicationByID(c *gin.Context) {
 
 	app, err := h.verificationRepo.GetApplicationWithUser(ctx, appID)
 	if err != nil {
+		if errors.Is(err, repository.ErrVerificationNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Verification application not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to retrieve verification application",
 		})
@@ -310,95 +270,75 @@ func (h *VerificationHandler) ReviewApplication(c *gin.Context) {
 		})
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
+	reviewerID, ok := reviewerIDVal.(uuid.UUID)
+	if !ok || reviewerID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
 	var req models.ReviewVerificationApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error": "Invalid request body",
 		})
 		return
 	}
-
-	// Get the application first to get user ID
-	app, err := h.verificationRepo.GetApplicationByID(ctx, appID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve verification application",
-		})
-		return
-	}
-
-	if app.Status != models.VerificationStatusPending {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Application has already been reviewed",
-		})
-		return
-	}
-
-	// Update application status
 	var notes string
 	if req.Notes != nil {
 		notes = *req.Notes
 	}
-	err = h.verificationRepo.UpdateApplicationStatus(ctx, appID, reviewerID, req.Decision, notes)
+	appUserID, err := h.verificationRepo.ReviewApplication(ctx, appID, reviewerID, req.Decision, req.Notes)
 	if err != nil {
+		if errors.Is(err, repository.ErrVerificationNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Verification application not found"})
+			return
+		}
+		if errors.Is(err, repository.ErrVerificationAlreadyReviewed) {
+			c.JSON(http.StatusConflict, gin.H{"error": "Application has already been reviewed"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update application status",
-		})
-		return
-	}
-
-	// Create decision audit entry
-	decision := &models.CreatorVerificationDecision{
-		ApplicationID: appID,
-		ReviewerID:    reviewerID,
-		Decision:      req.Decision,
-		Notes:         req.Notes,
-		Metadata:      make(map[string]interface{}),
-	}
-
-	err = h.verificationRepo.CreateDecision(ctx, decision)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to create decision audit entry",
+			"error": "Failed to review verification application",
 		})
 		return
 	}
 
 	// Send notification to user (async - don't fail request if notification fails)
 	// Use background context to avoid cancellation when HTTP request completes
-	go func() {
-		bgCtx := context.Background()
-		var notificationType string
-		var title string
-		var message string
+	if h.notificationService != nil {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			var notificationType string
+			var title string
+			var message string
 
-		if req.Decision == models.VerificationDecisionApproved {
-			notificationType = models.NotificationTypeSystemAlert
-			title = "Verification Approved"
-			message = "Your creator verification application has been approved! You now have a verified badge."
-		} else {
-			notificationType = models.NotificationTypeSystemAlert
-			title = "Verification Application Reviewed"
-			message = "Your creator verification application has been reviewed."
-			if notes != "" {
-				message += " Note: " + notes
+			if req.Decision == models.VerificationDecisionApproved {
+				notificationType = models.NotificationTypeSystemAlert
+				title = "Verification Approved"
+				message = "Your creator verification application has been approved! You now have a verified badge."
+			} else {
+				notificationType = models.NotificationTypeSystemAlert
+				title = "Verification Application Reviewed"
+				message = "Your creator verification application has been reviewed."
+				if notes != "" {
+					message += " Note: " + notes
+				}
 			}
-		}
 
-		_, _ = h.notificationService.CreateNotification(
-			bgCtx,
-			app.UserID,
-			notificationType,
-			title,
-			message,
-			nil, // link
-			nil, // sourceUserID
-			nil, // sourceContentID
-			nil, // sourceContentType
-		)
-	}()
+			_, _ = h.notificationService.CreateNotification(
+				bgCtx,
+				appUserID,
+				notificationType,
+				title,
+				message,
+				nil, // link
+				nil, // sourceUserID
+				nil, // sourceContentID
+				nil, // sourceContentType
+			)
+		})
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -436,15 +376,22 @@ func (h *VerificationHandler) GetAuditLogs(c *gin.Context) {
 
 	// Parse query parameters
 	userIDParam := c.Query("user_id")
-	onlyFlagged := c.DefaultQuery("only_flagged", "false") == "true"
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-
-	if limit < 1 || limit > 100 {
-		limit = 50
+	onlyFlagged := false
+	if value := c.Query("only_flagged"); value != "" {
+		parsed, err := strconv.ParseBool(value)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "only_flagged must be true or false"})
+			return
+		}
+		onlyFlagged = parsed
 	}
-	if page < 1 {
-		page = 1
+	if onlyFlagged && userIDParam != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "only_flagged and user_id cannot be combined"})
+		return
+	}
+	limit, page, ok := parseVerificationPage(c)
+	if !ok {
+		return
 	}
 
 	offset := (page - 1) * limit
@@ -499,14 +446,9 @@ func (h *VerificationHandler) GetUserAuditHistory(c *gin.Context) {
 		return
 	}
 
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-
-	if limit < 1 || limit > 100 {
-		limit = 50
-	}
-	if page < 1 {
-		page = 1
+	limit, page, ok := parseVerificationPage(c)
+	if !ok {
+		return
 	}
 
 	offset := (page - 1) * limit

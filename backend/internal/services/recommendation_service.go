@@ -7,10 +7,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 // RecommendationService handles recommendation logic
@@ -562,8 +562,19 @@ func (s *RecommendationService) RecordInteraction(
 	return nil
 }
 
+func (s *RecommendationService) RecordFeedback(ctx context.Context, feedback *models.RecommendationFeedback) error {
+	if err := s.repo.RecordFeedback(ctx, feedback); err != nil {
+		return fmt.Errorf("failed to record feedback: %w", err)
+	}
+	s.invalidateUserCache(ctx, feedback.UserID)
+	return nil
+}
+
 // invalidateUserCache invalidates all cached recommendations for a user
 func (s *RecommendationService) invalidateUserCache(ctx context.Context, userID uuid.UUID) {
+	if s.redisClient == nil {
+		return
+	}
 	pattern := fmt.Sprintf("recommendations:%s:*", userID.String())
 	iter := s.redisClient.Scan(ctx, 0, pattern, 100).Iterator()
 	for iter.Next(ctx) {

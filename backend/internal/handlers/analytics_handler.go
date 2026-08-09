@@ -1,41 +1,78 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/jackc/pgx/v5"
 )
+
+type analyticsService interface {
+	GetCreatorAnalyticsOverview(context.Context, string) (*models.CreatorAnalyticsOverview, error)
+	GetCreatorTopClips(context.Context, string, string, int) ([]models.CreatorTopClip, error)
+	GetCreatorTrends(context.Context, string, string, int) ([]models.TrendDataPoint, error)
+	GetCreatorAudienceInsights(context.Context, string, int) (*models.CreatorAudienceInsights, error)
+	GetClipAnalytics(context.Context, uuid.UUID) (*models.ClipAnalytics, error)
+	GetUserAnalytics(context.Context, uuid.UUID) (*models.UserAnalytics, error)
+	GetPlatformOverview(context.Context) (*models.PlatformOverviewMetrics, error)
+	GetContentMetrics(context.Context) (*models.ContentMetrics, error)
+	GetPlatformTrends(context.Context, string, int) ([]models.TrendDataPoint, error)
+	TrackEvent(context.Context, string, *uuid.UUID, *uuid.UUID, map[string]interface{}, string, string, string) error
+}
 
 // AnalyticsHandler handles analytics-related HTTP requests
 type AnalyticsHandler struct {
-	analyticsService *services.AnalyticsService
-	authService      *services.AuthService
+	analyticsService analyticsService
 }
 
 // NewAnalyticsHandler creates a new analytics handler
-func NewAnalyticsHandler(analyticsService *services.AnalyticsService, authService *services.AuthService) *AnalyticsHandler {
-	return &AnalyticsHandler{
-		analyticsService: analyticsService,
-		authService:      authService,
+func NewAnalyticsHandler(analyticsService analyticsService) *AnalyticsHandler {
+	return &AnalyticsHandler{analyticsService: analyticsService}
+}
+
+func creatorAnalyticsName(c *gin.Context) (string, bool) {
+	name := strings.TrimSpace(c.Param("creator"))
+	if name == "" || len(name) > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid creator name"})
+		return "", false
 	}
+	return name, true
+}
+
+func boundedAnalyticsInt(c *gin.Context, key string, defaultValue, maximum int) (int, bool) {
+	raw, exists := c.GetQuery(key)
+	if !exists {
+		return defaultValue, true
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 1 || value > maximum {
+		c.JSON(http.StatusBadRequest, gin.H{"error": key + " must be an integer between 1 and " + strconv.Itoa(maximum)})
+		return 0, false
+	}
+	return value, true
 }
 
 // GetCreatorAnalyticsOverview returns summary metrics for a creator
 // GET /api/v1/creators/:creatorName/analytics/overview
 func (h *AnalyticsHandler) GetCreatorAnalyticsOverview(c *gin.Context) {
-	creatorName := c.Param("creatorName")
-	if creatorName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "creator name is required"})
+	creatorName, ok := creatorAnalyticsName(c)
+	if !ok {
 		return
 	}
 
 	overview, err := h.analyticsService.GetCreatorAnalyticsOverview(c.Request.Context(), creatorName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve creator analytics"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "creator analytics not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve creator analytics"})
+		}
 		return
 	}
 
@@ -45,14 +82,20 @@ func (h *AnalyticsHandler) GetCreatorAnalyticsOverview(c *gin.Context) {
 // GetCreatorTopClips returns top-performing clips for a creator
 // GET /api/v1/creators/:creatorName/analytics/clips?sort=views&limit=10
 func (h *AnalyticsHandler) GetCreatorTopClips(c *gin.Context) {
-	creatorName := c.Param("creatorName")
-	if creatorName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "creator name is required"})
+	creatorName, ok := creatorAnalyticsName(c)
+	if !ok {
 		return
 	}
 
 	sortBy := c.DefaultQuery("sort", "votes")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if sortBy != "views" && sortBy != "votes" && sortBy != "comments" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sort must be one of views, votes, or comments"})
+		return
+	}
+	limit, ok := boundedAnalyticsInt(c, "limit", 10, 100)
+	if !ok {
+		return
+	}
 
 	clips, err := h.analyticsService.GetCreatorTopClips(c.Request.Context(), creatorName, sortBy, limit)
 	if err != nil {
@@ -69,14 +112,20 @@ func (h *AnalyticsHandler) GetCreatorTopClips(c *gin.Context) {
 // GetCreatorTrends returns time-series data for creator metrics
 // GET /api/v1/creators/:creatorName/analytics/trends?metric=views&days=30
 func (h *AnalyticsHandler) GetCreatorTrends(c *gin.Context) {
-	creatorName := c.Param("creatorName")
-	if creatorName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "creator name is required"})
+	creatorName, ok := creatorAnalyticsName(c)
+	if !ok {
 		return
 	}
 
 	metricType := c.DefaultQuery("metric", "clip_views")
-	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if metricType != "clip_views" && metricType != "votes" && metricType != "comments" && metricType != "favorites" && metricType != "shares" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported creator metric"})
+		return
+	}
+	days, ok := boundedAnalyticsInt(c, "days", 30, 365)
+	if !ok {
+		return
+	}
 
 	trends, err := h.analyticsService.GetCreatorTrends(c.Request.Context(), creatorName, metricType, days)
 	if err != nil {
@@ -163,7 +212,16 @@ func (h *AnalyticsHandler) GetContentMetrics(c *gin.Context) {
 // GET /api/v1/admin/analytics/trends?metric=users&days=30
 func (h *AnalyticsHandler) GetPlatformTrends(c *gin.Context) {
 	metricType := c.DefaultQuery("metric", "users")
-	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	validMetrics := map[string]bool{"users": true, "clips": true, "views": true, "votes": true, "comments": true}
+	if !validMetrics[metricType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "metric must be users, clips, views, votes, or comments"})
+		return
+	}
+	days, err := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if err != nil || days < 1 || days > 365 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "days must be between 1 and 365"})
+		return
+	}
 
 	trends, err := h.analyticsService.GetPlatformTrends(c.Request.Context(), metricType, days)
 	if err != nil {
@@ -181,13 +239,15 @@ func (h *AnalyticsHandler) GetPlatformTrends(c *gin.Context) {
 // GetCreatorAudienceInsights returns audience insights (geography and devices) for a creator
 // GET /api/v1/creators/:creatorName/analytics/audience?limit=10
 func (h *AnalyticsHandler) GetCreatorAudienceInsights(c *gin.Context) {
-	creatorName := c.Param("creatorName")
-	if creatorName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "creator name is required"})
+	creatorName, ok := creatorAnalyticsName(c)
+	if !ok {
 		return
 	}
 
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	limit, ok := boundedAnalyticsInt(c, "limit", 10, 50)
+	if !ok {
+		return
+	}
 
 	insights, err := h.analyticsService.GetCreatorAudienceInsights(c.Request.Context(), creatorName, limit)
 	if err != nil {

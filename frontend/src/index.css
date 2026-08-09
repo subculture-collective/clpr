@@ -28,6 +28,8 @@
         /* Brand */
         --color-brand: 124 58 237;
         --color-brand-hover: 109 40 217;
+        --color-link: 167 139 250;
+        --color-link-hover: 196 181 253;
 
         /* Interaction */
         --color-upvote: 249 115 22;
@@ -116,11 +118,11 @@
 
     a {
         @apply transition-colors;
-        color: rgb(var(--color-brand));
+        color: rgb(var(--color-link));
     }
 
     a:hover {
-        color: rgb(var(--color-brand-hover));
+        color: rgb(var(--color-link-hover));
     }
 
     button {
@@ -358,13 +360,13 @@
     }
 
     .forum-body a {
-        color: rgb(var(--color-brand));
+        color: rgb(var(--color-link));
         text-decoration: underline;
         text-underline-offset: 2px;
     }
 
     .forum-body a:hover {
-        color: rgb(var(--color-brand-hover));
+        color: rgb(var(--color-link-hover));
     }
 
     .forum-body ul,

@@ -26,22 +26,22 @@ describe('FeedFilters', () => {
             expect(select).toBeInTheDocument();
 
             expect(
-                screen.getByRole('option', { name: 'Trending 🔥' })
+                screen.getByRole('option', { name: 'Trending' })
             ).toBeInTheDocument();
             expect(
-                screen.getByRole('option', { name: 'Most Popular ⭐' })
+                screen.getByRole('option', { name: 'Most Popular' })
             ).toBeInTheDocument();
             expect(
-                screen.getByRole('option', { name: 'Top Rated 👑' })
+                screen.getByRole('option', { name: 'Top Rated' })
             ).toBeInTheDocument();
             expect(
-                screen.getByRole('option', { name: 'Rising 📈' })
+                screen.getByRole('option', { name: 'Rising' })
             ).toBeInTheDocument();
             expect(
-                screen.getByRole('option', { name: 'Newest 🆕' })
+                screen.getByRole('option', { name: 'Newest' })
             ).toBeInTheDocument();
             expect(
-                screen.getByRole('option', { name: 'Most Discussed 💬' })
+                screen.getByRole('option', { name: 'Most Discussed' })
             ).toBeInTheDocument();
         });
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -21,16 +22,20 @@ import (
 
 // ClipSyncHandler handles clip sync operations
 type ClipSyncHandler struct {
-	syncService *services.ClipSyncService
-	cfg         *config.Config
+	syncService clipSyncService
+}
+
+type clipSyncService interface {
+	SyncClipsByGame(context.Context, string, int, int, *services.SyncClipsByGameOptions) (*services.SyncStats, string, error)
+	SyncClipsByBroadcaster(context.Context, string, int, int, *services.SyncClipsByBroadcasterOptions) (*services.SyncStats, error)
+	SyncTrendingClips(context.Context, int, *services.TrendingSyncOptions) (*services.SyncStats, error)
+	GetLastSyncTime(context.Context) (*time.Time, error)
+	FetchClipByURL(context.Context, string) (*models.Clip, error)
 }
 
 // NewClipSyncHandler creates a new ClipSyncHandler
-func NewClipSyncHandler(syncService *services.ClipSyncService, cfg *config.Config) *ClipSyncHandler {
-	return &ClipSyncHandler{
-		syncService: syncService,
-		cfg:         cfg,
-	}
+func NewClipSyncHandler(syncService clipSyncService) *ClipSyncHandler {
+	return &ClipSyncHandler{syncService: syncService}
 }
 
 // TriggerSync handles manual sync trigger
@@ -47,7 +52,10 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 	}
 
 	// Body is optional — all fields have defaults
-	_ = c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
 
 	// Set defaults
 	if req.Hours == 0 {
@@ -55,6 +63,18 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 	}
 	if req.Limit == 0 {
 		req.Limit = 100
+	}
+	if req.Hours < 1 || req.Hours > 168 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hours must be between 1 and 168"})
+		return
+	}
+	if req.Limit < 1 || req.Limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
+	}
+	if len(req.GameID) > 100 || len(req.BroadcasterID) > 100 || len(req.Language) > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "identifier or language filter is too long"})
+		return
 	}
 	if req.Strategy == "" {
 		if req.GameID != "" {
@@ -107,8 +127,14 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "Sync completed",
+	responseStatus := http.StatusOK
+	message := "Sync completed"
+	if len(stats.Errors) > 0 {
+		responseStatus = http.StatusMultiStatus
+		message = "Sync completed with errors"
+	}
+	c.JSON(responseStatus, gin.H{
+		"message":       message,
 		"strategy":      req.Strategy,
 		"clips_fetched": stats.ClipsFetched,
 		"clips_created": stats.ClipsCreated,
@@ -124,12 +150,18 @@ func (h *ClipSyncHandler) TriggerSync(c *gin.Context) {
 // GetSyncStatus returns the current sync status
 // GET /admin/sync/status
 func (h *ClipSyncHandler) GetSyncStatus(c *gin.Context) {
-	// Get statistics from the clip repository
-	// This would be extended with a proper sync status tracking mechanism
-
+	lastSync, err := h.syncService.GetLastSyncTime(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve sync status"})
+		return
+	}
+	status := "never_run"
+	if lastSync != nil {
+		status = "ready"
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "ready",
-		"message": "Sync service is operational",
+		"status":       status,
+		"last_sync_at": lastSync,
 	})
 }
 
@@ -164,18 +196,24 @@ func (h *ClipSyncHandler) RequestClip(c *gin.Context) {
 
 // ClipHandler handles clip retrieval operations
 type ClipHandler struct {
-	clipService *services.ClipService
-	authService *services.AuthService
-	cdnProvider services.CDNProvider
-	jobService  *services.ClipExtractionJobService
-	clipConfig  *config.ClipConfig
+	clipService        *services.ClipService
+	creatorClipService creatorClipService
+	authService        *services.AuthService
+	cdnProvider        services.CDNProvider
+	jobService         *services.ClipExtractionJobService
+	clipConfig         *config.ClipConfig
+}
+
+type creatorClipService interface {
+	ListCreatorClips(context.Context, string, *uuid.UUID, int, int) ([]services.ClipWithUserData, int, error)
 }
 
 // NewClipHandler creates a new ClipHandler
 func NewClipHandler(clipService *services.ClipService, authService *services.AuthService, opts ...ClipHandlerOption) *ClipHandler {
 	handler := &ClipHandler{
-		clipService: clipService,
-		authService: authService,
+		clipService:        clipService,
+		creatorClipService: clipService,
+		authService:        authService,
 	}
 
 	for _, opt := range opts {
@@ -529,6 +567,10 @@ func (h *ClipHandler) GetClip(c *gin.Context) {
 // It redirects to the resolved direct media object URL instead of proxying bytes through Go.
 func (h *ClipHandler) GetClipMedia(c *gin.Context) {
 	clipIDParam := c.Param("id")
+	if clipIDParam == "" || len(clipIDParam) > 128 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CLIP_ID", Message: "Invalid clip ID"}})
+		return
+	}
 
 	var clip *services.ClipWithUserData
 	var err error
@@ -556,6 +598,7 @@ func (h *ClipHandler) GetClipMedia(c *gin.Context) {
 		return
 	}
 
+	c.Header("Cache-Control", "private, no-store")
 	c.Redirect(http.StatusTemporaryRedirect, mediaURL)
 }
 
@@ -710,6 +753,10 @@ func (h *ClipHandler) GetHLSMasterPlaylist(c *gin.Context) {
 // Returns live processing status from Redis when available.
 func (h *ClipHandler) GetClipProcessingStatus(c *gin.Context) {
 	clipIDParam := c.Param("id")
+	if clipIDParam == "" || len(clipIDParam) > 128 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CLIP_ID", Message: "Invalid clip ID"}})
+		return
+	}
 
 	var clip *services.ClipWithUserData
 	var err error
@@ -760,11 +807,9 @@ func (h *ClipHandler) GetClipProcessingStatus(c *gin.Context) {
 
 	jobStatus, err := h.jobService.GetJobStatus(c.Request.Context(), clip.ID.String())
 	if err != nil {
-		c.JSON(http.StatusOK, StandardResponse{
-			Success: true,
-			Data: map[string]interface{}{
-				"status": "not_queued",
-			},
+		c.JSON(http.StatusServiceUnavailable, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "PROCESSING_STATUS_UNAVAILABLE", Message: "Clip processing status is unavailable"},
 		})
 		return
 	}
@@ -785,7 +830,6 @@ func (h *ClipHandler) GetClipProcessingStatus(c *gin.Context) {
 		Success: true,
 		Data: map[string]interface{}{
 			"status": statusValue,
-			"job":    jobStatus,
 		},
 	})
 }
@@ -802,6 +846,10 @@ func (h *ClipHandler) RequestClipBackfill(c *gin.Context) {
 	}
 
 	clipIDParam := c.Param("id")
+	if clipIDParam == "" || len(clipIDParam) > 128 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CLIP_ID", Message: "Invalid clip ID"}})
+		return
+	}
 
 	var clip *services.ClipWithUserData
 	var err error
@@ -1565,27 +1613,30 @@ func (h *ClipHandler) UpdateClipVisibility(c *gin.Context) {
 // ListCreatorClips handles GET /creators/:creatorId/clips
 // Lists clips for a specific creator
 func (h *ClipHandler) ListCreatorClips(c *gin.Context) {
-	creatorID := c.Param("creatorId")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "25"))
-
-	// Validate and constrain parameters
-	if page < 1 {
-		page = 1
+	creatorID := strings.TrimSpace(c.Param("creator"))
+	if creatorID == "" || len(creatorID) > 100 {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_CREATOR_ID", Message: "Creator ID must be between 1 and 100 characters"}})
+		return
 	}
-	if limit < 1 || limit > 100 {
-		limit = 25
+	page, ok := parseBoundedPositiveQuery(c, "page", 1, 1_000_000)
+	if !ok {
+		return
+	}
+	limit, ok := parseBoundedPositiveQuery(c, "limit", 25, 100)
+	if !ok {
+		return
 	}
 
 	// Get user ID from context (optional)
 	var userID *uuid.UUID
 	if uid, exists := c.Get("user_id"); exists {
-		id := uid.(uuid.UUID)
-		userID = &id
+		if id, valid := uid.(uuid.UUID); valid && id != uuid.Nil {
+			userID = &id
+		}
 	}
 
 	// List clips
-	clips, total, err := h.clipService.ListCreatorClips(c.Request.Context(), creatorID, userID, page, limit)
+	clips, total, err := h.creatorClipService.ListCreatorClips(c.Request.Context(), creatorID, userID, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
@@ -1613,4 +1664,20 @@ func (h *ClipHandler) ListCreatorClips(c *gin.Context) {
 		Data:    clips,
 		Meta:    meta,
 	})
+}
+
+func parseBoundedPositiveQuery(c *gin.Context, key string, defaultValue, maximum int) (int, bool) {
+	raw, exists := c.GetQuery(key)
+	if !exists {
+		return defaultValue, true
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 1 || value > maximum {
+		c.JSON(http.StatusBadRequest, StandardResponse{
+			Success: false,
+			Error:   &ErrorInfo{Code: "INVALID_PAGINATION", Message: fmt.Sprintf("%s must be an integer between 1 and %d", key, maximum)},
+		})
+		return 0, false
+	}
+	return value, true
 }

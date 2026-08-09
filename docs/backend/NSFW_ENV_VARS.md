@@ -208,5 +208,5 @@ To test the NSFW detection system:
 ## Related Documentation
 
 - [NSFW Detection API](./NSFW_DETECTION.md)
-- [Moderation Queue](./MODERATION_QUEUE.md)
-- [Environment Variables](./ENVIRONMENT_VARIABLES.md)
+- Moderation Queue
+- Environment Variables

@@ -28,4 +28,28 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-expressions': 'warn',
     },
   },
+  {
+    files: [
+      'src/main.tsx',
+      'src/App.tsx',
+      'src/components/layout/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            '@/components',
+            '@/components/ui',
+            '@/components/video',
+            './components',
+            './components/layout',
+            './components/guards',
+            './components/consent',
+            '../ui',
+          ],
+        },
+      ],
+    },
+  },
 );

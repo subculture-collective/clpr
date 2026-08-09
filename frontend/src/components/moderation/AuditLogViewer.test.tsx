@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuditLogViewer } from './AuditLogViewer';
 import * as moderationApi from '../../lib/moderation-api';
+import { allowTestConsole } from '../../test/setup';
 
 // Mock the API module
 vi.mock('../../lib/moderation-api');
@@ -83,6 +84,9 @@ describe('AuditLogViewer', () => {
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(moderationApi.getAuditLogs).mockImplementation(
+                () => new Promise(() => {}),
+            );
             render(<AuditLogViewer />);
 
             expect(screen.getByText('Loading audit logs...')).toBeInTheDocument();
@@ -114,6 +118,7 @@ describe('AuditLogViewer', () => {
         });
 
         it('displays error state on API failure', async () => {
+            allowTestConsole('error', /Audit logs error:.*API Error/);
             vi.mocked(moderationApi.getAuditLogs).mockRejectedValue(
                 new Error('API Error')
             );

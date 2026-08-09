@@ -67,6 +67,74 @@ func TestCreateChannel_InvalidRequest(t *testing.T) {
 	}
 }
 
+func TestListChannels_Unauthorized(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := &ChatHandler{db: nil}
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chat/channels", http.NoBody)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	handler.ListChannels(c)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
+
+func TestListChannels_RejectsMalformedParameters(t *testing.T) {
+	tests := []string{
+		"?limit=zero",
+		"?limit=101",
+		"?offset=-1",
+		"?type=direct",
+	}
+	for _, query := range tests {
+		t.Run(query, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
+			handler := &ChatHandler{db: nil}
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/chat/channels"+query, http.NoBody)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+			c.Set("user_id", uuid.New())
+
+			handler.ListChannels(c)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+			}
+		})
+	}
+}
+
+func TestAuthenticatedUserID_RejectsMalformedContextIdentity(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("user_id", "not-a-uuid")
+
+	if _, ok := authenticatedUserID(c); ok {
+		t.Fatal("expected malformed context identity to be rejected")
+	}
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
+
+func TestIsChatStaffRole(t *testing.T) {
+	for _, role := range []string{"owner", "admin", "moderator"} {
+		if !isChatStaffRole(role) {
+			t.Fatalf("expected %q to be a staff role", role)
+		}
+	}
+	for _, role := range []string{"", "member", "administrator"} {
+		if isChatStaffRole(role) {
+			t.Fatalf("expected %q not to be a staff role", role)
+		}
+	}
+}
+
 // TestGetChannel_InvalidChannelID tests that invalid channel IDs are rejected
 func TestGetChannel_InvalidChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)

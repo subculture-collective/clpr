@@ -170,6 +170,9 @@ type FeatureFlagsConfig struct {
 	Analytics            bool
 	Moderation           bool
 	DiscoveryLists       bool
+	StreamClipCreation   bool
+	LiveFeed             bool
+	WatchParties         bool
 }
 
 // KarmaConfig holds karma system configuration
@@ -216,6 +219,7 @@ type RateLimitConfig struct {
 // SecurityConfig holds security-related configuration
 type SecurityConfig struct {
 	MFAEncryptionKey string // 32-byte key for AES-256 encryption of MFA secrets
+	OperationalToken string // bearer token for metrics and detailed health endpoints
 }
 
 // QueryLimitsConfig holds database query limits
@@ -474,6 +478,9 @@ func Load() (*Config, error) {
 			Analytics:            getEnv("FEATURE_ANALYTICS", "true") == "true",
 			Moderation:           getEnv("FEATURE_MODERATION", "true") == "true",
 			DiscoveryLists:       getEnv("FEATURE_DISCOVERY_LISTS", "false") == "true",
+			StreamClipCreation:   getEnvBool("FEATURE_STREAM_CLIP_CREATION", false),
+			LiveFeed:             getEnvBool("FEATURE_LIVE_FEED", false),
+			WatchParties:         getEnvBool("FEATURE_WATCH_PARTIES", false),
 		},
 		Karma: KarmaConfig{
 			InitialKarmaPoints:        getEnvInt("KARMA_INITIAL_POINTS", 100),
@@ -513,6 +520,7 @@ func Load() (*Config, error) {
 		},
 		Security: SecurityConfig{
 			MFAEncryptionKey: getEnv("MFA_ENCRYPTION_KEY", ""),
+			OperationalToken: getEnv("OPERATIONAL_AUTH_TOKEN", ""),
 		},
 		QueryLimits: QueryLimitsConfig{
 			MaxResultSize:   getEnvInt("QUERY_MAX_RESULT_SIZE", 1000),
@@ -614,6 +622,9 @@ func Load() (*Config, error) {
 		},
 	}
 
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("validate configuration: %w", err)
+	}
 	return config, nil
 }
 

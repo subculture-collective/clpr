@@ -1,32 +1,32 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+type contactRepository interface {
+	Create(context.Context, *models.ContactMessage) error
+	List(context.Context, int, int, string, string) ([]*models.ContactMessage, int, error)
+	UpdateStatus(context.Context, uuid.UUID, string) error
+}
 
 // ContactHandler handles contact form related HTTP requests
 type ContactHandler struct {
-	contactRepo *repository.ContactRepository
-	authService *services.AuthService
+	contactRepo contactRepository
 }
 
 // NewContactHandler creates a new contact handler
-func NewContactHandler(
-	contactRepo *repository.ContactRepository,
-	authService *services.AuthService,
-) *ContactHandler {
-	return &ContactHandler{
-		contactRepo: contactRepo,
-		authService: authService,
-	}
+func NewContactHandler(contactRepo contactRepository) *ContactHandler {
+	return &ContactHandler{contactRepo: contactRepo}
 }
 
 // SubmitContactMessage handles contact form submissions
@@ -40,7 +40,11 @@ func (h *ContactHandler) SubmitContactMessage(c *gin.Context) {
 	// Get user ID if authenticated (optional)
 	var userID *uuid.UUID
 	if id, exists := c.Get("user_id"); exists {
-		uid := id.(uuid.UUID)
+		uid, ok := id.(uuid.UUID)
+		if !ok || uid == uuid.Nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authenticated user"})
+			return
+		}
 		userID = &uid
 	}
 
@@ -83,17 +87,31 @@ func (h *ContactHandler) GetContactMessages(c *gin.Context) {
 	limit := 20
 	category := c.Query("category")
 	status := c.Query("status")
+	if category != "" && category != "abuse" && category != "account" && category != "billing" && category != "feedback" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category parameter"})
+		return
+	}
+	if status != "" && status != "pending" && status != "reviewed" && status != "resolved" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status parameter"})
+		return
+	}
 
 	if pageStr := c.Query("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
+		p, err := strconv.Atoi(pageStr)
+		if err != nil || p < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page parameter"})
+			return
 		}
+		page = p
 	}
 
 	if limitStr := c.Query("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
-			limit = l
+		l, err := strconv.Atoi(limitStr)
+		if err != nil || l < 1 || l > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Limit must be between 1 and 100"})
+			return
 		}
+		limit = l
 	}
 
 	// Get contact messages from repository
@@ -137,6 +155,10 @@ func (h *ContactHandler) UpdateContactMessageStatus(c *gin.Context) {
 
 	// Update status in database
 	if err := h.contactRepo.UpdateStatus(c.Request.Context(), messageID, req.Status); err != nil {
+		if errors.Is(err, repository.ErrContactMessageNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Contact message not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update contact message status"})
 		return
 	}

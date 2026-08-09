@@ -1,22 +1,92 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	pkgutils "git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // DiscoveryListHandler handles discovery list-related requests
 type DiscoveryListHandler struct {
 	repo          repository.DiscoveryListRepositoryInterface
 	analyticsRepo *repository.AnalyticsRepository
+}
+
+func discoveryOptionalUserID(c *gin.Context) *uuid.UUID {
+	value, exists := c.Get("user_id")
+	if !exists {
+		return nil
+	}
+	userID, ok := value.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		return nil
+	}
+	return &userID
+}
+
+func discoveryRequiredUserID(c *gin.Context) (uuid.UUID, bool) {
+	userID := discoveryOptionalUserID(c)
+	if userID == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return uuid.Nil, false
+	}
+	return *userID, true
+}
+
+func discoveryEventMetadata(listID uuid.UUID) *string {
+	value := fmt.Sprintf(`{"list_id":%q}`, listID.String())
+	return &value
+}
+
+func discoveryPagination(c *gin.Context) (int, int, bool) {
+	return discoveryPaginationWithDefault(c, 20)
+}
+
+func discoveryPaginationWithDefault(c *gin.Context, defaultLimit int) (int, int, bool) {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultLimit)))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer between 1 and 100"})
+		return 0, 0, false
+	}
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil || offset < 0 || offset > 10_000_000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be an integer between 0 and 10000000"})
+		return 0, 0, false
+	}
+	return limit, offset, true
+}
+
+func discoveryIdentifier(c *gin.Context) (string, bool) {
+	value := strings.TrimSpace(c.Param("id"))
+	if value == "" || len(value) > 200 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid discovery list identifier"})
+		return "", false
+	}
+	return value, true
+}
+
+func hasDuplicateUUIDs(values []uuid.UUID) bool {
+	seen := make(map[uuid.UUID]struct{}, len(values))
+	for _, value := range values {
+		if value == uuid.Nil {
+			return true
+		}
+		if _, exists := seen[value]; exists {
+			return true
+		}
+		seen[value] = struct{}{}
+	}
+	return false
 }
 
 // NewDiscoveryListHandler creates a new handler instance
@@ -44,25 +114,20 @@ func (h *DiscoveryListHandler) ListDiscoveryLists(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse query parameters
-	featuredOnly := c.Query("featured") == "true"
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
-	}
-
-	// Get user ID if authenticated
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if id, ok := userIDVal.(uuid.UUID); ok {
-			userID = &id
+	featuredOnly := false
+	if raw, exists := c.GetQuery("featured"); exists {
+		if raw != "true" && raw != "false" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "featured must be true or false"})
+			return
 		}
+		featuredOnly = raw == "true"
 	}
+	limit, offset, ok := discoveryPagination(c)
+	if !ok {
+		return
+	}
+
+	userID := discoveryOptionalUserID(c)
 
 	// Get lists from repository
 	lists, err := h.repo.ListDiscoveryLists(ctx, featuredOnly, userID, limit, offset)
@@ -89,20 +154,18 @@ func (h *DiscoveryListHandler) ListDiscoveryLists(c *gin.Context) {
 func (h *DiscoveryListHandler) GetDiscoveryList(c *gin.Context) {
 	logger := pkgutils.GetLogger()
 	ctx := c.Request.Context()
-	idOrSlug := c.Param("id")
+	idOrSlug, ok := discoveryIdentifier(c)
+	if !ok {
+		return
+	}
 
 	// Get user ID if authenticated
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if id, ok := userIDVal.(uuid.UUID); ok {
-			userID = &id
-		}
-	}
+	userID := discoveryOptionalUserID(c)
 
 	// Get list from repository
 	list, err := h.repo.GetDiscoveryList(ctx, idOrSlug, userID)
 	if err != nil {
-		if err.Error() == "discovery list not found" {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 			return
 		}
@@ -113,14 +176,16 @@ func (h *DiscoveryListHandler) GetDiscoveryList(c *gin.Context) {
 
 	// Track list view for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_view",
 				UserID:    userID,
 			}
 			// Note: We can't easily track the list ID as clip_id here since the schema expects a clip
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, list)
@@ -143,15 +208,13 @@ func (h *DiscoveryListHandler) GetDiscoveryList(c *gin.Context) {
 func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 	logger := pkgutils.GetLogger()
 	ctx := c.Request.Context()
-	listIDStr := c.Param("id")
+	listIDStr, ok := discoveryIdentifier(c)
+	if !ok {
+		return
+	}
 
 	// Get user ID if authenticated
-	var userID *uuid.UUID
-	if userIDVal, exists := c.Get("user_id"); exists {
-		if id, ok := userIDVal.(uuid.UUID); ok {
-			userID = &id
-		}
-	}
+	userID := discoveryOptionalUserID(c)
 
 	// Resolve listIDStr to UUID (accept both UUID and slug)
 	var listID uuid.UUID
@@ -160,7 +223,7 @@ func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 		// Not a UUID, try to resolve as slug
 		list, err2 := h.repo.GetDiscoveryList(ctx, listIDStr, userID)
 		if err2 != nil {
-			if err2.Error() == "discovery list not found" {
+			if errors.Is(err2, repository.ErrDiscoveryListNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 				return
 			}
@@ -172,15 +235,9 @@ func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 	}
 
 	// Parse query parameters
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
+	limit, offset, ok := discoveryPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get clips from repository
@@ -192,8 +249,8 @@ func (h *DiscoveryListHandler) GetDiscoveryListClips(c *gin.Context) {
 	}
 
 	// Calculate pagination metadata
-	page := offset / limit
-	hasMore := len(clips) == limit && (offset+limit) < total
+	page := offset/limit + 1
+	hasMore := len(clips) > 0 && offset+len(clips) < total
 
 	c.JSON(http.StatusOK, gin.H{
 		"clips":    clips,
@@ -222,12 +279,10 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -239,7 +294,7 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 	// Verify list exists
 	_, err = h.repo.GetDiscoveryList(ctx, listIDStr, &userID)
 	if err != nil {
-		if err.Error() == "discovery list not found" {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 			return
 		}
@@ -258,13 +313,16 @@ func (h *DiscoveryListHandler) FollowDiscoveryList(c *gin.Context) {
 
 	// Track follow event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_follow",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully followed list"})
@@ -288,12 +346,10 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -305,10 +361,6 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 	// Unfollow list
 	err = h.repo.UnfollowList(ctx, userID, listID)
 	if err != nil {
-		if err.Error() == "not following this list" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Not following this list"})
-			return
-		}
 		logger.Error("Failed to unfollow discovery list", err, map[string]interface{}{"user_id": userID, "list_id": listID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unfollow list"})
 		return
@@ -316,13 +368,16 @@ func (h *DiscoveryListHandler) UnfollowDiscoveryList(c *gin.Context) {
 
 	// Track unfollow event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_unfollow",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully unfollowed list"})
@@ -346,12 +401,10 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -363,7 +416,7 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 	// Verify list exists
 	_, err = h.repo.GetDiscoveryList(ctx, listIDStr, &userID)
 	if err != nil {
-		if err.Error() == "discovery list not found" {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
 			return
 		}
@@ -382,13 +435,16 @@ func (h *DiscoveryListHandler) BookmarkDiscoveryList(c *gin.Context) {
 
 	// Track bookmark event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_bookmark",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully bookmarked list"})
@@ -412,12 +468,10 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 	listIDStr := c.Param("id")
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse list ID
 	listID, err := uuid.Parse(listIDStr)
@@ -429,10 +483,6 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 	// Unbookmark list
 	err = h.repo.UnbookmarkList(ctx, userID, listID)
 	if err != nil {
-		if err.Error() == "list not bookmarked" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "List not bookmarked"})
-			return
-		}
 		logger.Error("Failed to unbookmark discovery list", err, map[string]interface{}{"user_id": userID, "list_id": listID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unbookmark list"})
 		return
@@ -440,13 +490,16 @@ func (h *DiscoveryListHandler) UnbookmarkDiscoveryList(c *gin.Context) {
 
 	// Track unbookmark event for analytics
 	if h.analyticsRepo != nil {
-		go func() {
+		handlerBackgroundJobs.Submit(func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			event := &models.AnalyticsEvent{
 				EventType: "discovery_list_unbookmark",
 				UserID:    &userID,
+				Metadata:  discoveryEventMetadata(listID),
 			}
-			_ = h.analyticsRepo.TrackEvent(ctx, event)
-		}()
+			_ = h.analyticsRepo.TrackEvent(bgCtx, event)
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully removed bookmark"})
@@ -468,23 +521,15 @@ func (h *DiscoveryListHandler) GetUserFollowedLists(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse query parameters
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
+	limit, offset, ok := discoveryPagination(c)
+	if !ok {
+		return
 	}
 
 	// Get followed lists from repository
@@ -516,15 +561,9 @@ func (h *DiscoveryListHandler) AdminListDiscoveryLists(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse query parameters
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	// Validate limits
-	if limit < 1 || limit > 100 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
+	limit, offset, ok := discoveryPaginationWithDefault(c, 50)
+	if !ok {
+		return
 	}
 
 	// Get all lists from repository
@@ -554,22 +593,25 @@ func (h *DiscoveryListHandler) AdminCreateDiscoveryList(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	userID, ok := discoveryRequiredUserID(c)
+	if !ok {
 		return
 	}
-	userID := userIDVal.(uuid.UUID)
 
 	// Parse request body
 	var req models.CreateDiscoveryListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+	req.Name = strings.TrimSpace(req.Name)
 
 	// Generate slug from name
 	slug := pkgutils.Slugify(req.Name)
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name must contain letters or numbers"})
+		return
+	}
 
 	// Set default for IsFeatured
 	isFeatured := false
@@ -586,6 +628,10 @@ func (h *DiscoveryListHandler) AdminCreateDiscoveryList(c *gin.Context) {
 	// Create list
 	list, err := h.repo.CreateDiscoveryList(ctx, req.Name, slug, description, isFeatured, userID)
 	if err != nil {
+		if errors.Is(err, repository.ErrDiscoveryListConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "A discovery list with this slug already exists"})
+			return
+		}
 		logger.Error("Failed to create discovery list", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create discovery list"})
 		return
@@ -622,12 +668,24 @@ func (h *DiscoveryListHandler) AdminUpdateDiscoveryList(c *gin.Context) {
 	// Parse request body
 	var req models.UpdateDiscoveryListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
+	}
+	if req.Name == nil && req.Description == nil && req.IsFeatured == nil && req.IsActive == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field must be provided"})
+		return
+	}
+	if req.Name != nil {
+		trimmed := strings.TrimSpace(*req.Name)
+		if trimmed == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Name cannot be blank"})
+			return
+		}
+		req.Name = &trimmed
 	}
 
 	// Update list
-	list, err := h.repo.UpdateDiscoveryList(ctx, listID, req.Name, req.Description, req.IsFeatured)
+	list, err := h.repo.UpdateDiscoveryList(ctx, listID, req.Name, req.Description, req.IsFeatured, req.IsActive)
 	if err != nil {
 		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
@@ -707,13 +765,24 @@ func (h *DiscoveryListHandler) AdminAddClipToList(c *gin.Context) {
 	// Parse request body
 	var req models.AddClipToListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	// Add clip to list
 	err = h.repo.AddClipToList(ctx, listID, req.ClipID)
 	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrDiscoveryListNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
+			return
+		case errors.Is(err, repository.ErrClipNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "Clip not found"})
+			return
+		case errors.Is(err, repository.ErrClipAlreadyInList):
+			c.JSON(http.StatusConflict, gin.H{"error": "Clip is already in this list"})
+			return
+		}
 		logger.Error("Failed to add clip to list", err, map[string]interface{}{"list_id": listID, "clip_id": req.ClipID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add clip to list"})
 		return
@@ -757,6 +826,10 @@ func (h *DiscoveryListHandler) AdminRemoveClipFromList(c *gin.Context) {
 	// Remove clip from list
 	err = h.repo.RemoveClipFromList(ctx, listID, clipID)
 	if err != nil {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
+			return
+		}
 		if errors.Is(err, repository.ErrClipNotFoundInList) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Clip not found in list"})
 			return
@@ -801,7 +874,7 @@ func (h *DiscoveryListHandler) AdminReorderListClips(c *gin.Context) {
 	// Parse request body
 	var req models.ReorderListClipsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
@@ -810,10 +883,22 @@ func (h *DiscoveryListHandler) AdminReorderListClips(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Cannot reorder more than %d clips at once", MaxReorderClipsLimit)})
 		return
 	}
+	if hasDuplicateUUIDs(req.ClipIDs) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "clip_ids must contain unique, non-zero UUIDs"})
+		return
+	}
 
 	// Reorder clips
 	err = h.repo.ReorderListClips(ctx, listID, req.ClipIDs)
 	if err != nil {
+		if errors.Is(err, repository.ErrDiscoveryListNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Discovery list not found"})
+			return
+		}
+		if errors.Is(err, repository.ErrDiscoveryListReorderMismatch) {
+			c.JSON(http.StatusConflict, gin.H{"error": "clip_ids must exactly match current list membership"})
+			return
+		}
 		logger.Error("Failed to reorder clips", err, map[string]interface{}{"list_id": listID})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reorder clips"})
 		return

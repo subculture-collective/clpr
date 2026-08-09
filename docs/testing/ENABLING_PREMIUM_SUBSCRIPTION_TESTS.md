@@ -107,7 +107,7 @@ Edit `backend/.env`:
 
 ```bash
 # Stripe Test Mode Keys
-STRIPE_SECRET_KEY=sk_test_51XXXXXXXXXXXXX
+STRIPE_SECRET_KEY=sk_test_<test-key-from-dashboard>
 STRIPE_WEBHOOK_SECRET=whsec_XXXXXXXXXXXXX
 STRIPE_PRO_MONTHLY_PRICE_ID=price_XXXXXXXXXXXXX
 STRIPE_PRO_YEARLY_PRICE_ID=price_YYYYYYYYYYYYY
@@ -255,7 +255,7 @@ test('should complete successful checkout with test card', async ({ authenticate
 
 - [Stripe Subscription Testing Guide](./stripe-subscription-testing.md) - Comprehensive testing procedures
 - [Stripe CI Secrets](./stripe-ci-secrets.md) - CI/CD configuration
-- [Premium Subscription Checkout Status](../../PREMIUM_SUBSCRIPTION_CHECKOUT_STATUS.md) - Implementation status
+- Premium Subscription Checkout Status - Implementation status
 
 ## Support
 

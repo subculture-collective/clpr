@@ -1,0 +1,4 @@
+Contact: mailto:security@clpr.tv
+Canonical: https://clpr.tv/.well-known/security.txt
+Preferred-Languages: en
+Expires: 2027-08-31T23:59:59Z

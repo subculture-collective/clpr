@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -39,11 +39,6 @@ export function PlaylistForm({
         ...defaultValues,
         ...initialValues,
     });
-
-    useEffect(() => {
-        if (!initialValues) return;
-        setValues(prev => ({ ...prev, ...initialValues }));
-    }, [initialValues]);
 
     const handleChange = (field: keyof PlaylistFormValues, value: string) => {
         setValues(prev => ({ ...prev, [field]: value }));

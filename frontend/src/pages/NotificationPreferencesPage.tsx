@@ -430,9 +430,7 @@ export function NotificationPreferencesPage() {
               </Button>
 
               <div className="flex gap-3">
-                <Link to="/notifications">
-                  <Button variant="ghost">Cancel</Button>
-                </Link>
+                <Button asChild variant="ghost"><Link to="/notifications">Cancel</Link></Button>
                 <Button type="submit" variant="primary" disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Preferences'}
                 </Button>

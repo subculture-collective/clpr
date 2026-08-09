@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-contrib/requestid"
+	"github.com/gin-gonic/gin"
 )
 
 // JSONRecoveryMiddleware returns a middleware that recovers from panics and returns JSON errors
@@ -17,19 +18,21 @@ func JSONRecoveryMiddleware() gin.HandlerFunc {
 				stack := debug.Stack()
 				logger := utils.GetLogger()
 
+				requestID := requestid.Get(c)
 				fields := map[string]interface{}{
 					"panic":      err,
 					"stack":      string(stack),
-					"request_id": c.GetString("RequestId"),
+					"request_id": requestID,
 				}
 
 				logger.Error("PANIC recovered", nil, fields)
 
 				// Always return JSON error response
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-					"error":   "Internal server error",
-					"code":    "INTERNAL_ERROR",
-					"message": "An unexpected error occurred. Please try again later.",
+					"error":      "Internal server error",
+					"code":       "INTERNAL_ERROR",
+					"message":    "An unexpected error occurred. Please try again later.",
+					"request_id": requestID,
 				})
 			}
 		}()

@@ -6,7 +6,6 @@ import {
     useClearQueue,
     useReorderQueue,
 } from '@/hooks/useQueue';
-import { cn } from '@/lib/utils';
 import {
     Trash2,
     ListPlus,
@@ -134,9 +133,7 @@ export function QueuePage() {
                         <p className='text-muted-foreground mb-6'>
                             Add clips to your queue to watch them later
                         </p>
-                        <Link to='/'>
-                            <Button variant='primary'>Browse Clips</Button>
-                        </Link>
+                        <Button asChild variant='primary'><Link to='/'>Browse Clips</Link></Button>
                     </div>
                 )}
 

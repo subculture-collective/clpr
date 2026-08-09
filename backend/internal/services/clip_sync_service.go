@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	internalutils "git.subcult.tv/subculture-collective/clpr/internal/utils"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 const (
@@ -95,6 +95,11 @@ func NewClipSyncService(twitchClient *twitch.Client, clipRepo *repository.ClipRe
 // SetDefaultLanguage overrides the service-level language filter (use "all" or "" to disable)
 func (s *ClipSyncService) SetDefaultLanguage(lang string) {
 	s.defaultLang = normalizeLanguageFilter(lang)
+}
+
+// GetLastSyncTime returns the most recent persisted clip import time.
+func (s *ClipSyncService) GetLastSyncTime(ctx context.Context) (*time.Time, error) {
+	return s.clipRepo.GetLastSyncTime(ctx)
 }
 
 // SyncStats contains statistics about a sync operation
@@ -657,9 +662,9 @@ func (s *ClipSyncService) processClipAsPosted(ctx context.Context, twitchClip *t
 		if existing.SubmittedByUserID == nil {
 			if err := s.clipRepo.ClaimScrapedClip(ctx, existing.ID, submitterID, nil, false, nil, time.Now()); err != nil {
 				utils.Warn("Failed to claim scraped clip for bot", map[string]interface{}{
-					"clip_id":    existing.ID.String(),
-					"twitch_id":  twitchClip.ID,
-					"error":      err,
+					"clip_id":   existing.ID.String(),
+					"twitch_id": twitchClip.ID,
+					"error":     err,
 				})
 			}
 		}
@@ -867,7 +872,6 @@ func languageMatches(clipLang, filter string) bool {
 	}
 	return clipLang == filter || strings.HasPrefix(clipLang, filter+"-")
 }
-
 
 // ExtractClipID extracts the clip ID from a Twitch clip URL or returns the ID if already provided
 func ExtractClipID(clipURLOrID string) string {

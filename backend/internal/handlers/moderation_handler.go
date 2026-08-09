@@ -9,19 +9,64 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
 	secondsPerHour         = 3600
 	banSyncTimeoutDuration = 5 * time.Minute
 )
+
+func validModerationEventType(eventType services.ModerationEventType) bool {
+	switch eventType {
+	case services.ModerationEventSubmissionReceived,
+		services.ModerationEventSubmissionSuspicious,
+		services.ModerationEventSubmissionAutoRejected,
+		services.ModerationEventSubmissionApproved,
+		services.ModerationEventSubmissionRejected,
+		services.ModerationEventSubmissionDuplicate,
+		services.ModerationEventAbuseDetected,
+		services.ModerationEventRateLimitExceeded,
+		services.ModerationEventVelocityViolation,
+		services.ModerationEventIPShareSuspicious,
+		services.ModerationEventUserCooldownActivated:
+		return true
+	default:
+		return false
+	}
+}
+
+func parseAdminDateRange(c *gin.Context, defaultDays int) (time.Time, time.Time, bool) {
+	now := time.Now().UTC()
+	start := now.AddDate(0, 0, -defaultDays)
+	end := now
+	var err error
+	if raw := c.Query("start_date"); raw != "" {
+		start, err = time.Parse("2006-01-02", raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "start_date must use YYYY-MM-DD"})
+			return time.Time{}, time.Time{}, false
+		}
+	}
+	if raw := c.Query("end_date"); raw != "" {
+		end, err = time.Parse("2006-01-02", raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "end_date must use YYYY-MM-DD"})
+			return time.Time{}, time.Time{}, false
+		}
+	}
+	if end.Before(start) || end.Sub(start) > 366*24*time.Hour {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "date range must be ordered and no longer than 366 days"})
+		return time.Time{}, time.Time{}, false
+	}
+	return start, end, true
+}
 
 // TwitchModerationService defines the interface for Twitch-specific moderation operations
 type TwitchModerationService interface {
@@ -65,9 +110,10 @@ func (h *ModerationHandler) SetTwitchModerationService(service TwitchModerationS
 // GetPendingEvents retrieves pending moderation events
 // GET /admin/moderation/events
 func (h *ModerationHandler) GetPendingEvents(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	events, err := h.moderationEventService.GetPendingEvents(c.Request.Context(), limit)
@@ -92,9 +138,14 @@ func (h *ModerationHandler) GetPendingEvents(c *gin.Context) {
 // GET /admin/moderation/events/:type
 func (h *ModerationHandler) GetEventsByType(c *gin.Context) {
 	eventType := services.ModerationEventType(c.Param("type"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	if !validModerationEventType(eventType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid moderation event type"})
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	events, err := h.moderationEventService.GetEventsByType(c.Request.Context(), eventType, limit)
@@ -128,14 +179,10 @@ func (h *ModerationHandler) MarkEventReviewed(c *gin.Context) {
 	}
 
 	// Get reviewer ID from context
-	reviewerIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	reviewerID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
 
 	err = h.moderationEventService.MarkEventReviewed(c.Request.Context(), eventID, reviewerID)
 	if err != nil {
@@ -163,17 +210,13 @@ func (h *ModerationHandler) ProcessEvent(c *gin.Context) {
 	}
 
 	// Get reviewer ID from context
-	reviewerIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	reviewerID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	reviewerID := reviewerIDVal.(uuid.UUID)
 
 	var req struct {
-		Action string `json:"action" binding:"required"`
+		Action string `json:"action" binding:"required,oneof=approve reject escalate"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -248,9 +291,10 @@ func (h *ModerationHandler) GetModerationQueue(c *gin.Context) {
 	// Parse and validate query parameters
 	contentType := c.Query("type")
 	status := c.DefaultQuery("status", "pending")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	// Validate status parameter
@@ -323,11 +367,14 @@ func (h *ModerationHandler) GetModerationQueue(c *gin.Context) {
 			&item.CreatedAt, &item.ReviewedAt, &item.ReviewedBy,
 		)
 		if err != nil {
-			// Log scan error for debugging but continue processing other rows
-			c.Error(fmt.Errorf("failed to scan moderation queue item: %w", err))
-			continue
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read moderation queue"})
+			return
 		}
 		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read moderation queue"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -354,14 +401,10 @@ func (h *ModerationHandler) ApproveContent(c *gin.Context) {
 	}
 
 	// Get moderator ID from context
-	moderatorIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	moderatorID := moderatorIDVal.(uuid.UUID)
 
 	// Begin transaction
 	tx, err := h.db.Begin(ctx)
@@ -432,18 +475,14 @@ func (h *ModerationHandler) RejectContent(c *gin.Context) {
 	}
 
 	// Get moderator ID from context
-	moderatorIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	moderatorID := moderatorIDVal.(uuid.UUID)
 
 	// Parse request body for optional reason
 	var req struct {
-		Reason *string `json:"reason"`
+		Reason *string `json:"reason" binding:"omitempty,max=1000"`
 	}
 	// Enforce JSON Content-Type for consistency
 	contentType := c.GetHeader("Content-Type")
@@ -525,24 +564,19 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 
 	var req models.BulkModerationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid moderation request"})
 		return
 	}
 
 	// Get moderator ID from context
-	moderatorIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	moderatorID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	moderatorID := moderatorIDVal.(uuid.UUID)
 
 	// Convert item IDs to UUIDs
 	itemIDs := make([]uuid.UUID, 0, len(req.ItemIDs))
+	seen := make(map[uuid.UUID]struct{}, len(req.ItemIDs))
 	for _, idStr := range req.ItemIDs {
 		id, err := uuid.Parse(idStr)
 		if err != nil {
@@ -551,6 +585,11 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 			})
 			return
 		}
+		if _, duplicate := seen[id]; duplicate {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "item_ids must be unique"})
+			return
+		}
+		seen[id] = struct{}{}
 		itemIDs = append(itemIDs, id)
 	}
 
@@ -573,8 +612,6 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 	}
 
 	// Update all items
-	processedCount := 0
-	failedItems := make([]string, 0)
 	for _, itemID := range itemIDs {
 		// Update queue item
 		cmdTag, err := tx.Exec(ctx, `
@@ -583,12 +620,12 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 			WHERE id = $3 AND status = 'pending'
 		`, status, moderatorID, itemID)
 		if err != nil {
-			failedItems = append(failedItems, itemID.String())
-			continue
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to moderate items"})
+			return
 		}
 		if cmdTag.RowsAffected() == 0 {
-			failedItems = append(failedItems, itemID.String())
-			continue
+			c.JSON(http.StatusConflict, gin.H{"error": "One or more items are missing or no longer pending"})
+			return
 		}
 
 		// Record decision
@@ -597,11 +634,9 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 			VALUES ($1, $2, $3, $4)
 		`, itemID, moderatorID, req.Action, req.Reason)
 		if err != nil {
-			failedItems = append(failedItems, itemID.String())
-			continue
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation decisions"})
+			return
 		}
-
-		processedCount++
 	}
 
 	if err = tx.Commit(ctx); err != nil {
@@ -613,12 +648,8 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 
 	response := gin.H{
 		"success":   true,
-		"processed": processedCount,
+		"processed": len(itemIDs),
 		"total":     len(itemIDs),
-	}
-	if len(failedItems) > 0 {
-		response["failed"] = failedItems
-		response["message"] = fmt.Sprintf("Processed %d items, %d failed", processedCount, len(failedItems))
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -835,9 +866,10 @@ func (h *ModerationHandler) GetAppeals(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	status := c.DefaultQuery("status", "pending")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	if limit < 1 || limit > 100 {
-		limit = 50
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
 	}
 
 	// Validate status parameter
@@ -900,10 +932,14 @@ func (h *ModerationHandler) GetAppeals(c *gin.Context) {
 			&appeal.ContentType, &appeal.ContentID,
 		)
 		if err != nil {
-			c.Error(fmt.Errorf("failed to scan appeal: %w", err))
-			continue
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read appeals"})
+			return
 		}
 		appeals = append(appeals, appeal)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read appeals"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -931,20 +967,14 @@ func (h *ModerationHandler) ResolveAppeal(c *gin.Context) {
 	}
 
 	// Get admin ID from context
-	adminIDVal, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
+	adminID, ok := authenticatedUserID(c)
+	if !ok {
 		return
 	}
-	adminID := adminIDVal.(uuid.UUID)
 
 	var req models.ResolveAppealRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid appeal resolution"})
 		return
 	}
 
@@ -954,8 +984,18 @@ func (h *ModerationHandler) ResolveAppeal(c *gin.Context) {
 		status = "approved"
 	}
 
-	// Update appeal
-	cmdTag, err := h.db.Exec(ctx, `
+	tx, err := h.db.Begin(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve appeal"})
+		return
+	}
+	defer tx.Rollback(ctx)
+	var targetUserID uuid.UUID
+	if err := tx.QueryRow(ctx, `SELECT user_id FROM moderation_appeals WHERE id = $1 FOR UPDATE`, appealID).Scan(&targetUserID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Appeal not found"})
+		return
+	}
+	cmdTag, err := tx.Exec(ctx, `
 		UPDATE moderation_appeals
 		SET status = $1, resolved_by = $2, resolution = $3
 		WHERE id = $4 AND status = 'pending'
@@ -968,9 +1008,25 @@ func (h *ModerationHandler) ResolveAppeal(c *gin.Context) {
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusConflict, gin.H{
 			"error": "Appeal not found or not in pending status",
 		})
+		return
+	}
+	reason := "appeal " + status
+	if req.Resolution != nil {
+		reason = *req.Resolution
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO moderation_audit_logs
+			(id, action, entity_type, entity_id, moderator_id, actor_id, target_user_id, reason, created_at)
+		VALUES ($1, 'resolve_appeal', 'moderation_appeal', $2, $3, $3, $4, $5, NOW())`,
+		uuid.New(), appealID, adminID, targetUserID, reason); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve appeal"})
+		return
+	}
+	if err := tx.Commit(ctx); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve appeal"})
 		return
 	}
 
@@ -1060,14 +1116,15 @@ func (h *ModerationHandler) GetModerationAuditLogs(c *gin.Context) {
 	actionType := c.Query("action")
 	startDate := c.DefaultQuery("start_date", "")
 	endDate := c.DefaultQuery("end_date", "")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	if limit < 1 || limit > 1000 {
-		limit = 100
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	if err != nil || limit < 1 || limit > 1000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 1000"})
+		return
 	}
-	if offset < 0 {
-		offset = 0
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil || offset < 0 || offset > 1_000_000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "offset must be between 0 and 1000000"})
+		return
 	}
 
 	// Build query with filters - use CTE for counting
@@ -1107,16 +1164,31 @@ func (h *ModerationHandler) GetModerationAuditLogs(c *gin.Context) {
 		argIdx++
 	}
 
+	var parsedStart, parsedEnd time.Time
 	if startDate != "" {
+		parsedStart, err = time.Parse("2006-01-02", startDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "start_date must use YYYY-MM-DD"})
+			return
+		}
 		baseWhere += fmt.Sprintf(" AND md.created_at >= $%d", argIdx)
-		args = append(args, startDate)
+		args = append(args, parsedStart)
 		argIdx++
 	}
 
 	if endDate != "" {
+		parsedEnd, err = time.Parse("2006-01-02", endDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "end_date must use YYYY-MM-DD"})
+			return
+		}
 		baseWhere += fmt.Sprintf(" AND md.created_at < ($%d::date + interval '1 day')", argIdx)
-		args = append(args, endDate)
+		args = append(args, parsedEnd)
 		argIdx++
+	}
+	if !parsedStart.IsZero() && !parsedEnd.IsZero() && (parsedEnd.Before(parsedStart) || parsedEnd.Sub(parsedStart) > 366*24*time.Hour) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "date range must be ordered and no longer than 366 days"})
+		return
 	}
 
 	// Count total records using CTE
@@ -1140,7 +1212,7 @@ func (h *ModerationHandler) GetModerationAuditLogs(c *gin.Context) {
 	}
 
 	var totalCount int
-	err := h.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	err = h.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to count audit logs",
@@ -1191,10 +1263,14 @@ func (h *ModerationHandler) GetModerationAuditLogs(c *gin.Context) {
 			&log.Reason, &log.Metadata, &log.CreatedAt,
 		)
 		if err != nil {
-			c.Error(fmt.Errorf("failed to scan audit log: %w", err))
-			continue
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read audit logs"})
+			return
 		}
 		logs = append(logs, log)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read audit logs"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1212,6 +1288,10 @@ func (h *ModerationHandler) GetModerationAuditLogs(c *gin.Context) {
 // GET /admin/moderation/analytics
 func (h *ModerationHandler) GetModerationAnalytics(c *gin.Context) {
 	ctx := c.Request.Context()
+	start, end, ok := parseAdminDateRange(c, 30)
+	if !ok {
+		return
+	}
 
 	// Check if database is available
 	if h.db == nil {
@@ -1221,17 +1301,8 @@ func (h *ModerationHandler) GetModerationAnalytics(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters for date range
-	startDate := c.DefaultQuery("start_date", "")
-	endDate := c.DefaultQuery("end_date", "")
-
-	// Default to last 30 days if not specified
-	if startDate == "" {
-		startDate = time.Now().AddDate(0, 0, -30).Format("2006-01-02")
-	}
-	if endDate == "" {
-		endDate = time.Now().Format("2006-01-02")
-	}
+	startDate := start.Format("2006-01-02")
+	endDate := end.Format("2006-01-02")
 
 	analytics := models.ModerationAnalytics{
 		ActionsByType:        make(map[string]int),
@@ -1456,36 +1527,11 @@ func (h *ModerationHandler) GetToxicityMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse query parameters for date range
-	startDateStr := c.Query("start_date")
-	endDateStr := c.Query("end_date")
-
-	// Default to last 30 days if not specified
-	var startDate, endDate time.Time
-	if startDateStr == "" {
-		startDate = time.Now().AddDate(0, 0, -30)
-	} else {
-		parsed, err := time.Parse("2006-01-02", startDateStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid start_date format. Use YYYY-MM-DD",
-			})
-			return
-		}
-		startDate = parsed
+	startDate, endDate, ok := parseAdminDateRange(c, 30)
+	if !ok {
+		return
 	}
-
-	if endDateStr == "" {
-		endDate = time.Now()
-	} else {
-		parsed, err := time.Parse("2006-01-02", endDateStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid end_date format. Use YYYY-MM-DD",
-			})
-			return
-		}
-		endDate = parsed.Add(24 * time.Hour) // Include the end date
-	}
+	endDate = endDate.Add(24 * time.Hour)
 
 	// Get metrics from toxicity classifier
 	if h.toxicityClassifier == nil {
@@ -1566,8 +1612,8 @@ func (h *ModerationHandler) SyncBans(c *gin.Context) {
 		"job_id":     jobID.String(),
 	})
 
-	// Start async ban sync in a goroutine (fire and forget)
-	go func() {
+	// Submit async ban sync to the bounded worker pool.
+	queued := handlerBackgroundJobs.Submit(func() {
 		// Create a new context for the background job with timeout
 		bgCtx, cancel := context.WithTimeout(context.Background(), banSyncTimeoutDuration)
 		defer cancel()
@@ -1618,7 +1664,14 @@ func (h *ModerationHandler) SyncBans(c *gin.Context) {
 				"job_id":     jobID.String(),
 			})
 		}
-	}()
+	})
+	if !queued {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Ban sync queue is at capacity. Please retry shortly.",
+			"code":  "BACKGROUND_QUEUE_FULL",
+		})
+		return
+	}
 
 	// Return immediate response
 	c.JSON(http.StatusOK, gin.H{
@@ -1745,23 +1798,23 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 
 	// Get moderator ID from context
 	moderatorIDVal, exists := c.Get("user_id")
-	if !exists {
+	moderatorID, authenticated := moderatorIDVal.(uuid.UUID)
+	if !exists || !authenticated || moderatorID == uuid.Nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
 		return
 	}
-	moderatorID := moderatorIDVal.(uuid.UUID)
 
 	// Parse request body
 	var req struct {
 		ChannelID string  `json:"channelId" binding:"required"`
 		UserID    string  `json:"userId" binding:"required"`
-		Reason    *string `json:"reason"`
+		Reason    *string `json:"reason" binding:"omitempty,max=1000"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request: " + err.Error(),
+			"error": "Invalid request",
 		})
 		return
 	}
@@ -1792,7 +1845,7 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 	}
 
 	// Create ban using moderation service
-	err = h.moderationService.BanUser(ctx, channelID, moderatorID, userID, req.Reason)
+	ban, err := h.moderationService.BanUserWithResult(ctx, channelID, moderatorID, userID, req.Reason)
 	if err != nil {
 		if errors.Is(err, services.ErrModerationPermissionDenied) || errors.Is(err, services.ErrModerationNotAuthorized) {
 			c.JSON(http.StatusForbidden, gin.H{
@@ -1818,27 +1871,7 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the created ban to return full details using direct query
-	// Note: We use a direct query here because we need the most recently created ban
-	// and CommunityRepository doesn't have a method to get ban by channel+user
-	var ban models.CommunityBan
-	err = h.db.QueryRow(ctx, `
-		SELECT id, community_id, banned_user_id, banned_by_user_id, reason, banned_at
-		FROM community_bans
-		WHERE community_id = $1 AND banned_user_id = $2
-		ORDER BY banned_at DESC
-		LIMIT 1
-	`, channelID, userID).Scan(
-		&ban.ID, &ban.CommunityID, &ban.BannedUserID, &ban.BannedByUserID, &ban.Reason, &ban.BannedAt,
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Ban created but failed to retrieve details",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"id":        ban.ID,
 		"channelId": ban.CommunityID,
 		"userId":    ban.BannedUserID,

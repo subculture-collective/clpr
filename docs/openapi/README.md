@@ -53,8 +53,8 @@ Complete OpenAPI 3.1 specification documenting all 474+ API endpoints for the Cl
 
 > ⚠️ **Note**: These are maintained for backward compatibility but `openapi.yaml` is now the single source of truth.
 
-- [`clip-submission-api.yaml`](./clip-submission-api.yaml) - Clip submission workflow
-- [`comments-api.yaml`](./comments-api.yaml) - Comment threading system
+- `clip-submission-api.yaml` - Clip submission workflow
+- `comments-api.yaml` - Comment threading system
 
 ## 🚀 Quick Start
 
@@ -334,11 +334,11 @@ Access the generated API documentation through the admin dashboard:
 
 ## 🔗 Related Documentation
 
-- [Main API Documentation](../backend/api.md)
-- [Clip Submission Guide](../CLIP_SUBMISSION_API_GUIDE.md)
-- [Authentication Guide](../backend/authentication.md)
-- [Rate Limiting](../backend/rate-limiting.md)
-- [WebSocket API](../backend/websocket-api.md)
+- Main API Documentation
+- Clip Submission Guide
+- Authentication Guide
+- Rate Limiting
+- WebSocket API
 
 ## 🐛 Troubleshooting
 

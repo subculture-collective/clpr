@@ -6,11 +6,11 @@ import (
 	"log"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 	"github.com/redis/go-redis/v9"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 )
 
 // HybridSearchService orchestrates BM25 + vector similarity search
@@ -92,10 +92,8 @@ func (s *HybridSearchService) Search(ctx context.Context, req *models.SearchRequ
 
 	// Step 5: Build response
 	response := &models.SearchResponse{
-		Query: req.Query,
-		Results: models.SearchResultsByType{
-			Clips: rerankedClips,
-		},
+		Query:   req.Query,
+		Results: models.EmptySearchResults(),
 		Counts: models.SearchCounts{
 			Clips: candidates.Counts.Clips, // Use total count from BM25
 		},
@@ -106,6 +104,7 @@ func (s *HybridSearchService) Search(ctx context.Context, req *models.SearchRequ
 			TotalItems: candidates.Counts.Clips,
 		},
 	}
+	response.Results.Clips = rerankedClips
 
 	// Calculate total pages
 	if req.Limit > 0 {
@@ -275,10 +274,8 @@ func (s *HybridSearchService) SearchWithScores(ctx context.Context, req *models.
 	// Build response with scores
 	response := &models.SearchResponseWithScores{
 		SearchResponse: models.SearchResponse{
-			Query: req.Query,
-			Results: models.SearchResultsByType{
-				Clips: rerankedClips,
-			},
+			Query:   req.Query,
+			Results: models.EmptySearchResults(),
 			Counts: models.SearchCounts{
 				Clips: candidates.Counts.Clips,
 			},
@@ -291,6 +288,7 @@ func (s *HybridSearchService) SearchWithScores(ctx context.Context, req *models.
 		},
 		Scores: scores,
 	}
+	response.SearchResponse.Results.Clips = rerankedClips
 
 	if req.Limit > 0 {
 		response.SearchResponse.Meta.TotalPages = (response.SearchResponse.Meta.TotalItems + req.Limit - 1) / req.Limit

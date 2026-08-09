@@ -5,14 +5,25 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
+	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware creates middleware that requires authentication
 func AuthMiddleware(authService *services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// The global mutation boundary may already have validated the token and
+		// attached the complete user. Reuse that result so protected mutation
+		// routes do not perform a second token/database lookup.
+		if value, exists := c.Get("user"); exists {
+			if user, ok := value.(*models.User); ok && user != nil {
+				sentrypkg.SetUser(c, user.ID.String(), user.Username)
+				c.Next()
+				return
+			}
+		}
 		token := extractToken(c)
 		if token == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
