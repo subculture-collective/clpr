@@ -147,7 +147,7 @@ describe('SearchPage - Sort Controls', () => {
             </HelmetProvider>,
         );
 
-        expect((await screen.findAllByTestId('empty-state')).length).toBeGreaterThan(0);
+        expect(await screen.findAllByTestId('empty-state')).toHaveLength(1);
         expect(screen.getByTestId('search-results')).toBeVisible();
     });
 });

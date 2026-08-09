@@ -67,7 +67,7 @@ test.describe('real-backend launch smoke', () => {
                 response.request().method() === 'GET',
         );
 
-        await page.goto('/search?q=clpr-release-no-results-9f731b');
+        await page.goto('/search?q=zzzzqvnonexistent9f731b');
 
         const response = await searchResponse;
         expect(response.status()).toBe(200);

@@ -708,7 +708,7 @@ export function SearchPage() {
 
                         {/* Empty State */}
                         {data.meta.total_items === 0 && (
-                            <div data-testid='empty-state'>
+                            <div>
                                 <EmptyStateWithAction
                                     icon={
                                         <svg
