@@ -569,6 +569,34 @@ func TestWebhookSignatureVerification_DEREncodedSignature(t *testing.T) {
 	assert.NoError(t, err, "DER-encoded signature should be accepted")
 }
 
+func TestWebhookSignatureVerification_RawSignatureWithDERPrefix(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	privateKey, publicKeyPEM, err := generateTestKeyPair()
+	assert.NoError(t, err)
+	handler := NewSendGridWebhookHandler(nil, publicKeyPEM)
+	payload := []byte(`[{"email":"test@example.com"}]`)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+
+	var signature string
+	for attempt := 0; attempt < 100000; attempt++ {
+		signature, err = signPayload(privateKey, timestamp, payload)
+		assert.NoError(t, err)
+		decoded, decodeErr := base64.StdEncoding.DecodeString(signature)
+		assert.NoError(t, decodeErr)
+		if decoded[0] == 0x30 {
+			break
+		}
+		signature = ""
+	}
+	if signature == "" {
+		t.Fatal("could not generate a raw P-256 signature with a DER-like prefix")
+	}
+
+	assert.NoError(t, handler.verifySignature(payload, signature, timestamp),
+		"a valid raw signature must not be misclassified as DER")
+}
+
 func TestWebhookSignatureVerification_InvalidDERZeroLengthR(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

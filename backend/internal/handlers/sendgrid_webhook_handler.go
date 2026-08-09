@@ -411,8 +411,16 @@ func (h *SendGridWebhookHandler) verifySignature(payload []byte, signature, time
 func parseECDSASignature(sigBytes []byte) (*big.Int, *big.Int, error) {
 	// Check for DER SEQUENCE tag first (more reliable than length check)
 	if len(sigBytes) > 0 && sigBytes[0] == 0x30 {
-		// DER-encoded signature
-		return parseDERSignature(sigBytes)
+		// A raw P-256 signature can also begin with the DER SEQUENCE byte by
+		// chance. Accept valid DER, but fall back to the exact-length raw format
+		// when the remaining bytes are not a valid DER structure.
+		r, s, err := parseDERSignature(sigBytes)
+		if err == nil {
+			return r, s, nil
+		}
+		if len(sigBytes) != 64 {
+			return nil, nil, err
+		}
 	}
 
 	// Assume raw r||s format (32 bytes each for P-256)
