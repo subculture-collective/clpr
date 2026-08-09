@@ -21,8 +21,30 @@ on:
         default: 'localhost'
 
 jobs:
+  preflight:
+    name: Check restore-drill configuration
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.configuration.outputs.enabled }}
+    steps:
+      - id: configuration
+        env:
+          RESTORE_DRILL_ENABLED: ${{ secrets.RESTORE_DRILL_ENABLED }}
+        run: |
+          # A restore drill needs protected backup-provider credentials. Do
+          # not turn a missing secret on a public runner into a false alarm.
+          if [ "$RESTORE_DRILL_ENABLED" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Production restore drill is enabled."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Restore drill is not configured for this runner; skipping safely."
+          fi
+
   restore-drill:
     name: Monthly Restore Drill
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
