@@ -4,7 +4,9 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 gitleaks_bin=${GITLEAKS_BIN:-gitleaks}
 fixture_dir=$(mktemp -d)
-trap 'rm -rf "$fixture_dir"' EXIT
+mkdir -p "$repo_root/.tmp"
+ignored_fixture=$(mktemp "$repo_root/.tmp/gitleaks-generated.XXXXXX")
+trap 'rm -rf "$fixture_dir"; rm -f "$ignored_fixture"' EXIT
 
 if grep -Ev '^[[:space:]]*(#|$)' "$repo_root/.gitleaksignore" \
   | grep -Ev '^[0-9a-f]{40}:' >/dev/null; then
@@ -42,5 +44,10 @@ if "$gitleaks_bin" git --no-banner --config "$replacement_repo/.gitleaks.toml" "
   echo "gitleaks policy regression: a replacement secret inherited a historical disposition" >&2
   exit 1
 fi
+
+# Ignored convergence artifacts must not contaminate the candidate-tree scan.
+printf 'AWS_ACCESS_KEY_ID=AKIA%s\n' 'ZYXWVUTSRQPONMLK' > "$ignored_fixture"
+SECRET_TREE_ONLY=1 GITLEAKS_BIN="$gitleaks_bin" \
+  bash "$repo_root/scripts/verify-secret-history.sh" >/dev/null
 
 echo "Gitleaks allowlist remains narrow and fail-closed."
