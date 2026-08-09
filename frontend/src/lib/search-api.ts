@@ -11,10 +11,32 @@ import type {
     SearchFilters,
 } from '../types/search';
 
+type LegacySearchResponse = Omit<SearchResponse, 'results'> & {
+    results?: {
+        [Key in keyof SearchResponse['results']]?:
+            | SearchResponse['results'][Key]
+            | null;
+    } | null;
+};
+
+export function normalizeSearchResponse(
+    response: LegacySearchResponse,
+): SearchResponse {
+    return {
+        ...response,
+        results: {
+            clips: response.results?.clips ?? [],
+            creators: response.results?.creators ?? [],
+            games: response.results?.games ?? [],
+            tags: response.results?.tags ?? [],
+        },
+    };
+}
+
 export const searchApi = {
     // Universal search
     async search(params: SearchRequest): Promise<SearchResponse> {
-        const response = await apiClient.get<SearchResponse>('/search', {
+        const response = await apiClient.get<LegacySearchResponse>('/search', {
             params: {
                 q: params.query,
                 type: params.type,
@@ -30,7 +52,7 @@ export const searchApi = {
                 limit: params.limit || 20,
             },
         });
-        return response.data;
+        return normalizeSearchResponse(response.data);
     },
 
     // Get autocomplete suggestions

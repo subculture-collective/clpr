@@ -1,0 +1,18 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "curl-auth-header"
+
+  [[rules.allowlists]]
+  description = "Literal bearer placeholders used by curl documentation examples"
+  regexTarget = "match"
+  regexes = ['''Bearer[ \t]+YOUR_(?:JWT_)?TOKEN''']
+
+[[rules]]
+id = "generic-api-key"
+
+  [[rules.allowlists]]
+  description = "Truncated JWT-shaped documentation examples ending in an ellipsis"
+  regexTarget = "match"
+  regexes = ['''[A-Za-z0-9_-]{30,64}\.\.\.''']

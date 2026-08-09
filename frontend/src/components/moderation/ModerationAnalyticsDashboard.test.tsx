@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModerationAnalyticsDashboard } from './ModerationAnalyticsDashboard';
 import * as moderationApi from '../../lib/moderation-api';
+import { allowTestConsole } from '../../test/setup';
 
 // Mock the API module
 vi.mock('../../lib/moderation-api');
@@ -135,6 +136,9 @@ describe('ModerationAnalyticsDashboard', () => {
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(moderationApi.getModerationAnalytics).mockImplementation(
+                () => new Promise(() => {}),
+            );
             render(<ModerationAnalyticsDashboard />);
 
             expect(
@@ -343,6 +347,7 @@ describe('ModerationAnalyticsDashboard', () => {
 
     describe('Error Handling', () => {
         it('displays error message when loading fails', async () => {
+            allowTestConsole('error', /Analytics error:.*Failed to load analytics/);
             vi.mocked(moderationApi.getModerationAnalytics).mockRejectedValue(
                 new Error('Failed to load analytics'),
             );
@@ -357,6 +362,7 @@ describe('ModerationAnalyticsDashboard', () => {
         });
 
         it('shows retry button on error', async () => {
+            allowTestConsole('error', /Analytics error:.*Failed to load analytics/);
             vi.mocked(moderationApi.getModerationAnalytics).mockRejectedValue(
                 new Error('Failed to load analytics'),
             );
@@ -371,6 +377,7 @@ describe('ModerationAnalyticsDashboard', () => {
         });
 
         it('retries loading when retry button is clicked', async () => {
+            allowTestConsole('error', /Analytics error:.*Failed/);
             const user = userEvent.setup();
             vi.mocked(moderationApi.getModerationAnalytics)
                 .mockRejectedValueOnce(new Error('Failed'))
@@ -438,6 +445,7 @@ describe('ModerationAnalyticsDashboard', () => {
         });
 
         it('displays error in accessible alert', async () => {
+            allowTestConsole('error', /Analytics error:.*Failed/);
             vi.mocked(moderationApi.getModerationAnalytics).mockRejectedValue(
                 new Error('Failed'),
             );

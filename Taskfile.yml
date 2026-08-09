@@ -210,6 +210,37 @@ tasks:
     cmds:
       - bash scripts/run-release-critical-backend-tests.sh
 
+  test:edge:
+    desc: Validate edge configuration, route parity, headers, health routes, and public metadata
+    cmds:
+      - bash scripts/test-edge-contracts.sh
+
+  test:blue-green:
+    desc: Validate immutable blue/green, canary, bake, and rollback contracts
+    cmds:
+      - bash scripts/test-blue-green-contracts.sh
+
+  test:operator-preflight:
+    desc: Validate fail-closed hosted, provider, staging, and recovery harnesses
+    cmds:
+      - bash scripts/test-operator-preflight.sh
+
+  test:source-convergence-contract:
+    desc: Validate deterministic source-gate orchestration and Gitea workflow structure
+    cmds:
+      - bash scripts/test-source-convergence-contract.sh
+
+  release:source-convergence:
+    desc: Run the complete fail-closed source gate from a clean checkout
+    cmds:
+      - bash scripts/source-convergence.sh --all
+
+  release:source-convergence:phase:
+    desc: Run one explicit source-gate phase (set PHASE=backend, frontend, api-docs, docs, contracts, or images)
+    cmds:
+      - 'test -n "{{.PHASE}}" || (echo "Set PHASE to a named convergence phase"; exit 1)'
+      - bash scripts/source-convergence.sh --phase "{{.PHASE}}"
+
   test:backend:
     desc: Run all backend Go tests
     cmds:

@@ -1,4 +1,5 @@
 import { render, screen } from '@/test/test-utils';
+import { act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { SearchErrorAlert } from './SearchErrorAlert';
 
@@ -46,7 +47,7 @@ describe('SearchErrorAlert', () => {
     render(<SearchErrorAlert type="error" onRetry={onRetry} />);
     
     const retryButton = screen.getByTestId('retry-search');
-    retryButton.click();
+    act(() => retryButton.click());
     
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -74,10 +75,9 @@ describe('SearchErrorAlert', () => {
     expect(screen.getByTestId('search-failover-warning')).toBeInTheDocument();
     
     // Fast-forward 10 seconds
-    vi.advanceTimersByTime(10000);
-    
-    // Wait for the component to update
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
     
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
@@ -89,10 +89,9 @@ describe('SearchErrorAlert', () => {
     expect(screen.getByTestId('search-failover-warning')).toBeInTheDocument();
     
     // Fast-forward 5 seconds
-    vi.advanceTimersByTime(5000);
-    
-    // Wait for the component to update
-    await vi.runOnlyPendingTimersAsync();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
     
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
@@ -102,7 +101,7 @@ describe('SearchErrorAlert', () => {
     render(<SearchErrorAlert type="error" onDismiss={onDismiss} />);
     
     // Fast-forward 10 seconds
-    vi.advanceTimersByTime(10000);
+    act(() => vi.advanceTimersByTime(10000));
     
     // Error should still be visible
     expect(screen.getByTestId('search-error-alert')).toBeInTheDocument();
@@ -115,7 +114,7 @@ describe('SearchErrorAlert', () => {
     
     // Find and click dismiss button (X button in Alert component)
     const dismissButton = screen.getByRole('button', { name: /dismiss/i });
-    dismissButton.click();
+    act(() => dismissButton.click());
     
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
@@ -143,7 +142,7 @@ describe('SearchErrorAlert', () => {
     
     // Manually dismiss
     const dismissButton = screen.getByRole('button', { name: /dismiss/i });
-    dismissButton.click();
+    act(() => dismissButton.click());
     
     // onDismiss should be called
     expect(onDismiss).toHaveBeenCalled();

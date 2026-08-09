@@ -72,6 +72,20 @@ jobs:
           path: backend/test-results.json
           if-no-files-found: error
 
+  openapi:
+    name: OpenAPI zero-warning contract
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Reject unsuppressed OpenAPI warnings or exception-budget changes
+        run: npm run openapi:lint
+
   frontend:
     name: Frontend lint, test, and build
     runs-on: ubuntu-24.04
@@ -89,6 +103,8 @@ jobs:
       - name: Reject high or critical production dependency advisories
         run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
+      - name: Verify React and edge route parity
+        run: npm run routes:check
       - name: Verify module and UI boundaries
         run: npm run boundaries:check
       - name: Unit tests
@@ -96,6 +112,11 @@ jobs:
       - name: Verify test pyramid and skip budget
         run: npm run test:inventory
       - run: npm run build
+      - name: Verify edge and public metadata contracts
+        working-directory: .
+        run: |
+          bash scripts/test-edge-contracts.sh --runtime
+          bash scripts/test-blue-green-contracts.sh
       - name: Upload frontend evidence
         if: always()
         uses: actions/upload-artifact@v4

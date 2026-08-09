@@ -20,9 +20,16 @@ POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_USER="${POSTGRES_USER:-clpr}"
 POSTGRES_DB="${POSTGRES_DB:-clpr}"
 TEST_DB_PREFIX="${TEST_DB_PREFIX:-restore_drill_test}"
+MIGRATIONS_PATH="${MIGRATIONS_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/backend/migrations}"
+RESTORE_MIN_CLIPS="${RESTORE_MIN_CLIPS:-1}"
+RESTORE_MIN_USERS="${RESTORE_MIN_USERS:-1}"
 RTO_TARGET_SECONDS="${RTO_TARGET_SECONDS:-3600}"  # 1 hour
 RPO_TARGET_SECONDS="${RPO_TARGET_SECONDS:-900}"   # 15 minutes
 DRILL_LOG="${DRILL_LOG:-/var/log/clpr/restore-drill.log}"
+BACKUP_FILE_OVERRIDE="${BACKUP_FILE_OVERRIDE:-}"
+BACKUP_TIMESTAMP="${BACKUP_TIMESTAMP:-}"
+RELEASE_EVIDENCE_MODE="${RELEASE_EVIDENCE_MODE:-false}"
+APPLICATION_SMOKE_URL="${APPLICATION_SMOKE_URL:-}"
 
 # Metrics
 DRILL_SUCCESS=0
@@ -33,6 +40,11 @@ CLIP_COUNT=0
 USER_COUNT=0
 RTO_MET=0
 RPO_MET=0
+
+[[ "$TEST_DB_PREFIX" =~ ^[a-z_][a-z0-9_]{0,31}$ ]] || {
+    echo "TEST_DB_PREFIX must be a safe lowercase PostgreSQL identifier prefix" >&2
+    exit 1
+}
 
 # Logging functions
 log_info() {
@@ -55,18 +67,32 @@ log_info "Configuration:"
 log_info "  Cloud Provider: $CLOUD_PROVIDER"
 log_info "  Backup Bucket: $BACKUP_BUCKET"
 log_info "  PostgreSQL Host: $POSTGRES_HOST:$POSTGRES_PORT"
-log_info "  RTO Target: ${RTO_TARGET_SECONDS}s ($(($RTO_TARGET_SECONDS / 60)) minutes)"
-log_info "  RPO Target: ${RPO_TARGET_SECONDS}s ($(($RPO_TARGET_SECONDS / 60)) minutes)"
+log_info "  RTO Target: ${RTO_TARGET_SECONDS}s ($((RTO_TARGET_SECONDS / 60)) minutes)"
+log_info "  RPO Target: ${RPO_TARGET_SECONDS}s ($((RPO_TARGET_SECONDS / 60)) minutes)"
 
 # Function to download latest backup
 download_latest_backup() {
-    local backup_file="/tmp/restore-drill-$(date +%Y%m%d-%H%M%S).sql.gz"
+    local backup_file
+    backup_file="/tmp/restore-drill-$(date +%Y%m%d-%H%M%S).sql.gz"
     local latest_backup=""
     local backup_timestamp=""
     
     log_info "Finding latest backup..."
+
+    if [ -n "$BACKUP_FILE_OVERRIDE" ]; then
+        if [ ! -f "$BACKUP_FILE_OVERRIDE" ]; then
+            log_error "BACKUP_FILE_OVERRIDE does not exist"
+            return 1
+        fi
+        if [ -z "$BACKUP_TIMESTAMP" ]; then
+            log_error "BACKUP_TIMESTAMP is required with BACKUP_FILE_OVERRIDE"
+            return 1
+        fi
+        cp "$BACKUP_FILE_OVERRIDE" "$backup_file"
+        latest_backup="protected local backup input"
+        backup_timestamp="$BACKUP_TIMESTAMP"
     
-    if [ "$CLOUD_PROVIDER" = "gcp" ]; then
+    elif [ "$CLOUD_PROVIDER" = "gcp" ]; then
         latest_backup=$(gsutil ls -l "gs://${BACKUP_BUCKET}/database/postgres-backup-*.sql.gz" 2>/dev/null | \
             grep -v TOTAL | sort -k2 -r | head -1 | awk '{print $3}') || {
             log_error "Failed to list backups from GCS"
@@ -87,7 +113,8 @@ download_latest_backup() {
         }
         
     elif [ "$CLOUD_PROVIDER" = "aws" ]; then
-        local latest_file=$(aws s3 ls "s3://${BACKUP_BUCKET}/database/" 2>/dev/null | \
+        local latest_file
+        latest_file=$(aws s3 ls "s3://${BACKUP_BUCKET}/database/" 2>/dev/null | \
             grep "postgres-backup-" | sort -r | head -1 | awk '{print $4}') || {
             log_error "Failed to list backups from S3"
             return 1
@@ -100,7 +127,8 @@ download_latest_backup() {
         
         latest_backup="s3://${BACKUP_BUCKET}/database/${latest_file}"
         
-        local s3_info=$(aws s3 ls "s3://${BACKUP_BUCKET}/database/${latest_file}" 2>/dev/null)
+        local s3_info
+        s3_info=$(aws s3 ls "s3://${BACKUP_BUCKET}/database/${latest_file}" 2>/dev/null)
         backup_timestamp=$(echo "$s3_info" | awk '{print $1" "$2}')
         
         log_info "Downloading backup from S3: $latest_backup"
@@ -130,7 +158,8 @@ download_latest_backup() {
             return 1
         fi
         
-        local blob_info=$(az storage blob show \
+        local blob_info
+        blob_info=$(az storage blob show \
             --account-name "${AZURE_STORAGE_ACCOUNT}" \
             --container-name "${BACKUP_BUCKET}" \
             --name "${latest_backup}" \
@@ -158,18 +187,23 @@ download_latest_backup() {
     
     # Calculate RPO (time between backup and current time)
     if [ -n "$backup_timestamp" ]; then
-        local backup_ts_epoch=$(date -d "$backup_timestamp" +%s 2>/dev/null || date -j -f "%Y-%m-%d %H:%M:%S" "$backup_timestamp" +%s 2>/dev/null || echo "0")
+        local backup_ts_epoch
+        backup_ts_epoch=$(date -d "$backup_timestamp" +%s 2>/dev/null || date -j -f "%Y-%m-%d %H:%M:%S" "$backup_timestamp" +%s 2>/dev/null || echo "0")
         if [ "$backup_ts_epoch" = "0" ] || [ -z "$backup_ts_epoch" ]; then
             log_warn "Failed to parse backup timestamp: $backup_timestamp"
             RPO_SECONDS=999999  # Very large value to indicate failure
         else
-            local current_ts=$(date +%s)
+            local current_ts
+            current_ts=$(date +%s)
             RPO_SECONDS=$((current_ts - backup_ts_epoch))
         fi
         
-        log_info "  RPO (backup age): ${RPO_SECONDS}s ($(($RPO_SECONDS / 60)) minutes)"
+        log_info "  RPO (backup age): ${RPO_SECONDS}s ($((RPO_SECONDS / 60)) minutes)"
         
-        if [ "$RPO_SECONDS" -le "$RPO_TARGET_SECONDS" ]; then
+        if [ "$RPO_SECONDS" -lt 0 ]; then
+            log_error "  Backup timestamp is in the future"
+            RPO_MET=0
+        elif [ "$RPO_SECONDS" -le "$RPO_TARGET_SECONDS" ]; then
             log_info "  ✓ RPO target met"
             RPO_MET=1
         else
@@ -188,7 +222,8 @@ download_latest_backup() {
 
 # Function to create test database
 create_test_database() {
-    local test_db="${TEST_DB_PREFIX}_$(date +%Y%m%d_%H%M%S)"
+    local test_db
+    test_db="${TEST_DB_PREFIX}_$(date +%Y%m%d_%H%M%S)"
     
     log_info "Creating test database: $test_db"
     
@@ -223,27 +258,38 @@ restore_backup() {
     log_info "  Source: $BACKUP_FILE"
     log_info "  Target: $TEST_DB"
     
-    local restore_start=$(date +%s)
-    
     if ! restore_dump_file; then
         log_error "Failed to restore backup"
         return 1
     fi
     
-    local restore_end=$(date +%s)
-    RESTORE_DURATION_SECONDS=$((restore_end - restore_start))
-    
     log_info "✓ Restore completed"
-    log_info "  Duration: ${RESTORE_DURATION_SECONDS}s ($(($RESTORE_DURATION_SECONDS / 60)) minutes)"
-    
-    # Check RTO
-    if [ "$RESTORE_DURATION_SECONDS" -le "$RTO_TARGET_SECONDS" ]; then
-        log_info "  ✓ RTO target met (${RESTORE_DURATION_SECONDS}s < ${RTO_TARGET_SECONDS}s)"
-        RTO_MET=1
-    else
-        log_error "  ✗ RTO target exceeded (${RESTORE_DURATION_SECONDS}s > ${RTO_TARGET_SECONDS}s)"
-        RTO_MET=0
-    fi
+}
+
+validate_migrations() {
+    command -v migrate >/dev/null || {
+        log_error "golang-migrate is required for release restore evidence"
+        return 1
+    }
+    [[ -d "$MIGRATIONS_PATH" ]] || {
+        log_error "Migration directory does not exist: $MIGRATIONS_PATH"
+        return 1
+    }
+    local database_url
+    database_url="$(python3 - "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_HOST" "$POSTGRES_PORT" "$TEST_DB" <<'PY'
+import sys
+from urllib.parse import quote
+user, password, host, port, database = sys.argv[1:]
+print(f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}@{host}:{port}/{quote(database, safe='')}?sslmode=require")
+PY
+)"
+    migrate -path "$MIGRATIONS_PATH" -database "$database_url" up
+    local version
+    version="$(migrate -path "$MIGRATIONS_PATH" -database "$database_url" version 2>&1)" || {
+        log_error "Restored database migration state is dirty or unreadable: $version"
+        return 1
+    }
+    log_info "✓ Migrations validated at version $version"
 }
 
 restore_dump_file() {
@@ -259,7 +305,7 @@ restore_dump_file() {
                 -v ON_ERROR_STOP=1 -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" \
                 -U "$POSTGRES_USER" -d "$TEST_DB" 2>&1 | tee -a "$DRILL_LOG"
         fi
-        return ${PIPESTATUS[1]}
+        return "${PIPESTATUS[1]}"
     fi
 
     prefix=$(head -c 5 "$BACKUP_FILE" || true)
@@ -267,12 +313,12 @@ restore_dump_file() {
         PGPASSWORD="${POSTGRES_PASSWORD}" pg_restore \
             -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$TEST_DB" \
             --no-owner --no-acl --verbose "$BACKUP_FILE" 2>&1 | tee -a "$DRILL_LOG"
-        return ${PIPESTATUS[0]}
+        return "${PIPESTATUS[0]}"
     fi
     PGPASSWORD="${POSTGRES_PASSWORD}" psql -v ON_ERROR_STOP=1 \
         -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$TEST_DB" \
         -f "$BACKUP_FILE" 2>&1 | tee -a "$DRILL_LOG"
-    return ${PIPESTATUS[0]}
+    return "${PIPESTATUS[0]}"
 }
 
 # Function to validate restored data
@@ -280,14 +326,13 @@ validate_restored_data() {
     log_info "Validating restored data..."
     
     # Check clips table
-    local clip_result=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+    local clip_result
+    if ! clip_result=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql \
         -h "$POSTGRES_HOST" \
         -p "$POSTGRES_PORT" \
         -U "$POSTGRES_USER" \
         -d "$TEST_DB" \
-        -t -c "SELECT COUNT(*) FROM clips;" 2>&1)
-    
-    if [ $? -ne 0 ]; then
+        -t -c "SELECT COUNT(*) FROM clips;" 2>&1); then
         log_error "Failed to query clips table: $clip_result"
         return 1
     fi
@@ -296,14 +341,13 @@ validate_restored_data() {
     log_info "  Clips count: $CLIP_COUNT"
     
     # Check users table
-    local user_result=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+    local user_result
+    if ! user_result=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql \
         -h "$POSTGRES_HOST" \
         -p "$POSTGRES_PORT" \
         -U "$POSTGRES_USER" \
         -d "$TEST_DB" \
-        -t -c "SELECT COUNT(*) FROM users;" 2>&1)
-    
-    if [ $? -ne 0 ]; then
+        -t -c "SELECT COUNT(*) FROM users;" 2>&1); then
         log_error "Failed to query users table: $user_result"
         return 1
     fi
@@ -311,27 +355,31 @@ validate_restored_data() {
     USER_COUNT=$(echo "$user_result" | tr -d '[:space:]')
     log_info "  Users count: $USER_COUNT"
     
-    # Basic sanity checks
-    if [ "$CLIP_COUNT" -lt 1 ] && [ "$USER_COUNT" -lt 1 ]; then
-        log_warn "Restored database appears to be empty (this may be expected for new installations)"
+    if [ "$CLIP_COUNT" -lt "$RESTORE_MIN_CLIPS" ]; then
+        log_error "Restored clips count $CLIP_COUNT is below required minimum $RESTORE_MIN_CLIPS"
+        return 1
+    fi
+    if [ "$USER_COUNT" -lt "$RESTORE_MIN_USERS" ]; then
+        log_error "Restored users count $USER_COUNT is below required minimum $RESTORE_MIN_USERS"
+        return 1
     fi
     
     # Check table integrity
     log_info "Checking table integrity..."
     
-    local integrity_check=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+    local integrity_check
+    if ! integrity_check=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql \
         -h "$POSTGRES_HOST" \
         -p "$POSTGRES_PORT" \
         -U "$POSTGRES_USER" \
         -d "$TEST_DB" \
-        -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>&1)
-    
-    if [ $? -ne 0 ]; then
+        -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>&1); then
         log_error "Failed to check table integrity: $integrity_check"
         return 1
     fi
     
-    local table_count=$(echo "$integrity_check" | tr -d '[:space:]')
+    local table_count
+    table_count=$(echo "$integrity_check" | tr -d '[:space:]')
     log_info "  Tables restored: $table_count"
     
     if [ "$table_count" -lt 1 ]; then
@@ -341,6 +389,21 @@ validate_restored_data() {
     
     log_info "✓ Data validation passed"
     return 0
+}
+
+validate_application_smoke() {
+    if [ "$RELEASE_EVIDENCE_MODE" != "true" ]; then
+        return 0
+    fi
+    if [ -z "$APPLICATION_SMOKE_URL" ]; then
+        log_error "APPLICATION_SMOKE_URL is required in release evidence mode"
+        return 1
+    fi
+    if ! curl --fail --silent --show-error "$APPLICATION_SMOKE_URL" >/dev/null; then
+        log_error "Isolated restored-application smoke failed"
+        return 1
+    fi
+    log_info "✓ Isolated restored-application smoke passed"
 }
 
 # Function to cleanup test database
@@ -419,10 +482,21 @@ main() {
         report_metrics
         return 1
     fi
+    if [ "$RELEASE_EVIDENCE_MODE" = "true" ] && [ "${RESTORE_TARGET_VALIDATED:-}" != "true" ]; then
+        log_error "release restore evidence requires a validated provisioned target"
+        return 1
+    fi
+    [[ "$RESTORE_MIN_CLIPS" =~ ^[1-9][0-9]*$ && "$RESTORE_MIN_USERS" =~ ^[1-9][0-9]*$ ]] || {
+        log_error "restore row-count minima must be positive integers"
+        return 1
+    }
     
     # Ensure we cleanup on exit
     trap cleanup_test_database EXIT INT TERM
     
+    local recovery_start
+    recovery_start=$(date +%s)
+
     # Download latest backup
     if ! download_latest_backup; then
         log_error "Failed to download backup"
@@ -444,11 +518,31 @@ main() {
         log_error "Failed to restore backup"
         exit_code=1
     fi
+
+    if ! validate_migrations; then
+        log_error "Failed to validate restored database migrations"
+        exit_code=1
+    fi
     
     # Validate restored data
     if ! validate_restored_data; then
         log_error "Failed to validate restored data"
         exit_code=1
+    fi
+
+    if ! validate_application_smoke; then
+        exit_code=1
+    fi
+
+    local recovery_end
+    recovery_end=$(date +%s)
+    RESTORE_DURATION_SECONDS=$((recovery_end - recovery_start))
+    if [ "$RESTORE_DURATION_SECONDS" -le "$RTO_TARGET_SECONDS" ]; then
+        log_info "✓ Full recovery RTO met (${RESTORE_DURATION_SECONDS}s <= ${RTO_TARGET_SECONDS}s)"
+        RTO_MET=1
+    else
+        log_error "Full recovery RTO exceeded (${RESTORE_DURATION_SECONDS}s > ${RTO_TARGET_SECONDS}s)"
+        RTO_MET=0
     fi
     
     # Check if RTO and RPO targets were met
@@ -458,7 +552,8 @@ main() {
     fi
     
     if [ "$RPO_MET" -ne 1 ]; then
-        log_warn "RPO target not met (non-fatal)"
+        log_error "RPO target not met"
+        exit_code=1
     fi
     
     # Set drill success based on exit code

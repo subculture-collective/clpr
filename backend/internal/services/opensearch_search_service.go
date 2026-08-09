@@ -8,9 +8,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
 // OpenSearchService handles search operations using OpenSearch
@@ -47,7 +47,7 @@ func (s *OpenSearchService) Search(ctx context.Context, req *models.SearchReques
 
 	response := &models.SearchResponse{
 		Query:   req.Query,
-		Results: models.SearchResultsByType{},
+		Results: models.EmptySearchResults(),
 		Counts:  models.SearchCounts{},
 		Meta: models.SearchMeta{
 			Page:  req.Page,

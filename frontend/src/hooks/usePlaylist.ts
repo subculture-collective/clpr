@@ -155,10 +155,11 @@ const unbookmarkPlaylist = async (id: string): Promise<void> => {
 };
 
 // React Query hooks
-export const usePlaylists = (page = 1, limit = 20) => {
+export const usePlaylists = (page = 1, limit = 20, enabled = true) => {
     return useQuery({
         queryKey: ['playlists', page, limit],
         queryFn: () => fetchPlaylists(page, limit),
+        enabled,
     });
 };
 

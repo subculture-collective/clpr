@@ -23,13 +23,7 @@ function scenario(exec) {
 export const options = {
   discardResponseBodies: true,
   scenarios: {
-    feed: scenario('feed'),
-    clip_detail: scenario('clipDetail'),
-    search: scenario('search'),
-    comments: scenario('comments'),
-    auth: scenario('auth'),
-    submission: scenario('submission'),
-    moderation: scenario('moderation'),
+    release_traffic: scenario('releaseTraffic'),
     rate_limit: { executor: 'per-vu-iterations', vus: 1, iterations: 1, exec: 'rateLimit' },
   },
   thresholds: {
@@ -43,11 +37,21 @@ export const options = {
     'http_req_duration{journey:comments}': ['p(95)<500'],
     'http_req_failed{journey:auth}': ['rate<0.005'],
     'http_req_duration{journey:auth}': ['p(95)<500'],
+    'http_req_failed{journey:submission}': ['rate<0.005'],
     'http_req_duration{journey:submission}': ['p(95)<1000'],
+    'http_req_failed{journey:moderation}': ['rate<0.005'],
     'http_req_duration{journey:moderation}': ['p(95)<1000'],
     checks: ['rate>0.99'],
   },
 };
+
+const releaseJourneys = [feed, clipDetail, search, comments, auth, submission, moderation];
+
+// Keep the declared VU count global to the profile. Previously every journey
+// received its own 5/25/75-VU scenario, multiplying the intended load by seven.
+export function releaseTraffic() {
+  releaseJourneys[__ITER % releaseJourneys.length]();
+}
 
 function headers(value = token) {
   return value ? { Authorization: `Bearer ${value}` } : {};

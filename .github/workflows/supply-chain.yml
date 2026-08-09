@@ -17,7 +17,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.6'
+          cache: false
+      - name: Install pinned Gitleaks
+        run: |
+          mkdir -p "$RUNNER_TEMP/gitleaks-bin"
+          GOBIN="$RUNNER_TEMP/gitleaks-bin" go install github.com/zricethezav/gitleaks/v8@v8.28.0
+      - name: Scan history and current tree
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks-bin/gitleaks
+        run: scripts/verify-secret-history.sh
+      - name: Verify secret-scan policy remains fail-closed
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks-bin/gitleaks
+        run: scripts/test-gitleaks-policy.sh
 
   dependency-review:
     name: Dependency review

@@ -9,6 +9,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// GetEnv returns an environment variable or a local-test fallback when unset.
+func GetEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
+
 // SetupTestDB creates a test database connection pool for integration tests
 // It expects PostgreSQL to be running (e.g., via Docker Compose)
 func SetupTestDB(t *testing.T) *pgxpool.Pool {

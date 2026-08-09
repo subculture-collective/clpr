@@ -26,10 +26,10 @@ export interface SearchResponse {
 }
 
 export interface SearchResultsByType {
-  clips?: Clip[];
-  creators?: User[];
-  games?: SearchGame[];
-  tags?: Tag[];
+  clips: Clip[];
+  creators: User[];
+  games: SearchGame[];
+  tags: Tag[];
 }
 
 export interface SearchCounts {

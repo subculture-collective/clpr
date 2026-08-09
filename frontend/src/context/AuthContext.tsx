@@ -27,6 +27,11 @@ import {
 import type { User } from '../lib/auth-api';
 import type { UserProperties } from '../lib/telemetry';
 import { setUnauthorizedHandler } from '../lib/api';
+import {
+    clearAuthStorage,
+    hasAuthSessionHint,
+    markAuthSession,
+} from '../lib/auth-storage';
 
 export interface AuthContextType {
     user: User | null;
@@ -50,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const applyUserContext = useCallback((currentUser: User) => {
         setUser(currentUser);
+        markAuthSession();
         unauthorizedHandledRef.current = false;
         setSentryUser(currentUser.id, currentUser.username);
         const userProperties: UserProperties = {
@@ -89,13 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check for existing session on mount
     const checkAuth = useCallback(async () => {
         try {
-            const currentUser = await getCurrentUser();
+            const currentUser = await getCurrentUser({
+                anonymousProbe: !hasAuthSessionHint(),
+            });
             applyUserContext(currentUser);
         } catch {
             // Not authenticated or session expired
             try {
-                const { clearAuthStorage } =
-                    await import('../lib/auth-storage');
                 await clearAuthStorage();
             } catch (e) {
                 console.warn(
@@ -125,7 +131,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         unauthorizedHandledRef.current = true;
         try {
-            const { clearAuthStorage } = await import('../lib/auth-storage');
             await clearAuthStorage();
         } catch (e) {
             console.warn(
@@ -171,8 +176,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
             // Clear any persisted auth/session tokens in this browser context
             try {
-                const { clearAuthStorage } =
-                    await import('../lib/auth-storage');
                 await clearAuthStorage();
             } catch (e) {
                 // Non-fatal: ensure logout continues even if storage cleanup fails

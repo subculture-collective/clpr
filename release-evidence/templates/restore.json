@@ -1,0 +1,17 @@
+{
+  "status": "not_executed",
+  "candidate_sha": "",
+  "backend_digest": "",
+  "frontend_digest": "",
+  "crawler_digest": "",
+  "executed_at": "",
+  "evidence_url": "",
+  "owner": "",
+  "restore_passed": false,
+  "application_smoke_passed": false,
+  "rpo_target_seconds": 900,
+  "rto_target_seconds": 3600,
+  "rpo_met": false,
+  "rto_met": false,
+  "isolated_target_id": ""
+}

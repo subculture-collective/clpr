@@ -341,10 +341,38 @@ type SearchResponse struct {
 
 // SearchResultsByType groups results by type
 type SearchResultsByType struct {
-	Clips    []Clip             `json:"clips,omitempty"`
-	Creators []User             `json:"creators,omitempty"`
-	Games    []GameSearchResult `json:"games,omitempty"`
-	Tags     []Tag              `json:"tags,omitempty"`
+	Clips    []Clip             `json:"clips"`
+	Creators []User             `json:"creators"`
+	Games    []GameSearchResult `json:"games"`
+	Tags     []Tag              `json:"tags"`
+}
+
+// EmptySearchResults returns the stable wire representation for an empty
+// universal search. All collections are non-nil so JSON clients receive []
+// instead of null regardless of which search implementation served a request.
+func EmptySearchResults() SearchResultsByType {
+	return SearchResultsByType{
+		Clips:    []Clip{},
+		Creators: []User{},
+		Games:    []GameSearchResult{},
+		Tags:     []Tag{},
+	}
+}
+
+// Normalize replaces nil result collections returned by legacy providers.
+func (r *SearchResultsByType) Normalize() {
+	if r.Clips == nil {
+		r.Clips = []Clip{}
+	}
+	if r.Creators == nil {
+		r.Creators = []User{}
+	}
+	if r.Games == nil {
+		r.Games = []GameSearchResult{}
+	}
+	if r.Tags == nil {
+		r.Tags = []Tag{}
+	}
 }
 
 // SearchCounts holds counts for each result type

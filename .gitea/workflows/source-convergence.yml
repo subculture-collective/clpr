@@ -1,0 +1,71 @@
+name: Source convergence
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  converge:
+    name: Complete local-equivalent source gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      # Gitea 1.27 supports fully qualified action URLs. Keeping them explicit
+      # avoids dependence on the server's DEFAULT_ACTIONS_URL setting.
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - name: Verify Gitea Actions artifact runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_ACTIONS:-}" = true
+          test -n "${ACTIONS_RUNTIME_URL:-}"
+          test -n "${ACTIONS_RUNTIME_TOKEN:-}"
+          test -n "${ACTIONS_RESULTS_URL:-}"
+      - name: Install deterministic dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install github.com/go-task/task/v3/cmd/task@v3.45.4
+          go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
+          go install github.com/zricethezav/gitleaks/v8@v8.28.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go -C backend mod download
+          npm ci
+          npm --prefix frontend ci
+          npm --prefix frontend exec -- playwright install --with-deps chromium firefox webkit
+      - name: Run complete source convergence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/source-convergence
+          bash scripts/source-convergence.sh --all 2>&1 \
+            | tee .tmp/source-convergence/workflow.log
+      # Artifacts are produced and uploaded within this same run. This workflow
+      # intentionally does not rely on GitHub-only cross-run artifact lookup or
+      # download-artifact run-id behavior.
+      - name: Upload convergence diagnostics
+        if: always()
+        uses: https://github.com/actions/upload-artifact@v4
+        with:
+          name: source-convergence-${{ gitea.sha }}
+          path: .tmp/source-convergence
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

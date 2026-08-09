@@ -114,8 +114,13 @@ export async function handleOAuthCallback(code: string, state: string): Promise<
 /**
  * Gets the current authenticated user
  */
-export async function getCurrentUser(): Promise<User> {
-  const response = await apiClient.get<User>('/auth/me');
+export async function getCurrentUser(options: {
+  anonymousProbe?: boolean;
+} = {}): Promise<User> {
+  const response = await apiClient.get<User>(
+    '/auth/me',
+    options.anonymousProbe ? { skipAuthRefresh: true } : undefined,
+  );
   return response.data;
 }
 

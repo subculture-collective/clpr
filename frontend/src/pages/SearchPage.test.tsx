@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchPage } from './SearchPage';
@@ -9,6 +9,10 @@ import { ToastProvider } from '../context/ToastContext';
 
 vi.mock('../context/AuthContext', () => ({
     useAuth: () => ({ isAuthenticated: false }),
+}));
+
+vi.mock('../components/search/TrendingSearches', () => ({
+    TrendingSearches: () => null,
 }));
 
 vi.mock('../lib/search-api', () => {
@@ -62,6 +66,7 @@ const mockSearchResponse = {
 };
 
 beforeEach(() => {
+    queryClient.clear();
     mockedSearchApi.search.mockResolvedValue(mockSearchResponse);
 });
 
@@ -75,7 +80,7 @@ const queryClient = new QueryClient({
 });
 
 describe('SearchPage - Sort Controls', () => {
-    it('renders sort dropdown with proper theme-aware styling', () => {
+    it('renders sort dropdown with proper theme-aware styling', async () => {
         render(
             <HelmetProvider>
                 <QueryClientProvider client={queryClient}>
@@ -88,12 +93,16 @@ describe('SearchPage - Sort Controls', () => {
             </HelmetProvider>
         );
 
+        await act(async () => {
+            await Promise.resolve();
+        });
+
         // Note: The sort dropdown only appears when there's a search query
         // This test verifies component renders without errors
         expect(screen.getByText(/Enter a search query/i)).toBeInTheDocument();
     });
 
-    it('sort dropdown has focus-visible styles for accessibility', () => {
+    it('sort dropdown has focus-visible styles for accessibility', async () => {
         // Create a wrapper with search query
         const wrapper = ({ children }: { children: React.ReactNode }) => (
             <HelmetProvider>
@@ -108,6 +117,7 @@ describe('SearchPage - Sort Controls', () => {
         );
 
         render(<SearchPage />, { wrapper }); // Wait for the component to render with query
+        await screen.findByTestId('empty-state-message');
         // The sort dropdown should have proper accessibility classes
         const sortElements = document.querySelectorAll('select');
 
@@ -122,5 +132,22 @@ describe('SearchPage - Sort Controls', () => {
             );
             expect(sortSelect.className).toContain('text-foreground');
         }
+    });
+
+    it('renders an empty search response without crashing', async () => {
+        render(
+            <HelmetProvider>
+                <QueryClientProvider client={queryClient}>
+                    <ToastProvider>
+                        <MemoryRouter initialEntries={['/search?q=test']}>
+                            <SearchPage />
+                        </MemoryRouter>
+                    </ToastProvider>
+                </QueryClientProvider>
+            </HelmetProvider>,
+        );
+
+        expect((await screen.findAllByTestId('empty-state')).length).toBeGreaterThan(0);
+        expect(screen.getByTestId('search-results')).toBeVisible();
     });
 });

@@ -1,0 +1,19 @@
+{
+  "status": "not_executed",
+  "candidate_sha": "",
+  "backend_digest": "",
+  "frontend_digest": "",
+  "crawler_digest": "",
+  "executed_at": "",
+  "evidence_url": "",
+  "owner": "",
+  "baseline_passed": false,
+  "stress_passed": false,
+  "soak_passed": false,
+  "thresholds_passed": false,
+  "profiles": {
+    "baseline": "5 VUs / 1m",
+    "stress": "25 then 75 VUs, followed by recovery",
+    "soak": "10 VUs / 30m"
+  }
+}

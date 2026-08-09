@@ -73,9 +73,13 @@ describe('AppealsQueue', () => {
             render(<AppealsQueue />);
 
             expect(screen.getByText('Appeals Queue')).toBeInTheDocument();
+            await screen.findByText('user_one');
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(moderationApi.getAdminAppeals).mockImplementation(
+                () => new Promise(() => {})
+            );
             const { container } = render(<AppealsQueue />);
 
             const spinner = container.querySelector('.animate-spin');
@@ -92,7 +96,7 @@ describe('AppealsQueue', () => {
             expect(screen.getByText('user_two')).toBeInTheDocument();
         });
 
-        it('displays status filter buttons', () => {
+        it('displays status filter buttons', async () => {
             render(<AppealsQueue />);
 
             expect(
@@ -104,6 +108,7 @@ describe('AppealsQueue', () => {
             expect(
                 screen.getByRole('button', { name: 'Rejected' })
             ).toBeInTheDocument();
+            await screen.findByText('user_one');
         });
 
         it('displays Review button for pending appeals', async () => {
@@ -406,12 +411,13 @@ describe('AppealsQueue', () => {
     });
 
     describe('Accessibility', () => {
-        it('has proper heading structure', () => {
+        it('has proper heading structure', async () => {
             render(<AppealsQueue />);
 
             expect(
                 screen.getByRole('heading', { name: 'Appeals Queue' })
             ).toBeInTheDocument();
+            await screen.findByText('user_one');
         });
 
         it('displays appeal information in accessible format', async () => {

@@ -380,7 +380,9 @@ describe('AppealResolutionModal', () => {
       });
 
       // Advance timers to trigger the delayed onClose and onSuccess
-      await vi.advanceTimersByTimeAsync(2000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
 
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalled();

@@ -42,8 +42,6 @@ info:
     url: https://git.subcult.tv/subculture-collective/clpr/blob/main/LICENSE
 
 servers:
-  - url: http://localhost:8080
-    description: Local development server
   - url: https://staging.clpr.tv
     description: Staging environment
   - url: https://api.clpr.tv
@@ -153,6 +151,8 @@ paths:
             application/xml:
               schema:
                 type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
   
   /robots.txt:
     get:
@@ -168,6 +168,8 @@ paths:
             text/plain:
               schema:
                 type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # ========================================
   # Health & Monitoring
@@ -207,6 +209,8 @@ paths:
                   status:
                     type: string
                     const: not ready
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /health/live:
     get:
@@ -226,6 +230,8 @@ paths:
                   status:
                     type: string
                     example: ok
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /health/stats:
     get:
@@ -253,6 +259,8 @@ paths:
                         type: integer
                       idle:
                         type: integer
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /health/cache:
     get:
@@ -268,6 +276,8 @@ paths:
             application/json:
               schema:
                 type: object
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /health/cache/check:
     get:
@@ -293,6 +303,8 @@ paths:
                     const: ok
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /health/webhooks:
     get:
@@ -308,6 +320,8 @@ paths:
             application/json:
               schema:
                 type: object
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   # ========================================
   # Debug Endpoints (development only)
@@ -326,6 +340,8 @@ paths:
             text/plain:
               schema:
                 type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # ========================================
   # API v1
@@ -348,6 +364,8 @@ paths:
                   status:
                     type: string
                     example: ok
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /api/v1/ping:
     get:
@@ -367,6 +385,8 @@ paths:
                   message:
                     type: string
                     example: pong
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /api/v1/config:
     get:
@@ -387,6 +407,8 @@ paths:
                     type: object
                   limits:
                     type: object
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   # ========================================
   # Logging
@@ -1520,6 +1542,8 @@ paths:
                       $ref: '#/components/schemas/Clip'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   # ========================================
   # Comments
@@ -1698,6 +1722,8 @@ paths:
                       $ref: '#/components/schemas/Tag'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /api/v1/tags/search:
     get:
@@ -1806,8 +1832,8 @@ paths:
           in: query
           schema:
             type: string
-            enum: [clips, users, tags]
-            default: clips
+            enum: [clips, creators, games, tags, all]
+            default: all
       responses:
         '200':
           description: Search results
@@ -1815,16 +1841,55 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [query, results, counts, meta]
                 properties:
+                  query:
+                    type: string
                   results:
-                    type: array
-                    items:
-                      oneOf:
-                        - $ref: '#/components/schemas/Clip'
-                        - $ref: '#/components/schemas/User'
-                        - $ref: '#/components/schemas/Tag'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    type: object
+                    required: [clips, creators, games, tags]
+                    properties:
+                      clips:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Clip'
+                      creators:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      games:
+                        type: array
+                        items:
+                          type: object
+                          required: [id, name, clip_count]
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            clip_count:
+                              type: integer
+                              minimum: 0
+                      tags:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Tag'
+                  counts:
+                    type: object
+                    required: [clips, creators, games, tags]
+                    properties:
+                      clips: {type: integer, minimum: 0}
+                      creators: {type: integer, minimum: 0}
+                      games: {type: integer, minimum: 0}
+                      tags: {type: integer, minimum: 0}
+                  meta:
+                    type: object
+                    required: [page, limit, total_items, total_pages]
+                    properties:
+                      page: {type: integer, minimum: 1}
+                      limit: {type: integer, minimum: 1, maximum: 100}
+                      total_items: {type: integer, minimum: 0}
+                      total_pages: {type: integer, minimum: 0}
         '400':
           $ref: '#/components/responses/BadRequest'
         '429':
@@ -2419,15 +2484,13 @@ paths:
                   value:
                     bans:
                       - id: "98765432-e89b-12d3-a456-426614174001"
-                        channelId: "123e4567-e89b-12d3-a456-426614174000"
-                        userId: "user-uuid-here"
-                        bannedBy: "moderator-uuid-here"
+                        user_id: "456e4567-e89b-12d3-a456-426614174002"
+                        banned_by_id: "789e4567-e89b-12d3-a456-426614174003"
                         reason: "Violation of community guidelines"
-                        bannedAt: "2024-01-15T10:30:00Z"
-                        expiresAt: null
-                        isPermanent: true
-                        username: "banneduser123"
-                        bannedByUsername: "moderator456"
+                        duration_hours: null
+                        expires_at: null
+                        is_permanent: true
+                        created_at: "2024-01-15T10:30:00Z"
                     total: 150
                     limit: 20
                     offset: 0
@@ -2523,13 +2586,13 @@ paths:
                 summary: Create permanent ban
                 value:
                   channelId: "123e4567-e89b-12d3-a456-426614174000"
-                  userId: "user-uuid-to-ban"
+                  userId: "456e4567-e89b-12d3-a456-426614174002"
                   reason: "Violation of community guidelines"
               banWithReason:
                 summary: Ban with detailed reason
                 value:
                   channelId: "123e4567-e89b-12d3-a456-426614174000"
-                  userId: "user-uuid-to-ban"
+                  userId: "456e4567-e89b-12d3-a456-426614174002"
                   reason: "Repeated harassment of community members. Multiple warnings issued."
       responses:
         '201':
@@ -2542,14 +2605,14 @@ paths:
                 success:
                   summary: Ban created
                   value:
-                    id: "ban-uuid-here"
-                    channelId: "123e4567-e89b-12d3-a456-426614174000"
-                    userId: "user-uuid-to-ban"
-                    bannedBy: "moderator-uuid-here"
+                    id: "98765432-e89b-12d3-a456-426614174001"
+                    user_id: "456e4567-e89b-12d3-a456-426614174002"
+                    banned_by_id: "789e4567-e89b-12d3-a456-426614174003"
                     reason: "Violation of community guidelines"
-                    bannedAt: "2024-01-15T10:30:00Z"
-                    expiresAt: null
-                    isPermanent: true
+                    duration_hours: null
+                    expires_at: null
+                    is_permanent: true
+                    created_at: "2024-01-15T10:30:00Z"
         '400':
           description: Bad request - Invalid parameters or cannot ban owner
           content:
@@ -2777,15 +2840,12 @@ paths:
                   summary: List of moderators
                   value:
                     moderators:
-                      - id: "member-uuid-here"
-                        userId: "user-uuid-here"
-                        channelId: "123e4567-e89b-12d3-a456-426614174000"
-                        role: "moderator"
-                        addedAt: "2024-01-10T09:00:00Z"
-                        addedBy: "owner-uuid-here"
-                        username: "mod_user123"
-                        displayName: "Mod User"
-                        avatarUrl: "https://example.com/avatar.jpg"
+                      - id: "98765432-e89b-12d3-a456-426614174001"
+                        user_id: "456e4567-e89b-12d3-a456-426614174002"
+                        permissions: ["ban_users", "delete_messages"]
+                        scope: "channel"
+                        channels: ["123e4567-e89b-12d3-a456-426614174000"]
+                        created_at: "2024-01-10T09:00:00Z"
                     total: 5
                     limit: 20
                     offset: 0
@@ -2861,13 +2921,13 @@ paths:
               addModerator:
                 summary: Add moderator
                 value:
-                  userId: "user-uuid-to-make-moderator"
+                  userId: "456e4567-e89b-12d3-a456-426614174002"
                   channelId: "123e4567-e89b-12d3-a456-426614174000"
                   reason: "Trusted community member"
               addModeratorNoReason:
                 summary: Add moderator without reason
                 value:
-                  userId: "user-uuid-to-make-moderator"
+                  userId: "456e4567-e89b-12d3-a456-426614174002"
                   channelId: "123e4567-e89b-12d3-a456-426614174000"
       responses:
         '201':
@@ -2893,12 +2953,12 @@ paths:
                   value:
                     success: true
                     moderator:
-                      id: "member-uuid-here"
-                      userId: "user-uuid-to-make-moderator"
-                      channelId: "123e4567-e89b-12d3-a456-426614174000"
-                      role: "moderator"
-                      addedAt: "2024-01-15T10:30:00Z"
-                      addedBy: "owner-uuid-here"
+                      id: "98765432-e89b-12d3-a456-426614174001"
+                      user_id: "456e4567-e89b-12d3-a456-426614174002"
+                      permissions: ["ban_users", "delete_messages"]
+                      scope: "channel"
+                      channels: ["123e4567-e89b-12d3-a456-426614174000"]
+                      created_at: "2024-01-15T10:30:00Z"
                     message: "Moderator added successfully"
         '400':
           description: Bad request - Invalid UUID or user already admin

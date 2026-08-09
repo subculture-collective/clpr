@@ -1,0 +1,63 @@
+name: Protected release evidence
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Release evidence gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CANDIDATE_MANIFEST_URL: ${{ secrets.RELEASE_CANDIDATE_MANIFEST_URL }}
+      EVIDENCE_BASE_URL: ${{ secrets.RELEASE_EVIDENCE_BASE_URL }}
+      EVIDENCE_TOKEN: ${{ secrets.RELEASE_EVIDENCE_TOKEN }}
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Fetch protected candidate and evidence objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$CANDIDATE_MANIFEST_URL" "$EVIDENCE_BASE_URL" <<'PY'
+          import sys
+          from urllib.parse import urlparse
+          for value in sys.argv[1:]:
+              parsed = urlparse(value)
+              if parsed.scheme != "https" or not parsed.hostname:
+                  raise SystemExit("release evidence store URLs must use HTTPS")
+          PY
+          test -n "$EVIDENCE_TOKEN"
+          mkdir -p .tmp/protected-evidence/operator
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            -H "Authorization: Bearer $EVIDENCE_TOKEN" \
+            "$CANDIDATE_MANIFEST_URL" \
+            -o .tmp/protected-evidence/candidate-manifest.json
+          for file in hosted-ci security-operations stripe-test-mode load-and-soak restore rollback; do
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              -H "Authorization: Bearer $EVIDENCE_TOKEN" \
+              "${EVIDENCE_BASE_URL%/}/$file.json" \
+              -o ".tmp/protected-evidence/operator/$file.json"
+          done
+      - name: Verify immutable candidate evidence
+        shell: bash
+        env:
+          RELEASE_CANDIDATE_MANIFEST: .tmp/protected-evidence/candidate-manifest.json
+          RELEASE_EVIDENCE_DIR: .tmp/protected-evidence/operator
+          RELEASE_EXPECTED_CANDIDATE_SHA: ${{ gitea.sha }}
+        run: |
+          set -euo pipefail
+          node --test scripts/tests/verify-release-evidence.test.js
+          node scripts/verify-release-evidence.js 2>&1 | tee .tmp/release-evidence-verification.txt
+      - name: Upload verification record only
+        if: always()
+        uses: https://github.com/actions/upload-artifact@v4
+        with:
+          name: release-evidence-verification-${{ gitea.sha }}
+          path: .tmp/release-evidence-verification.txt
+          if-no-files-found: error
+          retention-days: 90

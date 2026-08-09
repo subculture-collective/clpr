@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useSubmissionDraft } from './useSubmissionDraft';
 import type { SubmitClipRequest } from '../types/submission';
 import type { Tag } from '../types/tag';
+import { allowTestConsole } from '../test/setup';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -233,6 +234,7 @@ describe('useSubmissionDraft', () => {
     });
 
     it('should handle localStorage errors gracefully', () => {
+        allowTestConsole('error', /Failed to save draft:.*Storage quota exceeded/);
         const { result } = renderHook(() => useSubmissionDraft());
 
         // Mock localStorage.setItem to throw an error
@@ -261,6 +263,7 @@ describe('useSubmissionDraft', () => {
     });
 
     it('should handle corrupt draft data gracefully', () => {
+        allowTestConsole('error', /Failed to load draft:.*not valid json/, 2);
         // Put corrupt data in localStorage
         localStorageMock.setItem('submission_draft', 'not valid json');
 

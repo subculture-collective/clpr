@@ -1,0 +1,13 @@
+# Historical-only fixtures. Full commit fingerprints intentionally do not
+# suppress a similar finding introduced by a later commit.
+b1082e761fa3e09aedbcf6b129b371c750744f23:docs/testing/ENABLING_PREMIUM_SUBSCRIPTION_TESTS.md:stripe-access-token:110
+b1082e761fa3e09aedbcf6b129b371c750744f23:docs/testing/stripe-ci-secrets.md:stripe-access-token:34
+4a382cc83ca62e139bb276971204e9759c9372c2:docs/testing/ENABLING_PREMIUM_SUBSCRIPTION_TESTS.md:stripe-access-token:99
+82ccc39ff5d516d96ade425e7ccea0af6a8fc545:infrastructure/k8s/external-secrets/README.md:private-key:130
+f132f9228ef8d36a6bf013429ede9a099ede219f:docs/testing/STRIPE_CI_SECRETS.md:stripe-access-token:23
+674fc8a7a2c9f31951879a4eb3511f73a966b6fd:backend/internal/middleware/auth_middleware_websocket_test.go:generic-api-key:137
+a5063080ec144dff329f9d422bae55f384b91469:backend/k8s/secret-backend.yaml:private-key:15
+839ffeb0378a7946b08b10efece873696cb6e166:docker-compose.caddy.yml:twitch-api-token:29
+839ffeb0378a7946b08b10efece873696cb6e166:docker-compose.caddy.yml:twitch-api-token:30
+32086c6b4b7e0a62c5a0254745d010a5c6554ea1:backend/docs/authentication.md:private-key:55
+215f6b6371a6968ba6968068c9d04c1ce2fc8cb6:docs/API.md:generic-api-key:106

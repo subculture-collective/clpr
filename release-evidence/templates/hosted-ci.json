@@ -1,0 +1,13 @@
+{
+  "status": "not_executed",
+  "candidate_sha": "",
+  "backend_digest": "",
+  "frontend_digest": "",
+  "crawler_digest": "",
+  "executed_at": "",
+  "evidence_url": "",
+  "owner": "",
+  "required_workflow_passed": false,
+  "branch_protection_verified": false,
+  "webkit_passed": false
+}

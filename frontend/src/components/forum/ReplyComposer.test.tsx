@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReplyComposer } from './ReplyComposer';
+import { allowTestConsole } from '../../test/setup';
 
 describe('ReplyComposer', () => {
   const mockOnSubmit = vi.fn();
@@ -117,6 +118,7 @@ describe('ReplyComposer', () => {
   });
 
   it('announces submission errors and associates them with the textarea', async () => {
+    allowTestConsole('error', /Failed to post reply:.*network unavailable/);
     mockOnSubmit.mockRejectedValue(new Error('network unavailable'));
     render(<ReplyComposer onSubmit={mockOnSubmit} />);
 

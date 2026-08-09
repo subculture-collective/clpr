@@ -1,6 +1,13 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Skip automatic refresh for intentional anonymous session probes. */
+    skipAuthRefresh?: boolean;
+  }
+}
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
 
@@ -90,6 +97,10 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+
+    if (isUnauthorizedError(error) && originalRequest?.skipAuthRefresh) {
+      return Promise.reject(error);
+    }
 
     if (isUnauthorizedError(error) && originalRequest?._retry) {
       notifyUnauthorized(error);

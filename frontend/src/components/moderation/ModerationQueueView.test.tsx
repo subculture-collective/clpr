@@ -90,9 +90,16 @@ describe('ModerationQueueView', () => {
             expect(
                 screen.getByText('Review flagged clips'),
             ).toBeInTheDocument();
+            await screen.findByText('clip-1');
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(moderationApi.getModerationQueue).mockImplementation(
+                () => new Promise(() => {}),
+            );
+            vi.mocked(moderationApi.getModerationStats).mockImplementation(
+                () => new Promise(() => {}),
+            );
             renderWithRouter(
                 <ModerationQueueView
                     contentType='clip'
@@ -489,6 +496,7 @@ describe('ModerationQueueView', () => {
             expect(
                 screen.getByRole('heading', { name: 'Clip Moderation' }),
             ).toBeInTheDocument();
+            await screen.findByText('clip-1');
         });
 
         it('uses checkboxes for item selection', async () => {

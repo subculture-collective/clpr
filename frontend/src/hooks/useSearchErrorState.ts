@@ -255,12 +255,11 @@ export function useSearchErrorState(): UseSearchErrorStateReturn {
     // Store the search function for potential cancellation
     pendingRetryRef.current = searchFn;
 
-    // Use functional update to get current retry count
-    let currentRetryCount = 0;
+    // Read the count from the current render. A value assigned inside a state
+    // updater is not available synchronously under concurrent React rendering.
+    const currentRetryCount = errorState.retryCount;
 
     setErrorState(prev => {
-      currentRetryCount = prev.retryCount;
-
       // Check if max retries exceeded
       if (currentRetryCount >= MAX_RETRY_ATTEMPTS) {
         return {
@@ -320,7 +319,7 @@ export function useSearchErrorState(): UseSearchErrorStateReturn {
       // Clear pending retry
       pendingRetryRef.current = null;
     }
-  }, [errorState.isCircuitOpen, handleSearchError, handleSearchSuccess]);
+  }, [errorState.isCircuitOpen, errorState.retryCount, handleSearchError, handleSearchSuccess]);
 
   /**
    * Cancel ongoing retry

@@ -221,6 +221,47 @@ services:
         profiles:
             - green # Only starts when explicitly requested
 
+    # Exactly one crawler is shared by both application slots. It is reconciled
+    # only after traffic promotion so blue and green never scrape concurrently.
+    crawler:
+        image: ghcr.io/subculture-collective/clpr/crawler@${CRAWLER_DIGEST:?CRAWLER_DIGEST is required}
+        container_name: clpr-crawler
+        restart: unless-stopped
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        user: '10001:10001'
+        environment:
+            - ENVIRONMENT=production
+            - DB_HOST=postgres
+            - DB_PORT=5432
+            - DB_USER=${POSTGRES_USER:-clpr}
+            - DB_PASSWORD=${POSTGRES_PASSWORD}
+            - DB_NAME=${POSTGRES_DB:-clpr_db}
+            - DB_SSLMODE=${DB_SSLMODE:-verify-full}
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - REDIS_DB=0
+            - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:?TWITCH_CLIENT_ID is required}
+            - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:?TWITCH_CLIENT_SECRET is required}
+            - SCRAPE_INTERVAL=${SCRAPE_INTERVAL:-1800}
+            - SCRAPE_MIN_VIEWS=${SCRAPE_MIN_VIEWS:-50}
+            - SCRAPE_MAX_AGE_DAYS=${SCRAPE_MAX_AGE_DAYS:-7}
+            - SCRAPE_BATCH_SIZE=${SCRAPE_BATCH_SIZE:-50}
+            - SCRAPE_BROADCASTERS=${SCRAPE_BROADCASTERS:-}
+        networks:
+            - clpr-network
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=64m,uid=10001,gid=10001
+        cap_drop: [ALL]
+        security_opt: [no-new-privileges:true]
+        pids_limit: 128
+        mem_limit: 256m
+        cpus: 0.5
+
     # Shared Services
     postgres:
         build:
@@ -250,7 +291,7 @@ services:
             - clpr-network
 
     redis:
-        image: redis:7-alpine
+        image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
         container_name: clpr-redis
         restart: unless-stopped
         command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
@@ -267,7 +308,7 @@ services:
 
     # Caddy reverse proxy for traffic switching
     caddy:
-        image: caddy:2-alpine
+        image: caddy:2-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
         container_name: clpr-caddy
         restart: unless-stopped
         depends_on:
@@ -276,16 +317,22 @@ services:
         ports:
             - '80:80'
             - '443:443'
-            - '2019:2019' # Caddy admin API
         volumes:
-            - ./Caddyfile:/etc/caddy/Caddyfile:ro
+            - ${CLPR_RUNTIME_DIR:?CLPR_RUNTIME_DIR is required}:/etc/caddy/runtime:ro
             - caddy_data:/data
             - caddy_config:/config
             - caddy_logs:/var/log/caddy
-        environment:
-            - ACTIVE_ENV=${ACTIVE_ENV:-blue}
+        command: ['caddy', 'run', '--config', '/etc/caddy/runtime/Caddyfile']
         networks:
             - clpr-network
+        read_only: true
+        tmpfs:
+            - /tmp:rw,noexec,nosuid,size=32m
+        cap_drop: [ALL]
+        security_opt: [no-new-privileges:true]
+        pids_limit: 128
+        mem_limit: 256m
+        cpus: 0.5
         healthcheck:
             test:
                 [

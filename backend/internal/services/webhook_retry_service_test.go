@@ -44,13 +44,15 @@ func TestCalculateNextRetry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			nextRetry := service.calculateNextRetry(tt.retryCount)
-			delay := time.Until(nextRetry)
+			for range 100 {
+				delay := calculateRetryDelay(tt.retryCount)
 
-			assert.True(t, delay >= tt.minDelay,
-				"Expected delay >= %v, got %v", tt.minDelay, delay)
-			assert.True(t, delay <= tt.maxDelay,
-				"Expected delay <= %v, got %v", tt.maxDelay, delay)
+				assert.GreaterOrEqual(t, delay, tt.minDelay)
+				assert.LessOrEqual(t, delay, tt.maxDelay)
+			}
+
+			nextRetry := service.calculateNextRetry(tt.retryCount)
+			assert.WithinDuration(t, time.Now().Add(calculateRetryDelay(tt.retryCount)), nextRetry, tt.maxDelay-tt.minDelay)
 		})
 	}
 }

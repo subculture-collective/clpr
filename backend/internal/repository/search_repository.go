@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // SearchRepository handles search operations
@@ -25,7 +25,7 @@ func NewSearchRepository(db *pgxpool.Pool) *SearchRepository {
 func (r *SearchRepository) Search(ctx context.Context, req *models.SearchRequest) (*models.SearchResponse, error) {
 	response := &models.SearchResponse{
 		Query:   req.Query,
-		Results: models.SearchResultsByType{},
+		Results: models.EmptySearchResults(),
 		Counts:  models.SearchCounts{},
 		Meta: models.SearchMeta{
 			Page:  req.Page,

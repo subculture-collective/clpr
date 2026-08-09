@@ -26,21 +26,31 @@ ENV VITE_BASE_URL=${VITE_BASE_URL}
 RUN rm -f .env .env.local
 
 # Build the application (Vite will use .env.production automatically)
-RUN npm run build
+RUN npm run routes:check && npm run routes:nginx && npm run build
 
 # Production stage
 FROM nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
 
+ARG OCI_REVISION=unknown
+ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
+LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
+      org.opencontainers.image.source="${OCI_SOURCE}"
+
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/edge-routes.conf /etc/nginx/edge-routes.conf
 
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Preserve the favicon asset's canonical source while also serving the
+# conventional root URL expected by browsers and crawlers.
+RUN cp /usr/share/nginx/html/favicon_io/favicon.ico /usr/share/nginx/html/favicon.ico
+
 # Apply security updates available for the pinned base snapshot.
 RUN apk upgrade --no-cache
 
-USER nginx
+USER 101:101
 
 # Expose port
 EXPOSE 8080

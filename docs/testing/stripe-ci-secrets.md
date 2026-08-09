@@ -31,7 +31,7 @@ Go to: `Settings → Secrets and variables → Actions → New repository secret
 - **Description**: Stripe secret key for test mode (backend)
 - **Format**: Starts with `sk_test_`
 - **Where to find**: Stripe Dashboard → Developers → API keys → Test mode
-- **Example**: `sk_test_51A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6`
+- **Example**: `sk_test_<test-key-from-dashboard>`
 - **⚠️ IMPORTANT**: This is sensitive. Never commit or expose.
 
 #### 3. STRIPE_TEST_WEBHOOK_SECRET

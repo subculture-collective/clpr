@@ -8,6 +8,9 @@
     "build": "vite build && npm run bundle:check",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
     "boundaries:check": "node scripts/check-ui-boundaries.mjs",
+    "routes:check": "node scripts/generate-edge-routes.mjs --check",
+    "routes:manifest": "node scripts/generate-edge-routes.mjs --write-manifest",
+    "routes:nginx": "node scripts/generate-edge-routes.mjs --nginx-output edge-routes.conf",
     "build:analyze": "vite build --mode analyze",
     "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",
@@ -19,6 +22,7 @@
     "test:e2e:list": "playwright test --list",
     "test:e2e:mocked": "playwright test --project=mocked-chromium",
     "test:e2e:real": "playwright test --project=real-chromium --project=real-firefox --project=real-webkit",
+    "test:e2e:candidate": "playwright test --config=playwright.candidate.config.ts",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
@@ -63,7 +67,7 @@
     "@vitest/ui": "^4.0.7",
     "autoprefixer": "^10.4.21",
     "axe-core": "^4.11.0",
-    "baseline-browser-mapping": "^2.9.11",
+    "baseline-browser-mapping": "^2.11.13",
     "esbuild": "^0.25.12",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",

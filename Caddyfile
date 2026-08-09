@@ -38,6 +38,7 @@ clpr.tv {
         X-Frame-Options "DENY"
         X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
 
         Content-Security-Policy "default-src 'self'; script-src 'self' https://embed.twitch.tv https://www.googletagmanager.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://static-cdn.jtvnw.net https://*.twitchcdn.net https://*.twitch.tv https://api.dicebear.com https://us-assets.i.posthog.com; media-src 'self' blob: https://clips-media-assets2.twitch.tv https://clips.twitch.tv https://static.twitchcdn.net; frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://checkout.stripe.com; connect-src 'self' wss: https://api.twitch.tv https://gql.twitch.tv https://*.posthog.com https://*.i.posthog.com https://*.ingest.sentry.io https://www.google-analytics.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests"
 
@@ -59,7 +60,7 @@ clpr.tv {
     }
 
     @manifest {
-        path /manifest.json /site.webmanifest
+        path /manifest.json /manifest.webmanifest /site.webmanifest
     }
 
     @seo {
@@ -125,6 +126,28 @@ clpr.tv {
         reverse_proxy clpr-backend-blue:8080
         # Switch to green:
         # reverse_proxy clpr-backend-green:8080
+    }
+
+    # Readiness is distinct from liveness and verifies required dependencies.
+    handle /health/ready {
+        reverse_proxy clpr-backend-blue:8080
+        # Switch to green:
+        # reverse_proxy clpr-backend-green:8080
+    }
+
+    # Backwards-compatible readiness alias. Keep a single canonical health URL.
+    handle /ready {
+        redir * /health/ready 308
+    }
+
+    # Standards-based web app manifest alias. The frontend image owns the
+    # canonical manifest.json payload so the two URLs cannot drift.
+    handle /manifest.webmanifest {
+        rewrite * /manifest.json
+        header Content-Type "application/manifest+json"
+        reverse_proxy clpr-frontend-blue:8080
+        # Switch to green:
+        # reverse_proxy clpr-frontend-green:8080
     }
 
     # WebSocket support

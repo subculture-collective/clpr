@@ -1,0 +1,147 @@
+name: Immutable production candidate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  candidate:
+    name: Build, scan, sign, and publish immutable candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      OCI_SOURCE: https://git.subcult.tv/subculture-collective/clpr
+      REGISTRY_ROOT: ghcr.io/subculture-collective/clpr
+      TRIVY_IMAGE: aquasec/trivy:0.69.2@sha256:3d1f862cb6c4fe13c1506f96f816096030d8d5ccdb2380a3069f7bf07daa86aa
+      SYFT_IMAGE: anchore/syft:v1.30.0@sha256:bd5357d2cd087f03af748dac24df48bfbc1723080d78f75f69aca1f2d429060e
+      GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - uses: https://github.com/sigstore/cosign-installer@v3.8.2
+        with:
+          cosign-release: v2.4.3
+      - name: Install deterministic gate dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install github.com/go-task/task/v3/cmd/task@v3.45.4
+          go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
+          go install github.com/zricethezav/gitleaks/v8@v8.28.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go -C backend mod download
+          npm ci
+          npm --prefix frontend ci
+          npm --prefix frontend exec -- playwright install --with-deps chromium firefox webkit
+      - name: Converge candidate source before image generation
+        shell: bash
+        run: >-
+          bash scripts/source-convergence.sh
+          --phase contract --phase backend --phase frontend
+          --phase api-docs --phase docs --phase secrets
+          --phase browser --phase contracts
+      - name: Authenticate to GHCR
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GHCR_USERNAME"
+          test -n "$GHCR_TOKEN"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+      - name: Build each image once, scan, SBOM, publish, and sign
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate_sha="$(git rev-parse HEAD)"
+          test "$(git status --porcelain=v1 --untracked-files=all)" = ''
+          test "$candidate_sha" = "${GITEA_SHA:-${GITHUB_SHA:-}}"
+          test -n "$COSIGN_PRIVATE_KEY"
+          test -n "$COSIGN_PUBLIC_KEY"
+          evidence_dir="$PWD/.tmp/release-candidate"
+          mkdir -p "$evidence_dir/trivy-cache"
+
+          build_candidate() {
+            name="$1"
+            context="$2"
+            dockerfile="$3"
+            expected_user="$4"
+            image="$REGISTRY_ROOT/$name:candidate-$candidate_sha"
+
+            docker build \
+              --build-arg "OCI_REVISION=$candidate_sha" \
+              --build-arg "OCI_SOURCE=$OCI_SOURCE" \
+              --file "$dockerfile" --tag "$image" "$context"
+            test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")" = "$candidate_sha"
+            test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.source"}}' "$image")" = "$OCI_SOURCE"
+            test "$(docker image inspect --format '{{.Config.User}}' "$image")" = "$expected_user"
+
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$evidence_dir/trivy-cache:/root/.cache/trivy" \
+              -v "$evidence_dir:/evidence" \
+              "$TRIVY_IMAGE" image --scanners vuln --ignore-unfixed \
+              --severity HIGH,CRITICAL --exit-code 1 --format json \
+              --output "/evidence/$name-trivy.json" "$image"
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$evidence_dir:/evidence" \
+              "$SYFT_IMAGE" "docker:$image" -o "spdx-json=/evidence/$name.spdx.json"
+
+            docker push "$image"
+            repository_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")"
+            digest="${repository_digest##*@}"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            immutable_ref="$REGISTRY_ROOT/$name@$digest"
+            cosign sign --yes --key env://COSIGN_PRIVATE_KEY "$immutable_ref"
+            cosign verify --key env://COSIGN_PUBLIC_KEY "$immutable_ref" >/dev/null
+            cosign sign-blob --yes --key env://COSIGN_PRIVATE_KEY \
+              --bundle "$evidence_dir/$name.spdx.sigstore.json" \
+              "$evidence_dir/$name.spdx.json"
+            printf -v "${name}_digest" '%s' "$digest"
+          }
+
+          build_candidate backend backend backend/Dockerfile 10001:10001
+          build_candidate crawler backend backend/Dockerfile.crawler 10001:10001
+          build_candidate frontend frontend frontend/Dockerfile 101:101
+
+          built_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python3 - "$evidence_dir/candidate-manifest.json" "$candidate_sha" \
+            "$backend_digest" "$frontend_digest" "$crawler_digest" "$built_at" <<'PY'
+          import json
+          import pathlib
+          import sys
+          path, sha, backend, frontend, crawler, built_at = sys.argv[1:]
+          pathlib.Path(path).write_text(json.dumps({
+              "schema_version": 1,
+              "candidate_sha": sha,
+              "backend_digest": backend,
+              "frontend_digest": frontend,
+              "crawler_digest": crawler,
+              "built_at": built_at,
+          }, indent=2) + "\n")
+          PY
+          test "$(git rev-parse HEAD)" = "$candidate_sha"
+          test "$(git status --porcelain=v1 --untracked-files=all)" = ''
+      - name: Upload immutable candidate manifest and supply-chain records
+        uses: https://github.com/actions/upload-artifact@v4
+        with:
+          name: release-candidate-manifest
+          path: .tmp/release-candidate
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90

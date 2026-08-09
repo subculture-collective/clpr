@@ -12,7 +12,7 @@
     "docs:assets": "node scripts/check-unused-assets.js",
     "docs:inventory": "node scripts/generate-doc-inventory.js",
     "docs:check": "npm-run-all -l -s docs:lint docs:links:local docs:anchors docs:orphans docs:assets",
-    "openapi:lint": "redocly lint docs/openapi/openapi.yaml",
+    "openapi:lint": "redocly lint docs/openapi/openapi.yaml --format=json --max-problems=1000 > /tmp/clpr-redocly-lint.json && node scripts/verify-openapi-lint-result.js /tmp/clpr-redocly-lint.json",
     "openapi:bundle": "redocly bundle docs/openapi/openapi.yaml -o docs/openapi/openapi-bundled.yaml",
     "openapi:build": "redocly build-docs docs/openapi/openapi.yaml -o docs/openapi/api-docs.html",
     "openapi:preview": "redocly preview-docs docs/openapi/openapi.yaml",

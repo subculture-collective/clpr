@@ -1,0 +1,107 @@
+name: Authoritative release gates
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security:
+    name: Secret history gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-go@v5
+        with:
+          go-version: '1.25.6'
+          cache: false
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pinned Gitleaks
+        run: go install github.com/zricethezav/gitleaks/v8@v8.28.0
+      - name: Scan history and current tree
+        run: bash scripts/source-convergence.sh --phase secrets
+
+  documentation:
+    name: Documentation and OpenAPI gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: go -C backend mod download
+      - run: bash scripts/source-convergence.sh --phase api-docs --phase docs
+
+  browser:
+    name: Browser gate (Chromium, Firefox, WebKit)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: https://github.com/actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install deterministic dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
+          go install github.com/go-task/task/v3/cmd/task@v3.45.4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          npm --prefix frontend ci
+          npm --prefix frontend exec -- playwright install --with-deps chromium firefox webkit
+      - run: bash scripts/source-convergence.sh --phase browser
+      - name: Upload browser diagnostics
+        if: always()
+        uses: https://github.com/actions/upload-artifact@v4
+        with:
+          name: gitea-browser-${{ gitea.sha }}
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            .tmp/backend-e2e.log
+            .tmp/release-critical-tests.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  image-security:
+    name: Image scan and SBOM gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: bash scripts/source-convergence.sh --phase images
+      - name: Upload image security evidence
+        if: always()
+        uses: https://github.com/actions/upload-artifact@v4
+        with:
+          name: gitea-image-security-${{ gitea.sha }}
+          path: .tmp/source-convergence
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

@@ -77,18 +77,27 @@ test.beforeEach(async ({ page }) => {
     await mockPublicApi(page);
 });
 
-for (const journey of [
+const criticalJourneys = [
+    { name: 'home', path: '/', heading: /trending/i },
     { name: 'login', path: '/login', heading: /welcome to clipper/i },
     { name: 'search', path: '/search?q=accessible', heading: /search/i },
     { name: 'clip detail', path: `/clip/${clip.id}`, heading: clip.title },
     { name: 'payment plans', path: '/pricing', heading: /upgrade to clpr pro/i },
     { name: 'forum', path: '/forum', heading: /forum discussions/i },
+];
+
+for (const viewport of [
+    { name: 'desktop', width: 1280, height: 800 },
+    { name: 'mobile', width: 375, height: 812 },
 ]) {
-    test(`${journey.name} has no serious or critical axe violations`, async ({ page }) => {
-        await page.goto(journey.path);
-        await expect(page.getByRole('heading', { name: journey.heading }).first()).toBeVisible();
-        await expectNoSeriousAxeViolations(page);
-    });
+    for (const journey of criticalJourneys) {
+        test(`${journey.name} has no serious or critical axe violations on ${viewport.name}`, async ({ page }) => {
+            await page.setViewportSize(viewport);
+            await page.goto(journey.path);
+            await expect(page.getByRole('heading', { name: journey.heading }).first()).toBeVisible();
+            await expectNoSeriousAxeViolations(page);
+        });
+    }
 }
 
 for (const path of ['/submit', '/settings', '/admin/moderation']) {

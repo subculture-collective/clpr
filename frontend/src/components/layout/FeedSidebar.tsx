@@ -42,7 +42,7 @@ function SidebarSection({
                 {viewAllHref && (
                     <Link
                         to={viewAllHref}
-                        className='text-[11px] text-text-tertiary hover:text-brand transition-colors flex items-center gap-0.5 cursor-pointer'
+                        className='text-[11px] text-text-secondary hover:text-brand transition-colors flex items-center gap-0.5 cursor-pointer'
                     >
                         All
                         <ChevronRight className='h-3 w-3' />
@@ -70,7 +70,7 @@ function SidebarLink({
         >
             <span className='truncate'>{children}</span>
             {meta && (
-                <span className='text-[11px] text-text-tertiary shrink-0 ml-2'>
+                <span className='text-[11px] text-text-secondary shrink-0 ml-2'>
                     {meta}
                 </span>
             )}
@@ -117,7 +117,7 @@ export function FeedSidebar() {
 
     const { data: queueCount } = useQueueCount(isAuthenticated);
 
-    const { data: myPlaylistsResponse } = usePlaylists(1, 5);
+    const { data: myPlaylistsResponse } = usePlaylists(1, 5, isAuthenticated);
     const myPlaylists = isAuthenticated ? (myPlaylistsResponse?.data ?? []) : [];
 
     return (

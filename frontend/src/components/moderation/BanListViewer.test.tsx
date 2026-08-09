@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BanListViewer } from './BanListViewer';
 import * as chatApi from '../../lib/chat-api';
+import { allowTestConsole } from '../../test/setup';
 
 // Mock the API module
 vi.mock('../../lib/chat-api');
@@ -66,6 +67,9 @@ describe('BanListViewer', () => {
         });
 
         it('displays loading state initially', () => {
+            vi.mocked(chatApi.getChannelBans).mockImplementation(
+                () => new Promise(() => {}),
+            );
             render(<BanListViewer channelId={mockChannelId} />);
 
             expect(screen.getByText('Loading bans...')).toBeInTheDocument();
@@ -446,6 +450,7 @@ describe('BanListViewer', () => {
 
     describe('Error handling', () => {
         it('displays error message when loading fails', async () => {
+            allowTestConsole('error', /Bans loading error:.*Failed to load bans/);
             vi.mocked(chatApi.getChannelBans).mockRejectedValue(
                 new Error('Failed to load bans')
             );
@@ -462,6 +467,7 @@ describe('BanListViewer', () => {
         });
 
         it('allows retrying after error', async () => {
+            allowTestConsole('error', /Bans loading error:.*Failed to load bans/);
             vi.mocked(chatApi.getChannelBans).mockRejectedValueOnce(
                 new Error('Failed to load bans')
             );

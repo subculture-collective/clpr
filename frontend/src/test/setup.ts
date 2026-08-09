@@ -1,8 +1,89 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
+import type { MockInstance } from 'vitest';
 import { server } from './mocks/server';
 import 'fake-indexeddb/auto';
+
+type ConsoleLevel = 'error' | 'warn';
+type ConsoleAllowance = {
+    level: ConsoleLevel;
+    pattern: RegExp;
+    remaining: number;
+};
+
+let consoleAllowances: ConsoleAllowance[] = [];
+let capturedConsole: Array<{ level: ConsoleLevel; message: string }> = [];
+let consoleErrorSpy: MockInstance | undefined;
+let consoleWarnSpy: MockInstance | undefined;
+
+const formatConsoleArguments = (args: unknown[]): string =>
+    args
+        .map(value => {
+            if (value instanceof Error) return value.stack || value.message;
+            if (typeof value === 'string') return value;
+            try {
+                return JSON.stringify(value);
+            } catch {
+                return String(value);
+            }
+        })
+        .join(' ');
+
+/**
+ * Declare an intentional warning/error in the owning test. The allowance must
+ * be consumed exactly the requested number of times or the test fails.
+ */
+export function allowTestConsole(
+    level: ConsoleLevel,
+    pattern: RegExp,
+    count = 1,
+): void {
+    consoleAllowances.push({ level, pattern, remaining: count });
+}
+
+beforeEach(() => {
+    consoleAllowances = [];
+    capturedConsole = [];
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+        capturedConsole.push({ level: 'error', message: formatConsoleArguments(args) });
+    });
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation((...args) => {
+        capturedConsole.push({ level: 'warn', message: formatConsoleArguments(args) });
+    });
+});
+
+afterEach(() => {
+    consoleErrorSpy?.mockRestore();
+    consoleWarnSpy?.mockRestore();
+
+    const unexpected: typeof capturedConsole = [];
+    for (const entry of capturedConsole) {
+        const allowance = consoleAllowances.find(
+            candidate =>
+                candidate.level === entry.level &&
+                candidate.remaining > 0 &&
+                candidate.pattern.test(entry.message),
+        );
+        if (allowance) {
+            allowance.remaining -= 1;
+        } else {
+            unexpected.push(entry);
+        }
+    }
+
+    const unused = consoleAllowances.filter(allowance => allowance.remaining > 0);
+    if (unexpected.length || unused.length) {
+        const details = [
+            ...unexpected.map(entry => `unexpected console.${entry.level}: ${entry.message}`),
+            ...unused.map(
+                allowance =>
+                    `unused console.${allowance.level} allowance ${allowance.pattern} x${allowance.remaining}`,
+            ),
+        ];
+        throw new Error(`Test console contract failed:\n${details.join('\n')}`);
+    }
+});
 
 // Full-document navigation is intentionally not emulated by jsdom. Components
 // with redirect behavior expose injectable boundaries in unit tests; actual
