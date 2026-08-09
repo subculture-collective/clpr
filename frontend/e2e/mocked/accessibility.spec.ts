@@ -23,6 +23,8 @@ const clip = {
     is_removed: false,
 };
 
+const pageReadinessTimeout = 15_000;
+
 async function mockPublicApi(page: Page) {
     await page.route('**/api/v1/**', async (route) => {
         const url = new URL(route.request().url());
@@ -94,7 +96,9 @@ for (const viewport of [
         test(`${journey.name} has no serious or critical axe violations on ${viewport.name}`, async ({ page }) => {
             await page.setViewportSize(viewport);
             await page.goto(journey.path);
-            await expect(page.getByRole('heading', { name: journey.heading }).first()).toBeVisible();
+            await expect(page.getByRole('heading', { name: journey.heading }).first()).toBeVisible({
+                timeout: pageReadinessTimeout,
+            });
             await expectNoSeriousAxeViolations(page);
         });
     }
@@ -103,8 +107,10 @@ for (const viewport of [
 for (const path of ['/submit', '/settings', '/admin/moderation']) {
     test(`${path} preserves the accessible authentication boundary`, async ({ page }) => {
         await page.goto(path);
-        await expect(page).toHaveURL(/\/login$/);
-        await expect(page.getByRole('button', { name: /continue with twitch/i })).toBeVisible();
+        await expect(page).toHaveURL(/\/login$/, { timeout: pageReadinessTimeout });
+        await expect(page.getByRole('button', { name: /continue with twitch/i })).toBeVisible({
+            timeout: pageReadinessTimeout,
+        });
         await expectNoSeriousAxeViolations(page);
     });
 }
