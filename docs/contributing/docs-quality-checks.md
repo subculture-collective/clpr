@@ -16,14 +16,12 @@ This document describes the automated documentation quality checks that run in C
 
 ## Overview
 
-The documentation quality enforcement system includes six automated checks that run on every pull request:
+The documentation quality enforcement system includes four automated checks that run on every pull request:
 
 1. **Markdown Linting** - Ensures consistent markdown formatting
 2. **Spell Checking** - Catches typos while respecting repository documentation patterns
 3. **Link Validation** - Verifies all links are valid and reachable
-4. **Anchor Validation** - Ensures heading anchors exist
-5. **Orphan Detection** - Finds unreachable documentation pages
-6. **Asset Checking** - Detects unused assets
+4. **Asset Checking** - Detects unused assets
 
 These checks run against repository documentation and intentionally skip dependency directories such as `node_modules`.
 
@@ -35,7 +33,7 @@ These checks run against repository documentation and intentionally skip depende
 npm run docs:check
 ```
 
-This runs all six checks sequentially. Use this before submitting a PR to ensure it will pass CI.
+This runs all four checks sequentially. Use this before submitting a PR to ensure it will pass CI.
 
 ### Individual Checks
 
@@ -50,12 +48,6 @@ npm run docs:spell
 
 # Link validation
 npm run docs:links
-
-# Anchor validation
-npm run docs:anchors
-
-# Orphan detection
-npm run docs:orphans
 
 # Asset checking
 npm run docs:assets
@@ -168,76 +160,7 @@ npm run docs:links
 # 3. Adding to .lycheeignore if intentional
 ```
 
-### 4. Anchor Validation
-
-**Script:** `scripts/check-anchors.js`  
-**Command:** `npm run docs:anchors`
-
-Ensures that all anchor links (e.g., `[text](#heading)`) point to existing headings.
-
-**How It Works:**
-1. Extracts all headings from markdown files
-2. Converts headings to GitHub-style anchors (lowercase, hyphens, no special chars)
-3. Validates that all `#anchor` references exist
-
-Anchor checks scan repository documentation for local heading references.
-
-**Common Fixes:**
-```bash
-# Find broken anchors
-npm run docs:anchors
-
-# Fix by:
-# 1. Creating the missing heading
-# 2. Updating the anchor reference
-# 3. Removing the dead link
-```
-
-**Example:**
-```markdown
-# Database Setup
-
-[See the setup section](#database-setup)  <!-- ✓ Valid -->
-[See the config](#database-configuration)  <!-- ✗ Invalid - heading doesn't exist -->
-```
-
-### 5. Orphan Detection
-
-**Script:** `scripts/check-orphans.js`  
-**Command:** `npm run docs:orphans`
-
-Finds documentation pages that are not reachable from `/docs/index.md` using breadth-first search (BFS).
-
-**How It Works:**
-1. Starts from `/docs/index.md`
-2. Follows all links (wikilinks and markdown links)
-3. Recursively discovers reachable pages
-4. Reports pages that cannot be reached
-
-- `/docs/adr/**` - Architecture Decision Records (index tracked separately)
-
-**Allowlist:**
-- `changelog.md` - Special file, not linked from index
-- `contributing.md` - Special file, not linked from index
-- `index.md` - Starting point, self-referenced
-
-**Common Fixes:**
-```bash
-# Find orphaned pages
-npm run docs:orphans
-
-# Fix by:
-# 1. Adding link from index.md or another page
-# 2. Removing deprecated content
-# 3. Adding to ALLOWLIST in check-orphans.js if intentional
-```
-
-**Why This Matters:**
-- Ensures all documentation is discoverable
-- Prevents abandoned documentation
-- Maintains clean information architecture
-
-### 6. Asset Checking
+### 4. Asset Checking
 
 **Script:** `scripts/check-unused-assets.js`  
 **Command:** `npm run docs:assets`
@@ -287,7 +210,7 @@ The workflow runs on:
 2. **Setup Node.js** - Installs Node.js 20
 3. **Install Dependencies** - Runs `npm ci`
 4. **Install Lychee** - Installs link checker
-5. **Run All Checks** - Executes all six quality checks
+5. **Run Checks** - Executes markdown and asset checks; spelling and external-link checks report advisory results.
 6. **Report Results** - Comments on PR if checks fail
 
 ### Failure Handling

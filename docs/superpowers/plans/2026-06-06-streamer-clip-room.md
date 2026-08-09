@@ -761,8 +761,8 @@ Implement `ParseTwitchIRCPrivmsg(raw string) (TwitchIRCMessage, bool)` by:
 - Returning false unless raw contains ` PRIVMSG `.
 - Reading tags before the first space when raw begins with `@`.
 - Extracting `id`, `user-id`, and `display-name` from semicolon-separated tags.
-- Extracting channel after ` PRIVMSG #` until ` :`.
-- Extracting message text after ` :`.
+- Extracting channel after `PRIVMSG #` until `:`.
+- Extracting message text after `:`.
 
 Add manager methods:
 

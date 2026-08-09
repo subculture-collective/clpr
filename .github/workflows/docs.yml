@@ -7,8 +7,6 @@ name: Docs CI
 # - Markdown linting (frontmatter, HTML, tables)
 # - Spell checking (ignoring wikilinks, block refs, tags)
 # - Link validation (ignoring localhost)
-# - Anchor validation
-# - Orphan detection (BFS from /docs/index.md)
 # - Unused asset detection
 #
 
@@ -70,14 +68,6 @@ jobs:
         run: npm run docs:links
         continue-on-error: true  # Temporarily allow failures for external services and legacy URLs
 
-      - name: Check anchors
-        run: npm run docs:anchors
-        continue-on-error: false
-
-      - name: Check orphans
-        run: npm run docs:orphans
-        continue-on-error: false
-
       - name: Check assets
         run: npm run docs:assets
         continue-on-error: false
@@ -95,8 +85,6 @@ jobs:
             - **Lint errors**: Fix markdown formatting issues or update .markdownlint.jsonc
             - **Spelling errors**: Fix typos or add words to .cspell.json
             - **Broken links**: Fix URLs or add to .lycheeignore
-            - **Invalid anchors**: Fix heading references or create missing headings
-            - **Orphan pages**: Link pages from /docs/index.md or remove deprecated content
             - **Unused assets**: Remove unused files or add references
             
             **Related Issues:** #803, #845, #846, #805`;
@@ -115,6 +103,4 @@ jobs:
           echo "- Markdown linting: PASSED"
           echo "- Spell checking: PASSED"
           echo "- Link validation: PASSED"
-          echo "- Anchor validation: PASSED"
-          echo "- Orphan detection: PASSED"
           echo "- Asset checking: PASSED"

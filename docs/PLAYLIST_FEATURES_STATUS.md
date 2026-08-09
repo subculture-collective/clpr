@@ -31,7 +31,7 @@
     - Now doesn't block bottom playback controls (Next button, progress)
     - File: `frontend/src/components/playlist/PlaylistTheatreMode.tsx`
 
-6. **403 Error on Playlist Edit (Ownership) ** ✅
+6. **403 Error on Playlist Edit (Ownership)** ✅
     - Fixed error message matching in handler
     - Changed from exact string comparison to `strings.Contains("unauthorized")`
     - Now catches all permission errors properly

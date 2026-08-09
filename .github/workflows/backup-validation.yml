@@ -17,8 +17,31 @@ on:
         default: 'clpr-backups-prod'
 
 jobs:
+  preflight:
+    name: Check backup-validation configuration
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.configuration.outputs.enabled }}
+    steps:
+      - id: configuration
+        env:
+          BACKUP_VALIDATION_ENABLED: ${{ secrets.BACKUP_VALIDATION_ENABLED }}
+        run: |
+          # Production backup credentials must never be assumed to exist on a
+          # public runner. Enable this explicitly only in the protected
+          # operations environment after all provider credentials are set.
+          if [ "$BACKUP_VALIDATION_ENABLED" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Production backup validation is enabled."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Backup validation is not configured for this runner; skipping safely."
+          fi
+
   validate-backup:
     name: Validate Nightly Backup
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

@@ -114,87 +114,87 @@ This document summarizes the comprehensive monitoring and alerting infrastructur
 1. **ModerationBanHighFailureRate**
    - Severity: Warning
    - Threshold: >10% failure rate for 10 minutes
-   - Runbook: [Ban Operation Failures](#)
+   - Runbook: Ban Operation Failures (to be documented)
 
 2. **ModerationBanCriticalFailureRate**
    - Severity: Critical
    - Threshold: >50% failure rate for 5 minutes
-   - Runbook: [Critical Ban Failures](#)
+   - Runbook: Critical Ban Failures (to be documented)
 
 3. **ModerationBanHighLatency**
    - Severity: Warning
    - Threshold: P95 >2s for 10 minutes
-   - Runbook: [Ban Latency](#)
+   - Runbook: Ban Latency (to be documented)
 
 4. **ModerationBanCriticalLatency**
    - Severity: Critical
    - Threshold: P99 >5s for 5 minutes
-   - Runbook: [Critical Ban Latency](#)
+   - Runbook: Critical Ban Latency (to be documented)
 
 ### Sync Operation Alerts
 
 5. **ModerationSyncFailures**
    - Severity: Warning
    - Threshold: >0.1 failures/sec for 10 minutes
-   - Runbook: [Sync Failures](#)
+   - Runbook: Sync Failures (to be documented)
 
 6. **ModerationSyncCriticalFailureRate**
    - Severity: Critical
    - Threshold: >50% failure rate
-   - Runbook: [Critical Sync Failures](#)
+   - Runbook: Critical Sync Failures (to be documented)
 
 7. **ModerationSyncHighLatency**
    - Severity: Warning
    - Threshold: P95 >30s for 10 minutes
-   - Runbook: [Sync Latency](#)
+   - Runbook: Sync Latency (to be documented)
 
 ### Permission Check Alerts
 
 8. **ModerationPermissionDenialSpike**
    - Severity: Warning
    - Threshold: >10 denials/sec for 5 minutes
-   - Runbook: [Permission Denials](#)
+   - Runbook: Permission Denials (to be documented)
 
 9. **ModerationPermissionDenialCritical**
    - Severity: Critical
    - Threshold: >50% denial rate
-   - Runbook: [Critical Permission Issues](#)
+   - Runbook: Critical Permission Issues (to be documented)
 
 ### Database Alerts
 
 10. **ModerationSlowQueries**
     - Severity: Warning
     - Threshold: >1 slow query/sec for 10 minutes
-    - Runbook: [Slow Queries](#)
+    - Runbook: Slow Queries (to be documented)
 
 11. **ModerationSlowQueriesCritical**
     - Severity: Critical
     - Threshold: >5 slow queries/sec for 5 minutes
-    - Runbook: [Critical Slow Queries](#)
+    - Runbook: Critical Slow Queries (to be documented)
 
 ### API Alerts
 
 12. **ModerationAPIHighErrorRate**
     - Severity: Warning
     - Threshold: >5% error rate for 10 minutes
-    - Runbook: [API Errors](#)
+    - Runbook: API Errors (to be documented)
 
 13. **ModerationAPICriticalErrorRate**
     - Severity: Critical
     - Threshold: >10% 5xx error rate for 5 minutes
-    - Runbook: [Critical API Errors](#)
+    - Runbook: Critical API Errors (to be documented)
 
 ### Audit Log Alerts
 
 14. **ModerationAuditLogFailures**
     - Severity: Warning
     - Threshold: >1 failure/sec for 10 minutes
-    - Runbook: [Audit Log Failures](#)
+    - Runbook: Audit Log Failures (to be documented)
 
 15. **ModerationAuditLogHighLatency**
     - Severity: Warning
     - Threshold: P95 >500ms for 10 minutes
-    - Runbook: [Audit Log Latency](#)
+    - Runbook: Audit Log Latency (to be documented)
 
 ---
 
