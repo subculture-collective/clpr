@@ -43,8 +43,13 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
-      - run: npm ci
-      - run: go -C backend mod download
+      - name: Install documentation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          go -C backend mod download
+          bash scripts/install-lychee.sh
       - run: bash scripts/source-convergence.sh --phase api-docs --phase docs
 
   browser:

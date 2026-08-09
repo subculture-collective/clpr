@@ -11,6 +11,7 @@ fail() {
 }
 
 bash -n scripts/source-convergence.sh
+bash -n scripts/install-lychee.sh
 bash -n scripts/verify-gitea-actions-runtime.sh
 node --check scripts/compare-vitest-runs.mjs
 node --test scripts/tests/compare-vitest-runs.test.mjs
@@ -113,6 +114,14 @@ for required in [
         raise SystemExit(f'immutable candidate workflow is missing: {required}')
 if ':latest' in candidate_text:
     raise SystemExit('immutable candidate workflow must not use latest tags')
+
+for path in [
+    '.gitea/workflows/source-convergence.yml',
+    '.gitea/workflows/immutable-candidate.yml',
+    '.gitea/workflows/release-gates.yml',
+]:
+    if 'scripts/install-lychee.sh' not in pathlib.Path(path).read_text():
+        raise SystemExit(f'{path}: pinned lychee installer is required')
 PY
 
 if grep -Eq '(continue-on-error|--exit-code[ =]0|--severity LOW)' \

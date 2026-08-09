@@ -111,6 +111,7 @@ require_selected_tools() {
                 require_command npm
                 ;;
             docs)
+                require_command lychee
                 require_command node
                 require_command npm
                 ;;

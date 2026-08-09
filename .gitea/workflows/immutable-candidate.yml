@@ -44,6 +44,7 @@ jobs:
           go install github.com/go-task/task/v3/cmd/task@v3.45.4
           go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
           go install github.com/zricethezav/gitleaks/v8@v8.28.0
+          bash scripts/install-lychee.sh
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           go -C backend mod download
           npm ci
