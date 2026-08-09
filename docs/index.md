@@ -127,6 +127,8 @@ In-depth documentation for major platform features:
 - **[[operations/secrets-management|Secrets Management]]** - Secure credential handling
 - **[[operations/security-scanning|Security Scanning]]** - Automated security checks
 - **[[operations/observability|Observability]]** - Distributed tracing and metrics
+- **[[production-readiness-report-2026-08-08|Production Readiness Report]]** - Release findings, gates, and remediation status
+- **[[security/jwt-secret-history-review-2026-08-09|JWT and Secret-History Review]]** - Redacted signing-material and repository-history assessment
 
 ### Architecture Decisions
 
