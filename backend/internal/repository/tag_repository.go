@@ -464,6 +464,119 @@ func (r *TagRepository) AddBlacklistedTag(ctx context.Context, pattern string, r
 	return nil
 }
 
+// GetChildren returns all child tags for a parent slug
+func (r *TagRepository) GetChildren(ctx context.Context, parentSlug string) ([]*models.Tag, error) {
+	query := `
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
+		FROM tags
+		WHERE parent_slug = $1
+		ORDER BY usage_count DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query, parentSlug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []*models.Tag
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(
+			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
+			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan child tag: %w", err)
+		}
+		tags = append(tags, &tag)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating child tags: %w", err)
+	}
+
+	return tags, nil
+}
+
+// GetTagTree returns a tag and its full subtree using a recursive CTE
+func (r *TagRepository) GetTagTree(ctx context.Context, rootSlug string) ([]*models.Tag, error) {
+	query := `
+		WITH RECURSIVE tag_tree AS (
+			SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, 0 AS depth
+			FROM tags
+			WHERE slug = $1
+			UNION ALL
+			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at, tt.depth + 1
+			FROM tags t
+			INNER JOIN tag_tree tt ON t.parent_slug = tt.slug
+		)
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
+		FROM tag_tree
+		ORDER BY depth, usage_count DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query, rootSlug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tag tree: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []*models.Tag
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(
+			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
+			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan tag tree row: %w", err)
+		}
+		tags = append(tags, &tag)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating tag tree: %w", err)
+	}
+
+	return tags, nil
+}
+
+// GetRootTags returns all tags with no parent (top-level tags)
+func (r *TagRepository) GetRootTags(ctx context.Context) ([]*models.Tag, error) {
+	query := `
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
+		FROM tags
+		WHERE parent_slug IS NULL
+		ORDER BY usage_count DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get root tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []*models.Tag
+	for rows.Next() {
+		var tag models.Tag
+		err := rows.Scan(
+			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
+			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan root tag: %w", err)
+		}
+		tags = append(tags, &tag)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating root tags: %w", err)
+	}
+
+	return tags, nil
+}
+
 // RemoveBlacklistedTag removes a pattern from the blacklist
 func (r *TagRepository) RemoveBlacklistedTag(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM blacklisted_tags WHERE id = $1`

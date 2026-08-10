@@ -258,6 +258,7 @@ type Tag struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	Name        string    `json:"name" db:"name"`
 	Slug        string    `json:"slug" db:"slug"`
+	ParentSlug  *string   `json:"parent_slug,omitempty" db:"parent_slug"`
 	Description *string   `json:"description,omitempty" db:"description"`
 	Color       *string   `json:"color,omitempty" db:"color"`
 	UsageCount  int       `json:"usage_count" db:"usage_count"`
