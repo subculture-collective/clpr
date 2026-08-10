@@ -1757,6 +1757,36 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  /api/v1/tags/tree:
+    get:
+      tags: [Tags]
+      summary: Get tag hierarchy tree
+      description: Returns the full tag hierarchy. If root query param is provided, returns the subtree rooted at that slug. Otherwise returns all root tags with immediate children attached.
+      operationId: getTagTree
+      security: []
+      x-clpr-router-derived: true
+      parameters:
+        - name: root
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Root tag slug to anchor the subtree
+      responses:
+        '200':
+          description: Tag hierarchy tree
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TagTreeNode'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/tags/{slug}:
     get:
       tags: [Tags]
@@ -12842,6 +12872,8 @@ components:
           type: string
         slug:
           type: string
+        parent_slug:
+          type: [string, "null"]
         description:
           type: [string, "null"]
         color:
@@ -12852,6 +12884,38 @@ components:
         created_at:
           type: string
           format: date-time
+
+    TagTreeNode:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - usage_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        parent_slug:
+          type: [string, "null"]
+        description:
+          type: [string, "null"]
+        color:
+          type: [string, "null"]
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        usage_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagTreeNode'
 
     Submission:
       type: object

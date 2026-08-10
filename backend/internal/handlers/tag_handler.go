@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
@@ -15,6 +16,70 @@ import (
 )
 
 var adminTagSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+// TagTreeNode represents a tag in a hierarchical tree response.
+type TagTreeNode struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Slug        string          `json:"slug"`
+	ParentSlug  *string         `json:"parent_slug,omitempty"`
+	Description *string         `json:"description,omitempty"`
+	Color       *string         `json:"color,omitempty"`
+	UsageCount  int             `json:"usage_count"`
+	CreatedAt   time.Time       `json:"created_at"`
+	Children    []*TagTreeNode  `json:"children,omitempty"`
+}
+
+func tagToTreeNode(tag *models.Tag) *TagTreeNode {
+	return &TagTreeNode{
+		ID:          tag.ID,
+		Name:        tag.Name,
+		Slug:        tag.Slug,
+		ParentSlug:  tag.ParentSlug,
+		Description: tag.Description,
+		Color:       tag.Color,
+		UsageCount:  tag.UsageCount,
+		CreatedAt:   tag.CreatedAt,
+	}
+}
+
+// buildTreeFromFlatList converts a flat list of tags from a recursive CTE
+// into a hierarchical tree rooted at rootSlug. maxDepth guards against
+// cycles (which shouldn't exist but safety first).
+func buildTreeFromFlatList(tags []*models.Tag, rootSlug string) []*TagTreeNode {
+	tagMap := make(map[string]*models.Tag, len(tags))
+	childrenMap := make(map[string][]*models.Tag)
+	for _, t := range tags {
+		tagMap[t.Slug] = t
+		if t.ParentSlug != nil {
+			childrenMap[*t.ParentSlug] = append(childrenMap[*t.ParentSlug], t)
+		}
+	}
+
+	root, ok := tagMap[rootSlug]
+	if !ok {
+		return nil
+	}
+
+	node := tagToTreeNode(root)
+	buildSubtree(node, childrenMap, 0, 10)
+	return []*TagTreeNode{node}
+}
+
+func buildSubtree(node *TagTreeNode, childrenMap map[string][]*models.Tag, depth, maxDepth int) {
+	if depth >= maxDepth {
+		return
+	}
+	children, ok := childrenMap[node.Slug]
+	if !ok {
+		return
+	}
+	for _, child := range children {
+		childNode := tagToTreeNode(child)
+		buildSubtree(childNode, childrenMap, depth+1, maxDepth)
+		node.Children = append(node.Children, childNode)
+	}
+}
 
 func validateAdminTagFields(name, slug string, description *string) (string, string, bool) {
 	name = strings.TrimSpace(name)
@@ -362,11 +427,58 @@ func (h *TagHandler) SearchTags(c *gin.Context) {
 	})
 }
 
+// GetTagTree returns the full tag hierarchy.
+// If ?root=<slug> is provided, returns the subtree rooted at that slug.
+// Otherwise returns all root tags with their immediate children attached.
+// GET /api/v1/tags/tree
+func (h *TagHandler) GetTagTree(c *gin.Context) {
+	rootSlug := c.DefaultQuery("root", "")
+
+	var treeNodes []*TagTreeNode
+
+	if rootSlug != "" {
+		// Fetch the full subtree as a flat list via recursive CTE
+		tags, err := h.tagRepo.GetTagTree(c.Request.Context(), rootSlug)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag tree"})
+			return
+		}
+		// Build a hierarchical tree from the flat list
+		treeNodes = buildTreeFromFlatList(tags, rootSlug)
+		if treeNodes == nil {
+			// Root slug not found
+			treeNodes = []*TagTreeNode{}
+		}
+	} else {
+		// Get root tags
+		rootTags, err := h.tagRepo.GetRootTags(c.Request.Context())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch root tags"})
+			return
+		}
+		// Attach immediate children to each root
+		treeNodes = make([]*TagTreeNode, 0, len(rootTags))
+		for _, root := range rootTags {
+			node := tagToTreeNode(root)
+			children, childErr := h.tagRepo.GetChildren(c.Request.Context(), root.Slug)
+			if childErr == nil && len(children) > 0 {
+				for _, child := range children {
+					node.Children = append(node.Children, tagToTreeNode(child))
+				}
+			}
+			treeNodes = append(treeNodes, node)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tags": treeNodes})
+}
+
 // CreateTag handles POST /admin/tags
 func (h *TagHandler) CreateTag(c *gin.Context) {
 	var req struct {
 		Name        string  `json:"name" binding:"required,min=2,max=50"`
 		Slug        string  `json:"slug" binding:"required,min=2,max=50"`
+		ParentSlug  *string `json:"parent_slug,omitempty" binding:"omitempty,max=100"`
 		Description *string `json:"description"`
 		Color       *string `json:"color"`
 	}
@@ -391,11 +503,22 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 		return
 	}
 
+	// Validate parent_slug references an existing tag
+	if req.ParentSlug != nil {
+		parent, err := h.tagRepo.GetBySlug(c.Request.Context(), *req.ParentSlug)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "parent_slug does not reference an existing tag"})
+			return
+		}
+		_ = parent // parent exists, validation passed
+	}
+
 	// Create tag
 	tag := &models.Tag{
 		ID:          uuid.New(),
 		Name:        name,
 		Slug:        slug,
+		ParentSlug:  req.ParentSlug,
 		Description: req.Description,
 		Color:       req.Color,
 		UsageCount:  0,
@@ -442,6 +565,7 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 	var req struct {
 		Name        string  `json:"name" binding:"required,min=2,max=50"`
 		Slug        string  `json:"slug" binding:"required,min=2,max=50"`
+		ParentSlug  *string `json:"parent_slug,omitempty" binding:"omitempty,max=100"`
 		Description *string `json:"description"`
 		Color       *string `json:"color"`
 	}
@@ -475,6 +599,16 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 		return
 	}
 
+	// Validate parent_slug references an existing tag (skip self-references)
+	if req.ParentSlug != nil && *req.ParentSlug != tag.Slug {
+		parent, err := h.tagRepo.GetBySlug(c.Request.Context(), *req.ParentSlug)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "parent_slug does not reference an existing tag"})
+			return
+		}
+		_ = parent
+	}
+
 	// Update tag fields
 	blacklisted, err := h.tagRepo.IsBlacklisted(c.Request.Context(), slug)
 	if err != nil {
@@ -487,6 +621,7 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 	}
 	tag.Name = name
 	tag.Slug = slug
+	tag.ParentSlug = req.ParentSlug
 	tag.Description = req.Description
 	tag.Color = req.Color
 

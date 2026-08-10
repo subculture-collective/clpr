@@ -2,10 +2,16 @@ export interface Tag {
   id: string;
   name: string;
   slug: string;
+  parent_slug?: string | null;
   description?: string;
   color?: string;
   usage_count: number;
   created_at: string;
+}
+
+export interface TagTreeResponse {
+  tags: Tag[];
+  children?: Record<string, Tag[]>; // slug -> children
 }
 
 export interface TagListResponse {

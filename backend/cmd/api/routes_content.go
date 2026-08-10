@@ -14,6 +14,7 @@ func registerContentRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, inf
 		// Public tag endpoints
 		tags.GET("", h.Tag.ListTags)
 		tags.GET("/search", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Tag.SearchTags)
+		tags.GET("/tree", h.Tag.GetTagTree)
 		tags.GET("/:slug", h.Tag.GetTag)
 		tags.GET("/:slug/clips", h.Tag.GetClipsByTag)
 	}

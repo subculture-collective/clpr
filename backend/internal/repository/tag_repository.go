@@ -44,12 +44,12 @@ func NewTagRepository(pool *pgxpool.Pool) *TagRepository {
 // Create inserts a new tag into the database
 func (r *TagRepository) Create(ctx context.Context, tag *models.Tag) error {
 	query := `
-		INSERT INTO tags (id, name, slug, description, color, usage_count, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO tags (id, name, slug, parent_slug, description, color, usage_count, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	_, err := r.pool.Exec(ctx, query,
-		tag.ID, tag.Name, tag.Slug, tag.Description, tag.Color,
+		tag.ID, tag.Name, tag.Slug, tag.ParentSlug, tag.Description, tag.Color,
 		tag.UsageCount, tag.CreatedAt,
 	)
 
@@ -63,14 +63,14 @@ func (r *TagRepository) Create(ctx context.Context, tag *models.Tag) error {
 // GetByID retrieves a tag by its ID
 func (r *TagRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Tag, error) {
 	query := `
-		SELECT id, name, slug, description, color, usage_count, created_at
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE id = $1
 	`
 
 	var tag models.Tag
 	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&tag.ID, &tag.Name, &tag.Slug, &tag.Description,
+		&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
 		&tag.Color, &tag.UsageCount, &tag.CreatedAt,
 	)
 
@@ -87,14 +87,14 @@ func (r *TagRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Tag,
 // GetBySlug retrieves a tag by its slug
 func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag, error) {
 	query := `
-		SELECT id, name, slug, description, color, usage_count, created_at
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE slug = $1
 	`
 
 	var tag models.Tag
 	err := r.pool.QueryRow(ctx, query, slug).Scan(
-		&tag.ID, &tag.Name, &tag.Slug, &tag.Description,
+		&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
 		&tag.Color, &tag.UsageCount, &tag.CreatedAt,
 	)
 
@@ -114,7 +114,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 	switch sort {
 	case "alphabetical":
 		query = `
-		SELECT id, name, slug, description, color, usage_count, created_at
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY name ASC
@@ -122,7 +122,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		`
 	case "recent":
 		query = `
-		SELECT id, name, slug, description, color, usage_count, created_at
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY created_at DESC
@@ -132,7 +132,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		fallthrough
 	default:
 		query = `
-		SELECT id, name, slug, description, color, usage_count, created_at
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
 		ORDER BY usage_count DESC
@@ -150,7 +150,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 	for rows.Next() {
 		var tag models.Tag
 		err := rows.Scan(
-			&tag.ID, &tag.Name, &tag.Slug, &tag.Description,
+			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
 			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
 		)
 		if err != nil {
@@ -180,7 +180,7 @@ func (r *TagRepository) Count(ctx context.Context) (int, error) {
 // Search searches for tags by name
 func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]*models.Tag, error) {
 	searchQuery := `
-		SELECT id, name, slug, description, color, usage_count, created_at
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE (name ILIKE $1 OR slug ILIKE $1)
 		AND slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
@@ -198,7 +198,7 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 	for rows.Next() {
 		var tag models.Tag
 		err := rows.Scan(
-			&tag.ID, &tag.Name, &tag.Slug, &tag.Description,
+			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
 			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
 		)
 		if err != nil {
@@ -218,12 +218,12 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 func (r *TagRepository) Update(ctx context.Context, tag *models.Tag) error {
 	query := `
 		UPDATE tags
-		SET name = $2, slug = $3, description = $4, color = $5
+		SET name = $2, slug = $3, parent_slug = $4, description = $5, color = $6
 		WHERE id = $1
 	`
 
 	result, err := r.pool.Exec(ctx, query,
-		tag.ID, tag.Name, tag.Slug, tag.Description, tag.Color,
+		tag.ID, tag.Name, tag.Slug, tag.ParentSlug, tag.Description, tag.Color,
 	)
 
 	if err != nil {
@@ -297,7 +297,7 @@ func (r *TagRepository) RemoveTagFromClip(ctx context.Context, clipID, tagID uui
 // GetClipTags retrieves all tags for a clip
 func (r *TagRepository) GetClipTags(ctx context.Context, clipID uuid.UUID) ([]*models.Tag, error) {
 	query := `
-		SELECT t.id, t.name, t.slug, t.description, t.color, t.usage_count, t.created_at
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
 		FROM tags t
 		INNER JOIN clip_tags ct ON t.id = ct.tag_id
 		WHERE ct.clip_id = $1
@@ -314,7 +314,7 @@ func (r *TagRepository) GetClipTags(ctx context.Context, clipID uuid.UUID) ([]*m
 	for rows.Next() {
 		var tag models.Tag
 		err := rows.Scan(
-			&tag.ID, &tag.Name, &tag.Slug, &tag.Description,
+			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
 			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
 		)
 		if err != nil {

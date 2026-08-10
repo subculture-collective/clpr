@@ -2661,6 +2661,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/tags/tree",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).GetTagTree-fm",
+    "operation_id": "getTagTree",
+    "contract_level": "transitional"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/tags/{slug}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).GetTag-fm",
     "operation_id": "getTag",
