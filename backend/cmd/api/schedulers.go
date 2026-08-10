@@ -20,6 +20,7 @@ type SchedulerGroup struct {
 	EmailMetrics    *scheduler.EmailMetricsScheduler
 	LiveStatus      *scheduler.LiveStatusScheduler       // may be nil
 	PlaylistScript  *scheduler.PlaylistScriptScheduler
+	AutoTag         *scheduler.AutoTagScheduler
 }
 
 func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure) *SchedulerGroup {
@@ -79,6 +80,18 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 	// Start playlist script scheduler (checks every 5 minutes for due scripts)
 	sg.PlaylistScript = scheduler.NewPlaylistScriptScheduler(svcs.PlaylistScript, 5)
 	go sg.PlaylistScript.Start(context.Background())
+
+	// Start auto-tag scheduler (runs every 30 seconds to tag newly synced clips)
+	if svcs.AutoTag != nil {
+		sg.AutoTag = scheduler.NewAutoTagScheduler(
+			svcs.AutoTag,
+			nil, // whisper — deferred until video download pipeline is implemented
+			nil, // thumbnail — deferred until video download pipeline is implemented
+			repos.Clip,
+			30, // run every 30 seconds
+		)
+		go sg.AutoTag.Start(context.Background())
+	}
 
 	return sg
 }

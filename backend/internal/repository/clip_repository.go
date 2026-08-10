@@ -1397,6 +1397,55 @@ func (r *ClipRepository) AddTagBySlug(ctx context.Context, clipID uuid.UUID, tag
 	return nil
 }
 
+// GetUntaggedClips returns clips that have no entries in the clip_tags table.
+// Results are ordered by created_at DESC and limited to the given count.
+func (r *ClipRepository) GetUntaggedClips(ctx context.Context, limit int) ([]models.Clip, error) {
+	query := `
+		SELECT
+			id, twitch_clip_id, twitch_clip_url, embed_url, title,
+			creator_name, creator_id, broadcaster_name, broadcaster_id,
+			game_id, game_name, language, thumbnail_url, duration,
+			view_count, created_at, imported_at, vote_score, comment_count,
+			favorite_count, is_featured, is_nsfw, is_removed, removed_reason,
+			submitted_by_user_id, submitted_at
+		FROM clips c
+		WHERE is_removed = false
+		AND NOT EXISTS (SELECT 1 FROM clip_tags ct WHERE ct.clip_id = c.id)
+		ORDER BY created_at DESC
+		LIMIT $1
+	`
+
+	rows, err := r.pool.Query(ctx, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get untagged clips: %w", err)
+	}
+	defer rows.Close()
+
+	var clips []models.Clip
+	for rows.Next() {
+		var clip models.Clip
+		err := rows.Scan(
+			&clip.ID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.EmbedURL,
+			&clip.Title, &clip.CreatorName, &clip.CreatorID, &clip.BroadcasterName,
+			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
+			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
+			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
+			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
+			&clip.SubmittedByUserID, &clip.SubmittedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan untagged clip: %w", err)
+		}
+		clips = append(clips, clip)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating untagged clips: %w", err)
+	}
+
+	return clips, nil
+}
+
 // GetFollowingFeedClips retrieves clips from users and broadcasters that the user follows
 func (r *ClipRepository) GetFollowingFeedClips(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*models.ClipWithSubmitter, int, error) {
 	query := `
