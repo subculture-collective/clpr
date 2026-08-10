@@ -332,12 +332,30 @@ type NSFWConfig struct {
 // VisionConfig holds vision AI (content classification) configuration
 type VisionConfig struct {
 	Enabled        bool   // Enable vision AI tagging (default: false)
-	APIKey         string // API key for vision API (OpenAI-compatible)
-	APIURL         string // API URL for vision API
-	Model          string // Model name for vision API (e.g., gpt-4o-mini)
+	Provider       string // API provider: "openai", "openrouter", "anthropic" (default: "openai")
+	APIKey         string // API key for vision API
+	APIURL         string // API URL for vision API (auto-inferred if empty for known providers)
+	Model          string // Model name (e.g., gpt-4o-mini, openai/gpt-4o-mini, claude-3.5-haiku)
 	FFmpegPath     string // Path to ffmpeg binary
 	OutputDir      string // Directory for extracted thumbnails
+	SiteURL        string // Site URL for OpenRouter HTTP-Referer header
+	SiteName       string // Site name for OpenRouter X-Title header
 	TimeoutSeconds int    // Request timeout in seconds (default: 30)
+}
+
+// Defaults for known providers when api_url is not explicitly set.
+func (c VisionConfig) ResolveAPIURL() string {
+	if c.APIURL != "" {
+		return c.APIURL
+	}
+	switch c.Provider {
+	case "openrouter":
+		return "https://openrouter.ai/api/v1/chat/completions"
+	case "anthropic":
+		return "https://api.anthropic.com/v1/messages"
+	default:
+		return "https://api.openai.com/v1/chat/completions"
+	}
 }
 
 // WhisperConfig holds Whisper transcription configuration
@@ -633,11 +651,14 @@ func Load() (*Config, error) {
 		},
 		Vision: VisionConfig{
 			Enabled:        getEnvBool("VISION_ENABLED", false),
+			Provider:       getEnv("VISION_PROVIDER", "openai"),
 			APIKey:         getEnv("VISION_API_KEY", ""),
 			APIURL:         getEnv("VISION_API_URL", ""),
 			Model:          getEnv("VISION_MODEL", "gpt-4o-mini"),
 			FFmpegPath:     getEnv("VISION_FFMPEG_PATH", "ffmpeg"),
 			OutputDir:      getEnv("VISION_OUTPUT_DIR", "/tmp/clpr-thumbnails"),
+			SiteURL:        getEnv("VISION_SITE_URL", "https://clpr.tv"),
+			SiteName:       getEnv("VISION_SITE_NAME", "CLPR"),
 			TimeoutSeconds: getEnvInt("VISION_TIMEOUT_SECONDS", 30),
 		},
 		Whisper: WhisperConfig{

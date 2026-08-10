@@ -311,13 +311,16 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		thumbnailService = services.NewThumbnailService(
 			cfg.Vision.FFmpegPath,
 			cfg.Vision.OutputDir,
+			cfg.Vision.Provider,
 			cfg.Vision.APIKey,
-			cfg.Vision.APIURL,
+			cfg.Vision.ResolveAPIURL(),
 			cfg.Vision.Model,
+			cfg.Vision.SiteURL,
+			cfg.Vision.SiteName,
 			cfg.Vision.Enabled,
 			cfg.Vision.TimeoutSeconds,
 		)
-		log.Printf("Thumbnail/vision service initialized (model: %s)", cfg.Vision.Model)
+		log.Printf("Thumbnail/vision service initialized (provider: %s, model: %s)", cfg.Vision.Provider, cfg.Vision.Model)
 	}
 
 	// Initialize WebSocket server

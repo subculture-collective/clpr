@@ -38,21 +38,26 @@ type ThumbnailService struct {
 	ffmpegPath string
 	outputDir  string
 
+	provider   string
 	httpClient *http.Client
 	apiKey     string
 	apiURL     string
 	model      string
+	siteURL    string
+	siteName   string
 	enabled    bool
 }
 
 // NewThumbnailService creates a new ThumbnailService.
 //
 // ffmpegPath is the path to the ffmpeg binary. outputDir is where extracted
-// thumbnails are written. apiKey, apiURL, and model configure the vision AI
-// call (OpenAI-compatible chat completions endpoint).
+// thumbnails are written. provider is one of "openai", "openrouter", "anthropic".
+// apiKey, apiURL, and model configure the vision AI call.
+// siteURL and siteName are used for the OpenRouter HTTP-Referer / X-Title headers.
 func NewThumbnailService(
 	ffmpegPath, outputDir string,
-	apiKey, apiURL, model string,
+	provider, apiKey, apiURL, model string,
+	siteURL, siteName string,
 	enabled bool,
 	timeoutSeconds int,
 ) *ThumbnailService {
@@ -62,13 +67,16 @@ func NewThumbnailService(
 	return &ThumbnailService{
 		ffmpegPath: ffmpegPath,
 		outputDir:  outputDir,
+		provider:   provider,
 		httpClient: &http.Client{
 			Timeout: time.Duration(timeoutSeconds) * time.Second,
 		},
-		apiKey:  apiKey,
-		apiURL:  apiURL,
-		model:   model,
-		enabled: enabled,
+		apiKey:   apiKey,
+		apiURL:   apiURL,
+		model:    model,
+		siteURL:  siteURL,
+		siteName: siteName,
+		enabled:  enabled,
 	}
 }
 
@@ -201,6 +209,12 @@ func (ts *ThumbnailService) ClassifyThumbnails(ctx context.Context, imagePaths [
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+ts.apiKey)
+
+	// OpenRouter-specific headers for ranking and attribution
+	if ts.provider == "openrouter" {
+		req.Header.Set("HTTP-Referer", ts.siteURL)
+		req.Header.Set("X-Title", ts.siteName)
+	}
 
 	resp, err := ts.httpClient.Do(req)
 	if err != nil {

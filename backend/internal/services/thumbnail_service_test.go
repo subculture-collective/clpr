@@ -15,13 +15,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func newTestThumbnailService(ffmpegPath, outputDir, apiKey, apiURL, model string, enabled bool) *ThumbnailService {
+	return NewThumbnailService(ffmpegPath, outputDir, "openai", apiKey, apiURL, model, "", "", enabled, 30)
+}
+
 func TestNewThumbnailService(t *testing.T) {
 	svc := NewThumbnailService(
 		"ffmpeg",
 		"/tmp/thumbs",
+		"openai",
 		"test-api-key",
 		"https://api.openai.com/v1/chat/completions",
 		"gpt-4o-mini",
+		"", "",
 		true,
 		30,
 	)
@@ -34,14 +40,13 @@ func TestNewThumbnailService(t *testing.T) {
 }
 
 func TestThumbnailService_Operational_Disabled(t *testing.T) {
-	svc := NewThumbnailService(
+	svc := newTestThumbnailService(
 		"ffmpeg",
 		"/tmp/thumbs",
 		"",  // no API key
 		"",  // no API URL
 		"",
 		false,
-		30,
 	)
 
 	assert.False(t, svc.Operational())
@@ -71,7 +76,7 @@ func TestExtractThumbnails_SkipsWithoutFfmpeg(t *testing.T) {
 	outputDir := filepath.Join(tmpDir, "thumbs")
 	require.NoError(t, os.MkdirAll(outputDir, 0755))
 
-	svc := NewThumbnailService("ffmpeg", outputDir, "", "", "", false, 30)
+	svc := newTestThumbnailService("ffmpeg", outputDir, "", "", "", false)
 	ctx := context.Background()
 
 	thumbs, err := svc.ExtractThumbnails(ctx, videoPath, 2.0)
@@ -87,7 +92,7 @@ func TestExtractThumbnails_SkipsWithoutFfmpeg(t *testing.T) {
 }
 
 func TestClassifyThumbnails_Disabled(t *testing.T) {
-	svc := NewThumbnailService("ffmpeg", "/tmp", "", "", "", false, 30)
+	svc := newTestThumbnailService("ffmpeg", "/tmp", "", "", "", false)
 
 	ctx := context.Background()
 	tags, err := svc.ClassifyThumbnails(ctx, []string{"/fake/path.jpg"}, "Test Game")
@@ -121,7 +126,7 @@ func TestClassifyThumbnails_WithMockAPI(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true)
 	ctx := context.Background()
 
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Valorant")
@@ -149,7 +154,7 @@ func TestClassifyThumbnails_WithMockAPI_SingleTag(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true)
 	ctx := context.Background()
 
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Minecraft")
@@ -178,7 +183,7 @@ func TestClassifyThumbnails_WithMockAPI_FiltersUnknownTags(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true)
 	ctx := context.Background()
 
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "League of Legends")
@@ -206,7 +211,7 @@ func TestClassifyThumbnails_WithMockAPI_Deduplicates(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true)
 	ctx := context.Background()
 
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Valorant")
@@ -225,7 +230,7 @@ func TestClassifyThumbnails_WithMockAPI_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true)
 	ctx := context.Background()
 
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Game")
@@ -255,12 +260,43 @@ func TestClassifyThumbnails_WithMockAPI_MalformedResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, "test-api-key", server.URL, "gpt-4o-mini", true)
 	ctx := context.Background()
 
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Game")
 	assert.Error(t, err)
 	assert.Nil(t, tags)
+}
+
+// TestClassifyThumbnails_WithMockAPI_OpenRouterHeaders verifies that the
+// HTTP-Referer and X-Title headers are sent when provider is "openrouter".
+func TestClassifyThumbnails_WithMockAPI_OpenRouterHeaders(t *testing.T) {
+	tmpDir := t.TempDir()
+	imgPath := filepath.Join(tmpDir, "test.jpg")
+	require.NoError(t, os.WriteFile(imgPath, []byte("fake-data"), 0644))
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "openrouter.ai", r.Header.Get("HTTP-Referer"))
+		assert.Equal(t, "TestApp", r.Header.Get("X-Title"))
+		assert.Contains(t, r.Header.Get("Authorization"), "Bearer or-key")
+
+		resp := map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{"message": map[string]string{"content": `{"tags": ["irl"]}`}},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	svc := NewThumbnailService("ffmpeg", tmpDir, "openrouter", "or-key", server.URL,
+		"openai/gpt-4o-mini", "openrouter.ai", "TestApp", true, 30)
+	ctx := context.Background()
+
+	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Just Chatting")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"irl"}, tags)
 }
 
 // TestClassifyThumbnails_WithRealAPI performs a live API call to the configured
@@ -284,7 +320,7 @@ func TestClassifyThumbnails_WithRealAPI(t *testing.T) {
 	imgPath := filepath.Join(tmpDir, "test_frame.jpg")
 	require.NoError(t, os.WriteFile(imgPath, []byte("placeholder"), 0644))
 
-	svc := NewThumbnailService("ffmpeg", tmpDir, apiKey, apiURL, model, true, 30)
+	svc := newTestThumbnailService("ffmpeg", tmpDir, apiKey, apiURL, model, true)
 	require.True(t, svc.Operational())
 
 	ctx := context.Background()
@@ -323,7 +359,7 @@ func TestExtractThumbnails_InvalidVideo(t *testing.T) {
 	badPath := filepath.Join(tmpDir, "notavideo.mp4")
 	require.NoError(t, os.WriteFile(badPath, []byte("this is not a video"), 0644))
 
-	svc := NewThumbnailService("ffmpeg", outputDir, "", "", "", false, 30)
+	svc := newTestThumbnailService("ffmpeg", outputDir, "", "", "", false)
 	ctx := context.Background()
 
 	_, err := svc.ExtractThumbnails(ctx, badPath, 10.0)
