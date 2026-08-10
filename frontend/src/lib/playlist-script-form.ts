@@ -17,6 +17,8 @@ export function scriptToFormValues(
         game_ids: script.game_ids || [],
         broadcaster_id: script.broadcaster_id || '',
         tag: script.tag || '',
+        tags: script.tags || [],
+        tags_logic: script.tags_logic || 'and',
         exclude_tags: script.exclude_tags || [],
         language: script.language || '',
         min_vote_score:

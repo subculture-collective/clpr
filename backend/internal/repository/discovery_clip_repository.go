@@ -29,6 +29,8 @@ type DiscoveryClipFilters struct {
 	BroadcasterID   *string
 	CreatorID       *string
 	Tag             *string
+	Tags            []string // Multiple tags with AND/OR logic
+	TagsLogic       string   // "and" | "or", default "and"
 	ExcludeTags     []string
 	Search          *string
 	Language        *string

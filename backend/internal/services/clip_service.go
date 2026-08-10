@@ -365,6 +365,8 @@ func (s *ClipService) ListScrapedClips(ctx context.Context, filters repository.C
 		BroadcasterID:   filters.BroadcasterID,
 		CreatorID:       filters.CreatorID,
 		Tag:             filters.Tag,
+		Tags:            filters.Tags,
+		TagsLogic:       filters.TagsLogic,
 		ExcludeTags:     filters.ExcludeTags,
 		Search:          filters.Search,
 		Language:        filters.Language,
@@ -617,6 +619,10 @@ func (s *ClipService) buildCacheKey(filters repository.ClipFilters, page, limit 
 	}
 	if filters.Tag != nil {
 		key += fmt.Sprintf(":tag:%s", *filters.Tag)
+	}
+	if len(filters.Tags) > 0 {
+		key += fmt.Sprintf(":tags:%v", filters.Tags)
+		key += fmt.Sprintf(":tagslogic:%s", filters.TagsLogic)
 	}
 	if filters.Search != nil {
 		key += fmt.Sprintf(":search:%s", *filters.Search)

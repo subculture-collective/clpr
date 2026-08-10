@@ -422,6 +422,8 @@ type ClipFilters struct {
 	GameID            *string
 	BroadcasterID     *string
 	Tag               *string
+	Tags              []string // Multiple tags with AND/OR logic
+	TagsLogic         string   // "and" | "or", default "and"
 	ExcludeTags       []string // Exclude clips with any of these tag slugs
 	Search            *string
 	Language          *string // Language code (e.g., en, es, fr)
@@ -553,7 +555,28 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 		argIndex++
 	}
 
-	if filters.Tag != nil {
+	// Apply tag filters — supports single legacy tag and multi-tag AND/OR logic
+	if len(filters.Tags) > 0 {
+		if filters.TagsLogic == "or" {
+			// OR logic: clip must have at least one of the specified tags
+			whereClauses = append(whereClauses, fmt.Sprintf(`EXISTS (
+				SELECT 1 FROM clip_tags ct
+				JOIN tags t ON ct.tag_id = t.id
+				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+			)`, utils.SQLPlaceholder(argIndex)))
+			args = append(args, filters.Tags)
+			argIndex++
+		} else {
+			// AND logic (default): clip must have ALL specified tags
+			whereClauses = append(whereClauses, fmt.Sprintf(`(
+				SELECT COUNT(DISTINCT t.slug) FROM clip_tags ct
+				JOIN tags t ON ct.tag_id = t.id
+				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+			) = %s`, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1)))
+			args = append(args, filters.Tags, len(filters.Tags))
+			argIndex += 2
+		}
+	} else if filters.Tag != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf(`EXISTS (
 			SELECT 1 FROM clip_tags ct
 			JOIN tags t ON ct.tag_id = t.id
@@ -786,7 +809,26 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 	// Note: SubmittedByUserID filter is intentionally not applied here since this method
 	// retrieves only scraped clips (submitted_by_user_id IS NULL). Use ListWithFilters instead.
 
-	if filters.Tag != nil {
+	// Apply tag filters — supports single legacy tag and multi-tag AND/OR logic
+	if len(filters.Tags) > 0 {
+		if filters.TagsLogic == "or" {
+			whereClauses = append(whereClauses, fmt.Sprintf(`EXISTS (
+				SELECT 1 FROM clip_tags ct
+				JOIN tags t ON ct.tag_id = t.id
+				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+			)`, utils.SQLPlaceholder(argIndex)))
+			args = append(args, filters.Tags)
+			argIndex++
+		} else {
+			whereClauses = append(whereClauses, fmt.Sprintf(`(
+				SELECT COUNT(DISTINCT t.slug) FROM clip_tags ct
+				JOIN tags t ON ct.tag_id = t.id
+				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+			) = %s`, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1)))
+			args = append(args, filters.Tags, len(filters.Tags))
+			argIndex += 2
+		}
+	} else if filters.Tag != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf(`EXISTS (
 			SELECT 1 FROM clip_tags ct
 			JOIN tags t ON ct.tag_id = t.id

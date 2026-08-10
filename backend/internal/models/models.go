@@ -3768,7 +3768,9 @@ type PlaylistScript struct {
 	GameID                  *string    `json:"game_id,omitempty" db:"game_id"`
 	GameIDs                 []string   `json:"game_ids,omitempty" db:"game_ids"`
 	BroadcasterID           *string    `json:"broadcaster_id,omitempty" db:"broadcaster_id"`
-	Tag                     *string    `json:"tag,omitempty" db:"tag"`
+	Tag                     *string    `json:"tag,omitempty" db:"tag"`                // DEPRECATED: use Tags instead
+	Tags                    []string   `json:"tags,omitempty" db:"tags"`               // Multiple tags with AND/OR logic
+	TagsLogic               string     `json:"tags_logic,omitempty" db:"tags_logic"`  // "and" | "or", default "and"
 	ExcludeTags             []string   `json:"exclude_tags,omitempty" db:"exclude_tags"`
 	Language                *string    `json:"language,omitempty" db:"language"`
 	MinVoteScore            *int       `json:"min_vote_score,omitempty" db:"min_vote_score"`
@@ -3861,7 +3863,9 @@ type CreatePlaylistScriptRequest struct {
 	GameID          *string  `json:"game_id,omitempty" binding:"omitempty,max=50"`
 	GameIDs         []string `json:"game_ids,omitempty" binding:"omitempty,max=50,dive,max=50"`
 	BroadcasterID   *string  `json:"broadcaster_id,omitempty" binding:"omitempty,max=50"`
-	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`
+	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`                                  // DEPRECATED: use Tags instead
+	Tags            []string `json:"tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
+	TagsLogic       *string  `json:"tags_logic,omitempty" binding:"omitempty,oneof=and or"`
 	ExcludeTags     []string `json:"exclude_tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
 	Language        *string  `json:"language,omitempty" binding:"omitempty,max=10"`
 	MinVoteScore    *int     `json:"min_vote_score,omitempty" binding:"omitempty,min=0"`
@@ -3887,7 +3891,9 @@ type UpdatePlaylistScriptRequest struct {
 	GameID          *string  `json:"game_id,omitempty" binding:"omitempty,max=50"`
 	GameIDs         []string `json:"game_ids,omitempty" binding:"omitempty,max=50,dive,max=50"`
 	BroadcasterID   *string  `json:"broadcaster_id,omitempty" binding:"omitempty,max=50"`
-	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`
+	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`                                  // DEPRECATED: use Tags instead
+	Tags            []string `json:"tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
+	TagsLogic       *string  `json:"tags_logic,omitempty" binding:"omitempty,oneof=and or"`
 	ExcludeTags     []string `json:"exclude_tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
 	Language        *string  `json:"language,omitempty" binding:"omitempty,max=10"`
 	MinVoteScore    *int     `json:"min_vote_score,omitempty" binding:"omitempty,min=0"`

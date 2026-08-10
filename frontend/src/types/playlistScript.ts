@@ -55,6 +55,8 @@ export interface PlaylistScript {
     game_ids?: string[];
     broadcaster_id?: string;
     tag?: string;
+    tags: string[];
+    tags_logic: 'and' | 'or';
     exclude_tags?: string[];
     language?: string;
     min_vote_score?: number;
@@ -85,6 +87,8 @@ export interface CreatePlaylistScriptRequest {
     game_ids?: string[];
     broadcaster_id?: string;
     tag?: string;
+    tags?: string[];
+    tags_logic?: 'and' | 'or';
     exclude_tags?: string[];
     language?: string;
     min_vote_score?: number;
@@ -110,6 +114,8 @@ export interface UpdatePlaylistScriptRequest {
     game_ids?: string[];
     broadcaster_id?: string;
     tag?: string;
+    tags?: string[];
+    tags_logic?: 'and' | 'or';
     exclude_tags?: string[];
     language?: string;
     min_vote_score?: number;

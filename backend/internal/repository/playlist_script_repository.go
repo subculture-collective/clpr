@@ -16,7 +16,7 @@ var ErrPlaylistScriptNotFound = errors.New("playlist script not found")
 
 // playlistScriptColumns is the full column list for playlist_scripts queries
 const playlistScriptColumns = `id, name, description, sort, timeframe, clip_limit, visibility,
-               is_active, schedule, strategy, game_id, game_ids, broadcaster_id, tag, exclude_tags,
+               is_active, schedule, strategy, game_id, game_ids, broadcaster_id, tag, tags, tags_logic, exclude_tags,
                language, min_vote_score, min_view_count, exclude_nsfw, top_10k_streamers,
                seed_clip_id, retention_days, title_template,
                created_by, created_at, updated_at, last_run_at, last_generated_playlist_id`
@@ -49,6 +49,8 @@ func scanPlaylistScript(row pgx.Row) (*models.PlaylistScript, error) {
 		&script.GameIDs,
 		&script.BroadcasterID,
 		&script.Tag,
+		&script.Tags,
+		&script.TagsLogic,
 		&script.ExcludeTags,
 		&script.Language,
 		&script.MinVoteScore,
@@ -87,6 +89,8 @@ func scanPlaylistScriptRows(rows pgx.Rows) ([]*models.PlaylistScript, error) {
 			&script.GameIDs,
 			&script.BroadcasterID,
 			&script.Tag,
+			&script.Tags,
+			&script.TagsLogic,
 			&script.ExcludeTags,
 			&script.Language,
 			&script.MinVoteScore,
@@ -159,11 +163,11 @@ func (r *PlaylistScriptRepository) Create(ctx context.Context, script *models.Pl
 	query := `
         INSERT INTO playlist_scripts (
             id, name, description, sort, timeframe, clip_limit, visibility, is_active,
-            schedule, strategy, game_id, game_ids, broadcaster_id, tag, exclude_tags,
+            schedule, strategy, game_id, game_ids, broadcaster_id, tag, tags, tags_logic, exclude_tags,
             language, min_vote_score, min_view_count, exclude_nsfw, top_10k_streamers,
             seed_clip_id, retention_days, title_template, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
         RETURNING created_at, updated_at
     `
 
@@ -182,6 +186,8 @@ func (r *PlaylistScriptRepository) Create(ctx context.Context, script *models.Pl
 		script.GameIDs,
 		script.BroadcasterID,
 		script.Tag,
+		script.Tags,
+		script.TagsLogic,
 		script.ExcludeTags,
 		script.Language,
 		script.MinVoteScore,
@@ -208,11 +214,12 @@ func (r *PlaylistScriptRepository) Update(ctx context.Context, script *models.Pl
         SET name = $1, description = $2, sort = $3, timeframe = $4,
             clip_limit = $5, visibility = $6, is_active = $7,
             schedule = $8, strategy = $9, game_id = $10, game_ids = $11,
-            broadcaster_id = $12, tag = $13, exclude_tags = $14, language = $15,
-            min_vote_score = $16, min_view_count = $17, exclude_nsfw = $18,
-            top_10k_streamers = $19, seed_clip_id = $20, retention_days = $21,
-            title_template = $22
-        WHERE id = $23
+            broadcaster_id = $12, tag = $13, tags = $14, tags_logic = $15,
+            exclude_tags = $16, language = $17,
+            min_vote_score = $18, min_view_count = $19, exclude_nsfw = $20,
+            top_10k_streamers = $21, seed_clip_id = $22, retention_days = $23,
+            title_template = $24
+        WHERE id = $25
         RETURNING updated_at
     `
 
@@ -230,6 +237,8 @@ func (r *PlaylistScriptRepository) Update(ctx context.Context, script *models.Pl
 		script.GameIDs,
 		script.BroadcasterID,
 		script.Tag,
+		script.Tags,
+		script.TagsLogic,
 		script.ExcludeTags,
 		script.Language,
 		script.MinVoteScore,

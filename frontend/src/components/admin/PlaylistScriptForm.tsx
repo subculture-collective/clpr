@@ -39,6 +39,8 @@ export interface PlaylistScriptFormValues {
     game_ids: string[];
     broadcaster_id: string;
     tag: string;
+    tags: string[];
+    tags_logic: 'and' | 'or';
     exclude_tags: string[];
     language: string;
     min_vote_score: string;
@@ -64,6 +66,8 @@ const DEFAULT_VALUES: PlaylistScriptFormValues = {
     game_ids: [],
     broadcaster_id: '',
     tag: '',
+    tags: [],
+    tags_logic: 'and',
     exclude_tags: [],
     language: '',
     min_vote_score: '',
@@ -500,13 +504,57 @@ export function PlaylistScriptForm({
                                 fullWidth
                             />
                         )}
-                        <Input
-                            label="Tag"
+<Input
+                            label="Tag (deprecated)"
                             value={form.tag}
                             onChange={(e) => set('tag', e.target.value)}
                             placeholder="Include clips with this tag"
+                            helperText="Use the Tags field below for multiple tags with AND/OR logic"
                             fullWidth
                         />
+                        {/* Multi-tag filter — full width */}
+                        <div className="md:col-span-2 space-y-3">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-foreground">
+                                    Tags
+                                </label>
+                                <TagInput
+                                    value={form.tags}
+                                    onChange={(v) => set('tags', v)}
+                                    placeholder="Add a tag slug and press Enter"
+                                />
+                                <p className="text-sm text-muted-foreground">
+                                    Filter clips by tag slugs (e.g.
+                                    content/clutch, game/valorant)
+                                </p>
+                            </div>
+                            {form.tags.length > 1 && (
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-medium text-foreground">
+                                        Tags Logic
+                                    </label>
+                                    <select
+                                        value={form.tags_logic}
+                                        onChange={(e) =>
+                                            set(
+                                                'tags_logic',
+                                                e.target.value as
+                                                    | 'and'
+                                                    | 'or',
+                                            )
+                                        }
+                                        className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    >
+                                        <option value="and">
+                                            Must have ALL tags (AND)
+                                        </option>
+                                        <option value="or">
+                                            Must have ANY tag (OR)
+                                        </option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                         <div className="flex flex-col gap-1.5">
                             <label className="text-sm font-medium text-foreground">
                                 Exclude Tags

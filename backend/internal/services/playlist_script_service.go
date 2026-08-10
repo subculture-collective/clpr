@@ -220,6 +220,8 @@ func (s *PlaylistScriptService) CreateScript(ctx context.Context, userID uuid.UU
 		GameIDs:         req.GameIDs,
 		BroadcasterID:   req.BroadcasterID,
 		Tag:             req.Tag,
+		Tags:            req.Tags,
+		TagsLogic:       defaultTagsLogic(req.TagsLogic),
 		ExcludeTags:     req.ExcludeTags,
 		Language:        req.Language,
 		MinVoteScore:    req.MinVoteScore,
@@ -294,6 +296,12 @@ func (s *PlaylistScriptService) UpdateScript(ctx context.Context, scriptID uuid.
 	if req.Tag != nil {
 		script.Tag = req.Tag
 	}
+	if req.Tags != nil {
+		script.Tags = req.Tags
+	}
+	if req.TagsLogic != nil {
+		script.TagsLogic = *req.TagsLogic
+	}
 	if req.ExcludeTags != nil {
 		script.ExcludeTags = req.ExcludeTags
 	}
@@ -365,9 +373,18 @@ func hasPlaylistScriptUpdate(req *models.UpdatePlaylistScriptRequest) bool {
 	return req.Name != nil || req.Description != nil || req.Sort != nil || req.Timeframe != nil ||
 		req.ClipLimit != nil || req.Visibility != nil || req.IsActive != nil || req.Schedule != nil ||
 		req.Strategy != nil || req.GameID != nil || req.GameIDs != nil || req.BroadcasterID != nil ||
-		req.Tag != nil || req.ExcludeTags != nil || req.Language != nil || req.MinVoteScore != nil ||
+		req.Tag != nil || req.Tags != nil || req.TagsLogic != nil || req.ExcludeTags != nil ||
+		req.Language != nil || req.MinVoteScore != nil ||
 		req.MinViewCount != nil || req.ExcludeNSFW != nil || req.Top10kStreamers != nil ||
 		req.SeedClipID != nil || req.RetentionDays != nil || req.TitleTemplate != nil
+}
+
+// defaultTagsLogic returns the logic value or "and" as default
+func defaultTagsLogic(logic *string) string {
+	if logic != nil {
+		return *logic
+	}
+	return "and"
 }
 
 // DeleteScript removes a playlist script
@@ -476,6 +493,8 @@ func buildFiltersFromScript(script *models.PlaylistScript) repository.ClipFilter
 		GameID:          script.GameID,
 		BroadcasterID:   script.BroadcasterID,
 		Tag:             script.Tag,
+		Tags:            script.Tags,
+		TagsLogic:       script.TagsLogic,
 		ExcludeTags:     script.ExcludeTags,
 		Language:        script.Language,
 		Top10kStreamers: script.Top10kStreamers,
