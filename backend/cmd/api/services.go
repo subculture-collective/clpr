@@ -66,6 +66,8 @@ type Services struct {
 	OutboundWebhook          *services.OutboundWebhookService
 	TwitchBanSync            *services.TwitchBanSyncService    // may be nil
 	TwitchModeration         *services.TwitchModerationService // may be nil
+	Whisper                  *services.WhisperService          // may be nil
+	Thumbnail                *services.ThumbnailService        // may be nil
 	WSServer                 *websocket.Server
 	CancelEventTracker       context.CancelFunc
 	Logger                   *utils.StructuredLogger
@@ -292,6 +294,32 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		twitchModerationService = services.NewTwitchModerationService(infra.TwitchClient, repos.TwitchAuth, repos.User, repos.AuditLog)
 	}
 
+	// Initialize Whisper service (speech-to-text transcription)
+	var whisperService *services.WhisperService
+	if cfg.Whisper.Enabled {
+		if cfg.Whisper.PythonPath != "" && cfg.Whisper.RunnerDir != "" {
+			whisperService = services.NewWhisperService(cfg.Whisper.PythonPath, cfg.Whisper.RunnerDir)
+			log.Printf("Whisper service initialized (runner: %s)", cfg.Whisper.RunnerDir)
+		} else {
+			log.Println("WARNING: Whisper is enabled but PYTHON_PATH or RUNNER_DIR is missing; disabling transcription")
+		}
+	}
+
+	// Initialize Thumbnail service (frame extraction + vision AI classification)
+	var thumbnailService *services.ThumbnailService
+	if cfg.Vision.Enabled {
+		thumbnailService = services.NewThumbnailService(
+			cfg.Vision.FFmpegPath,
+			cfg.Vision.OutputDir,
+			cfg.Vision.APIKey,
+			cfg.Vision.APIURL,
+			cfg.Vision.Model,
+			cfg.Vision.Enabled,
+			cfg.Vision.TimeoutSeconds,
+		)
+		log.Printf("Thumbnail/vision service initialized (model: %s)", cfg.Vision.Model)
+	}
+
 	// Initialize WebSocket server
 	wsServer := websocket.NewServer(pool, infra.Redis.GetClient(), &cfg.WebSocket)
 	streamerClipRoomService.SetEventBroadcaster(func(roomID uuid.UUID, eventType string, data map[string]interface{}) {
@@ -361,6 +389,8 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		OutboundWebhook:          outboundWebhookService,
 		TwitchBanSync:            twitchBanSyncService,
 		TwitchModeration:         twitchModerationService,
+		Whisper:                  whisperService,
+		Thumbnail:                thumbnailService,
 		WSServer:                 wsServer,
 		CancelEventTracker:       cancelEventTracker,
 		Logger:                   logger,

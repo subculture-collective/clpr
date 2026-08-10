@@ -13,7 +13,7 @@ func TestNewAutoTagScheduler(t *testing.T) {
 	clipRepo := &repository.ClipRepository{}
 	intervalSeconds := 30
 
-	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, intervalSeconds)
+	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, nil, intervalSeconds)
 
 	if scheduler.clipRepo != clipRepo {
 		t.Error("clipRepo not properly initialized")
@@ -45,7 +45,7 @@ func TestNewAutoTagScheduler(t *testing.T) {
 
 func TestAutoTagScheduler_StopIdempotent(t *testing.T) {
 	clipRepo := &repository.ClipRepository{}
-	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, 30)
+	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, nil, 30)
 
 	// First Stop should close channel.
 	scheduler.Stop()
@@ -64,7 +64,7 @@ func TestAutoTagScheduler_StopIdempotent(t *testing.T) {
 
 func TestAutoTagScheduler_StopMultipleTimes(t *testing.T) {
 	clipRepo := &repository.ClipRepository{}
-	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, 1)
+	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, nil, 1)
 
 	for i := 0; i < 10; i++ {
 		scheduler.Stop()
@@ -73,7 +73,7 @@ func TestAutoTagScheduler_StopMultipleTimes(t *testing.T) {
 
 func TestAutoTagScheduler_StopConcurrent(t *testing.T) {
 	clipRepo := &repository.ClipRepository{}
-	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, 1)
+	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, nil, 1)
 
 	var wg sync.WaitGroup
 	numGoroutines := 100
@@ -182,7 +182,7 @@ func TestAutoTagScheduler_ContextCancellation(t *testing.T) {
 
 func TestAutoTagScheduler_NilServices(t *testing.T) {
 	clipRepo := &repository.ClipRepository{}
-	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, 30)
+	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, nil, 30)
 
 	if scheduler.whisper != nil {
 		t.Error("whisper should be nil (deferred feature)")

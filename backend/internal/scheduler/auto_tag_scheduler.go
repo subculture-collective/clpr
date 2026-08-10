@@ -2,13 +2,15 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
+	"os"
 	"sync"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 const autoTagSchedulerName = "auto_tag"
@@ -16,16 +18,12 @@ const autoTagSchedulerName = "auto_tag"
 // AutoTagScheduler periodically finds untagged clips and applies
 // structural + AI-derived tags to them.  It runs on a short ticker
 // so new clips are tagged near-real-time.
-//
-// TODO: The full pipeline (Whisper transcription, thumbnail extraction,
-// vision AI classification) requires downloading the video file first.
-// For now only structural tags are applied.  Once a video download worker
-// is available, wire the whisper and thumbnail services in processClips.
 type AutoTagScheduler struct {
-	autoTag  *services.AutoTagService
-	whisper  *services.WhisperService
+	autoTag   *services.AutoTagService
+	whisper   *services.WhisperService
 	thumbnail *services.ThumbnailService
-	clipRepo *repository.ClipRepository
+	clipRepo  *repository.ClipRepository
+	tagRepo   *repository.TagRepository
 
 	interval time.Duration
 	stopChan chan struct{}
@@ -42,13 +40,18 @@ func NewAutoTagScheduler(
 	whisper *services.WhisperService,
 	thumbnail *services.ThumbnailService,
 	clipRepo *repository.ClipRepository,
+	tagRepo *repository.TagRepository,
 	intervalSeconds int,
 ) *AutoTagScheduler {
+	if intervalSeconds <= 0 {
+		intervalSeconds = 30
+	}
 	return &AutoTagScheduler{
 		autoTag:   autoTag,
 		whisper:   whisper,
 		thumbnail: thumbnail,
 		clipRepo:  clipRepo,
+		tagRepo:   tagRepo,
 		interval:  time.Duration(intervalSeconds) * time.Second,
 		stopChan:  make(chan struct{}),
 	}
@@ -130,23 +133,12 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		}
 		tagged++
 
-		// TODO: Full pipeline — download video, extract audio, run Whisper
-		// transcription, extract thumbnails, classify with vision AI.
-		// Example skeleton:
-		//
-		//   if s.whisper != nil {
-		//       wavPath := downloadAndExtractAudio(clip.TwitchClipURL)
-		//       result, err := s.whisper.TranscribeAudio(ctx, wavPath)
-		//       …
-		//   }
-		//   if s.thumbnail != nil {
-		//       thumbs, err := s.thumbnail.ExtractThumbnails(ctx, videoPath, *clip.Duration)
-		//       contentTags, err := s.thumbnail.ClassifyThumbnails(ctx, thumbs, clip.GameName)
-		//       …
-		//   }
-		_ = s.whisper      // placeholder — not yet wired
-		_ = s.thumbnail    // placeholder — not yet wired
-		_ = fmt.Sprintf("") // keep import clean
+		// Full pipeline: download → audio extraction → whisper,
+		// thumbnail extraction → vision AI classification.
+		// These are best-effort — failures are logged and we move on.
+		if s.whisper != nil || (s.thumbnail != nil && s.thumbnail.Operational()) {
+			s.processClipMedia(ctx, clip)
+		}
 	}
 
 	duration := time.Since(startTime)
@@ -156,4 +148,117 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		"total":     len(untagged),
 		"duration":  duration.String(),
 	})
+}
+
+// processClipMedia downloads the clip video, extracts audio for Whisper
+// transcription, extracts thumbnails for vision AI classification, and
+// stores the resulting content tags.  All steps are best-effort — individual
+// failures are logged and skipped.
+func (s *AutoTagScheduler) processClipMedia(ctx context.Context, clip *models.Clip) {
+	// Derive the video download URL from the thumbnail URL.
+	// Twitch thumbnail URLs follow the pattern:
+	//   https://clips-media-assets2.twitch.tv/AT-cm-<id>-preview-480x272.jpg
+	// The actual mp4 is at the same path with .mp4 suffix.
+	if clip.ThumbnailURL == nil || *clip.ThumbnailURL == "" {
+		utils.Warn("No thumbnail URL available for media processing", map[string]interface{}{
+			"clip_id": clip.ID.String(),
+		})
+		return
+	}
+
+	videoPath, dlErr := services.DownloadClipVideo(ctx, *clip.ThumbnailURL, "/tmp/clpr-tags")
+	if dlErr != nil {
+		utils.Warn("Failed to download clip video, skipping media analysis", map[string]interface{}{
+			"clip_id": clip.ID.String(),
+		})
+		return
+	}
+	defer os.Remove(videoPath)
+
+	// Whisper transcription
+	if s.whisper != nil {
+		wavPath, extErr := services.ExtractAudio(ctx, "ffmpeg", videoPath, "/tmp/clpr-tags")
+		if extErr == nil {
+			defer os.Remove(wavPath)
+			result, whErr := s.whisper.TranscribeAudio(ctx, wavPath)
+			if whErr == nil && result != nil {
+				utils.Info("Clip transcribed", map[string]interface{}{
+					"clip_id":  clip.ID.String(),
+					"language": result.Language,
+					"text_len": len(result.FullText),
+				})
+			} else if whErr != nil {
+				utils.Warn("Whisper transcription failed", map[string]interface{}{
+					"clip_id": clip.ID.String(),
+				})
+			}
+		} else {
+			utils.Warn("Audio extraction failed", map[string]interface{}{
+				"clip_id": clip.ID.String(),
+			})
+		}
+	}
+
+	// Thumbnail extraction + vision AI classification
+	if s.thumbnail != nil && s.thumbnail.Operational() {
+		duration := 60.0 // default if clip.Duration is nil
+		if clip.Duration != nil {
+			duration = *clip.Duration
+		}
+		thumbs, thErr := s.thumbnail.ExtractThumbnails(ctx, videoPath, duration)
+		if thErr == nil {
+			defer func() {
+				for _, t := range thumbs {
+					os.Remove(t)
+				}
+			}()
+			tags, visErr := s.thumbnail.ClassifyThumbnails(ctx, thumbs, gameName(clip))
+			if visErr == nil {
+				// Ensure content tags exist and attach them to the clip.
+				s.ensureAndAttachContentTags(ctx, clip.ID, tags)
+			} else {
+				utils.Warn("Vision classification failed", map[string]interface{}{
+					"clip_id": clip.ID.String(),
+				})
+			}
+		} else {
+			utils.Warn("Thumbnail extraction failed", map[string]interface{}{
+				"clip_id": clip.ID.String(),
+			})
+		}
+	}
+}
+
+// ensureAndAttachContentTags ensures that content/ prefixed tags exist in
+// the tags table and then attaches them to the clip via clip_tags.
+func (s *AutoTagScheduler) ensureAndAttachContentTags(ctx context.Context, clipID uuid.UUID, tagSlugs []string) {
+	if s.tagRepo == nil {
+		return
+	}
+
+	// Ensure the content parent tag exists.
+	_, _ = s.tagRepo.GetOrCreateTag(ctx, "Content", "content", nil)
+
+	for _, slug := range tagSlugs {
+		fullSlug := "content/" + slug
+
+		// Ensure the tag row exists in the tags table.
+		_, _ = s.tagRepo.GetOrCreateTag(ctx, slug, fullSlug, nil)
+
+		// Attach the tag to the clip (idempotent).
+		if addErr := s.clipRepo.AddTagBySlug(ctx, clipID, fullSlug); addErr != nil {
+			utils.Warn("Failed to add content tag", map[string]interface{}{
+				"clip_id": clipID.String(),
+				"tag":     fullSlug,
+			})
+		}
+	}
+}
+
+// gameName returns the game name for a clip, or "Unknown Game" if not set.
+func gameName(clip *models.Clip) string {
+	if clip != nil && clip.GameName != nil {
+		return *clip.GameName
+	}
+	return "Unknown Game"
 }

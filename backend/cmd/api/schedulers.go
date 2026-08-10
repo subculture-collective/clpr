@@ -85,9 +85,10 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 	if svcs.AutoTag != nil {
 		sg.AutoTag = scheduler.NewAutoTagScheduler(
 			svcs.AutoTag,
-			nil, // whisper — deferred until video download pipeline is implemented
-			nil, // thumbnail — deferred until video download pipeline is implemented
+			svcs.Whisper,
+			svcs.Thumbnail,
 			repos.Clip,
+			repos.Tag,
 			30, // run every 30 seconds
 		)
 		go sg.AutoTag.Start(context.Background())

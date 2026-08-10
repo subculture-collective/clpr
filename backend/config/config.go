@@ -37,6 +37,8 @@ type Config struct {
 	Recommendations RecommendationsConfig
 	Toxicity        ToxicityConfig
 	NSFW            NSFWConfig
+	Vision          VisionConfig
+	Whisper         WhisperConfig
 	Telemetry       TelemetryConfig
 }
 
@@ -327,6 +329,24 @@ type NSFWConfig struct {
 	TimeoutSeconds int     // Request timeout in seconds (default: 5)
 }
 
+// VisionConfig holds vision AI (content classification) configuration
+type VisionConfig struct {
+	Enabled        bool   // Enable vision AI tagging (default: false)
+	APIKey         string // API key for vision API (OpenAI-compatible)
+	APIURL         string // API URL for vision API
+	Model          string // Model name for vision API (e.g., gpt-4o-mini)
+	FFmpegPath     string // Path to ffmpeg binary
+	OutputDir      string // Directory for extracted thumbnails
+	TimeoutSeconds int    // Request timeout in seconds (default: 30)
+}
+
+// WhisperConfig holds Whisper transcription configuration
+type WhisperConfig struct {
+	Enabled    bool   // Enable Whisper transcription (default: false)
+	PythonPath string // Path to python3 binary
+	RunnerDir  string // Directory containing whisper_runner.py
+}
+
 // TelemetryConfig holds distributed tracing configuration
 type TelemetryConfig struct {
 	Enabled          bool    // Enable OpenTelemetry tracing (default: false)
@@ -610,6 +630,20 @@ func Load() (*Config, error) {
 			AutoFlag:       getEnvBool("NSFW_AUTO_FLAG", true),
 			MaxLatencyMs:   getEnvInt("NSFW_MAX_LATENCY_MS", 200),
 			TimeoutSeconds: getEnvInt("NSFW_TIMEOUT_SECONDS", 5),
+		},
+		Vision: VisionConfig{
+			Enabled:        getEnvBool("VISION_ENABLED", false),
+			APIKey:         getEnv("VISION_API_KEY", ""),
+			APIURL:         getEnv("VISION_API_URL", ""),
+			Model:          getEnv("VISION_MODEL", "gpt-4o-mini"),
+			FFmpegPath:     getEnv("VISION_FFMPEG_PATH", "ffmpeg"),
+			OutputDir:      getEnv("VISION_OUTPUT_DIR", "/tmp/clpr-thumbnails"),
+			TimeoutSeconds: getEnvInt("VISION_TIMEOUT_SECONDS", 30),
+		},
+		Whisper: WhisperConfig{
+			Enabled:    getEnvBool("WHISPER_ENABLED", false),
+			PythonPath: getEnv("WHISPER_PYTHON_PATH", "python3"),
+			RunnerDir:  getEnv("WHISPER_RUNNER_DIR", ""),
 		},
 		Telemetry: TelemetryConfig{
 			Enabled:          getEnvBool("TELEMETRY_ENABLED", false),
