@@ -327,6 +327,30 @@ func TestBuildTrendingGameConfigs(t *testing.T) {
 	}
 }
 
+func TestFallbackCategories(t *testing.T) {
+	categories := fallbackCategories()
+	if len(categories) != len(defaultTrendingGameIDs) {
+		t.Fatalf("expected %d categories, got %d", len(defaultTrendingGameIDs), len(categories))
+	}
+
+	seen := map[string]bool{}
+	for i, cat := range categories {
+		if cat.GameID == "" {
+			t.Fatalf("category[%d] has empty GameID", i)
+		}
+		if cat.GameName != "fallback" {
+			t.Fatalf("category[%d] GameName = %q, want \"fallback\"", i, cat.GameName)
+		}
+		if cat.ViewerCount != 0 {
+			t.Fatalf("category[%d] ViewerCount = %d, want 0", i, cat.ViewerCount)
+		}
+		if seen[cat.GameID] {
+			t.Fatalf("duplicate GameID %s", cat.GameID)
+		}
+		seen[cat.GameID] = true
+	}
+}
+
 func TestApplyTrendingDefaults(t *testing.T) {
 	store := newMockTrendingStateStore(nil)
 	svc := &ClipSyncService{maxPages: 5, stateStore: store}

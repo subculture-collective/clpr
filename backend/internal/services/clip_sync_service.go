@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"regexp"
 	"strings"
 	"time"
@@ -40,6 +41,13 @@ var defaultTrendingGameIDs = []string{
 	"488552",           // Overwatch 2
 }
 
+// TopCategory represents a Twitch category with viewer count
+type TopCategory struct {
+	GameID      string
+	GameName    string
+	ViewerCount int
+}
+
 // SyncClipsByGameOptions controls pagination behaviour for game syncs
 type SyncClipsByGameOptions struct {
 	InitialCursor  string
@@ -51,6 +59,7 @@ type SyncClipsByGameOptions struct {
 // TrendingGameConfig pairs a game with its per-run fetch limit
 type TrendingGameConfig struct {
 	GameID string
+	Name   string
 	Limit  int
 }
 
@@ -316,6 +325,187 @@ func (s *ClipSyncService) SyncClipsByBroadcaster(ctx context.Context, broadcaste
 	return stats, nil
 }
 
+// FollowedBroadcasterSyncOptions configures the followed broadcaster sync run.
+type FollowedBroadcasterSyncOptions struct {
+	MinFollowers        int    // minimum clpr followers to include a broadcaster
+	ClipsPerBroadcaster int    // max clips fetched per broadcaster
+	MaxTotalClips       int    // hard cap per sync cycle
+	PrefersLive         bool   // prioritize currently-live broadcasters
+	LanguageFilter      string
+}
+
+// SyncFollowedBroadcasterClips fetches clips from broadcasters that have at
+// least MinFollowers users following them on clpr. Results are shuffled and
+// capped at MaxTotalClips per cycle.
+func (s *ClipSyncService) SyncFollowedBroadcasterClips(ctx context.Context, opts *FollowedBroadcasterSyncOptions) (*SyncStats, error) {
+	if opts == nil {
+		opts = &FollowedBroadcasterSyncOptions{
+			MinFollowers:        3,
+			ClipsPerBroadcaster: 5,
+			MaxTotalClips:       200,
+		}
+	}
+	if opts.MinFollowers < 1 {
+		opts.MinFollowers = 3
+	}
+	if opts.ClipsPerBroadcaster < 1 {
+		opts.ClipsPerBroadcaster = 5
+	}
+	if opts.MaxTotalClips < 1 {
+		opts.MaxTotalClips = 200
+	}
+
+	stats := &SyncStats{StartTime: time.Now()}
+
+	broadcasterIDs, err := s.userRepo.GetBroadcastersWithMinFollowers(ctx, opts.MinFollowers)
+	if err != nil {
+		return nil, fmt.Errorf("fetching followed broadcasters: %w", err)
+	}
+	if len(broadcasterIDs) == 0 {
+		stats.EndTime = time.Now()
+		return stats, nil
+	}
+
+	// Shuffle to rotate which broadcasters are picked each cycle
+	rand.Shuffle(len(broadcasterIDs), func(i, j int) {
+		broadcasterIDs[i], broadcasterIDs[j] = broadcasterIDs[j], broadcasterIDs[i]
+	})
+
+	totalClips := 0
+
+	for _, bid := range broadcasterIDs {
+		if totalClips >= opts.MaxTotalClips {
+			break
+		}
+
+		remaining := opts.MaxTotalClips - totalClips
+		perBroadcaster := opts.ClipsPerBroadcaster
+		if perBroadcaster > remaining {
+			perBroadcaster = remaining
+		}
+
+		bOpts := &SyncClipsByBroadcasterOptions{
+			LanguageFilter: opts.LanguageFilter,
+		}
+
+		bStats, bErr := s.SyncClipsByBroadcaster(ctx, bid, 24, perBroadcaster, bOpts)
+		if bErr != nil {
+			stats.Errors = append(stats.Errors, fmt.Sprintf("broadcaster %s: %v", bid, bErr))
+			continue
+		}
+
+		stats.ClipsFetched += bStats.ClipsFetched
+		stats.ClipsCreated += bStats.ClipsCreated
+		stats.ClipsUpdated += bStats.ClipsUpdated
+		stats.ClipsSkipped += bStats.ClipsSkipped
+		stats.Errors = append(stats.Errors, bStats.Errors...)
+		totalClips += bStats.ClipsFetched
+	}
+
+	stats.EndTime = time.Now()
+
+	utils.Info("Followed broadcaster sync completed", map[string]interface{}{
+		"broadcasters_scanned": min(len(broadcasterIDs), (totalClips+opts.ClipsPerBroadcaster-1)/opts.ClipsPerBroadcaster),
+		"broadcasters_total":   len(broadcasterIDs),
+		"total_fetched":        stats.ClipsFetched,
+		"total_created":        stats.ClipsCreated,
+		"total_updated":        stats.ClipsUpdated,
+		"total_skipped":        stats.ClipsSkipped,
+		"errors":               len(stats.Errors),
+		"duration":             stats.EndTime.Sub(stats.StartTime),
+	})
+
+	return stats, nil
+}
+
+// SyncGlobalTrending fetches platform-wide trending clips (no game/broadcaster filter)
+// to capture popular clips across all categories on Twitch.
+func (s *ClipSyncService) SyncGlobalTrending(ctx context.Context, limit int) (*SyncStats, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+
+	stats := &SyncStats{StartTime: time.Now()}
+	languageFilter := normalizeLanguageFilter(s.defaultLang)
+
+	endTime := time.Now()
+	startTime := endTime.Add(-24 * time.Hour)
+
+	params := &twitch.ClipParams{
+		First:     internalutils.Min(limit, 100),
+		StartedAt: startTime,
+		EndedAt:   endTime,
+	}
+
+	utils.Info("Syncing global trending clips", map[string]interface{}{
+		"start_time": startTime,
+		"end_time":   endTime,
+		"limit":      limit,
+	})
+
+	// Fetch clips with pagination
+	totalFetched := 0
+	for totalFetched < limit {
+		clipsResp, err := s.twitchClient.GetClips(ctx, params)
+		if err != nil {
+			stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to fetch global trending: %v", err))
+			break
+		}
+
+		if len(clipsResp.Data) == 0 {
+			break
+		}
+
+		var channelTags map[string][]string
+		if s.tagRepo != nil {
+			ids := make([]string, 0, len(clipsResp.Data))
+			seenIDs := map[string]bool{}
+			for _, clip := range clipsResp.Data {
+				if clip.BroadcasterID != "" && !seenIDs[clip.BroadcasterID] {
+					seenIDs[clip.BroadcasterID] = true
+					ids = append(ids, clip.BroadcasterID)
+				}
+			}
+			channelTags = s.fetchChannelTags(ctx, ids)
+		}
+
+		for _, twitchClip := range clipsResp.Data {
+			if !languageMatches(twitchClip.Language, languageFilter) {
+				stats.ClipsSkipped++
+				continue
+			}
+
+			if err := s.processClip(ctx, &twitchClip, stats, channelTags[twitchClip.BroadcasterID]); err != nil {
+				stats.Errors = append(stats.Errors, fmt.Sprintf("Failed to process clip %s: %v", twitchClip.ID, err))
+			}
+			totalFetched++
+			if totalFetched >= limit {
+				break
+			}
+		}
+
+		if clipsResp.Pagination.Cursor == "" || totalFetched >= limit {
+			break
+		}
+
+		params.After = clipsResp.Pagination.Cursor
+	}
+
+	stats.ClipsFetched = totalFetched
+	stats.EndTime = time.Now()
+
+	utils.Info("Global trending sync completed", map[string]interface{}{
+		"fetched":  stats.ClipsFetched,
+		"created":  stats.ClipsCreated,
+		"updated":  stats.ClipsUpdated,
+		"skipped":  stats.ClipsSkipped,
+		"errors":   len(stats.Errors),
+		"duration": stats.EndTime.Sub(stats.StartTime),
+	})
+
+	return stats, nil
+}
+
 // SyncTrendingClips fetches trending clips from multiple top games with pagination rotation
 func (s *ClipSyncService) SyncTrendingClips(ctx context.Context, hours int, opts *TrendingSyncOptions) (*SyncStats, error) {
 	stats := &SyncStats{StartTime: time.Now()}
@@ -323,15 +513,26 @@ func (s *ClipSyncService) SyncTrendingClips(ctx context.Context, hours int, opts
 
 	games := append([]TrendingGameConfig(nil), resolved.Games...)
 	if len(games) == 0 {
-		resolvedGames, resolveErr := s.resolveTrendingGames(ctx, resolved.StateStore)
-		if resolveErr != nil {
-			stats.Errors = append(stats.Errors, resolveErr.Error())
+		categories, fetchErr := s.fetchTopCategories(ctx, 50)
+		if fetchErr != nil {
+			utils.Warn("Failed to fetch top categories, using fallback", map[string]interface{}{
+				"error": fetchErr.Error(),
+			})
+			categories = fallbackCategories()
 		}
-		games = resolvedGames
-	}
 
-	if len(games) == 0 {
-		games = buildTrendingGameConfigs(defaultTrendingGameIDs)
+		// Build trending game configs: top 3 get 5 clips each, rest get 3
+		for i, cat := range categories {
+			limit := 3
+			if i < 3 {
+				limit = 5
+			}
+			games = append(games, TrendingGameConfig{
+				GameID: cat.GameID,
+				Name:   cat.GameName,
+				Limit:  limit,
+			})
+		}
 	}
 
 	utils.Info("Syncing trending clips", map[string]interface{}{
@@ -1002,6 +1203,34 @@ func (s *ClipSyncService) FetchAndImportClips(ctx context.Context, params *twitc
 	}
 
 	return clips, nil
+}
+
+// fetchTopCategories retrieves the top N categories from Twitch by current popularity.
+func (s *ClipSyncService) fetchTopCategories(ctx context.Context, limit int) ([]TopCategory, error) {
+	resp, err := s.twitchClient.GetTopGames(ctx, limit, "")
+	if err != nil {
+		return nil, fmt.Errorf("fetching top categories: %w", err)
+	}
+
+	result := make([]TopCategory, 0, len(resp.Data))
+	for _, g := range resp.Data {
+		result = append(result, TopCategory{
+			GameID:      g.ID,
+			GameName:    g.Name,
+			ViewerCount: 0, // Twitch Top Games API doesn't include viewer counts
+		})
+	}
+	return result, nil
+}
+
+// fallbackCategories returns the hardcoded default game IDs as TopCategory structs
+// for use when the Twitch API is unavailable.
+func fallbackCategories() []TopCategory {
+	result := make([]TopCategory, len(defaultTrendingGameIDs))
+	for i, id := range defaultTrendingGameIDs {
+		result[i] = TopCategory{GameID: id, GameName: "fallback", ViewerCount: 0}
+	}
+	return result
 }
 
 // GetTopGames returns the IDs of the top games currently on Twitch.

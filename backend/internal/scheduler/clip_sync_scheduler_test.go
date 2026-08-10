@@ -22,6 +22,26 @@ func (m *MockClipSyncService) SyncTrendingClips(ctx context.Context, hours int, 
 	}, nil
 }
 
+// SyncFollowedBroadcasterClips is a mock implementation
+func (m *MockClipSyncService) SyncFollowedBroadcasterClips(ctx context.Context, opts *services.FollowedBroadcasterSyncOptions) (*services.SyncStats, error) {
+	return &services.SyncStats{
+		ClipsFetched: 10,
+		ClipsCreated: 10,
+		StartTime:    time.Now(),
+		EndTime:      time.Now().Add(time.Second),
+	}, nil
+}
+
+// SyncGlobalTrending is a mock implementation
+func (m *MockClipSyncService) SyncGlobalTrending(ctx context.Context, limit int) (*services.SyncStats, error) {
+	return &services.SyncStats{
+		ClipsFetched: 3,
+		ClipsCreated: 3,
+		StartTime:    time.Now(),
+		EndTime:      time.Now().Add(time.Second),
+	}, nil
+}
+
 // TestStopMultipleTimes verifies that calling Stop() multiple times doesn't panic
 func TestStopMultipleTimes(t *testing.T) {
 	mockService := &MockClipSyncService{}

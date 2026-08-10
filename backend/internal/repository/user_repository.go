@@ -629,6 +629,43 @@ func (r *AccountDeletionRepository) MarkCompleted(ctx context.Context, deletionI
 	return err
 }
 
+// GetBroadcastersWithMinFollowers returns broadcaster IDs that have at least
+// minFollowers users following them on clpr.
+func (r *UserRepository) GetBroadcastersWithMinFollowers(ctx context.Context, minFollowers int) ([]string, error) {
+	if minFollowers < 1 {
+		minFollowers = 1
+	}
+
+	query := `
+		SELECT broadcaster_id
+		FROM broadcaster_follows
+		GROUP BY broadcaster_id
+		HAVING COUNT(*) >= $1
+		ORDER BY COUNT(*) DESC
+	`
+
+	rows, err := r.db.Query(ctx, query, minFollowers)
+	if err != nil {
+		return nil, fmt.Errorf("querying broadcasters by min followers: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scanning broadcaster id: %w", err)
+		}
+		ids = append(ids, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating broadcaster ids: %w", err)
+	}
+
+	return ids, nil
+}
+
 // UpdateDeviceToken updates a user's device token and platform
 func (r *UserRepository) UpdateDeviceToken(ctx context.Context, userID uuid.UUID, deviceToken string, devicePlatform string) error {
 	query := `
