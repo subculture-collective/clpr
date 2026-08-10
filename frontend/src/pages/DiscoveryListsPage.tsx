@@ -1,3 +1,11 @@
+/**
+ * DiscoveryListsPage — Discovery lists have been merged into curated playlists.
+ *
+ * This page now queries playlists via `useInfiniteFeaturedPlaylists`, which
+ * fetches from GET /playlists/featured. The "Discovery Lists" branding is
+ * retained for backward compatibility. In a future release this page will be
+ * renamed to reflect the unified playlist model.
+ */
 import { SEO } from '../components';
 import { PlaylistCard } from '../components/playlist/PlaylistCard';
 import { Button } from '../components/ui';

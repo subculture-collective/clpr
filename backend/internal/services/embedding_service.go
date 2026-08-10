@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -375,12 +376,69 @@ func (s *EmbeddingService) executeAPIRequest(ctx context.Context, reqBody Embedd
 		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	var embeddingResp EmbeddingResponse
-	if err := json.NewDecoder(resp.Body).Decode(&embeddingResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	embeddingResp, err := decodeEmbeddingAPIResponse(resp)
+	if err != nil {
+		return nil, err
 	}
 
-	return &embeddingResp, nil
+	return embeddingResp, nil
+}
+
+func decodeEmbeddingAPIResponse(resp *http.Response) (*EmbeddingResponse, error) {
+	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
+	if !strings.Contains(contentType, "text/event-stream") {
+		var embeddingResp EmbeddingResponse
+		if err := json.NewDecoder(resp.Body).Decode(&embeddingResp); err != nil {
+			return nil, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return &embeddingResp, nil
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	// Allow large non-streaming embedding payloads wrapped in one SSE data line.
+	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || !strings.HasPrefix(line, "data:") {
+			continue
+		}
+
+		payload := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
+		if payload == "" || payload == "[DONE]" {
+			continue
+		}
+
+		var status struct {
+			RequestID string `json:"request_id"`
+			Status    string `json:"status"`
+			Message   string `json:"message"`
+		}
+		if err := json.Unmarshal([]byte(payload), &status); err != nil {
+			return nil, fmt.Errorf("failed to decode SSE payload: %w", err)
+		}
+
+		switch status.Status {
+		case "queued":
+			continue
+		case "ollama_unavailable", "dropped_by_admin":
+			if status.Message != "" {
+				return nil, fmt.Errorf("embedding broker %s: %s", status.Status, status.Message)
+			}
+			return nil, fmt.Errorf("embedding broker %s", status.Status)
+		}
+
+		var embeddingResp EmbeddingResponse
+		if err := json.Unmarshal([]byte(payload), &embeddingResp); err != nil {
+			return nil, fmt.Errorf("failed to decode SSE embedding response: %w", err)
+		}
+		return &embeddingResp, nil
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("failed to read SSE embedding response: %w", err)
+	}
+
+	return nil, fmt.Errorf("no embedding response event received")
 }
 
 // doAPICall is deprecated - kept for backward compatibility

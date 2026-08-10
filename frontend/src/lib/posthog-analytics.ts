@@ -52,9 +52,8 @@ function loadPostHogScript(): Promise<PostHogQueue> {
 
         // Initialize the posthog queue (official snippet pattern)
         const win = window as { posthog?: PostHogQueue };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        win.posthog = win.posthog || ([] as any);
-        const posthog = win.posthog as PostHogQueue;
+        (win.posthog as PostHogQueue & Array<unknown>) = win.posthog || ([] as unknown as PostHogQueue & Array<unknown>);
+        const posthog = win.posthog as PostHogQueue & Array<unknown>;
 
         // Queue methods to be called after script loads
         const methods = [
@@ -77,10 +76,10 @@ function loadPostHogScript(): Promise<PostHogQueue> {
         ];
 
         for (const method of methods) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (posthog as any)[method] = function (...args: unknown[]) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (posthog as any).push([method, ...args]);
+            (posthog as Record<string, (...args: unknown[]) => void>)[method] = function (
+                ...args: unknown[]
+            ) {
+                (posthog as Array<unknown[]>).push([method, ...args]);
             };
         }
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Card, CardHeader, CardBody, Button, Input } from '../../components';
 import { Search, Shield, Ban, TrendingUp, MessageSquare, MessageSquareOff, Eye } from 'lucide-react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Modal } from '@/components/ui/Modal';
 
 interface User {
@@ -266,8 +266,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to ban user');
     },
   });
@@ -283,8 +282,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to unban user');
     },
   });
@@ -300,8 +298,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to update user role');
     },
   });
@@ -317,8 +314,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to update user karma');
     },
   });
@@ -343,8 +339,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to suspend comment privileges');
     },
   });
@@ -360,8 +355,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to lift comment suspension');
     },
   });
@@ -384,8 +378,7 @@ export function AdminUsersPage() {
       setActionType(null);
       setErrorMessage(null);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ error?: string }>) => {
       setErrorMessage(error.response?.data?.error || 'Failed to toggle comment review');
     },
   });
@@ -520,7 +513,7 @@ export function AdminUsersPage() {
             <CardBody className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">On This Page</p>
-                <p className="text-2xl font-bold">{data.users.length}</p>
+                <p className="text-2xl font-bold">{data?.users?.length ?? 0}</p>
               </div>
             </CardBody>
           </Card>
@@ -554,13 +547,13 @@ export function AdminUsersPage() {
             </div>
           )}
 
-          {data && data.users.length === 0 && (
+          {data?.users?.length === 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No users found matching your criteria.</p>
             </div>
           )}
 
-          {data && data.users.length > 0 && (
+          {data?.users?.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

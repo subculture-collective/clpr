@@ -38,3 +38,17 @@ export interface ClipTagsResponse {
 export interface AddTagsRequest {
   tag_slugs: string[];
 }
+
+export interface TagPromotionItem {
+  id: string;
+  tag_slug: string;
+  unique_users: number;
+  clip_count: number;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+}
+
+export interface TagPromotionQueueResponse {
+  items: TagPromotionItem[];
+  total: number;
+}

@@ -281,6 +281,29 @@ type BlacklistedTag struct {
 	CreatedAt time.Time  `json:"created_at" db:"created_at"`
 }
 
+// TagPromotionQueueItem represents a user-created tag awaiting moderator review
+type TagPromotionQueueItem struct {
+	ID          uuid.UUID  `json:"id" db:"id"`
+	TagSlug     string     `json:"tag_slug" db:"tag_slug"`
+	UsageCount  int        `json:"usage_count" db:"usage_count"`
+	UniqueUsers int        `json:"unique_users" db:"unique_users"`
+	Status      string     `json:"status" db:"status"` // pending, approved, rejected
+	ReviewedBy  *uuid.UUID `json:"reviewed_by,omitempty" db:"reviewed_by"`
+	ReviewedAt  *time.Time `json:"reviewed_at,omitempty" db:"reviewed_at"`
+	PromotedAt  *time.Time `json:"promoted_at,omitempty" db:"promoted_at"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+// TagPromotionCandidate represents a row from the tag_promotion_candidates view
+type TagPromotionCandidate struct {
+	Slug        string  `json:"slug" db:"slug"`
+	Name        string  `json:"name" db:"name"`
+	ClipCount   int     `json:"clip_count" db:"clip_count"`
+	UniqueUsers int     `json:"unique_users" db:"unique_users"`
+	ParentSlug  *string `json:"parent_slug,omitempty" db:"parent_slug"`
+}
+
 // Report represents a user report for moderation
 type Report struct {
 	ID             uuid.UUID  `json:"id" db:"id"`

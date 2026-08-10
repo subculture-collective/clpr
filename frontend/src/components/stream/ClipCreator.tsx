@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -34,9 +35,8 @@ export function ClipCreator({ streamer, currentTime = 0, duration = 0 }: ClipCre
         navigate(`/clips/${data.clip_id}`);
       }, 1000);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (error: any) => {
-      const message = error?.response?.data?.error || 'Failed to create clip. Please try again.';
+    onError: (error: AxiosError<{ error?: string }>) => {
+      const message = error.response?.data?.error || 'Failed to create clip. Please try again.';
       setErrorMessage(message);
     },
   });

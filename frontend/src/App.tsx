@@ -233,6 +233,11 @@ const AdminTagsPage = lazy(() =>
         default: m.AdminTagsPage,
     })),
 );
+const AdminTagPromotionPage = lazy(() =>
+    import('./pages/admin/AdminTagPromotionPage').then(m => ({
+        default: m.AdminTagPromotionPage,
+    })),
+);
 const AdminAPIDocsPage = lazy(() =>
     import('./pages/admin/AdminAPIDocsPage').then(m => ({
         default: m.AdminAPIDocsPage,
@@ -650,6 +655,7 @@ function App() {
                                                 discoveryListForm: AdminDiscoveryListFormPage,
                                                 playlistScripts: AdminPlaylistScriptsPage,
                                                 tags: AdminTagsPage,
+                                                tagPromotion: AdminTagPromotionPage,
                                                 apiDocs: AdminAPIDocsPage,
                                                 forumModeration: ForumModerationPage,
                                                 forumModerationLog: ModerationLogPage,

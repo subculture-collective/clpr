@@ -2,6 +2,9 @@ package services
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +12,35 @@ import (
 	"github.com/stretchr/testify/assert"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
+
+func TestDecodeEmbeddingAPIResponseFromLlamaLineSSE(t *testing.T) {
+	body := strings.Join([]string{
+		`data: {"request_id":"req-1","position":1,"wait_seconds":0,"status":"queued"}`,
+		``,
+		`data: {"object":"list","data":[{"object":"embedding","embedding":[0.1,0.2],"index":0}],"model":"nomic-embed-text:v1.5","usage":{"prompt_tokens":3,"total_tokens":3}}`,
+		``,
+	}, "\n")
+
+	resp := &http.Response{
+		Header: http.Header{"Content-Type": []string{"text/event-stream"}},
+		Body:   io.NopCloser(strings.NewReader(body)),
+	}
+
+	decoded, err := decodeEmbeddingAPIResponse(resp)
+	assert.NoError(t, err)
+	assert.Equal(t, "nomic-embed-text:v1.5", decoded.Model)
+	assert.Equal(t, []float32{0.1, 0.2}, decoded.Data[0].Embedding)
+}
+
+func TestDecodeEmbeddingAPIResponseFromLlamaLineTerminalError(t *testing.T) {
+	resp := &http.Response{
+		Header: http.Header{"Content-Type": []string{"text/event-stream"}},
+		Body:   io.NopCloser(strings.NewReader(`data: {"request_id":"req-1","status":"ollama_unavailable","message":"connection refused"}`)),
+	}
+
+	_, err := decodeEmbeddingAPIResponse(resp)
+	assert.ErrorContains(t, err, "ollama_unavailable")
+}
 
 func TestBuildClipText(t *testing.T) {
 	service := &EmbeddingService{}

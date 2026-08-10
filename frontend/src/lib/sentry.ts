@@ -206,3 +206,16 @@ export function captureMessage(
  * Export Sentry for direct access if needed
  */
 export { Sentry };
+
+/**
+ * Capture an error with component stack context for error boundaries
+ */
+export function captureBoundaryError(
+  error: Error,
+  componentStack: string | null | undefined,
+): void {
+  Sentry.withScope((scope) => {
+    scope.setContext('errorBoundary', { componentStack });
+    Sentry.captureException(error);
+  });
+}

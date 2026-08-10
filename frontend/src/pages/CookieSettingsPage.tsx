@@ -11,7 +11,7 @@ import {
   Toggle,
 } from '../components';
 import { useConsent } from '../context/ConsentContext';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * Cookie Settings Page
@@ -21,11 +21,19 @@ import { useState } from 'react';
 export function CookieSettingsPage() {
   const { consent, updateConsent, doNotTrack, acceptAll, rejectAll } = useConsent();
   const [success, setSuccess] = useState(false);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
 
   const handleConsentChange = (category: string, value: boolean) => {
     updateConsent({ [category]: value });
     setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSuccess(false), 3000);
   };
 
   return (

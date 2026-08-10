@@ -198,8 +198,10 @@ func (r *PlaylistRepository) GetByShareToken(ctx context.Context, shareToken str
 func (r *PlaylistRepository) Update(ctx context.Context, playlist *models.Playlist) error {
 	query := `
 		UPDATE playlists
-		SET title = $1, description = $2, cover_url = $3, visibility = $4, share_token = $5
-		WHERE id = $6 AND deleted_at IS NULL
+		SET title = $1, description = $2, cover_url = $3, visibility = $4,
+		    is_curated = $5, is_featured = $6, display_order = $7, script_id = $8,
+		    share_token = $9
+		WHERE id = $10 AND deleted_at IS NULL
 		RETURNING updated_at
 	`
 
@@ -208,6 +210,10 @@ func (r *PlaylistRepository) Update(ctx context.Context, playlist *models.Playli
 		playlist.Description,
 		playlist.CoverURL,
 		playlist.Visibility,
+		playlist.IsCurated,
+		playlist.IsFeatured,
+		playlist.DisplayOrder,
+		playlist.ScriptID,
 		playlist.ShareToken,
 		playlist.ID,
 	).Scan(&playlist.UpdatedAt)

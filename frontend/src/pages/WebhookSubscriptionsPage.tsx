@@ -717,7 +717,7 @@ function DeliveriesModal({
             <div className="space-y-4">
                 {isLoading ? (
                     <div className="text-center py-8">Loading deliveries...</div>
-                ) : data && data.deliveries.length > 0 ? (
+                ) : data?.deliveries?.length > 0 ? (
                     <>
                         <div className="space-y-3 max-h-96 overflow-y-auto">
                             {data.deliveries.map((delivery: WebhookDelivery) => (

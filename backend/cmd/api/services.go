@@ -275,7 +275,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	var liveStatusService *services.LiveStatusService
 	outboundWebhookService := services.NewOutboundWebhookService(repos.OutboundWebhook)
 	if infra.TwitchClient != nil {
-		clipSyncService = services.NewClipSyncService(infra.TwitchClient, repos.Clip, repos.Tag, repos.User, infra.Redis)
+		clipSyncService = services.NewClipSyncService(infra.TwitchClient, repos.Clip, repos.Tag, repos.User, infra.Redis, nil)
 		submissionService = services.NewSubmissionService(repos.Submission, repos.Clip, repos.DiscoveryClip, repos.User, repos.Vote, repos.AuditLog, infra.TwitchClient, notificationService, infra.Redis, outboundWebhookService, cacheService, cfg)
 		liveStatusService = services.NewLiveStatusService(repos.Broadcaster, repos.StreamFollow, infra.TwitchClient)
 		// Set notification service for live status notifications

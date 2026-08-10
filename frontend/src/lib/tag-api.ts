@@ -6,6 +6,7 @@ import type {
   TagDetailResponse,
   ClipTagsResponse,
   AddTagsRequest,
+  TagPromotionQueueResponse,
 } from "../types/tag";
 import type { ClipFeedResponse } from "../types/clip";
 
@@ -105,6 +106,35 @@ export const tagApi = {
   deleteTag: async (id: string) => {
     const response = await apiClient.delete<{ message: string }>(
       `/admin/tags/${id}`
+    );
+    return response.data;
+  },
+
+  // Admin: Get tag promotion queue
+  getPromotionQueue: async (params?: {
+    status?: "pending" | "approved" | "rejected";
+    limit?: number;
+    page?: number;
+  }) => {
+    const response = await apiClient.get<TagPromotionQueueResponse>(
+      "/admin/tags/promotion-queue",
+      { params }
+    );
+    return response.data;
+  },
+
+  // Admin: Approve tag promotion
+  approvePromotion: async (id: string) => {
+    const response = await apiClient.post<{ message: string }>(
+      `/admin/tags/promotion-queue/${id}/approve`
+    );
+    return response.data;
+  },
+
+  // Admin: Reject tag promotion
+  rejectPromotion: async (id: string) => {
+    const response = await apiClient.post<{ message: string }>(
+      `/admin/tags/promotion-queue/${id}/reject`
     );
     return response.data;
   },

@@ -1,3 +1,12 @@
+/**
+ * DEPRECATED: Discovery list React Query hooks.
+ *
+ * These hooks consume the deprecated discovery-list API. Discovery lists have
+ * been merged into the curated playlist system — prefer the playlist hooks in
+ * `usePlaylist.ts` instead (e.g. `useInfiniteFeaturedPlaylists`).
+ *
+ * Kept for backward compatibility; will be removed in a future release.
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { discoveryListApi } from '../lib/discovery-list-api';
 import { useAuth } from './useAuth';

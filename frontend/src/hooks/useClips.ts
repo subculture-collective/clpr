@@ -83,8 +83,7 @@ export const useClipVote = () => {
         updater: (clip: Clip) => Clip,
     ) => {
         queryClient.setQueriesData({ queryKey: ['clips'] }, (old: unknown) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const oldData = old as any;
+            const oldData = old as { pages?: ClipFeedResponse[] } | null | undefined;
             if (!oldData?.pages) return oldData;
 
             return {
@@ -246,8 +245,7 @@ export const useClipFavorite = () => {
             queryClient.setQueriesData(
                 { queryKey: ['clips'] },
                 (old: unknown) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const oldData = old as any;
+                    const oldData = old as { pages?: ClipFeedResponse[] } | null | undefined;
                     if (!oldData?.pages) return oldData;
 
                     return {
@@ -276,8 +274,7 @@ export const useClipFavorite = () => {
             queryClient.setQueriesData(
                 { queryKey: ['favorites'] },
                 (old: unknown) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const oldData = old as any;
+                    const oldData = old as { pages?: { clips: Clip[] }[] } | null | undefined;
                     if (!oldData?.pages) return oldData;
 
                     return {

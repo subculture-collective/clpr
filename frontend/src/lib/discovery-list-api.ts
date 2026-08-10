@@ -1,3 +1,14 @@
+/**
+ * DEPRECATED: Discovery List API module.
+ *
+ * Discovery lists have been merged into the curated playlist system.
+ * Use the playlist API (e.g. GET /playlists with ?is_curated=true) instead.
+ *
+ * This module is kept for backward compatibility with existing consumers.
+ * It will be removed in a future release.
+ *
+ * @deprecated Use {@link ./playlist-api.ts} or the playlists endpoints.
+ */
 import { apiClient } from './api';
 import type { DiscoveryListWithStats } from '../types/discoveryList';
 import type { ClipFeedResponse } from '../types/clip';

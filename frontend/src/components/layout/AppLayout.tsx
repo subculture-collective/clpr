@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { SkipLink } from '../ui/SkipLink';
 import { Footer } from './Footer';
@@ -13,12 +13,11 @@ const QueueWidget = lazy(() =>
     import('../queue/QueueWidget').then((module) => ({ default: module.QueueWidget })),
 );
 
-const scrollPositions = new Map<string, number>();
-
 export function AppLayout() {
     const location = useLocation();
     const navigationType = useNavigationType();
     const { isAuthenticated } = useAuth();
+    const scrollPositionsRef = useRef(new Map<string, number>());
 
     // Initialize offline cache on app start
     useOfflineCacheInit();
@@ -29,6 +28,7 @@ export function AppLayout() {
     // New routes start at the top; browser back/forward restores the prior position.
     useEffect(() => {
         document.body.style.overflow = '';
+        const scrollPositions = scrollPositionsRef.current;
         const targetPosition = navigationType === 'POP'
             ? scrollPositions.get(location.key) ?? 0
             : 0;

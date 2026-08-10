@@ -143,7 +143,7 @@ export function StreamPage() {
               <div className="flex justify-center items-center py-12">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
               </div>
-            ) : clipsData?.data.length ? (
+            ) : clipsData?.data?.length ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {clipsData.data.map((clip) => (
                   <ClipCard key={clip.id} clip={clip} />

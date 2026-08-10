@@ -381,6 +381,7 @@ func initClipSyncService(cfg *config.Config, db *database.DB) *services.ClipSync
 		repository.NewTagRepository(db.Pool),
 		repository.NewUserRepository(db.Pool),
 		redisClient,
+		nil,
 	)
 }
 

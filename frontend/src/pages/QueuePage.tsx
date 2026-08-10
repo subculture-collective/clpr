@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button, Spinner } from '@/components/ui';
 import { SEO } from '@/components/SEO';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ConvertToPlaylistDialog } from '@/components/queue/ConvertToPlaylistDialog';
 import { PlaylistTheatreMode } from '@/components/playlist/PlaylistTheatreMode';
 import type { PlaylistItem } from '@/components/playlist/PlaylistTheatreMode';
@@ -46,9 +46,11 @@ export function QueuePage() {
     }));
 
     // Auto-select first item
-    if (!currentItemId && playlistItems.length > 0) {
-        setCurrentItemId(playlistItems[0].id);
-    }
+    useEffect(() => {
+        if (!currentItemId && playlistItems.length > 0) {
+            setCurrentItemId(playlistItems[0].id);
+        }
+    }, [currentItemId, playlistItems]);
 
     const handleItemClick = useCallback(
         (item: PlaylistItem) => {

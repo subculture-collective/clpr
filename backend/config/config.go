@@ -463,7 +463,7 @@ func Load() (*Config, error) {
 			MaxEmailsPerHour:         getEnvInt("EMAIL_MAX_PER_HOUR", 10),
 		},
 		Embedding: EmbeddingConfig{
-			OpenAIAPIKey:             getEnv("OPENAI_API_KEY", ""),
+			OpenAIAPIKey:             getEnv("LLAMA_LINE_API_KEY", getEnv("OPENAI_API_KEY", "")),
 			APIBaseURL:               getEnv("EMBEDDING_API_BASE_URL", ""),
 			Model:                    getEnv("EMBEDDING_MODEL", "text-embedding-3-small"),
 			RequestsPerMinute:        getEnvInt("EMBEDDING_REQUESTS_PER_MINUTE", 500),

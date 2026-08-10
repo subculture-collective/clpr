@@ -103,13 +103,13 @@ export function CreatorDashboardPage() {
           </p>
         </div>
 
-        {data?.clips.length === 0 ? (
+        {data?.clips?.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">
             <p className="text-lg">No clips found</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {data?.clips.map((clip) => (
+            {data?.clips?.map((clip) => (
               <div
                 key={clip.id}
                 className="bg-surface rounded-lg shadow-md p-6"
@@ -224,7 +224,7 @@ export function CreatorDashboardPage() {
         {/* Pagination info */}
         {data && data.total > 0 && (
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Showing {data.clips.length} of {data.total} clips
+            Showing {data?.clips?.length ?? 0} of {data.total} clips
           </div>
         )}
       </Container>

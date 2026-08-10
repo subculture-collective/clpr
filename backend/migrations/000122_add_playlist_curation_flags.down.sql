@@ -1,0 +1,3 @@
+-- Note: Columns is_curated, is_featured, display_order were added by 000104;
+-- script_id was added by 000105. This migration is idempotent (ADD COLUMN IF NOT EXISTS).
+-- No reverse action needed for already-existing production columns.

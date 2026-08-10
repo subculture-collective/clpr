@@ -31,7 +31,7 @@ export function WatchPartyBrowsePage() {
                     getPublicWatchParties(20, 0),
                 ]);
                 setTrendingParties(trending);
-                setPublicParties(publicData.parties);
+                setPublicParties(publicData.parties ?? []);
             } catch (err) {
                 console.error('Error loading parties:', err);
                 showToast('Failed to load watch parties', 'error');

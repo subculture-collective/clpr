@@ -344,7 +344,7 @@ export function UserProfilePage() {
                     {/* Tab Content */}
                     {activeTab === 'clips' && (
                         <div>
-                            {clipsData && clipsData.clips.length > 0 ?
+                            {clipsData?.clips?.length > 0 ?
                                 <>
                                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                         {clipsData.clips.map(clip => (
@@ -402,7 +402,7 @@ export function UserProfilePage() {
 
                     {activeTab === 'activity' && (
                         <div>
-                            {activityData && activityData.data.length > 0 ?
+                            {activityData?.data?.length > 0 ?
                                 <>
                                     <div className='space-y-4'>
                                         {activityData.data.map(activity => (
@@ -512,7 +512,7 @@ export function UserProfilePage() {
 
                     {activeTab === 'followers' && (
                         <div>
-                            {followersData && followersData.data.length > 0 ?
+                            {followersData?.data?.length > 0 ?
                                 <>
                                     <div className='space-y-4'>
                                         {followersData.data.map(follower => (
@@ -613,7 +613,7 @@ export function UserProfilePage() {
 
                     {activeTab === 'following' && (
                         <div>
-                            {followingData && followingData.data.length > 0 ?
+                            {followingData?.data?.length > 0 ?
                                 <>
                                     <div className='space-y-4'>
                                         {followingData.data.map(

@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
+	"github.com/google/uuid"
 )
 
 func TestExtractClipID(t *testing.T) {
@@ -396,5 +398,47 @@ func TestResolveTrendingGamesUsesCachedList(t *testing.T) {
 
 	if configs[0].GameID != justChattingGameID {
 		t.Fatalf("expected Just Chatting to be first, got %s", configs[0].GameID)
+	}
+}
+
+func TestNewClipSyncServiceAutoTaggerNil(t *testing.T) {
+	// Backward-compat: nil autoTagger should be supported
+	svc := NewClipSyncService(nil, nil, nil, nil, nil, nil)
+	if svc.autoTagger != nil {
+		t.Fatal("expected autoTagger to be nil when constructed with nil")
+	}
+}
+
+func TestNewClipSyncServiceAutoTaggerSet(t *testing.T) {
+	autoTagger := NewAutoTaggerService(nil, nil)
+	svc := NewClipSyncService(nil, nil, nil, nil, nil, autoTagger)
+	if svc.autoTagger != autoTagger {
+		t.Fatal("expected autoTagger to be stored on ClipSyncService")
+	}
+}
+
+func TestMaybeAutoTagNilSafe(t *testing.T) {
+	// maybeAutoTag should never panic, even when autoTagger is nil
+	svc := &ClipSyncService{autoTagger: nil}
+	clip := &models.Clip{ID: uuid.New()}
+	// Should not panic
+	svc.maybeAutoTag(clip)
+}
+
+func TestMaybeAutoTagLaunchesGoroutine(t *testing.T) {
+	// Create a minimal ClipSyncService and verify maybeAutoTag does not block
+	// when autoTagger is nil (the common case in tests)
+	svc := &ClipSyncService{autoTagger: nil}
+	clip := &models.Clip{ID: uuid.New()}
+	done := make(chan struct{})
+	go func() {
+		svc.maybeAutoTag(clip)
+		close(done)
+	}()
+	select {
+	case <-done:
+		// Expected: returns immediately when autoTagger is nil
+	case <-time.After(time.Second):
+		t.Fatal("maybeAutoTag blocked unexpectedly")
 	}
 }

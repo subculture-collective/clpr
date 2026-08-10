@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
@@ -13,8 +13,15 @@ const DELETE_CONFIRMATION_TIMEOUT = 5000;
 
 export function AdminDiscoveryListsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const deleteConfirmTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    return () => {
+      if (deleteConfirmTimerRef.current) clearTimeout(deleteConfirmTimerRef.current);
+    };
+  }, []);
 
   // Fetch all discovery lists
   const { data: lists, isLoading } = useQuery({
@@ -53,8 +60,8 @@ export function AdminDiscoveryListsPage() {
       deleteMutation.mutate(listId);
     } else {
       setDeleteConfirm(listId);
-      // Auto-cancel confirm after timeout
-      setTimeout(() => setDeleteConfirm(null), DELETE_CONFIRMATION_TIMEOUT);
+      if (deleteConfirmTimerRef.current) clearTimeout(deleteConfirmTimerRef.current);
+      deleteConfirmTimerRef.current = setTimeout(() => setDeleteConfirm(null), DELETE_CONFIRMATION_TIMEOUT);
     }
   };
 

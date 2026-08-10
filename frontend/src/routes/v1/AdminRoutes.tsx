@@ -30,6 +30,7 @@ export interface AdminRoutePages {
     forumModeration: Page;
     forumModerationLog: Page;
     moderationUsers: Page;
+    tagPromotion: Page;
 }
 
 function protectedPage(PageComponent: Page) {
@@ -77,6 +78,10 @@ export function adminRoutes(pages: AdminRoutePages) {
                 element={protectedPage(pages.playlistScripts)}
             />
             <Route path='/admin/tags' element={protectedPage(pages.tags)} />
+            <Route
+                path='/admin/tag-promotion'
+                element={protectedPage(pages.tagPromotion)}
+            />
             <Route path='/admin/api-docs' element={protectedPage(pages.apiDocs)} />
             <Route
                 path='/admin/forum/moderation'

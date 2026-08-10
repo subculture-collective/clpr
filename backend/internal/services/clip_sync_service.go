@@ -81,10 +81,11 @@ type ClipSyncService struct {
 	stateStore   TrendingStateStore
 	maxPages     int
 	defaultLang  string
+	autoTagger   *AutoTaggerService
 }
 
 // NewClipSyncService creates a new ClipSyncService
-func NewClipSyncService(twitchClient *twitch.Client, clipRepo *repository.ClipRepository, tagRepo *repository.TagRepository, userRepo *repository.UserRepository, redisClient *redispkg.Client) *ClipSyncService {
+func NewClipSyncService(twitchClient *twitch.Client, clipRepo *repository.ClipRepository, tagRepo *repository.TagRepository, userRepo *repository.UserRepository, redisClient *redispkg.Client, autoTagger *AutoTaggerService) *ClipSyncService {
 	var stateStore TrendingStateStore
 	if redisClient != nil {
 		stateStore = NewRedisTrendingStateStore(redisClient)
@@ -98,6 +99,7 @@ func NewClipSyncService(twitchClient *twitch.Client, clipRepo *repository.ClipRe
 		stateStore:   stateStore,
 		maxPages:     defaultTrendingMaxPages,
 		defaultLang:  normalizeLanguageFilter("en"),
+		autoTagger:   autoTagger,
 	}
 }
 
@@ -791,6 +793,9 @@ func (s *ClipSyncService) FetchClipByURL(ctx context.Context, clipURLOrID string
 		return nil, fmt.Errorf("failed to save clip: %w", err)
 	}
 
+	// Trigger structural auto-tagging in a non-blocking goroutine
+	s.maybeAutoTag(clip)
+
 	if s.tagRepo != nil && twitchClip.BroadcasterID != "" {
 		if tags := s.fetchChannelTags(ctx, []string{twitchClip.BroadcasterID}); len(tags) > 0 {
 			_ = s.applyStreamerTags(ctx, clip, tags[twitchClip.BroadcasterID])
@@ -839,8 +844,27 @@ func (s *ClipSyncService) processClip(ctx context.Context, twitchClip *twitch.Cl
 		}
 	}
 
+	// Trigger structural auto-tagging in a non-blocking goroutine
+	s.maybeAutoTag(clip)
+
 	stats.ClipsCreated++
 	return nil
+}
+
+// maybeAutoTag fires structural auto-tagging in a non-blocking goroutine
+// when the autoTagger is configured. Tagging is best-effort; failures are logged.
+func (s *ClipSyncService) maybeAutoTag(clip *models.Clip) {
+	if s.autoTagger == nil {
+		return
+	}
+	go func() {
+		if _, err := s.autoTagger.TagClip(context.Background(), clip); err != nil {
+			utils.Warn("Auto-tagger failed for clip", map[string]interface{}{
+				"clip_id": clip.ID.String(),
+				"error":   err.Error(),
+			})
+		}
+	}()
 }
 
 // processClipAsPosted imports a Twitch clip and marks it as "posted" by the given submitter.
@@ -897,6 +921,9 @@ func (s *ClipSyncService) processClipAsPosted(ctx context.Context, twitchClip *t
 			stats.Errors = append(stats.Errors, err.Error())
 		}
 	}
+
+	// Trigger structural auto-tagging in a non-blocking goroutine
+	s.maybeAutoTag(clip)
 
 	stats.ClipsCreated++
 	return nil
