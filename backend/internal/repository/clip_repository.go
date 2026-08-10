@@ -1382,6 +1382,21 @@ WHERE id = $1
 	return nil
 }
 
+// AddTagBySlug inserts a row into clip_tags by resolving tag slug to tag ID.
+// Uses ON CONFLICT DO NOTHING to make the operation idempotent — if the clip
+// already has the tag, the insert is silently skipped.
+func (r *ClipRepository) AddTagBySlug(ctx context.Context, clipID uuid.UUID, tagSlug string) error {
+	query := `INSERT INTO clip_tags (clip_id, tag_id)
+		SELECT $1, id FROM tags WHERE slug = $2
+		ON CONFLICT DO NOTHING`
+
+	_, err := r.pool.Exec(ctx, query, clipID, tagSlug)
+	if err != nil {
+		return fmt.Errorf("failed to add tag by slug: %w", err)
+	}
+	return nil
+}
+
 // GetFollowingFeedClips retrieves clips from users and broadcasters that the user follows
 func (r *ClipRepository) GetFollowingFeedClips(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*models.ClipWithSubmitter, int, error) {
 	query := `

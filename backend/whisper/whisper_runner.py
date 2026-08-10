@@ -1,0 +1,1 @@
+../../../hasanara/worker/whisper_runner.py
