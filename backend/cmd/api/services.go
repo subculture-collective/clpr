@@ -26,6 +26,7 @@ type Services struct {
 	Comment                  *services.CommentService
 	Clip                     *services.ClipService
 	AutoTag                  *services.AutoTagService
+	TopicClassification      *services.TopicClassificationService
 	Reputation               *services.ReputationService
 	Analytics                *services.AnalyticsService
 	Engagement               *services.EngagementService
@@ -123,6 +124,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	commentService := services.NewCommentService(repos.Comment, repos.Clip, repos.User, notificationService, toxicityClassifier)
 	clipService := services.NewClipService(repos.Clip, repos.DiscoveryClip, repos.Vote, repos.Favorite, repos.User, repos.WatchHistory, infra.Redis, repos.AuditLog, notificationService)
 	autoTagService := services.NewAutoTagService(repos.Tag)
+	topicClassificationService := services.NewTopicClassificationService(repos.ClipTopic)
 	reputationService := services.NewReputationService(repos.Reputation, repos.User)
 	analyticsService := services.NewAnalyticsService(repos.Analytics, repos.Clip)
 	engagementService := services.NewEngagementService(repos.Analytics, repos.User, repos.Clip)
@@ -368,6 +370,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Comment:                  commentService,
 		Clip:                     clipService,
 		AutoTag:                  autoTagService,
+		TopicClassification:      topicClassificationService,
 		Reputation:               reputationService,
 		Analytics:                analyticsService,
 		Engagement:               engagementService,

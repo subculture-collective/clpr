@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
 import { ShareButton } from '@/components/clip/ShareButton';
 import { useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { topicApi } from '@/lib/topic-api';
 
 export function ClipDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -32,6 +34,11 @@ export function ClipDetailPage() {
     const isVoting = voteMutation.isPending;
     const isBanned = user?.is_banned;
     const banReason = user?.ban_reason;
+    const { data: clipTopics } = useQuery({
+        queryKey: ['clip-topics', id],
+        queryFn: () => topicApi.getClipTopics(id || ''),
+        enabled: Boolean(id),
+    });
 
     // Watch history integration - full progress tracking for HLS clips only
     const {
@@ -292,6 +299,20 @@ export function ClipDetailPage() {
                             })}
                         </span>
                     </div>
+
+                    {clipTopics && clipTopics.topics.length > 0 && (
+                        <div className='mb-3 flex flex-wrap gap-2' aria-label='Clip topics'>
+                            {clipTopics.topics.map(topic => (
+                                <Link
+                                    key={topic.topic_id}
+                                    to={`/category/${topic.topic_slug}`}
+                                    className='rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent/80'
+                                >
+                                    {topic.topic_name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Actions row — matching PlaylistDetail stats row */}
                     <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>

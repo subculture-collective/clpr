@@ -27,6 +27,15 @@ func createCurationClip(t *testing.T, repo *ClipRepository, title, gameID, creat
 	if _, err := repo.pool.Exec(context.Background(), `UPDATE clips SET view_velocity = $1 WHERE id = $2`, velocity, clip.ID); err != nil {
 		t.Fatalf("set clip velocity: %v", err)
 	}
+	if _, err := repo.pool.Exec(context.Background(), `
+		INSERT INTO clip_topics (clip_id, topic_id, source, confidence)
+		SELECT $1, cg.category_id, 'twitch_category', .55
+		FROM games g JOIN category_games cg ON cg.game_id = g.id
+		WHERE g.twitch_game_id = $2
+		ON CONFLICT DO NOTHING
+	`, clip.ID, gameID); err != nil {
+		t.Fatalf("classify clip topic: %v", err)
+	}
 	return clip
 }
 

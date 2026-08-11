@@ -36,6 +36,13 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminTags.DELETE("/blacklist/:id", h.Tag.RemoveBlacklistedTag)
 		}
 
+		adminTopics := admin.Group("/topics")
+		{
+			adminTopics.POST("/:id/merge", h.Topic.MergeTopics)
+			adminTopics.POST("/:id/split", h.Topic.SplitTopic)
+		}
+		admin.PUT("/clips/:id/topics", h.Topic.ReplaceClipTopics)
+
 		// Submission moderation (if available)
 		if h.Submission != nil {
 			adminSubmissions := admin.Group("/submissions")

@@ -46,6 +46,7 @@ type Handlers struct {
 	Community           *handlers.CommunityHandler
 	DiscoveryList       *handlers.DiscoveryListHandler
 	Category            *handlers.CategoryHandler
+	Topic               *handlers.TopicHandler
 	Game                *handlers.GameHandler
 	AccountType         *handlers.AccountTypeHandler
 	Verification        *handlers.VerificationHandler
@@ -130,6 +131,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	communityHandler := handlers.NewCommunityHandler(svcs.Community, svcs.Auth)
 	discoveryListHandler := handlers.NewDiscoveryListHandler(repos.DiscoveryList, repos.Analytics)
 	categoryHandler := handlers.NewCategoryHandler(repos.Category, repos.Clip)
+	topicHandler := handlers.NewTopicHandler(repos.ClipTopic)
 	gameHandler := handlers.NewGameHandler(repos.Game, repos.Clip, svcs.Auth)
 	accountTypeHandler := handlers.NewAccountTypeHandler(svcs.AccountType, svcs.Auth)
 	verificationHandler := handlers.NewVerificationHandler(repos.Verification, svcs.Notification, pool)
@@ -230,6 +232,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Community:           communityHandler,
 		DiscoveryList:       discoveryListHandler,
 		Category:            categoryHandler,
+		Topic:               topicHandler,
 		Game:                gameHandler,
 		AccountType:         accountTypeHandler,
 		Verification:        verificationHandler,

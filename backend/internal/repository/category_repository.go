@@ -31,7 +31,7 @@ func (r *CategoryRepository) List(ctx context.Context, categoryType *string, fea
 		FROM categories
 	`
 
-	whereClause := "WHERE 1=1"
+	whereClause := "WHERE is_active = TRUE"
 	args := []interface{}{}
 
 	if categoryType != nil && *categoryType != "" {
@@ -80,7 +80,7 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 		       category_type, is_featured, is_custom, created_by_user_id,
 		       created_at, updated_at
 		FROM categories
-		WHERE id = $1
+		WHERE id = $1 AND is_active = TRUE
 	`
 
 	var category models.Category
@@ -108,7 +108,7 @@ func (r *CategoryRepository) GetBySlug(ctx context.Context, slug string) (*model
 		       category_type, is_featured, is_custom, created_by_user_id,
 		       created_at, updated_at
 		FROM categories
-		WHERE slug = $1
+		WHERE slug = $1 AND is_active = TRUE
 	`
 
 	var category models.Category

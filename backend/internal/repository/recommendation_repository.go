@@ -268,10 +268,10 @@ func (r *RecommendationRepository) GetContentBasedRecommendations(
 						ELSE 0
 					END +
 					CASE WHEN EXISTS (
-						SELECT 1 FROM games g
-						JOIN category_games cg ON cg.game_id = g.id
-						JOIN categories topic ON topic.id = cg.category_id
-						WHERE g.twitch_game_id = c.game_id AND topic.slug = ANY($4::text[])
+						SELECT 1 FROM clip_topics ct
+						JOIN categories topic ON topic.id = ct.topic_id
+						WHERE ct.clip_id = c.id AND topic.is_active = TRUE
+						  AND topic.slug = ANY($4::text[])
 					) THEN 0.25 ELSE 0 END +
 					CASE
 						WHEN $5::uuid[] IS NOT NULL AND cwt.clip_tags && $5::uuid[] THEN 0.15

@@ -26,6 +26,7 @@ export interface AdminRoutePages {
     discoveryListForm: Page;
     playlistScripts: Page;
     tags: Page;
+    topics: Page;
     apiDocs: Page;
     forumModeration: Page;
     forumModerationLog: Page;
@@ -78,6 +79,7 @@ export function adminRoutes(pages: AdminRoutePages) {
                 element={protectedPage(pages.playlistScripts)}
             />
             <Route path='/admin/tags' element={protectedPage(pages.tags)} />
+            <Route path='/admin/topics' element={protectedPage(pages.topics)} />
             <Route
                 path='/admin/tag-promotion'
                 element={protectedPage(pages.tagPromotion)}

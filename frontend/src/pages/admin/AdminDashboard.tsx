@@ -280,6 +280,21 @@ export function AdminDashboard() {
                     </Card>
                 </Link>
 
+                <Link to='/admin/topics' className='touch-target'>
+                    <Card hover clickable>
+                        <CardHeader>
+                            <h3 className='text-lg xs:text-xl font-semibold'>
+                                Topic Moderation
+                            </h3>
+                        </CardHeader>
+                        <CardBody>
+                            <p className='text-sm xs:text-base text-muted-foreground'>
+                                Correct clip topics and merge or split the taxonomy
+                            </p>
+                        </CardBody>
+                    </Card>
+                </Link>
+
             </Grid>
         </Container>
     );

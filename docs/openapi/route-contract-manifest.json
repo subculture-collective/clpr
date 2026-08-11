@@ -168,6 +168,13 @@
     "contract_level": "route-specific"
   },
   {
+    "method": "PUT",
+    "path": "/api/v1/admin/clips/{id}/topics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TopicHandler).ReplaceClipTopics-fm",
+    "operation_id": "replaceAdminClipTopics",
+    "contract_level": "route-specific"
+  },
+  {
     "method": "GET",
     "path": "/api/v1/admin/contact",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ContactHandler).GetContactMessages-fm",
@@ -641,6 +648,20 @@
     "path": "/api/v1/admin/tags/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).UpdateTag-fm",
     "operation_id": "putApiV1AdminTagsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/topics/{id}/merge",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TopicHandler).MergeTopics-fm",
+    "operation_id": "mergeAdminTopic",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/topics/{id}/split",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TopicHandler).SplitTopic-fm",
+    "operation_id": "splitAdminTopic",
     "contract_level": "route-specific"
   },
   {
@@ -1306,6 +1327,13 @@
     "path": "/api/v1/clips/{id}/tags/{slug}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).RemoveTagFromClip-fm",
     "operation_id": "removeTagFromClip",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/topics",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TopicHandler).ListClipTopics-fm",
+    "operation_id": "getClipTopics",
     "contract_level": "route-specific"
   },
   {

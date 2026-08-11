@@ -22,6 +22,7 @@ type AutoTagScheduler struct {
 	autoTag       *services.AutoTagService
 	thumbnail     *services.ThumbnailService
 	transcription *services.ClipTranscriptionService
+	topics        *services.TopicClassificationService
 	clipRepo      *repository.ClipRepository
 	tagRepo       *repository.TagRepository
 
@@ -37,6 +38,7 @@ func NewAutoTagScheduler(
 	autoTag *services.AutoTagService,
 	thumbnail *services.ThumbnailService,
 	transcription *services.ClipTranscriptionService,
+	topics *services.TopicClassificationService,
 	clipRepo *repository.ClipRepository,
 	tagRepo *repository.TagRepository,
 	intervalSeconds int,
@@ -48,6 +50,7 @@ func NewAutoTagScheduler(
 		autoTag:       autoTag,
 		thumbnail:     thumbnail,
 		transcription: transcription,
+		topics:        topics,
 		clipRepo:      clipRepo,
 		tagRepo:       tagRepo,
 		interval:      time.Duration(intervalSeconds) * time.Second,
@@ -143,6 +146,11 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 				"clip_id":   clip.ID.String(),
 			})
 		}
+		if s.topics != nil {
+			if err := s.topics.ClassifyClip(ctx, clip.ID); err != nil {
+				utils.Warn("Clip topic classification failed", map[string]interface{}{"clip_id": clip.ID.String()})
+			}
+		}
 	}
 
 	duration := time.Since(startTime)
@@ -197,6 +205,9 @@ func (s *AutoTagScheduler) processTranscriptionClips(ctx context.Context) {
 			utils.Error("Failed to store clip transcript", recordErr, map[string]interface{}{
 				"clip_id": clip.ID.String(),
 			})
+		}
+		if s.topics != nil {
+			_ = s.topics.ClassifyClip(ctx, clip.ID)
 		}
 	}
 }

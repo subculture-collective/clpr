@@ -1140,6 +1140,23 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  /api/v1/clips/{id}/topics:
+    get:
+      tags: [Topics]
+      summary: Get directly classified clip topics
+      operationId: getClipTopics
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ClipId'
+      responses:
+        '200':
+          description: Direct topic assignments with provenance and confidence
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ClipTopicsResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
   /api/v1/clips/{id}/tags/{slug}:
     delete:
       tags: [Tags]
@@ -7258,6 +7275,79 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/admin/clips/{id}/topics:
+    put:
+      tags: [Admin, Topics]
+      summary: Replace a clip's topic assignments
+      description: Replaces automated assignments with moderator-selected topics. Moderator MFA and CSRF protection are required.
+      operationId: replaceAdminClipTopics
+      parameters:
+        - $ref: '#/components/parameters/ClipId'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReplaceClipTopicsRequest'}
+      responses:
+        '200':
+          description: Updated topic assignments
+          content: {application/json: {schema: {$ref: '#/components/schemas/ClipTopicsResponse'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/admin/topics/{id}/merge:
+    post:
+      tags: [Admin, Topics]
+      summary: Merge one topic into another
+      description: Moves assignments to the target and deactivates the source. Moderator MFA and CSRF protection are required.
+      operationId: mergeAdminTopic
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MergeTopicsRequest'}
+      responses:
+        '200': {description: Topics merged, content: {application/json: {schema: {$ref: '#/components/schemas/SuccessOnlyResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /api/v1/admin/topics/{id}/split:
+    post:
+      tags: [Admin, Topics]
+      summary: Split selected clips into a new topic
+      description: Creates a topic and moves only clips assigned to the source. Moderator MFA and CSRF protection are required.
+      operationId: splitAdminTopic
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SplitTopicRequest'}
+      responses:
+        '201':
+          description: Newly created topic
+          content: {application/json: {schema: {$ref: '#/components/schemas/TopicMutationResponse'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
   /api/v1/admin/tags/blacklist:
     get:
       tags: [Admin, Tags]
@@ -12171,6 +12261,74 @@ components:
         slug: {type: string, minLength: 2, maxLength: 50, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
         description: {type: string, maxLength: 1000}
         color: {type: string, pattern: '^#[0-9A-Fa-f]{6}$'}
+
+    ClipTopic:
+      type: object
+      required: [clip_id, topic_id, topic_name, topic_slug, source, confidence, evidence, created_at, updated_at]
+      properties:
+        clip_id: {type: string, format: uuid}
+        topic_id: {type: string, format: uuid}
+        topic_name: {type: string}
+        topic_slug: {type: string}
+        source: {type: string, enum: [twitch_category, metadata, tag, transcript, manual, backfill]}
+        confidence: {type: number, minimum: 0, maximum: 1}
+        evidence: {type: object, additionalProperties: true}
+        assigned_by_user_id: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    ClipTopicsResponse:
+      type: object
+      required: [topics]
+      properties:
+        topics: {type: array, maxItems: 20, items: {$ref: '#/components/schemas/ClipTopic'}}
+
+    ReplaceClipTopicsRequest:
+      type: object
+      required: [topic_ids]
+      additionalProperties: false
+      properties:
+        topic_ids: {type: array, maxItems: 5, uniqueItems: true, items: {type: string, format: uuid}}
+
+    MergeTopicsRequest:
+      type: object
+      required: [target_topic_id]
+      additionalProperties: false
+      properties:
+        target_topic_id: {type: string, format: uuid}
+
+    SplitTopicRequest:
+      type: object
+      required: [name, slug, clip_ids]
+      additionalProperties: false
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        slug: {type: string, minLength: 1, maxLength: 100, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
+        description: {type: string, maxLength: 1000}
+        clip_ids: {type: array, minItems: 1, maxItems: 500, uniqueItems: true, items: {type: string, format: uuid}}
+
+    Topic:
+      type: object
+      required: [id, name, slug, position, category_type, is_featured, is_custom, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        slug: {type: string}
+        description: {type: string}
+        icon: {type: string}
+        position: {type: integer}
+        category_type: {type: string, enum: [topic]}
+        is_featured: {type: boolean}
+        is_custom: {type: boolean}
+        created_by_user_id: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+
+    TopicMutationResponse:
+      type: object
+      required: [topic]
+      properties:
+        topic: {$ref: '#/components/schemas/Topic'}
 
     AdminTagResponse:
       type: object

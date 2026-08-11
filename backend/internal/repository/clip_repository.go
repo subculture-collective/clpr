@@ -610,9 +610,8 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 
 	if filters.CategoryID != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf(`EXISTS (
-			SELECT 1 FROM category_games cg
-			JOIN games g ON g.id = cg.game_id
-			WHERE cg.category_id = %s AND g.twitch_game_id = c.game_id
+			SELECT 1 FROM clip_topics ct
+			WHERE ct.topic_id = %s AND ct.clip_id = c.id
 		)`, utils.SQLPlaceholder(argIndex)))
 		args = append(args, *filters.CategoryID)
 		argIndex++

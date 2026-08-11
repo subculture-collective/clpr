@@ -258,8 +258,7 @@ func (r *PlaylistCurationRepository) OnePerCreator(ctx context.Context, script *
 }
 
 // DiversityRoulette produces a lightly shuffled creator-first mix with a soft
-// cap per semantic topic. Twitch category is only used to approximate topic
-// membership until direct clip-topic classification is available.
+// cap per directly classified semantic topic.
 func (r *PlaylistCurationRepository) DiversityRoulette(ctx context.Context, script *models.PlaylistScript) ([]models.Clip, error) {
 	where, args := baseClipFilter(script)
 	where += timeframeClause(script)
@@ -278,11 +277,10 @@ func (r *PlaylistCurationRepository) DiversityRoulette(ctx context.Context, scri
 			FROM clips c
 			LEFT JOIN LATERAL (
 				SELECT category.slug
-				FROM games g
-				JOIN category_games cg ON cg.game_id = g.id
-				JOIN categories category ON category.id = cg.category_id
-				WHERE g.twitch_game_id = c.game_id
-				ORDER BY category.position, category.slug
+				FROM clip_topics ct
+				JOIN categories category ON category.id = ct.topic_id
+				WHERE ct.clip_id = c.id AND category.is_active = TRUE
+				ORDER BY ct.confidence DESC, category.position, category.slug
 				LIMIT 1
 			) topic ON true
 			WHERE %s
@@ -354,11 +352,10 @@ func (r *PlaylistCurationRepository) WeekendMix(ctx context.Context, script *mod
 			FROM clips c
 			LEFT JOIN LATERAL (
 				SELECT category.slug
-				FROM games g
-				JOIN category_games cg ON cg.game_id = g.id
-				JOIN categories category ON category.id = cg.category_id
-				WHERE g.twitch_game_id = c.game_id
-				ORDER BY category.position, category.slug
+				FROM clip_topics ct
+				JOIN categories category ON category.id = ct.topic_id
+				WHERE ct.clip_id = c.id AND category.is_active = TRUE
+				ORDER BY ct.confidence DESC, category.position, category.slug
 				LIMIT 1
 			) topic ON true
 			WHERE %s

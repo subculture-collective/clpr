@@ -23,6 +23,7 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 
 		// Clip tags (public)
 		clips.GET("/:id/tags", h.Tag.GetClipTags)
+		clips.GET("/:id/topics", h.Topic.ListClipTopics)
 
 		// Clip analytics (public)
 		clips.GET("/:id/analytics", h.Analytics.GetClipAnalytics)

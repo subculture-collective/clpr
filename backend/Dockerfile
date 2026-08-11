@@ -18,6 +18,7 @@ COPY . .
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o /app/bin/api ./cmd/api
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o /app/bin/seed-site-freshness ./cmd/seed-site-freshness
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o /app/bin/backfill-clip-topics ./cmd/backfill-clip-topics
 
 # Final stage includes the local faster-whisper runtime and ffmpeg. Video is
 # streamed from Twitch; only a short-lived normalized WAV is written.
@@ -44,6 +45,7 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=builder --chown=clpr:clpr /app/bin/api .
 COPY --from=builder --chown=clpr:clpr /app/bin/seed-site-freshness .
+COPY --from=builder --chown=clpr:clpr /app/bin/backfill-clip-topics .
 
 # Copy pSEO HTML templates
 COPY --from=builder --chown=clpr:clpr /app/templates ./templates/

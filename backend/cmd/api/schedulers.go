@@ -87,6 +87,7 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 			svcs.AutoTag,
 			svcs.Thumbnail,
 			svcs.ClipTranscription,
+			svcs.TopicClassification,
 			repos.Clip,
 			repos.Tag,
 			30, // run every 30 seconds

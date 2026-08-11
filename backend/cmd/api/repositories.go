@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Repositories holds all database repository instances.
@@ -13,6 +13,7 @@ type Repositories struct {
 	AccountDeletion       *repository.AccountDeletionRepository
 	Consent               *repository.ConsentRepository
 	Clip                  *repository.ClipRepository
+	ClipTopic             *repository.ClipTopicRepository
 	Comment               *repository.CommentRepository
 	Vote                  *repository.VoteRepository
 	Favorite              *repository.FavoriteRepository
@@ -69,6 +70,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		AccountDeletion:       repository.NewAccountDeletionRepository(pool),
 		Consent:               repository.NewConsentRepository(pool),
 		Clip:                  repository.NewClipRepository(pool),
+		ClipTopic:             repository.NewClipTopicRepository(pool),
 		Comment:               repository.NewCommentRepository(pool),
 		Vote:                  repository.NewVoteRepository(pool),
 		Favorite:              repository.NewFavoriteRepository(pool),
