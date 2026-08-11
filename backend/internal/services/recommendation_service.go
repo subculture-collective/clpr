@@ -185,7 +185,7 @@ func (s *RecommendationService) GetRecommendations(
 
 		// Apply diversity if not already applied
 		if !diversityApplied && len(recommendations) > 0 {
-			recommendations = s.enforceGameDiversity(recommendations, limit)
+			recommendations = s.enforceCreatorDiversity(recommendations, limit)
 			diversityApplied = true
 		}
 	}
@@ -312,8 +312,8 @@ func (s *RecommendationService) getHybridRecommendations(
 		return nil, err
 	}
 
-	// Enforce game diversity
-	recommendations = s.enforceGameDiversity(recommendations, limit)
+	// Keep the personalized feed broad without suppressing creator affinity.
+	recommendations = s.enforceCreatorDiversity(recommendations, limit)
 
 	return recommendations, nil
 }
@@ -436,8 +436,9 @@ func (s *RecommendationService) buildRecommendations(
 	return recommendations, nil
 }
 
-// enforceGameDiversity ensures game diversity in recommendations
-func (s *RecommendationService) enforceGameDiversity(
+// enforceCreatorDiversity caps creator repetition first, with Twitch category
+// serving only as a secondary fallback until direct topic labels are available.
+func (s *RecommendationService) enforceCreatorDiversity(
 	recommendations []models.ClipRecommendation,
 	limit int,
 ) []models.ClipRecommendation {
@@ -445,8 +446,8 @@ func (s *RecommendationService) enforceGameDiversity(
 		return recommendations
 	}
 
-	gameCount := make(map[string]int)
-	maxSameGame := 3 // Max 3 clips from same game in a row
+	creatorCount := make(map[string]int)
+	categoryCount := make(map[string]int)
 	var diversified []models.ClipRecommendation
 
 	for _, rec := range recommendations {
@@ -454,30 +455,28 @@ func (s *RecommendationService) enforceGameDiversity(
 			break
 		}
 
+		creatorID := ""
+		if rec.Clip.BroadcasterID != nil {
+			creatorID = *rec.Clip.BroadcasterID
+		}
+		if creatorID == "" && rec.Clip.CreatorID != nil {
+			creatorID = *rec.Clip.CreatorID
+		}
 		gameID := ""
 		if rec.Clip.GameID != nil {
 			gameID = *rec.Clip.GameID
 		}
 
-		// Check if we've hit the limit for this game in recent recommendations
-		recentCount := 0
-		startIdx := len(diversified) - maxSameGame
-		if startIdx < 0 {
-			startIdx = 0
+		if creatorID != "" && creatorCount[creatorID] >= 2 {
+			continue
 		}
-		for i := startIdx; i < len(diversified); i++ {
-			if diversified[i].Clip.GameID != nil && *diversified[i].Clip.GameID == gameID {
-				recentCount++
-			}
-		}
-
-		// Skip if we've already shown too many from this game recently
-		if recentCount >= maxSameGame && gameCount[gameID] > 0 {
+		if gameID != "" && categoryCount[gameID] >= 4 {
 			continue
 		}
 
 		diversified = append(diversified, rec)
-		gameCount[gameID]++
+		creatorCount[creatorID]++
+		categoryCount[gameID]++
 	}
 
 	// If we don't have enough, add remaining without diversity check
@@ -509,12 +508,11 @@ func (s *RecommendationService) enforceGameDiversity(
 func (s *RecommendationService) generateReason(clip *models.Clip, algorithm string, score float64) string {
 	reasons := []string{}
 
-	if clip.GameName != nil && *clip.GameName != "" {
-		reasons = append(reasons, fmt.Sprintf("Because you liked clips in %s", *clip.GameName))
-	}
-
 	if clip.BroadcasterName != "" {
 		reasons = append(reasons, fmt.Sprintf("Because you watched %s", clip.BroadcasterName))
+	}
+	if clip.GameName != nil && *clip.GameName != "" {
+		reasons = append(reasons, fmt.Sprintf("More from the %s Twitch category", *clip.GameName))
 	}
 
 	if len(reasons) == 0 {

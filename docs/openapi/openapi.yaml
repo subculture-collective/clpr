@@ -14192,12 +14192,15 @@ components:
 
     UserPreference:
       type: object
-      required: [user_id, favorite_games, followed_streamers, preferred_categories, preferred_tags, onboarding_completed, updated_at, created_at]
+      required: [user_id, twitch_categories, followed_creators, preferred_topics, favorite_games, followed_streamers, preferred_categories, preferred_tags, onboarding_completed, updated_at, created_at]
       properties:
         user_id: {type: string, format: uuid}
         favorite_games: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
         followed_streamers: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
         preferred_categories: {type: array, maxItems: 5, items: {type: string, minLength: 1, maxLength: 100}}
+        twitch_categories: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        followed_creators: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        preferred_topics: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
         preferred_tags: {type: array, maxItems: 10, items: {type: string, format: uuid}}
         onboarding_completed: {type: boolean}
         onboarding_completed_at: {type: string, format: date-time}
@@ -14211,6 +14214,9 @@ components:
         favorite_games: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
         followed_streamers: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
         preferred_categories: {type: array, maxItems: 5, items: {type: string, minLength: 1, maxLength: 100}}
+        twitch_categories: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        followed_creators: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
+        preferred_topics: {type: array, maxItems: 10, items: {type: string, minLength: 1, maxLength: 100}}
         preferred_tags: {type: array, maxItems: 10, items: {type: string, format: uuid}}
 
     OnboardingPreferencesRequest:

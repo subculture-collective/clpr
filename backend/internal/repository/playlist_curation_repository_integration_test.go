@@ -30,20 +30,48 @@ func createCurationClip(t *testing.T, repo *ClipRepository, title, gameID, creat
 	return clip
 }
 
-func TestDiversityRouletteReturnsAtMostOneClipPerGame(t *testing.T) {
+func mapCurationGameToTopic(t *testing.T, repo *ClipRepository, gameID, topicSlug string) {
+	t.Helper()
+	gameUUID, topicUUID := uuid.New(), uuid.New()
+	ctx := context.Background()
+	if _, err := repo.pool.Exec(ctx, `
+		INSERT INTO games (id, twitch_game_id, name, slug) VALUES ($1, $2, $3, $4)
+		ON CONFLICT (twitch_game_id) DO UPDATE SET name = EXCLUDED.name
+	`, gameUUID, gameID, gameID, gameID); err != nil {
+		t.Fatalf("create game %s: %v", gameID, err)
+	}
+	if _, err := repo.pool.Exec(ctx, `
+		INSERT INTO categories (id, name, slug, position) VALUES ($1, $2, $2, 100)
+		ON CONFLICT (slug) DO NOTHING
+	`, topicUUID, topicSlug); err != nil {
+		t.Fatalf("create topic %s: %v", topicSlug, err)
+	}
+	if _, err := repo.pool.Exec(ctx, `
+		INSERT INTO category_games (game_id, category_id)
+		SELECT g.id, c.id FROM games g, categories c
+		WHERE g.twitch_game_id = $1 AND c.slug = $2
+		ON CONFLICT DO NOTHING
+	`, gameID, topicSlug); err != nil {
+		t.Fatalf("map game %s to topic %s: %v", gameID, topicSlug, err)
+	}
+}
+
+func TestDiversityRoulettePrioritizesCreatorAndTopicDiversity(t *testing.T) {
 	pool := testutil.SetupTestDB(t)
 	defer testutil.CleanupTestDB(t, pool)
 	testutil.TruncateTables(t, pool, "clips")
 	clipRepo := NewClipRepository(pool)
+	mapCurationGameToTopic(t, clipRepo, "game-a", "topic-a")
+	mapCurationGameToTopic(t, clipRepo, "game-b", "topic-a")
 	now := time.Now()
 	clips := []models.Clip{
 		createCurationClip(t, clipRepo, "a1", "game-a", "creator-a", 1000, 20, now.Add(-time.Hour)),
 		createCurationClip(t, clipRepo, "a2", "game-a", "creator-b", 900, 18, now.Add(-2*time.Hour)),
 		createCurationClip(t, clipRepo, "b1", "game-b", "creator-c", 800, 16, now.Add(-time.Hour)),
 	}
-	gameByClip := map[uuid.UUID]string{}
+	creatorByClip := map[uuid.UUID]string{}
 	for _, clip := range clips {
-		gameByClip[clip.ID] = *clip.GameID
+		creatorByClip[clip.ID] = *clip.CreatorID
 	}
 
 	week := "week"
@@ -51,16 +79,16 @@ func TestDiversityRouletteReturnsAtMostOneClipPerGame(t *testing.T) {
 	if err != nil {
 		t.Fatalf("diversity roulette: %v", err)
 	}
-	if len(result) != 2 {
-		t.Fatalf("result count = %d, want one clip for each of 2 games", len(result))
+	if len(result) != 3 {
+		t.Fatalf("result count = %d, want one clip for each creator", len(result))
 	}
 	seen := map[string]bool{}
 	for _, clip := range result {
-		game := gameByClip[clip.ID]
-		if seen[game] {
-			t.Fatalf("game %q appeared more than once", game)
+		creator := creatorByClip[clip.ID]
+		if seen[creator] {
+			t.Fatalf("creator %q appeared more than once", creator)
 		}
-		seen[game] = true
+		seen[creator] = true
 	}
 }
 
@@ -83,11 +111,13 @@ func TestClipOfTheDayPrioritizesCurrentVelocity(t *testing.T) {
 	}
 }
 
-func TestWeekendMixEnforcesCreatorAndGameDiversity(t *testing.T) {
+func TestWeekendMixEnforcesCreatorAndTopicDiversity(t *testing.T) {
 	pool := testutil.SetupTestDB(t)
 	defer testutil.CleanupTestDB(t, pool)
 	testutil.TruncateTables(t, pool, "clips")
 	clipRepo := NewClipRepository(pool)
+	mapCurationGameToTopic(t, clipRepo, "game-a", "topic-weekend-a")
+	mapCurationGameToTopic(t, clipRepo, "game-b", "topic-weekend-b")
 	now := time.Now()
 	clips := []models.Clip{
 		createCurationClip(t, clipRepo, "a1", "game-a", "creator-a", 1000, 30, now.Add(-time.Hour)),
@@ -107,16 +137,20 @@ func TestWeekendMixEnforcesCreatorAndGameDiversity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("weekend mix: %v", err)
 	}
-	seenCreators, gameCounts := map[string]bool{}, map[string]int{}
+	seenCreators, topicCounts := map[string]bool{}, map[string]int{}
 	for _, clip := range result {
 		creator := creatorByClip[clip.ID]
 		if seenCreators[creator] {
 			t.Fatalf("creator %q appeared more than once", creator)
 		}
 		seenCreators[creator] = true
-		gameCounts[gameByClip[clip.ID]]++
+		topic := "topic-weekend-a"
+		if gameByClip[clip.ID] == "game-b" {
+			topic = "topic-weekend-b"
+		}
+		topicCounts[topic]++
 	}
-	if gameCounts["game-a"] > 2 {
-		t.Fatalf("game-a appeared %d times, want at most 2", gameCounts["game-a"])
+	if topicCounts["topic-weekend-a"] > 4 {
+		t.Fatalf("topic-weekend-a appeared %d times, want at most 4", topicCounts["topic-weekend-a"])
 	}
 }

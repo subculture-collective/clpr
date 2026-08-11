@@ -3,82 +3,47 @@ package services
 import (
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
-// TestEnforceGameDiversity tests that game diversity is enforced
-func TestEnforceGameDiversity(t *testing.T) {
+// TestEnforceCreatorDiversity tests that creator repetition is capped first.
+func TestEnforceCreatorDiversity(t *testing.T) {
 	service := &RecommendationService{
 		contentWeight:       0.5,
 		collaborativeWeight: 0.3,
 		trendingWeight:      0.2,
 	}
 
-	gameID1 := "game-1"
-	gameID2 := "game-2"
-	gameID3 := "game-3"
-
-	// Create test recommendations - 10 clips from game-1, 5 from game-2, 2 from game-3
-	recommendations := []models.ClipRecommendation{
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.9},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.89},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.88},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.87},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.86},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID2}, Score: 0.85},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID2}, Score: 0.84},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.83},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.82},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID3}, Score: 0.81},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID2}, Score: 0.80},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.79},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.78},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID2}, Score: 0.77},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID2}, Score: 0.76},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID3}, Score: 0.75},
-		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID1}, Score: 0.74},
+	gameIDs := []string{"category-1", "category-2", "category-3"}
+	creatorIDs := []string{"creator-1", "creator-2", "creator-3", "creator-4", "creator-5"}
+	var recommendations []models.ClipRecommendation
+	for index := 0; index < 3; index++ {
+		for creatorIndex := range creatorIDs {
+			creatorID := creatorIDs[creatorIndex]
+			gameID := gameIDs[(creatorIndex+index)%len(gameIDs)]
+			recommendations = append(recommendations, models.ClipRecommendation{
+				Clip:  models.Clip{ID: uuid.New(), BroadcasterID: &creatorID, GameID: &gameID},
+				Score: 1 - float64(len(recommendations))/100,
+			})
+		}
 	}
 
 	// Enforce diversity with limit of 10
-	diversified := service.enforceGameDiversity(recommendations, 10)
+	diversified := service.enforceCreatorDiversity(recommendations, 10)
 
 	// Should have exactly 10 recommendations
 	assert.Len(t, diversified, 10, "Should have exactly 10 recommendations")
 
-	// Count consecutive same-game clips
-	for i := 0; i < len(diversified)-3; i++ {
-		gameID := ""
-		if diversified[i].Clip.GameID != nil {
-			gameID = *diversified[i].Clip.GameID
-		}
-
-		consecutiveCount := 1
-		for j := i + 1; j < len(diversified) && j < i+3; j++ {
-			nextGameID := ""
-			if diversified[j].Clip.GameID != nil {
-				nextGameID = *diversified[j].Clip.GameID
-			}
-			if gameID == nextGameID {
-				consecutiveCount++
-			}
-		}
-
-		// Should never have more than 3 consecutive clips from same game
-		assert.LessOrEqual(t, consecutiveCount, 3,
-			"Should not have more than 3 consecutive clips from game %s", gameID)
-	}
-
-	// Check we have variety of games
-	gamesSeen := make(map[string]bool)
+	creatorCounts := make(map[string]int)
 	for _, rec := range diversified {
-		if rec.Clip.GameID != nil {
-			gamesSeen[*rec.Clip.GameID] = true
-		}
+		creatorCounts[*rec.Clip.BroadcasterID]++
 	}
-	assert.GreaterOrEqual(t, len(gamesSeen), 2, "Should have at least 2 different games")
+	for creatorID, count := range creatorCounts {
+		assert.LessOrEqual(t, count, 2, "should cap clips from %s", creatorID)
+	}
 }
 
 // TestMergeAndRank tests the merging and ranking of scores
@@ -171,7 +136,7 @@ func TestGenerateReason(t *testing.T) {
 				BroadcasterName: "",
 			},
 			algorithm: models.AlgorithmContent,
-			wantMatch: "Because you liked clips in Valorant",
+			wantMatch: "More from the Valorant Twitch category",
 		},
 		{
 			name: "Clip with broadcaster name",
@@ -226,15 +191,13 @@ func TestGenerateReason(t *testing.T) {
 	}
 }
 
-// TestEnforceGameDiversityEmptyList tests diversity with empty list
-func TestEnforceGameDiversityEmptyList(t *testing.T) {
+func TestEnforceCreatorDiversityEmptyList(t *testing.T) {
 	service := &RecommendationService{}
-	diversified := service.enforceGameDiversity([]models.ClipRecommendation{}, 10)
+	diversified := service.enforceCreatorDiversity([]models.ClipRecommendation{}, 10)
 	assert.Empty(t, diversified, "Should return empty list for empty input")
 }
 
-// TestEnforceGameDiversityLessThanLimit tests diversity when list is smaller than limit
-func TestEnforceGameDiversityLessThanLimit(t *testing.T) {
+func TestEnforceCreatorDiversityLessThanLimit(t *testing.T) {
 	service := &RecommendationService{}
 
 	gameID := "game-1"
@@ -243,7 +206,7 @@ func TestEnforceGameDiversityLessThanLimit(t *testing.T) {
 		{Clip: models.Clip{ID: uuid.New(), GameID: &gameID}, Score: 0.8},
 	}
 
-	diversified := service.enforceGameDiversity(recommendations, 10)
+	diversified := service.enforceCreatorDiversity(recommendations, 10)
 	assert.Len(t, diversified, 2, "Should return all recommendations when less than limit")
 }
 

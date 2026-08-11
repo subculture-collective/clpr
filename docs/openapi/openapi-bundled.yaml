@@ -20092,6 +20092,9 @@ components:
       type: object
       required:
         - user_id
+        - twitch_categories
+        - followed_creators
+        - preferred_topics
         - favorite_games
         - followed_streamers
         - preferred_categories
@@ -20120,6 +20123,27 @@ components:
         preferred_categories:
           type: array
           maxItems: 5
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        twitch_categories:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        followed_creators:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        preferred_topics:
+          type: array
+          maxItems: 10
           items:
             type: string
             minLength: 1
@@ -20167,6 +20191,27 @@ components:
         preferred_categories:
           type: array
           maxItems: 5
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        twitch_categories:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        followed_creators:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+        preferred_topics:
+          type: array
+          maxItems: 10
           items:
             type: string
             minLength: 1

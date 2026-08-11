@@ -43,6 +43,9 @@ const BroadcasterPage = lazy(() =>
 const CreatorsPage = lazy(() =>
     import('./pages/CreatorsPage').then(m => ({ default: m.CreatorsPage })),
 );
+const OnboardingPage = lazy(() =>
+    import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })),
+);
 const CreatorPage = lazy(() =>
     import('./pages/CreatorPage').then(m => ({
         default: m.CreatorPage,
@@ -576,6 +579,7 @@ function App() {
                                             path='/auth/success'
                                             element={<AuthCallbackPage />}
                                         />
+                                        <Route path='/onboarding' element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
 
                                         {accountRoutes({
                                             favorites: FavoritesPage,

@@ -196,9 +196,9 @@ func (h *RecommendationHandler) CompleteOnboarding(c *gin.Context) {
 	// Create preferences object
 	preferences := &models.UserPreference{
 		UserID:              userID,
-		FavoriteGames:       req.FavoriteGames,
-		FollowedStreamers:   req.FollowedStreamers,
-		PreferredCategories: req.PreferredCategories,
+		FavoriteGames:       firstNonEmptyStrings(req.TwitchCategories, req.FavoriteGames),
+		FollowedStreamers:   firstNonEmptyStrings(req.FollowedCreators, req.FollowedStreamers),
+		PreferredCategories: firstNonEmptyStrings(req.PreferredTopics, req.PreferredCategories),
 		PreferredTags:       req.PreferredTags,
 	}
 
@@ -276,6 +276,16 @@ func (h *RecommendationHandler) UpdatePreferences(c *gin.Context) {
 	if req.PreferredTags != nil {
 		preferences.PreferredTags = *req.PreferredTags
 	}
+	if req.TwitchCategories != nil {
+		preferences.FavoriteGames = *req.TwitchCategories
+	}
+	if req.FollowedCreators != nil {
+		preferences.FollowedStreamers = *req.FollowedCreators
+	}
+	if req.PreferredTopics != nil {
+		preferences.PreferredCategories = *req.PreferredTopics
+	}
+	preferences.SyncCreatorFirstAliases()
 
 	// Update preferences
 	if err := h.service.UpdateUserPreferences(c.Request.Context(), preferences); err != nil {
@@ -286,6 +296,13 @@ func (h *RecommendationHandler) UpdatePreferences(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, preferences)
+}
+
+func firstNonEmptyStrings(primary, legacy []string) []string {
+	if len(primary) > 0 {
+		return primary
+	}
+	return legacy
 }
 
 // TrackView handles POST /api/v1/recommendations/track-view

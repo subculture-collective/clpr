@@ -257,9 +257,9 @@ func (r *PlaylistCurationRepository) OnePerCreator(ctx context.Context, script *
 	return r.scanClipIDs(ctx, query, args)
 }
 
-// DiversityRoulette produces a lightly shuffled cross-game mix while allowing
-// only one clip from each game. The random factor is intentionally bounded so
-// strong clips stay competitive without every refresh returning the same order.
+// DiversityRoulette produces a lightly shuffled creator-first mix with a soft
+// cap per semantic topic. Twitch category is only used to approximate topic
+// membership until direct clip-topic classification is available.
 func (r *PlaylistCurationRepository) DiversityRoulette(ctx context.Context, script *models.PlaylistScript) ([]models.Clip, error) {
 	where, args := baseClipFilter(script)
 	where += timeframeClause(script)
@@ -268,25 +268,40 @@ func (r *PlaylistCurationRepository) DiversityRoulette(ctx context.Context, scri
 	query := fmt.Sprintf(`
 		WITH eligible AS (
 			SELECT c.id,
-			       c.game_id,
+			       COALESCE(NULLIF(c.broadcaster_id, ''), NULLIF(c.creator_id, ''), c.id::text) AS creator_key,
+			       COALESCE(topic.slug, 'unclassified:' || COALESCE(NULLIF(c.broadcaster_id, ''), c.id::text)) AS topic_key,
 			       (
 				   COALESCE(c.view_velocity, 0) * 8
 				   + LN(GREATEST(c.view_count, 0) + 1) * 4
 				   + GREATEST(0, 48 - EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600)
 			   ) * (0.9 + random() * 0.2) AS rank_score
 			FROM clips c
+			LEFT JOIN LATERAL (
+				SELECT category.slug
+				FROM games g
+				JOIN category_games cg ON cg.game_id = g.id
+				JOIN categories category ON category.id = cg.category_id
+				WHERE g.twitch_game_id = c.game_id
+				ORDER BY category.position, category.slug
+				LIMIT 1
+			) topic ON true
 			WHERE %s
-			  AND c.game_id IS NOT NULL
-			  AND c.game_id <> ''
-		), ranked AS (
+		), creator_ranked AS (
+			SELECT id,
+			       topic_key,
+			       rank_score,
+			       ROW_NUMBER() OVER (PARTITION BY creator_key ORDER BY rank_score DESC, id) AS creator_rank
+			FROM eligible
+		), topic_ranked AS (
 			SELECT id,
 			       rank_score,
-			       ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY rank_score DESC, id) AS game_rank
-			FROM eligible
+			       ROW_NUMBER() OVER (PARTITION BY topic_key ORDER BY rank_score DESC, id) AS topic_rank
+			FROM creator_ranked
+			WHERE creator_rank = 1
 		)
 		SELECT id
-		FROM ranked
-		WHERE game_rank = 1
+		FROM topic_ranked
+		WHERE topic_rank <= 3
 		ORDER BY rank_score DESC
 		LIMIT $%d
 	`, where, nextArg)
@@ -319,8 +334,8 @@ func (r *PlaylistCurationRepository) ClipOfTheDay(ctx context.Context, script *m
 	return r.scanClipIDs(ctx, query, args)
 }
 
-// WeekendMix balances quality and surprise while capping the result at one
-// clip per creator and two clips per game.
+// WeekendMix balances quality and surprise with one clip per creator and a
+// soft cap per semantic topic.
 func (r *PlaylistCurationRepository) WeekendMix(ctx context.Context, script *models.PlaylistScript) ([]models.Clip, error) {
 	where, args := baseClipFilter(script)
 	where += timeframeClause(script)
@@ -329,33 +344,40 @@ func (r *PlaylistCurationRepository) WeekendMix(ctx context.Context, script *mod
 	query := fmt.Sprintf(`
 		WITH eligible AS (
 			SELECT c.id,
-			       c.game_id,
 			       COALESCE(NULLIF(c.creator_id, ''), NULLIF(c.broadcaster_id, ''), c.id::text) AS creator_key,
+			       COALESCE(topic.slug, 'unclassified:' || COALESCE(NULLIF(c.broadcaster_id, ''), c.id::text)) AS topic_key,
 			       (
 				   COALESCE(c.view_velocity, 0) * 8
 				   + LN(GREATEST(c.view_count, 0) + 1) * 4
 				   + GREATEST(0, 72 - EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600)
 			   ) * (0.9 + random() * 0.2) AS rank_score
 			FROM clips c
+			LEFT JOIN LATERAL (
+				SELECT category.slug
+				FROM games g
+				JOIN category_games cg ON cg.game_id = g.id
+				JOIN categories category ON category.id = cg.category_id
+				WHERE g.twitch_game_id = c.game_id
+				ORDER BY category.position, category.slug
+				LIMIT 1
+			) topic ON true
 			WHERE %s
-			  AND c.game_id IS NOT NULL
-			  AND c.game_id <> ''
 		), creator_ranked AS (
 			SELECT id,
-			       game_id,
+			       topic_key,
 			       rank_score,
 			       ROW_NUMBER() OVER (PARTITION BY creator_key ORDER BY rank_score DESC, id) AS creator_rank
 			FROM eligible
-		), game_ranked AS (
+		), topic_ranked AS (
 			SELECT id,
 			       rank_score,
-			       ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY rank_score DESC, id) AS game_rank
+			       ROW_NUMBER() OVER (PARTITION BY topic_key ORDER BY rank_score DESC, id) AS topic_rank
 			FROM creator_ranked
 			WHERE creator_rank = 1
 		)
 		SELECT id
-		FROM game_ranked
-		WHERE game_rank <= 2
+		FROM topic_ranked
+		WHERE topic_rank <= 4
 		ORDER BY rank_score DESC
 		LIMIT $%d
 	`, where, nextArg)

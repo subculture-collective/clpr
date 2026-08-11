@@ -52,7 +52,7 @@ func (r *RecommendationRepository) GetUserPreferences(ctx context.Context, userI
 
 	if err == pgx.ErrNoRows {
 		// Return empty preferences for users without any
-		return &models.UserPreference{
+		pref := &models.UserPreference{
 			UserID:              userID,
 			FavoriteGames:       []string{},
 			FollowedStreamers:   []string{},
@@ -61,7 +61,9 @@ func (r *RecommendationRepository) GetUserPreferences(ctx context.Context, userI
 			OnboardingCompleted: false,
 			UpdatedAt:           time.Now(),
 			CreatedAt:           time.Now(),
-		}, nil
+		}
+		pref.SyncCreatorFirstAliases()
+		return pref, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user preferences: %w", err)
@@ -70,6 +72,7 @@ func (r *RecommendationRepository) GetUserPreferences(ctx context.Context, userI
 	pref.FavoriteGames = favoriteGames
 	pref.FollowedStreamers = followedStreamers
 	pref.PreferredCategories = preferredCategories
+	pref.SyncCreatorFirstAliases()
 
 	// Convert string UUIDs to uuid.UUID
 	pref.PreferredTags = make([]uuid.UUID, 0, len(preferredTags))
@@ -240,6 +243,9 @@ func (r *RecommendationRepository) GetContentBasedRecommendations(
 			FROM clips
 			WHERE created_at > NOW() - INTERVAL '7 days'
 		),
+		user_follows AS (
+			SELECT broadcaster_id FROM broadcaster_follows WHERE user_id = $1
+		),
 		clip_with_tags AS (
 			SELECT c.id,
 			       ARRAY_AGG(DISTINCT ct.tag_id) FILTER (WHERE ct.tag_id IS NOT NULL) AS clip_tags
@@ -256,13 +262,22 @@ func (r *RecommendationRepository) GetContentBasedRecommendations(
 			SELECT
 				c.id as clip_id,
 				(
-					CASE WHEN c.game_id = ANY($2::text[]) THEN 0.35 ELSE 0 END +
-					CASE WHEN c.broadcaster_id = ANY($3::text[]) THEN 0.25 ELSE 0 END +
-					CASE WHEN c.game_name = ANY($4::text[]) THEN 0.15 ELSE 0 END +
+					CASE
+						WHEN c.broadcaster_id IN (SELECT broadcaster_id FROM user_follows) THEN 0.45
+						WHEN c.broadcaster_id = ANY($3::text[]) THEN 0.35
+						ELSE 0
+					END +
+					CASE WHEN EXISTS (
+						SELECT 1 FROM games g
+						JOIN category_games cg ON cg.game_id = g.id
+						JOIN categories topic ON topic.id = cg.category_id
+						WHERE g.twitch_game_id = c.game_id AND topic.slug = ANY($4::text[])
+					) THEN 0.25 ELSE 0 END +
 					CASE
 						WHEN $5::uuid[] IS NOT NULL AND cwt.clip_tags && $5::uuid[] THEN 0.15
 						ELSE 0
 					END +
+					CASE WHEN c.game_id = ANY($2::text[]) THEN 0.05 ELSE 0 END +
 					(c.vote_score::float / NULLIF((SELECT max_vote_score FROM max_vote), 0)) * 0.1
 				) as similarity_score
 			FROM clips c

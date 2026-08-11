@@ -60,6 +60,7 @@
     "/moderation/users",
     "/notifications",
     "/notifications/preferences",
+    "/onboarding",
     "/playlists",
     "/playlists/:id",
     "/playlists/:id/theatre",

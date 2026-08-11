@@ -39,7 +39,7 @@ var siteFreshnessDisplayOrder = map[string]int{
 	"Clip of the Day":     3,
 	"Fresh Faces":         4,
 	"Creator Roulette":    5,
-	"Diversity Roulette":  6,
+	"Across the Culture":  6,
 	"Weekend Mix":         7,
 	"Hidden Gems":         8,
 	"Breakout Board":      9,

@@ -58,8 +58,8 @@ export const STRATEGY_META: Record<PlaylistScriptStrategy, StrategyMeta> = {
         hidesSortTimeframe: true,
     },
     diversity_roulette: {
-        label: 'Diversity Roulette',
-        description: 'A lightly shuffled mix with one strong clip per Twitch category',
+        label: 'Across the Culture',
+        description: 'A creator-first mix spread across live-culture topics',
         group: 'database',
         hidesSortTimeframe: true,
     },
@@ -71,7 +71,7 @@ export const STRATEGY_META: Record<PlaylistScriptStrategy, StrategyMeta> = {
     },
     weekend_mix: {
         label: 'Weekend Mix',
-        description: 'One clip per creator and at most two per Twitch category',
+        description: 'One clip per creator with a soft topic cap',
         group: 'database',
         hidesSortTimeframe: true,
     },

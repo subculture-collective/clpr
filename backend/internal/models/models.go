@@ -3572,12 +3572,21 @@ type UserPreference struct {
 	FavoriteGames         []string    `json:"favorite_games" db:"favorite_games"`
 	FollowedStreamers     []string    `json:"followed_streamers" db:"followed_streamers"`
 	PreferredCategories   []string    `json:"preferred_categories" db:"preferred_categories"`
+	TwitchCategories      []string    `json:"twitch_categories" db:"-"`
+	FollowedCreators      []string    `json:"followed_creators" db:"-"`
+	PreferredTopics       []string    `json:"preferred_topics" db:"-"`
 	PreferredTags         []uuid.UUID `json:"preferred_tags" db:"preferred_tags"`
 	OnboardingCompleted   bool        `json:"onboarding_completed" db:"onboarding_completed"`
 	OnboardingCompletedAt *time.Time  `json:"onboarding_completed_at,omitempty" db:"onboarding_completed_at"`
 	ColdStartSource       *string     `json:"cold_start_source,omitempty" db:"cold_start_source"` // 'onboarding', 'inferred', 'default'
 	UpdatedAt             time.Time   `json:"updated_at" db:"updated_at"`
 	CreatedAt             time.Time   `json:"created_at" db:"created_at"`
+}
+
+func (p *UserPreference) SyncCreatorFirstAliases() {
+	p.TwitchCategories = p.FavoriteGames
+	p.FollowedCreators = p.FollowedStreamers
+	p.PreferredTopics = p.PreferredCategories
 }
 
 // UserClipInteraction represents a user's interaction with a clip
@@ -3644,11 +3653,15 @@ type UpdatePreferencesRequest struct {
 	FavoriteGames       *[]string    `json:"favorite_games,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
 	FollowedStreamers   *[]string    `json:"followed_streamers,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
 	PreferredCategories *[]string    `json:"preferred_categories,omitempty" binding:"omitempty,max=5,dive,required,max=100"`
+	TwitchCategories    *[]string    `json:"twitch_categories,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	FollowedCreators    *[]string    `json:"followed_creators,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	PreferredTopics     *[]string    `json:"preferred_topics,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
 	PreferredTags       *[]uuid.UUID `json:"preferred_tags,omitempty" binding:"omitempty,max=10"`
 }
 
 func (r *UpdatePreferencesRequest) Validate() error {
-	if r.FavoriteGames == nil && r.FollowedStreamers == nil && r.PreferredCategories == nil && r.PreferredTags == nil {
+	if r.FavoriteGames == nil && r.FollowedStreamers == nil && r.PreferredCategories == nil &&
+		r.TwitchCategories == nil && r.FollowedCreators == nil && r.PreferredTopics == nil && r.PreferredTags == nil {
 		return fmt.Errorf("at least one preference field must be provided")
 	}
 	return nil
@@ -3664,13 +3677,17 @@ type OnboardingPreferencesRequest struct {
 	FavoriteGames       []string    `json:"favorite_games,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
 	FollowedStreamers   []string    `json:"followed_streamers,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
 	PreferredCategories []string    `json:"preferred_categories,omitempty" binding:"omitempty,max=5,dive,required,max=100"`
+	TwitchCategories    []string    `json:"twitch_categories,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	FollowedCreators    []string    `json:"followed_creators,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
+	PreferredTopics     []string    `json:"preferred_topics,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
 	PreferredTags       []uuid.UUID `json:"preferred_tags,omitempty" binding:"omitempty,max=10"`
 }
 
 // Validate ensures at least one preference type is provided
 func (r *OnboardingPreferencesRequest) Validate() error {
-	if len(r.FavoriteGames) == 0 && len(r.FollowedStreamers) == 0 &&
-		len(r.PreferredCategories) == 0 && len(r.PreferredTags) == 0 {
+	if len(r.FavoriteGames) == 0 && len(r.FollowedStreamers) == 0 && len(r.PreferredCategories) == 0 &&
+		len(r.TwitchCategories) == 0 && len(r.FollowedCreators) == 0 && len(r.PreferredTopics) == 0 &&
+		len(r.PreferredTags) == 0 {
 		return fmt.Errorf("at least one preference type must be provided")
 	}
 	return nil
