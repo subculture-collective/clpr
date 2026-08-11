@@ -25,6 +25,7 @@
     "/admin/sync",
     "/admin/tag-promotion",
     "/admin/tags",
+    "/admin/topics",
     "/admin/users",
     "/admin/verification",
     "/admin/webhooks/dlq",
@@ -86,6 +87,7 @@
     "/subscription/success",
     "/tag/*",
     "/terms",
+    "/twitch-category/:gameId",
     "/user/:username",
     "/verification/apply",
     "/watch-history"
