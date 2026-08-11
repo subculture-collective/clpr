@@ -18,18 +18,21 @@ COPY . .
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o /app/bin/api ./cmd/api
 
-# Final stage
-FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce
+# Final stage (debian-slim for glibc compat with host Python)
+FROM debian:bookworm-slim
 
 ARG OCI_REVISION=unknown
 ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
 LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
       org.opencontainers.image.source="${OCI_SOURCE}"
 
-# Install ca-certificates for HTTPS calls
-RUN apk --no-cache add ca-certificates
+# Install runtime deps: ffmpeg for thumbnail extraction, python3 + faster-whisper for transcription
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates ffmpeg python3 python3-pip \
+    && pip3 install --break-system-packages faster-whisper \
+    && rm -rf /var/lib/apt/lists/* /root/.cache/pip
 
-RUN addgroup -S -g 10001 clpr && adduser -S -D -H -u 10001 -G clpr clpr \
+RUN groupadd -r -g 10001 clpr && useradd -r -m -u 10001 -g clpr clpr \
     && mkdir -p /app/exports && chown -R clpr:clpr /app
 
 WORKDIR /app
@@ -39,6 +42,9 @@ COPY --from=builder --chown=clpr:clpr /app/bin/api .
 
 # Copy pSEO HTML templates
 COPY --from=builder --chown=clpr:clpr /app/templates ./templates/
+
+# Copy whisper symlink (resolves to /hasanara mount at runtime)
+COPY --from=builder --chown=clpr:clpr /app/whisper ./whisper/
 
 USER 10001:10001
 
