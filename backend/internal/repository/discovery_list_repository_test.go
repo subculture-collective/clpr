@@ -588,6 +588,14 @@ func TestDiscoveryListRepository_ListDiscoveryLists(t *testing.T) {
 		t.Fatalf("Failed to create list: %v", err)
 	}
 
+	legacyID := uuid.New()
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO playlists (id, user_id, title, slug, is_curated, visibility)
+		VALUES ($1, $2, 'Legacy list', NULL, TRUE, 'public')
+	`, legacyID, userID); err != nil {
+		t.Fatalf("create legacy list without slug: %v", err)
+	}
+
 	// List all lists
 	lists, err := repo.ListDiscoveryLists(ctx, false, nil, 10, 0)
 	if err != nil {
@@ -596,6 +604,18 @@ func TestDiscoveryListRepository_ListDiscoveryLists(t *testing.T) {
 
 	if len(lists) < 3 {
 		t.Errorf("Expected at least 3 lists, got %d", len(lists))
+	}
+	var foundLegacy bool
+	for _, list := range lists {
+		if list.ID == legacyID {
+			foundLegacy = true
+			if list.Slug != legacyID.String() {
+				t.Errorf("legacy slug = %q, want UUID fallback", list.Slug)
+			}
+		}
+	}
+	if !foundLegacy {
+		t.Error("legacy list without slug was omitted")
 	}
 
 	// List only featured

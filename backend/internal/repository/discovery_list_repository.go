@@ -45,7 +45,7 @@ func (r *DiscoveryListRepository) ListDiscoveryLists(ctx context.Context, featur
 			SELECT
 				p.id,
 				p.title as name,
-				p.slug,
+				COALESCE(p.slug, p.id::text) AS slug,
 				p.description,
 				p.is_featured,
 				p.visibility = 'public' as is_active,
@@ -237,7 +237,7 @@ func (r *DiscoveryListRepository) GetDiscoveryList(ctx context.Context, idOrSlug
 		SELECT
 			p.id,
 			p.title as name,
-			p.slug,
+			COALESCE(p.slug, p.id::text) AS slug,
 			p.description,
 			p.is_featured,
 			p.visibility = 'public' as is_active,
@@ -539,7 +539,7 @@ func (r *DiscoveryListRepository) GetUserFollowedLists(ctx context.Context, user
 		SELECT
 			p.id,
 			p.title as name,
-			p.slug,
+			COALESCE(p.slug, p.id::text) AS slug,
 			p.description,
 			p.is_featured,
 			p.visibility = 'public' as is_active,
@@ -924,7 +924,7 @@ func (r *DiscoveryListRepository) ListAllDiscoveryLists(ctx context.Context, lim
 		SELECT
 			p.id,
 			p.title as name,
-			p.slug,
+			COALESCE(p.slug, p.id::text) AS slug,
 			p.description,
 			p.is_featured,
 			p.visibility = 'public' as is_active,
