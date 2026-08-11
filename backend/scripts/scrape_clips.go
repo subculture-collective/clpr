@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	"git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // ScraperStats tracks scraping statistics
@@ -130,6 +131,7 @@ func runScraper(ctx context.Context, db *pgxpool.Pool, twitchClient *twitch.Clie
 	stats := &ScraperStats{
 		StartTime: time.Now(),
 	}
+	publisher := services.NewTwitchClipPublisher(repository.NewClipRepository(db))
 
 	// Step 1: Get list of broadcasters to scrape
 	var broadcasters []string
@@ -187,6 +189,7 @@ func runScraper(ctx context.Context, db *pgxpool.Pool, twitchClient *twitch.Clie
 			ctx,
 			db,
 			twitchClient,
+			publisher,
 			broadcasterID,
 			broadcasterName,
 			cfg,
@@ -253,6 +256,7 @@ func scrapeClipsForBroadcaster(
 	ctx context.Context,
 	db *pgxpool.Pool,
 	twitchClient *twitch.Client,
+	publisher *services.TwitchClipPublisher,
 	broadcasterID string,
 	broadcasterName string,
 	cfg ScraperConfig,
@@ -290,89 +294,45 @@ func scrapeClipsForBroadcaster(
 			continue
 		}
 
-		// Check if clip already exists
-		exists, err := clipExists(ctx, db, twitchClip.ID)
-		if err != nil {
-			log.Printf("  Warning: Failed to check if clip exists (id=%s): %v", twitchClip.ID, err)
-			stats.Errors++
-			stats.LastError = err
-			continue
-		}
-
-		if exists {
-			clipsSkipped++
-			continue
-		}
-
-		// Insert clip if not in dry-run mode
-		if !cfg.DryRun {
-			if err := insertClip(ctx, db, &twitchClip); err != nil {
-				log.Printf("  Warning: Failed to insert clip (id=%s): %v", twitchClip.ID, err)
+		if cfg.DryRun {
+			exists, err := clipExists(ctx, db, twitchClip.ID)
+			if err != nil {
+				log.Printf("  Warning: Failed to check if clip exists (id=%s): %v", twitchClip.ID, err)
 				stats.Errors++
 				stats.LastError = err
 				continue
 			}
+			if exists {
+				clipsSkipped++
+				continue
+			}
+			clipsAdded++
+			continue
 		}
 
-		clipsAdded++
+		result, err := publisher.Publish(ctx, &twitchClip)
+		if err != nil {
+			log.Printf("  Warning: Failed to publish clip (id=%s): %v", twitchClip.ID, err)
+			stats.Errors++
+			stats.LastError = err
+			continue
+		}
+		if result.Disposition == services.PublishCreated {
+			clipsAdded++
+		} else {
+			clipsSkipped++
+		}
 	}
 
 	return clipsAdded, clipsSkipped, apiCalls, nil
 }
 
-// clipExists checks if a clip already exists in the database (both clips and discovery_clips)
+// clipExists supports dry-run reporting without publishing the clip.
 func clipExists(ctx context.Context, db *pgxpool.Pool, twitchClipID string) (bool, error) {
 	var exists bool
-	query := `SELECT EXISTS(
-		SELECT 1 FROM clips WHERE twitch_clip_id = $1
-		UNION ALL
-		SELECT 1 FROM discovery_clips WHERE twitch_clip_id = $1
-	)`
+	query := `SELECT EXISTS(SELECT 1 FROM clips WHERE twitch_clip_id = $1)`
 	err := db.QueryRow(ctx, query, twitchClipID).Scan(&exists)
 	return exists, err
-}
-
-// insertClip inserts a new clip into the discovery_clips staging table
-func insertClip(ctx context.Context, db *pgxpool.Pool, twitchClip *twitch.Clip) error {
-	id := uuid.New()
-	now := time.Now()
-
-	query := `
-		INSERT INTO discovery_clips (
-			id, twitch_clip_id, twitch_clip_url, embed_url, title,
-			creator_name, creator_id, broadcaster_name, broadcaster_id,
-			game_id, game_name, language, thumbnail_url, duration, view_count,
-			created_at, imported_at, is_nsfw, is_removed, is_hidden
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-			$11, $12, $13, $14, $15, $16, $17, $18, $19, $20
-		)
-	`
-
-	_, err := db.Exec(ctx, query,
-		id,
-		twitchClip.ID,
-		twitchClip.URL,
-		twitchClip.EmbedURL,
-		twitchClip.Title,
-		twitchClip.CreatorName,
-		&twitchClip.CreatorID,
-		twitchClip.BroadcasterName,
-		&twitchClip.BroadcasterID,
-		&twitchClip.GameID,
-		nil, // game_name - would require additional API call
-		&twitchClip.Language,
-		&twitchClip.ThumbnailURL,
-		&twitchClip.Duration,
-		twitchClip.ViewCount,
-		twitchClip.CreatedAt,
-		now,
-		false, // is_nsfw
-		false, // is_removed
-		false, // is_hidden
-	)
-
-	return err
 }
 
 // printSummary prints the scraping summary

@@ -36,15 +36,18 @@ type playlistGenerationWriter interface {
 var siteFreshnessDisplayOrder = map[string]int{
 	"Viral Velocity":      1,
 	"Trending Now":        2,
-	"Hidden Gems":         3,
+	"Clip of the Day":     3,
 	"Fresh Faces":         4,
 	"Creator Roulette":    5,
-	"Breakout Board":      6,
-	"Community Favorites": 7,
-	"Discovery Mix":       8,
-	"Binge Loop":          9,
-	"Deep Cuts Weekly":    10,
-	"Hot Takes":           11,
+	"Diversity Roulette":  6,
+	"Weekend Mix":         7,
+	"Hidden Gems":         8,
+	"Breakout Board":      9,
+	"Community Favorites": 10,
+	"Discovery Mix":       11,
+	"Binge Loop":          12,
+	"Deep Cuts Weekly":    13,
+	"Hot Takes":           14,
 }
 
 // PlaylistScriptService handles script-based playlist automation
@@ -455,6 +458,12 @@ func (s *PlaylistScriptService) GeneratePlaylist(ctx context.Context, scriptID u
 	}
 
 	return playlist, nil
+}
+
+// AcknowledgeEmptyGeneration advances a scheduled script after a successful
+// query found no eligible clips, without replacing its existing playlist.
+func (s *PlaylistScriptService) AcknowledgeEmptyGeneration(ctx context.Context, scriptID uuid.UUID) error {
+	return s.scriptRepo.UpdateLastRunWithoutPlaylist(ctx, scriptID)
 }
 
 func generatedPlaylistPresentationForScript(script *models.PlaylistScript, ownerID uuid.UUID) generatedPlaylistPresentation {

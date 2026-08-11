@@ -18,15 +18,20 @@ import (
 
 // BroadcasterHandler handles broadcaster-related HTTP requests
 type BroadcasterHandler struct {
-	broadcasterRepo  *repository.BroadcasterRepository
-	rankingRefresher broadcasterRankingRefresher
-	clipRepo         *repository.ClipRepository
-	twitchClient     *twitch.Client
-	authService      *services.AuthService
+	broadcasterRepo      *repository.BroadcasterRepository
+	rankingRefresher     broadcasterRankingRefresher
+	creatorDiscoveryRepo creatorDiscoveryLister
+	clipRepo             *repository.ClipRepository
+	twitchClient         *twitch.Client
+	authService          *services.AuthService
 }
 
 type broadcasterRankingRefresher interface {
 	RefreshRankings(context.Context) error
+}
+
+type creatorDiscoveryLister interface {
+	ListCreatorDiscovery(context.Context, int) (*models.CreatorDiscoveryRails, error)
 }
 
 // NewBroadcasterHandler creates a new broadcaster handler
@@ -37,11 +42,12 @@ func NewBroadcasterHandler(
 	authService *services.AuthService,
 ) *BroadcasterHandler {
 	return &BroadcasterHandler{
-		broadcasterRepo:  broadcasterRepo,
-		rankingRefresher: broadcasterRepo,
-		clipRepo:         clipRepo,
-		twitchClient:     twitchClient,
-		authService:      authService,
+		broadcasterRepo:      broadcasterRepo,
+		rankingRefresher:     broadcasterRepo,
+		creatorDiscoveryRepo: broadcasterRepo,
+		clipRepo:             clipRepo,
+		twitchClient:         twitchClient,
+		authService:          authService,
 	}
 }
 

@@ -176,7 +176,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 
           {comment.user_karma !== undefined && (
             <span className="text-xs text-muted-foreground">
-              {comment.user_karma.toLocaleString()} karma
+              {comment.user_karma.toLocaleString()} uppies
             </span>
           )}
 

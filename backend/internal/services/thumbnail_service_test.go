@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,8 +45,8 @@ func TestThumbnailService_Operational_Disabled(t *testing.T) {
 	svc := newTestThumbnailService(
 		"ffmpeg",
 		"/tmp/thumbs",
-		"",  // no API key
-		"",  // no API URL
+		"", // no API key
+		"", // no API URL
 		"",
 		false,
 	)
@@ -132,6 +134,170 @@ func TestClassifyThumbnails_WithMockAPI(t *testing.T) {
 	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Valorant")
 	require.NoError(t, err)
 	assert.Equal(t, []string{"clutch", "highlights"}, tags)
+}
+
+func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
+	thumbnailURL := "https://static-cdn.jtvnw.net/twitch-vap-video-assets/example/landscape/thumb/example-640x360.jpg"
+	gameName := "VALORANT"
+	language := "en"
+	duration := 31.2
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		encoded, err := json.Marshal(body)
+		require.NoError(t, err)
+		requestText := string(encoded)
+
+		assert.Contains(t, requestText, thumbnailURL)
+		assert.Contains(t, requestText, "ranked demon gets humbled")
+		assert.Contains(t, requestText, "StreamerOne")
+		assert.Contains(t, requestText, "ClipperTwo")
+		assert.Contains(t, requestText, gameName)
+		assert.Contains(t, requestText, language)
+
+		resp := map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{"message": map[string]string{"content": `{
+					"suggested_title":"Ranked Demon Gets Humbled",
+					"confidence":0.94,
+					"basis":"source_title",
+					"evidence":["The source title already identifies the moment."],
+					"tags":["funny","unknown_tag"]
+				}`}},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		require.NoError(t, json.NewEncoder(w).Encode(resp))
+	}))
+	defer server.Close()
+
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "gpt-4o-mini", true)
+	result, err := svc.AnalyzeClipThumbnail(context.Background(), &models.Clip{
+		Title:           "ranked demon gets humbled",
+		BroadcasterName: "StreamerOne",
+		CreatorName:     "ClipperTwo",
+		GameName:        &gameName,
+		Language:        &language,
+		Duration:        &duration,
+		ThumbnailURL:    &thumbnailURL,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "Ranked Demon Gets Humbled", result.SuggestedTitle)
+	assert.Equal(t, 0.94, result.Confidence)
+	assert.Equal(t, "source_title", result.Basis)
+	assert.Equal(t, []string{"The source title already identifies the moment."}, result.Evidence)
+	assert.Equal(t, []string{"funny"}, result.Tags)
+}
+
+func TestAnalyzeClipThumbnail_RejectsUnsupportedEvidenceBasis(t *testing.T) {
+	thumbnailURL := "https://static-cdn.jtvnw.net/example.jpg"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{"message": map[string]string{"content": `{
+					"suggested_title":"An Invented Outcome",
+					"confidence":0.99,
+					"basis":"transcript",
+					"evidence":[],
+					"tags":[]
+				}`}},
+			},
+		}
+		require.NoError(t, json.NewEncoder(w).Encode(resp))
+	}))
+	defer server.Close()
+
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "gpt-4o-mini", true)
+	_, err := svc.AnalyzeClipThumbnail(context.Background(), &models.Clip{
+		Title: "clip", ThumbnailURL: &thumbnailURL,
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "basis")
+}
+
+func TestAnalyzeClipWithTranscriptUsesSpokenWordsAsTitleEvidence(t *testing.T) {
+	thumbnailURL := "https://static-cdn.jtvnw.net/example.jpg"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		encoded, err := json.Marshal(body)
+		require.NoError(t, err)
+		assert.Contains(t, string(encoded), "I cannot believe that final save")
+
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{"message": map[string]string{"content": `{
+					"suggested_title":"I Cannot Believe That Final Save",
+					"confidence":0.97,
+					"basis":"transcript",
+					"evidence":["The speaker reacts to a final save."],
+					"tags":["reaction","highlights"]
+				}`}},
+			},
+		}))
+	}))
+	defer server.Close()
+
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "gpt-4o-mini", true)
+	result, err := svc.AnalyzeClipWithTranscript(context.Background(), &models.Clip{
+		Title: "clip", ThumbnailURL: &thumbnailURL,
+	}, "I cannot believe that final save")
+
+	require.NoError(t, err)
+	assert.Equal(t, "transcript", result.Basis)
+	assert.True(t, ShouldApplySuggestedTitle(&models.Clip{Title: "clip"}, result))
+}
+
+func TestShouldApplySuggestedTitle_PreservesInformativeTwitchTitle(t *testing.T) {
+	clip := &models.Clip{Title: "Ranked demon gets humbled on the final round"}
+	result := &ClipThumbnailEnrichment{
+		SuggestedTitle: "Streamer Wins the Final Round",
+		Confidence:     0.99,
+		Basis:          "visible",
+	}
+
+	assert.False(t, ShouldApplySuggestedTitle(clip, result))
+}
+
+func TestShouldApplySuggestedTitle_RepairsWeakAutomatedTitle(t *testing.T) {
+	clip := &models.Clip{Title: "lol"}
+	result := &ClipThumbnailEnrichment{
+		SuggestedTitle: "A Surprised Reaction on Stream",
+		Confidence:     0.94,
+		Basis:          "visible",
+	}
+
+	assert.True(t, ShouldApplySuggestedTitle(clip, result))
+}
+
+func TestShouldApplySuggestedTitle_RejectsInsufficientOrUncertainSuggestion(t *testing.T) {
+	clip := &models.Clip{Title: "clip"}
+
+	assert.False(t, ShouldApplySuggestedTitle(clip, &ClipThumbnailEnrichment{
+		SuggestedTitle: "An Exciting Moment on Stream",
+		Confidence:     0.99,
+		Basis:          "insufficient",
+	}))
+	assert.False(t, ShouldApplySuggestedTitle(clip, &ClipThumbnailEnrichment{
+		SuggestedTitle: "An Exciting Moment on Stream",
+		Confidence:     0.89,
+		Basis:          "visible",
+	}))
+}
+
+func TestShouldApplySuggestedTitle_NeverChangesUserSubmittedClip(t *testing.T) {
+	userID := uuid.New()
+	clip := &models.Clip{Title: "lol", SubmittedByUserID: &userID}
+	result := &ClipThumbnailEnrichment{
+		SuggestedTitle: "A Surprised Reaction on Stream",
+		Confidence:     0.99,
+		Basis:          "visible",
+	}
+
+	assert.False(t, ShouldApplySuggestedTitle(clip, result))
 }
 
 func TestClassifyThumbnails_WithMockAPI_SingleTag(t *testing.T) {

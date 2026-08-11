@@ -17,16 +17,14 @@ import {
 export const useClipFeed = (filters?: ClipFeedFilters) => {
     return useInfiniteQuery({
         queryKey: ['clips', filters],
-        // Use page-based pagination to align with tests and mocks
-        queryFn: ({ pageParam = 1 }) =>
-            clipApi.fetchClips({ pageParam, filters } as unknown as {
-                pageParam: number;
-                filters?: ClipFeedFilters;
-            }),
+        queryFn: ({ pageParam }) =>
+            clipApi.fetchClips({ cursor: pageParam || undefined, filters }),
         getNextPageParam: lastPage => {
-            return lastPage.has_more ? (lastPage.page ?? 1) + 1 : undefined;
+            return lastPage.has_more && lastPage.cursor ?
+                    lastPage.cursor
+                :   undefined;
         },
-        initialPageParam: 1,
+        initialPageParam: '',
     });
 };
 

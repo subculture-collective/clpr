@@ -72,9 +72,19 @@ type TrendingSyncOptions struct {
 	LanguageFilter       string
 }
 
+type twitchClipClient interface {
+	GetClips(context.Context, *twitch.ClipParams) (*twitch.ClipsResponse, error)
+	GetTopGames(context.Context, int, string) (*twitch.TopGamesResponse, error)
+	GetChannels(context.Context, []string) (*twitch.ChannelsResponse, error)
+}
+
+type gameCatalogWriter interface {
+	Create(context.Context, *models.GameEntity) error
+}
+
 // ClipSyncService handles fetching and syncing clips from Twitch
 type ClipSyncService struct {
-	twitchClient *twitch.Client
+	twitchClient twitchClipClient
 	clipRepo     *repository.ClipRepository
 	tagRepo      *repository.TagRepository
 	userRepo     *repository.UserRepository
@@ -82,10 +92,12 @@ type ClipSyncService struct {
 	maxPages     int
 	defaultLang  string
 	autoTagger   *AutoTaggerService
+	publisher    *TwitchClipPublisher
+	gameRepo     gameCatalogWriter
 }
 
 // NewClipSyncService creates a new ClipSyncService
-func NewClipSyncService(twitchClient *twitch.Client, clipRepo *repository.ClipRepository, tagRepo *repository.TagRepository, userRepo *repository.UserRepository, redisClient *redispkg.Client, autoTagger *AutoTaggerService) *ClipSyncService {
+func NewClipSyncService(twitchClient twitchClipClient, clipRepo *repository.ClipRepository, tagRepo *repository.TagRepository, userRepo *repository.UserRepository, redisClient *redispkg.Client, autoTagger *AutoTaggerService) *ClipSyncService {
 	var stateStore TrendingStateStore
 	if redisClient != nil {
 		stateStore = NewRedisTrendingStateStore(redisClient)
@@ -100,7 +112,13 @@ func NewClipSyncService(twitchClient *twitch.Client, clipRepo *repository.ClipRe
 		maxPages:     defaultTrendingMaxPages,
 		defaultLang:  normalizeLanguageFilter("en"),
 		autoTagger:   autoTagger,
+		publisher:    NewTwitchClipPublisher(clipRepo),
 	}
+}
+
+// SetGameRepository enables catalog persistence during trending syncs.
+func (s *ClipSyncService) SetGameRepository(gameRepo gameCatalogWriter) {
+	s.gameRepo = gameRepo
 }
 
 // SetDefaultLanguage overrides the service-level language filter (use "all" or "" to disable)
@@ -329,10 +347,10 @@ func (s *ClipSyncService) SyncClipsByBroadcaster(ctx context.Context, broadcaste
 
 // FollowedBroadcasterSyncOptions configures the followed broadcaster sync run.
 type FollowedBroadcasterSyncOptions struct {
-	MinFollowers        int    // minimum clpr followers to include a broadcaster
-	ClipsPerBroadcaster int    // max clips fetched per broadcaster
-	MaxTotalClips       int    // hard cap per sync cycle
-	PrefersLive         bool   // prioritize currently-live broadcasters
+	MinFollowers        int  // minimum clpr followers to include a broadcaster
+	ClipsPerBroadcaster int  // max clips fetched per broadcaster
+	MaxTotalClips       int  // hard cap per sync cycle
+	PrefersLive         bool // prioritize currently-live broadcasters
 	LanguageFilter      string
 }
 
@@ -537,6 +555,8 @@ func (s *ClipSyncService) SyncTrendingClips(ctx context.Context, hours int, opts
 		}
 	}
 
+	s.persistTrendingGameCatalog(ctx, games, stats)
+
 	utils.Info("Syncing trending clips", map[string]interface{}{
 		"games":       len(games),
 		"max_pages":   resolved.MaxPages,
@@ -628,6 +648,29 @@ func (s *ClipSyncService) SyncTrendingClips(ctx context.Context, hours int, opts
 	})
 
 	return stats, nil
+}
+
+func (s *ClipSyncService) persistTrendingGameCatalog(ctx context.Context, games []TrendingGameConfig, stats *SyncStats) {
+	if s.gameRepo == nil {
+		return
+	}
+	now := time.Now()
+	for _, game := range games {
+		if game.GameID == "" || game.Name == "" || game.Name == "fallback" {
+			continue
+		}
+		entity := &models.GameEntity{
+			ID: uuid.New(), TwitchGameID: game.GameID, Name: game.Name,
+			CreatedAt: now, UpdatedAt: now,
+		}
+		if err := s.gameRepo.Create(ctx, entity); err != nil {
+			message := fmt.Sprintf("Failed to persist game %s: %v", game.GameID, err)
+			stats.Errors = append(stats.Errors, message)
+			utils.Warn("Failed to persist trending game", map[string]interface{}{
+				"game_id": game.GameID, "error": err,
+			})
+		}
+	}
 }
 
 func (s *ClipSyncService) applyTrendingDefaults(opts *TrendingSyncOptions) *TrendingSyncOptions {
@@ -776,54 +819,35 @@ func (s *ClipSyncService) FetchClipByURL(ctx context.Context, clipURLOrID string
 
 	twitchClip := clipsResp.Data[0]
 
-	// Check if already exists
-	exists, err := s.clipRepo.ExistsByTwitchClipID(ctx, twitchClip.ID)
+	result, err := s.publisher.Publish(ctx, &twitchClip)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check clip existence: %w", err)
+		return nil, fmt.Errorf("failed to publish clip: %w", err)
 	}
 
-	if exists {
-		// Return existing clip
-		return s.clipRepo.GetByTwitchClipID(ctx, twitchClip.ID)
-	}
+	if result.Disposition == PublishCreated {
+		s.maybeAutoTag(result.Clip)
 
-	// Transform and save
-	clip := transformTwitchClip(&twitchClip)
-	if err := s.clipRepo.Create(ctx, clip); err != nil {
-		return nil, fmt.Errorf("failed to save clip: %w", err)
-	}
-
-	// Trigger structural auto-tagging in a non-blocking goroutine
-	s.maybeAutoTag(clip)
-
-	if s.tagRepo != nil && twitchClip.BroadcasterID != "" {
-		if tags := s.fetchChannelTags(ctx, []string{twitchClip.BroadcasterID}); len(tags) > 0 {
-			_ = s.applyStreamerTags(ctx, clip, tags[twitchClip.BroadcasterID])
+		if s.tagRepo != nil && twitchClip.BroadcasterID != "" {
+			if tags := s.fetchChannelTags(ctx, []string{twitchClip.BroadcasterID}); len(tags) > 0 {
+				_ = s.applyStreamerTags(ctx, result.Clip, tags[twitchClip.BroadcasterID])
+			}
 		}
 	}
 
-	return clip, nil
+	return result.Clip, nil
 }
 
 // processClip processes a single clip from Twitch (create or update)
 func (s *ClipSyncService) processClip(ctx context.Context, twitchClip *twitch.Clip, stats *SyncStats, streamerTags []string) error {
-	// Check if clip already exists
-	exists, err := s.clipRepo.ExistsByTwitchClipID(ctx, twitchClip.ID)
+	result, err := s.publisher.Publish(ctx, twitchClip)
 	if err != nil {
-		return fmt.Errorf("failed to check clip existence: %w", err)
+		return fmt.Errorf("failed to publish clip: %w", err)
 	}
 
-	if exists {
-		// Update view count for existing clip
-		if err := s.clipRepo.UpdateViewCount(ctx, twitchClip.ID, twitchClip.ViewCount); err != nil {
-			return fmt.Errorf("failed to update view count: %w", err)
-		}
+	if result.Disposition == PublishUpdated {
 		stats.ClipsUpdated++
 		return nil
 	}
-
-	// Transform Twitch clip to our model
-	clip := transformTwitchClip(twitchClip)
 
 	// Ensure unclaimed users exist for creator and broadcaster
 	if err := s.ensureUnclaimedUser(ctx, twitchClip.CreatorID, twitchClip.CreatorName); err != nil {
@@ -833,19 +857,14 @@ func (s *ClipSyncService) processClip(ctx context.Context, twitchClip *twitch.Cl
 		utils.Warn("Failed to ensure unclaimed user for broadcaster", map[string]interface{}{"broadcaster": twitchClip.BroadcasterName, "error": err})
 	}
 
-	// Save to database
-	if err := s.clipRepo.Create(ctx, clip); err != nil {
-		return fmt.Errorf("failed to create clip: %w", err)
-	}
-
 	if len(streamerTags) > 0 && s.tagRepo != nil {
-		if err := s.applyStreamerTags(ctx, clip, streamerTags); err != nil {
+		if err := s.applyStreamerTags(ctx, result.Clip, streamerTags); err != nil {
 			stats.Errors = append(stats.Errors, err.Error())
 		}
 	}
 
 	// Trigger structural auto-tagging in a non-blocking goroutine
-	s.maybeAutoTag(clip)
+	s.maybeAutoTag(result.Clip)
 
 	stats.ClipsCreated++
 	return nil

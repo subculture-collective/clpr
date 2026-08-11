@@ -47,6 +47,24 @@ export const streamerClipRoomApi = {
         unwrapResponse(response.data, 'Failed to stop streamer clip room');
     },
 
+    async updateSubmissions(
+        channel: string,
+        enabled: boolean,
+        durationMinutes?: number,
+    ): Promise<StreamerClipRoom> {
+        const response = await apiClient.put<StandardResponse<StreamerClipRoom>>(
+            `/streamer-clip-rooms/${encodeURIComponent(channel)}/submissions`,
+            {
+                enabled,
+                ...(durationMinutes === undefined
+                    ? {}
+                    : { duration_minutes: durationMinutes }),
+            },
+        );
+
+        return unwrapResponse(response.data, 'Failed to update clip submissions');
+    },
+
     async getRoomItems(
         roomId: string,
         status: 'pending' | 'approved' | 'rejected' | 'skipped' | 'all' = 'all',

@@ -311,6 +311,26 @@ func (r *PlaylistScriptRepository) UpdateLastRun(ctx context.Context, scriptID, 
 	return nil
 }
 
+// UpdateLastRunWithoutPlaylist records a completed generation attempt that had no
+// eligible clips. The previous generated playlist remains available while the
+// script waits for its next scheduled interval.
+func (r *PlaylistScriptRepository) UpdateLastRunWithoutPlaylist(ctx context.Context, scriptID uuid.UUID) error {
+	now := time.Now()
+	result, err := r.pool.Exec(ctx, `
+		UPDATE playlist_scripts
+		SET last_run_at = $1, updated_at = $1
+		WHERE id = $2 AND is_active = true
+	`, now, scriptID)
+	if err != nil {
+		return fmt.Errorf("failed to update empty playlist script run metadata: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrPlaylistScriptNotFound
+	}
+
+	return nil
+}
+
 // ListDueForExecution returns active, non-manual scripts where enough time has elapsed since last_run_at
 func (r *PlaylistScriptRepository) ListDueForExecution(ctx context.Context) ([]*models.PlaylistScript, error) {
 	query := fmt.Sprintf(`

@@ -85,9 +85,26 @@ func (f *fakeStreamerClipRoomRepository) SetRoomActive(ctx context.Context, room
 		room.ListenerStartedAt = &now
 	} else {
 		room.ListenerStartedAt = nil
+		room.SubmissionsOpen = false
+		room.SubmissionsCloseAt = nil
 	}
 	room.UpdatedAt = time.Now().UTC()
 	return nil
+}
+
+func (f *fakeStreamerClipRoomRepository) SetSubmissionWindow(_ context.Context, roomID uuid.UUID, open bool, closeAt *time.Time) (*models.StreamerClipRoom, error) {
+	room, ok := f.roomsByID[roomID]
+	if !ok {
+		return nil, nil
+	}
+	room.SubmissionsOpen = open
+	if open {
+		room.SubmissionsCloseAt = closeAt
+	} else {
+		room.SubmissionsCloseAt = nil
+	}
+	room.UpdatedAt = time.Now().UTC()
+	return f.cloneRoom(room), nil
 }
 
 func (f *fakeStreamerClipRoomRepository) CreateItem(ctx context.Context, item *models.StreamerClipRoomItem) error {
@@ -252,7 +269,7 @@ func (f *fakeClipLookupRepository) GetByTwitchClipID(ctx context.Context, twitch
 func TestStreamerClipRoomServiceIngestsClprClipAsPending(t *testing.T) {
 	ctx := context.Background()
 	ownerID := uuid.New()
-	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	clipID := uuid.New()
 
 	rooms := newFakeStreamerClipRoomRepository()
@@ -292,10 +309,101 @@ func TestStreamerClipRoomServiceIngestsClprClipAsPending(t *testing.T) {
 	}
 }
 
+func TestStreamerClipRoomServiceIgnoresMessagesWhileSubmissionsAreClosed(t *testing.T) {
+	room := &models.StreamerClipRoom{
+		ID:              uuid.New(),
+		OwnerUserID:     uuid.New(),
+		TwitchChannel:   "moonmoon",
+		ApprovalMode:    models.StreamerClipRoomApprovalManual,
+		IsActive:        true,
+		SubmissionsOpen: false,
+	}
+	rooms := newFakeStreamerClipRoomRepository()
+	rooms.seedRoom(room)
+
+	items, err := newStreamerClipRoomService(rooms, newFakeClipLookupRepository()).IngestChatMessage(
+		context.Background(),
+		TwitchChatClipMessage{RoomID: room.ID, MessageText: "https://clips.twitch.tv/ClosedWindow"},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 0 || rooms.createCalls != 0 {
+		t.Fatalf("expected closed submissions to ignore the message, got %d items and %d creates", len(items), rooms.createCalls)
+	}
+}
+
+func TestStreamerClipRoomServiceClosesExpiredSubmissionWindow(t *testing.T) {
+	expiredAt := time.Now().UTC().Add(-time.Second)
+	room := &models.StreamerClipRoom{
+		ID:                 uuid.New(),
+		OwnerUserID:        uuid.New(),
+		TwitchChannel:      "moonmoon",
+		ApprovalMode:       models.StreamerClipRoomApprovalManual,
+		IsActive:           true,
+		SubmissionsOpen:    true,
+		SubmissionsCloseAt: &expiredAt,
+	}
+	rooms := newFakeStreamerClipRoomRepository()
+	rooms.seedRoom(room)
+
+	items, err := newStreamerClipRoomService(rooms, newFakeClipLookupRepository()).IngestChatMessage(
+		context.Background(),
+		TwitchChatClipMessage{RoomID: room.ID, MessageText: "https://clips.twitch.tv/ExpiredWindow"},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 0 || rooms.createCalls != 0 {
+		t.Fatalf("expected expired submissions to ignore the message, got %d items and %d creates", len(items), rooms.createCalls)
+	}
+	if rooms.roomsByID[room.ID].SubmissionsOpen {
+		t.Fatal("expected expired submission window to be persisted as closed")
+	}
+}
+
+func TestStreamerClipRoomServiceSetsTimedSubmissions(t *testing.T) {
+	ownerID := uuid.New()
+	room := &models.StreamerClipRoom{
+		ID:            uuid.New(),
+		OwnerUserID:   ownerID,
+		TwitchChannel: "moonmoon",
+		ApprovalMode:  models.StreamerClipRoomApprovalManual,
+		IsActive:      true,
+	}
+	rooms := newFakeStreamerClipRoomRepository()
+	rooms.seedRoom(room)
+	durationMinutes := 15
+	before := time.Now().UTC().Add(14*time.Minute + 59*time.Second)
+
+	updated, err := newStreamerClipRoomService(rooms, newFakeClipLookupRepository()).SetSubmissions(
+		context.Background(), ownerID, room.TwitchChannel, true, &durationMinutes,
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !updated.SubmissionsOpen || updated.SubmissionsCloseAt == nil {
+		t.Fatalf("expected timed submissions to be open, got %#v", updated)
+	}
+	if updated.SubmissionsCloseAt.Before(before) || updated.SubmissionsCloseAt.After(time.Now().UTC().Add(15*time.Minute+time.Second)) {
+		t.Fatalf("unexpected submission deadline: %s", updated.SubmissionsCloseAt)
+	}
+
+	closed, err := newStreamerClipRoomService(rooms, newFakeClipLookupRepository()).SetSubmissions(
+		context.Background(), ownerID, room.TwitchChannel, false, nil,
+	)
+	if err != nil {
+		t.Fatalf("unexpected close error: %v", err)
+	}
+	if closed.SubmissionsOpen || closed.SubmissionsCloseAt != nil {
+		t.Fatalf("expected submissions to be closed with no deadline, got %#v", closed)
+	}
+}
+
 func TestStreamerClipRoomServiceHydratesListedItemsWithClip(t *testing.T) {
 	ctx := context.Background()
 	ownerID := uuid.New()
-	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	clipID := uuid.New()
 
 	rooms := newFakeStreamerClipRoomRepository()
@@ -324,7 +432,7 @@ func TestStreamerClipRoomServiceHydratesListedItemsWithClip(t *testing.T) {
 func TestStreamerClipRoomServiceBroadcastsDetectedItems(t *testing.T) {
 	ctx := context.Background()
 	ownerID := uuid.New()
-	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	clipID := uuid.New()
 
 	rooms := newFakeStreamerClipRoomRepository()
@@ -368,7 +476,7 @@ func TestStreamerClipRoomServiceBroadcastsDetectedItems(t *testing.T) {
 func TestStreamerClipRoomServiceHydratesApprovedItem(t *testing.T) {
 	ctx := context.Background()
 	ownerID := uuid.New()
-	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	clipID := uuid.New()
 	itemID := uuid.New()
 
@@ -407,7 +515,7 @@ func TestStreamerClipRoomServiceMarksListenerStopped(t *testing.T) {
 func TestStreamerClipRoomServiceSkipsUnknownTwitchClip(t *testing.T) {
 	ctx := context.Background()
 	ownerID := uuid.New()
-	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 
 	rooms := newFakeStreamerClipRoomRepository()
 	rooms.seedRoom(room)
@@ -439,10 +547,56 @@ func TestStreamerClipRoomServiceSkipsUnknownTwitchClip(t *testing.T) {
 	}
 }
 
+type fakeStreamerClipImporter struct {
+	clip  *models.Clip
+	err   error
+	input string
+}
+
+func (f *fakeStreamerClipImporter) FetchClipByURL(_ context.Context, input string) (*models.Clip, error) {
+	f.input = input
+	return f.clip, f.err
+}
+
+func TestStreamerClipRoomServiceImportsUnknownTwitchClip(t *testing.T) {
+	ownerID := uuid.New()
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalManual, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	rooms := newFakeStreamerClipRoomRepository()
+	rooms.seedRoom(room)
+	clips := newFakeClipLookupRepository()
+	imported := &models.Clip{ID: uuid.New(), TwitchClipID: "InterestingClipSlug", Title: "Interesting clip", CreatedAt: time.Now().UTC()}
+	importer := &fakeStreamerClipImporter{clip: imported}
+	svc := newStreamerClipRoomService(rooms, clips)
+	svc.SetClipImporter(importer)
+
+	items, err := svc.IngestChatMessage(context.Background(), TwitchChatClipMessage{
+		RoomID:          room.ID,
+		TwitchMessageID: "message-1",
+		TwitchUserID:    "viewer-1",
+		TwitchUsername:  "viewer",
+		MessageText:     "watch https://clips.twitch.tv/InterestingClipSlug",
+	})
+	if err != nil {
+		t.Fatalf("ingest message: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected one item, got %d", len(items))
+	}
+	if items[0].Status != models.StreamerClipRoomItemStatusPending {
+		t.Fatalf("expected pending item, got %q", items[0].Status)
+	}
+	if items[0].ClipID == nil || *items[0].ClipID != imported.ID {
+		t.Fatalf("expected imported clip ID %s, got %v", imported.ID, items[0].ClipID)
+	}
+	if importer.input != "https://clips.twitch.tv/InterestingClipSlug" {
+		t.Fatalf("unexpected importer input %q", importer.input)
+	}
+}
+
 func TestStreamerClipRoomServiceAutoApprovesWhenConfigured(t *testing.T) {
 	ctx := context.Background()
 	ownerID := uuid.New()
-	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalAuto, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	room := &models.StreamerClipRoom{ID: uuid.New(), OwnerUserID: ownerID, TwitchChannel: "moonmoon", ApprovalMode: models.StreamerClipRoomApprovalAuto, IsActive: true, SubmissionsOpen: true, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	clipID := uuid.New()
 
 	rooms := newFakeStreamerClipRoomRepository()

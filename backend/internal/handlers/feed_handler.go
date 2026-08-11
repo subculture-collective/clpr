@@ -538,11 +538,29 @@ func (h *FeedHandler) GetFollowingFeed(c *gin.Context) {
 // Supports both offset-based (legacy) and cursor-based pagination
 func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 	// Parse query parameters
-	games := c.QueryArray("filter[game]")
-	streamers := c.QueryArray("filter[streamer]")
-	tags := c.QueryArray("filter[tags]")
-	dateFrom := c.Query("filter[date_from]")
-	dateTo := c.Query("filter[date_to]")
+	// Use flat parameter names because the global request validator deliberately
+	// rejects bracketed query keys. Keep the bracketed lookups as a compatibility
+	// fallback for callers mounted without that middleware.
+	games := c.QueryArray("game_id")
+	if len(games) == 0 {
+		games = c.QueryArray("filter[game]")
+	}
+	streamers := c.QueryArray("broadcaster_id")
+	if len(streamers) == 0 {
+		streamers = c.QueryArray("filter[streamer]")
+	}
+	tags := c.QueryArray("tag")
+	if len(tags) == 0 {
+		tags = c.QueryArray("filter[tags]")
+	}
+	dateFrom := c.Query("date_from")
+	if dateFrom == "" {
+		dateFrom = c.Query("filter[date_from]")
+	}
+	dateTo := c.Query("date_to")
+	if dateTo == "" {
+		dateTo = c.Query("filter[date_to]")
+	}
 	sort := c.DefaultQuery("sort", "trending")
 	limit, limitErr := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	offset, offsetErr := strconv.Atoi(c.DefaultQuery("offset", "0"))
@@ -582,6 +600,29 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		return
 	}
 
+	// Resolve the viewer before creating the stateless feed-session seed. A new
+	// first-page request gets a fresh personalized arrangement; subsequent pages
+	// recover the same seed from the cursor.
+	userID, ok := optionalFeedUserID(c)
+	if !ok {
+		return
+	}
+	shuffleSeed := ""
+	if sort == "trending" {
+		if cursor != "" {
+			decodedCursor, decodeErr := utils.DecodeCursor(cursor)
+			if decodeErr != nil || decodedCursor == nil || decodedCursor.ShuffleSeed == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cursor: refresh the feed to start a new session"})
+				return
+			}
+			shuffleSeed = decodedCursor.ShuffleSeed
+		} else if userID != nil {
+			shuffleSeed = uuid.NewSHA1(*userID, []byte(uuid.NewString())).String()
+		} else {
+			shuffleSeed = uuid.NewString()
+		}
+	}
+
 	// Validate date filters to prevent SQL injection
 	var validatedDateFrom, validatedDateTo string
 	var err error
@@ -610,8 +651,9 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 
 	// Build filters for clip repository
 	filters := repository.ClipFilters{
-		Sort:              sort,
-		UserSubmittedOnly: true, // Only show user-submitted clips in feed
+		Sort:                sort,
+		UserSubmittedOnly:   false, // Automated and user-submitted clips share the main feed.
+		TrendingShuffleSeed: &shuffleSeed,
 	}
 
 	// Apply cursor if provided (takes precedence over offset)
@@ -641,12 +683,6 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 	}
 	if validatedDateTo != "" {
 		filters.DateTo = &validatedDateTo
-	}
-
-	// Get authenticated user ID if present
-	userID, ok := optionalFeedUserID(c)
-	if !ok {
-		return
 	}
 
 	// Fetch clips using feed service with user data enrichment (fetch limit+1 to check if there are more)
@@ -704,7 +740,7 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		default:
 			sortValue = float64(lastClip.CreatedAt.Unix())
 		}
-		encodedCursor := utils.EncodeCursor(sort, sortValue, lastClip.ID, lastClip.CreatedAt.Unix())
+		encodedCursor := utils.EncodeCursorWithShuffleSeed(sort, sortValue, lastClip.ID, lastClip.CreatedAt.Unix(), shuffleSeed)
 		nextCursor = &encodedCursor
 	}
 

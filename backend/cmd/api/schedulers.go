@@ -18,7 +18,7 @@ type SchedulerGroup struct {
 	Embedding       *scheduler.EmbeddingScheduler // may be nil
 	Export          *scheduler.ExportScheduler
 	EmailMetrics    *scheduler.EmailMetricsScheduler
-	LiveStatus      *scheduler.LiveStatusScheduler       // may be nil
+	LiveStatus      *scheduler.LiveStatusScheduler // may be nil
 	PlaylistScript  *scheduler.PlaylistScriptScheduler
 	AutoTag         *scheduler.AutoTagScheduler
 }
@@ -85,8 +85,8 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 	if svcs.AutoTag != nil {
 		sg.AutoTag = scheduler.NewAutoTagScheduler(
 			svcs.AutoTag,
-			svcs.Whisper,
 			svcs.Thumbnail,
+			svcs.ClipTranscription,
 			repos.Clip,
 			repos.Tag,
 			30, // run every 30 seconds

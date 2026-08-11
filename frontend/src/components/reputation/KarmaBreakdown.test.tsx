@@ -16,25 +16,25 @@ const mockZeroBreakdown: KarmaBreakdown = {
 };
 
 describe('KarmaBreakdownChart', () => {
-    it('displays total karma correctly', () => {
+    it('displays total uppies correctly', () => {
         render(<KarmaBreakdownChart breakdown={mockBreakdown} />);
 
         expect(screen.getByText('1,234')).toBeInTheDocument();
-        expect(screen.getByText('Total Karma')).toBeInTheDocument();
+        expect(screen.getByText('Total Uppies')).toBeInTheDocument();
     });
 
-    it('displays clip karma amount', () => {
+    it('displays clip uppies amount', () => {
         render(<KarmaBreakdownChart breakdown={mockBreakdown} />);
 
         expect(screen.getByText('500')).toBeInTheDocument();
-        expect(screen.getByText('Clip Karma')).toBeInTheDocument();
+        expect(screen.getByText('Clip Uppies')).toBeInTheDocument();
     });
 
-    it('displays comment karma amount', () => {
+    it('displays comment uppies amount', () => {
         render(<KarmaBreakdownChart breakdown={mockBreakdown} />);
 
         expect(screen.getByText('734')).toBeInTheDocument();
-        expect(screen.getByText('Comment Karma')).toBeInTheDocument();
+        expect(screen.getByText('Comment Uppies')).toBeInTheDocument();
     });
 
     it('calculates percentages correctly', () => {
@@ -46,7 +46,7 @@ describe('KarmaBreakdownChart', () => {
         expect(screen.getByText('59.5%')).toBeInTheDocument();
     });
 
-    it('handles zero karma gracefully', () => {
+    it('handles zero uppies gracefully', () => {
         render(<KarmaBreakdownChart breakdown={mockZeroBreakdown} />);
 
         // Multiple zeros are rendered (total, clip, comment); ensure at least one is present
@@ -55,10 +55,10 @@ describe('KarmaBreakdownChart', () => {
         expect(screen.getAllByText('0.0%').length).toBe(2);
     });
 
-    it('displays karma breakdown title', () => {
+    it('displays uppies breakdown title', () => {
         render(<KarmaBreakdownChart breakdown={mockBreakdown} />);
 
-        expect(screen.getByText('Karma Breakdown')).toBeInTheDocument();
+        expect(screen.getByText('Uppies Breakdown')).toBeInTheDocument();
     });
 
     it('shows percentage labels', () => {

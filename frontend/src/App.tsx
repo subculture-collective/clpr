@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -26,11 +26,6 @@ const DiscoveryListDetailPage = lazy(() =>
         default: m.DiscoveryListDetailPage,
     })),
 );
-const ScrapedClipsPage = lazy(() =>
-    import('./pages/ScrapedClipsPage').then(m => ({
-        default: m.ScrapedClipsPage,
-    })),
-);
 const ClipDetailPage = lazy(() =>
     import('./pages/ClipDetailPage').then(m => ({ default: m.ClipDetailPage })),
 );
@@ -44,6 +39,9 @@ const BroadcasterPage = lazy(() =>
     import('./pages/BroadcasterPage').then(m => ({
         default: m.BroadcasterPage,
     })),
+);
+const CreatorsPage = lazy(() =>
+    import('./pages/CreatorsPage').then(m => ({ default: m.CreatorsPage })),
 );
 const CreatorPage = lazy(() =>
     import('./pages/CreatorPage').then(m => ({
@@ -396,7 +394,7 @@ function App() {
                                         />
                                         <Route
                                             path='/discover'
-                                            element={<ScrapedClipsPage />}
+                                            element={<Navigate to='/' replace />}
                                         />
                                         <Route
                                             path='/discover/lists'
@@ -410,7 +408,7 @@ function App() {
                                         />
                                         <Route
                                             path='/discover/scraped'
-                                            element={<ScrapedClipsPage />}
+                                            element={<Navigate to='/' replace />}
                                         />
                                         {/* Live Feed - Hidden until after launch */}
                                         {/* <Route
@@ -442,6 +440,10 @@ function App() {
                                             element={<BroadcasterPage />}
                                         />
                                         <Route
+                                            path='/creators'
+                                            element={<CreatorsPage />}
+                                        />
+                                        <Route
                                             path='/creator/:creatorId'
                                             element={<CreatorPage />}
                                         />
@@ -458,7 +460,7 @@ function App() {
                                             element={<UserProfilePage />}
                                         />
                                         <Route
-                                            path='/tag/:tagSlug'
+                                            path='/tag/*'
                                             element={<TagPage />}
                                         />
                                         <Route

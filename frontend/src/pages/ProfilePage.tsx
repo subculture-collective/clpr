@@ -281,7 +281,7 @@ export function ProfilePage() {
                                 <div className='flex flex-wrap justify-center xs:justify-start gap-3 xs:gap-4 text-xs xs:text-sm'>
                                     <div className='flex items-center gap-2'>
                                         <span className='text-muted-foreground'>
-                                            Karma:
+                                            Uppies:
                                         </span>
                                         <span className='text-primary-600 font-semibold'>
                                             {user.karma_points}
@@ -399,7 +399,7 @@ export function ProfilePage() {
                                         role='tab'
                                         aria-selected={activeTab === 'karma'}
                                     >
-                                        Karma
+                                        Uppies
                                     </button>
                                     <button
                                         onClick={() =>
@@ -532,7 +532,7 @@ export function ProfilePage() {
                                         />
                                     :   <div className='py-12 text-center'>
                                             <p className='text-muted-foreground'>
-                                                Loading karma data...
+                                                Loading uppies data...
                                             </p>
                                         </div>
                                     }
@@ -619,7 +619,7 @@ export function ProfilePage() {
                                             tips={[
                                                 'Share your thoughts on clips you enjoy',
                                                 'Engage in discussions with other users',
-                                                'Earn karma by posting quality comments',
+                                                'Earn uppies by posting quality comments',
                                             ]}
                                         />
                                     }
@@ -679,7 +679,7 @@ export function ProfilePage() {
                                             description='Start upvoting clips you enjoy to see them here.'
                                             primaryAction={{
                                                 label: 'Discover Clips',
-                                                href: '/discover',
+                                                href: '/',
                                             }}
                                             secondaryAction={{
                                                 label: 'Browse Top Clips',

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,8 @@ const mockUseApproveStreamerClipRoomItem = vi.fn();
 const mockUseRejectStreamerClipRoomItem = vi.fn();
 const mockUseReorderStreamerClipRoomItems = vi.fn();
 const mockUseStreamerClipRoomWebSocket = vi.fn();
+const mockUseTwitchBotAuthorization = vi.fn();
+const mockUseUpdateStreamerClipRoomSubmissions = vi.fn();
 
 vi.mock('@/hooks/useStreamerClipRoom', () => ({
     useStreamerClipRoom: (...args: unknown[]) => mockUseStreamerClipRoom(...args),
@@ -29,6 +31,9 @@ vi.mock('@/hooks/useStreamerClipRoom', () => ({
         mockUseRejectStreamerClipRoomItem(...args),
     useReorderStreamerClipRoomItems: (...args: unknown[]) =>
         mockUseReorderStreamerClipRoomItems(...args),
+    useTwitchBotAuthorization: () => mockUseTwitchBotAuthorization(),
+    useUpdateStreamerClipRoomSubmissions: () =>
+        mockUseUpdateStreamerClipRoomSubmissions(),
 }));
 
 vi.mock('@/hooks/useStreamerClipRoomWebSocket', () => ({
@@ -87,6 +92,7 @@ const stopMutate = vi.fn();
 const approveMutate = vi.fn();
 const rejectMutate = vi.fn();
 const reorderMutate = vi.fn();
+const updateSubmissionsMutate = vi.fn();
 
 const baseRoom: StreamerClipRoom = {
     id: 'room-1',
@@ -94,6 +100,7 @@ const baseRoom: StreamerClipRoom = {
     twitch_channel: 'teststreamer',
     approval_mode: 'manual',
     is_active: true,
+    submissions_open: false,
     listener_started_at: '2026-06-06T10:00:00Z',
     created_at: '2026-06-06T09:00:00Z',
     updated_at: '2026-06-06T10:05:00Z',
@@ -176,6 +183,21 @@ describe('StreamerClipRoomPage', () => {
             mutate: reorderMutate,
             isPending: false,
         });
+        mockUseUpdateStreamerClipRoomSubmissions.mockReturnValue({
+            mutate: updateSubmissionsMutate,
+            isPending: false,
+            isError: false,
+            error: null,
+        });
+        mockUseTwitchBotAuthorization.mockReturnValue({
+            data: {
+                authenticated: true,
+                bot_authorized: true,
+                clip_download_authorized: true,
+                twitch_username: 'teststreamer',
+            },
+            isLoading: false,
+        });
     });
 
     it('renders listener controls and pending approvals when there are no approved clips', () => {
@@ -198,6 +220,68 @@ describe('StreamerClipRoomPage', () => {
         expect(screen.getByText(/pending approvals/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /reject/i })).toBeInTheDocument();
+        expect(screen.getByText(/submissions closed/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /start timer/i })).toBeEnabled();
+    });
+
+    it('opens timed submissions and lets the streamer close them', () => {
+        const timedRoom = {
+            ...baseRoom,
+            submissions_open: true,
+            submissions_close_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+        } satisfies StreamerClipRoom;
+        mockUseStreamerClipRoom.mockReturnValue({
+            data: {
+                room: timedRoom,
+                pending_items: [],
+                approved_items: [],
+                skipped_items: [],
+            } satisfies StreamerClipRoomWithItems,
+            isLoading: false,
+            isError: false,
+            refetch: vi.fn(),
+        });
+
+        render(
+            <MemoryRouter initialEntries={['/streamer-tools/teststreamer/clips']}>
+                <Routes>
+                    <Route
+                        path='/streamer-tools/:channel/clips'
+                        element={<StreamerClipRoomPage />}
+                    />
+                </Routes>
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByText(/remaining/i)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /close submissions/i }));
+        expect(updateSubmissionsMutate).toHaveBeenCalledWith({
+            channel: 'teststreamer',
+            enabled: false,
+        });
+    });
+
+    it('starts submissions with the selected timer duration', () => {
+        render(
+            <MemoryRouter initialEntries={['/streamer-tools/teststreamer/clips']}>
+                <Routes>
+                    <Route
+                        path='/streamer-tools/:channel/clips'
+                        element={<StreamerClipRoomPage />}
+                    />
+                </Routes>
+            </MemoryRouter>,
+        );
+
+        fireEvent.change(screen.getByLabelText(/submission duration/i), {
+            target: { value: '25' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
+        expect(updateSubmissionsMutate).toHaveBeenCalledWith({
+            channel: 'teststreamer',
+            enabled: true,
+            durationMinutes: 25,
+        });
     });
 
     it('passes approved clips into theatre mode and keeps the approval rail visible', () => {
@@ -231,5 +315,71 @@ describe('StreamerClipRoomPage', () => {
         expect(screen.getByText(/approved clips/i)).toBeInTheDocument();
         expect(screen.getByText(/discussion/i)).toBeInTheDocument();
         expect(screen.getByText('Approvals')).toBeInTheDocument();
+    });
+
+    it('asks the streamer to authorize the Clpr bot before starting', () => {
+        mockUseTwitchBotAuthorization.mockReturnValue({
+            data: {
+                authenticated: true,
+                bot_authorized: false,
+                clip_download_authorized: true,
+                twitch_username: 'teststreamer',
+            },
+            isLoading: false,
+        });
+
+		render(
+			<MemoryRouter initialEntries={['/streamer-tools/teststreamer/clips']}>
+				<Routes>
+					<Route
+						path='/streamer-tools/:channel/clips'
+						element={<StreamerClipRoomPage />}
+					/>
+				</Routes>
+			</MemoryRouter>,
+		);
+
+        expect(
+            screen.getByText(/let clpr watch your twitch chat/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getAllByRole('button', { name: /authorize.*bot/i }).length,
+        ).toBeGreaterThan(0);
+		for (const startButton of screen.getAllByRole('button', { name: /start listener/i })) {
+			expect(startButton).toBeDisabled();
+		}
+	});
+
+    it('asks the streamer to authorize clip downloads before starting', () => {
+        mockUseTwitchBotAuthorization.mockReturnValue({
+            data: {
+                authenticated: true,
+                bot_authorized: true,
+                clip_download_authorized: false,
+                twitch_username: 'teststreamer',
+            },
+            isLoading: false,
+        });
+
+        render(
+            <MemoryRouter initialEntries={['/streamer-tools/teststreamer/clips']}>
+                <Routes>
+                    <Route
+                        path='/streamer-tools/:channel/clips'
+                        element={<StreamerClipRoomPage />}
+                    />
+                </Routes>
+            </MemoryRouter>,
+        );
+
+        expect(
+            screen.getByText(/allow clpr to download your twitch clips/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getAllByRole('button', { name: /authorize clip downloads/i }).length,
+        ).toBeGreaterThan(0);
+        for (const startButton of screen.getAllByRole('button', { name: /start listener/i })) {
+            expect(startButton).toBeDisabled();
+        }
     });
 });

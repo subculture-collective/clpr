@@ -443,33 +443,33 @@ export function PlaylistScriptForm({
                     )}
                     {strategyMeta?.requiresGameId && (
                         <Input
-                            label="Game ID"
+                            label="Twitch Category ID"
                             value={form.game_id}
                             onChange={(e) => set('game_id', e.target.value)}
-                            placeholder="Twitch game ID"
+                            placeholder="Twitch category ID"
                             fullWidth
                         />
                     )}
                     {strategyMeta?.requiresGameIds && (
                         <div className="flex flex-col gap-1.5">
                             <label className="text-sm font-medium text-foreground">
-                                Game IDs
+                                Twitch Category IDs
                             </label>
                             <TagInput
                                 value={form.game_ids}
                                 onChange={(v) => set('game_ids', v)}
-                                placeholder="Add a Twitch game ID and press Enter"
+                                placeholder="Add a Twitch category ID and press Enter"
                             />
                         </div>
                     )}
                     {strategyMeta?.requiresBroadcasterId && (
                         <Input
-                            label="Broadcaster ID"
+                            label="Creator Channel ID"
                             value={form.broadcaster_id}
                             onChange={(e) =>
                                 set('broadcaster_id', e.target.value)
                             }
-                            placeholder="Twitch broadcaster ID"
+                            placeholder="Twitch creator/channel ID"
                             fullWidth
                         />
                     )}
@@ -485,22 +485,22 @@ export function PlaylistScriptForm({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {!strategyMeta?.requiresGameId && (
                             <Input
-                                label="Game ID"
+                                label="Twitch Category ID"
                                 value={form.game_id}
                                 onChange={(e) => set('game_id', e.target.value)}
-                                placeholder="Filter by Twitch game ID"
-                                helperText="Optional single-game filter"
+                                placeholder="Filter by Twitch category ID"
+                                helperText="Optional single-category filter"
                                 fullWidth
                             />
                         )}
                         {!strategyMeta?.requiresBroadcasterId && (
                             <Input
-                                label="Broadcaster ID"
+                                label="Creator Channel ID"
                                 value={form.broadcaster_id}
                                 onChange={(e) =>
                                     set('broadcaster_id', e.target.value)
                                 }
-                                placeholder="Filter by broadcaster ID"
+                                placeholder="Filter by creator/channel ID"
                                 fullWidth
                             />
                         )}
@@ -605,7 +605,7 @@ export function PlaylistScriptForm({
                             }
                         />
                         <Toggle
-                            label="Top 10K Streamers Only"
+                            label="Top 10K Creators Only"
                             checked={form.top_10k_streamers}
                             onChange={(e) =>
                                 set('top_10k_streamers', e.target.checked)

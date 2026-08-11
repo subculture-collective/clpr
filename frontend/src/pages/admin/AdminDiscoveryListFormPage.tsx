@@ -230,7 +230,7 @@ export function AdminDiscoveryListFormPage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Epic Gaming Moments"
+                placeholder="e.g., Wildest Live Moments"
                 required
                 maxLength={200}
               />

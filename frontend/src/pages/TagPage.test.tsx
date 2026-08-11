@@ -27,6 +27,21 @@ vi.mock('../components/clip', () => ({
 }));
 
 describe('TagPage', () => {
+    it('renders namespaced tags from the wildcard route', () => {
+        render(
+            <MemoryRouter initialEntries={['/tag/content/highlights']}>
+                <Routes>
+                    <Route path="/tag/*" element={<TagPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText('#content/highlights')).toBeInTheDocument();
+        expect(screen.getByTestId('filters').textContent).toContain(
+            '"tags":["content/highlights"]',
+        );
+    });
+
     it('renders ClipFeed with tag filter when tagSlug is provided', () => {
         render(
             <MemoryRouter initialEntries={['/tag/gaming']}>

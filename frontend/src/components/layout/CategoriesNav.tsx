@@ -11,13 +11,13 @@ import { CategoryIcon } from '../ui/CategoryIcon';
 import type { Category } from '../../types/category';
 import type { Tag } from '../../types/tag';
 
-type NavTab = 'categories' | 'tags' | 'streamers';
+type NavTab = 'creators' | 'topics' | 'tags';
 
 export function CategoriesNav() {
-    const [activeTab, setActiveTab] = useState<NavTab>('categories');
-    const [categories, setCategories] = useState<Category[]>([]);
+    const [activeTab, setActiveTab] = useState<NavTab>('creators');
+    const [topics, setTopics] = useState<Category[]>([]);
     const [tags, setTags] = useState<Tag[]>([]);
-    const [streamers, setStreamers] = useState<PopularBroadcaster[]>([]);
+    const [creators, setCreators] = useState<PopularBroadcaster[]>([]);
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -26,20 +26,20 @@ export function CategoriesNav() {
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [featuredRes, tagsRes, streamersRes] = await Promise.all([
-                    categoryApi.listCategories({ featured: true }),
+                const [featuredRes, tagsRes, creatorsRes] = await Promise.all([
+                    categoryApi.listCategories({ type: 'topic', featured: true }),
                     tagApi.listTags({ sort: 'popularity', limit: 20 }),
                     fetchPopularBroadcasters(20),
                 ]);
 
-                let cats = featuredRes.categories || [];
-                if (cats.length === 0) {
-                    const all = await categoryApi.listCategories();
-                    cats = all.categories || [];
+                let featuredTopics = featuredRes.categories || [];
+                if (featuredTopics.length === 0) {
+                    const all = await categoryApi.listCategories({ type: 'topic' });
+                    featuredTopics = all.categories || [];
                 }
-                setCategories(cats);
+                setTopics(featuredTopics);
                 setTags(tagsRes.tags || []);
-                setStreamers(streamersRes);
+                setCreators(creatorsRes);
             } catch (err) {
                 console.error('Failed to fetch nav data:', err);
             } finally {
@@ -69,7 +69,7 @@ export function CategoriesNav() {
             el.removeEventListener('scroll', updateScrollState);
             window.removeEventListener('resize', updateScrollState);
         };
-    }, [activeTab, categories.length, tags.length, streamers.length]);
+    }, [activeTab, topics.length, tags.length, creators.length]);
 
     const scrollByAmount = (direction: 'left' | 'right') => {
         const el = scrollRef.current;
@@ -84,17 +84,17 @@ export function CategoriesNav() {
 
     // Hide if no data at all
     if (
-        categories.length === 0 &&
+        topics.length === 0 &&
         tags.length === 0 &&
-        streamers.length === 0
+        creators.length === 0
     ) {
         return null;
     }
 
     const tabs: { key: NavTab; label: string; count: number }[] = [
-        { key: 'categories', label: 'Categories', count: categories.length },
+        { key: 'creators', label: 'Creators', count: creators.length },
+        { key: 'topics', label: 'Topics', count: topics.length },
         { key: 'tags', label: 'Tags', count: tags.length },
-        { key: 'streamers', label: 'Streamers', count: streamers.length },
     ];
 
     // Only show tabs that have data
@@ -151,19 +151,42 @@ export function CategoriesNav() {
                         <div
                             ref={scrollRef}
                             className='flex items-center gap-2 overflow-x-auto py-2 scrollbar-hide px-6'
-                            role='list'
+                            role='navigation'
                             aria-label={`Browse ${activeTab}`}
                         >
-                            {activeTab === 'categories' &&
-                                categories.map(category => (
+                            {activeTab === 'creators' &&
+                                <>
                                     <Link
-                                        key={category.id}
-                                        to={`/category/${category.slug}`}
-                                        className='flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
-                                        role='listitem'
+                                        to='/creators'
+                                        className='flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-white whitespace-nowrap'
                                     >
-                                        <CategoryIcon icon={category.icon} size='sm' />
-                                        <span>{category.name}</span>
+                                        Explore creators
+                                    </Link>
+                                    {creators.map(creator => (
+                                        <Link
+                                            key={creator.broadcaster_id}
+                                            to={`/broadcaster/${creator.broadcaster_id}`}
+                                            className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                        >
+                                            <span className='w-2 h-2 rounded-full bg-primary-500 shrink-0' />
+                                            <span>{creator.broadcaster_name}</span>
+                                            <span className='text-xs text-muted-foreground'>
+                                                {creator.clip_count} clips
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </>
+                            }
+
+                            {activeTab === 'topics' &&
+                                topics.map(topic => (
+                                    <Link
+                                        key={topic.id}
+                                        to={`/category/${topic.slug}`}
+                                        className='flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                    >
+                                        <CategoryIcon icon={topic.icon} size='sm' />
+                                        <span>{topic.name}</span>
                                     </Link>
                                 ))}
 
@@ -171,9 +194,8 @@ export function CategoriesNav() {
                                 tags.map(tag => (
                                     <Link
                                         key={tag.id}
-                                        to={`/tag/${tag.slug}`}
+                                        to={`/tag/${encodeURIComponent(tag.slug)}`}
                                         className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
-                                        role='listitem'
                                     >
                                         <span
                                             className='w-2 h-2 rounded-full shrink-0'
@@ -191,21 +213,6 @@ export function CategoriesNav() {
                                     </Link>
                                 ))}
 
-                            {activeTab === 'streamers' &&
-                                streamers.map(streamer => (
-                                    <Link
-                                        key={streamer.broadcaster_id}
-                                        to={`/broadcaster/${streamer.broadcaster_id}`}
-                                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
-                                        role='listitem'
-                                    >
-                                        <span className='w-2 h-2 rounded-full bg-primary-500 shrink-0' />
-                                        <span>{streamer.broadcaster_name}</span>
-                                        <span className='text-xs text-muted-foreground'>
-                                            {streamer.clip_count} clips
-                                        </span>
-                                    </Link>
-                                ))}
                         </div>
                     </div>
                 </div>

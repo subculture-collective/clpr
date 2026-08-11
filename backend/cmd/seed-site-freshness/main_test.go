@@ -9,8 +9,8 @@ import (
 func TestDefaultSiteFreshnessPresetsWithoutTwitch(t *testing.T) {
 	presets := defaultSiteFreshnessPresets(false)
 
-	if len(presets) != 9 {
-		t.Fatalf("expected 9 non-Twitch presets, got %d", len(presets))
+	if len(presets) != 12 {
+		t.Fatalf("expected 12 non-Twitch presets, got %d", len(presets))
 	}
 
 	for _, preset := range presets {
@@ -29,8 +29,8 @@ func TestDefaultSiteFreshnessPresetsWithoutTwitch(t *testing.T) {
 func TestDefaultSiteFreshnessPresetsWithTwitch(t *testing.T) {
 	presets := defaultSiteFreshnessPresets(true)
 
-	if len(presets) != 11 {
-		t.Fatalf("expected 11 presets with Twitch enabled, got %d", len(presets))
+	if len(presets) != 14 {
+		t.Fatalf("expected 14 presets with Twitch enabled, got %d", len(presets))
 	}
 
 	requiresTwitch := 0

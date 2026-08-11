@@ -18,7 +18,7 @@ describe('StreamerInput', () => {
 
         const input = screen.getByRole('textbox');
         expect(input).toBeInTheDocument();
-        expect(input).toHaveAttribute('placeholder', 'Enter streamer name...');
+        expect(input).toHaveAttribute('placeholder', 'Enter creator name...');
     });
 
     it('shows auto-detected badge when autoDetected is true', () => {
@@ -94,7 +94,7 @@ describe('StreamerInput', () => {
         );
 
         expect(
-            screen.getByText('Type to search for streamers or enter manually')
+            screen.getByText('Type to search for creators or enter manually')
         ).toBeInTheDocument();
 
         rerender(
@@ -107,7 +107,7 @@ describe('StreamerInput', () => {
 
         expect(
             screen.getByText(
-                'Streamer will be detected from the clip URL. You can override by typing here.'
+                'Creator will be detected from the clip URL. You can override by typing here.'
             )
         ).toBeInTheDocument();
     });

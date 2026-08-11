@@ -1,7 +1,7 @@
 {
     "name": "clpr - Community-Driven Twitch Clip Curation",
     "short_name": "clpr",
-    "description": "Discover, share, and vote on the best Twitch clips. Join our community to curate and enjoy the most entertaining moments from your favorite streamers.",
+    "description": "Discover the creators and moments shaping live culture. Browse Twitch clips by creator, topic, tag, or collection.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

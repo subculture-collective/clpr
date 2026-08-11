@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { streamerClipRoomApi } from '@/lib/streamer-clip-room-api';
+import { checkTwitchAuthStatus } from '@/lib/twitch-api';
 
 const streamerClipRoomQueryKey = ['streamer-clip-room'] as const;
+
+export const useTwitchBotAuthorization = () => {
+    return useQuery({
+        queryKey: ['twitch-auth-status'],
+        queryFn: checkTwitchAuthStatus,
+    });
+};
 
 export const useStreamerClipRoom = (channel: string, enabled = true) => {
     return useQuery({
@@ -39,6 +47,25 @@ export const useStopStreamerClipRoom = () => {
 
     return useMutation({
         mutationFn: (channel: string) => streamerClipRoomApi.stopRoom(channel),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: streamerClipRoomQueryKey });
+        },
+    });
+};
+
+export const useUpdateStreamerClipRoomSubmissions = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            channel,
+            enabled,
+            durationMinutes,
+        }: {
+            channel: string;
+            enabled: boolean;
+            durationMinutes?: number;
+        }) => streamerClipRoomApi.updateSubmissions(channel, enabled, durationMinutes),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: streamerClipRoomQueryKey });
         },

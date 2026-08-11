@@ -101,7 +101,7 @@ export function UserMenu() {
                         </p>
                         <div className='flex items-center gap-2 mt-2'>
                             <p className='text-xs text-muted-foreground'>
-                                {user.karma_points} karma
+                                {user.karma_points} uppies
                             </p>
                             <span className='text-xs text-muted-foreground'>
                                 •

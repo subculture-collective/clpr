@@ -49,7 +49,7 @@ export function StreamerInput({
             setSuggestions(creatorSuggestions);
             setShowSuggestions(true);
         } catch (error) {
-            console.error('Failed to fetch streamer suggestions:', error);
+            console.error('Failed to fetch creator suggestions:', error);
             setSuggestions([]);
         } finally {
             setIsLoading(false);
@@ -135,7 +135,7 @@ export function StreamerInput({
                     htmlFor={id || 'streamer_input'}
                     className='block text-sm font-medium'
                 >
-                    Streamer{' '}
+                    Creator{' '}
                     {required && <span className='text-red-500'>*</span>}
                 </label>
                 {autoDetected && (
@@ -155,7 +155,7 @@ export function StreamerInput({
                     onFocus={() =>
                         suggestions.length > 0 && setShowSuggestions(true)
                     }
-                    placeholder='Enter streamer name...'
+                    placeholder='Enter creator name...'
                     disabled={disabled}
                     required={required}
                 />
@@ -204,8 +204,8 @@ export function StreamerInput({
             </div>
             <p className='text-xs text-muted-foreground mt-1'>
                 {autoDetected
-                    ? 'Streamer will be detected from the clip URL. You can override by typing here.'
-                    : 'Type to search for streamers or enter manually'}
+                    ? 'Creator will be detected from the clip URL. You can override by typing here.'
+                    : 'Type to search for creators or enter manually'}
             </p>
         </div>
     );

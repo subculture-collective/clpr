@@ -286,8 +286,6 @@ func (h *ClipHandler) ListClips(c *gin.Context) {
 	language := c.Query("language")
 	submittedByUserID := c.Query("submitted_by_user_id")
 	top10kStreamers := c.Query("top10k_streamers") == "true"
-	// By default, only show user-submitted clips. Set show_all_clips=true to include scraped clips (for discovery)
-	showAllClips := c.Query("show_all_clips") == "true"
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "25"))
 
@@ -317,7 +315,7 @@ func (h *ClipHandler) ListClips(c *gin.Context) {
 	filters := repository.ClipFilters{
 		Sort:              sort,
 		Top10kStreamers:   top10kStreamers,
-		UserSubmittedOnly: !showAllClips, // Only show user-submitted unless explicitly requesting all
+		UserSubmittedOnly: false, // Automated and user-submitted clips share the main feed.
 	}
 
 	if gameID != "" {
@@ -402,6 +400,15 @@ func (h *ClipHandler) ListClips(c *gin.Context) {
 // ListScrapedClips handles GET /scraped-clips
 // Returns clips that have not been claimed/submitted by any user (submitted_by_user_id IS NULL)
 func (h *ClipHandler) ListScrapedClips(c *gin.Context) {
+	c.JSON(http.StatusGone, StandardResponse{
+		Success: false,
+		Error: &ErrorInfo{
+			Code:    "DISCOVERY_FEED_RETIRED",
+			Message: "The discovery feed has moved to /api/v1/clips",
+		},
+	})
+	return
+
 	// Parse query parameters
 	sort := c.DefaultQuery("sort", "new")
 	timeframe := c.Query("timeframe")

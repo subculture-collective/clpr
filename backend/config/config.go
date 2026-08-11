@@ -363,6 +363,8 @@ type WhisperConfig struct {
 	Enabled    bool   // Enable Whisper transcription (default: false)
 	PythonPath string // Path to python3 binary
 	RunnerDir  string // Directory containing whisper_runner.py
+	FFmpegPath string // Path to ffmpeg for streaming audio extraction
+	WorkDir    string // Temporary WAV directory
 }
 
 // TelemetryConfig holds distributed tracing configuration
@@ -522,8 +524,8 @@ func Load() (*Config, error) {
 		},
 		Karma: KarmaConfig{
 			InitialKarmaPoints:        getEnvInt("KARMA_INITIAL_POINTS", 100),
-			SubmissionKarmaRequired:   getEnvInt("KARMA_SUBMISSION_REQUIRED", 100),
-			RequireKarmaForSubmission: getEnv("KARMA_REQUIRE_FOR_SUBMISSION", "true") == "true",
+			SubmissionKarmaRequired:   getEnvInt("KARMA_SUBMISSION_REQUIRED", 0),
+			RequireKarmaForSubmission: getEnv("KARMA_REQUIRE_FOR_SUBMISSION", "false") == "true",
 		},
 		Jobs: JobsConfig{
 			HotClipsRefreshIntervalMinutes: getEnvInt("HOT_CLIPS_REFRESH_INTERVAL_MINUTES", 5),
@@ -665,6 +667,8 @@ func Load() (*Config, error) {
 			Enabled:    getEnvBool("WHISPER_ENABLED", false),
 			PythonPath: getEnv("WHISPER_PYTHON_PATH", "python3"),
 			RunnerDir:  getEnv("WHISPER_RUNNER_DIR", ""),
+			FFmpegPath: getEnv("WHISPER_FFMPEG_PATH", "ffmpeg"),
+			WorkDir:    getEnv("WHISPER_WORK_DIR", "/tmp/clpr-transcriptions"),
 		},
 		Telemetry: TelemetryConfig{
 			Enabled:          getEnvBool("TELEMETRY_ENABLED", false),

@@ -280,7 +280,7 @@ export function UserProfilePage() {
                                             {userData.karma_points}
                                         </span>
                                         <span className='text-muted-foreground ml-1'>
-                                            Karma
+                                            Uppies
                                         </span>
                                     </div>
                                     <div className='flex items-center text-muted-foreground'>

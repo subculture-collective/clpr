@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button, Spinner } from '@/components/ui';
 import { SEO } from '@/components/SEO';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ConvertToPlaylistDialog } from '@/components/queue/ConvertToPlaylistDialog';
 import { PlaylistTheatreMode } from '@/components/playlist/PlaylistTheatreMode';
 import type { PlaylistItem } from '@/components/playlist/PlaylistTheatreMode';
@@ -30,7 +30,7 @@ export function QueuePage() {
     const navigate = useNavigate();
 
     const [showConvertDialog, setShowConvertDialog] = useState(false);
-    const [currentItemId, setCurrentItemId] = useState<string | null>(null);
+    const [selectedItemId, setCurrentItemId] = useState<string | null>(null);
     const [loopEnabled, setLoopEnabled] = useState(false);
     const [shuffleEnabled, setShuffleEnabled] = useState(false);
 
@@ -45,12 +45,11 @@ export function QueuePage() {
         played_at: item.played_at,
     }));
 
-    // Auto-select first item
-    useEffect(() => {
-        if (!currentItemId && playlistItems.length > 0) {
-            setCurrentItemId(playlistItems[0].id);
-        }
-    }, [currentItemId, playlistItems]);
+    const currentItemId =
+        selectedItemId &&
+        playlistItems.some(item => item.id === selectedItemId)
+            ? selectedItemId
+            : (playlistItems[0]?.id ?? null);
 
     const handleItemClick = useCallback(
         (item: PlaylistItem) => {

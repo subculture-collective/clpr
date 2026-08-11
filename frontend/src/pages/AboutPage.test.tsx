@@ -53,6 +53,19 @@ describe('AboutPage', () => {
         expect(screen.getByText('Get in Touch')).toBeInTheDocument();
     });
 
+    it('positions clpr around creators and live culture', () => {
+        const { container } = render(
+            <MemoryRouter>
+                <AboutPage />
+            </MemoryRouter>
+        );
+
+        expect(
+            screen.getByText(/people and moments shaping live culture/i),
+        ).toBeInTheDocument();
+        expect(container).not.toHaveTextContent(/gaming community/i);
+    });
+
     it('has anchor IDs for navigation', () => {
         const { container } = render(
             <MemoryRouter>

@@ -6,7 +6,7 @@ export function NewFeedPage() {
     <>
       <SEO
         title="New Clips"
-        description="Discover the latest Twitch clips from the community. Browse freshly added clips from your favorite streamers and games."
+        description="Discover the latest Twitch clips from the community and fresh moments from creators across every kind of stream."
         canonicalUrl="/new"
       />
       <Container className="py-8">

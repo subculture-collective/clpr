@@ -120,6 +120,7 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	{
 		// Popular broadcasters (must come before /:id route)
 		broadcasters.GET("/popular", h.Broadcaster.ListPopularBroadcasters)
+		broadcasters.GET("/discover", h.Broadcaster.ListCreatorDiscovery)
 
 		// Broadcaster rankings by engagement score (must come before /:id route)
 		broadcasters.GET("/rankings", h.Broadcaster.GetBroadcasterRankings)

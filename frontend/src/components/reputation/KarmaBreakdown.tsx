@@ -12,7 +12,7 @@ export function KarmaBreakdownChart({ breakdown }: KarmaBreakdownProps) {
 
   return (
     <div className="p-6 bg-surface-raised rounded-lg">
-      <h3 className="mb-4 text-lg font-semibold text-white">Karma Breakdown</h3>
+      <h3 className="mb-4 text-lg font-semibold text-white">Uppies Breakdown</h3>
       
       {/* Total Karma */}
       <div className="mb-6">
@@ -20,7 +20,7 @@ export function KarmaBreakdownChart({ breakdown }: KarmaBreakdownProps) {
           <div className="text-4xl font-bold text-purple-400">
             {total.toLocaleString()}
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">Total Karma</div>
+          <div className="mt-1 text-sm text-muted-foreground">Total Uppies</div>
         </div>
       </div>
 
@@ -29,7 +29,7 @@ export function KarmaBreakdownChart({ breakdown }: KarmaBreakdownProps) {
         {/* Clip Karma */}
         <div>
           <div className="flex justify-between mb-1 text-sm">
-            <span className="flex items-center gap-1 text-foreground"><Film size={16} strokeWidth={1.75} /> Clip Karma</span>
+            <span className="flex items-center gap-1 text-foreground"><Film size={16} strokeWidth={1.75} /> Clip Uppies</span>
             <span className="font-semibold text-purple-400">
               {breakdown.clip_karma.toLocaleString()}
             </span>
@@ -45,7 +45,7 @@ export function KarmaBreakdownChart({ breakdown }: KarmaBreakdownProps) {
         {/* Comment Karma */}
         <div>
           <div className="flex justify-between mb-1 text-sm">
-            <span className="flex items-center gap-1 text-foreground"><MessageSquare size={16} strokeWidth={1.75} /> Comment Karma</span>
+            <span className="flex items-center gap-1 text-foreground"><MessageSquare size={16} strokeWidth={1.75} /> Comment Uppies</span>
             <span className="font-semibold text-blue-400">
               {breakdown.comment_karma.toLocaleString()}
             </span>

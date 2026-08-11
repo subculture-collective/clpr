@@ -71,7 +71,7 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
     unban: 'Unban User',
     promote: 'Promote User',
     demote: 'Demote User',
-    karma: 'Adjust Karma Points',
+    karma: 'Adjust Uppies',
     suspend_comments: 'Suspend Comment Privileges',
     lift_suspension: 'Lift Comment Suspension',
     toggle_review: 'Toggle Comment Review'
@@ -86,7 +86,7 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
             {actionType === 'karma' ? (
               <div>
                 <label htmlFor="admin-user-karma" className="block text-sm font-medium mb-2">
-                  New Karma Points
+                  New Uppies
                 </label>
                 <Input
                   id="admin-user-karma"
@@ -315,7 +315,7 @@ export function AdminUsersPage() {
       setErrorMessage(null);
     },
     onError: (error: AxiosError<{ error?: string }>) => {
-      setErrorMessage(error.response?.data?.error || 'Failed to update user karma');
+      setErrorMessage(error.response?.data?.error || 'Failed to update user uppies');
     },
   });
 
@@ -561,7 +561,7 @@ export function AdminUsersPage() {
                     <th className="text-left p-3">User</th>
                     <th className="text-left p-3">Email</th>
                     <th className="text-left p-3">Role</th>
-                    <th className="text-left p-3">Karma</th>
+                    <th className="text-left p-3">Uppies</th>
                     <th className="text-left p-3">Status</th>
                     <th className="text-left p-3">Joined</th>
                     <th className="text-right p-3">Actions</th>
@@ -655,7 +655,7 @@ export function AdminUsersPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleAction(user, 'karma')}
-                            title="Adjust Karma"
+                            title="Adjust Uppies"
                           >
                             <TrendingUp className="w-4 h-4" />
                           </Button>

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // TwitchAuthRepository handles Twitch OAuth authentication data persistence
@@ -77,6 +77,32 @@ func (r *TwitchAuthRepository) GetTwitchAuth(ctx context.Context, userID uuid.UU
 		return nil, nil
 	}
 
+	return auth, err
+}
+
+// GetTwitchAuthByTwitchUserID retrieves the streamer authorization associated
+// with a Twitch broadcaster ID.
+func (r *TwitchAuthRepository) GetTwitchAuthByTwitchUserID(ctx context.Context, twitchUserID string) (*models.TwitchAuth, error) {
+	query := `
+		SELECT user_id, twitch_user_id, twitch_username, access_token, refresh_token, scopes, expires_at, created_at, updated_at
+		FROM twitch_auth
+		WHERE twitch_user_id = $1
+	`
+	auth := &models.TwitchAuth{}
+	err := r.pool.QueryRow(ctx, query, twitchUserID).Scan(
+		&auth.UserID,
+		&auth.TwitchUserID,
+		&auth.TwitchUsername,
+		&auth.AccessToken,
+		&auth.RefreshToken,
+		&auth.Scopes,
+		&auth.ExpiresAt,
+		&auth.CreatedAt,
+		&auth.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
 	return auth, err
 }
 

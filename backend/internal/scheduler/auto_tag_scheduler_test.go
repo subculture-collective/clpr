@@ -18,9 +18,6 @@ func TestNewAutoTagScheduler(t *testing.T) {
 	if scheduler.clipRepo != clipRepo {
 		t.Error("clipRepo not properly initialized")
 	}
-	if scheduler.whisper != nil {
-		t.Error("whisper should be nil")
-	}
 	if scheduler.thumbnail != nil {
 		t.Error("thumbnail should be nil")
 	}
@@ -184,9 +181,6 @@ func TestAutoTagScheduler_NilServices(t *testing.T) {
 	clipRepo := &repository.ClipRepository{}
 	scheduler := NewAutoTagScheduler(nil, nil, nil, clipRepo, nil, 30)
 
-	if scheduler.whisper != nil {
-		t.Error("whisper should be nil (deferred feature)")
-	}
 	if scheduler.thumbnail != nil {
 		t.Error("thumbnail should be nil (deferred feature)")
 	}

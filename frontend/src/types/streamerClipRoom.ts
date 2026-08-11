@@ -8,6 +8,7 @@ export type StreamerClipRoomEventType =
     | 'item_approved'
     | 'item_rejected'
     | 'items_reordered'
+    | 'submissions_changed'
     | 'room_status_changed';
 
 export interface StreamerClipRoom {
@@ -16,6 +17,8 @@ export interface StreamerClipRoom {
     twitch_channel: string;
     approval_mode: StreamerClipRoomApprovalMode;
     is_active: boolean;
+    submissions_open: boolean;
+    submissions_close_at?: string;
     last_listener_error?: string;
     listener_started_at?: string;
     created_at: string;

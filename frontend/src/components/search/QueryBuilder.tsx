@@ -82,7 +82,7 @@ interface FilterMeta {
 const FILTER_METADATA: FilterMeta[] = [
     {
         name: 'game',
-        description: 'Filter by game name',
+        description: 'Filter by Twitch category (legacy game: syntax)',
         examples: ['game:valorant', 'game:"League of Legends"'],
         valueType: 'string',
     },
@@ -94,7 +94,7 @@ const FILTER_METADATA: FilterMeta[] = [
     },
     {
         name: 'broadcaster',
-        description: 'Filter by broadcaster/channel',
+        description: 'Filter by creator channel',
         examples: ['broadcaster:pokimane'],
         valueType: 'string',
     },
@@ -164,7 +164,7 @@ const FILTER_METADATA: FilterMeta[] = [
     },
     {
         name: 'karma',
-        description: 'Filter by user karma',
+        description: 'Filter by user uppies',
         examples: ['karma:>100', 'karma:>=50'],
         valueType: 'range',
     },

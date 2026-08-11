@@ -80,11 +80,49 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 5. Backend exchanges code for access token + refresh token
 6. Tokens stored encrypted in database
 
-**Current Scopes Requested:** `chat:read chat:edit moderator:manage:banned_users channel:manage:banned_users`
+**Current Scopes Requested:** `chat:read chat:edit channel:bot channel:manage:clips moderator:manage:banned_users channel:manage:banned_users`
 
 ---
 
 ## Requested User Scopes
+
+### Scope: `channel:manage:clips`
+
+**Purpose:** Allow Clpr to request Twitch's official temporary download URLs for clips captured from the broadcaster's channel.
+
+**Feature:** Streamer Clip Rooms and authorized clip processing
+
+**Behavior:**
+- The streamer grants access explicitly through Twitch OAuth.
+- Clpr limits this authorization to clips from the connected broadcaster's channel.
+- The public status response exposes whether download authorization is present without exposing tokens or raw scopes.
+- The streamer can revoke the authorization by disconnecting Twitch.
+
+**Compliance:**
+- ✅ Uses the scope Twitch documents for the Get Clips Download endpoint
+- ✅ Streamer consent is required before the clip-room listener starts
+- ✅ The dashboard explains why download access is requested
+- ✅ Stored OAuth tokens are never returned to the frontend
+
+### Scope: `channel:bot`
+
+**Purpose:** Let the dedicated Clpr bot join the broadcaster's Twitch chat and detect supported clip links.
+
+**Feature:** Streamer Clip Rooms
+
+**Behavior:**
+- The broadcaster grants access explicitly through Twitch OAuth.
+- The bot only creates queue entries for supported Twitch or Clpr clip URLs found in public chat messages.
+- Starting a listener is restricted to the Twitch channel connected to the authenticated Clpr account.
+- Revoking the Twitch connection removes the stored broadcaster authorization.
+
+**Bot identity:** The deployed listener uses a separate Twitch bot account configured with `TWITCH_BOT_USERNAME` and `TWITCH_BOT_OAUTH_TOKEN`; it does not authenticate to IRC as the broadcaster.
+
+**Compliance:**
+- ✅ Broadcaster consent is required before the listener starts
+- ✅ Authorization is checked by exact OAuth scope name
+- ✅ The bot cannot be started in an unrelated channel
+- ✅ The broadcaster can stop the listener or disconnect Twitch
 
 ### Scope 1: `chat:read`
 

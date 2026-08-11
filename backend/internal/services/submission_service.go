@@ -269,11 +269,6 @@ func (s *SubmissionService) SubmitClip(ctx context.Context, userID uuid.UUID, re
 		return nil, &ValidationError{Field: "user", Message: "Your account has been banned and cannot submit clips. Please contact support if you believe this is an error."}
 	}
 
-	// Check minimum karma requirement (configurable, can be disabled)
-	if s.cfg.Karma.RequireKarmaForSubmission && user.KarmaPoints < s.cfg.Karma.SubmissionKarmaRequired {
-		return nil, &ValidationError{Field: "karma", Message: fmt.Sprintf("You need at least %d karma points to submit clips. Earn karma by participating in the community through voting and commenting.", s.cfg.Karma.SubmissionKarmaRequired)}
-	}
-
 	// Perform abuse detection checks (skip for admins)
 	if s.abuseDetector != nil && !isAdmin {
 		abuseCheck, err := s.abuseDetector.CheckSubmissionAbuse(ctx, userID, ip, deviceFingerprint)

@@ -6,7 +6,7 @@ export function TopFeedPage() {
     <>
       <SEO
         title="Top Clips"
-        description="Watch the highest-rated Twitch clips. Browse the best gaming moments as voted by the community, featuring top plays and highlights."
+        description="Watch the highest-rated Twitch clips across creators, topics, and communities, as voted by the people watching."
         canonicalUrl="/top"
       />
       <Container className="py-8">

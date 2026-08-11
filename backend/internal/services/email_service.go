@@ -1216,7 +1216,7 @@ func (s *EmailService) prepareWelcomeEmail(data map[string]interface{}) (html, t
                 <li style="margin-bottom: 10px;">Browse trending clips on the homepage</li>
                 <li style="margin-bottom: 10px;">Vote on your favorite clips to help them rise</li>
                 <li style="margin-bottom: 10px;">Submit your own clips for the community</li>
-                <li style="margin-bottom: 10px;">Earn karma by contributing quality content</li>
+                <li style="margin-bottom: 10px;">Earn uppies by contributing quality content</li>
             </ul>
         </div>
         
@@ -1249,7 +1249,7 @@ Getting Started:
 - Browse trending clips on the homepage
 - Vote on your favorite clips to help them rise
 - Submit your own clips for the community
-- Earn karma by contributing quality content
+- Earn uppies by contributing quality content
 
 Explore Clips: %s
 

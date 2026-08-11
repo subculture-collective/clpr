@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func TestClipSubmissionDoesNotRequireUppiesByDefault(t *testing.T) {
+	t.Setenv("KARMA_REQUIRE_FOR_SUBMISSION", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Karma.RequireKarmaForSubmission {
+		t.Fatal("clip submission uppies gate is enabled by default")
+	}
+	if cfg.Karma.SubmissionKarmaRequired != 0 {
+		t.Fatalf("clip submission uppies requirement = %d, want 0", cfg.Karma.SubmissionKarmaRequired)
+	}
+}
+
 func TestLoadClipConfigDefaults(t *testing.T) {
 	t.Setenv("CLIP_MAX_DURATION_SECONDS", "")
 	t.Setenv("CLIP_RECOMMENDED_DURATION_SECONDS", "")

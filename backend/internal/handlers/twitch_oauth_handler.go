@@ -54,20 +54,76 @@ type twitchOAuthState struct {
 	UserID    string `json:"uid"`
 	ExpiresAt int64  `json:"exp"`
 	Nonce     string `json:"nonce"`
+	ReturnTo  string `json:"return_to,omitempty"`
 }
 
-func signTwitchOAuthState(userID uuid.UUID, secret string, now time.Time) (string, error) {
+func signTwitchOAuthState(userID uuid.UUID, secret string, now time.Time, returnTo ...string) (string, error) {
 	nonce := make([]byte, 24)
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
-	payload, err := json.Marshal(twitchOAuthState{UserID: userID.String(), ExpiresAt: now.Add(10 * time.Minute).Unix(), Nonce: base64.RawURLEncoding.EncodeToString(nonce)})
+	safeReturnTo := ""
+	if len(returnTo) > 0 {
+		safeReturnTo = sanitizeOAuthReturnTo(returnTo[0])
+	}
+	payload, err := json.Marshal(twitchOAuthState{UserID: userID.String(), ExpiresAt: now.Add(10 * time.Minute).Unix(), Nonce: base64.RawURLEncoding.EncodeToString(nonce), ReturnTo: safeReturnTo})
 	if err != nil {
 		return "", err
 	}
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write(payload)
 	return base64.RawURLEncoding.EncodeToString(payload) + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)), nil
+}
+
+func decodeTwitchOAuthState(value string) (twitchOAuthState, bool) {
+	parts := strings.Split(value, ".")
+	if len(parts) != 2 {
+		return twitchOAuthState{}, false
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return twitchOAuthState{}, false
+	}
+	var state twitchOAuthState
+	if json.Unmarshal(payload, &state) != nil {
+		return twitchOAuthState{}, false
+	}
+	return state, true
+}
+
+func sanitizeOAuthReturnTo(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" || len(value) > 512 || !strings.HasPrefix(value, "/") || strings.HasPrefix(value, "//") || strings.Contains(value, `\`) {
+		return ""
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || parsed.IsAbs() || parsed.Host != "" {
+		return ""
+	}
+	return value
+}
+
+func appendOAuthResult(returnTo, key, value string) string {
+	if returnTo == "" {
+		returnTo = "/streams"
+	}
+	parsed, err := url.Parse(returnTo)
+	if err != nil {
+		return "/streams"
+	}
+	query := parsed.Query()
+	query.Set(key, value)
+	parsed.RawQuery = query.Encode()
+	return parsed.String()
+}
+
+func hasTwitchScope(scopes, required string) bool {
+	for _, scope := range strings.Fields(scopes) {
+		if scope == required {
+			return true
+		}
+	}
+	return false
 }
 
 func verifyTwitchOAuthState(value string, userID uuid.UUID, secret string, now time.Time) bool {
@@ -100,7 +156,10 @@ func verifyTwitchOAuthState(value string, userID uuid.UUID, secret string, now t
 func (h *TwitchOAuthHandler) InitiateTwitchOAuth(c *gin.Context) {
 	clientID := os.Getenv("TWITCH_CLIENT_ID")
 	clientSecret := os.Getenv("TWITCH_CLIENT_SECRET")
-	redirectURI := os.Getenv("TWITCH_REDIRECT_URI")
+	redirectURI := os.Getenv("TWITCH_PLATFORM_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = os.Getenv("TWITCH_REDIRECT_URI")
+	}
 
 	// Validate required environment variables
 	if clientID == "" || clientSecret == "" || redirectURI == "" {
@@ -113,17 +172,19 @@ func (h *TwitchOAuthHandler) InitiateTwitchOAuth(c *gin.Context) {
 	if !ok {
 		return
 	}
-	state, err := signTwitchOAuthState(userID, clientSecret, time.Now())
+	state, err := signTwitchOAuthState(userID, clientSecret, time.Now(), c.Query("return_to"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to initialize OAuth state"})
 		return
 	}
 
-	// For chat integration and ban management, we need:
+	// For chat integration, bot authorization, clip downloads, and ban management, we need:
 	// - chat:read chat:edit: for chat functionality
+	// - channel:bot: let the Clpr cloud bot join and read this broadcaster's chat
+	// - channel:manage:clips: obtain official temporary download URLs for this broadcaster's clips
 	// - moderator:manage:banned_users: for moderators to ban/unban users
 	// - channel:manage:banned_users: for broadcasters to ban/unban users
-	scopes := "chat:read chat:edit moderator:manage:banned_users channel:manage:banned_users"
+	scopes := "chat:read chat:edit channel:bot channel:manage:clips moderator:manage:banned_users channel:manage:banned_users"
 
 	params := url.Values{"client_id": {clientID}, "redirect_uri": {redirectURI}, "response_type": {"code"}, "scope": {scopes}, "state": {state}}
 	authURL := "https://id.twitch.tv/oauth2/authorize?" + params.Encode()
@@ -169,12 +230,17 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=invalid_oauth_state")
 		return
 	}
+	state, _ := decodeTwitchOAuthState(c.Query("state"))
+	returnTo := sanitizeOAuthReturnTo(state.ReturnTo)
 
 	ctx := c.Request.Context()
 
 	// Exchange code for tokens
 	clientID := os.Getenv("TWITCH_CLIENT_ID")
-	redirectURI := os.Getenv("TWITCH_REDIRECT_URI")
+	redirectURI := os.Getenv("TWITCH_PLATFORM_REDIRECT_URI")
+	if redirectURI == "" {
+		redirectURI = os.Getenv("TWITCH_REDIRECT_URI")
+	}
 
 	// Validate required environment variables
 	if clientID == "" || clientSecret == "" || redirectURI == "" {
@@ -299,8 +365,8 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		"twitch_username": userData.Data[0].Login,
 	})
 
-	// Redirect back to streams page with success message
-	c.Redirect(http.StatusFound, "/streams?twitch_connected=true")
+	// Return to the feature that initiated authorization when possible.
+	c.Redirect(http.StatusFound, appendOAuthResult(returnTo, "twitch_connected", "true"))
 }
 
 // GetTwitchAuthStatus returns the Twitch authentication status for the current user
@@ -359,8 +425,10 @@ func (h *TwitchOAuthHandler) GetTwitchAuthStatus(c *gin.Context) {
 
 	twitchUsername := auth.TwitchUsername
 	c.JSON(http.StatusOK, models.TwitchAuthStatusResponse{
-		Authenticated:  true,
-		TwitchUsername: &twitchUsername,
+		Authenticated:          true,
+		BotAuthorized:          hasTwitchScope(auth.Scopes, "channel:bot"),
+		ClipDownloadAuthorized: hasTwitchScope(auth.Scopes, "channel:manage:clips"),
+		TwitchUsername:         &twitchUsername,
 	})
 }
 

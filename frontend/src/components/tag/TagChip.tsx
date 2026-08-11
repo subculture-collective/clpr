@@ -81,7 +81,7 @@ export const TagChip: React.FC<TagChipProps> = ({
 
   return (
     <Link
-      to={`/tags/${tag.slug}`}
+      to={`/tag/${encodeURIComponent(tag.slug)}`}
       className={baseClasses}
       style={style}
       title={tag.description || `View clips tagged with ${tag.name}`}

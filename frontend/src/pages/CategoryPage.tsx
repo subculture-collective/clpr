@@ -109,10 +109,10 @@ export function CategoryPage() {
                 )}
             </div>
 
-            {/* Featured Games */}
+            {/* Related Twitch Categories */}
             {games.length > 0 && (
                 <div className='mb-8'>
-                    <h2 className='text-2xl font-bold mb-4'>Popular Games</h2>
+                    <h2 className='text-2xl font-bold mb-4'>Related Twitch Categories</h2>
                     <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4'>
                         {games.map(game => (
                             <Link

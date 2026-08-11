@@ -53,6 +53,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 			streamerClipRooms.GET("/:channel", h.StreamerClipRoom.GetRoom)
 			streamerClipRooms.POST("/:channel/start", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.StreamerClipRoom.StartRoom)
 			streamerClipRooms.POST("/:channel/stop", h.StreamerClipRoom.StopRoom)
+			streamerClipRooms.PUT("/:channel/submissions", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.StreamerClipRoom.UpdateSubmissions)
 			// Gin requires sibling wildcard routes to use the same parameter name.
 			// These routes still expose the API contract shape `/:roomId/...`; the
 			// shared internal name avoids registration conflicts with `/:channel`.

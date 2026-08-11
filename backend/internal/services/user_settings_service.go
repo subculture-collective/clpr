@@ -273,13 +273,13 @@ user_data.json - Complete export of your data in JSON format, including:
 1. User Profile
    - Account information (ID, username, email, display name)
    - Profile details (bio, avatar, social links)
-   - Account metrics (karma points, trust score, follower counts)
+   - Account metrics (uppies, trust score, follower counts)
    - Account type and role
    - Timestamps (created, updated, last login)
 
 2. Settings
    - Profile visibility preferences (public/private/followers)
-   - Karma display preferences
+   - Uppies display preferences
    - Other privacy and display settings
 
 3. Favorites

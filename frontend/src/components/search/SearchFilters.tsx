@@ -120,10 +120,10 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
                         </div>
                     )}
 
-                    {/* Game Facets */}
+                    {/* Twitch category facets */}
                     {facets.games && facets.games.length > 0 && (
                         <div>
-                            <h4 className='text-sm font-medium mb-2'>Games</h4>
+                            <h4 className='text-sm font-medium mb-2'>Twitch Categories</h4>
                             <div className='space-y-1 max-h-48 overflow-y-auto'>
                                 {facets.games.slice(0, 10).map((game) => (
                                     <button

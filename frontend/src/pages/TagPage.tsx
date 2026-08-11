@@ -3,7 +3,8 @@ import { Container, SEO } from '../components';
 import { ClipFeed } from '../components/clip';
 
 export function TagPage() {
-  const { tagSlug } = useParams<{ tagSlug: string }>();
+  const params = useParams<{ tagSlug: string; '*': string }>();
+  const tagSlug = params.tagSlug || params['*'];
 
   if (!tagSlug) {
     return (

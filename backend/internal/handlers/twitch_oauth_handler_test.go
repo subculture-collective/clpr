@@ -261,6 +261,12 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	if !strings.Contains(scope, "chat:read") || !strings.Contains(scope, "chat:edit") {
 		t.Error("Expected chat scopes in redirect URL")
 	}
+	if !strings.Contains(scope, "channel:bot") {
+		t.Error("Expected channel:bot scope in redirect URL")
+	}
+	if !strings.Contains(scope, "channel:manage:clips") {
+		t.Error("Expected channel:manage:clips scope in redirect URL")
+	}
 	if !strings.Contains(scope, "moderator:manage:banned_users") {
 		t.Error("Expected moderator:manage:banned_users scope in redirect URL")
 	}
@@ -274,5 +280,53 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	}
 	if query.Get("redirect_uri") == "" {
 		t.Error("Expected non-empty redirect_uri parameter in redirect URL")
+	}
+}
+
+func TestTwitchOAuthStatePreservesSafeReturnPath(t *testing.T) {
+	userID := uuid.New()
+	signed, err := signTwitchOAuthState(userID, "secret", time.Now(), "/streamer-tools/teststreamer/clips")
+	if err != nil {
+		t.Fatalf("sign state: %v", err)
+	}
+	if !verifyTwitchOAuthState(signed, userID, "secret", time.Now()) {
+		t.Fatal("expected signed state to verify")
+	}
+	state, ok := decodeTwitchOAuthState(signed)
+	if !ok {
+		t.Fatal("expected signed state to decode")
+	}
+	if state.ReturnTo != "/streamer-tools/teststreamer/clips" {
+		t.Fatalf("unexpected return path %q", state.ReturnTo)
+	}
+}
+
+func TestTwitchOAuthStateRejectsExternalReturnPath(t *testing.T) {
+	userID := uuid.New()
+	signed, err := signTwitchOAuthState(userID, "secret", time.Now(), "https://evil.example/steal")
+	if err != nil {
+		t.Fatalf("sign state: %v", err)
+	}
+	state, ok := decodeTwitchOAuthState(signed)
+	if !ok {
+		t.Fatal("expected signed state to decode")
+	}
+	if state.ReturnTo != "" {
+		t.Fatalf("expected external return path to be discarded, got %q", state.ReturnTo)
+	}
+}
+
+func TestSanitizeOAuthReturnToRejectsBackslashAuthority(t *testing.T) {
+	if got := sanitizeOAuthReturnTo(`/\evil.example/steal`); got != "" {
+		t.Fatalf("expected backslash authority to be discarded, got %q", got)
+	}
+}
+
+func TestHasTwitchScopeUsesExactScopeNames(t *testing.T) {
+	if !hasTwitchScope("chat:read channel:bot", "channel:bot") {
+		t.Fatal("expected channel:bot scope")
+	}
+	if hasTwitchScope("chat:read channel:bot-extra", "channel:bot") {
+		t.Fatal("did not expect partial scope match")
 	}
 }

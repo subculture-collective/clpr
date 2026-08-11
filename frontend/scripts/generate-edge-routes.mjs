@@ -90,12 +90,15 @@ function routeRegex(route) {
     const segments = route
         .split('/')
         .filter(Boolean)
-        .map(segment => {
+        .map((segment, index, allSegments) => {
             if (segment.startsWith(':')) {
                 if (!/^:[A-Za-z][A-Za-z0-9_]*$/.test(segment)) {
                     throw new Error(`Unsupported dynamic route segment: ${segment}`);
                 }
                 return '[^/]+';
+            }
+            if (segment === '*' && index === allSegments.length - 1) {
+                return '.*';
             }
             if (segment.includes('*')) {
                 throw new Error(`Unsupported wildcard route segment: ${segment}`);

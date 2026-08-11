@@ -359,26 +359,26 @@ export function NotificationPreferencesPage() {
               </div>
             </div>
 
-            {/* Stream & Broadcaster Notifications */}
+            {/* Creator live notifications */}
             <div className="bg-surface rounded-lg shadow-sm border border-border p-6">
               <h2 className="text-lg font-semibold text-foreground mb-4">
-                Stream & Broadcaster Notifications
+                Creator Live Notifications
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Get notified when streamers and broadcasters you follow go live
+                Get notified when creators you follow go live
               </p>
 
               <div className="space-y-4">
                 <ToggleSwitch
-                  label="Broadcaster Live"
-                  description="When broadcasters you follow on the platform go live"
+                  label="Creator Live on Clpr"
+                  description="When creators you follow on Clpr go live"
                   checked={formData.notify_broadcaster_live ?? true}
                   onChange={() => handleToggle('notify_broadcaster_live')}
                 />
 
                 <ToggleSwitch
                   label="Stream Live"
-                  description="When streamers you follow go live on Twitch"
+                  description="When creators you follow go live on Twitch"
                   checked={formData.notify_stream_live ?? true}
                   onChange={() => handleToggle('notify_stream_live')}
                 />

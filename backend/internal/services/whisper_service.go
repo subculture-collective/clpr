@@ -43,29 +43,7 @@ func NewWhisperService(pythonPath, runnerDir string) *WhisperService {
 // TranscribeAudio runs whisper_runner.py on a WAV file and returns the
 // structured transcription result.
 func (s *WhisperService) TranscribeAudio(ctx context.Context, wavPath string) (*WhisperResult, error) {
-	// Resolve the symlink to find the real hasanara root so Python can
-	// import app.{logging_config,settings} and worker.metrics at runtime.
-	resolvedRunner, err := filepath.EvalSymlinks(s.runnerPath)
-	if err != nil {
-		return nil, fmt.Errorf("resolving whisper_runner symlink: %w", err)
-	}
-	hasanaraRoot := filepath.Dir(filepath.Dir(resolvedRunner)) // up from worker/ to hasanara/
-	workerDir := filepath.Dir(resolvedRunner)
-
-	// Inline Python script: add hasanara root + worker dir to sys.path,
-	// import transcribe_chunk, run it, and print JSON to stdout.
-	script := fmt.Sprintf(`
-import sys, json
-sys.path.insert(0, %q)
-sys.path.insert(0, %q)
-from whisper_runner import transcribe_chunk
-segments, lang_info = transcribe_chunk(%q)
-full_text = " ".join(s["text"] for s in segments)
-result = {"segments": segments, "language": lang_info.get("language"), "full_text": full_text}
-print(json.dumps(result))
-`, hasanaraRoot, workerDir, wavPath)
-
-	cmd := exec.CommandContext(ctx, s.pythonPath, "-c", script)
+	cmd := exec.CommandContext(ctx, s.pythonPath, s.runnerPath, wavPath)
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

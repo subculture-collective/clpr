@@ -264,7 +264,7 @@ export function NotificationsPage() {
                   tips={
                     filter === 'all' ? [
                       "Like or comment on clips to get notifications",
-                      "Follow your favorite streamers",
+                      "Follow your favorite creators",
                       "Submit clips to the community"
                     ] : undefined
                   }

@@ -235,18 +235,18 @@ var badgeDefinitions = map[string]models.Badge{
 	"influencer": {
 		ID:          "influencer",
 		Name:        "Influencer",
-		Description: "Earned 10,000+ karma",
+		Description: "Earned 10,000+ uppies",
 		Icon:        "⭐",
 		Category:    "achievement",
-		Requirement: "10,000 karma",
+		Requirement: "10,000 uppies",
 	},
 	"trusted_user": {
 		ID:          "trusted_user",
 		Name:        "Trusted User",
-		Description: "Earned 1,000+ karma",
+		Description: "Earned 1,000+ uppies",
 		Icon:        "✅",
 		Category:    "achievement",
-		Requirement: "1,000 karma",
+		Requirement: "1,000 uppies",
 	},
 	"conversationalist": {
 		ID:          "conversationalist",
@@ -349,7 +349,7 @@ func CanUserPerformAction(karma int, action string) bool {
 	case "report_content":
 		return karma >= 50
 	case "submit_clips":
-		return karma >= 100
+		return true
 	case "nominate_featured":
 		return karma >= 500
 	default:

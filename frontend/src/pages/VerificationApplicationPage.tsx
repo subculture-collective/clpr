@@ -374,7 +374,7 @@ export function VerificationApplicationPage() {
                                 id="content-description"
                                 value={contentDescription}
                                 onChange={(e) => setContentDescription(e.target.value)}
-                                placeholder="Tell us about your content (games you play, streaming schedule, community focus, etc.)"
+                                placeholder="Tell us about your content, topics, streaming schedule, and community"
                                 rows={4}
                             />
                         </div>

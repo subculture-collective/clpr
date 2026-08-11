@@ -46,11 +46,11 @@ describe('ReputationDisplay', () => {
     expect(screen.getByText('Contributor')).toBeInTheDocument();
   });
 
-  it('displays karma points', () => {
+  it('displays uppies points', () => {
     render(<ReputationDisplay reputation={mockReputation} />);
     
     expect(screen.getByText('1,234')).toBeInTheDocument();
-    expect(screen.getByText('Total Karma')).toBeInTheDocument();
+    expect(screen.getByText('Total Uppies')).toBeInTheDocument();
   });
 
   it('displays trust score', () => {
@@ -93,17 +93,17 @@ describe('ReputationDisplay', () => {
   it('renders in compact mode', () => {
     render(<ReputationDisplay reputation={mockReputation} compact={true} />);
     
-    // In compact mode, should show karma and rank
+    // In compact mode, should show uppies and rank
     expect(screen.getByText('1,234')).toBeInTheDocument();
     expect(screen.getByText('Contributor')).toBeInTheDocument();
     // But not full stats
     expect(screen.queryByText('Trust Score')).not.toBeInTheDocument();
   });
 
-  it('shows karma label in compact mode', () => {
+  it('shows uppies label in compact mode', () => {
     render(<ReputationDisplay reputation={mockReputation} compact={true} />);
     
-    expect(screen.getByText('karma')).toBeInTheDocument();
+    expect(screen.getByText('uppies')).toBeInTheDocument();
   });
 });
 

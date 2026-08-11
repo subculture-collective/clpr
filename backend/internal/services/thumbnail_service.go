@@ -11,8 +11,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
+
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // contentTagSlugs is the set of valid content tag slugs the vision model can choose from.
@@ -31,6 +34,61 @@ var contentTagSlugs = []string{
 
 // ErrVisionAPIUnavailable is returned when the vision API is not configured.
 var ErrVisionAPIUnavailable = fmt.Errorf("vision API is disabled or not configured")
+
+var nonWordTitleCharacters = regexp.MustCompile(`[^\p{L}\p{N}]+`)
+
+// ClipThumbnailEnrichment is the model's evidence-bound interpretation of a
+// Twitch clip thumbnail and Twitch-provided metadata.
+type ClipThumbnailEnrichment struct {
+	SuggestedTitle string   `json:"suggested_title"`
+	Confidence     float64  `json:"confidence"`
+	Basis          string   `json:"basis"`
+	Evidence       []string `json:"evidence"`
+	Tags           []string `json:"tags"`
+}
+
+// ShouldApplySuggestedTitle is the deterministic safety gate between a model
+// suggestion and the public clip title. It only repairs weak automated titles;
+// an informative Twitch or human title always wins.
+func ShouldApplySuggestedTitle(clip *models.Clip, result *ClipThumbnailEnrichment) bool {
+	if clip == nil || result == nil || clip.SubmittedByUserID != nil {
+		return false
+	}
+	if !isWeakSourceTitle(clip.Title) || result.Confidence < 0.90 {
+		return false
+	}
+	basis := strings.ToLower(strings.TrimSpace(result.Basis))
+	if basis != "source_title" && basis != "visible" && basis != "metadata" && basis != "transcript" {
+		return false
+	}
+	candidate := strings.TrimSpace(result.SuggestedTitle)
+	if len([]rune(candidate)) < 8 || len([]rune(candidate)) > 100 {
+		return false
+	}
+	if strings.ContainsAny(candidate, `"“”`) && !strings.ContainsAny(clip.Title, `"“”`) {
+		return false
+	}
+	return !isWeakSourceTitle(candidate)
+}
+
+func isWeakSourceTitle(title string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(title))
+	words := strings.Fields(nonWordTitleCharacters.ReplaceAllString(normalized, " "))
+	if len(words) == 0 {
+		return true
+	}
+	weak := map[string]bool{
+		"clip": true, "twitch": true, "lol": true, "lmao": true,
+		"wow": true, "omg": true, "wtf": true, "pog": true, "poggers": true,
+	}
+	if len(words) == 1 {
+		return weak[words[0]] || len([]rune(words[0])) < 4
+	}
+	if len(words) == 2 {
+		return weak[words[0]] && weak[words[1]]
+	}
+	return false
+}
 
 // ThumbnailService handles thumbnail extraction via ffmpeg and content
 // classification via a configurable vision AI API.
@@ -232,6 +290,174 @@ func (ts *ThumbnailService) ClassifyThumbnails(ctx context.Context, imagePaths [
 	}
 
 	return ts.parseVisionResponse(bodyBytes)
+}
+
+// AnalyzeClipThumbnail asks the configured vision model to enrich a clip using
+// only fields Twitch exposes through its API and the public thumbnail URL.
+func (ts *ThumbnailService) AnalyzeClipThumbnail(ctx context.Context, clip *models.Clip) (*ClipThumbnailEnrichment, error) {
+	return ts.analyzeClip(ctx, clip, "")
+}
+
+// AnalyzeClipWithTranscript combines Twitch metadata, the public thumbnail,
+// and authorized Whisper output. Spoken words are stronger evidence than a
+// thumbnail but must still not be expanded into invented events.
+func (ts *ThumbnailService) AnalyzeClipWithTranscript(ctx context.Context, clip *models.Clip, transcript string) (*ClipThumbnailEnrichment, error) {
+	return ts.analyzeClip(ctx, clip, strings.TrimSpace(transcript))
+}
+
+func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, transcript string) (*ClipThumbnailEnrichment, error) {
+	if !ts.Operational() {
+		return nil, ErrVisionAPIUnavailable
+	}
+	if clip == nil || clip.ThumbnailURL == nil || strings.TrimSpace(*clip.ThumbnailURL) == "" {
+		return nil, fmt.Errorf("clip thumbnail URL is required")
+	}
+
+	metadata := map[string]interface{}{
+		"source_title":     clip.Title,
+		"broadcaster_name": clip.BroadcasterName,
+		"creator_name":     clip.CreatorName,
+		"game_name":        gameName(clip),
+	}
+	if clip.Language != nil {
+		metadata["language"] = *clip.Language
+	}
+	if clip.Duration != nil {
+		metadata["duration_seconds"] = *clip.Duration
+	}
+	metadataJSON, err := json.Marshal(metadata)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling clip metadata: %w", err)
+	}
+
+	tagsList := strings.Join(contentTagSlugs, `", "`)
+	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. Return exactly one JSON object with suggested_title, confidence (0 to 1), basis (source_title, transcript, visible, metadata, or insufficient), evidence (short strings), and tags.`
+	transcriptContext := "No authorized transcript is available."
+	if transcript != "" {
+		runes := []rune(transcript)
+		if len(runes) > 4000 {
+			runes = runes[:4000]
+		}
+		transcriptContext = "Authorized Whisper transcript: " + string(runes)
+	}
+	userPrompt := fmt.Sprintf(
+		`Twitch metadata: %s. %s Suggest an accurate concise title and 0-3 tags chosen only from ["%s"]. If evidence is insufficient, preserve the source title and use basis "insufficient".`,
+		string(metadataJSON), transcriptContext, tagsList,
+	)
+
+	reqBody := map[string]interface{}{
+		"model": ts.model,
+		"messages": []map[string]interface{}{
+			{"role": "system", "content": systemPrompt},
+			{"role": "user", "content": []map[string]interface{}{
+				{"type": "text", "text": userPrompt},
+				{"type": "image_url", "image_url": map[string]string{"url": *clip.ThumbnailURL, "detail": "low"}},
+			}},
+		},
+		"response_format": map[string]string{"type": "json_object"},
+		"max_tokens":      300,
+		"temperature":     0.0,
+	}
+
+	body, err := ts.doVisionRequest(ctx, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	result, err := ts.parseClipEnrichmentResponse(body)
+	if err != nil {
+		return nil, err
+	}
+	if result.Basis == "transcript" && transcript == "" {
+		return nil, fmt.Errorf("vision API returned transcript basis without a transcript")
+	}
+	return result, nil
+}
+
+func (ts *ThumbnailService) doVisionRequest(ctx context.Context, reqBody map[string]interface{}) ([]byte, error) {
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling vision API request: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", ts.apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("creating vision API request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+ts.apiKey)
+	if ts.provider == "openrouter" {
+		req.Header.Set("HTTP-Referer", ts.siteURL)
+		req.Header.Set("X-Title", ts.siteName)
+	}
+	resp, err := ts.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("vision API request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading vision API response: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("vision API returned status %d: %s", resp.StatusCode, string(body))
+	}
+	return body, nil
+}
+
+func (ts *ThumbnailService) parseClipEnrichmentResponse(body []byte) (*ClipThumbnailEnrichment, error) {
+	var apiResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(body, &apiResp); err != nil {
+		return nil, fmt.Errorf("parsing vision API response: %w", err)
+	}
+	if len(apiResp.Choices) == 0 {
+		return nil, fmt.Errorf("vision API returned no choices")
+	}
+	content := strings.TrimSpace(apiResp.Choices[0].Message.Content)
+	var result ClipThumbnailEnrichment
+	if err := json.Unmarshal([]byte(content), &result); err != nil {
+		return nil, fmt.Errorf("parsing clip enrichment content: %w (content: %s)", err, content)
+	}
+	result.Basis = strings.ToLower(strings.TrimSpace(result.Basis))
+	validBasis := result.Basis == "source_title" || result.Basis == "transcript" ||
+		result.Basis == "visible" || result.Basis == "metadata" || result.Basis == "insufficient"
+	if !validBasis {
+		return nil, fmt.Errorf("vision API returned unsupported evidence basis %q", result.Basis)
+	}
+	if result.Confidence < 0 || result.Confidence > 1 {
+		return nil, fmt.Errorf("vision API returned confidence outside 0..1: %f", result.Confidence)
+	}
+	result.SuggestedTitle = strings.TrimSpace(result.SuggestedTitle)
+	result.Tags = filterContentTags(result.Tags)
+	return &result, nil
+}
+
+func gameName(clip *models.Clip) string {
+	if clip != nil && clip.GameName != nil {
+		return *clip.GameName
+	}
+	return "Unknown Game"
+}
+
+func filterContentTags(input []string) []string {
+	validSet := make(map[string]bool, len(contentTagSlugs))
+	for _, slug := range contentTagSlugs {
+		validSet[slug] = true
+	}
+	seen := make(map[string]bool, len(input))
+	result := make([]string, 0, len(input))
+	for _, tag := range input {
+		tag = strings.ToLower(strings.TrimSpace(tag))
+		if tag != "" && validSet[tag] && !seen[tag] {
+			seen[tag] = true
+			result = append(result, tag)
+		}
+	}
+	return result
 }
 
 // parseVisionResponse extracts the content tags from the vision API response.

@@ -8,9 +8,9 @@ interface MetaProps {
     type?: string;
 }
 
-const DEFAULT_TITLE = 'clpr - Discover Gaming Highlights';
+const DEFAULT_TITLE = 'clpr - Discover Creators and Live Moments';
 const DEFAULT_DESCRIPTION =
-    'clpr is the best place to discover and share gaming highlights from Twitch. Browse clips by game, creator, or trending topics.';
+    'Discover the creators and moments shaping live culture. Browse Twitch clips by creator, topic, tag, or collection.';
 const DEFAULT_IMAGE = '/clpr-banner-1021px.png';
 
 export function Meta({

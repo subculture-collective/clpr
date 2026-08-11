@@ -180,7 +180,7 @@ export function SubmissionConfirmation({
             <div className='flex flex-col sm:flex-row gap-3'>
                 {fromDiscover && (
                     <Button asChild variant='primary' fullWidth>
-                        <Link to='/discover' className='sm:flex-1'>
+                        <Link to='/' className='sm:flex-1'>
                             Back to Discovery
                         </Link>
                     </Button>

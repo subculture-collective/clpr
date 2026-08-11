@@ -113,7 +113,7 @@ describe('DiscoveryPage', () => {
         expect(screen.getByText('Top Views')).toBeInTheDocument();
     });
 
-    it('renders the Top 10k Streamers toggle', () => {
+    it('renders the Top 10k Creators toggle', () => {
         render(
             <MemoryRouter initialEntries={['/discovery']}>
                 <DiscoveryPage />
@@ -121,11 +121,11 @@ describe('DiscoveryPage', () => {
         );
 
         expect(
-            screen.getByText('Top 10k Streamers Only')
+            screen.getByText('Top 10K Creators Only')
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                'Filter clips to only show content from the top 10,000 streamers'
+                'Filter clips to only show content from the top 10,000 creators'
             )
         ).toBeInTheDocument();
     });

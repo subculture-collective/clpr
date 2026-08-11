@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -173,6 +174,27 @@ type Clip struct {
 	LastMirrorSyncAt *time.Time `json:"last_mirror_sync_at,omitempty" db:"last_mirror_sync_at"`
 	// Watch progress (populated from watch history, not in database)
 	WatchProgress *WatchProgressInfo `json:"watch_progress,omitempty" db:"-"`
+}
+
+// ClipEnrichment records the model output and whether the deterministic title
+// policy accepted it. Keeping this separate from Clip preserves provenance.
+type ClipEnrichment struct {
+	ClipID         uuid.UUID
+	SourceTitle    string
+	SuggestedTitle string
+	Confidence     float64
+	Basis          string
+	Evidence       []string
+	Tags           []string
+	TitleAccepted  bool
+}
+
+type ClipTranscript struct {
+	ClipID   uuid.UUID
+	Language string
+	FullText string
+	Segments json.RawMessage
+	Source   string
 }
 
 // WatchProgressInfo represents watch progress for a clip (used in API responses)
@@ -3791,9 +3813,9 @@ type PlaylistScript struct {
 	GameID                  *string    `json:"game_id,omitempty" db:"game_id"`
 	GameIDs                 []string   `json:"game_ids,omitempty" db:"game_ids"`
 	BroadcasterID           *string    `json:"broadcaster_id,omitempty" db:"broadcaster_id"`
-	Tag                     *string    `json:"tag,omitempty" db:"tag"`                // DEPRECATED: use Tags instead
-	Tags                    []string   `json:"tags,omitempty" db:"tags"`               // Multiple tags with AND/OR logic
-	TagsLogic               string     `json:"tags_logic,omitempty" db:"tags_logic"`  // "and" | "or", default "and"
+	Tag                     *string    `json:"tag,omitempty" db:"tag"`               // DEPRECATED: use Tags instead
+	Tags                    []string   `json:"tags,omitempty" db:"tags"`             // Multiple tags with AND/OR logic
+	TagsLogic               string     `json:"tags_logic,omitempty" db:"tags_logic"` // "and" | "or", default "and"
 	ExcludeTags             []string   `json:"exclude_tags,omitempty" db:"exclude_tags"`
 	Language                *string    `json:"language,omitempty" db:"language"`
 	MinVoteScore            *int       `json:"min_vote_score,omitempty" db:"min_vote_score"`
@@ -3882,11 +3904,11 @@ type CreatePlaylistScriptRequest struct {
 	Visibility      *string  `json:"visibility,omitempty" binding:"omitempty,oneof=private public unlisted"`
 	IsActive        *bool    `json:"is_active,omitempty"`
 	Schedule        *string  `json:"schedule,omitempty" binding:"omitempty,oneof=manual hourly daily weekly monthly"`
-	Strategy        *string  `json:"strategy,omitempty" binding:"omitempty,oneof=standard sleeper_hits viral_velocity community_favorites deep_cuts fresh_faces one_per_creator similar_vibes cross_game_hits controversial binge_worthy rising_stars twitch_top_game twitch_top_broadcaster twitch_trending twitch_discovery"`
+	Strategy        *string  `json:"strategy,omitempty" binding:"omitempty,oneof=standard sleeper_hits viral_velocity community_favorites deep_cuts fresh_faces one_per_creator diversity_roulette clip_of_the_day weekend_mix similar_vibes cross_game_hits controversial binge_worthy rising_stars twitch_top_game twitch_top_broadcaster twitch_trending twitch_discovery"`
 	GameID          *string  `json:"game_id,omitempty" binding:"omitempty,max=50"`
 	GameIDs         []string `json:"game_ids,omitempty" binding:"omitempty,max=50,dive,max=50"`
 	BroadcasterID   *string  `json:"broadcaster_id,omitempty" binding:"omitempty,max=50"`
-	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`                                  // DEPRECATED: use Tags instead
+	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"` // DEPRECATED: use Tags instead
 	Tags            []string `json:"tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
 	TagsLogic       *string  `json:"tags_logic,omitempty" binding:"omitempty,oneof=and or"`
 	ExcludeTags     []string `json:"exclude_tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
@@ -3910,11 +3932,11 @@ type UpdatePlaylistScriptRequest struct {
 	Visibility      *string  `json:"visibility,omitempty" binding:"omitempty,oneof=private public unlisted"`
 	IsActive        *bool    `json:"is_active,omitempty"`
 	Schedule        *string  `json:"schedule,omitempty" binding:"omitempty,oneof=manual hourly daily weekly monthly"`
-	Strategy        *string  `json:"strategy,omitempty" binding:"omitempty,oneof=standard sleeper_hits viral_velocity community_favorites deep_cuts fresh_faces one_per_creator similar_vibes cross_game_hits controversial binge_worthy rising_stars twitch_top_game twitch_top_broadcaster twitch_trending twitch_discovery"`
+	Strategy        *string  `json:"strategy,omitempty" binding:"omitempty,oneof=standard sleeper_hits viral_velocity community_favorites deep_cuts fresh_faces one_per_creator diversity_roulette clip_of_the_day weekend_mix similar_vibes cross_game_hits controversial binge_worthy rising_stars twitch_top_game twitch_top_broadcaster twitch_trending twitch_discovery"`
 	GameID          *string  `json:"game_id,omitempty" binding:"omitempty,max=50"`
 	GameIDs         []string `json:"game_ids,omitempty" binding:"omitempty,max=50,dive,max=50"`
 	BroadcasterID   *string  `json:"broadcaster_id,omitempty" binding:"omitempty,max=50"`
-	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"`                                  // DEPRECATED: use Tags instead
+	Tag             *string  `json:"tag,omitempty" binding:"omitempty,max=100"` // DEPRECATED: use Tags instead
 	Tags            []string `json:"tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
 	TagsLogic       *string  `json:"tags_logic,omitempty" binding:"omitempty,oneof=and or"`
 	ExcludeTags     []string `json:"exclude_tags,omitempty" binding:"omitempty,max=50,dive,min=1,max=100"`
@@ -4251,11 +4273,13 @@ type TwitchAuth struct {
 
 // TwitchAuthStatusResponse represents the response for Twitch auth status
 type TwitchAuthStatusResponse struct {
-	Authenticated  bool       `json:"authenticated"`
-	Connected      bool       `json:"connected"`
-	TwitchUserID   *string    `json:"twitch_user_id,omitempty"`
-	TwitchUsername *string    `json:"twitch_username,omitempty"`
-	ExpiresAt      *time.Time `json:"expires_at,omitempty"`
+	Authenticated          bool       `json:"authenticated"`
+	Connected              bool       `json:"connected"`
+	BotAuthorized          bool       `json:"bot_authorized"`
+	ClipDownloadAuthorized bool       `json:"clip_download_authorized"`
+	TwitchUserID           *string    `json:"twitch_user_id,omitempty"`
+	TwitchUsername         *string    `json:"twitch_username,omitempty"`
+	ExpiresAt              *time.Time `json:"expires_at,omitempty"`
 }
 
 // ============================================================================

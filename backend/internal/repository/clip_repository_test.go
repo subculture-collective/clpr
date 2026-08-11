@@ -5,12 +5,14 @@ package repository
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
+	"git.subcult.tv/subculture-collective/clpr/internal/utils"
+	"github.com/google/uuid"
 )
 
 func TestClipRepository_ListWithFilters_Discussed(t *testing.T) {
@@ -109,6 +111,255 @@ func TestClipRepository_ListWithFilters_Discussed(t *testing.T) {
 	if clips[1].CommentCount < clips[2].CommentCount {
 		t.Errorf("Clips not sorted by comment count: clip[1]=%d, clip[2]=%d",
 			clips[1].CommentCount, clips[2].CommentCount)
+	}
+}
+
+func TestClipRepository_UpdateViewCountRecordsVelocity(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+
+	repo := NewClipRepository(pool)
+	ctx := context.Background()
+	clip := &models.Clip{
+		ID: uuid.New(), TwitchClipID: "velocity-" + uuid.NewString(),
+		TwitchClipURL: "https://clips.twitch.tv/velocity", EmbedURL: "https://clips.twitch.tv/embed?clip=velocity",
+		Title: "Velocity", CreatorName: "creator", BroadcasterName: "broadcaster",
+		ViewCount: 100, CreatedAt: time.Now().Add(-4 * time.Hour), ImportedAt: time.Now().Add(-2 * time.Hour),
+	}
+	if err := repo.Create(ctx, clip); err != nil {
+		t.Fatalf("create clip: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE clips SET view_count_observed_at = NOW() - INTERVAL '2 hours' WHERE id = $1`, clip.ID); err != nil {
+		t.Fatalf("arrange prior observation: %v", err)
+	}
+
+	if err := repo.UpdateViewCount(ctx, clip.TwitchClipID, 200); err != nil {
+		t.Fatalf("update view count: %v", err)
+	}
+
+	var previous int
+	var velocity float64
+	if err := pool.QueryRow(ctx, `SELECT previous_view_count, view_velocity FROM clips WHERE id = $1`, clip.ID).Scan(&previous, &velocity); err != nil {
+		t.Fatalf("read velocity: %v", err)
+	}
+	if previous != 100 {
+		t.Fatalf("previous view count = %d, want 100", previous)
+	}
+	if velocity < 49 || velocity > 51 {
+		t.Fatalf("view velocity = %.2f, want approximately 50 views/hour", velocity)
+	}
+}
+
+func TestClipRepository_PublishAutomatedClipRecordsVelocity(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+
+	repo := NewClipRepository(pool)
+	ctx := context.Background()
+	clip := &models.Clip{
+		ID: uuid.New(), TwitchClipID: "publish-velocity-" + uuid.NewString(),
+		TwitchClipURL: "https://clips.twitch.tv/publish-velocity", EmbedURL: "https://clips.twitch.tv/embed?clip=publish-velocity",
+		Title: "Publish Velocity", CreatorName: "creator", BroadcasterName: "broadcaster",
+		ViewCount: 100, CreatedAt: time.Now().Add(-4 * time.Hour), ImportedAt: time.Now().Add(-2 * time.Hour),
+	}
+	if _, inserted, err := repo.PublishAutomatedClip(ctx, clip); err != nil || !inserted {
+		t.Fatalf("initial publish: inserted=%v err=%v", inserted, err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE clips SET view_count_observed_at = NOW() - INTERVAL '2 hours' WHERE id = $1`, clip.ID); err != nil {
+		t.Fatalf("arrange prior observation: %v", err)
+	}
+
+	clip.ViewCount = 200
+	if _, inserted, err := repo.PublishAutomatedClip(ctx, clip); err != nil || inserted {
+		t.Fatalf("refresh publish: inserted=%v err=%v", inserted, err)
+	}
+
+	var previous int
+	var velocity float64
+	if err := pool.QueryRow(ctx, `SELECT previous_view_count, view_velocity FROM clips WHERE id = $1`, clip.ID).Scan(&previous, &velocity); err != nil {
+		t.Fatalf("read velocity: %v", err)
+	}
+	if previous != 100 {
+		t.Fatalf("previous view count = %d, want 100", previous)
+	}
+	if velocity < 49 || velocity > 51 {
+		t.Fatalf("view velocity = %.2f, want approximately 50 views/hour", velocity)
+	}
+}
+
+func TestClipRepository_MixedTrendingRankUsesVelocityAndUserBoost(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips", "users")
+
+	ctx := context.Background()
+	userRepo := NewUserRepository(pool)
+	user := &models.User{ID: uuid.New(), TwitchID: testutil.StringPtr("rank-user-" + uuid.NewString()), Username: "rank-user", DisplayName: "Rank User"}
+	if err := userRepo.Create(ctx, user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	clipRepo := NewClipRepository(pool)
+	createdAt := time.Now().Add(-12 * time.Hour)
+	makeClip := func(label string) *models.Clip {
+		return &models.Clip{
+			ID: uuid.New(), TwitchClipID: label + "-" + uuid.NewString(),
+			TwitchClipURL: "https://clips.twitch.tv/" + label, EmbedURL: "https://clips.twitch.tv/embed?clip=" + label,
+			Title: label, CreatorName: "creator", BroadcasterName: "broadcaster",
+			ViewCount: 100, CreatedAt: createdAt, ImportedAt: time.Now(),
+		}
+	}
+	baseline := makeClip("baseline")
+	velocity := makeClip("velocity")
+	community := makeClip("community")
+	community.SubmittedByUserID = &user.ID
+	community.SubmittedAt = testutil.TimePtr(time.Now())
+	for _, clip := range []*models.Clip{baseline, velocity, community} {
+		if err := clipRepo.Create(ctx, clip); err != nil {
+			t.Fatalf("create %s: %v", clip.Title, err)
+		}
+	}
+	if _, err := pool.Exec(ctx, `UPDATE clips SET previous_view_count = 50, view_velocity = 100 WHERE id = $1`, velocity.ID); err != nil {
+		t.Fatalf("arrange velocity: %v", err)
+	}
+
+	if _, err := clipRepo.UpdateTrendingScores(ctx); err != nil {
+		t.Fatalf("update mixed ranks: %v", err)
+	}
+	first, _, err := clipRepo.ListWithFilters(ctx, ClipFilters{Sort: "trending"}, 10, 0)
+	if err != nil {
+		t.Fatalf("list mixed rank: %v", err)
+	}
+	scores := map[uuid.UUID]float64{}
+	order := make([]uuid.UUID, 0, len(first))
+	for _, clip := range first {
+		scores[clip.ID] = clip.TrendingScore
+		order = append(order, clip.ID)
+	}
+	if scores[community.ID]-scores[baseline.ID] < 0.14 {
+		t.Fatalf("community boost too small: community %.3f baseline %.3f", scores[community.ID], scores[baseline.ID])
+	}
+	if scores[velocity.ID]-scores[baseline.ID] < 0.14 {
+		t.Fatalf("velocity signal too small: velocity %.3f baseline %.3f", scores[velocity.ID], scores[baseline.ID])
+	}
+
+	if _, err := clipRepo.UpdateTrendingScores(ctx); err != nil {
+		t.Fatalf("repeat mixed rank update: %v", err)
+	}
+	second, _, err := clipRepo.ListWithFilters(ctx, ClipFilters{Sort: "trending"}, 10, 0)
+	if err != nil {
+		t.Fatalf("repeat mixed rank list: %v", err)
+	}
+	for i := range order {
+		if second[i].ID != order[i] {
+			t.Fatalf("rank changed inside exploration window at %d: got %s want %s", i, second[i].ID, order[i])
+		}
+	}
+}
+
+func TestClipRepository_TrendingShuffleIsSeededAndAutomatedOnly(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips", "users")
+
+	ctx := context.Background()
+	userRepo := NewUserRepository(pool)
+	user := &models.User{ID: uuid.New(), TwitchID: testutil.StringPtr("shuffle-user-" + uuid.NewString()), Username: "shuffle-user", DisplayName: "Shuffle User"}
+	if err := userRepo.Create(ctx, user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	clipRepo := NewClipRepository(pool)
+	createdAt := time.Now().Add(-6 * time.Hour)
+	automatedIDs := make(map[uuid.UUID]struct{})
+	for i := 0; i < 12; i++ {
+		clip := &models.Clip{
+			ID: uuid.New(), TwitchClipID: fmt.Sprintf("shuffle-auto-%d-%s", i, uuid.NewString()),
+			TwitchClipURL: "https://clips.twitch.tv/shuffle-auto", EmbedURL: "https://clips.twitch.tv/embed?clip=shuffle-auto",
+			Title: fmt.Sprintf("Automated %d", i), CreatorName: "creator", BroadcasterName: "broadcaster",
+			ViewCount: 100, CreatedAt: createdAt, ImportedAt: time.Now(),
+		}
+		if err := clipRepo.Create(ctx, clip); err != nil {
+			t.Fatalf("create automated clip %d: %v", i, err)
+		}
+		automatedIDs[clip.ID] = struct{}{}
+	}
+	community := &models.Clip{
+		ID: uuid.New(), TwitchClipID: "shuffle-community-" + uuid.NewString(),
+		TwitchClipURL: "https://clips.twitch.tv/shuffle-community", EmbedURL: "https://clips.twitch.tv/embed?clip=shuffle-community",
+		Title: "Community", CreatorName: "creator", BroadcasterName: "broadcaster",
+		ViewCount: 100, CreatedAt: createdAt, ImportedAt: time.Now(),
+		SubmittedByUserID: &user.ID, SubmittedAt: testutil.TimePtr(time.Now()),
+	}
+	if err := clipRepo.Create(ctx, community); err != nil {
+		t.Fatalf("create community clip: %v", err)
+	}
+	if _, err := clipRepo.UpdateTrendingScores(ctx); err != nil {
+		t.Fatalf("update mixed ranks: %v", err)
+	}
+
+	seedA := "11111111-1111-4111-8111-111111111111"
+	seedB := "22222222-2222-4222-8222-222222222222"
+	list := func(seed string) []models.Clip {
+		clips, _, err := clipRepo.ListWithFilters(ctx, ClipFilters{Sort: "trending", TrendingShuffleSeed: &seed}, 20, 0)
+		if err != nil {
+			t.Fatalf("list seed %s: %v", seed, err)
+		}
+		return clips
+	}
+	first := list(seedA)
+	repeated := list(seedA)
+	secondSeed := list(seedB)
+	for i := range first {
+		if repeated[i].ID != first[i].ID {
+			t.Fatalf("same seed changed order at %d", i)
+		}
+	}
+	autoOrder := func(clips []models.Clip) []uuid.UUID {
+		ids := make([]uuid.UUID, 0, len(automatedIDs))
+		for _, clip := range clips {
+			if _, ok := automatedIDs[clip.ID]; ok {
+				ids = append(ids, clip.ID)
+			}
+		}
+		return ids
+	}
+	if reflect.DeepEqual(autoOrder(first), autoOrder(secondSeed)) {
+		t.Fatal("different seeds produced the same automated clip order")
+	}
+
+	var rawCommunityScore float64
+	if err := pool.QueryRow(ctx, `SELECT trending_score FROM clips WHERE id = $1`, community.ID).Scan(&rawCommunityScore); err != nil {
+		t.Fatalf("read community score: %v", err)
+	}
+	for _, clips := range [][]models.Clip{first, secondSeed} {
+		for _, clip := range clips {
+			if clip.ID == community.ID && clip.TrendingScore != rawCommunityScore {
+				t.Fatalf("community score was shuffled: got %.17g want %.17g", clip.TrendingScore, rawCommunityScore)
+			}
+		}
+	}
+
+	pageOne, _, err := clipRepo.ListWithFilters(ctx, ClipFilters{Sort: "trending", TrendingShuffleSeed: &seedA}, 6, 0)
+	if err != nil {
+		t.Fatalf("list first page: %v", err)
+	}
+	last := pageOne[len(pageOne)-1]
+	cursor := utils.EncodeCursorWithShuffleSeed("trending", last.TrendingScore, last.ID, last.CreatedAt.Unix(), seedA)
+	pageTwo, _, err := clipRepo.ListWithFilters(ctx, ClipFilters{Sort: "trending", TrendingShuffleSeed: &seedA, Cursor: &cursor}, 6, 0)
+	if err != nil {
+		t.Fatalf("list second page: %v", err)
+	}
+	seen := make(map[uuid.UUID]struct{}, len(pageOne))
+	for _, clip := range pageOne {
+		seen[clip.ID] = struct{}{}
+	}
+	for _, clip := range pageTwo {
+		if _, duplicate := seen[clip.ID]; duplicate {
+			t.Fatalf("clip %s repeated across shuffled pages", clip.ID)
+		}
 	}
 }
 

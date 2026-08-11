@@ -83,9 +83,9 @@ func (h *ReputationHandler) GetUserKarma(c *gin.Context) {
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to get karma breakdown",
+			"error":   "Failed to get uppies breakdown",
 			"code":    "KARMA_FETCH_ERROR",
-			"message": "Unable to retrieve karma breakdown. Please try again later.",
+			"message": "Unable to retrieve uppies breakdown. Please try again later.",
 		})
 		return
 	}
@@ -94,9 +94,9 @@ func (h *ReputationHandler) GetUserKarma(c *gin.Context) {
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to get karma history",
+			"error":   "Failed to get uppies history",
 			"code":    "KARMA_HISTORY_FETCH_ERROR",
-			"message": "Unable to retrieve karma history. Please try again later.",
+			"message": "Unable to retrieve uppies history. Please try again later.",
 		})
 		return
 	}

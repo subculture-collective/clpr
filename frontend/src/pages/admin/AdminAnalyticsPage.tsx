@@ -187,7 +187,7 @@ const AdminAnalyticsPage: React.FC = () => {
                     name: game.game_name,
                     value: game.clip_count,
                   }))}
-                  title="Most Popular Games"
+                  title="Most Popular Twitch Categories"
                   valueLabel="Clip Count"
                   color="#3b82f6"
                   height={350}

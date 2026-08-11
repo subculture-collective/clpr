@@ -9,7 +9,6 @@ import { NotificationBell } from './NotificationBell';
 import { UserMenu } from './UserMenu';
 import {
     Home,
-    Search,
     MessageSquare,
     Trophy,
     ListMusic,
@@ -17,6 +16,7 @@ import {
     Star,
     ClipboardList,
     Clock,
+    Users,
     User,
     Settings,
     LogOut,
@@ -88,8 +88,8 @@ export function Header() {
                             </Link>
                         </Button>
                         <Button asChild variant='ghost' size='sm'>
-                            <Link to='/discover' className={`relative ${location.pathname === '/discover' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
-                                <Search size={16} strokeWidth={1.75} className='mr-1.5' /> Discover
+                            <Link to='/creators' className={`relative ${location.pathname.startsWith('/creators') || location.pathname.startsWith('/broadcaster/') ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
+                                <Users size={16} strokeWidth={1.75} className='mr-1.5' /> Creators
                             </Link>
                         </Button>
                         <Button asChild variant='ghost' size='sm'>
@@ -223,18 +223,18 @@ export function Header() {
                             </Button>
                             <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
                                 <Link
-                                    to='/discover'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Search size={16} strokeWidth={1.75} className='mr-2' /> Discover
-                                </Link>
-                            </Button>
-                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
-                                <Link
                                     to='/forum'
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <MessageSquare size={16} strokeWidth={1.75} className='mr-2' /> Forum
+                                </Link>
+                            </Button>
+                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
+                                <Link
+                                    to='/creators'
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    <Users size={16} strokeWidth={1.75} className='mr-2' /> Creators
                                 </Link>
                             </Button>
 

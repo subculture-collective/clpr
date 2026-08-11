@@ -91,10 +91,10 @@ export function BroadcasterPage() {
             queryClient.invalidateQueries({
                 queryKey: ['broadcaster', broadcasterId],
             });
-            showToast('Successfully followed broadcaster', 'success');
+            showToast('Successfully followed creator', 'success');
         },
         onError: () => {
-            showToast('Failed to follow broadcaster', 'error');
+            showToast('Failed to follow creator', 'error');
         },
     });
 
@@ -105,16 +105,16 @@ export function BroadcasterPage() {
             queryClient.invalidateQueries({
                 queryKey: ['broadcaster', broadcasterId],
             });
-            showToast('Successfully unfollowed broadcaster', 'success');
+            showToast('Successfully unfollowed creator', 'success');
         },
         onError: () => {
-            showToast('Failed to unfollow broadcaster', 'error');
+            showToast('Failed to unfollow creator', 'error');
         },
     });
 
     const handleFollowToggle = () => {
         if (!isAuthenticated) {
-            showToast('Please log in to follow broadcasters', 'error');
+            showToast('Please log in to follow creators', 'error');
             return;
         }
 
@@ -140,10 +140,10 @@ export function BroadcasterPage() {
             <Container className='py-8'>
                 <div className='text-center text-muted-foreground py-12'>
                     <h2 className='text-2xl font-bold mb-2'>
-                        Broadcaster Not Found
+                        Creator Not Found
                     </h2>
                     <p>
-                        The broadcaster you're looking for doesn't exist or has
+                        The creator you're looking for doesn't exist or has
                         no clips yet.
                     </p>
                 </div>
@@ -154,7 +154,7 @@ export function BroadcasterPage() {
     return (
         <>
             <SEO
-                title={`${profile.display_name} - Broadcaster Profile`}
+                title={`${profile.display_name} - Creator Profile`}
                 description={`View all clips featuring ${profile.display_name} on Clipper`}
             />
             <Container className='py-8'>
@@ -378,7 +378,7 @@ export function BroadcasterPage() {
                         )}
                     </>
                 :   <div className='text-center text-muted-foreground py-12'>
-                        <p>No clips found for this broadcaster.</p>
+                        <p>No clips found for this creator.</p>
                     </div>
                 }
             </Container>

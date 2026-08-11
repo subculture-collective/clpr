@@ -35,7 +35,7 @@ export function DiscoveryListsPage() {
     <>
       <SEO
         title="Discovery Lists"
-        description="Browse curated collections of amazing Twitch clips. Find new content organized by theme, game, and community favorites."
+        description="Browse curated Twitch clip collections organized around creators, topics, moments, and community favorites."
         canonicalUrl="/discover/lists"
       />
       <FeedLayout sidebar={<FeedSidebar />}>

@@ -47,7 +47,7 @@ export function StreamFollowButton({ streamerUsername, className }: StreamFollow
 
   const handleFollow = async () => {
     if (!user) {
-      addToast('Please log in to follow streamers', 'error');
+      addToast('Please log in to follow creators', 'error');
       return;
     }
 

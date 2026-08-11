@@ -2,7 +2,6 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '../context/AuthContext';
 import * as submissionApi from '../lib/submission-api';
-import * as configApi from '../lib/config-api';
 import { render, screen, waitFor } from '../test/test-utils';
 import { SubmitClipPage } from './SubmitClipPage';
 import { tagApi } from '../lib/tag-api';
@@ -13,11 +12,6 @@ vi.mock('../lib/submission-api', () => ({
     getUserSubmissions: vi.fn(),
     checkClipStatus: vi.fn(),
     getClipMetadata: vi.fn(),
-}));
-
-// Mock the config API
-vi.mock('../lib/config-api', () => ({
-    getPublicConfig: vi.fn(),
 }));
 
 // Mock tag API to avoid network calls in TagSelector
@@ -76,7 +70,6 @@ describe('SubmitClipPage', () => {
     const mockGetUserSubmissions = vi.mocked(submissionApi.getUserSubmissions);
     const mockCheckClipStatus = vi.mocked(submissionApi.checkClipStatus);
     const mockGetClipMetadata = vi.mocked(submissionApi.getClipMetadata);
-    const mockGetPublicConfig = vi.mocked(configApi.getPublicConfig);
     const mockUseAuth = vi.mocked(useAuth);
     const mockSearchTags = vi.mocked(tagApi.searchTags);
 
@@ -90,13 +83,6 @@ describe('SubmitClipPage', () => {
                 limit: 5,
                 total: 0,
                 total_pages: 0,
-            },
-        });
-        mockGetPublicConfig.mockResolvedValue({
-            karma: {
-                initial_karma_points: 100,
-                submission_karma_required: 100,
-                require_karma_for_submission: true,
             },
         });
         mockSearchTags.mockResolvedValue({ tags: [] });
@@ -113,7 +99,7 @@ describe('SubmitClipPage', () => {
         });
     });
 
-    describe('Authentication and Karma Gate', () => {
+    describe('Authentication', () => {
         it('shows login prompt when not authenticated', () => {
             mockUseAuth.mockReturnValue({
                 user: null,
@@ -158,9 +144,10 @@ describe('SubmitClipPage', () => {
             expect(mockNavigate).toHaveBeenCalledWith('/login');
         });
 
-        it('shows warning when user has insufficient karma', async () => {
+        it('allows a signed-in user with zero uppies to submit', async () => {
+            const user = userEvent.setup();
             mockUseAuth.mockReturnValue({
-                user: { ...mockUser, karma_points: 50 },
+                user: { ...mockUser, karma_points: 0 },
                 isAuthenticated: true,
                 login: vi.fn(),
                 logout: vi.fn(),
@@ -173,60 +160,16 @@ describe('SubmitClipPage', () => {
 
             render(<SubmitClipPage />);
 
-            await waitFor(() => {
-                expect(
-                    screen.getByText(
-                        /You need 50 more karma points to submit clips/
-                    )
-                ).toBeInTheDocument();
-            });
-        });
-
-        it('does not show warning when user has enough karma', async () => {
-            mockUseAuth.mockReturnValue({
-                user: mockUser,
-                isAuthenticated: true,
-                login: vi.fn(),
-                logout: vi.fn(),
-                isLoading: false,
-                isAdmin: false,
-                isModerator: false,
-                isModeratorOrAdmin: false,
-                refreshUser: vi.fn(),
-            });
-
-            render(<SubmitClipPage />);
+            const clipUrlInput = screen.getByLabelText(/Twitch Clip URL/);
+            await user.type(clipUrlInput, 'https://clips.twitch.tv/TestClip');
 
             await waitFor(() => {
-                expect(
-                    screen.queryByText(/more karma points to submit/)
-                ).not.toBeInTheDocument();
-            });
-        });
-
-        it('disables form fields when user has insufficient karma', async () => {
-            mockUseAuth.mockReturnValue({
-                user: { ...mockUser, karma_points: 50 },
-                isAuthenticated: true,
-                login: vi.fn(),
-                logout: vi.fn(),
-                isLoading: false,
-                isAdmin: false,
-                isModerator: false,
-                isModeratorOrAdmin: false,
-                refreshUser: vi.fn(),
-            });
-
-            render(<SubmitClipPage />);
-
-            await waitFor(() => {
-                const clipUrlInput = screen.getByLabelText(/Twitch Clip URL/);
                 const submitButton = screen.getByRole('button', {
                     name: /Submit Clip/,
                 });
 
-                expect(clipUrlInput).toBeDisabled();
-                expect(submitButton).toBeDisabled();
+                expect(clipUrlInput).toBeEnabled();
+                expect(submitButton).toBeEnabled();
             });
         });
     });

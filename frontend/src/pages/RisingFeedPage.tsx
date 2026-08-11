@@ -6,7 +6,7 @@ export function RisingFeedPage() {
     <>
       <SEO
         title="Rising Clips"
-        description="Discover trending Twitch clips gaining momentum. See what's rising in popularity and catch viral gaming moments early."
+        description="Discover Twitch clips gaining momentum across live culture and catch breakout creators and moments early."
         canonicalUrl="/rising"
       />
       <Container className="py-8">

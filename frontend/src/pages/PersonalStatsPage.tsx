@@ -88,7 +88,7 @@ const PersonalStatsPage: React.FC = () => {
                 subtitle="Platform engagement"
               />
               <MetricCard
-                title="Karma Earned"
+                title="Uppies Earned"
                 value={stats.total_karma_earned}
                 subtitle="Reputation points"
               />
@@ -202,7 +202,7 @@ const PersonalStatsPage: React.FC = () => {
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">
-                    Total Karma
+                    Total Uppies
                   </dt>
                   <dd className="mt-1 text-2xl font-semibold text-foreground">
                     {stats.total_karma_earned}

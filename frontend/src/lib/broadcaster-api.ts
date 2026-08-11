@@ -7,6 +7,29 @@ export interface PopularBroadcaster {
     clip_count: number;
 }
 
+export interface CreatorDiscoveryProfile {
+    broadcaster_id: string;
+    broadcaster_name: string;
+    total_clips: number;
+    recent_clips: number;
+    total_views: number;
+    recent_views: number;
+    view_velocity: number;
+    follower_count: number;
+    first_discovered_at: string;
+    latest_clip_at: string;
+    latest_clip_thumbnail?: string;
+    latest_clip_title?: string;
+    twitch_category_name?: string;
+    score: number;
+}
+
+export interface CreatorDiscoveryRails {
+    trending: CreatorDiscoveryProfile[];
+    rising: CreatorDiscoveryProfile[];
+    new: CreatorDiscoveryProfile[];
+}
+
 export interface BroadcasterProfile {
     broadcaster_id: string;
     broadcaster_name: string;
@@ -49,6 +72,17 @@ export async function fetchPopularBroadcasters(
         broadcasters: PopularBroadcaster[];
     }>(`/broadcasters/popular`, { params: { limit } });
     return response.data.broadcasters || [];
+}
+
+/** Fetch creator-first discovery rails ranked by momentum and freshness. */
+export async function fetchCreatorDiscovery(
+    limit: number = 12,
+): Promise<CreatorDiscoveryRails> {
+    const response = await apiClient.get<{
+        success: boolean;
+        data: CreatorDiscoveryRails;
+    }>('/broadcasters/discover', { params: { limit } });
+    return response.data.data;
 }
 
 /**

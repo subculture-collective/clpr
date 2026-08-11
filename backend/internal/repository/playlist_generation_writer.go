@@ -37,10 +37,17 @@ func (w *PlaylistGenerationWriter) Persist(ctx context.Context, script *models.P
 		return fmt.Errorf("insert generated playlist: %w", err)
 	}
 
-	for index, clip := range clips {
-		if _, err = tx.Exec(ctx, `INSERT INTO playlist_items (playlist_id, clip_id, order_index) VALUES ($1, $2, $3)`, playlist.ID, clip.ID, index); err != nil {
+	seenClipIDs := make(map[uuid.UUID]struct{}, len(clips))
+	itemIndex := 0
+	for _, clip := range clips {
+		if _, seen := seenClipIDs[clip.ID]; seen {
+			continue
+		}
+		seenClipIDs[clip.ID] = struct{}{}
+		if _, err = tx.Exec(ctx, `INSERT INTO playlist_items (playlist_id, clip_id, order_index) VALUES ($1, $2, $3)`, playlist.ID, clip.ID, itemIndex); err != nil {
 			return fmt.Errorf("insert generated playlist item: %w", err)
 		}
+		itemIndex++
 	}
 	now := time.Now()
 	if _, err = tx.Exec(ctx, `INSERT INTO generated_playlists (id, script_id, playlist_id, generated_at) VALUES ($1, $2, $3, $4)`, uuid.New(), script.ID, playlist.ID, now); err != nil {

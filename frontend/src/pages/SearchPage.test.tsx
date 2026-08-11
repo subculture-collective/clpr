@@ -100,6 +100,9 @@ describe('SearchPage - Sort Controls', () => {
         // Note: The sort dropdown only appears when there's a search query
         // This test verifies component renders without errors
         expect(screen.getByText(/Enter a search query/i)).toBeInTheDocument();
+        expect(
+            screen.getByText(/clips, creators, tags, and Twitch categories/i),
+        ).toBeInTheDocument();
     });
 
     it('sort dropdown has focus-visible styles for accessibility', async () => {

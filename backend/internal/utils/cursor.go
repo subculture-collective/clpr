@@ -11,16 +11,27 @@ import (
 
 // Cursor represents a pagination cursor containing sort key values and clip ID
 type Cursor struct {
-	SortKey   string  // The sort field name (e.g., "trending_score", "created_at")
-	SortValue float64 // The value of the sort field for the last item
-	ClipID    string  // The clip ID for tie-breaking
-	CreatedAt int64   // Unix timestamp of created_at for tie-breaking
+	SortKey     string  // The sort field name (e.g., "trending_score", "created_at")
+	SortValue   float64 // The value of the sort field for the last item
+	ClipID      string  // The clip ID for tie-breaking
+	CreatedAt   int64   // Unix timestamp of created_at for tie-breaking
+	ShuffleSeed string  // Optional stateless feed-session seed
 }
 
 // EncodeCursor encodes a cursor into a base64 string
 // Format: sort_key:sort_value:clip_id:created_at
 func EncodeCursor(sortKey string, sortValue float64, clipID uuid.UUID, createdAtUnix int64) string {
-	data := fmt.Sprintf("%s:%.6f:%s:%d", sortKey, sortValue, clipID.String(), createdAtUnix)
+	return EncodeCursorWithShuffleSeed(sortKey, sortValue, clipID, createdAtUnix, "")
+
+}
+
+// EncodeCursorWithShuffleSeed keeps a personalized shuffle stable while the
+// client paginates, without storing feed sessions on the server.
+func EncodeCursorWithShuffleSeed(sortKey string, sortValue float64, clipID uuid.UUID, createdAtUnix int64, shuffleSeed string) string {
+	data := fmt.Sprintf("%s:%s:%s:%d", sortKey, strconv.FormatFloat(sortValue, 'g', -1, 64), clipID.String(), createdAtUnix)
+	if shuffleSeed != "" {
+		data += ":" + shuffleSeed
+	}
 	return base64.URLEncoding.EncodeToString([]byte(data))
 }
 
@@ -36,8 +47,8 @@ func DecodeCursor(cursorStr string) (*Cursor, error) {
 	}
 
 	parts := strings.Split(string(decoded), ":")
-	if len(parts) != 4 {
-		return nil, fmt.Errorf("invalid cursor format: expected 4 parts, got %d", len(parts))
+	if len(parts) != 4 && len(parts) != 5 {
+		return nil, fmt.Errorf("invalid cursor format: expected 4 or 5 parts, got %d", len(parts))
 	}
 
 	// Validate sortKey to prevent injection attacks
@@ -70,10 +81,19 @@ func DecodeCursor(cursorStr string) (*Cursor, error) {
 		return nil, fmt.Errorf("invalid cursor format: invalid created_at timestamp")
 	}
 
+	shuffleSeed := ""
+	if len(parts) == 5 {
+		shuffleSeed = parts[4]
+		if _, err := uuid.Parse(shuffleSeed); err != nil {
+			return nil, fmt.Errorf("invalid cursor format: invalid shuffle seed")
+		}
+	}
+
 	return &Cursor{
-		SortKey:   sortKey,
-		SortValue: sortValue,
-		ClipID:    clipID,
-		CreatedAt: createdAt,
+		SortKey:     sortKey,
+		SortValue:   sortValue,
+		ClipID:      clipID,
+		CreatedAt:   createdAt,
+		ShuffleSeed: shuffleSeed,
 	}, nil
 }

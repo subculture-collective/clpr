@@ -91,7 +91,7 @@ describe('useClips', () => {
 
             expect(result.current.data?.pages[0].clips).toEqual([mockClip]);
             expect(clipApi.fetchClips).toHaveBeenCalledWith({
-                pageParam: 1,
+                cursor: undefined,
                 filters: undefined,
             });
         });
@@ -109,7 +109,7 @@ describe('useClips', () => {
             await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
             expect(clipApi.fetchClips).toHaveBeenCalledWith({
-                pageParam: 1,
+                cursor: undefined,
                 filters,
             });
         });
@@ -144,6 +144,7 @@ describe('useClips', () => {
             const page1Response: ClipFeedResponse = {
                 ...mockClipFeedResponse,
                 has_more: true,
+                cursor: 'feed-cursor',
             };
 
             vi.mocked(clipApi.fetchClips).mockResolvedValue(page1Response);
@@ -178,6 +179,7 @@ describe('useClips', () => {
                 page: 1,
                 limit: 10,
                 has_more: true,
+                cursor: 'feed-cursor',
             };
 
             const page2Response: ClipFeedResponse = {
@@ -209,7 +211,7 @@ describe('useClips', () => {
 
             expect(clipApi.fetchClips).toHaveBeenCalledTimes(2);
             expect(clipApi.fetchClips).toHaveBeenNthCalledWith(2, {
-                pageParam: 2,
+                cursor: 'feed-cursor',
                 filters: undefined,
             });
         });

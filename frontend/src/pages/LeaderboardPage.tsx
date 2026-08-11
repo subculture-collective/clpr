@@ -120,7 +120,7 @@ export default function LeaderboardPage() {
                             : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
-                    <Trophy size={20} /> Karma
+                    <Trophy size={20} /> Uppies
                 </button>
                 <button
                     onClick={() => handleTypeChange('engagement')}
@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
                             : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
-                    <Tv size={20} /> Streamers
+                    <Tv size={20} /> Creators
                 </button>
             </div>
 

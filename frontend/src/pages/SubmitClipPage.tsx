@@ -20,7 +20,6 @@ import {
     submitClip,
     getClipMetadata,
 } from '../lib/submission-api';
-import { getPublicConfig } from '../lib/config-api';
 import { trackEvent, SubmissionEvents } from '../lib/telemetry';
 import type {
     ClipSubmission,
@@ -130,23 +129,16 @@ export function SubmitClipPage() {
     const [recentSubmissions, setRecentSubmissions] = useState<
         ClipSubmission[]
     >([]);
-    const [karmaRequired, setKarmaRequired] = useState(100);
-    const [karmaRequirementEnabled, setKarmaRequirementEnabled] =
-        useState(true);
-
     // Draft management
     const draft = useSubmissionDraft();
     const [showDraftRestored, setShowDraftRestored] = useState(false);
 
-    // Check if user is authenticated and has enough karma
+    // Clip submission is available to every authenticated, non-banned user.
     const canSubmit =
         isAuthenticated &&
         user &&
-        (!karmaRequirementEnabled || user.karma_points >= karmaRequired) &&
         !rateLimitError &&
         !duplicateError;
-    const karmaNeeded =
-        user ? Math.max(0, karmaRequired - user.karma_points) : karmaRequired;
 
     // Helper function to convert text to slug format
     const slugify = useMemo(
@@ -235,21 +227,6 @@ export function SubmitClipPage() {
                 localStorage.removeItem('submission_rate_limit');
             }
         }
-    }, []);
-
-    // Load karma configuration
-    useEffect(() => {
-        getPublicConfig()
-            .then(config => {
-                setKarmaRequired(config.karma.submission_karma_required);
-                setKarmaRequirementEnabled(
-                    config.karma.require_karma_for_submission,
-                );
-            })
-            .catch(err => {
-                console.error('Failed to load config:', err);
-                // Use defaults if config fails to load
-            });
     }, []);
 
     // Load recent submissions
@@ -434,13 +411,7 @@ export function SubmitClipPage() {
         setUrlError(null);
 
         if (!canSubmit) {
-            if (karmaRequirementEnabled) {
-                setError(
-                    `You need at least ${karmaRequired} karma points to submit clips`,
-                );
-            } else {
-                setError('You must be logged in to submit clips');
-            }
+            setError('You must be logged in to submit clips');
             return;
         }
 
@@ -676,7 +647,7 @@ export function SubmitClipPage() {
                         Submit a Clip
                     </h1>
                     <p className='text-sm xs:text-base text-muted-foreground'>
-                        Share your favorite gaming moments with the community
+                        Share a memorable moment from any Twitch creator or community
                     </p>
                 </div>
 
@@ -701,14 +672,6 @@ export function SubmitClipPage() {
                             onDismiss={() => setDuplicateError(null)}
                         />
                     </div>
-                )}
-
-                {!canSubmit && !rateLimitError && (
-                    <Alert variant='warning' className='mb-4 xs:mb-6'>
-                        You need {karmaNeeded} more karma points to submit
-                        clips. Earn karma by commenting, voting, and
-                        contributing to the community.
-                    </Alert>
                 )}
 
                 {error && (

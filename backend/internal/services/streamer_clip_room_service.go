@@ -16,6 +16,7 @@ import (
 
 var (
 	ErrStreamerClipRoomForbidden = errors.New("streamer clip room forbidden")
+	ErrStreamerClipRoomInactive  = errors.New("streamer clip room listener is inactive")
 	ErrStreamerClipRoomNotFound  = errors.New("streamer clip room not found")
 )
 
@@ -26,6 +27,7 @@ type streamerClipRoomRepository interface {
 	GetRoomByOwnerChannel(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error)
 	GetRoomByID(ctx context.Context, roomID uuid.UUID) (*models.StreamerClipRoom, error)
 	SetRoomActive(ctx context.Context, roomID uuid.UUID, active bool, listenerError *string) error
+	SetSubmissionWindow(ctx context.Context, roomID uuid.UUID, open bool, closeAt *time.Time) (*models.StreamerClipRoom, error)
 	CreateItem(ctx context.Context, item *models.StreamerClipRoomItem) error
 	ListItems(ctx context.Context, roomID uuid.UUID, status string, limit int) ([]models.StreamerClipRoomItem, error)
 	GetItem(ctx context.Context, roomID, itemID uuid.UUID) (*models.StreamerClipRoomItem, error)
@@ -40,10 +42,24 @@ type clipLookupRepository interface {
 	GetByTwitchClipID(ctx context.Context, twitchClipID string) (*models.Clip, error)
 }
 
+type streamerClipImporter interface {
+	FetchClipByURL(ctx context.Context, clipURLOrID string) (*models.Clip, error)
+}
+
 type StreamerClipRoomService struct {
 	rooms            streamerClipRoomRepository
 	clips            clipLookupRepository
+	importer         streamerClipImporter
 	eventBroadcaster func(roomID uuid.UUID, eventType string, data map[string]interface{})
+}
+
+// SetClipImporter enables on-demand import when chat contains a Twitch clip
+// that is not already present in Clpr.
+func (s *StreamerClipRoomService) SetClipImporter(importer streamerClipImporter) {
+	if s == nil {
+		return
+	}
+	s.importer = importer
 }
 
 func NewStreamerClipRoomService(rooms *repository.StreamerClipRoomRepository, clips *repository.ClipRepository) *StreamerClipRoomService {
@@ -160,6 +176,40 @@ func (s *StreamerClipRoomService) StartRoom(ctx context.Context, ownerUserID uui
 	return room, nil
 }
 
+func (s *StreamerClipRoomService) SetSubmissions(ctx context.Context, ownerUserID uuid.UUID, channel string, enabled bool, durationMinutes *int) (*models.StreamerClipRoom, error) {
+	if !twitchChannelPattern.MatchString(strings.TrimSpace(channel)) {
+		return nil, fmt.Errorf("invalid Twitch channel")
+	}
+	room, err := s.rooms.GetRoomByOwnerChannel(ctx, ownerUserID, channel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load streamer clip room: %w", err)
+	}
+	if room == nil {
+		return nil, ErrStreamerClipRoomNotFound
+	}
+	if enabled && !room.IsActive {
+		return nil, ErrStreamerClipRoomInactive
+	}
+
+	var closeAt *time.Time
+	if enabled && durationMinutes != nil {
+		if *durationMinutes < 1 || *durationMinutes > 1440 {
+			return nil, fmt.Errorf("submission duration must be between 1 and 1440 minutes")
+		}
+		deadline := time.Now().UTC().Add(time.Duration(*durationMinutes) * time.Minute)
+		closeAt = &deadline
+	}
+
+	updated, err := s.rooms.SetSubmissionWindow(ctx, room.ID, enabled, closeAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update submissions: %w", err)
+	}
+	if updated == nil {
+		return nil, ErrStreamerClipRoomNotFound
+	}
+	return updated, nil
+}
+
 func (s *StreamerClipRoomService) StopRoom(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
 	if !twitchChannelPattern.MatchString(strings.TrimSpace(channel)) {
 		return nil, fmt.Errorf("invalid Twitch channel")
@@ -176,6 +226,8 @@ func (s *StreamerClipRoomService) StopRoom(ctx context.Context, ownerUserID uuid
 		return nil, fmt.Errorf("failed to stop room: %w", err)
 	}
 	room.IsActive = false
+	room.SubmissionsOpen = false
+	room.SubmissionsCloseAt = nil
 	room.LastListenerError = nil
 	room.ListenerStartedAt = nil
 	room.UpdatedAt = time.Now().UTC()
@@ -189,6 +241,13 @@ func (s *StreamerClipRoomService) IngestChatMessage(ctx context.Context, msg Twi
 	}
 	if room == nil {
 		return nil, fmt.Errorf("streamer clip room not found")
+	}
+	if !room.IsActive || !room.SubmissionsOpen {
+		return nil, nil
+	}
+	if room.SubmissionsCloseAt != nil && !room.SubmissionsCloseAt.After(time.Now().UTC()) {
+		_, _ = s.rooms.SetSubmissionWindow(ctx, room.ID, false, nil)
+		return nil, nil
 	}
 
 	links := ExtractClipLinks(msg.MessageText)
@@ -433,14 +492,12 @@ func (s *StreamerClipRoomService) resolveClip(ctx context.Context, link Detected
 		clip, err := s.clips.GetByTwitchClipID(ctx, link.TwitchClipID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				reason := clipNotImported
-				return nil, &reason, nil
+				return s.importTwitchClip(ctx, link, clipNotImported)
 			}
 			return nil, nil, fmt.Errorf("failed to resolve clip %s: %w", link.SourceURL, err)
 		}
 		if clip == nil {
-			reason := clipNotImported
-			return nil, &reason, nil
+			return s.importTwitchClip(ctx, link, clipNotImported)
 		}
 		if isUnavailableClip(clip) {
 			reason := clipUnavailable
@@ -451,6 +508,22 @@ func (s *StreamerClipRoomService) resolveClip(ctx context.Context, link Detected
 		reason := clipNotImported
 		return nil, &reason, nil
 	}
+}
+
+func (s *StreamerClipRoomService) importTwitchClip(ctx context.Context, link DetectedClipLink, fallbackReason string) (*models.Clip, *string, error) {
+	if s.importer == nil {
+		return nil, &fallbackReason, nil
+	}
+	clip, err := s.importer.FetchClipByURL(ctx, link.SourceURL)
+	if err != nil || clip == nil {
+		reason := "clip_unavailable"
+		return nil, &reason, nil
+	}
+	if isUnavailableClip(clip) {
+		reason := "clip_unavailable"
+		return clip, &reason, nil
+	}
+	return clip, nil, nil
 }
 
 func isUnavailableClip(clip *models.Clip) bool {

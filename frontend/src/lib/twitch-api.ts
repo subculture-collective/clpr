@@ -4,7 +4,14 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 export interface TwitchAuthStatus {
   authenticated: boolean;
+  bot_authorized: boolean;
+  clip_download_authorized: boolean;
   twitch_username?: string;
+}
+
+export function getTwitchBotAuthorizationUrl(channel: string): string {
+  const returnTo = `/streamer-tools/${encodeURIComponent(channel)}/clips`;
+  return `${API_BASE_URL}/twitch/oauth/authorize?return_to=${encodeURIComponent(returnTo)}`;
 }
 
 /**

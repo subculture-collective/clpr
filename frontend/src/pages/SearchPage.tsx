@@ -348,8 +348,8 @@ export function SearchPage() {
     const seoTitle = query ? `Search: ${query}` : 'Search Clips';
     const seoDescription =
         query ?
-            `Search results for "${query}" on Clipper. Find Twitch clips, games, creators, and tags matching your query.`
-        :   'Search for Twitch clips, games, creators, and tags on Clipper. Discover amazing gaming moments from your favorite streamers.';
+            `Search results for "${query}" on Clipper. Find Twitch clips, creators, tags, and categories matching your query.`
+        :   'Search Twitch clips, creators, tags, and categories on Clipper. Discover the people and moments shaping live culture.';
 
     if (!query.trim()) {
         return (
@@ -373,8 +373,8 @@ export function SearchPage() {
                     <div className='max-w-4xl mx-auto'>
                         <div className='text-center text-muted-foreground py-8 xs:py-12 mb-8'>
                             <p className='text-base xs:text-lg px-4'>
-                                Enter a search query to find clips, games,
-                                creators, and tags.
+                                Enter a search query to find clips, creators,
+                                tags, and Twitch categories.
                             </p>
                         </div>
 
@@ -405,8 +405,12 @@ export function SearchPage() {
             label: 'Creators',
             count: data?.counts.creators || 0,
         },
-        { id: 'games', label: 'Games', count: data?.counts.games || 0 },
         { id: 'tags', label: 'Tags', count: data?.counts.tags || 0 },
+        {
+            id: 'games',
+            label: 'Twitch Categories',
+            count: data?.counts.games || 0,
+        },
     ];
 
     return (
@@ -634,7 +638,7 @@ export function SearchPage() {
                                                     </p>
                                                 )}
                                                 <div className='mt-2 text-xs text-muted-foreground'>
-                                                    {creator.karma_points} karma
+                                                    {creator.karma_points} uppies
                                                 </div>
                                             </div>
                                         ))}
@@ -642,13 +646,13 @@ export function SearchPage() {
                                 </section>
                             )}
 
-                        {/* Games */}
+                        {/* Twitch Categories */}
                         {(activeTab === 'all' || activeTab === 'games') &&
                             data.results.games &&
                             data.results.games.length > 0 && (
                                 <section>
                                     <h2 className='text-xl font-bold mb-4'>
-                                        Games{' '}
+                                        Twitch Categories{' '}
                                         {activeTab === 'all' &&
                                             `(${data.counts.games})`}
                                     </h2>

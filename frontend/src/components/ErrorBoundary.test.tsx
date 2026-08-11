@@ -77,7 +77,7 @@ describe('ErrorBoundary', () => {
 
   it('renders custom fallback when provided', () => {
     allowBoundaryError();
-    const customFallback = <div>Custom error message</div>;
+    const customFallback = () => <div>Custom error message</div>;
     
     renderWithI18n(
       <ErrorBoundary fallback={customFallback}>

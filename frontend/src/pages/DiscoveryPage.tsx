@@ -109,16 +109,16 @@ export function DiscoveryPage() {
                         </div>
                     </div>
 
-                    {/* Top 10k Streamers Toggle */}
+                    {/* Top creators toggle */}
                     <div className='bg-card border border-border rounded-xl p-4 mb-6'>
                         <div className='flex items-center justify-between'>
                             <div>
                                 <div className='font-medium text-foreground'>
-                                    Top 10k Streamers Only
+                                    Top 10K Creators Only
                                 </div>
                                 <div className='text-sm text-muted-foreground mt-1'>
                                     Filter clips to only show content from the
-                                    top 10,000 streamers
+                                    top 10,000 creators
                                 </div>
                             </div>
                             <button

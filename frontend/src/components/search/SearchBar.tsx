@@ -166,7 +166,7 @@ export function SearchBar({
                         onFocus={() =>
                             suggestions.length > 0 && setShowSuggestions(true)
                         }
-                        placeholder='Search clips, games, creators...'
+                        placeholder='Search clips, creators, tags, categories...'
                         aria-label='Search'
                         autoFocus={autoFocus}
                         className='pr-10'

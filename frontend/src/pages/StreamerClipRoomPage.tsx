@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     AlertTriangle,
     Check,
     CircleAlert,
+    Clock3,
     Radio,
     RefreshCw,
     Square,
@@ -20,8 +21,11 @@ import {
     useStartStreamerClipRoom,
     useStopStreamerClipRoom,
     useStreamerClipRoom,
+    useTwitchBotAuthorization,
+    useUpdateStreamerClipRoomSubmissions,
 } from '@/hooks/useStreamerClipRoom';
 import { useStreamerClipRoomWebSocket } from '@/hooks/useStreamerClipRoomWebSocket';
+import { getTwitchBotAuthorizationUrl } from '@/lib/twitch-api';
 import type { StreamerClipRoomItem } from '@/types/streamerClipRoom';
 
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -33,6 +37,17 @@ function formatDateTime(value?: string) {
     if (!value) return 'Unknown';
 
     return dateTimeFormatter.format(new Date(value));
+}
+
+function formatRemaining(milliseconds: number) {
+    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return hours > 0
+        ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        : `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 function ItemBadge({
@@ -239,9 +254,28 @@ export function StreamerClipRoomPage() {
 
     const startRoom = useStartStreamerClipRoom();
     const stopRoom = useStopStreamerClipRoom();
+    const updateSubmissions = useUpdateStreamerClipRoomSubmissions();
     const approveItem = useApproveStreamerClipRoomItem();
     const rejectItem = useRejectStreamerClipRoomItem();
     const reorderItems = useReorderStreamerClipRoomItems();
+    const botAuthorization = useTwitchBotAuthorization();
+    const isBotAuthorized = botAuthorization.data?.bot_authorized ?? false;
+    const isClipDownloadAuthorized =
+        botAuthorization.data?.clip_download_authorized ?? false;
+    const hasRequiredTwitchAuthorization =
+        isBotAuthorized && isClipDownloadAuthorized;
+    const [submissionDurationMinutes, setSubmissionDurationMinutes] = useState(10);
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    const submissionsCloseAtMs = room?.submissions_close_at
+        ? new Date(room.submissions_close_at).getTime()
+        : null;
+
+    useEffect(() => {
+        if (!room?.submissions_open || submissionsCloseAtMs === null) return;
+
+        const intervalId = window.setInterval(() => setNowMs(Date.now()), 1000);
+        return () => window.clearInterval(intervalId);
+    }, [room?.submissions_open, submissionsCloseAtMs]);
 
     const { isConnected, error: wsError } = useStreamerClipRoomWebSocket({
         roomId,
@@ -327,11 +361,26 @@ export function StreamerClipRoomPage() {
         startRoom.mutate(channel);
     }, [channel, startRoom]);
 
+    const handleAuthorizeBot = useCallback(() => {
+        if (!channel) return;
+        window.location.assign(getTwitchBotAuthorizationUrl(channel));
+    }, [channel]);
+
     const handleStopListener = useCallback(() => {
         if (!channel) return;
 
         stopRoom.mutate(channel);
     }, [channel, stopRoom]);
+
+    const handleOpenSubmissions = useCallback((durationMinutes?: number) => {
+        if (!channel) return;
+        updateSubmissions.mutate({ channel, enabled: true, durationMinutes });
+    }, [channel, updateSubmissions]);
+
+    const handleCloseSubmissions = useCallback(() => {
+        if (!channel) return;
+        updateSubmissions.mutate({ channel, enabled: false });
+    }, [channel, updateSubmissions]);
 
     const approvalContent = useMemo(
         () => (
@@ -347,6 +396,14 @@ export function StreamerClipRoomPage() {
 
     const hasApprovedItems = theatreItems.length > 0;
     const isListenerLive = room?.is_active ?? false;
+    const areSubmissionsOpen = Boolean(
+        room?.submissions_open &&
+        (submissionsCloseAtMs === null || submissionsCloseAtMs > nowMs),
+    );
+    const submissionCountdown =
+        areSubmissionsOpen && submissionsCloseAtMs !== null
+            ? formatRemaining(submissionsCloseAtMs - nowMs)
+            : null;
     const activeConnectionLabel =
         wsError ? 'Sync issue'
         : isConnected ? 'Live sync'
@@ -428,11 +485,30 @@ export function StreamerClipRoomPage() {
                                 <ItemBadge tone={isListenerLive ? 'success' : 'neutral'}>
                                     {isListenerLive ? 'Listener active' : 'Listener stopped'}
                                 </ItemBadge>
+                                <ItemBadge tone={areSubmissionsOpen ? 'success' : 'neutral'}>
+                                    {areSubmissionsOpen
+                                        ? `Submissions open${submissionCountdown ? ` · ${submissionCountdown}` : ''}`
+                                        : 'Submissions closed'}
+                                </ItemBadge>
                                 <ItemBadge tone={isConnected ? 'success' : 'warning'}>
                                     {activeConnectionLabel}
                                 </ItemBadge>
                                 <ItemBadge tone='brand'>
                                     Approved {theatreItems.length}
+                                </ItemBadge>
+                                <ItemBadge
+                                    tone={isBotAuthorized ? 'success' : 'warning'}
+                                >
+                                    {isBotAuthorized
+                                        ? 'Bot authorized'
+                                        : 'Bot needs access'}
+                                </ItemBadge>
+                                <ItemBadge
+                                    tone={isClipDownloadAuthorized ? 'success' : 'warning'}
+                                >
+                                    {isClipDownloadAuthorized
+                                        ? 'Clip downloads authorized'
+                                        : 'Clip downloads need access'}
                                 </ItemBadge>
                                 <ItemBadge tone='neutral'>
                                     Pending {pendingItems.length}
@@ -440,9 +516,21 @@ export function StreamerClipRoomPage() {
                             </div>
 
                             <div className='ml-auto flex flex-wrap items-center gap-2'>
+                                {!hasRequiredTwitchAuthorization && (
+                                    <Button
+                                        onClick={handleAuthorizeBot}
+                                        loading={botAuthorization.isLoading}
+                                        leftIcon={<Radio className='h-4 w-4' />}
+                                    >
+                                        {!isBotAuthorized
+                                            ? 'Authorize Clpr bot'
+                                            : 'Authorize clip downloads'}
+                                    </Button>
+                                )}
                                 <Button
                                     onClick={handleStartListener}
                                     loading={startRoom.isPending}
+                                    disabled={!hasRequiredTwitchAuthorization}
                                     leftIcon={<Radio className='h-4 w-4' />}
                                 >
                                     Start listener
@@ -487,6 +575,71 @@ export function StreamerClipRoomPage() {
                             </span>
                         </div>
 
+                        <div className='flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2'>
+                            <div className='mr-auto flex min-w-[180px] items-center gap-2 text-sm'>
+                                <Clock3 className={`h-4 w-4 ${areSubmissionsOpen ? 'text-emerald-300' : 'text-white/45'}`} />
+                                <span className='font-medium text-white'>Viewer submissions</span>
+                                <span className='text-white/55'>
+                                    {areSubmissionsOpen
+                                        ? submissionCountdown
+                                            ? `${submissionCountdown} remaining`
+                                            : 'open until you close them'
+                                        : isListenerLive
+                                            ? 'closed'
+                                            : 'start the listener first'}
+                                </span>
+                            </div>
+                            <Button
+                                size='sm'
+                                variant='outline'
+                                onClick={() => handleOpenSubmissions()}
+                                disabled={!isListenerLive || areSubmissionsOpen}
+                                loading={updateSubmissions.isPending}
+                            >
+                                Open until closed
+                            </Button>
+                            <label className='flex items-center gap-2 text-xs text-white/60'>
+                                <span>Minutes</span>
+                                <input
+                                    aria-label='Submission duration in minutes'
+                                    type='number'
+                                    min={1}
+                                    max={1440}
+                                    value={submissionDurationMinutes}
+                                    onChange={event => {
+                                        const value = Number(event.target.value);
+                                        setSubmissionDurationMinutes(Number.isFinite(value) ? value : 10);
+                                    }}
+                                    className='h-8 w-20 rounded-lg border border-white/15 bg-black/40 px-2 text-sm text-white outline-none focus:border-brand/60'
+                                />
+                            </label>
+                            <Button
+                                size='sm'
+                                onClick={() => handleOpenSubmissions(submissionDurationMinutes)}
+                                disabled={!isListenerLive || submissionDurationMinutes < 1 || submissionDurationMinutes > 1440}
+                                loading={updateSubmissions.isPending}
+                            >
+                                Start timer
+                            </Button>
+                            <Button
+                                size='sm'
+                                variant='outline'
+                                onClick={handleCloseSubmissions}
+                                disabled={!areSubmissionsOpen}
+                                loading={updateSubmissions.isPending}
+                            >
+                                Close submissions
+                            </Button>
+                        </div>
+
+                        {updateSubmissions.isError && (
+                            <div className='text-xs text-rose-200'>
+                                {updateSubmissions.error instanceof Error
+                                    ? updateSubmissions.error.message
+                                    : 'Failed to update submissions'}
+                            </div>
+                        )}
+
                         {room.last_listener_error && (
                             <div className='flex items-start gap-2 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-100'>
                                 <CircleAlert className='mt-0.5 h-4 w-4 shrink-0' />
@@ -496,6 +649,39 @@ export function StreamerClipRoomPage() {
                                         {room.last_listener_error}
                                     </p>
                                 </div>
+                            </div>
+                        )}
+                        {!isBotAuthorized && !botAuthorization.isLoading && (
+                            <div className='flex items-start justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100'>
+                                <div>
+                                    <p className='font-medium'>
+                                        Let Clpr watch your Twitch chat
+                                    </p>
+                                    <p className='text-amber-100/80'>
+                                        Twitch will ask you to grant channel bot access. The
+                                        bot only queues supported clip links posted by viewers.
+                                    </p>
+                                </div>
+                                <Button size='sm' onClick={handleAuthorizeBot}>
+                                    Authorize bot
+                                </Button>
+                            </div>
+                        )}
+                        {!isClipDownloadAuthorized && !botAuthorization.isLoading && (
+                            <div className='flex items-start justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-sm text-violet-100'>
+                                <div>
+                                    <p className='font-medium'>
+                                        Allow Clpr to download your Twitch clips
+                                    </p>
+                                    <p className='text-violet-100/80'>
+                                        Twitch will ask you to grant clip-management access.
+                                        Clpr uses it to request temporary official download URLs
+                                        for clips from your channel so submitted clips can be processed and played.
+                                    </p>
+                                </div>
+                                <Button size='sm' onClick={handleAuthorizeBot}>
+                                    Authorize clip downloads
+                                </Button>
                             </div>
                         )}
                     </div>
@@ -534,13 +720,14 @@ export function StreamerClipRoomPage() {
                                         Streamer clip room is ready.
                                     </h2>
                                     <p className='max-w-xl text-sm leading-6 text-white/65'>
-                                        Start the listener so Twitch chat submissions can flow into the pending rail. Once you approve a clip, it will appear in theatre playback and the discussion tab will open on the current clip.
+                                        Start the listener, then open submissions for as long as you want. Viewer clip links will flow into the pending rail until you close submissions or the timer runs out.
                                     </p>
 
                                     <div className='flex flex-wrap gap-2'>
                                         <Button
                                             onClick={handleStartListener}
                                             loading={startRoom.isPending}
+                                            disabled={!hasRequiredTwitchAuthorization}
                                             leftIcon={<Radio className='h-4 w-4' />}
                                         >
                                             Start listener

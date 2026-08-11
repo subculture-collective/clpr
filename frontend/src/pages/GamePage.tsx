@@ -41,7 +41,7 @@ export function GamePage() {
                 setFollowing(data.game.is_following);
             } catch (err) {
                 console.error('Failed to fetch game:', err);
-                setError('Failed to load game details');
+                setError('Failed to load Twitch category details');
             } finally {
                 setLoading(false);
             }
@@ -79,7 +79,7 @@ export function GamePage() {
 
     const handleFollow = async () => {
         if (!user) {
-            showToast('Please sign in to follow games', 'error');
+            showToast('Please sign in to follow Twitch categories', 'error');
             return;
         }
 
@@ -89,7 +89,7 @@ export function GamePage() {
             if (following) {
                 await gameApi.unfollowGame(gameId);
                 setFollowing(false);
-                showToast('Unfollowed game', 'success');
+                showToast('Unfollowed Twitch category', 'success');
                 if (game) {
                     setGame({
                         ...game,
@@ -99,7 +99,7 @@ export function GamePage() {
             } else {
                 await gameApi.followGame(gameId);
                 setFollowing(true);
-                showToast('Following game', 'success');
+                showToast('Following Twitch category', 'success');
                 if (game) {
                     setGame({
                         ...game,
@@ -139,7 +139,7 @@ export function GamePage() {
         return (
             <Container className='py-8'>
                 <div className='text-center text-muted-foreground py-12'>
-                    <p className='text-lg'>{error || 'Game not found'}</p>
+                    <p className='text-lg'>{error || 'Twitch category not found'}</p>
                 </div>
             </Container>
         );
@@ -147,7 +147,7 @@ export function GamePage() {
 
     return (
         <Container className='py-8'>
-            {/* Game Header */}
+            {/* Twitch Category Header */}
             <div className='mb-8'>
                 <div className='flex items-start gap-6'>
                     {game.box_art_url && (
@@ -160,6 +160,9 @@ export function GamePage() {
                         />
                     )}
                     <div className='flex-1'>
+                        <p className='text-xs font-semibold uppercase tracking-wider text-primary-400 mb-1'>
+                            Twitch Category
+                        </p>
                         <h1 className='text-4xl font-bold mb-2'>{game.name}</h1>
                         <div className='flex items-center gap-4 text-sm text-muted-foreground mb-4'>
                             <span>{game.clip_count} clips</span>
@@ -223,7 +226,7 @@ export function GamePage() {
                 </div>
             : clips.length === 0 ?
                 <div className='text-center text-muted-foreground py-12'>
-                    <p className='text-lg'>No clips found for this game</p>
+                    <p className='text-lg'>No clips found for this Twitch category</p>
                 </div>
             :   <>
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8'>

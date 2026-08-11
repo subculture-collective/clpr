@@ -22,7 +22,7 @@ export interface SEOProps {
 
 const DEFAULT_TITLE = 'Clipper - Community-Driven Twitch Clip Curation';
 const DEFAULT_DESCRIPTION =
-    'Discover, share, and vote on the best Twitch clips. Join our community to curate and enjoy the most entertaining moments from your favorite streamers.';
+    'Discover, share, and vote on memorable Twitch clips from creators across live culture.';
 const DEFAULT_IMAGE = '/clpr-banner-1021px.png';
 const SITE_NAME = 'Clipper';
 

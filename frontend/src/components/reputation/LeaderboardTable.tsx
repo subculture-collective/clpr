@@ -49,7 +49,7 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
               Tier
             </th>
             <th className="px-6 py-4 text-sm font-semibold text-right text-foreground">
-              {type === 'karma' ? 'Karma' : 'Engagement'}
+              {type === 'karma' ? 'Uppies' : 'Engagement'}
             </th>
             {type === 'engagement' && (
               <th className="px-6 py-4 text-sm font-semibold text-right text-foreground">
@@ -184,7 +184,7 @@ export function LeaderboardSummary({ entries, type }: LeaderboardSummaryProps) {
             {entry.score.toLocaleString()}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {type === 'karma' ? 'karma' : 'engagement'}
+            {type === 'karma' ? 'uppies' : 'engagement'}
           </div>
         </Link>
       ))}

@@ -5,14 +5,12 @@ import { useTags } from '@/hooks/useTags';
 import { useDiscoveryLists } from '@/hooks/useDiscoveryLists';
 import { useQueueCount } from '@/hooks/useQueue';
 import { useIsAuthenticated } from '@/hooks';
-import { gameApi } from '@/lib/game-api';
 import { categoryApi } from '@/lib/category-api';
 import { apiClient } from '@/lib/api';
 import {
     ChevronRight,
     ListMusic,
     Tag,
-    Gamepad2,
     Sparkles,
     Bookmark,
     List,
@@ -91,12 +89,6 @@ export function FeedSidebar() {
     });
     const tags = tagsResponse?.tags ?? [];
 
-    const { data: gamesResponse } = useQuery({
-        queryKey: ['games', 'trending', 5],
-        queryFn: () => gameApi.getTrendingGames({ limit: 5 }),
-    });
-    const trendingGames = gamesResponse?.games ?? [];
-
     const { data: discoveryResponse } = useDiscoveryLists({ limit: 5 });
     const discoveryLists = (discoveryResponse as { lists?: Array<{ id: string; title: string; slug?: string; clip_count?: number }> })?.lists ?? [];
 
@@ -147,41 +139,21 @@ export function FeedSidebar() {
                 </SidebarSection>
             )}
 
-            {/* Popular Tags */}
-            {tags.length > 0 && (
-                <SidebarSection title='Tags' icon={Tag} viewAllHref='/tags'>
-                    <div className='flex flex-wrap gap-1.5'>
-                        {tags.map(tag => (
-                            <Link
-                                key={tag.id}
-                                to={`/tag/${tag.slug}`}
-                                className='inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-surface-raised hover:bg-surface-hover rounded-full text-text-secondary hover:text-text-primary transition-colors cursor-pointer'
-                            >
-                                {tag.name}
-                                <span className='text-text-tertiary'>
-                                    {tag.usage_count}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </SidebarSection>
-            )}
-
-            {/* Top Games */}
-            {trendingGames.length > 0 && (
+            {/* Top Creators */}
+            {topStreamers.length > 0 && (
                 <SidebarSection
-                    title='Games'
-                    icon={Gamepad2}
-                    viewAllHref='/games'
+                    title='Trending Creators'
+                    icon={Users}
+                    viewAllHref='/creators'
                 >
                     <div className='space-y-0.5'>
-                        {trendingGames.map(game => (
+                        {topStreamers.map((streamer, idx) => (
                             <SidebarLink
-                                key={game.id}
-                                to={`/game/${game.id}`}
-                                meta={`${game.recent_clip_count} clips`}
+                                key={streamer.broadcaster_id}
+                                to={`/broadcaster/${streamer.broadcaster_id}`}
+                                meta={`#${idx + 1}`}
                             >
-                                {game.name}
+                                {streamer.broadcaster_name}
                             </SidebarLink>
                         ))}
                     </div>
@@ -205,22 +177,21 @@ export function FeedSidebar() {
                 </SidebarSection>
             )}
 
-            {/* Top Streamers */}
-            {topStreamers.length > 0 && (
-                <SidebarSection
-                    title='Streamers'
-                    icon={Users}
-                    viewAllHref='/leaderboard'
-                >
-                    <div className='space-y-0.5'>
-                        {topStreamers.map((streamer, idx) => (
-                            <SidebarLink
-                                key={streamer.broadcaster_id}
-                                to={`/broadcaster/${streamer.broadcaster_id}`}
-                                meta={`#${idx + 1}`}
+            {/* Popular Tags */}
+            {tags.length > 0 && (
+                <SidebarSection title='Tags' icon={Tag} viewAllHref='/tags'>
+                    <div className='flex flex-wrap gap-1.5'>
+                        {tags.map(tag => (
+                            <Link
+                                key={tag.id}
+                                to={`/tag/${encodeURIComponent(tag.slug)}`}
+                                className='inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-surface-raised hover:bg-surface-hover rounded-full text-text-secondary hover:text-text-primary transition-colors cursor-pointer'
                             >
-                                {streamer.broadcaster_name}
-                            </SidebarLink>
+                                {tag.name}
+                                <span className='text-text-tertiary'>
+                                    {tag.usage_count}
+                                </span>
+                            </Link>
                         ))}
                     </div>
                 </SidebarSection>
@@ -239,13 +210,13 @@ export function FeedSidebar() {
                 <SidebarSection
                     title='Discovery'
                     icon={List}
-                    viewAllHref='/discover'
+                    viewAllHref='/discover/lists'
                 >
                     <div className='space-y-0.5'>
                         {discoveryLists.map(list => (
                             <SidebarLink
                                 key={list.id}
-                                to={`/discover/${list.slug || list.id}`}
+                                to={`/discover/lists/${list.slug || list.id}`}
                                 meta={
                                     list.clip_count !== undefined
                                         ? `${list.clip_count} clips`

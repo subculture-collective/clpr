@@ -79,6 +79,23 @@ func TestEncodeCursor(t *testing.T) {
 	}
 }
 
+func TestEncodeCursorWithShuffleSeed(t *testing.T) {
+	clipID := uuid.New()
+	seed := uuid.NewString()
+	encoded := EncodeCursorWithShuffleSeed("trending", 0.9123456789012345, clipID, 1609459200, seed)
+
+	decoded, err := DecodeCursor(encoded)
+	if err != nil {
+		t.Fatalf("decode seeded cursor: %v", err)
+	}
+	if decoded.ShuffleSeed != seed {
+		t.Fatalf("shuffle seed = %q, want %q", decoded.ShuffleSeed, seed)
+	}
+	if decoded.SortValue != 0.9123456789012345 {
+		t.Fatalf("sort value lost precision: got %.17g", decoded.SortValue)
+	}
+}
+
 func TestDecodeCursor(t *testing.T) {
 	clipID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 	createdAt := int64(1609459200)

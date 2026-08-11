@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
@@ -18,19 +17,20 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"git.subcult.tv/subculture-collective/clpr/pkg/twitch"
+	"github.com/google/uuid"
 )
 
 type siteFreshnessPreset struct {
-	Name          string
-	Description   string
-	Sort          string
-	Timeframe     *string
-	ClipLimit     int
-	Visibility    string
-	Schedule      string
-	Strategy      string
-	RetentionDays int
-	TitleTemplate string
+	Name           string
+	Description    string
+	Sort           string
+	Timeframe      *string
+	ClipLimit      int
+	Visibility     string
+	Schedule       string
+	Strategy       string
+	RetentionDays  int
+	TitleTemplate  string
 	RequiresTwitch bool
 }
 
@@ -114,6 +114,19 @@ func defaultSiteFreshnessPresets(includeTwitch bool) []siteFreshnessPreset {
 
 	presets := []siteFreshnessPreset{
 		{
+			Name:           "Clip of the Day",
+			Description:    "A daily spotlight on the strongest current clip, balancing momentum, audience size, and freshness.",
+			Sort:           "trending",
+			Timeframe:      day,
+			ClipLimit:      1,
+			Visibility:     models.PlaylistVisibilityPublic,
+			Schedule:       "daily",
+			Strategy:       "clip_of_the_day",
+			RetentionDays:  7,
+			TitleTemplate:  "Clip of the Day • {date}",
+			RequiresTwitch: false,
+		},
+		{
 			Name:           "Viral Velocity",
 			Description:    "Automatically refreshed playlist highlighting clips with the fastest recent momentum.",
 			Sort:           "trending",
@@ -150,6 +163,32 @@ func defaultSiteFreshnessPresets(includeTwitch bool) []siteFreshnessPreset {
 			Strategy:       "one_per_creator",
 			RetentionDays:  7,
 			TitleTemplate:  "Creator Roulette • {date}",
+			RequiresTwitch: false,
+		},
+		{
+			Name:           "Diversity Roulette",
+			Description:    "A daily, lightly shuffled tour across the catalog with one strong clip from each Twitch category.",
+			Sort:           "top",
+			Timeframe:      week,
+			ClipLimit:      20,
+			Visibility:     models.PlaylistVisibilityPublic,
+			Schedule:       "daily",
+			Strategy:       "diversity_roulette",
+			RetentionDays:  7,
+			TitleTemplate:  "Diversity Roulette • {date}",
+			RequiresTwitch: false,
+		},
+		{
+			Name:           "Weekend Mix",
+			Description:    "A weekly quality-and-surprise mix capped at one clip per creator and two clips per Twitch category.",
+			Sort:           "top",
+			Timeframe:      week,
+			ClipLimit:      30,
+			Visibility:     models.PlaylistVisibilityPublic,
+			Schedule:       "weekly",
+			Strategy:       "weekend_mix",
+			RetentionDays:  14,
+			TitleTemplate:  "Weekend Mix • Week of {week_start}",
 			RequiresTwitch: false,
 		},
 		{
@@ -236,7 +275,7 @@ func defaultSiteFreshnessPresets(includeTwitch bool) []siteFreshnessPreset {
 		presets = append(presets,
 			siteFreshnessPreset{
 				Name:           "Trending Now",
-				Description:    "Automatically imports and publishes a fresh mix of top clips from Twitch's current hottest games.",
+				Description:    "Automatically imports and publishes a fresh mix of top clips from Twitch's current hottest creators and categories.",
 				Sort:           "trending",
 				Timeframe:      day,
 				ClipLimit:      25,
@@ -375,7 +414,7 @@ func initClipSyncService(cfg *config.Config, db *database.DB) *services.ClipSync
 		return nil
 	}
 
-	return services.NewClipSyncService(
+	service := services.NewClipSyncService(
 		twitchClient,
 		repository.NewClipRepository(db.Pool),
 		repository.NewTagRepository(db.Pool),
@@ -383,6 +422,8 @@ func initClipSyncService(cfg *config.Config, db *database.DB) *services.ClipSync
 		redisClient,
 		nil,
 	)
+	service.SetGameRepository(repository.NewGameRepository(db.Pool))
+	return service
 }
 
 func printSummary(summary *seedSummary, dryRun bool, baseURL string) {

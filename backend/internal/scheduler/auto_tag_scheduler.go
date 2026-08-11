@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"context"
-	"os"
+	"encoding/json"
 	"sync"
 	"time"
 
@@ -19,11 +19,11 @@ const autoTagSchedulerName = "auto_tag"
 // structural + AI-derived tags to them.  It runs on a short ticker
 // so new clips are tagged near-real-time.
 type AutoTagScheduler struct {
-	autoTag   *services.AutoTagService
-	whisper   *services.WhisperService
-	thumbnail *services.ThumbnailService
-	clipRepo  *repository.ClipRepository
-	tagRepo   *repository.TagRepository
+	autoTag       *services.AutoTagService
+	thumbnail     *services.ThumbnailService
+	transcription *services.ClipTranscriptionService
+	clipRepo      *repository.ClipRepository
+	tagRepo       *repository.TagRepository
 
 	interval time.Duration
 	stopChan chan struct{}
@@ -32,13 +32,11 @@ type AutoTagScheduler struct {
 
 // NewAutoTagScheduler creates a new AutoTagScheduler.
 //
-// whisper and thumbnail may be nil until their respective video-download
-// prerequisite is implemented.  The scheduler skips those steps when
-// the service pointer is nil.
+// thumbnail may be nil when vision enrichment is disabled.
 func NewAutoTagScheduler(
 	autoTag *services.AutoTagService,
-	whisper *services.WhisperService,
 	thumbnail *services.ThumbnailService,
+	transcription *services.ClipTranscriptionService,
 	clipRepo *repository.ClipRepository,
 	tagRepo *repository.TagRepository,
 	intervalSeconds int,
@@ -47,13 +45,13 @@ func NewAutoTagScheduler(
 		intervalSeconds = 30
 	}
 	return &AutoTagScheduler{
-		autoTag:   autoTag,
-		whisper:   whisper,
-		thumbnail: thumbnail,
-		clipRepo:  clipRepo,
-		tagRepo:   tagRepo,
-		interval:  time.Duration(intervalSeconds) * time.Second,
-		stopChan:  make(chan struct{}),
+		autoTag:       autoTag,
+		thumbnail:     thumbnail,
+		transcription: transcription,
+		clipRepo:      clipRepo,
+		tagRepo:       tagRepo,
+		interval:      time.Duration(intervalSeconds) * time.Second,
+		stopChan:      make(chan struct{}),
 	}
 }
 
@@ -109,6 +107,12 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 	}
 
 	if len(untagged) == 0 {
+		if s.transcription != nil {
+			s.processTranscriptionClips(ctx)
+		}
+		if s.thumbnail != nil && s.thumbnail.Operational() {
+			s.processVisionClips(ctx)
+		}
 		return
 	}
 
@@ -133,11 +137,11 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		}
 		tagged++
 
-		// Full pipeline: download → audio extraction → whisper,
-		// thumbnail extraction → vision AI classification.
-		// These are best-effort — failures are logged and we move on.
-		if s.whisper != nil || (s.thumbnail != nil && s.thumbnail.Operational()) {
-			s.processClipMedia(ctx, clip)
+		if err := s.clipRepo.MarkAutoTagged(ctx, clip.ID); err != nil {
+			utils.Error("Failed to record auto-tag completion", err, map[string]interface{}{
+				"scheduler": autoTagSchedulerName,
+				"clip_id":   clip.ID.String(),
+			})
 		}
 	}
 
@@ -148,83 +152,112 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		"total":     len(untagged),
 		"duration":  duration.String(),
 	})
+
+	if s.transcription != nil {
+		s.processTranscriptionClips(ctx)
+	}
+	if s.thumbnail != nil && s.thumbnail.Operational() {
+		s.processVisionClips(ctx)
+	}
 }
 
-// processClipMedia downloads the clip video, extracts audio for Whisper
-// transcription, extracts thumbnails for vision AI classification, and
-// stores the resulting content tags.  All steps are best-effort — individual
-// failures are logged and skipped.
-func (s *AutoTagScheduler) processClipMedia(ctx context.Context, clip *models.Clip) {
-	// Derive the video download URL from the thumbnail URL.
-	// Twitch thumbnail URLs follow the pattern:
-	//   https://clips-media-assets2.twitch.tv/AT-cm-<id>-preview-480x272.jpg
-	// The actual mp4 is at the same path with .mp4 suffix.
-	if clip.ThumbnailURL == nil || *clip.ThumbnailURL == "" {
-		utils.Warn("No thumbnail URL available for media processing", map[string]interface{}{
-			"clip_id": clip.ID.String(),
+func (s *AutoTagScheduler) processTranscriptionClips(ctx context.Context) {
+	clips, err := s.clipRepo.GetClipsNeedingTranscription(ctx, 2)
+	if err != nil {
+		utils.Error("Failed to fetch clips needing transcription", err, map[string]interface{}{
+			"scheduler": autoTagSchedulerName,
 		})
 		return
 	}
-
-	videoPath, dlErr := services.DownloadClipVideo(ctx, *clip.ThumbnailURL, "/tmp/clpr-tags")
-	if dlErr != nil {
-		utils.Warn("Failed to download clip video, skipping media analysis", map[string]interface{}{
-			"clip_id": clip.ID.String(),
-		})
-		return
-	}
-	defer os.Remove(videoPath)
-
-	// Whisper transcription
-	if s.whisper != nil {
-		wavPath, extErr := services.ExtractAudio(ctx, "ffmpeg", videoPath, "/tmp/clpr-tags")
-		if extErr == nil {
-			defer os.Remove(wavPath)
-			result, whErr := s.whisper.TranscribeAudio(ctx, wavPath)
-			if whErr == nil && result != nil {
-				utils.Info("Clip transcribed", map[string]interface{}{
-					"clip_id":  clip.ID.String(),
-					"language": result.Language,
-					"text_len": len(result.FullText),
-				})
-			} else if whErr != nil {
-				utils.Warn("Whisper transcription failed", map[string]interface{}{
+	for i := range clips {
+		clip := &clips[i]
+		clipCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		result, transcribeErr := s.transcription.TranscribeClip(clipCtx, clip)
+		cancel()
+		if transcribeErr != nil {
+			utils.Warn("Authorized clip transcription failed", map[string]interface{}{
+				"clip_id": clip.ID.String(),
+			})
+			if recordErr := s.clipRepo.RecordTranscriptionFailure(ctx, clip.ID, transcribeErr); recordErr != nil {
+				utils.Error("Failed to record transcription failure", recordErr, map[string]interface{}{
 					"clip_id": clip.ID.String(),
 				})
 			}
-		} else {
-			utils.Warn("Audio extraction failed", map[string]interface{}{
+			continue
+		}
+		segments, marshalErr := json.Marshal(result.Segments)
+		if marshalErr != nil {
+			_ = s.clipRepo.RecordTranscriptionFailure(ctx, clip.ID, marshalErr)
+			continue
+		}
+		if recordErr := s.clipRepo.RecordClipTranscript(ctx, &models.ClipTranscript{
+			ClipID: clip.ID, Language: result.Language, FullText: result.FullText,
+			Segments: segments, Source: "twitch_authorized_whisper",
+		}); recordErr != nil {
+			utils.Error("Failed to store clip transcript", recordErr, map[string]interface{}{
 				"clip_id": clip.ID.String(),
 			})
 		}
 	}
+}
 
-	// Thumbnail extraction + vision AI classification
-	if s.thumbnail != nil && s.thumbnail.Operational() {
-		duration := 60.0 // default if clip.Duration is nil
-		if clip.Duration != nil {
-			duration = *clip.Duration
+// processVisionClips analyzes Twitch's public thumbnail URL directly. It does
+// not download clip video or require broadcaster/editor permissions.
+func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
+	clips, err := s.clipRepo.GetClipsNeedingVision(ctx, 10)
+	if err != nil {
+		utils.Error("Failed to fetch clips needing thumbnail enrichment", err, map[string]interface{}{
+			"scheduler": autoTagSchedulerName,
+		})
+		return
+	}
+	for i := range clips {
+		clip := &clips[i]
+		var result *services.ClipThumbnailEnrichment
+		transcript, transcriptErr := s.clipRepo.GetClipTranscript(ctx, clip.ID)
+		if transcriptErr != nil {
+			utils.Warn("Failed to load clip transcript for enrichment", map[string]interface{}{
+				"clip_id": clip.ID.String(),
+			})
 		}
-		thumbs, thErr := s.thumbnail.ExtractThumbnails(ctx, videoPath, duration)
-		if thErr == nil {
-			defer func() {
-				for _, t := range thumbs {
-					os.Remove(t)
-				}
-			}()
-			tags, visErr := s.thumbnail.ClassifyThumbnails(ctx, thumbs, gameName(clip))
-			if visErr == nil {
-				// Ensure content tags exist and attach them to the clip.
-				s.ensureAndAttachContentTags(ctx, clip.ID, tags)
-			} else {
-				utils.Warn("Vision classification failed", map[string]interface{}{
+		var analyzeErr error
+		if transcript != nil && transcript.FullText != "" {
+			result, analyzeErr = s.thumbnail.AnalyzeClipWithTranscript(ctx, clip, transcript.FullText)
+		} else {
+			result, analyzeErr = s.thumbnail.AnalyzeClipThumbnail(ctx, clip)
+		}
+		if analyzeErr != nil {
+			utils.Warn("Twitch thumbnail enrichment failed", map[string]interface{}{
+				"clip_id": clip.ID.String(),
+			})
+			if recordErr := s.clipRepo.RecordVisionFailure(ctx, clip.ID, analyzeErr); recordErr != nil {
+				utils.Error("Failed to record thumbnail enrichment failure", recordErr, map[string]interface{}{
 					"clip_id": clip.ID.String(),
 				})
 			}
-		} else {
-			utils.Warn("Thumbnail extraction failed", map[string]interface{}{
+			continue
+		}
+
+		s.ensureAndAttachContentTags(ctx, clip.ID, result.Tags)
+		enrichment := &models.ClipEnrichment{
+			ClipID:         clip.ID,
+			SourceTitle:    clip.Title,
+			SuggestedTitle: result.SuggestedTitle,
+			Confidence:     result.Confidence,
+			Basis:          result.Basis,
+			Evidence:       result.Evidence,
+			Tags:           result.Tags,
+			TitleAccepted:  services.ShouldApplySuggestedTitle(clip, result),
+		}
+		if recordErr := s.clipRepo.RecordThumbnailEnrichment(ctx, enrichment); recordErr != nil {
+			utils.Error("Failed to store thumbnail enrichment", recordErr, map[string]interface{}{
 				"clip_id": clip.ID.String(),
 			})
+			if failureErr := s.clipRepo.RecordVisionFailure(ctx, clip.ID, recordErr); failureErr != nil {
+				utils.Error("Failed to record thumbnail persistence failure", failureErr, map[string]interface{}{
+					"clip_id": clip.ID.String(),
+				})
+			}
 		}
 	}
 }
@@ -253,12 +286,4 @@ func (s *AutoTagScheduler) ensureAndAttachContentTags(ctx context.Context, clipI
 			})
 		}
 	}
-}
-
-// gameName returns the game name for a clip, or "Unknown Game" if not set.
-func gameName(clip *models.Clip) string {
-	if clip != nil && clip.GameName != nil {
-		return *clip.GameName
-	}
-	return "Unknown Game"
 }

@@ -925,6 +925,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/broadcasters/discover",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*BroadcasterHandler).ListCreatorDiscovery-fm",
+    "operation_id": "getApiV1BroadcastersDiscover",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/broadcasters/live",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*LiveStatusHandler).ListLiveBroadcasters-fm",
     "operation_id": "getApiV1BroadcastersLive",
@@ -2517,6 +2524,13 @@
     "path": "/api/v1/streamer-clip-rooms/{channel}/stop",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).StopRoom-fm",
     "operation_id": "postApiV1StreamerClipRoomsChannelStop",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/streamer-clip-rooms/{channel}/submissions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).UpdateSubmissions-fm",
+    "operation_id": "putApiV1StreamerClipRoomsChannelSubmissions",
     "contract_level": "route-specific"
   },
   {

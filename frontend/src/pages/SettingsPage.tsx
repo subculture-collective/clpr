@@ -303,8 +303,8 @@ export function SettingsPage() {
                                             </select>
                                         </div>
                                         <Toggle
-                                            label='Show Karma Publicly'
-                                            helperText='Display your karma points on your public profile'
+                                            label='Show Uppies Publicly'
+                                            helperText='Display your uppies on your public profile'
                                             checked={settingsData.show_karma_publicly ?? true}
                                             onChange={(e) =>
                                                 setSettingsData({

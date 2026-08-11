@@ -406,7 +406,7 @@ export function TermsPage() {
               </li>
             </ul>
             <p className="text-muted-foreground mt-4">
-              Thank you for using Clipper! We're excited to have you as part of our gaming community. 🎮
+              Thank you for using Clipper! We're excited to have you in our creator and clip community.
             </p>
           </CardBody>
         </Card>

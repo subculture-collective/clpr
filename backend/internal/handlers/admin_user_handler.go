@@ -275,12 +275,12 @@ func (h *AdminUserHandler) UpdateUserKarma(c *gin.Context) {
 	reason := "Karma manually adjusted by admin"
 	err = h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, adminUserID, repository.AdminUserActionKarma, *req.KarmaPoints, reason)
 	if err != nil {
-		writeAdminUserMutationError(c, err, "Failed to update user karma")
+		writeAdminUserMutationError(c, err, "Failed to update user uppies")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":      "User karma updated successfully",
+		"message":      "User uppies updated successfully",
 		"karma_points": *req.KarmaPoints,
 	})
 }

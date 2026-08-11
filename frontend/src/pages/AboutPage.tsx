@@ -8,7 +8,7 @@ export function AboutPage() {
     <>
       <SEO
         title="About"
-        description="Learn about clpr - a modern, open-source platform for discovering and sharing the best Twitch clips. Join our community of gamers and streamers."
+        description="Learn about clpr, an open-source platform for discovering the creators and moments shaping live culture."
         canonicalUrl="/about"
       />
       <Container className="py-8 max-w-4xl">
@@ -23,14 +23,14 @@ export function AboutPage() {
           <CardBody>
             <h2 className="text-2xl font-semibold mb-4">What is clpr?</h2>
             <p className="text-muted-foreground mb-4">
-              clpr is a modern, open-source platform for discovering and sharing gaming highlights from Twitch. 
-              We aggregate the best clips from your favorite games and streamers, making them easy to find, watch, 
-              and share with the gaming community.
+              clpr is a modern, open-source platform for discovering and sharing the people and moments shaping live culture.
+              We bring together memorable Twitch clips from creators across IRL, reactions, news, politics, music,
+              sports, creative streams, gaming, and everything in between.
             </p>
             <p className="text-muted-foreground mb-4">
-              Our mission is to celebrate great gaming moments and connect the gaming community through shared experiences. 
-              Whether you're looking for the latest esports plays, hilarious streamer reactions, or incredible speedrun achievements, 
-              clpr brings it all together in one place.
+              Our mission is to help people find creators worth following and moments worth talking about.
+              Whether it is a sharp reaction, an unfolding news story, an unforgettable performance, or an impossible play,
+              clpr brings it together in one place.
             </p>
             <p className="text-muted-foreground">
               Built with React, TypeScript, and modern web technologies, clpr is designed to be fast, responsive, 
@@ -48,14 +48,14 @@ export function AboutPage() {
                 <h3 className="text-lg font-semibold mb-2 text-foreground">Automated Clip Discovery</h3>
                 <p className="text-muted-foreground">
                   We automatically sync and index clips from Twitch, ensuring you never miss the hottest moments 
-                  from your favorite games and creators.
+                  from creators and communities across Twitch.
                 </p>
               </div>
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-foreground">Smart Browsing & Search</h3>
                 <p className="text-muted-foreground">
-                  Browse clips by game, creator, or tag. Our intelligent search makes it easy to find exactly 
-                  what you're looking for, from specific plays to trending moments.
+                  Browse clips by creator, topic, tag, or Twitch category. Our search makes it easy to find exactly
+                  what you're looking for, from specific conversations to trending moments.
                 </p>
               </div>
               <div>
@@ -83,7 +83,7 @@ export function AboutPage() {
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <li className="flex items-start">
                 <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Browse clips from multiple games and creators</span>
+                <span className="text-muted-foreground">Discover creators across topics and communities</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">✓</span>
@@ -132,7 +132,7 @@ export function AboutPage() {
             <h2 className="text-2xl font-semibold mb-4">Open Source & Community</h2>
             <p className="text-muted-foreground mb-4">
               clpr is proudly open source! Our code is available on GitHub, and we welcome contributions 
-              from developers, designers, and gaming enthusiasts.
+              from developers, designers, creators, and live-culture enthusiasts.
             </p>
             <div className="flex flex-wrap gap-4">
               <a

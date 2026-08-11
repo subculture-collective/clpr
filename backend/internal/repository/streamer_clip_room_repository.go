@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
@@ -29,6 +30,8 @@ func scanStreamerClipRoom(row pgx.Row) (*models.StreamerClipRoom, error) {
 		&room.TwitchChannel,
 		&room.ApprovalMode,
 		&room.IsActive,
+		&room.SubmissionsOpen,
+		&room.SubmissionsCloseAt,
 		&room.LastListenerError,
 		&room.ListenerStartedAt,
 		&room.CreatedAt,
@@ -79,6 +82,7 @@ func (r *StreamerClipRoomRepository) GetOrCreateRoom(ctx context.Context, ownerU
 		VALUES ($1, $2)
 		ON CONFLICT DO NOTHING
 		RETURNING id, owner_user_id, twitch_channel, approval_mode, is_active,
+			submissions_open, submissions_close_at,
 			last_listener_error, listener_started_at, created_at, updated_at
 	`
 
@@ -92,6 +96,7 @@ func (r *StreamerClipRoomRepository) GetOrCreateRoom(ctx context.Context, ownerU
 
 	const selectQuery = `
 		SELECT id, owner_user_id, twitch_channel, approval_mode, is_active,
+			submissions_open, submissions_close_at,
 			last_listener_error, listener_started_at, created_at, updated_at
 		FROM streamer_clip_rooms
 		WHERE owner_user_id = $1
@@ -110,6 +115,7 @@ func (r *StreamerClipRoomRepository) GetOrCreateRoom(ctx context.Context, ownerU
 func (r *StreamerClipRoomRepository) GetRoomByID(ctx context.Context, roomID uuid.UUID) (*models.StreamerClipRoom, error) {
 	const query = `
 		SELECT id, owner_user_id, twitch_channel, approval_mode, is_active,
+			submissions_open, submissions_close_at,
 			last_listener_error, listener_started_at, created_at, updated_at
 		FROM streamer_clip_rooms
 		WHERE id = $1
@@ -129,6 +135,7 @@ func (r *StreamerClipRoomRepository) GetRoomByID(ctx context.Context, roomID uui
 func (r *StreamerClipRoomRepository) GetRoomByOwnerChannel(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
 	normalized := strings.ToLower(strings.TrimSpace(channel))
 	const query = `SELECT id, owner_user_id, twitch_channel, approval_mode, is_active,
+		submissions_open, submissions_close_at,
 		last_listener_error, listener_started_at, created_at, updated_at
 		FROM streamer_clip_rooms WHERE owner_user_id = $1 AND lower(twitch_channel) = $2`
 	room, err := scanStreamerClipRoom(r.pool.QueryRow(ctx, query, ownerUserID, normalized))
@@ -146,6 +153,8 @@ func (r *StreamerClipRoomRepository) SetRoomActive(ctx context.Context, roomID u
 	const query = `
 		UPDATE streamer_clip_rooms
 		SET is_active = $2,
+			submissions_open = CASE WHEN $2 THEN submissions_open ELSE false END,
+			submissions_close_at = CASE WHEN $2 THEN submissions_close_at ELSE NULL END,
 			last_listener_error = $3,
 			listener_started_at = CASE WHEN $2 THEN NOW() ELSE NULL END,
 			updated_at = NOW()
@@ -157,6 +166,28 @@ func (r *StreamerClipRoomRepository) SetRoomActive(ctx context.Context, roomID u
 	}
 
 	return nil
+}
+
+// SetSubmissionWindow opens or closes chat submissions, optionally until a deadline.
+func (r *StreamerClipRoomRepository) SetSubmissionWindow(ctx context.Context, roomID uuid.UUID, open bool, closeAt *time.Time) (*models.StreamerClipRoom, error) {
+	const query = `
+		UPDATE streamer_clip_rooms
+		SET submissions_open = $2,
+			submissions_close_at = CASE WHEN $2 THEN $3 ELSE NULL END,
+			updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, owner_user_id, twitch_channel, approval_mode, is_active,
+			submissions_open, submissions_close_at,
+			last_listener_error, listener_started_at, created_at, updated_at
+	`
+	room, err := scanStreamerClipRoom(r.pool.QueryRow(ctx, query, roomID, open, closeAt))
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to update streamer clip room submission window: %w", err)
+	}
+	return room, nil
 }
 
 // CreateItem inserts a new streamer clip room item.

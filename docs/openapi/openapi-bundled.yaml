@@ -1797,6 +1797,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/TagTreeNode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/tags/{slug}:
@@ -9987,6 +9989,34 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/broadcasters/discover:
+    get:
+      tags:
+        - Broadcasters
+      summary: Discover trending, rising, and new creators
+      description: Returns creator-first discovery rails ranked by current clip momentum, growth relative to catalog size, and first-seen freshness.
+      operationId: getApiV1BroadcastersDiscover
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+            default: 12
+      responses:
+        '200':
+          description: Creator discovery rails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorDiscoveryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/broadcasters/popular:
     get:
       tags:
@@ -13562,6 +13592,38 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/streamer-clip-rooms/{channel}/submissions:
+    put:
+      tags:
+        - Streamer Clip Rooms
+      summary: Open or close viewer clip submissions
+      description: Opens submissions indefinitely or for up to 1440 minutes. The Twitch listener must be active before submissions can be opened.
+      operationId: putApiV1StreamerClipRoomsChannelSubmissions
+      parameters:
+        - $ref: '#/components/parameters/TwitchChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStreamerClipRoomSubmissionsRequest'
+      responses:
+        '200':
+          description: Submission window updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamerClipRoomResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/streamer-clip-rooms/{channel}/ws:
     get:
       tags:
@@ -13926,6 +13988,15 @@ paths:
         - Twitch OAuth
       summary: Begin user-bound Twitch OAuth
       operationId: getApiV1TwitchOauthAuthorize
+      parameters:
+        - name: return_to
+          in: query
+          required: false
+          description: Safe application-relative path to return to after authorization.
+          schema:
+            type: string
+            maxLength: 512
+            pattern: ^/(?!/).*
       responses:
         '307':
           $ref: '#/components/responses/OAuthRedirect'
@@ -18275,6 +18346,93 @@ components:
         updated_at:
           type: string
           format: date-time
+    CreatorDiscoveryProfile:
+      type: object
+      required:
+        - broadcaster_id
+        - broadcaster_name
+        - total_clips
+        - recent_clips
+        - total_views
+        - recent_views
+        - view_velocity
+        - follower_count
+        - first_discovered_at
+        - latest_clip_at
+        - score
+      properties:
+        broadcaster_id:
+          type: string
+        broadcaster_name:
+          type: string
+        total_clips:
+          type: integer
+          minimum: 0
+        recent_clips:
+          type: integer
+          minimum: 0
+        total_views:
+          type: integer
+          format: int64
+          minimum: 0
+        recent_views:
+          type: integer
+          format: int64
+          minimum: 0
+        view_velocity:
+          type: number
+          minimum: 0
+        follower_count:
+          type: integer
+          minimum: 0
+        first_discovered_at:
+          type: string
+          format: date-time
+        latest_clip_at:
+          type: string
+          format: date-time
+        latest_clip_thumbnail:
+          type:
+            - string
+            - 'null'
+        latest_clip_title:
+          type:
+            - string
+            - 'null'
+        twitch_category_name:
+          type:
+            - string
+            - 'null'
+        score:
+          type: number
+    CreatorDiscoveryResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: object
+          required:
+            - trending
+            - rising
+            - new
+          properties:
+            trending:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreatorDiscoveryProfile'
+            rising:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreatorDiscoveryProfile'
+            new:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreatorDiscoveryProfile'
     LiveBroadcasterListResponse:
       type: object
       required:
@@ -20138,6 +20296,7 @@ components:
         - twitch_channel
         - approval_mode
         - is_active
+        - submissions_open
         - created_at
         - updated_at
       properties:
@@ -20157,6 +20316,11 @@ components:
             - auto
         is_active:
           type: boolean
+        submissions_open:
+          type: boolean
+        submissions_close_at:
+          type: string
+          format: date-time
         last_listener_error:
           type: string
         listener_started_at:
@@ -20285,6 +20449,18 @@ components:
           items:
             type: string
             format: uuid
+    UpdateStreamerClipRoomSubmissionsRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+        duration_minutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
     StreamerClipRoomResponse:
       type: object
       required:
@@ -20609,11 +20785,19 @@ components:
       required:
         - authenticated
         - connected
+        - bot_authorized
+        - clip_download_authorized
       properties:
         authenticated:
           type: boolean
         connected:
           type: boolean
+        bot_authorized:
+          type: boolean
+          description: Whether the broadcaster granted the channel:bot scope.
+        clip_download_authorized:
+          type: boolean
+          description: Whether the broadcaster granted channel:manage:clips so Clpr may obtain official temporary download URLs for their clips.
         twitch_user_id:
           type: string
         twitch_username:
@@ -21563,6 +21747,9 @@ components:
         - deep_cuts
         - fresh_faces
         - one_per_creator
+        - diversity_roulette
+        - clip_of_the_day
+        - weekend_mix
         - similar_vibes
         - cross_game_hits
         - controversial

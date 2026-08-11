@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // PlaylistCurationRepository provides strategy-based clip queries for automated playlist curation.
@@ -250,6 +250,113 @@ func (r *PlaylistCurationRepository) OnePerCreator(ctx context.Context, script *
 		SELECT id
 		FROM ranked
 		WHERE creator_rank = 1
+		LIMIT $%d
+	`, where, nextArg)
+	args = append(args, script.ClipLimit)
+
+	return r.scanClipIDs(ctx, query, args)
+}
+
+// DiversityRoulette produces a lightly shuffled cross-game mix while allowing
+// only one clip from each game. The random factor is intentionally bounded so
+// strong clips stay competitive without every refresh returning the same order.
+func (r *PlaylistCurationRepository) DiversityRoulette(ctx context.Context, script *models.PlaylistScript) ([]models.Clip, error) {
+	where, args := baseClipFilter(script)
+	where += timeframeClause(script)
+	nextArg := len(args) + 1
+
+	query := fmt.Sprintf(`
+		WITH eligible AS (
+			SELECT c.id,
+			       c.game_id,
+			       (
+				   COALESCE(c.view_velocity, 0) * 8
+				   + LN(GREATEST(c.view_count, 0) + 1) * 4
+				   + GREATEST(0, 48 - EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600)
+			   ) * (0.9 + random() * 0.2) AS rank_score
+			FROM clips c
+			WHERE %s
+			  AND c.game_id IS NOT NULL
+			  AND c.game_id <> ''
+		), ranked AS (
+			SELECT id,
+			       rank_score,
+			       ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY rank_score DESC, id) AS game_rank
+			FROM eligible
+		)
+		SELECT id
+		FROM ranked
+		WHERE game_rank = 1
+		ORDER BY rank_score DESC
+		LIMIT $%d
+	`, where, nextArg)
+	args = append(args, script.ClipLimit)
+
+	return r.scanClipIDs(ctx, query, args)
+}
+
+// ClipOfTheDay selects the strongest current clip using velocity, total views,
+// and recency. A very small random factor prevents permanent ties.
+func (r *PlaylistCurationRepository) ClipOfTheDay(ctx context.Context, script *models.PlaylistScript) ([]models.Clip, error) {
+	where, args := baseClipFilter(script)
+	where += timeframeClause(script)
+	nextArg := len(args) + 1
+
+	query := fmt.Sprintf(`
+		SELECT c.id
+		FROM clips c
+		WHERE %s
+		ORDER BY (
+			COALESCE(c.view_velocity, 0) * 8
+			+ LN(GREATEST(c.view_count, 0) + 1) * 4
+			+ GREATEST(0, 24 - EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600) * 2
+		) * (0.95 + random() * 0.1) DESC,
+		c.created_at DESC
+		LIMIT $%d
+	`, where, nextArg)
+	args = append(args, script.ClipLimit)
+
+	return r.scanClipIDs(ctx, query, args)
+}
+
+// WeekendMix balances quality and surprise while capping the result at one
+// clip per creator and two clips per game.
+func (r *PlaylistCurationRepository) WeekendMix(ctx context.Context, script *models.PlaylistScript) ([]models.Clip, error) {
+	where, args := baseClipFilter(script)
+	where += timeframeClause(script)
+	nextArg := len(args) + 1
+
+	query := fmt.Sprintf(`
+		WITH eligible AS (
+			SELECT c.id,
+			       c.game_id,
+			       COALESCE(NULLIF(c.creator_id, ''), NULLIF(c.broadcaster_id, ''), c.id::text) AS creator_key,
+			       (
+				   COALESCE(c.view_velocity, 0) * 8
+				   + LN(GREATEST(c.view_count, 0) + 1) * 4
+				   + GREATEST(0, 72 - EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600)
+			   ) * (0.9 + random() * 0.2) AS rank_score
+			FROM clips c
+			WHERE %s
+			  AND c.game_id IS NOT NULL
+			  AND c.game_id <> ''
+		), creator_ranked AS (
+			SELECT id,
+			       game_id,
+			       rank_score,
+			       ROW_NUMBER() OVER (PARTITION BY creator_key ORDER BY rank_score DESC, id) AS creator_rank
+			FROM eligible
+		), game_ranked AS (
+			SELECT id,
+			       rank_score,
+			       ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY rank_score DESC, id) AS game_rank
+			FROM creator_ranked
+			WHERE creator_rank = 1
+		)
+		SELECT id
+		FROM game_ranked
+		WHERE game_rank <= 2
+		ORDER BY rank_score DESC
 		LIMIT $%d
 	`, where, nextArg)
 	args = append(args, script.ClipLimit)

@@ -26,7 +26,7 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
           <span className="font-semibold text-purple-400">
             {reputation.karma_points.toLocaleString()}
           </span>
-          <span className="text-xs text-muted-foreground">karma</span>
+          <span className="text-xs text-muted-foreground">uppies</span>
         </div>
 
         {/* Rank */}
@@ -69,7 +69,7 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
           <div className="text-4xl font-bold text-purple-400">
             {((reputation?.karma_points) || 0).toLocaleString()}
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">Total Karma</div>
+          <div className="mt-1 text-sm text-muted-foreground">Total Uppies</div>
         </div>
       </div>
 

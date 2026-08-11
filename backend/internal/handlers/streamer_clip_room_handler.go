@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -68,8 +69,7 @@ func (h *StreamerClipRoomHandler) StartRoom(c *gin.Context) {
 		return
 	}
 
-	var twitchUsername string
-	var accessToken string
+	var broadcasterUsername string
 	if h.twitchAuthRepo != nil {
 		auth, err := h.twitchAuthRepo.GetTwitchAuth(c.Request.Context(), userID)
 		if err != nil {
@@ -77,12 +77,30 @@ func (h *StreamerClipRoomHandler) StartRoom(c *gin.Context) {
 			return
 		}
 		if auth != nil {
-			twitchUsername = strings.TrimSpace(auth.TwitchUsername)
-			accessToken = strings.TrimSpace(auth.AccessToken)
+			broadcasterUsername = strings.TrimSpace(auth.TwitchUsername)
+			if !hasTwitchScope(auth.Scopes, "channel:bot") {
+				c.JSON(http.StatusForbidden, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_BOT_AUTH_REQUIRED", Message: "Authorize the Clpr bot for your Twitch channel before starting the listener"}})
+				return
+			}
+			if !hasTwitchScope(auth.Scopes, "channel:manage:clips") {
+				c.JSON(http.StatusForbidden, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_CLIP_DOWNLOAD_AUTH_REQUIRED", Message: "Authorize Clpr to download clips from your Twitch channel before starting the listener"}})
+				return
+			}
 		}
 	}
-	if accessToken == "" {
-		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_AUTH_REQUIRED", Message: "Connect Twitch chat before starting the listener"}})
+	if broadcasterUsername == "" {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_AUTH_REQUIRED", Message: "Connect Twitch and authorize the Clpr bot before starting the listener"}})
+		return
+	}
+	if !strings.EqualFold(broadcasterUsername, channel) {
+		c.JSON(http.StatusForbidden, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_CHANNEL_MISMATCH", Message: "You can only start the bot in the Twitch channel connected to your account"}})
+		return
+	}
+
+	botUsername := strings.TrimSpace(os.Getenv("TWITCH_BOT_USERNAME"))
+	botOAuthToken := strings.TrimSpace(strings.TrimPrefix(os.Getenv("TWITCH_BOT_OAUTH_TOKEN"), "oauth:"))
+	if botUsername == "" || botOAuthToken == "" {
+		c.JSON(http.StatusServiceUnavailable, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_BOT_NOT_CONFIGURED", Message: "The Clpr Twitch bot is not configured"}})
 		return
 	}
 
@@ -92,11 +110,7 @@ func (h *StreamerClipRoomHandler) StartRoom(c *gin.Context) {
 		return
 	}
 
-	if twitchUsername != "" {
-		err = h.listener.StartWithUsername(c.Request.Context(), room.ID, room.TwitchChannel, twitchUsername, accessToken)
-	} else {
-		err = h.listener.Start(c.Request.Context(), room.ID, room.TwitchChannel, accessToken)
-	}
+	err = h.listener.StartWithUsername(c.Request.Context(), room.ID, room.TwitchChannel, botUsername, botOAuthToken)
 	if err != nil {
 		_, _ = h.service.StopRoom(c.Request.Context(), userID, channel)
 		c.JSON(http.StatusInternalServerError, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Failed to start Twitch listener"}})
@@ -129,6 +143,35 @@ func (h *StreamerClipRoomHandler) StopRoom(c *gin.Context) {
 		h.listener.Stop(room.ID)
 	}
 	h.broadcastRoomEvent(room.ID, "room_status_changed", gin.H{"room": room})
+	c.JSON(http.StatusOK, StandardResponse{Success: true, Data: room})
+}
+
+func (h *StreamerClipRoomHandler) UpdateSubmissions(c *gin.Context) {
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
+	channel := strings.TrimSpace(c.Param("channel"))
+	if !validTwitchChannel(channel) {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "Invalid Twitch channel"}})
+		return
+	}
+
+	var req models.UpdateStreamerClipRoomSubmissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Enabled == nil {
+		c.JSON(http.StatusBadRequest, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INVALID_REQUEST", Message: "enabled is required and duration_minutes must be between 1 and 1440"}})
+		return
+	}
+	if !*req.Enabled {
+		req.DurationMinutes = nil
+	}
+
+	room, err := h.service.SetSubmissions(c.Request.Context(), userID, channel, *req.Enabled, req.DurationMinutes)
+	if err != nil {
+		handleStreamerClipRoomError(c, err, "Failed to update clip submissions")
+		return
+	}
+	h.broadcastRoomEvent(room.ID, "submissions_changed", gin.H{"room": room})
 	c.JSON(http.StatusOK, StandardResponse{Success: true, Data: room})
 }
 
@@ -378,6 +421,9 @@ func handleStreamerClipRoomError(c *gin.Context, err error, message string) {
 	code := "INTERNAL_ERROR"
 	lowerErr := strings.ToLower(err.Error())
 	switch {
+	case errors.Is(err, services.ErrStreamerClipRoomInactive):
+		c.JSON(http.StatusConflict, StandardResponse{Success: false, Error: &ErrorInfo{Code: "LISTENER_INACTIVE", Message: "Start the Twitch listener before opening submissions"}})
+		return
 	case errors.Is(err, services.ErrStreamerClipRoomForbidden):
 		status = http.StatusForbidden
 		code = "FORBIDDEN"

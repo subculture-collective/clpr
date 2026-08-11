@@ -60,7 +60,7 @@ export function RoleBadgeTestPage() {
                     <span className="font-medium">AdminUser123</span>
                     <UserRoleBadge role="admin" size="sm" />
                   </div>
-                  <p className="text-sm text-muted-foreground">1,234 karma</p>
+                  <p className="text-sm text-muted-foreground">1,234 uppies</p>
                 </div>
               </div>
             </div>
@@ -75,7 +75,7 @@ export function RoleBadgeTestPage() {
                 />
                 <span className="font-medium">ModUser456</span>
                 <UserRoleBadge role="moderator" size="sm" />
-                <span className="text-xs text-muted-foreground">500 karma</span>
+                <span className="text-xs text-muted-foreground">500 uppies</span>
                 <span className="text-xs text-muted-foreground">•</span>
                 <span className="text-xs text-muted-foreground">2 hours ago</span>
               </div>
@@ -87,7 +87,7 @@ export function RoleBadgeTestPage() {
                 <span className="text-sm text-muted-foreground">Submitted by</span>
                 <span className="font-medium">RegularUser789</span>
                 <UserRoleBadge role="user" size="sm" />
-                <span className="text-xs text-muted-foreground">100 karma</span>
+                <span className="text-xs text-muted-foreground">100 uppies</span>
               </div>
             </div>
 

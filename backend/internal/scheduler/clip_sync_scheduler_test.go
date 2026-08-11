@@ -10,10 +10,15 @@ import (
 )
 
 // MockClipSyncService is a mock implementation for testing
-type MockClipSyncService struct{}
+type MockClipSyncService struct {
+	trendingCalls int
+	followedCalls int
+	globalCalls   int
+}
 
 // SyncTrendingClips is a mock implementation that matches the interface
 func (m *MockClipSyncService) SyncTrendingClips(ctx context.Context, hours int, opts *services.TrendingSyncOptions) (*services.SyncStats, error) {
+	m.trendingCalls++
 	return &services.SyncStats{
 		ClipsFetched: 5,
 		ClipsCreated: 5,
@@ -24,6 +29,7 @@ func (m *MockClipSyncService) SyncTrendingClips(ctx context.Context, hours int, 
 
 // SyncFollowedBroadcasterClips is a mock implementation
 func (m *MockClipSyncService) SyncFollowedBroadcasterClips(ctx context.Context, opts *services.FollowedBroadcasterSyncOptions) (*services.SyncStats, error) {
+	m.followedCalls++
 	return &services.SyncStats{
 		ClipsFetched: 10,
 		ClipsCreated: 10,
@@ -34,12 +40,30 @@ func (m *MockClipSyncService) SyncFollowedBroadcasterClips(ctx context.Context, 
 
 // SyncGlobalTrending is a mock implementation
 func (m *MockClipSyncService) SyncGlobalTrending(ctx context.Context, limit int) (*services.SyncStats, error) {
+	m.globalCalls++
 	return &services.SyncStats{
 		ClipsFetched: 3,
 		ClipsCreated: 3,
 		StartTime:    time.Now(),
 		EndTime:      time.Now().Add(time.Second),
 	}, nil
+}
+
+func TestRunSyncSkipsUnsupportedUnfilteredClipsRequest(t *testing.T) {
+	mockService := &MockClipSyncService{}
+	scheduler := NewClipSyncScheduler(mockService, 15)
+
+	scheduler.runSync(context.Background())
+
+	if mockService.trendingCalls != 1 {
+		t.Fatalf("trending sync calls = %d, want 1", mockService.trendingCalls)
+	}
+	if mockService.followedCalls != 1 {
+		t.Fatalf("followed sync calls = %d, want 1", mockService.followedCalls)
+	}
+	if mockService.globalCalls != 0 {
+		t.Fatalf("unsupported unfiltered global sync calls = %d, want 0", mockService.globalCalls)
+	}
 }
 
 // TestStopMultipleTimes verifies that calling Stop() multiple times doesn't panic

@@ -47,6 +47,9 @@ services:
             - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
             - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
             - TWITCH_REDIRECT_URI=${TWITCH_REDIRECT_URI:-https://clpr.tv/api/v1/auth/twitch/callback}
+            - TWITCH_PLATFORM_REDIRECT_URI=${TWITCH_PLATFORM_REDIRECT_URI:-https://clpr.tv/api/v1/twitch/oauth/callback}
+            - TWITCH_BOT_USERNAME=${TWITCH_BOT_USERNAME:-clpr_bot}
+            - TWITCH_BOT_OAUTH_TOKEN=${TWITCH_BOT_OAUTH_TOKEN:-}
             - OPENSEARCH_URL=${OPENSEARCH_URL:?OPENSEARCH_URL is required}
             - OPENSEARCH_INSECURE_SKIP_VERIFY=false
             - CLIP_MAX_DURATION_SECONDS=${CLIP_MAX_DURATION_SECONDS}
@@ -154,6 +157,9 @@ services:
             - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
             - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
             - TWITCH_REDIRECT_URI=${TWITCH_REDIRECT_URI:-https://clpr.tv/api/v1/auth/twitch/callback}
+            - TWITCH_PLATFORM_REDIRECT_URI=${TWITCH_PLATFORM_REDIRECT_URI:-https://clpr.tv/api/v1/twitch/oauth/callback}
+            - TWITCH_BOT_USERNAME=${TWITCH_BOT_USERNAME:-clpr_bot}
+            - TWITCH_BOT_OAUTH_TOKEN=${TWITCH_BOT_OAUTH_TOKEN:-}
             - OPENSEARCH_URL=${OPENSEARCH_URL:?OPENSEARCH_URL is required}
             - OPENSEARCH_INSECURE_SKIP_VERIFY=false
             - CLIP_MAX_DURATION_SECONDS=${CLIP_MAX_DURATION_SECONDS}

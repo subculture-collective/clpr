@@ -60,7 +60,7 @@ export function HomePage() {
         <>
             <SEO
                 title='Home'
-                description='Discover and share the best Twitch clips curated by the community. Vote on your favorite moments, explore trending clips, and join the conversation.'
+                description='Discover the creators and live moments people are talking about. Explore fresh clips, follow creators, and join the conversation.'
                 canonicalUrl='/'
             />
             <FeedLayout sidebar={<FeedSidebar />}>
@@ -132,8 +132,8 @@ export function HomePage() {
 
                 {/* Main Clip Feed */}
                 <ClipFeed
-                    title='Home Feed'
-                    description='Discover the best Twitch clips'
+                    title='Live culture, clipped'
+                    description='Fresh moments from creators across Twitch'
                     defaultSort='trending'
                     showSearch
                 />

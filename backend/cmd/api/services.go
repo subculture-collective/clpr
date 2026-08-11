@@ -64,10 +64,11 @@ type Services struct {
 	Submission               *services.SubmissionService    // may be nil
 	LiveStatus               *services.LiveStatusService    // may be nil
 	OutboundWebhook          *services.OutboundWebhookService
-	TwitchBanSync            *services.TwitchBanSyncService    // may be nil
-	TwitchModeration         *services.TwitchModerationService // may be nil
-	Whisper                  *services.WhisperService          // may be nil
-	Thumbnail                *services.ThumbnailService        // may be nil
+	TwitchBanSync            *services.TwitchBanSyncService     // may be nil
+	TwitchModeration         *services.TwitchModerationService  // may be nil
+	Whisper                  *services.WhisperService           // may be nil
+	ClipTranscription        *services.ClipTranscriptionService // may be nil
+	Thumbnail                *services.ThumbnailService         // may be nil
 	WSServer                 *websocket.Server
 	CancelEventTracker       context.CancelFunc
 	Logger                   *utils.StructuredLogger
@@ -278,12 +279,15 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	outboundWebhookService := services.NewOutboundWebhookService(repos.OutboundWebhook)
 	if infra.TwitchClient != nil {
 		clipSyncService = services.NewClipSyncService(infra.TwitchClient, repos.Clip, repos.Tag, repos.User, infra.Redis, nil)
+		clipSyncService.SetGameRepository(repos.Game)
 		submissionService = services.NewSubmissionService(repos.Submission, repos.Clip, repos.DiscoveryClip, repos.User, repos.Vote, repos.AuditLog, infra.TwitchClient, notificationService, infra.Redis, outboundWebhookService, cacheService, cfg)
 		liveStatusService = services.NewLiveStatusService(repos.Broadcaster, repos.StreamFollow, infra.TwitchClient)
 		// Set notification service for live status notifications
 		liveStatusService.SetNotificationService(notificationService)
 		// Enable Twitch-powered playlist strategies
 		playlistScriptService.SetClipSyncService(clipSyncService)
+		// Import previously unseen Twitch links posted to streamer clip rooms.
+		streamerClipRoomService.SetClipImporter(clipSyncService)
 	}
 
 	// Initialize Twitch-related services
@@ -303,6 +307,18 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		} else {
 			log.Println("WARNING: Whisper is enabled but PYTHON_PATH or RUNNER_DIR is missing; disabling transcription")
 		}
+	}
+
+	var clipTranscriptionService *services.ClipTranscriptionService
+	if whisperService != nil && cfg.Twitch.ClientID != "" && repos.TwitchAuth != nil {
+		clipDownloads := services.NewTwitchClipDownloadService(cfg.Twitch.ClientID, "", nil)
+		clipTranscriptionService = services.NewClipTranscriptionService(
+			repos.TwitchAuth,
+			clipDownloads,
+			&services.FFmpegRemoteAudioExtractor{FFmpegPath: cfg.Whisper.FFmpegPath, WorkDir: cfg.Whisper.WorkDir},
+			whisperService,
+		)
+		log.Println("Authorized Twitch clip transcription service initialized")
 	}
 
 	// Initialize Thumbnail service (frame extraction + vision AI classification)
@@ -393,6 +409,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		TwitchBanSync:            twitchBanSyncService,
 		TwitchModeration:         twitchModerationService,
 		Whisper:                  whisperService,
+		ClipTranscription:        clipTranscriptionService,
 		Thumbnail:                thumbnailService,
 		WSServer:                 wsServer,
 		CancelEventTracker:       cancelEventTracker,

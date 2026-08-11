@@ -11,6 +11,45 @@ import (
 	"github.com/google/uuid"
 )
 
+type catalogSyncTwitchClient struct{}
+
+func (catalogSyncTwitchClient) GetTopGames(context.Context, int, string) (*twitch.TopGamesResponse, error) {
+	return &twitch.TopGamesResponse{Data: []twitch.Game{{ID: "509658", Name: "Just Chatting"}}}, nil
+}
+
+func (catalogSyncTwitchClient) GetClips(context.Context, *twitch.ClipParams) (*twitch.ClipsResponse, error) {
+	return &twitch.ClipsResponse{}, nil
+}
+
+func (catalogSyncTwitchClient) GetChannels(context.Context, []string) (*twitch.ChannelsResponse, error) {
+	return &twitch.ChannelsResponse{}, nil
+}
+
+type recordingGameWriter struct {
+	games []*models.GameEntity
+}
+
+func (w *recordingGameWriter) Create(_ context.Context, game *models.GameEntity) error {
+	w.games = append(w.games, game)
+	return nil
+}
+
+func TestSyncTrendingClipsPersistsTopGameCatalog(t *testing.T) {
+	writer := &recordingGameWriter{}
+	svc := NewClipSyncService(catalogSyncTwitchClient{}, nil, nil, nil, nil, nil)
+	svc.SetGameRepository(writer)
+
+	if _, err := svc.SyncTrendingClips(context.Background(), 24, nil); err != nil {
+		t.Fatalf("sync trending clips: %v", err)
+	}
+	if len(writer.games) != 1 {
+		t.Fatalf("persisted games = %d, want 1", len(writer.games))
+	}
+	if writer.games[0].TwitchGameID != "509658" || writer.games[0].Name != "Just Chatting" {
+		t.Fatalf("persisted game = %+v", writer.games[0])
+	}
+}
+
 func TestExtractClipID(t *testing.T) {
 	tests := []struct {
 		name     string

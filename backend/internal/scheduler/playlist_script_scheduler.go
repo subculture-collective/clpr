@@ -2,13 +2,15 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 const (
@@ -21,6 +23,7 @@ const (
 type PlaylistScriptServiceInterface interface {
 	ListDueForExecution(ctx context.Context) ([]*models.PlaylistScript, error)
 	GeneratePlaylist(ctx context.Context, scriptID uuid.UUID) (*models.Playlist, error)
+	AcknowledgeEmptyGeneration(ctx context.Context, scriptID uuid.UUID) error
 	DeleteStaleGeneratedPlaylists(ctx context.Context) (int64, error)
 }
 
@@ -106,11 +109,34 @@ func (s *PlaylistScriptScheduler) runDueScripts(ctx context.Context) {
 
 	successCount := 0
 	failCount := 0
+	skippedCount := 0
 
 	for _, script := range scripts {
 		// Run each script sequentially to avoid overwhelming the database
 		playlist, genErr := s.service.GeneratePlaylist(ctx, script.ID)
 		if genErr != nil {
+			if errors.Is(genErr, services.ErrPlaylistGenerationEmpty) {
+				if acknowledgeErr := s.service.AcknowledgeEmptyGeneration(ctx, script.ID); acknowledgeErr != nil {
+					utils.Error("Failed to acknowledge empty playlist generation", acknowledgeErr, map[string]interface{}{
+						"scheduler": playlistScriptSchedulerName,
+						"script_id": script.ID.String(),
+						"script":    script.Name,
+						"strategy":  script.Strategy,
+					})
+					failCount++
+					continue
+				}
+
+				utils.Info("Playlist script had no eligible clips", map[string]interface{}{
+					"scheduler": playlistScriptSchedulerName,
+					"script_id": script.ID.String(),
+					"script":    script.Name,
+					"strategy":  script.Strategy,
+				})
+				skippedCount++
+				continue
+			}
+
 			utils.Error("Failed to generate playlist from script", genErr, map[string]interface{}{
 				"scheduler": playlistScriptSchedulerName,
 				"script_id": script.ID.String(),
@@ -144,6 +170,7 @@ func (s *PlaylistScriptScheduler) runDueScripts(ctx context.Context) {
 	utils.Info("Playlist script generation cycle completed", map[string]interface{}{
 		"scheduler": playlistScriptSchedulerName,
 		"success":   successCount,
+		"skipped":   skippedCount,
 		"failed":    failCount,
 		"duration":  duration.String(),
 	})

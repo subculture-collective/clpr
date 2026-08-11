@@ -27,14 +27,14 @@ export function LiveFeedPage() {
     <>
       <SEO
         title="Live Now"
-        description="Watch live streams from broadcasters you follow"
+        description="Watch live streams from creators you follow"
       />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Live Now</h1>
           <p className="text-muted-foreground">
-            Broadcasters you follow who are currently streaming
+            Creators you follow who are currently streaming
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export function LiveFeedPage() {
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <p className="text-red-800 dark:text-red-200">
-              Failed to load live broadcasters. Please try again.
+              Failed to load live creators. Please try again.
             </p>
           </div>
         )}
@@ -57,13 +57,13 @@ export function LiveFeedPage() {
             <PlayCircle className="mx-auto mb-4 text-muted-foreground" size={48} />
             <h3 className="text-xl font-semibold mb-2">No live streams</h3>
             <p className="text-muted-foreground mb-4">
-              None of the broadcasters you follow are currently live.
+              None of the creators you follow are currently live.
             </p>
             <Link
               to="/discover"
               className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
-              Discover Broadcasters
+              Discover Creators
             </Link>
           </div>
         )}
@@ -118,7 +118,7 @@ export function LiveFeedPage() {
 
                   {broadcaster.game_name && (
                     <p className="text-sm text-muted-foreground mb-3">
-                      Playing {broadcaster.game_name}
+                      Twitch category: {broadcaster.game_name}
                     </p>
                   )}
 

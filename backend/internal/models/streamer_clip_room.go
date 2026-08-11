@@ -20,15 +20,17 @@ const (
 )
 
 type StreamerClipRoom struct {
-	ID                uuid.UUID  `json:"id" db:"id"`
-	OwnerUserID       uuid.UUID  `json:"owner_user_id" db:"owner_user_id"`
-	TwitchChannel     string     `json:"twitch_channel" db:"twitch_channel"`
-	ApprovalMode      string     `json:"approval_mode" db:"approval_mode"`
-	IsActive          bool       `json:"is_active" db:"is_active"`
-	LastListenerError *string    `json:"last_listener_error,omitempty" db:"last_listener_error"`
-	ListenerStartedAt *time.Time `json:"listener_started_at,omitempty" db:"listener_started_at"`
-	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
+	ID                 uuid.UUID  `json:"id" db:"id"`
+	OwnerUserID        uuid.UUID  `json:"owner_user_id" db:"owner_user_id"`
+	TwitchChannel      string     `json:"twitch_channel" db:"twitch_channel"`
+	ApprovalMode       string     `json:"approval_mode" db:"approval_mode"`
+	IsActive           bool       `json:"is_active" db:"is_active"`
+	SubmissionsOpen    bool       `json:"submissions_open" db:"submissions_open"`
+	SubmissionsCloseAt *time.Time `json:"submissions_close_at,omitempty" db:"submissions_close_at"`
+	LastListenerError  *string    `json:"last_listener_error,omitempty" db:"last_listener_error"`
+	ListenerStartedAt  *time.Time `json:"listener_started_at,omitempty" db:"listener_started_at"`
+	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 type StreamerClipRoomItem struct {
@@ -64,6 +66,11 @@ type StreamerClipRoomWithItems struct {
 
 type ReorderStreamerClipRoomItemsRequest struct {
 	ItemIDs []string `json:"item_ids" binding:"required,min=1,max=500,dive,required,uuid"`
+}
+
+type UpdateStreamerClipRoomSubmissionsRequest struct {
+	Enabled         *bool `json:"enabled" binding:"required"`
+	DurationMinutes *int  `json:"duration_minutes,omitempty" binding:"omitempty,min=1,max=1440"`
 }
 
 type StreamerClipRoomEvent struct {
