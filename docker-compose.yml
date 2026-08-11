@@ -35,14 +35,14 @@ services:
       - com.centurylinklabs.watchtower.enable=false
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid,size=64m
+      - /tmp:rw,noexec,nosuid,size=256m
       - /app/exports:rw,noexec,nosuid,size=256m,uid=10001,gid=10001
     volumes:
       - clpr-whisper-models:/app/whisper-models
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     pids_limit: 256
-    mem_limit: 1536m
+    mem_limit: 2g
     cpus: 2.0
     restart: unless-stopped
 
