@@ -9,7 +9,6 @@ import { NotificationBell } from './NotificationBell';
 import { UserMenu } from './UserMenu';
 import {
     Home,
-    MessageSquare,
     Trophy,
     ListMusic,
     Sparkles,
@@ -92,12 +91,6 @@ export function Header() {
                                 <Users size={16} strokeWidth={1.75} className='mr-1.5' /> Creators
                             </Link>
                         </Button>
-                        <Button asChild variant='ghost' size='sm'>
-                            <Link to='/forum' className={`relative ${location.pathname.startsWith('/forum') ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
-                                <MessageSquare size={16} strokeWidth={1.75} className='mr-1.5' /> Forum
-                            </Link>
-                        </Button>
-
                         {/* More dropdown */}
                         <div className='relative' ref={moreMenuRef}>
                             <Button
@@ -219,14 +212,6 @@ export function Header() {
                                     data-testid='mobile-nav-home'
                                 >
                                     <Home size={16} strokeWidth={1.75} className='mr-2' /> Feed
-                                </Link>
-                            </Button>
-                            <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
-                                <Link
-                                    to='/forum'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <MessageSquare size={16} strokeWidth={1.75} className='mr-2' /> Forum
                                 </Link>
                             </Button>
                             <Button asChild variant='ghost' size='sm' className='w-full justify-start'>

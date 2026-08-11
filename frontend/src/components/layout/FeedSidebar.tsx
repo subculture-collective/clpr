@@ -16,7 +16,6 @@ import {
     List,
     Flame,
     Users,
-    MessageSquare,
 } from 'lucide-react';
 
 function SidebarSection({
@@ -196,14 +195,6 @@ export function FeedSidebar() {
                     </div>
                 </SidebarSection>
             )}
-
-            {/* Forum */}
-            <SidebarSection title='Forum' icon={MessageSquare} viewAllHref='/forum'>
-                <div className='space-y-0.5'>
-                    <SidebarLink to='/forum'>Browse Discussions</SidebarLink>
-                    <SidebarLink to='/forum/new'>Start a Thread</SidebarLink>
-                </div>
-            </SidebarSection>
 
             {/* Discovery Lists */}
             {discoveryLists.length > 0 && (
