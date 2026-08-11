@@ -25,14 +25,18 @@ export function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const toast = useToast();
     const query = searchParams.get('q') || '';
-    const typeParam = searchParams.get('type') || 'all';
+    const rawTypeParam = searchParams.get('type') || 'all';
+    const typeParam = rawTypeParam === 'games' ? 'twitch_categories' : rawTypeParam;
     const sortParam = searchParams.get('sort') || 'relevance';
     const pageParam = (() => {
         const p = parseInt(searchParams.get('page') || '1', 10);
         return isNaN(p) || p < 1 ? 1 : p;
     })();
     const languageParam = searchParams.get('language') || undefined;
-    const gameIdParam = searchParams.get('game_id') || undefined;
+    const twitchCategoryIdParam =
+        searchParams.get('twitch_category_id') ||
+        searchParams.get('game_id') ||
+        undefined;
     const dateFromParam = searchParams.get('date_from') || undefined;
     const dateToParam = searchParams.get('date_to') || undefined;
     const minVotesParam = searchParams.get('min_votes');
@@ -46,7 +50,7 @@ export function SearchPage() {
 
     const [filters, setFilters] = useState<SearchFiltersType>({
         language: languageParam,
-        gameId: gameIdParam,
+        twitchCategoryId: twitchCategoryIdParam,
         dateFrom: dateFromParam,
         dateTo: dateToParam,
         minVotes: minVotesParam ? parseInt(minVotesParam, 10) : undefined,
@@ -142,7 +146,7 @@ export function SearchPage() {
                     page: pageParam,
                     limit: 20,
                     language: filters.language,
-                    gameId: filters.gameId,
+                    twitchCategoryId: filters.twitchCategoryId,
                     dateFrom: filters.dateFrom,
                     dateTo: filters.dateTo,
                     minVotes: filters.minVotes,
@@ -153,7 +157,7 @@ export function SearchPage() {
                 const totalResults =
                     (result.counts.clips || 0) +
                     (result.counts.creators || 0) +
-                    (result.counts.games || 0) +
+                    (result.counts.twitch_categories || result.counts.games || 0) +
                     (result.counts.tags || 0);
                 addToHistory(query, totalResults);
 
@@ -206,7 +210,7 @@ export function SearchPage() {
         queueMicrotask(() => {
             setFilters({
                 language: languageParam,
-                gameId: gameIdParam,
+                twitchCategoryId: twitchCategoryIdParam,
                 dateFrom: dateFromParam,
                 dateTo: dateToParam,
                 minVotes:
@@ -216,7 +220,7 @@ export function SearchPage() {
         });
     }, [
         languageParam,
-        gameIdParam,
+        twitchCategoryIdParam,
         dateFromParam,
         dateToParam,
         minVotesParam,
@@ -269,9 +273,11 @@ export function SearchPage() {
             newParams.delete('language');
         }
 
-        if (newFilters.gameId) {
-            newParams.set('game_id', newFilters.gameId);
+        if (newFilters.twitchCategoryId) {
+            newParams.set('twitch_category_id', newFilters.twitchCategoryId);
+            newParams.delete('game_id');
         } else {
+            newParams.delete('twitch_category_id');
             newParams.delete('game_id');
         }
 
@@ -314,7 +320,7 @@ export function SearchPage() {
         // Only treat filters as active if at least one has a meaningful value
         const hasActiveFilters =
             !!filters.language ||
-            !!filters.gameId ||
+            !!filters.twitchCategoryId ||
             !!filters.dateFrom ||
             !!filters.dateTo ||
             (typeof filters.minVotes === 'number' &&
@@ -396,7 +402,7 @@ export function SearchPage() {
             count:
                 (data?.counts.clips || 0) +
                 (data?.counts.creators || 0) +
-                (data?.counts.games || 0) +
+                (data?.counts.twitch_categories || data?.counts.games || 0) +
                 (data?.counts.tags || 0),
         },
         { id: 'clips', label: 'Clips', count: data?.counts.clips || 0 },
@@ -407,9 +413,9 @@ export function SearchPage() {
         },
         { id: 'tags', label: 'Tags', count: data?.counts.tags || 0 },
         {
-            id: 'games',
+            id: 'twitch_categories',
             label: 'Twitch Categories',
-            count: data?.counts.games || 0,
+            count: data?.counts.twitch_categories || data?.counts.games || 0,
         },
     ];
 
@@ -647,26 +653,26 @@ export function SearchPage() {
                             )}
 
                         {/* Twitch Categories */}
-                        {(activeTab === 'all' || activeTab === 'games') &&
-                            data.results.games &&
-                            data.results.games.length > 0 && (
+                        {(activeTab === 'all' || activeTab === 'twitch_categories') &&
+                            data.results.twitch_categories &&
+                            data.results.twitch_categories.length > 0 && (
                                 <section>
                                     <h2 className='text-xl font-bold mb-4'>
                                         Twitch Categories{' '}
                                         {activeTab === 'all' &&
-                                            `(${data.counts.games})`}
+                                            `(${data.counts.twitch_categories || data.counts.games})`}
                                     </h2>
                                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-                                        {data.results.games.map(game => (
+                                        {data.results.twitch_categories.map(category => (
                                             <div
-                                                key={game.id}
+                                                key={category.id}
                                                 className='p-4 rounded-lg border border-border hover:border-primary transition-colors search-result-card'
                                             >
                                                 <h3 className='font-semibold text-lg'>
-                                                    {game.name}
+                                                    {category.name}
                                                 </h3>
                                                 <p className='text-sm text-muted-foreground mt-1'>
-                                                    {game.clip_count} clips
+                                                    {category.clip_count} clips
                                                 </p>
                                             </div>
                                         ))}

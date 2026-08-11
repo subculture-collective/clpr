@@ -77,7 +77,7 @@ describe('Deep Linking Utilities', () => {
     });
 
     it('should parse game link correctly', () => {
-      expect(parseDeepLink(`${baseUrl}/game/valorant`)).toBe('/game/valorant');
+      expect(parseDeepLink(`${baseUrl}/game/valorant`)).toBe('/twitch-category/valorant');
     });
 
     it('should parse creator link correctly', () => {
@@ -239,7 +239,7 @@ describe('Deep Linking Utilities', () => {
       expect(descriptions).toContain('User profile page');
       expect(descriptions).toContain('Search page');
       expect(descriptions).toContain('Submit clip page');
-      expect(descriptions).toContain('Game page');
+      expect(descriptions).toContain('Twitch category page');
       expect(descriptions).toContain('Creator page');
       expect(descriptions).toContain('Tag page');
     });
@@ -249,7 +249,7 @@ describe('Deep Linking Utilities', () => {
       const testCases = [
         { path: '/clip/abc123', description: 'Clip detail page' },
         { path: '/profile', description: 'User profile page' },
-        { path: '/game/valorant', description: 'Game page' },
+        { path: '/game/valorant', description: 'Legacy Twitch category link' },
         { path: '/creator/shroud', description: 'Creator page' },
         { path: '/tag/funny', description: 'Tag page' },
       ];

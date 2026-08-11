@@ -52,3 +52,13 @@ export interface TrendingGamesResponse {
 export interface GameFollowResponse {
   message: string;
 }
+
+// Creator-first names for Twitch's upstream category resource. The Game names
+// remain exported until legacy clients and routes complete their migration.
+export type TwitchCategory = Game;
+export type TwitchCategoryWithStats = GameWithStats;
+export type TrendingTwitchCategory = TrendingGame;
+export type TwitchCategoryDetailResponse = GameDetailResponse;
+export type TwitchCategoryListResponse = GameListResponse;
+export type TrendingTwitchCategoriesResponse = TrendingGamesResponse;
+export type TwitchCategoryFollowResponse = GameFollowResponse;

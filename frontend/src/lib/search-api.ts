@@ -28,6 +28,10 @@ export function normalizeSearchResponse(
             clips: response.results?.clips ?? [],
             creators: response.results?.creators ?? [],
             games: response.results?.games ?? [],
+            twitch_categories:
+                response.results?.twitch_categories ??
+                response.results?.games ??
+                [],
             tags: response.results?.tags ?? [],
         },
     };
@@ -41,7 +45,7 @@ export const searchApi = {
                 q: params.query,
                 type: params.type,
                 sort: params.sort,
-                game_id: params.gameId,
+                twitch_category_id: params.twitchCategoryId ?? params.gameId,
                 creator_id: params.creatorId,
                 language: params.language,
                 tags: params.tags,

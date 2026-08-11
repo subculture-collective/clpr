@@ -18,6 +18,8 @@ export interface Clip {
     broadcaster_id?: string;
     game_id?: string;
     game_name?: string;
+    twitch_category_id?: string;
+    twitch_category_name?: string;
     language?: string;
     thumbnail_url?: string;
     duration?: number;
@@ -84,7 +86,9 @@ export interface ClipFeedFilters {
     sort?: SortOption;
     timeframe?: TimeFrame;
     game_id?: string;
+    twitch_category_id?: string;
     games?: string[]; // Multi-select game filter
+    twitch_categories?: string[];
     creator_id?: string;
     streamers?: string[]; // Multi-select streamer filter
     tags?: string[];

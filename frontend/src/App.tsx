@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -32,6 +32,12 @@ const ClipDetailPage = lazy(() =>
 const GamePage = lazy(() =>
     import('./pages/GamePage').then(m => ({ default: m.GamePage })),
 );
+
+function LegacyGameRedirect() {
+    const { gameId } = useParams<{ gameId: string }>();
+    const location = useLocation();
+    return <Navigate to={`/twitch-category/${gameId || ''}${location.search}`} replace />;
+}
 const CategoryPage = lazy(() =>
     import('./pages/CategoryPage').then(m => ({ default: m.CategoryPage })),
 );
@@ -437,6 +443,10 @@ function App() {
                                         />
                                         <Route
                                             path='/game/:gameId'
+                                            element={<LegacyGameRedirect />}
+                                        />
+                                        <Route
+                                            path='/twitch-category/:gameId'
                                             element={<GamePage />}
                                         />
                                         <Route

@@ -198,7 +198,7 @@ export function UserSubmissionsPage() {
                                             )}
                                             {submission.game_name && (
                                                 <p>
-                                                    Game: {submission.game_name}
+                                                    Twitch category: {submission.game_name}
                                                 </p>
                                             )}
                                             <p>

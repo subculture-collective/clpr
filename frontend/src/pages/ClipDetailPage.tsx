@@ -178,7 +178,7 @@ export function ClipDetailPage() {
     const description = `Watch "${clip.title}" by ${clip.creator_name} on ${
         clip.broadcaster_name
     }'s channel${
-        clip.game_name ? ` playing ${clip.game_name}` : ''
+        clip.game_name ? ` in the ${clip.game_name} Twitch category` : ''
     }. ${clip.view_count.toLocaleString()} views, ${clip.vote_score} votes.`;
 
     // Schema.org VideoObject structured data
@@ -267,7 +267,7 @@ export function ClipDetailPage() {
                             <>
                                 <span>•</span>
                                 <Link
-                                    to={`/game/${clip.game_id}`}
+                                    to={`/twitch-category/${clip.twitch_category_id || clip.game_id}`}
                                     className='hover:text-foreground transition-colors'
                                 >
                                     {clip.game_name}

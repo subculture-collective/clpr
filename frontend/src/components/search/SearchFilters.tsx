@@ -15,7 +15,7 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
         return null;
     }
 
-    const hasFilters = filters.language || filters.gameId || filters.dateFrom || filters.dateTo;
+    const hasFilters = filters.language || filters.twitchCategoryId || filters.gameId || filters.dateFrom || filters.dateTo;
 
     const handleLanguageToggle = (language: string) => {
         onFiltersChange({
@@ -24,10 +24,11 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
         });
     };
 
-    const handleGameSelect = (gameName: string) => {
+    const handleTwitchCategorySelect = (categoryId: string) => {
         onFiltersChange({
             ...filters,
-            gameId: filters.gameId === gameName ? undefined : gameName,
+            twitchCategoryId:
+                filters.twitchCategoryId === categoryId ? undefined : categoryId,
         });
     };
 
@@ -67,7 +68,7 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
 
     const hasAnyFacets = 
         (facets.languages && facets.languages.length > 0) ||
-        (facets.games && facets.games.length > 0) ||
+        ((facets.twitch_categories || facets.games)?.length ?? 0) > 0 ||
         facets.date_range;
 
     if (!hasAnyFacets) {
@@ -121,29 +122,29 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
                     )}
 
                     {/* Twitch category facets */}
-                    {facets.games && facets.games.length > 0 && (
+                    {(facets.twitch_categories || facets.games)?.length ? (
                         <div>
                             <h4 className='text-sm font-medium mb-2'>Twitch Categories</h4>
                             <div className='space-y-1 max-h-48 overflow-y-auto'>
-                                {facets.games.slice(0, 10).map((game) => (
+                                {(facets.twitch_categories || facets.games || []).slice(0, 10).map((category) => (
                                     <button
-                                        key={game.key}
-                                        onClick={() => handleGameSelect(game.key)}
+                                        key={category.key}
+                                        onClick={() => handleTwitchCategorySelect(category.key)}
                                         className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                                            filters.gameId === game.key
+                                            filters.twitchCategoryId === category.key
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'hover:bg-accent'
                                         }`}
                                     >
-                                        <span className='font-medium'>{game.label || game.key}</span>
+                                        <span className='font-medium'>{category.label || category.key}</span>
                                         <span className='ml-2 text-muted-foreground'>
-                                            ({game.count})
+                                            ({category.count})
                                         </span>
                                     </button>
                                 ))}
                             </div>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Date Range Facets */}
                     {facets.date_range && (

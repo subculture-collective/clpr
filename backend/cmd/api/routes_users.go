@@ -75,6 +75,7 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 
 		// Game follows for a user
 		users.GET("/:id/games/following", h.Game.GetFollowedGames)
+		users.GET("/:id/twitch-categories/following", h.Game.GetFollowedGames)
 		// User feeds routes
 		users.GET("/:id/feeds", middleware.OptionalAuthMiddleware(svcs.Auth), h.Feed.ListUserFeeds)
 		users.POST("/:id/feeds", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Feed.CreateFeed)

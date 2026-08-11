@@ -18,7 +18,8 @@ export function SavedSearches({ className = '' }: SavedSearchesProps) {
     
     if (search.filters) {
       const filters = search.filters;
-      if (filters.gameId) params.append('game_id', filters.gameId);
+      const twitchCategoryId = filters.twitchCategoryId || filters.gameId;
+      if (twitchCategoryId) params.append('twitch_category_id', twitchCategoryId);
       if (filters.language) params.append('language', filters.language);
       if (filters.minVotes) params.append('min_votes', filters.minVotes.toString());
       if (filters.dateFrom) params.append('date_from', filters.dateFrom);
@@ -83,7 +84,7 @@ export function SavedSearches({ className = '' }: SavedSearchesProps) {
                   // Count only filters with actual values
                   const filterCount = [
                     search.filters.language,
-                    search.filters.gameId,
+                    search.filters.twitchCategoryId || search.filters.gameId,
                     search.filters.dateFrom,
                     search.filters.dateTo,
                     typeof search.filters.minVotes === 'number' && !isNaN(search.filters.minVotes) && search.filters.minVotes > 0,

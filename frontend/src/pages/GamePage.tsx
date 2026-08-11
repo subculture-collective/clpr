@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Container, Spinner, Button } from '../components';
 import { ClipGridCard } from '../components/clip';
-import { gameApi } from '../lib/game-api';
+import { twitchCategoryApi } from '../lib/game-api';
 import type { GameWithStats } from '../types/game';
 import type { Clip } from '../types/clip';
 import { useAuth } from '../context/AuthContext';
@@ -36,7 +36,7 @@ export function GamePage() {
             try {
                 setLoading(true);
                 setError(null);
-                const data = await gameApi.getGame(gameId);
+                const data = await twitchCategoryApi.getGame(gameId);
                 setGame(data.game);
                 setFollowing(data.game.is_following);
             } catch (err) {
@@ -64,7 +64,7 @@ export function GamePage() {
                 } = { page, limit: 20, sort };
                 if (timeframe) params.timeframe = timeframe;
 
-                const data = await gameApi.getGameClips(gameId, params);
+                const data = await twitchCategoryApi.getGameClips(gameId, params);
                 setClips(data.clips || []);
                 setHasMore(data.has_more);
             } catch (err) {
@@ -87,7 +87,7 @@ export function GamePage() {
 
         try {
             if (following) {
-                await gameApi.unfollowGame(gameId);
+                await twitchCategoryApi.unfollowGame(gameId);
                 setFollowing(false);
                 showToast('Unfollowed Twitch category', 'success');
                 if (game) {
@@ -97,7 +97,7 @@ export function GamePage() {
                     });
                 }
             } else {
-                await gameApi.followGame(gameId);
+                await twitchCategoryApi.followGame(gameId);
                 setFollowing(true);
                 showToast('Following Twitch category', 'success');
                 if (game) {

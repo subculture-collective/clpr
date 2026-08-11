@@ -47,13 +47,13 @@ func decodeSearchResponse(t *testing.T, response *httptest.ResponseRecorder) map
 	return payload
 }
 
-func assertFourResultArrays(t *testing.T, payload map[string]any, lengths map[string]int) {
+func assertResultArrays(t *testing.T, payload map[string]any, lengths map[string]int) {
 	t.Helper()
 	results, ok := payload["results"].(map[string]any)
 	if !ok {
 		t.Fatalf("results = %#v, want object", payload["results"])
 	}
-	for _, field := range []string{"clips", "creators", "games", "tags"} {
+	for _, field := range []string{"clips", "creators", "games", "twitch_categories", "tags"} {
 		items, ok := results[field].([]any)
 		if !ok {
 			t.Fatalf("results.%s = %#v, want array", field, results[field])
@@ -78,7 +78,7 @@ func TestSearchHandlerWireContractNormalizesNilAndEmptyCollections(t *testing.T)
 			if response.Code != http.StatusOK {
 				t.Fatalf("status = %d, want 200: %s", response.Code, response.Body.String())
 			}
-			assertFourResultArrays(t, decodeSearchResponse(t, response), map[string]int{})
+			assertResultArrays(t, decodeSearchResponse(t, response), map[string]int{})
 		})
 	}
 }
@@ -93,14 +93,14 @@ func TestSearchHandlerWireContractPreservesPopulatedAndFilteredResults(t *testin
 			Tags:     []models.Tag{{}},
 		},
 	}}
-	response := performSearchRequest(t, provider, "/api/v1/search?q=clip&type=clips&game_id=game-1&language=en&tags=featured&min_votes=5&page=2&limit=10")
+	response := performSearchRequest(t, provider, "/api/v1/search?q=clip&type=twitch_categories&twitch_category_id=game-1&language=en&tags=featured&min_votes=5&page=2&limit=10")
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200: %s", response.Code, response.Body.String())
 	}
-	assertFourResultArrays(t, decodeSearchResponse(t, response), map[string]int{
-		"clips": 1, "creators": 1, "games": 1, "tags": 1,
+	assertResultArrays(t, decodeSearchResponse(t, response), map[string]int{
+		"clips": 1, "creators": 1, "games": 1, "twitch_categories": 1, "tags": 1,
 	})
-	if provider.request == nil || provider.request.Type != "clips" || provider.request.GameID == nil || *provider.request.GameID != "game-1" || provider.request.Language == nil || *provider.request.Language != "en" || provider.request.MinVotes == nil || *provider.request.MinVotes != 5 || provider.request.Page != 2 || provider.request.Limit != 10 {
+	if provider.request == nil || provider.request.Type != "games" || provider.request.GameID == nil || *provider.request.GameID != "game-1" || provider.request.Language == nil || *provider.request.Language != "en" || provider.request.MinVotes == nil || *provider.request.MinVotes != 5 || provider.request.Page != 2 || provider.request.Limit != 10 {
 		t.Fatalf("filtered request was not preserved: %#v", provider.request)
 	}
 }

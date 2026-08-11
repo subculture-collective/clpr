@@ -78,6 +78,17 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		games.DELETE("/:gameId/follow", middleware.AuthMiddleware(svcs.Auth), h.Game.UnfollowGame)
 	}
 
+	// Canonical creator-first name for Twitch's upstream category resource.
+	// Legacy /games endpoints remain available during the deprecation window.
+	twitchCategories := v1.Group("/twitch-categories")
+	{
+		twitchCategories.GET("/trending", h.Game.GetTrendingGames)
+		twitchCategories.GET("/:gameId", middleware.OptionalAuthMiddleware(svcs.Auth), h.Game.GetGame)
+		twitchCategories.GET("/:gameId/clips", h.Game.ListGameClips)
+		twitchCategories.POST("/:gameId/follow", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Game.FollowGame)
+		twitchCategories.DELETE("/:gameId/follow", middleware.AuthMiddleware(svcs.Auth), h.Game.UnfollowGame)
+	}
+
 	// Discovery list routes
 	discoveryLists := v1.Group("/discovery-lists")
 	{

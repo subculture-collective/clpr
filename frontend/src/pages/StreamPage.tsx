@@ -126,7 +126,7 @@ export function StreamPage() {
                 </h2>
                 {streamInfo.game_name && (
                   <p className="text-muted-foreground">
-                    Playing: {streamInfo.game_name}
+                    Twitch category: {streamInfo.game_name}
                   </p>
                 )}
               </div>

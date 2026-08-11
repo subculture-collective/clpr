@@ -8,7 +8,7 @@ const { searchApi } = await import('./search-api');
 
 const responseBase = {
     query: 'nothing',
-    counts: { clips: 0, creators: 0, games: 0, tags: 0 },
+    counts: { clips: 0, creators: 0, games: 0, twitch_categories: 0, tags: 0 },
     meta: { page: 1, limit: 20, total_items: 0, total_pages: 0 },
 };
 
@@ -28,6 +28,7 @@ describe('searchApi.search', () => {
             clips: [],
             creators: [],
             games: [],
+            twitch_categories: [],
             tags: [],
         });
     });
@@ -37,7 +38,7 @@ describe('searchApi.search', () => {
 
         const response = await searchApi.search({ query: 'nothing' });
 
-        expect(response.results).toEqual({ clips: [], creators: [], games: [], tags: [] });
+        expect(response.results).toEqual({ clips: [], creators: [], games: [], twitch_categories: [], tags: [] });
     });
 
     it('preserves explicitly empty result collections', async () => {
@@ -63,7 +64,10 @@ describe('searchApi.search', () => {
 
         const response = await searchApi.search({ query: 'clip' });
 
-        expect(response.results).toEqual(results);
+        expect(response.results).toEqual({
+            ...results,
+            twitch_categories: results.games,
+        });
     });
 
     it('serializes filtered search parameters', async () => {
@@ -94,7 +98,7 @@ describe('searchApi.search', () => {
                 q: 'clip',
                 type: 'clips',
                 sort: 'recent',
-                game_id: 'game-1',
+                twitch_category_id: 'game-1',
                 creator_id: 'creator-1',
                 language: 'en',
                 tags: ['speedrun'],

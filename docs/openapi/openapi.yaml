@@ -890,11 +890,16 @@ paths:
             type: string
             enum: [hot, trending, new, top, controversial]
             default: hot
-        - name: game
+        - name: twitch_category_id
           in: query
           schema:
             type: string
-          description: Filter by game name
+          description: Filter by Twitch category ID
+        - name: game_id
+          in: query
+          deprecated: true
+          schema: {type: string}
+          description: Legacy alias for twitch_category_id
         - name: broadcaster
           in: query
           schema:
@@ -1881,8 +1886,16 @@ paths:
           in: query
           schema:
             type: string
-            enum: [clips, creators, games, tags, all]
+            enum: [clips, creators, twitch_categories, games, tags, all]
             default: all
+        - name: twitch_category_id
+          in: query
+          schema: {type: string}
+        - name: game_id
+          in: query
+          deprecated: true
+          schema: {type: string}
+          description: Legacy alias for twitch_category_id
       responses:
         '200':
           description: Search results
@@ -1896,7 +1909,7 @@ paths:
                     type: string
                   results:
                     type: object
-                    required: [clips, creators, games, tags]
+                    required: [clips, creators, games, twitch_categories, tags]
                     properties:
                       clips:
                         type: array
@@ -1919,17 +1932,27 @@ paths:
                             clip_count:
                               type: integer
                               minimum: 0
+                      twitch_categories:
+                        type: array
+                        items:
+                          type: object
+                          required: [id, name, clip_count]
+                          properties:
+                            id: {type: string}
+                            name: {type: string}
+                            clip_count: {type: integer, minimum: 0}
                       tags:
                         type: array
                         items:
                           $ref: '#/components/schemas/Tag'
                   counts:
                     type: object
-                    required: [clips, creators, games, tags]
+                    required: [clips, creators, games, twitch_categories, tags]
                     properties:
                       clips: {type: integer, minimum: 0}
                       creators: {type: integer, minimum: 0}
                       games: {type: integer, minimum: 0}
+                      twitch_categories: {type: integer, minimum: 0}
                       tags: {type: integer, minimum: 0}
                   meta:
                     type: object
@@ -9174,7 +9197,8 @@ paths:
         - {name: limit, in: query, schema: {type: integer, minimum: 10, maximum: 100, default: 20}}
         - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
         - {name: cursor, in: query, schema: {type: string, maxLength: 2048}}
-        - {name: 'filter[game]', in: query, schema: {type: string, maxLength: 100}}
+        - {name: twitch_category_id, in: query, schema: {type: string, maxLength: 100}}
+        - {name: game_id, in: query, deprecated: true, description: Legacy alias for twitch_category_id, schema: {type: string, maxLength: 100}}
         - {name: 'filter[streamer]', in: query, schema: {type: string, maxLength: 100}}
         - {name: 'filter[tags]', in: query, schema: {type: string, maxLength: 100}}
         - {name: 'filter[date_from]', in: query, schema: {type: string, format: date-time}}
@@ -9601,6 +9625,78 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/twitch-categories/trending:
+    get:
+      tags: [Twitch Categories]
+      summary: List trending Twitch categories
+      operationId: getTrendingTwitchCategories
+      security: []
+      responses:
+        '200': {$ref: '#/components/responses/RouterDerivedSuccess'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/twitch-categories/{gameId}:
+    get:
+      tags: [Twitch Categories]
+      summary: Get a Twitch category
+      operationId: getTwitchCategory
+      security: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/RouterDerivedSuccess'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/v1/twitch-categories/{gameId}/clips:
+    get:
+      tags: [Twitch Categories]
+      summary: List visible clips in a Twitch category
+      operationId: listTwitchCategoryClips
+      security: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/RouterDerivedSuccess'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/v1/twitch-categories/{gameId}/follow:
+    post:
+      tags: [Twitch Categories]
+      summary: Follow a Twitch category
+      operationId: followTwitchCategory
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/RouterDerivedSuccess'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      tags: [Twitch Categories]
+      summary: Unfollow a Twitch category
+      operationId: unfollowTwitchCategory
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {$ref: '#/components/responses/RouterDerivedSuccess'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
   /api/v1/notifications:
     get:
       tags: [Notifications]
@@ -11179,6 +11275,20 @@ paths:
         - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         '200': {description: Followed games returned, content: {application/json: {schema: {$ref: '#/components/schemas/FollowedGamesResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/users/{id}/twitch-categories/following:
+    get:
+      tags: [Twitch Categories]
+      summary: List Twitch categories followed by a user
+      operationId: listFollowedTwitchCategories
+      parameters:
+        - {$ref: '#/components/parameters/FeedOwnerID'}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        '200': {description: Followed Twitch categories returned, content: {application/json: {schema: {$ref: '#/components/schemas/FollowedGamesResponse'}}}}
         '400': {$ref: '#/components/responses/BadRequest'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
@@ -12965,6 +13075,10 @@ components:
         game_id:
           type: [string, "null"]
         game_name:
+          type: [string, "null"]
+        twitch_category_id:
+          type: [string, "null"]
+        twitch_category_name:
           type: [string, "null"]
         language:
           type: [string, "null"]

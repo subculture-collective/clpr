@@ -541,9 +541,12 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 	// Use flat parameter names because the global request validator deliberately
 	// rejects bracketed query keys. Keep the bracketed lookups as a compatibility
 	// fallback for callers mounted without that middleware.
-	games := c.QueryArray("game_id")
-	if len(games) == 0 {
-		games = c.QueryArray("filter[game]")
+	twitchCategories := c.QueryArray("twitch_category_id")
+	if len(twitchCategories) == 0 {
+		twitchCategories = c.QueryArray("game_id")
+	}
+	if len(twitchCategories) == 0 {
+		twitchCategories = c.QueryArray("filter[game]")
 	}
 	streamers := c.QueryArray("broadcaster_id")
 	if len(streamers) == 0 {
@@ -577,11 +580,11 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cursor is too long"})
 		return
 	}
-	if len(games) > 1 || len(streamers) > 1 || len(tags) > 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "game, streamer, and tag filters currently accept one value each"})
+	if len(twitchCategories) > 1 || len(streamers) > 1 || len(tags) > 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Twitch category, creator, and tag filters currently accept one value each"})
 		return
 	}
-	for _, values := range [][]string{games, streamers, tags} {
+	for _, values := range [][]string{twitchCategories, streamers, tags} {
 		for _, value := range values {
 			if value == "" || len(value) > 100 {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "filter values must be between 1 and 100 characters"})
@@ -662,9 +665,9 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		offset = 0 // Ignore offset when using cursor
 	}
 
-	// Apply game filters (currently single-select; multi-select requires backend changes)
-	if len(games) > 0 {
-		filters.GameID = &games[0]
+	// Apply Twitch category filters (currently single-select).
+	if len(twitchCategories) > 0 {
+		filters.GameID = &twitchCategories[0]
 	}
 
 	// Apply streamer filters (currently single-select; multi-select requires backend changes)
@@ -769,12 +772,14 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		"clips":      clips,
 		"pagination": paginationResponse,
 		"filters_applied": gin.H{
-			"games":     games,
-			"streamers": streamers,
-			"tags":      tags,
-			"date_from": dateFrom,
-			"date_to":   dateTo,
-			"sort":      sort,
+			"twitch_categories": twitchCategories,
+			"games":             twitchCategories,
+			"creators":          streamers,
+			"streamers":         streamers,
+			"tags":              tags,
+			"date_from":         dateFrom,
+			"date_to":           dateTo,
+			"sort":              sort,
 		},
 	})
 }

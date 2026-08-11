@@ -27,7 +27,9 @@ function buildClipParams(
     if (filters) {
         if (filters.sort) params.sort = filters.sort;
         if (filters.timeframe) params.timeframe = filters.timeframe;
-        if (filters.game_id) params.game_id = filters.game_id;
+        if (filters.twitch_category_id || filters.game_id) {
+            params.twitch_category_id = filters.twitch_category_id || filters.game_id || '';
+        }
         if (filters.creator_id) params.creator_id = filters.creator_id;
         if (filters.language) params.language = filters.language;
         if (filters.nsfw !== undefined) params.nsfw = filters.nsfw;
@@ -39,10 +41,11 @@ function buildClipParams(
             params.tag = filters.tags.join(',');
         }
         // New filter parameters
-        // Note: Backend currently supports only single game/streamer selection
+        // Note: Backend currently supports only one Twitch category/creator selection
         // Multi-select support requires backend query modifications for OR logic
-        if (filters.games && filters.games.length > 0) {
-            params.game_id = filters.games[0];
+        const twitchCategories = filters.twitch_categories || filters.games;
+        if (twitchCategories && twitchCategories.length > 0) {
+            params.twitch_category_id = twitchCategories[0];
         }
         if (filters.streamers && filters.streamers.length > 0) {
             params.broadcaster_id = filters.streamers[0];
@@ -118,7 +121,9 @@ export async function fetchScrapedClips({
     if (filters) {
         if (filters.sort) params.sort = filters.sort;
         if (filters.timeframe) params.timeframe = filters.timeframe;
-        if (filters.game_id) params.game_id = filters.game_id;
+        if (filters.twitch_category_id || filters.game_id) {
+            params.twitch_category_id = filters.twitch_category_id || filters.game_id || '';
+        }
         if (filters.creator_id) params.creator_id = filters.creator_id;
         if (filters.language) params.language = filters.language;
     }

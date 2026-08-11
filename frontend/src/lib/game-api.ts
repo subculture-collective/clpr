@@ -7,10 +7,10 @@ import type {
 } from "../types/game";
 import type { ClipFeedResponse } from "../types/clip";
 
-export const gameApi = {
+export const twitchCategoryApi = {
   // Get game details
   getGame: async (gameId: string) => {
-    const response = await apiClient.get<GameDetailResponse>(`/games/${gameId}`);
+    const response = await apiClient.get<GameDetailResponse>(`/twitch-categories/${gameId}`);
     return response.data;
   },
 
@@ -25,7 +25,7 @@ export const gameApi = {
     }
   ) => {
     const response = await apiClient.get<ClipFeedResponse>(
-      `/games/${gameId}/clips`,
+      `/twitch-categories/${gameId}/clips`,
       { params }
     );
     return response.data;
@@ -34,7 +34,7 @@ export const gameApi = {
   // Get trending games
   getTrendingGames: async (params?: { limit?: number; page?: number }) => {
     const response = await apiClient.get<TrendingGamesResponse>(
-      "/games/trending",
+      "/twitch-categories/trending",
       { params }
     );
     return response.data;
@@ -43,7 +43,7 @@ export const gameApi = {
   // Follow a game
   followGame: async (gameId: string) => {
     const response = await apiClient.post<GameFollowResponse>(
-      `/games/${gameId}/follow`
+      `/twitch-categories/${gameId}/follow`
     );
     return response.data;
   },
@@ -51,7 +51,7 @@ export const gameApi = {
   // Unfollow a game
   unfollowGame: async (gameId: string) => {
     const response = await apiClient.delete<GameFollowResponse>(
-      `/games/${gameId}/follow`
+      `/twitch-categories/${gameId}/follow`
     );
     return response.data;
   },
@@ -62,9 +62,12 @@ export const gameApi = {
     params?: { limit?: number; page?: number }
   ) => {
     const response = await apiClient.get<GameListResponse>(
-      `/users/${userId}/games/following`,
+      `/users/${userId}/twitch-categories/following`,
       { params }
     );
     return response.data;
   },
 };
+
+/** @deprecated Use twitchCategoryApi. */
+export const gameApi = twitchCategoryApi;

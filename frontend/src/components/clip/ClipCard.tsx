@@ -150,7 +150,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                                 <span className='hidden xs:inline'>•</span>
                                 <span className='flex items-center gap-1'>
                                     <Link
-                                        to={`/game/${clip.game_id}`}
+                                        to={`/twitch-category/${clip.twitch_category_id || clip.game_id}`}
                                         className='hover:text-foreground transition-colors cursor-pointer'
                                     >
                                         {clip.game_name}

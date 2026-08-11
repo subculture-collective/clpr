@@ -117,7 +117,7 @@ export function CategoryPage() {
                         {games.map(game => (
                             <Link
                                 key={game.id}
-                                to={`/game/${game.twitch_game_id}`}
+                                to={`/twitch-category/${game.twitch_game_id}`}
                                 className='group'
                             >
                                 <div className='aspect-3/4 relative rounded-lg overflow-hidden shadow-lg transition-transform group-hover:scale-105'>

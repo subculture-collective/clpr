@@ -278,7 +278,10 @@ func (h *ClipHandler) ListClips(c *gin.Context) {
 	// Parse query parameters
 	sort := c.DefaultQuery("sort", "hot")
 	timeframe := c.Query("timeframe")
-	gameID := c.Query("game_id")
+	gameID := c.Query("twitch_category_id")
+	if gameID == "" {
+		gameID = c.Query("game_id")
+	}
 	broadcasterID := c.Query("broadcaster_id")
 	tag := c.Query("tag")
 	excludeTagsParam := c.Query("exclude_tags")
@@ -412,7 +415,10 @@ func (h *ClipHandler) ListScrapedClips(c *gin.Context) {
 	// Parse query parameters
 	sort := c.DefaultQuery("sort", "new")
 	timeframe := c.Query("timeframe")
-	gameID := c.Query("game_id")
+	gameID := c.Query("twitch_category_id")
+	if gameID == "" {
+		gameID = c.Query("game_id")
+	}
 	broadcasterID := c.Query("broadcaster_id")
 	tag := c.Query("tag")
 	excludeTagsParam := c.Query("exclude_tags")

@@ -2723,6 +2723,41 @@
     "contract_level": "route-specific"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/twitch-categories/trending",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetTrendingGames-fm",
+    "operation_id": "getTrendingTwitchCategories",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/twitch-categories/{gameId}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetGame-fm",
+    "operation_id": "getTwitchCategory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/twitch-categories/{gameId}/clips",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).ListGameClips-fm",
+    "operation_id": "listTwitchCategoryClips",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/twitch-categories/{gameId}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).UnfollowGame-fm",
+    "operation_id": "unfollowTwitchCategory",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/twitch-categories/{gameId}/follow",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).FollowGame-fm",
+    "operation_id": "followTwitchCategory",
+    "contract_level": "route-specific"
+  },
+  {
     "method": "DELETE",
     "path": "/api/v1/twitch/auth",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TwitchOAuthHandler).RevokeTwitchAuth-fm",
@@ -3091,6 +3126,13 @@
     "path": "/api/v1/users/{id}/reputation",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ReputationHandler).GetUserReputation-fm",
     "operation_id": "getUserReputation",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/{id}/twitch-categories/following",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*GameHandler).GetFollowedGames-fm",
+    "operation_id": "listFollowedTwitchCategories",
     "contract_level": "route-specific"
   },
   {

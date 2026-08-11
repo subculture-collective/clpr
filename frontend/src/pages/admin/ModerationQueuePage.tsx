@@ -273,7 +273,7 @@ export function ModerationQueuePage() {
                                                     )}
                                                     {submission.game_name && (
                                                         <p>
-                                                            Game:{' '}
+                                                            Twitch category:{' '}
                                                             {
                                                                 submission.game_name
                                                             }

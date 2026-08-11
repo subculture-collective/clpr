@@ -37,17 +37,20 @@ const mockSearchResponse = {
         clips: [],
         creators: [],
         games: [],
+        twitch_categories: [],
         tags: [],
     },
     counts: {
         clips: 0,
         creators: 0,
         games: 0,
+        twitch_categories: 0,
         tags: 0,
     },
     facets: {
         languages: [],
         games: [],
+        twitch_categories: [],
         tags: [],
         date_range: {
             last_hour: 0,

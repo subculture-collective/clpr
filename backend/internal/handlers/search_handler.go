@@ -122,6 +122,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		})
 		return
 	}
+	req.SyncTwitchCategoryAliases()
 
 	// Validate and set defaults
 	if err := h.validateAndSetDefaults(&req); err != nil {
@@ -209,7 +210,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 
 	// Enforce the public response contract at the HTTP boundary as a final
 	// compatibility guard for injected or rolling-deployment search providers.
-	results.Results.Normalize()
+	results.SyncTwitchCategoryAliases()
 
 	// Track search analytics (optional, get user ID if authenticated)
 	totalResults := results.Counts.Clips + results.Counts.Creators + results.Counts.Games + results.Counts.Tags
@@ -359,6 +360,7 @@ func (h *SearchHandler) SearchWithScores(c *gin.Context) {
 		})
 		return
 	}
+	req.SyncTwitchCategoryAliases()
 
 	// Validate and set defaults
 	if err := h.validateAndSetDefaults(&req); err != nil {
@@ -384,6 +386,7 @@ func (h *SearchHandler) SearchWithScores(c *gin.Context) {
 		})
 		return
 	}
+	results.SearchResponse.SyncTwitchCategoryAliases()
 
 	// Track search analytics
 	totalResults := results.Counts.Clips + results.Counts.Creators + results.Counts.Games + results.Counts.Tags

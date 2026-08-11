@@ -176,6 +176,26 @@ type Clip struct {
 	WatchProgress *WatchProgressInfo `json:"watch_progress,omitempty" db:"-"`
 }
 
+func clipWireValue(clip Clip) struct {
+	clipAlias
+	TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
+	TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
+} {
+	return struct {
+		clipAlias
+		TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
+		TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
+	}{clipAlias: clipAlias(clip), TwitchCategoryID: clip.GameID, TwitchCategoryName: clip.GameName}
+}
+
+type clipAlias Clip
+
+// MarshalJSON exposes creator-first Twitch category aliases while retaining
+// the legacy game_* fields during the compatibility window.
+func (c Clip) MarshalJSON() ([]byte, error) {
+	return json.Marshal(clipWireValue(c))
+}
+
 // ClipEnrichment records the model output and whether the deterministic title
 // policy accepted it. Keeping this separate from Clip preserves provenance.
 type ClipEnrichment struct {
@@ -346,6 +366,16 @@ type ClipWithHotScore struct {
 	HotScore float64 `json:"hot_score" db:"hot_score"`
 }
 
+func (c ClipWithHotScore) MarshalJSON() ([]byte, error) {
+	wire := clipWireValue(c.Clip)
+	return json.Marshal(struct {
+		clipAlias
+		TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
+		TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
+		HotScore           float64 `json:"hot_score"`
+	}{wire.clipAlias, wire.TwitchCategoryID, wire.TwitchCategoryName, c.HotScore})
+}
+
 // ClipSubmitterInfo represents basic info about the user who submitted a clip
 type ClipSubmitterInfo struct {
 	ID          uuid.UUID `json:"id"`
@@ -360,20 +390,31 @@ type ClipWithSubmitter struct {
 	SubmittedBy *ClipSubmitterInfo `json:"submitted_by,omitempty"`
 }
 
+func (c ClipWithSubmitter) MarshalJSON() ([]byte, error) {
+	wire := clipWireValue(c.Clip)
+	return json.Marshal(struct {
+		clipAlias
+		TwitchCategoryID   *string            `json:"twitch_category_id,omitempty"`
+		TwitchCategoryName *string            `json:"twitch_category_name,omitempty"`
+		SubmittedBy        *ClipSubmitterInfo `json:"submitted_by,omitempty"`
+	}{wire.clipAlias, wire.TwitchCategoryID, wire.TwitchCategoryName, c.SubmittedBy})
+}
+
 // SearchRequest represents a search query request
 type SearchRequest struct {
-	Query     string   `json:"query" form:"q"`
-	Type      string   `json:"type" form:"type"` // clips, creators, games, tags, all
-	Sort      string   `json:"sort" form:"sort"` // relevance (default), recent, popular
-	GameID    *string  `json:"game_id" form:"game_id"`
-	CreatorID *string  `json:"creator_id" form:"creator_id"`
-	Language  *string  `json:"language" form:"language"`
-	Tags      []string `json:"tags" form:"tags"`
-	MinVotes  *int     `json:"min_votes" form:"min_votes"`
-	DateFrom  *string  `json:"date_from" form:"date_from"`
-	DateTo    *string  `json:"date_to" form:"date_to"`
-	Page      int      `json:"page" form:"page"`
-	Limit     int      `json:"limit" form:"limit"`
+	Query            string   `json:"query" form:"q"`
+	Type             string   `json:"type" form:"type"` // clips, creators, games, tags, all
+	Sort             string   `json:"sort" form:"sort"` // relevance (default), recent, popular
+	GameID           *string  `json:"game_id" form:"game_id"`
+	TwitchCategoryID *string  `json:"twitch_category_id" form:"twitch_category_id"`
+	CreatorID        *string  `json:"creator_id" form:"creator_id"`
+	Language         *string  `json:"language" form:"language"`
+	Tags             []string `json:"tags" form:"tags"`
+	MinVotes         *int     `json:"min_votes" form:"min_votes"`
+	DateFrom         *string  `json:"date_from" form:"date_from"`
+	DateTo           *string  `json:"date_to" form:"date_to"`
+	Page             int      `json:"page" form:"page"`
+	Limit            int      `json:"limit" form:"limit"`
 }
 
 // SearchResponse represents search results
@@ -387,10 +428,11 @@ type SearchResponse struct {
 
 // SearchResultsByType groups results by type
 type SearchResultsByType struct {
-	Clips    []Clip             `json:"clips"`
-	Creators []User             `json:"creators"`
-	Games    []GameSearchResult `json:"games"`
-	Tags     []Tag              `json:"tags"`
+	Clips            []Clip             `json:"clips"`
+	Creators         []User             `json:"creators"`
+	Games            []GameSearchResult `json:"games"`
+	TwitchCategories []GameSearchResult `json:"twitch_categories"`
+	Tags             []Tag              `json:"tags"`
 }
 
 // EmptySearchResults returns the stable wire representation for an empty
@@ -398,10 +440,11 @@ type SearchResultsByType struct {
 // instead of null regardless of which search implementation served a request.
 func EmptySearchResults() SearchResultsByType {
 	return SearchResultsByType{
-		Clips:    []Clip{},
-		Creators: []User{},
-		Games:    []GameSearchResult{},
-		Tags:     []Tag{},
+		Clips:            []Clip{},
+		Creators:         []User{},
+		Games:            []GameSearchResult{},
+		TwitchCategories: []GameSearchResult{},
+		Tags:             []Tag{},
 	}
 }
 
@@ -416,6 +459,12 @@ func (r *SearchResultsByType) Normalize() {
 	if r.Games == nil {
 		r.Games = []GameSearchResult{}
 	}
+	if r.TwitchCategories == nil {
+		r.TwitchCategories = r.Games
+	}
+	if len(r.Games) == 0 && len(r.TwitchCategories) > 0 {
+		r.Games = r.TwitchCategories
+	}
 	if r.Tags == nil {
 		r.Tags = []Tag{}
 	}
@@ -423,10 +472,11 @@ func (r *SearchResultsByType) Normalize() {
 
 // SearchCounts holds counts for each result type
 type SearchCounts struct {
-	Clips    int `json:"clips"`
-	Creators int `json:"creators"`
-	Games    int `json:"games"`
-	Tags     int `json:"tags"`
+	Clips            int `json:"clips"`
+	Creators         int `json:"creators"`
+	Games            int `json:"games"`
+	TwitchCategories int `json:"twitch_categories"`
+	Tags             int `json:"tags"`
 }
 
 // SearchMeta holds pagination and other metadata
@@ -439,10 +489,27 @@ type SearchMeta struct {
 
 // SearchFacets holds aggregated facet data for filtering
 type SearchFacets struct {
-	Languages []FacetBucket  `json:"languages,omitempty"`
-	Games     []FacetBucket  `json:"games,omitempty"`
-	Tags      []FacetBucket  `json:"tags,omitempty"`
-	DateRange DateRangeFacet `json:"date_range,omitempty"`
+	Languages        []FacetBucket  `json:"languages,omitempty"`
+	Games            []FacetBucket  `json:"games,omitempty"`
+	TwitchCategories []FacetBucket  `json:"twitch_categories,omitempty"`
+	Tags             []FacetBucket  `json:"tags,omitempty"`
+	DateRange        DateRangeFacet `json:"date_range,omitempty"`
+}
+
+func (r *SearchRequest) SyncTwitchCategoryAliases() {
+	if r.TwitchCategoryID != nil {
+		r.GameID = r.TwitchCategoryID
+	}
+	if r.Type == "twitch_categories" {
+		r.Type = "games"
+	}
+}
+
+func (r *SearchResponse) SyncTwitchCategoryAliases() {
+	r.Results.Normalize()
+	r.Results.TwitchCategories = r.Results.Games
+	r.Counts.TwitchCategories = r.Counts.Games
+	r.Facets.TwitchCategories = r.Facets.Games
 }
 
 // FacetBucket represents a single facet value with its count
@@ -467,6 +534,10 @@ type GameSearchResult struct {
 	Name      string `json:"name" db:"game_name"`
 	ClipCount int    `json:"clip_count" db:"clip_count"`
 }
+
+// TwitchCategorySearchResult is the creator-first name for Twitch's upstream
+// category search result. GameSearchResult remains for wire compatibility.
+type TwitchCategorySearchResult = GameSearchResult
 
 // SearchSuggestion represents an autocomplete suggestion
 type SearchSuggestion struct {
@@ -945,6 +1016,17 @@ type CreatorTopClip struct {
 	Clip
 	Views          int64   `json:"views"`
 	EngagementRate float64 `json:"engagement_rate"`
+}
+
+func (c CreatorTopClip) MarshalJSON() ([]byte, error) {
+	wire := clipWireValue(c.Clip)
+	return json.Marshal(struct {
+		clipAlias
+		TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
+		TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
+		Views              int64   `json:"views"`
+		EngagementRate     float64 `json:"engagement_rate"`
+	}{wire.clipAlias, wire.TwitchCategoryID, wire.TwitchCategoryName, c.Views, c.EngagementRate})
 }
 
 // TrendDataPoint represents a data point in a time series
@@ -2320,6 +2402,8 @@ type GameEntity struct {
 // Game is an alias for GameEntity for backward compatibility
 type Game = GameEntity
 
+type TwitchCategoryEntity = GameEntity
+
 // GameWithStats represents a game with additional statistics
 type GameWithStats struct {
 	GameEntity
@@ -3607,6 +3691,18 @@ type ClipRecommendation struct {
 	Algorithm string  `json:"algorithm" db:"algorithm"`
 }
 
+func (c ClipRecommendation) MarshalJSON() ([]byte, error) {
+	wire := clipWireValue(c.Clip)
+	return json.Marshal(struct {
+		clipAlias
+		TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
+		TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
+		Score              float64 `json:"score"`
+		Reason             string  `json:"reason"`
+		Algorithm          string  `json:"algorithm"`
+	}{wire.clipAlias, wire.TwitchCategoryID, wire.TwitchCategoryName, c.Score, c.Reason, c.Algorithm})
+}
+
 // RecommendationRequest represents a request for clip recommendations
 type RecommendationRequest struct {
 	UserID    uuid.UUID `json:"user_id" form:"user_id"`
@@ -3885,6 +3981,16 @@ type PlaylistWithClips struct {
 type PlaylistClipRef struct {
 	Clip
 	OrderIndex int `json:"order" db:"order_index"`
+}
+
+func (c PlaylistClipRef) MarshalJSON() ([]byte, error) {
+	wire := clipWireValue(c.Clip)
+	return json.Marshal(struct {
+		clipAlias
+		TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
+		TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
+		OrderIndex         int     `json:"order"`
+	}{wire.clipAlias, wire.TwitchCategoryID, wire.TwitchCategoryName, c.OrderIndex})
 }
 
 // CreatePlaylistRequest represents the request to create a playlist

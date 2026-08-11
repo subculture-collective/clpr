@@ -42,8 +42,13 @@ export const DEEP_LINK_ROUTES: DeepLinkRoute[] = [
   },
   {
     pattern: /^\/game\/([a-zA-Z0-9_-]+)$/,
-    handler: (matches) => `/game/${matches[1]}`,
-    description: 'Game page',
+    handler: (matches) => `/twitch-category/${matches[1]}`,
+    description: 'Legacy Twitch category link',
+  },
+  {
+    pattern: /^\/twitch-category\/([a-zA-Z0-9_-]+)$/,
+    handler: (matches) => `/twitch-category/${matches[1]}`,
+    description: 'Twitch category page',
   },
   {
     pattern: /^\/creator\/([a-zA-Z0-9_-]+)$/,
