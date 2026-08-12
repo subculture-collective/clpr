@@ -6,6 +6,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 resolver="$repo_root/scripts/configure-test-service-host.sh"
 fixture_dir="$(mktemp -d)"
 trap 'rm -rf "$fixture_dir"' EXIT
+fallback_dir="$fixture_dir/fallback"
+mkdir -p "$fallback_dir"
 
 fail() {
     echo "test service host contract: $*" >&2
@@ -38,6 +40,18 @@ hosted_values="$(PATH="$fixture_dir:$PATH" GITHUB_ACTIONS=true bash -c '
 ' _ "$resolver")"
 [[ "$hosted_values" == '172.24.0.1|172.24.0.1|172.24.0.1|http://172.24.0.1:9201' ]] || \
     fail "hosted gateway was not propagated: $hosted_values"
+
+ln -s "$(command -v python3)" "$fallback_dir/python3"
+
+fallback_values="$(PATH="$fallback_dir" GITHUB_ACTIONS=true /bin/bash -c '
+    source "$1"
+    printf "%s|%s\n" "$TEST_SERVICE_HOST" "$TEST_DATABASE_HOST"
+' _ "$resolver")"
+fallback_host="${fallback_values%%|*}"
+[[ "$fallback_host" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || \
+    fail "hosted route-table fallback was not an IPv4 address: $fallback_values"
+[[ "$fallback_values" == "$fallback_host|$fallback_host" ]] || \
+    fail "hosted route-table fallback was not propagated: $fallback_values"
 
 override_values="$(
     TEST_SERVICE_HOST=services.internal \

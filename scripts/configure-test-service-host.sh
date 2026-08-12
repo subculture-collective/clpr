@@ -5,11 +5,26 @@
 # mounted socket, so published ports live on the job container's host gateway.
 if [[ -z "${TEST_SERVICE_HOST:-}" ]]; then
     if [[ "${GITHUB_ACTIONS:-}" == "true" || "${GITEA_ACTIONS:-}" == "true" ]]; then
-        command -v ip >/dev/null 2>&1 || {
-            echo "Unable to resolve hosted test services: ip is unavailable" >&2
-            return 1 2>/dev/null || exit 1
-        }
-        TEST_SERVICE_HOST="$(ip -4 route show default | awk '/default via / { print $3; exit }')"
+        TEST_SERVICE_HOST=""
+        if command -v ip >/dev/null 2>&1; then
+            TEST_SERVICE_HOST="$(ip -4 route show default | awk '/default via / { print $3; exit }')"
+        elif command -v python3 >/dev/null 2>&1; then
+            TEST_SERVICE_HOST="$(python3 - <<'PY'
+import socket
+import struct
+
+try:
+    with open('/proc/net/route', encoding='ascii') as routes:
+        for line in routes:
+            fields = line.split()
+            if len(fields) >= 3 and fields[1] == '00000000':
+                print(socket.inet_ntoa(struct.pack('<L', int(fields[2], 16))))
+                break
+except (OSError, ValueError):
+    pass
+PY
+)"
+        fi
         if [[ ! "$TEST_SERVICE_HOST" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
             echo "Unable to resolve the hosted Docker gateway" >&2
             return 1 2>/dev/null || exit 1
