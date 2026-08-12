@@ -58,8 +58,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
         'animate-in slide-in-from-bottom duration-300',
         className
       )}
-      role="dialog"
-      aria-modal="true"
+      role="region"
       aria-labelledby="consent-banner-title"
       aria-describedby="consent-banner-description"
     >
@@ -83,7 +82,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <p id="consent-banner-description" className="text-sm text-muted-foreground">
                 We use cookies and similar technologies to personalize ads, analyze traffic,
                 and improve your experience. You can customize your preferences or accept/reject all.{' '}
-                <Link to="/privacy" className="text-primary-500 hover:underline">
+                <Link to="/privacy" className="text-primary-500 underline underline-offset-2">
                   Learn more in our Privacy Policy
                 </Link>
               </p>
@@ -106,7 +105,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 Reject All
               </Button>
               <Button
-                variant="primary"
+                variant="outline"
                 size="sm"
                 onClick={acceptAll}
                 className="flex-1 md:flex-none"

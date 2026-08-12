@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { Gamepad2 } from 'lucide-react';
-import { Container, Spinner, Button, CategoryIcon } from '../components';
+import { Container, Spinner, Button, CategoryIcon, SEO } from '../components';
 import { ClipGridCard } from '../components/clip';
 import { categoryApi } from '../lib/category-api';
 import type { Category } from '../types/category';
@@ -14,6 +14,7 @@ type CategoryTimeframe = 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
 
 export function CategoryPage() {
     const { categorySlug } = useParams<{ categorySlug: string }>();
+    const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [category, setCategory] = useState<Category | null>(null);
@@ -26,6 +27,14 @@ export function CategoryPage() {
     const timeframe = searchParams.get('timeframe') as CategoryTimeframe | null;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const [hasMore, setHasMore] = useState(false);
+
+    const legacyTopicRedirects: Record<string, string> = {
+        news: 'news-politics', politics: 'news-politics', irl: 'irl-travel',
+        drama: 'culture-drama', music: 'music-performance', creative: 'creative-making',
+        esports: 'gaming', highlights: 'gaming', fails: 'reactions-commentary',
+        variety: 'reactions-commentary', 'just-chatting': 'reactions-commentary',
+    };
+    const canonicalSlug = categorySlug ? legacyTopicRedirects[categorySlug] : undefined;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -62,6 +71,10 @@ export function CategoryPage() {
         fetchData();
     }, [categorySlug, sort, timeframe, page]);
 
+    if (canonicalSlug) {
+        return <Navigate replace to={`/topics/${canonicalSlug}${location.search}`} />;
+    }
+
     const handleSortChange = (newSort: string) => {
         setSearchParams({ sort: newSort, ...(timeframe && { timeframe }) });
     };
@@ -95,6 +108,8 @@ export function CategoryPage() {
     }
 
     return (
+        <>
+        <SEO title={category.name} description={category.description ?? `Browse clips about ${category.name}.`} canonicalUrl={`/topics/${category.slug}`} />
         <Container className='py-8'>
             {/* Category Header */}
             <div className='mb-8'>
@@ -225,5 +240,6 @@ export function CategoryPage() {
                 </>
             )}
         </Container>
+        </>
     );
 }

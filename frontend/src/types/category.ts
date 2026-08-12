@@ -9,6 +9,7 @@ export interface Category {
     category_type?: string;
     is_featured?: boolean;
     is_custom?: boolean;
+    is_public?: boolean;
     created_by_user_id?: string | null;
     created_at: string;
     updated_at: string;

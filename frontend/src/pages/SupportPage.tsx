@@ -27,7 +27,7 @@ export default function SupportPage() {
                 description='clpr is free to use. If it matters to you, help sustain the project through Subcult on Patreon.'
                 canonicalUrl='/support'
             />
-            <main className='relative overflow-hidden bg-background px-4 py-14 sm:px-6 sm:py-20 lg:px-8'>
+            <div className='relative overflow-hidden bg-background px-4 py-14 sm:px-6 sm:py-20 lg:px-8'>
                 <div aria-hidden='true' className='absolute left-1/2 top-0 h-80 w-[52rem] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl' />
                 <div className='relative mx-auto max-w-6xl'>
                     <section className='grid items-end gap-10 border-b border-border pb-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]'>
@@ -72,7 +72,7 @@ export default function SupportPage() {
                         Patreon support is handled by Patreon under its own terms. Supporting does not change your clpr account, permissions, limits, or ranking.
                     </p>
                 </div>
-            </main>
+            </div>
         </>
     );
 }

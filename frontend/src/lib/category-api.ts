@@ -8,7 +8,7 @@ import type { ClipFeedResponse } from '../types/clip';
 
 export const categoryApi = {
     // List categories with optional filters
-    listCategories: async (params?: { featured?: boolean; type?: string }) => {
+    listCategories: async (params?: { featured?: boolean; public?: boolean; type?: string }) => {
         const response = await apiClient.get<CategoryListResponse>(
             '/categories',
             {

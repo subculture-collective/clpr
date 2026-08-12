@@ -89,7 +89,7 @@ func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag
 	query := `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug = $1
+		WHERE slug = $1 AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 	`
 
 	var tag models.Tag
@@ -112,11 +112,28 @@ func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag
 func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int) ([]*models.Tag, error) {
 	var query string
 	switch sort {
+	case "trending":
+		query = `
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color,
+		       COUNT(ct.clip_id)::int AS usage_count, t.created_at
+		FROM tags t JOIN clip_tags ct ON ct.tag_id = t.id
+		JOIN clips c ON c.id = ct.clip_id
+		WHERE ct.created_at >= NOW() - INTERVAL '7 days'
+		  AND c.is_removed = FALSE AND c.is_hidden = FALSE
+		  AND t.slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+		GROUP BY t.id ORDER BY usage_count DESC, t.name ASC LIMIT $1 OFFSET $2`
+	case "curated":
+		query = `SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
+		FROM tags WHERE parent_slug = 'content'
+		AND slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
+		ORDER BY usage_count DESC, name ASC LIMIT $1 OFFSET $2`
 	case "alphabetical":
 		query = `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY name ASC
 		LIMIT $1 OFFSET $2
 		`
@@ -124,7 +141,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 		`
@@ -134,7 +151,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY usage_count DESC
 		LIMIT $1 OFFSET $2
 		`
@@ -169,7 +186,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 // Count returns the total number of tags
 func (r *TagRepository) Count(ctx context.Context) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM tags`
+	query := `SELECT COUNT(*) FROM tags WHERE NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)`
 	err := r.pool.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count tags: %w", err)
@@ -184,6 +201,7 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 		FROM tags
 		WHERE (name ILIKE $1 OR slug ILIKE $1)
 		AND slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY usage_count DESC
 		LIMIT $2
 	`
@@ -212,6 +230,48 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 	}
 
 	return tags, nil
+}
+
+func (r *TagRepository) ListAdmin(ctx context.Context, limit, offset int) ([]*models.Tag, error) {
+	rows, err := r.pool.Query(ctx, `SELECT t.id,t.name,t.slug,t.parent_slug,t.description,t.color,t.usage_count,t.created_at,
+		s.suppressed_at,s.suppressed_by,s.reason FROM tags t LEFT JOIN tag_suppressions s ON s.tag_id=t.id
+		ORDER BY t.name LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags := []*models.Tag{}
+	for rows.Next() {
+		var tag models.Tag
+		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description, &tag.Color, &tag.UsageCount, &tag.CreatedAt, &tag.SuppressedAt, &tag.SuppressedBy, &tag.SuppressionReason); err != nil {
+			return nil, err
+		}
+		tags = append(tags, &tag)
+	}
+	return tags, rows.Err()
+}
+
+func (r *TagRepository) Suppress(ctx context.Context, id, actor uuid.UUID, reason string) error {
+	result, err := r.pool.Exec(ctx, `INSERT INTO tag_suppressions(tag_id,suppressed_by,reason) VALUES($1,$2,$3)
+		ON CONFLICT(tag_id) DO UPDATE SET suppressed_by=EXCLUDED.suppressed_by,reason=EXCLUDED.reason,suppressed_at=NOW()`, id, actor, reason)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrTagNotFound
+	}
+	return nil
+}
+
+func (r *TagRepository) Restore(ctx context.Context, id uuid.UUID) error {
+	result, err := r.pool.Exec(ctx, `DELETE FROM tag_suppressions WHERE tag_id=$1`, id)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrTagNotFound
+	}
+	return nil
 }
 
 // Update updates an existing tag
@@ -301,6 +361,7 @@ func (r *TagRepository) GetClipTags(ctx context.Context, clipID uuid.UUID) ([]*m
 		FROM tags t
 		INNER JOIN clip_tags ct ON t.id = ct.tag_id
 		WHERE ct.clip_id = $1
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		ORDER BY t.name ASC
 	`
 
@@ -414,7 +475,13 @@ func (r *TagRepository) GetOrCreateTag(ctx context.Context, name, slug string, c
 
 // GetClipTagCount returns the number of tags associated with a clip
 func (r *TagRepository) GetClipTagCount(ctx context.Context, clipID uuid.UUID) (int, error) {
-	query := `SELECT COUNT(*) FROM clip_tags WHERE clip_id = $1`
+	query := `
+		SELECT COUNT(*)
+		FROM clip_tags ct
+		JOIN tags t ON t.id = ct.tag_id
+		WHERE ct.clip_id = $1
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+	`
 	var count int
 	err := r.pool.QueryRow(ctx, query, clipID).Scan(&count)
 	if err != nil {

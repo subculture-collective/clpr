@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Card, CardBody, Button, Input, TextArea, Alert } from '../components';
+import { Container, Card, CardBody, Button, Input, TextArea, Alert, SEO } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { submitContactMessage, type ContactMessageRequest } from '../lib/contact-api';
 
@@ -52,7 +52,7 @@ export function ContactPage() {
   };
 
   return (
-    <Container className="py-8 max-w-3xl">
+    <><SEO title='Contact' description='Contact the clpr team about support, safety, privacy, or feedback.' canonicalUrl='/contact' /><Container className="py-8 max-w-3xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
         <p className="text-muted-foreground">
@@ -218,6 +218,6 @@ export function ContactPage() {
           </div>
         </CardBody>
       </Card>
-    </Container>
+    </Container></>
   );
 }

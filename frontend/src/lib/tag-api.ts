@@ -110,6 +110,21 @@ export const tagApi = {
     return response.data;
   },
 
+  listAdminTags: async () => {
+    const response = await apiClient.get<{ tags: Tag[] }>("/admin/tags");
+    return response.data;
+  },
+
+  suppressTag: async (id: string, reason: string) => {
+    const response = await apiClient.post<{ message: string }>(`/admin/tags/suppressions/${id}`, { reason });
+    return response.data;
+  },
+
+  restoreTag: async (id: string) => {
+    const response = await apiClient.delete<{ message: string }>(`/admin/tags/suppressions/${id}`);
+    return response.data;
+  },
+
   // Admin: Get tag promotion queue
   getPromotionQueue: async (params?: {
     status?: "pending" | "approved" | "rejected";

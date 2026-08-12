@@ -47,8 +47,17 @@ func (h *CategoryHandler) ListCategories(c *gin.Context) {
 		}
 		featured = &parsed
 	}
+	var public *bool
+	if publicParam := c.Query("public"); publicParam != "" {
+		parsed, err := strconv.ParseBool(publicParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid public parameter"})
+			return
+		}
+		public = &parsed
+	}
 
-	categories, err := h.categoryRepo.List(c.Request.Context(), categoryType, featured)
+	categories, err := h.categoryRepo.List(c.Request.Context(), categoryType, featured, public)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch categories",

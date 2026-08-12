@@ -297,14 +297,17 @@ type Favorite struct {
 
 // Tag represents a categorization tag
 type Tag struct {
-	ID          uuid.UUID `json:"id" db:"id"`
-	Name        string    `json:"name" db:"name"`
-	Slug        string    `json:"slug" db:"slug"`
-	ParentSlug  *string   `json:"parent_slug,omitempty" db:"parent_slug"`
-	Description *string   `json:"description,omitempty" db:"description"`
-	Color       *string   `json:"color,omitempty" db:"color"`
-	UsageCount  int       `json:"usage_count" db:"usage_count"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	ID                uuid.UUID  `json:"id" db:"id"`
+	Name              string     `json:"name" db:"name"`
+	Slug              string     `json:"slug" db:"slug"`
+	ParentSlug        *string    `json:"parent_slug,omitempty" db:"parent_slug"`
+	Description       *string    `json:"description,omitempty" db:"description"`
+	Color             *string    `json:"color,omitempty" db:"color"`
+	UsageCount        int        `json:"usage_count" db:"usage_count"`
+	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
+	SuppressedAt      *time.Time `json:"suppressed_at,omitempty" db:"suppressed_at"`
+	SuppressedBy      *uuid.UUID `json:"suppressed_by,omitempty" db:"suppressed_by"`
+	SuppressionReason *string    `json:"suppression_reason,omitempty" db:"suppression_reason"`
 }
 
 // ClipTag represents the many-to-many relationship between clips and tags
@@ -1037,14 +1040,16 @@ type TrendDataPoint struct {
 
 // PlatformOverviewMetrics represents KPIs for admin dashboard
 type PlatformOverviewMetrics struct {
-	TotalUsers         int64   `json:"total_users"`
-	ActiveUsersDaily   int     `json:"active_users_daily"`
-	ActiveUsersMonthly int     `json:"active_users_monthly"`
-	TotalClips         int64   `json:"total_clips"`
-	ClipsAddedToday    int     `json:"clips_added_today"`
-	TotalVotes         int64   `json:"total_votes"`
-	TotalComments      int64   `json:"total_comments"`
-	AvgSessionDuration float64 `json:"avg_session_duration"`
+	TotalUsers         int64     `json:"total_users"`
+	ActiveUsersDaily   *int      `json:"active_users_daily"`
+	ActiveUsersMonthly *int      `json:"active_users_monthly"`
+	TotalClips         int64     `json:"total_clips"`
+	ClipsAddedToday    int       `json:"clips_added_today"`
+	TotalVotes         int64     `json:"total_votes"`
+	TotalComments      int64     `json:"total_comments"`
+	AvgSessionDuration *float64  `json:"avg_session_duration"`
+	GeneratedAt        time.Time `json:"generated_at"`
+	Source             string    `json:"source"`
 }
 
 // ContentMetrics represents content-related metrics for admin dashboard
@@ -2382,6 +2387,7 @@ type Category struct {
 	CategoryType    string     `json:"category_type" db:"category_type"`
 	IsFeatured      bool       `json:"is_featured" db:"is_featured"`
 	IsCustom        bool       `json:"is_custom" db:"is_custom"`
+	IsPublic        bool       `json:"is_public" db:"is_public"`
 	CreatedByUserID *uuid.UUID `json:"created_by_user_id,omitempty" db:"created_by_user_id"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`

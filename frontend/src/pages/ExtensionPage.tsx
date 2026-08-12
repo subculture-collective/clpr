@@ -3,6 +3,7 @@ import { Container, Card, CardBody, SEO, Button } from '../components';
 
 const CHROME_STORE_URL = 'https://chrome.google.com/webstore/detail/clpr';
 const FIREFOX_STORE_URL = 'https://addons.mozilla.org/firefox/addon/clpr';
+const SOURCE_URL = 'https://git.subcult.tv/subculture-collective/clpr';
 
 interface FeatureProps {
     icon: React.ReactNode;
@@ -39,9 +40,10 @@ export function ExtensionPage() {
                         Clipper Browser Extension
                     </h1>
                     <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                        Share Twitch clips to Clipper with one click. The extension
-                        detects clips automatically, pre-fills metadata, and lets you
-                        add tags and a description before submitting.
+                        Share Twitch clips to Clipper with one click. The
+                        extension detects clips automatically, pre-fills
+                        metadata, and lets you add tags and a description before
+                        submitting.
                     </p>
                     <div className="flex flex-wrap gap-3 justify-center">
                         <a
@@ -64,13 +66,23 @@ export function ExtensionPage() {
                                 Add to Firefox
                             </Button>
                         </a>
+                        <a
+                            href={SOURCE_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-h-11 items-center px-4 font-medium underline underline-offset-4"
+                        >
+                            View source
+                        </a>
                     </div>
                 </div>
 
                 {/* Features */}
                 <Card className="mb-8">
                     <CardBody>
-                        <h2 className="text-2xl font-semibold mb-6">Features</h2>
+                        <h2 className="text-2xl font-semibold mb-6">
+                            Features
+                        </h2>
                         <div className="grid gap-6 sm:grid-cols-2">
                             <Feature
                                 icon={<Search size={16} strokeWidth={1.75} />}
@@ -78,7 +90,12 @@ export function ExtensionPage() {
                                 description="Automatically detects Twitch clip pages (twitch.tv and clips.twitch.tv) and enables the share button."
                             />
                             <Feature
-                                icon={<MousePointer size={16} strokeWidth={1.75} />}
+                                icon={
+                                    <MousePointer
+                                        size={16}
+                                        strokeWidth={1.75}
+                                    />
+                                }
                                 title="Context menu"
                                 description='Right-click any Twitch clip page to see "Share to Clipper" in the context menu.'
                             />
@@ -109,32 +126,45 @@ export function ExtensionPage() {
                 {/* How it works */}
                 <Card className="mb-8">
                     <CardBody>
-                        <h2 className="text-2xl font-semibold mb-6">How it works</h2>
+                        <h2 className="text-2xl font-semibold mb-6">
+                            How it works
+                        </h2>
                         <ol className="space-y-4 list-decimal list-inside text-sm text-muted-foreground">
                             <li>
-                                <strong className="text-foreground">Install</strong> the
-                                extension from the Chrome Web Store or Firefox Add-ons.
+                                <strong className="text-foreground">
+                                    Install
+                                </strong>{' '}
+                                the extension from the Chrome Web Store or
+                                Firefox Add-ons.
                             </li>
                             <li>
-                                <strong className="text-foreground">Log in</strong> by
-                                clicking the extension icon and selecting{' '}
-                                <em>Login with Twitch</em>. This opens your Clipper account
-                                in a new tab.
+                                <strong className="text-foreground">
+                                    Log in
+                                </strong>{' '}
+                                by clicking the extension icon and selecting{' '}
+                                <em>Login with Twitch</em>. This opens your
+                                Clipper account in a new tab.
                             </li>
                             <li>
-                                <strong className="text-foreground">Browse Twitch</strong>.
-                                When you land on a clip page the extension badge lights up
-                                automatically.
+                                <strong className="text-foreground">
+                                    Browse Twitch
+                                </strong>
+                                . When you land on a clip page the extension
+                                badge lights up automatically.
                             </li>
                             <li>
-                                <strong className="text-foreground">Click the icon</strong>{' '}
-                                (or right-click → Share to Clipper) to open the popup.
+                                <strong className="text-foreground">
+                                    Click the icon
+                                </strong>{' '}
+                                (or right-click → Share to Clipper) to open the
+                                popup.
                             </li>
                             <li>
                                 <strong className="text-foreground">
                                     Review and submit
                                 </strong>{' '}
-                                – edit the title, add tags, and click <em>Share Clip</em>.
+                                – edit the title, add tags, and click{' '}
+                                <em>Share Clip</em>.
                             </li>
                         </ol>
                     </CardBody>
@@ -150,17 +180,25 @@ export function ExtensionPage() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b border-border">
-                                        <th className="text-left py-2 pr-8">Browser</th>
-                                        <th className="text-left py-2">Minimum version</th>
+                                        <th className="text-left py-2 pr-8">
+                                            Browser
+                                        </th>
+                                        <th className="text-left py-2">
+                                            Minimum version
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-muted-foreground">
                                     <tr className="border-b border-border">
-                                        <td className="py-2 pr-8">Chrome / Chromium</td>
+                                        <td className="py-2 pr-8">
+                                            Chrome / Chromium
+                                        </td>
                                         <td className="py-2">99+</td>
                                     </tr>
                                     <tr className="border-b border-border">
-                                        <td className="py-2 pr-8">Microsoft Edge</td>
+                                        <td className="py-2 pr-8">
+                                            Microsoft Edge
+                                        </td>
                                         <td className="py-2">99+</td>
                                     </tr>
                                     <tr>
@@ -172,7 +210,6 @@ export function ExtensionPage() {
                         </div>
                     </CardBody>
                 </Card>
-
             </Container>
         </>
     );

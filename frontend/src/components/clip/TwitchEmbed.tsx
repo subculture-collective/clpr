@@ -12,9 +12,10 @@
 // - No stripping of Twitch branding or attribution
 // - Respects creator's right to delete clips (graceful error handling)
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useVolumePreference } from '@/hooks';
 import { MutedIcon } from '@/components/ui';
+import { Play } from 'lucide-react';
 
 interface TwitchEmbedProps {
   clipId: string;
@@ -32,27 +33,16 @@ export function TwitchEmbed({
   title = 'Twitch Clip'
 }: TwitchEmbedProps) {
   const [isLoaded, setIsLoaded] = useState(autoplay);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-load embed when it scrolls into view
+  // Keep feed cards poster-first and allow only one active third-party embed.
   useEffect(() => {
-    if (isLoaded || autoplay) return;
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsLoaded(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [isLoaded, autoplay]);
+    const deactivate = (event: Event) => {
+      const activeClip = (event as CustomEvent<string>).detail;
+      if (activeClip !== clipId) setIsLoaded(false);
+    };
+    window.addEventListener('clpr:twitch-play', deactivate);
+    return () => window.removeEventListener('clpr:twitch-play', deactivate);
+  }, [clipId]);
   const [hasError, setHasError] = useState(false);
   const [showMutedIndicator, setShowMutedIndicator] = useState(true);
   const { embedMuted: volumePreferredMuted, hasSetPreference, setUnmutedPreference } = useVolumePreference();
@@ -121,7 +111,6 @@ export function TwitchEmbed({
   if (!isLoaded) {
     return (
       <div
-        ref={containerRef}
         className="relative w-full pt-[56.25%] bg-black rounded-lg overflow-hidden"
       >
         {/* Thumbnail shown while waiting for viewport intersection */}
@@ -136,6 +125,17 @@ export function TwitchEmbed({
             height="1080"
           />
         )}
+        <button
+          type="button"
+          className="absolute inset-0 m-auto flex h-14 w-14 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          aria-label={`Play ${title}`}
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('clpr:twitch-play', { detail: clipId }));
+            setIsLoaded(true);
+          }}
+        >
+          <Play className="h-6 w-6 fill-current" aria-hidden="true" />
+        </button>
       </div>
     );
   }

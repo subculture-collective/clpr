@@ -7,6 +7,9 @@ export interface Tag {
   color?: string;
   usage_count: number;
   created_at: string;
+  suppressed_at?: string;
+  suppressed_by?: string;
+  suppression_reason?: string;
 }
 
 export interface TagTreeResponse {
@@ -43,7 +46,7 @@ export interface TagPromotionItem {
   id: string;
   tag_slug: string;
   unique_users: number;
-  clip_count: number;
+  usage_count: number;
   status: "pending" | "approved" | "rejected";
   created_at: string;
 }

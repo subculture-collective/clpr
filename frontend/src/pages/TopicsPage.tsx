@@ -6,7 +6,7 @@ import { categoryApi } from '../lib/category-api';
 export function TopicsPage() {
     const { data, isLoading, isError } = useQuery({
         queryKey: ['categories', 'topic'],
-        queryFn: () => categoryApi.listCategories({ type: 'topic' }),
+        queryFn: () => categoryApi.listCategories({ type: 'topic', public: true }),
     });
     const topics = data?.categories ?? [];
 

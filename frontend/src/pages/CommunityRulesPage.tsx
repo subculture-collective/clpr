@@ -1,10 +1,10 @@
-import { Container, Card, CardBody } from '../components';
+import { Container, Card, CardBody, SEO } from '../components';
 
 export function CommunityRulesPage() {
   const lastUpdated = 'August 11, 2026';
 
   return (
-    <Container className="py-8 max-w-4xl">
+    <><SEO title='Community Rules' description='The rules that keep the clpr community respectful and safe.' canonicalUrl='/community-rules' /><Container className="py-8 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">Community Rules</h1>
         <p className="text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
@@ -171,6 +171,6 @@ export function CommunityRulesPage() {
           </CardBody>
         </Card>
       </div>
-    </Container>
+    </Container></>
   );
 }

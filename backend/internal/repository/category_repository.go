@@ -23,10 +23,10 @@ func NewCategoryRepository(pool *pgxpool.Pool) *CategoryRepository {
 }
 
 // List retrieves categories ordered by position with optional filters
-func (r *CategoryRepository) List(ctx context.Context, categoryType *string, featured *bool) ([]*models.Category, error) {
+func (r *CategoryRepository) List(ctx context.Context, categoryType *string, featured, public *bool) ([]*models.Category, error) {
 	baseQuery := `
 		SELECT id, name, slug, description, icon, position,
-		       category_type, is_featured, is_custom, created_by_user_id,
+		       category_type, is_featured, is_custom, is_public, created_by_user_id,
 		       created_at, updated_at
 		FROM categories
 	`
@@ -41,6 +41,10 @@ func (r *CategoryRepository) List(ctx context.Context, categoryType *string, fea
 	if featured != nil {
 		args = append(args, *featured)
 		whereClause += fmt.Sprintf(" AND is_featured = $%d", len(args))
+	}
+	if public != nil {
+		args = append(args, *public)
+		whereClause += fmt.Sprintf(" AND is_public = $%d", len(args))
 	}
 
 	query := fmt.Sprintf("%s %s ORDER BY position ASC, name ASC", baseQuery, whereClause)
@@ -57,7 +61,7 @@ func (r *CategoryRepository) List(ctx context.Context, categoryType *string, fea
 		err := rows.Scan(
 			&category.ID, &category.Name, &category.Slug, &category.Description,
 			&category.Icon, &category.Position,
-			&category.CategoryType, &category.IsFeatured, &category.IsCustom, &category.CreatedByUserID,
+			&category.CategoryType, &category.IsFeatured, &category.IsCustom, &category.IsPublic, &category.CreatedByUserID,
 			&category.CreatedAt, &category.UpdatedAt,
 		)
 		if err != nil {
@@ -77,7 +81,7 @@ func (r *CategoryRepository) List(ctx context.Context, categoryType *string, fea
 func (r *CategoryRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Category, error) {
 	query := `
 		SELECT id, name, slug, description, icon, position,
-		       category_type, is_featured, is_custom, created_by_user_id,
+		       category_type, is_featured, is_custom, is_public, created_by_user_id,
 		       created_at, updated_at
 		FROM categories
 		WHERE id = $1 AND is_active = TRUE
@@ -87,7 +91,7 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&category.ID, &category.Name, &category.Slug, &category.Description,
 		&category.Icon, &category.Position,
-		&category.CategoryType, &category.IsFeatured, &category.IsCustom, &category.CreatedByUserID,
+		&category.CategoryType, &category.IsFeatured, &category.IsCustom, &category.IsPublic, &category.CreatedByUserID,
 		&category.CreatedAt, &category.UpdatedAt,
 	)
 
@@ -105,7 +109,7 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 func (r *CategoryRepository) GetBySlug(ctx context.Context, slug string) (*models.Category, error) {
 	query := `
 		SELECT id, name, slug, description, icon, position,
-		       category_type, is_featured, is_custom, created_by_user_id,
+		       category_type, is_featured, is_custom, is_public, created_by_user_id,
 		       created_at, updated_at
 		FROM categories
 		WHERE slug = $1 AND is_active = TRUE
@@ -115,7 +119,7 @@ func (r *CategoryRepository) GetBySlug(ctx context.Context, slug string) (*model
 	err := r.pool.QueryRow(ctx, query, slug).Scan(
 		&category.ID, &category.Name, &category.Slug, &category.Description,
 		&category.Icon, &category.Position,
-		&category.CategoryType, &category.IsFeatured, &category.IsCustom, &category.CreatedByUserID,
+		&category.CategoryType, &category.IsFeatured, &category.IsCustom, &category.IsPublic, &category.CreatedByUserID,
 		&category.CreatedAt, &category.UpdatedAt,
 	)
 

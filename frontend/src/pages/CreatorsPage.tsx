@@ -36,7 +36,7 @@ export function CreatorsPage() {
                 description='Find trending, rising, live, and newly discovered creators shaping live culture.'
                 canonicalUrl='/creators'
             />
-            <main className='container mx-auto px-4 py-8 sm:py-12'>
+            <div className='container mx-auto px-4 py-8 sm:py-12'>
                 <header className='relative mb-12 overflow-hidden border-y border-border py-10 sm:py-14'>
                     <div className='absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_center,rgb(var(--color-brand)/0.13),transparent_65%)]' />
                     <div className='relative max-w-4xl'>
@@ -138,7 +138,7 @@ export function CreatorsPage() {
                         <p className='mt-2 max-w-md text-sm text-muted-foreground'>Fresh creator signals will appear as new clips arrive and audiences respond.</p>
                     </div>
                 )}
-            </main>
+            </div>
         </>
     );
 }

@@ -73,20 +73,19 @@ export function ClipFeed({
     const containerRef = useRef<HTMLDivElement>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullDistance, setPullDistance] = useState(0);
+    const [visibleCount, setVisibleCount] = useState(12);
     const touchStartRef = useRef<number>(0);
     const scrollTopRef = useRef<number>(0);
 
     // Get filters from URL or use defaults (normalize 'hot' to 'trending')
     // In discover mode, ignore URL sort/timeframe to keep the feed controlled by tabs
-    const rawSort =
-        discoverMode ? defaultSort : (
-            (searchParams.get('sort') as SortOption) || defaultSort
-        );
+    const rawSort = discoverMode
+        ? defaultSort
+        : (searchParams.get('sort') as SortOption) || defaultSort;
     const sort = normalizeSortOption(rawSort);
-    const timeframe =
-        discoverMode ? defaultTimeframe : (
-            (searchParams.get('timeframe') as TimeFrame) || defaultTimeframe
-        );
+    const timeframe = discoverMode
+        ? defaultTimeframe
+        : (searchParams.get('timeframe') as TimeFrame) || defaultTimeframe;
 
     // Combine URL filters with additional filters and current language
     const filters: ClipFeedFilters = {
@@ -109,8 +108,15 @@ export function ClipFeed({
     } = useClipFeed(filters);
 
     // Get all clips from all pages
-    const clips = data?.pages.flatMap(page => page.clips) ?? [];
-    const validClips = clips.filter(clip => clip?.id);
+    const clips = data?.pages.flatMap((page) => page.clips) ?? [];
+    const validClips = clips.filter((clip) => clip?.id);
+    const visibleClips = validClips.slice(0, visibleCount);
+    const hasBufferedClips = visibleCount < validClips.length;
+    const filterKey = JSON.stringify(filters);
+
+    useEffect(() => {
+        setVisibleCount(12);
+    }, [filterKey]);
 
     // Intersection observer for infinite scroll
     const { ref: loadMoreRef, inView } = useInView({
@@ -119,10 +125,29 @@ export function ClipFeed({
 
     // Load more when the trigger element comes into view
     useEffect(() => {
-        if (inView && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+        if (!inView || isFetchingNextPage) return;
+
+        if (hasBufferedClips) {
+            setVisibleCount((count) => Math.min(count + 12, validClips.length));
+        } else if (hasNextPage) {
+            void fetchNextPage();
         }
-    }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [
+        inView,
+        hasBufferedClips,
+        hasNextPage,
+        isFetchingNextPage,
+        fetchNextPage,
+        validClips.length,
+    ]);
+
+    const handleLoadMore = useCallback(() => {
+        if (hasBufferedClips) {
+            setVisibleCount((count) => Math.min(count + 12, validClips.length));
+            return;
+        }
+        void fetchNextPage();
+    }, [fetchNextPage, hasBufferedClips, validClips.length]);
 
     // Pull-to-refresh handlers for mobile web
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -202,15 +227,14 @@ export function ClipFeed({
         all: 'All Time',
     };
 
-    const resolvedTitle =
-        useSortTitle ?
-            sort === 'top' || sort === 'trending' ?
-                `${sortLabelMap[sort] ?? sort} — ${timeframeLabelMap[timeframe] ?? 'Past Day'}`
-            :   `${sortLabelMap[sort] ?? sort} Feed`
-        :   title;
+    const resolvedTitle = useSortTitle
+        ? sort === 'top' || sort === 'trending'
+            ? `${sortLabelMap[sort] ?? sort} — ${timeframeLabelMap[timeframe] ?? 'Past Day'}`
+            : `${sortLabelMap[sort] ?? sort} Feed`
+        : title;
 
     return (
-        <div className='w-full'>
+        <div className="w-full">
             {/* Hide FeedHeader in discover mode - DiscoveryPage has its own header/tabs */}
             {!discoverMode && (
                 <FeedHeader
@@ -227,44 +251,45 @@ export function ClipFeed({
             {/* Pull-to-refresh indicator */}
             {pullDistance > 0 && (
                 <div
-                    className='flex justify-center items-center py-4 text-muted-foreground transition-all'
+                    className="flex justify-center items-center py-4 text-muted-foreground transition-all"
                     style={{
                         transform: `translateY(${Math.min(pullDistance, 80)}px)`,
                         opacity: Math.min(pullDistance / 80, 1),
                     }}
                 >
-                    {isRefreshing ?
-                        <Spinner size='md' />
-                    :   <div className='flex flex-col items-center'>
+                    {isRefreshing ? (
+                        <Spinner size="md" />
+                    ) : (
+                        <div className="flex flex-col items-center">
                             <svg
-                                className='w-6 h-6 mb-1'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
+                                className="w-6 h-6 mb-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                                 style={{
                                     transform: `rotate(${pullDistance * 4}deg)`,
                                 }}
                             >
                                 <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                                 />
                             </svg>
-                            <span className='text-xs'>
-                                {pullDistance > 80 ?
-                                    'Release to refresh'
-                                :   'Pull to refresh'}
+                            <span className="text-xs">
+                                {pullDistance > 80
+                                    ? 'Release to refresh'
+                                    : 'Pull to refresh'}
                             </span>
                         </div>
-                    }
+                    )}
                 </div>
             )}
 
             {/* Loading state */}
             {isLoading && (
-                <div className='space-y-6'>
+                <div className="space-y-6">
                     {Array.from({ length: 5 }).map((_, i) => (
                         <ClipCardSkeleton key={i} />
                     ))}
@@ -274,20 +299,20 @@ export function ClipFeed({
             {/* Error state */}
             {isError && (
                 <EmptyState
-                    title='Error loading clips'
-                    message='Something went wrong. Please try again later.'
+                    title="Error loading clips"
+                    message="Something went wrong. Please try again later."
                     icon={
                         <svg
-                            className='w-16 h-16'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
+                            className="w-16 h-16"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                         >
                             <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                                 strokeWidth={2}
-                                d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
                     }
@@ -297,20 +322,20 @@ export function ClipFeed({
             {/* Empty state */}
             {!isLoading && !isError && validClips.length === 0 && (
                 <EmptyState
-                    title='No clips found'
-                    message='Try adjusting your filters or check back later.'
+                    title="No clips found"
+                    message="Try adjusting your filters or check back later."
                     icon={
                         <svg
-                            className='w-16 h-16'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
+                            className="w-16 h-16"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                         >
                             <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                                 strokeWidth={2}
-                                d='M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'
+                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                             />
                         </svg>
                     }
@@ -325,35 +350,38 @@ export function ClipFeed({
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                 >
-                    <div className='space-y-6'>
-                        {validClips.map(clip =>
-                            discoverMode ?
+                    <div className="space-y-6">
+                        {visibleClips.map((clip) =>
+                            discoverMode ? (
                                 <MemoizedDiscoverClipCard
                                     key={clip.id}
                                     clip={clip}
                                 />
-                            :   <MemoizedClipCard key={clip.id} clip={clip} />,
+                            ) : (
+                                <MemoizedClipCard key={clip.id} clip={clip} />
+                            ),
                         )}
                     </div>
 
                     {/* Load more trigger */}
-                    {hasNextPage && (
+                    {(hasBufferedClips || hasNextPage) && (
                         <div
                             ref={loadMoreRef}
-                            className='py-8 flex justify-center'
+                            className="py-8 flex justify-center"
                         >
-                            {isFetchingNextPage ?
-                                <Spinner size='lg' />
-                            :   <Button onClick={() => fetchNextPage()}>
+                            {isFetchingNextPage ? (
+                                <Spinner size="lg" />
+                            ) : (
+                                <Button onClick={handleLoadMore}>
                                     Load More
                                 </Button>
-                            }
+                            )}
                         </div>
                     )}
 
                     {/* End of results */}
                     {!hasNextPage && validClips.length > 0 && (
-                        <div className='text-center py-8 text-muted-foreground'>
+                        <div className="text-center py-8 text-muted-foreground">
                             <p>You've reached the end!</p>
                         </div>
                     )}

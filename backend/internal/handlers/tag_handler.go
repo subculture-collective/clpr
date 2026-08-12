@@ -19,15 +19,15 @@ var adminTagSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 // TagTreeNode represents a tag in a hierarchical tree response.
 type TagTreeNode struct {
-	ID          uuid.UUID       `json:"id"`
-	Name        string          `json:"name"`
-	Slug        string          `json:"slug"`
-	ParentSlug  *string         `json:"parent_slug,omitempty"`
-	Description *string         `json:"description,omitempty"`
-	Color       *string         `json:"color,omitempty"`
-	UsageCount  int             `json:"usage_count"`
-	CreatedAt   time.Time       `json:"created_at"`
-	Children    []*TagTreeNode  `json:"children,omitempty"`
+	ID          uuid.UUID      `json:"id"`
+	Name        string         `json:"name"`
+	Slug        string         `json:"slug"`
+	ParentSlug  *string        `json:"parent_slug,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Color       *string        `json:"color,omitempty"`
+	UsageCount  int            `json:"usage_count"`
+	CreatedAt   time.Time      `json:"created_at"`
+	Children    []*TagTreeNode `json:"children,omitempty"`
 }
 
 func tagToTreeNode(tag *models.Tag) *TagTreeNode {
@@ -658,6 +658,52 @@ func (h *TagHandler) DeleteTag(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Tag deleted successfully",
 	})
+}
+
+func (h *TagHandler) ListAdminTags(c *gin.Context) {
+	tags, err := h.tagRepo.ListAdmin(c.Request.Context(), 500, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tags"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"tags": tags})
+}
+
+func (h *TagHandler) SuppressTag(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tag ID"})
+		return
+	}
+	actor, ok := authenticatedUserID(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || len(strings.TrimSpace(req.Reason)) < 1 || len(req.Reason) > 500 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "reason is required and must be at most 500 characters"})
+		return
+	}
+	if err := h.tagRepo.Suppress(c.Request.Context(), id, actor, strings.TrimSpace(req.Reason)); err != nil {
+		writeAdminTagError(c, err, "Failed to suppress tag")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Tag suppressed"})
+}
+
+func (h *TagHandler) RestoreTag(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tag ID"})
+		return
+	}
+	if err := h.tagRepo.Restore(c.Request.Context(), id); err != nil {
+		writeAdminTagError(c, err, "Failed to restore tag")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Tag restored"})
 }
 
 // GetClipTags handles GET /clips/:id/tags

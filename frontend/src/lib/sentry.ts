@@ -55,6 +55,14 @@ export function initSentry(config: SentryConfig): void {
 
         // Before sending events, scrub sensitive data
         beforeSend(event) {
+            if (isThirdPartyTwitchFailure(event)) {
+                event.level = 'warning';
+                event.tags = {
+                    ...event.tags,
+                    error_domain: 'third_party_twitch',
+                    exclude_from_first_party_alerts: 'true',
+                };
+            }
             return scrubSensitiveData(event);
         },
 
@@ -72,7 +80,31 @@ export function initSentry(config: SentryConfig): void {
     });
 
     console.log(
-        `Sentry initialized: environment=${config.environment}, release=${config.release}`
+        `Sentry initialized: environment=${config.environment}, release=${config.release}`,
+    );
+}
+
+/**
+ * Classify failures attributable to Twitch embeds without dropping their
+ * diagnostic event. Alert rules can exclude the explicit tag while the event,
+ * breadcrumbs, and replay remain available to investigate provider failures.
+ */
+export function isThirdPartyTwitchFailure(event: Sentry.ErrorEvent): boolean {
+    const values = [
+        event.request?.url,
+        event.transaction,
+        event.exception?.values?.map((value) => value.value).join(' '),
+        event.exception?.values
+            ?.flatMap((value) => value.stacktrace?.frames ?? [])
+            .map((frame) => `${frame.filename ?? ''} ${frame.abs_path ?? ''}`)
+            .join(' '),
+    ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+    return /(^|[./])(?:clips\.)?twitch\.tv(?:[/:]|$)|player\.twitch\.tv/.test(
+        values,
     );
 }
 
@@ -80,7 +112,7 @@ export function initSentry(config: SentryConfig): void {
  * Scrub sensitive data from Sentry events
  */
 function scrubSensitiveData(
-    event: Sentry.ErrorEvent
+    event: Sentry.ErrorEvent,
 ): Sentry.ErrorEvent | null {
     // Scrub sensitive headers
     if (event.request?.headers) {
@@ -163,7 +195,7 @@ export function clearUser(): void {
 export function addBreadcrumb(
     message: string,
     category?: string,
-    data?: Record<string, unknown>
+    data?: Record<string, unknown>,
 ): void {
     Sentry.addBreadcrumb({
         message,
@@ -178,7 +210,7 @@ export function addBreadcrumb(
  */
 export function captureException(
     error: Error,
-    context?: Record<string, Record<string, unknown>>
+    context?: Record<string, Record<string, unknown>>,
 ): void {
     if (context) {
         Sentry.withScope((scope) => {
@@ -197,7 +229,7 @@ export function captureException(
  */
 export function captureMessage(
     message: string,
-    level: Sentry.SeverityLevel = 'info'
+    level: Sentry.SeverityLevel = 'info',
 ): void {
     Sentry.captureMessage(message, level);
 }
@@ -211,11 +243,11 @@ export { Sentry };
  * Capture an error with component stack context for error boundaries
  */
 export function captureBoundaryError(
-  error: Error,
-  componentStack: string | null | undefined,
+    error: Error,
+    componentStack: string | null | undefined,
 ): void {
-  Sentry.withScope((scope) => {
-    scope.setContext('errorBoundary', { componentStack });
-    Sentry.captureException(error);
-  });
+    Sentry.withScope((scope) => {
+        scope.setContext('errorBoundary', { componentStack });
+        Sentry.captureException(error);
+    });
 }

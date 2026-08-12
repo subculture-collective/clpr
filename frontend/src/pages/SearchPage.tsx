@@ -475,8 +475,8 @@ export function SearchPage() {
                 </div>
 
                 {/* Tabs and Sort */}
-                <div className='flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 xs:gap-0 mb-4 xs:mb-6 border-b border-border'>
-                    <div className='flex gap-0.5 xs:gap-1 overflow-x-auto scrollbar-hide'>
+                <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-4 xs:mb-6 border-b border-border'>
+                    <div className='flex w-full gap-0.5 xs:gap-1 overflow-x-auto scrollbar-hide'>
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
@@ -509,7 +509,7 @@ export function SearchPage() {
                         onChange={e =>
                             handleSortChange(e.target.value as SortType)
                         }
-                        className='px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 touch-target'
+                        className='w-full md:w-auto px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 touch-target'
                         data-testid='search-sort-select'
                     >
                         <option value='relevance'>Relevance</option>

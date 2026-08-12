@@ -6,6 +6,7 @@ import {
     LeaderboardTable,
 } from '../components/reputation/LeaderboardTable';
 import { LeaderboardSkeleton, EmptyStateWithAction } from '../components/ui';
+import { SEO } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
 import type { LeaderboardResponse, LeaderboardType } from '../types/reputation';
@@ -102,7 +103,7 @@ export default function LeaderboardPage() {
     const displayValue = (value: number) => value > 0 ? value.toLocaleString() : '—';
 
     return (
-        <div className='max-w-6xl mx-auto px-4 py-8'>
+        <><SEO title='Leaderboards' description='Community rankings for clpr contributors, clips, and creators.' canonicalUrl='/leaderboards' /><div className='max-w-6xl mx-auto px-4 py-8'>
             {/* Header */}
             <div className='mb-8'>
                 <h1 className='text-4xl font-bold text-white mb-2'>
@@ -236,12 +237,19 @@ export default function LeaderboardPage() {
 
             {!loading && !error && type === 'streamers' && streamerRankings.length === 0 && (
                 <div className='text-center text-muted-foreground py-12'>
-                    <p>No streamer rankings available yet.</p>
+                    <p className='mb-4'>Streamer rankings will appear after eligible clips receive community activity.</p>
+                    <Link className='inline-flex min-h-11 items-center rounded-md border border-border px-4 text-foreground' to='/explore'>Explore clips</Link>
                 </div>
             )}
 
             {!loading && !error && type !== 'streamers' && leaderboard && (
                 <>
+                    {leaderboard.entries.length === 0 && (
+                        <div className='py-12 text-center text-muted-foreground'>
+                            <p className='mb-4'>No rankings are available yet. Explore clips and participate to help build the leaderboard.</p>
+                            <Link className='inline-flex min-h-11 items-center rounded-md border border-border px-4 text-foreground' to='/explore'>Explore clips</Link>
+                        </div>
+                    )}
                     {/* Top 3 Summary */}
                     {page === 1 && (
                         <LeaderboardSummary
@@ -258,7 +266,7 @@ export default function LeaderboardPage() {
                     />
 
                     {/* Pagination */}
-                    {leaderboard.entries.length === limit && (
+                    {leaderboard.entries.length > 0 && leaderboard.entries.length === limit && (
                         <div className='flex justify-center gap-4 mt-6'>
                             <button
                                 onClick={() => handlePageChange(page - 1)}
@@ -281,6 +289,6 @@ export default function LeaderboardPage() {
                     )}
                 </>
             )}
-        </div>
+        </div></>
     );
 }
