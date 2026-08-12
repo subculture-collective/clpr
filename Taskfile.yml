@@ -171,7 +171,14 @@ tasks:
       - bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T redis-test redis-cli ping >/dev/null 2>&1; then echo "Redis is ready"; exit 0; fi; sleep 1; done; echo "Redis failed to become ready"; exit 1'
       - bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T postgres-test pg_isready -U clpr -d clpr_test >/dev/null 2>&1; then echo "PostgreSQL is ready"; exit 0; fi; sleep 1; done; echo "PostgreSQL failed to become ready"; exit 1'
       - task: migrate:test:up
-      - bash -c 'for i in {1..60}; do if curl -f -s "{{.TEST_OPENSEARCH_URL}}/_cluster/health" >/dev/null 2>&1; then echo "OpenSearch is ready"; exit 0; fi; sleep 1; done; echo "OpenSearch failed to become ready"; exit 1'
+      - >-
+        bash -c 'for i in {1..120}; do
+        if curl -f -s "{{.TEST_OPENSEARCH_URL}}/_cluster/health" >/dev/null 2>&1;
+        then echo "OpenSearch is ready"; exit 0; fi; sleep 1; done;
+        echo "OpenSearch failed to become ready";
+        docker compose -f docker-compose.test.yml ps opensearch-test;
+        docker compose -f docker-compose.test.yml logs --tail=120 opensearch-test;
+        exit 1'
 
   test:teardown:
     desc: Stop test containers
