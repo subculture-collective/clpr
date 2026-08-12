@@ -117,16 +117,15 @@ function createStorage(): Storage {
     };
 }
 
-if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
-    const ls = createStorage();
-    Object.defineProperty(globalThis, 'localStorage', { value: ls, writable: true, configurable: true });
-    Object.defineProperty(window, 'localStorage', { value: ls, writable: true, configurable: true });
-}
-if (typeof sessionStorage === 'undefined' || typeof sessionStorage.getItem !== 'function') {
-    const ss = createStorage();
-    Object.defineProperty(globalThis, 'sessionStorage', { value: ss, writable: true, configurable: true });
-    Object.defineProperty(window, 'sessionStorage', { value: ss, writable: true, configurable: true });
-}
+// Always replace the globals. Node's built-in Storage methods exist and pass a
+// typeof check even when they throw because no --localstorage-file was set.
+const ls = createStorage();
+Object.defineProperty(globalThis, 'localStorage', { value: ls, writable: true, configurable: true });
+Object.defineProperty(window, 'localStorage', { value: ls, writable: true, configurable: true });
+
+const ss = createStorage();
+Object.defineProperty(globalThis, 'sessionStorage', { value: ss, writable: true, configurable: true });
+Object.defineProperty(window, 'sessionStorage', { value: ss, writable: true, configurable: true });
 
 // Unhandled application requests indicate incomplete test setup and must fail.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

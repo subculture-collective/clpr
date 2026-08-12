@@ -15,6 +15,7 @@ describe('useTheatreMode', () => {
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         // Clean up after each test
         localStorage.clear();
     });
