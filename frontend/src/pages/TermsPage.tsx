@@ -286,20 +286,16 @@ export function TermsPage() {
           </CardBody>
         </Card>
 
-        {/* Subscription Terms */}
-        <Card id="subscriptions">
+        {/* Community Support */}
+        <Card id="community-support">
           <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">10. Subscriptions and Payments</h2>
+            <h2 className="text-2xl font-semibold mb-4">10. Community Support</h2>
             <p className="text-muted-foreground mb-4">
-              If we offer paid subscriptions or features:
+              clpr does not sell account tiers or feature access. You may choose to support Subcult through Patreon, but doing so is optional and does not change your clpr account, permissions, limits, or content ranking.
             </p>
-            <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-              <li>Subscription fees are billed in advance on a recurring basis</li>
-              <li>Prices are subject to change with 30 days notice</li>
-              <li>You may cancel your subscription at any time</li>
-              <li>Refunds are provided in accordance with our refund policy</li>
-              <li>All payments are processed securely through third-party payment providers</li>
-            </ul>
+            <p className="text-muted-foreground">
+              Patreon support is governed by Patreon's terms, billing, cancellation, and refund policies. clpr does not receive or store your payment-card information.
+            </p>
           </CardBody>
         </Card>
 

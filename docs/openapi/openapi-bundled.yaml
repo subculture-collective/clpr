@@ -14063,62 +14063,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /api/v1/subscriptions/change-plan:
-    post:
-      tags:
-        - Subscriptions
-      summary: Change the current subscription plan
-      operationId: postApiV1SubscriptionsChangePlan
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeSubscriptionPlanRequest'
-      responses:
-        '200':
-          description: Plan changed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubscriptionMessageResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-  /api/v1/subscriptions/checkout:
-    post:
-      tags:
-        - Subscriptions
-      summary: Create a Stripe checkout session
-      operationId: postApiV1SubscriptionsCheckout
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateCheckoutSessionRequest'
-      responses:
-        '200':
-          description: Checkout session created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateCheckoutSessionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/subscriptions/invoices:
     get:
       tags:
@@ -14191,27 +14135,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-  /api/v1/subscriptions/reactivate:
-    post:
-      tags:
-        - Subscriptions
-      summary: Reactivate a subscription scheduled for cancellation
-      operationId: postApiV1SubscriptionsReactivate
-      responses:
-        '200':
-          description: Subscription reactivated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubscriptionMessageResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/twitch/auth:
@@ -21233,29 +21156,6 @@ components:
         created:
           type: integer
           format: int64
-    CreateCheckoutSessionRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - price_id
-      properties:
-        price_id:
-          type: string
-          minLength: 1
-          maxLength: 255
-        coupon_code:
-          type: string
-          maxLength: 100
-    ChangeSubscriptionPlanRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - price_id
-      properties:
-        price_id:
-          type: string
-          minLength: 1
-          maxLength: 255
     CancelSubscriptionRequest:
       type: object
       additionalProperties: false
@@ -21264,17 +21164,6 @@ components:
       properties:
         immediate:
           type: boolean
-    CreateCheckoutSessionResponse:
-      type: object
-      required:
-        - session_id
-        - session_url
-      properties:
-        session_id:
-          type: string
-        session_url:
-          type: string
-          format: uri
     CreatePortalSessionResponse:
       type: object
       required:

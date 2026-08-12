@@ -2,23 +2,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useRef } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { Link } from 'react-router-dom';
-import { Alert, Button, Card, CardBody, CardHeader, Container, Input, Modal, Stack, Toggle } from '../components';
+import { Alert, Button, Card, CardBody, CardHeader, Container, Input, Stack, Toggle } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useConsent } from '../context/ConsentContext';
 import type { UpdateProfileRequest, UpdateSettingsRequest } from '../lib/user-settings-api';
 import { getUserSettings, updateProfile, updateUserSettings } from '../lib/user-settings-api';
-import {
-    getSubscription,
-    cancelSubscription,
-    reactivateSubscription,
-    createPortalSession,
-} from '../lib/subscription-api';
-import type { Subscription } from '../lib/subscription-api';
-
-// Constants for billing period calculation
-const DAYS_IN_YEAR = 365; // Threshold for yearly subscription (allowing minimal variance)
-const DAYS_IN_MONTH_MIN = 28; // Minimum days for monthly subscription
-const DAYS_IN_MONTH_MAX = 32; // Maximum days for monthly subscription
 
 export function SettingsPage() {
     const { user, refreshUser } = useAuth();
@@ -26,7 +14,6 @@ export function SettingsPage() {
     const { consent, updateConsent, doNotTrack, resetConsent } = useConsent();
 
     // Refs to store timeout IDs for success messages (cleaned up on unmount)
-    const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const profileTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const settingsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const consentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,7 +21,6 @@ export function SettingsPage() {
     // Cleanup all timeouts on unmount
     useEffect(() => {
         return () => {
-            if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
             if (profileTimeoutRef.current) clearTimeout(profileTimeoutRef.current);
             if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
             if (consentTimeoutRef.current) clearTimeout(consentTimeoutRef.current);
@@ -58,18 +44,6 @@ export function SettingsPage() {
 
     // Consent state
     const [consentSuccess, setConsentSuccess] = useState(false);
-
-    // Subscription state
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [cancelImmediate, setCancelImmediate] = useState(false);
-    const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
-    const [subscriptionSuccess, setSubscriptionSuccess] = useState<string | null>(null);
-
-    // Load subscription
-    const { data: subscription, refetch: refetchSubscription } = useQuery<Subscription | null>({
-        queryKey: ['subscription'],
-        queryFn: getSubscription,
-    });
 
     // Load user settings
     const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -131,64 +105,6 @@ export function SettingsPage() {
             setSettingsError('Failed to update settings. Please try again.');
         } finally {
             setIsSavingSettings(false);
-        }
-    };
-
-    // Subscription management handlers
-    const handleCancelSubscription = async () => {
-        setSubscriptionError(null);
-        setSubscriptionSuccess(null);
-        try {
-            await cancelSubscription(cancelImmediate);
-            await refetchSubscription();
-            setShowCancelModal(false);
-            setCancelImmediate(false); // Reset to default
-
-            // Clear any existing timeout before setting a new one
-            if (successTimeoutRef.current) {
-                clearTimeout(successTimeoutRef.current);
-            }
-
-            setSubscriptionSuccess(
-                cancelImmediate
-                    ? 'Subscription canceled immediately'
-                    : 'Subscription will be canceled at the end of the billing period',
-            );
-            successTimeoutRef.current = setTimeout(() => setSubscriptionSuccess(null), 5000);
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { error?: string } } };
-            setSubscriptionError(err.response?.data?.error || 'Failed to cancel subscription');
-        }
-    };
-
-    const handleReactivateSubscription = async () => {
-        setSubscriptionError(null);
-        setSubscriptionSuccess(null);
-
-        // Clear any existing timeout before setting a new one
-        if (successTimeoutRef.current) {
-            clearTimeout(successTimeoutRef.current);
-        }
-
-        try {
-            await reactivateSubscription();
-            await refetchSubscription();
-            setSubscriptionSuccess('Subscription reactivated successfully');
-            successTimeoutRef.current = setTimeout(() => setSubscriptionSuccess(null), 5000);
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { error?: string } } };
-            setSubscriptionError(err.response?.data?.error || 'Failed to reactivate subscription');
-        }
-    };
-
-    const handleManageSubscription = async () => {
-        setSubscriptionError(null);
-        try {
-            const { portal_url } = await createPortalSession();
-            window.open(portal_url, '_blank');
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { error?: string } } };
-            setSubscriptionError(err.response?.data?.error || 'Failed to open customer portal');
         }
     };
 
@@ -413,114 +329,26 @@ export function SettingsPage() {
                         </CardBody>
                     </Card>
 
-                    {/* Subscription Management */}
-                    <Card className='mb-6' data-testid='subscription-section'>
+                    {/* Account Access */}
+                    <Card className='mb-6' data-testid='account-access-section'>
                         <CardHeader>
-                            <h2 className='text-xl font-semibold'>Subscription</h2>
+                            <h2 className='text-xl font-semibold'>Account Access</h2>
                         </CardHeader>
                         <CardBody>
-                            {subscriptionError && (
-                                <Alert variant='error' className='mb-4'>
-                                    {subscriptionError}
-                                </Alert>
-                            )}
-                            {subscriptionSuccess && (
-                                <Alert variant='success' className='mb-4'>
-                                    {subscriptionSuccess}
-                                </Alert>
-                            )}
-                            {subscription ? (
-                                <Stack direction='vertical' gap={4}>
-                                    <div>
-                                        <label className='block text-sm font-medium mb-1'>Current Plan</label>
-                                        <p className='text-lg font-semibold' data-testid='current-plan'>
-                                            {subscription.tier === 'pro' ? 'Pro' : 'Free'}
-                                        </p>
-                                    </div>
-
-                                    {subscription.tier === 'pro' && subscription.status && (
-                                        <div>
-                                            <label className='block text-sm font-medium mb-1'>Status</label>
-                                            <p data-testid='subscription-status'>
-                                                {subscription.cancel_at_period_end ? (
-                                                    <span className='text-warning-600'>Will cancel at period end</span>
-                                                ) : (
-                                                    <span className='text-success-600 capitalize'>
-                                                        {subscription.status}
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {subscription.tier === 'pro' &&
-                                        subscription.current_period_start &&
-                                        subscription.current_period_end && (
-                                            <div>
-                                                <label className='block text-sm font-medium mb-1'>Billing Period</label>
-                                                <p data-testid='billing-period'>
-                                                    {(() => {
-                                                        const start = new Date(subscription.current_period_start);
-                                                        const end = new Date(subscription.current_period_end);
-                                                        const daysDiff = Math.round(
-                                                            (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-                                                        );
-
-                                                        if (daysDiff >= DAYS_IN_YEAR) {
-                                                            return 'Yearly';
-                                                        } else if (
-                                                            daysDiff >= DAYS_IN_MONTH_MIN &&
-                                                            daysDiff <= DAYS_IN_MONTH_MAX
-                                                        ) {
-                                                            return 'Monthly';
-                                                        } else {
-                                                            return `${daysDiff} days`;
-                                                        }
-                                                    })()}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                    {subscription.current_period_end && (
-                                        <div>
-                                            <label className='block text-sm font-medium mb-1'>Next Billing Date</label>
-                                            <p data-testid='next-billing-date'>
-                                                {new Date(subscription.current_period_end).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    <div className='flex flex-wrap gap-3 pt-2'>
-                                        {subscription.tier === 'pro' && !subscription.cancel_at_period_end && (
-                                            <>
-                                                <Button variant='outline' onClick={handleManageSubscription}>
-                                                    Manage Subscription
-                                                </Button>
-                                                <Button
-                                                    variant='outline'
-                                                    className='text-error-600 border-error-600 hover:bg-error-50'
-                                                    onClick={() => setShowCancelModal(true)}
-                                                >
-                                                    Cancel Subscription
-                                                </Button>
-                                            </>
-                                        )}
-                                        {subscription.cancel_at_period_end && (
-                                            <Button variant='primary' onClick={handleReactivateSubscription}>
-                                                Reactivate Subscription
-                                            </Button>
-                                        )}
-                                        {subscription.tier === 'free' && (
-                                            <Button asChild variant='primary'><Link to='/pricing'>Upgrade to Pro</Link></Button>
-                                        )}
-                                    </div>
-                                </Stack>
-                            ) : (
-                                <div>
-                                    <p className='text-muted-foreground mb-4'>You are currently on the free plan.</p>
-                                    <Button asChild variant='primary'><Link to='/pricing'>View Pro Plans</Link></Button>
+                            <div className='rounded-xl border border-brand/25 bg-brand/5 p-5'>
+                                <p className='text-lg font-semibold text-foreground'>Everything is included.</p>
+                                <p className='mt-2 text-sm leading-6 text-muted-foreground'>
+                                    clpr does not have paid account tiers or feature quotas. Normal safeguards against spam, abuse, and excessive automated traffic still apply to everyone.
+                                </p>
+                                <div className='mt-4 flex flex-wrap gap-3'>
+                                    <Button asChild variant='outline'>
+                                        <Link to='/support'>How community support works</Link>
+                                    </Button>
+                                    <Button asChild variant='primary'>
+                                        <a href='https://patreon.com/subcult' target='_blank' rel='noopener noreferrer'>Support on Patreon</a>
+                                    </Button>
                                 </div>
-                            )}
+                            </div>
                         </CardBody>
                     </Card>
 
@@ -554,71 +382,6 @@ export function SettingsPage() {
                 </div>
             </Container>
 
-            {/* Cancel Subscription Modal */}
-            <Modal
-                open={showCancelModal}
-                onClose={() => {
-                    setShowCancelModal(false);
-                    setCancelImmediate(false); // Reset to default when closing
-                }}
-                title='Cancel Subscription'
-            >
-                <div className='space-y-4'>
-                    <Alert variant='warning'>
-                        <strong>Warning:</strong> Are you sure you want to cancel your subscription?
-                    </Alert>
-                    <p className='text-sm text-muted-foreground'>
-                        Choose when you would like your subscription to end:
-                    </p>
-                    <div className='space-y-3'>
-                        <label className='flex items-start gap-3 cursor-pointer'>
-                            <input
-                                type='radio'
-                                name='cancelType'
-                                checked={!cancelImmediate}
-                                onChange={() => setCancelImmediate(false)}
-                                className='mt-1'
-                            />
-                            <div>
-                                <div className='font-medium'>End at period end</div>
-                                <div className='text-sm text-muted-foreground'>
-                                    You'll retain access until{' '}
-                                    {subscription?.current_period_end
-                                        ? new Date(subscription.current_period_end).toLocaleDateString()
-                                        : 'the end of your billing period'}
-                                </div>
-                            </div>
-                        </label>
-                        <label className='flex items-start gap-3 cursor-pointer'>
-                            <input
-                                type='radio'
-                                name='cancelType'
-                                checked={cancelImmediate}
-                                onChange={() => setCancelImmediate(true)}
-                                className='mt-1'
-                            />
-                            <div>
-                                <div className='font-medium'>Cancel immediately</div>
-                                <div className='text-sm text-muted-foreground'>
-                                    Access will end immediately (no refund for remaining time)
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                    <div className='flex gap-3 justify-end pt-4'>
-                        <Button variant='ghost' onClick={() => setShowCancelModal(false)}>
-                            Keep Subscription
-                        </Button>
-                        <Button
-                            variant='primary'
-                            onClick={handleCancelSubscription}
-                            className='bg-error-600 hover:bg-error-700'
-                        >
-                            Cancel Subscription
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
         </>
     );
 }

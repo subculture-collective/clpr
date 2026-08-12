@@ -1,361 +1,64 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Helmet } from '@dr.pogodin/react-helmet';
-import {
-  getRevenueMetrics,
-  formatCurrency,
-  formatPercentage,
-} from '../../lib/revenue-api';
-import {
-  MetricCard,
-  LineChartComponent,
-  BarChartComponent,
-  PieChartComponent,
-} from '../../components/analytics';
+import { ArrowUpRight, CircleDollarSign, ExternalLink, HeartHandshake, Infinity as InfinityIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { SEO } from '../../components';
 
-// Helper function to get retention level label for accessibility
-const getRetentionLabel = (value: number): string => {
-  if (value >= 80) return 'High retention';
-  if (value >= 60) return 'Medium retention';
-  if (value >= 40) return 'Low retention';
-  return 'Very low retention';
-};
+const principles = [
+    { icon: InfinityIcon, label: 'Account access', value: 'Open', detail: 'No paid tiers or feature quotas' },
+    { icon: CircleDollarSign, label: 'clpr billing', value: 'Disabled', detail: 'No new Stripe checkout or plan changes' },
+    { icon: HeartHandshake, label: 'Funding path', value: 'Patreon', detail: 'Optional support through Subcult' },
+];
 
-// Helper function to get retention symbol for visual indicator
-const getRetentionSymbol = (value: number): string => {
-  if (value >= 80) return '✓';
-  if (value >= 60) return '⚠';
-  if (value >= 40) return '⚠';
-  return '✗';
-};
-
-const AdminRevenuePage: React.FC = () => {
-  // Fetch revenue metrics
-  const { data: metrics, isLoading, error } = useQuery({
-    queryKey: ['revenueMetrics'],
-    queryFn: getRevenueMetrics,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on window focus to reduce load
-  });
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded">
-          <p className="font-bold">Error loading revenue metrics</p>
-          <p>Please try again later or contact support if the issue persists.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+const AdminRevenuePage = () => (
     <>
-      <Helmet>
-        <title>Revenue Dashboard - Admin</title>
-      </Helmet>
+        <SEO title='Community Support - Admin' noindex />
+        <div className='mx-auto max-w-6xl'>
+            <header className='mb-8 border-b border-border pb-7'>
+                <p className='mb-2 text-xs font-bold uppercase tracking-[0.18em] text-brand'>Funding model</p>
+                <h1 className='text-3xl font-bold text-text-primary'>Community Support</h1>
+                <p className='mt-2 max-w-2xl text-sm leading-6 text-text-secondary'>
+                    clpr account access is not monetized. People who want to sustain the project are directed to Subcult on Patreon without receiving account advantages.
+                </p>
+            </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Revenue Dashboard
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Monitor MRR, churn, ARPU, and subscription metrics
-          </p>
-          {metrics?.updated_at && (
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">
-              Last updated: {new Date(metrics.updated_at).toLocaleString()}
-            </p>
-          )}
-        </div>
+            <section className='grid gap-4 md:grid-cols-3' aria-label='Funding status'>
+                {principles.map(item => {
+                    const Icon = item.icon;
+                    return (
+                        <article key={item.label} className='rounded-xl border border-border bg-surface p-5'>
+                            <div className='mb-6 flex items-center justify-between'>
+                                <span className='rounded-lg bg-brand/10 p-2.5 text-brand'><Icon className='h-5 w-5' /></span>
+                                <span className='h-2 w-2 rounded-full bg-emerald-400' />
+                            </div>
+                            <p className='text-xs font-bold uppercase tracking-[0.14em] text-text-tertiary'>{item.label}</p>
+                            <p className='mt-1 text-2xl font-bold text-text-primary'>{item.value}</p>
+                            <p className='mt-2 text-sm text-text-secondary'>{item.detail}</p>
+                        </article>
+                    );
+                })}
+            </section>
 
-        {/* Key Metrics */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Key Metrics
-          </h2>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 animate-pulse"
-                >
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <section className='mt-8 grid gap-6 rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center'>
+                <div>
+                    <h2 className='text-xl font-bold text-text-primary'>Public support destination</h2>
+                    <p className='mt-2 max-w-2xl text-sm leading-6 text-text-secondary'>
+                        The public support page explains that Patreon is optional and does not affect permissions, limits, ranking, or access.
+                    </p>
+                    <div className='mt-5 flex flex-wrap gap-3'>
+                        <Link to='/support' className='inline-flex items-center gap-2 rounded-lg border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-text-primary hover:border-brand/50'>
+                            View support page <ArrowUpRight className='h-4 w-4' />
+                        </Link>
+                        <a href='https://patreon.com/subcult' target='_blank' rel='noopener noreferrer' className='inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover'>
+                            Open Patreon <ExternalLink className='h-4 w-4' />
+                        </a>
+                    </div>
                 </div>
-              ))}
-            </div>
-          ) : metrics ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard
-                title="Monthly Recurring Revenue"
-                value={formatCurrency(metrics.mrr)}
-                subtitle="Active subscriptions"
-              />
-              <MetricCard
-                title="Active Subscribers"
-                value={metrics.active_subscribers}
-                subtitle="Paid users"
-              />
-              <MetricCard
-                title="Churn Rate"
-                value={formatPercentage(metrics.churn)}
-                subtitle="This month"
-              />
-              <MetricCard
-                title="ARPU"
-                value={formatCurrency(metrics.arpu)}
-                subtitle="Average revenue per user"
-              />
-              <MetricCard
-                title="New Subscribers"
-                value={metrics.new_subscribers}
-                subtitle="This month"
-              />
-              <MetricCard
-                title="Churned Subscribers"
-                value={metrics.churned_subscribers}
-                subtitle="This month"
-              />
-              <MetricCard
-                title="Trial Conversion"
-                value={formatPercentage(metrics.trial_conversion_rate)}
-                subtitle="Trial to paid"
-              />
-              <MetricCard
-                title="Avg. Lifetime Value"
-                value={formatCurrency(metrics.average_lifetime_value)}
-                subtitle="Customer LTV"
-              />
-            </div>
-          ) : null}
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* MRR Trend */}
-          {isLoading ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 h-80 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-              <div className="h-full bg-gray-200 dark:bg-gray-700 rounded"></div>
-            </div>
-          ) : metrics?.revenue_by_month && metrics.revenue_by_month.length > 0 ? (
-            <LineChartComponent
-              data={metrics.revenue_by_month.map((m) => ({
-                date: m.month,
-                value: m.mrr / 100, // Convert cents to dollars for display
-              }))}
-              title="MRR Trend"
-              valueLabel="MRR ($)"
-              color="#10b981"
-            />
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex items-center justify-center h-80">
-              <p className="text-gray-500 dark:text-gray-400">No revenue data available</p>
-            </div>
-          )}
-
-          {/* Subscriber Growth */}
-          {isLoading ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 h-80 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-              <div className="h-full bg-gray-200 dark:bg-gray-700 rounded"></div>
-            </div>
-          ) : metrics?.subscriber_growth && metrics.subscriber_growth.length > 0 ? (
-            <LineChartComponent
-              data={metrics.subscriber_growth.map((m) => ({
-                date: m.month,
-                value: m.total,
-              }))}
-              title="Subscriber Growth"
-              valueLabel="Total Subscribers"
-              color="#8b5cf6"
-            />
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex items-center justify-center h-80">
-              <p className="text-gray-500 dark:text-gray-400">No subscriber data available</p>
-            </div>
-          )}
-        </div>
-
-        {/* Plan Distribution and Subscriber Flow */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Plan Distribution */}
-          {isLoading ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 h-80 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-              <div className="h-full bg-gray-200 dark:bg-gray-700 rounded"></div>
-            </div>
-          ) : metrics?.plan_distribution && metrics.plan_distribution.length > 0 ? (
-            <PieChartComponent
-              data={metrics.plan_distribution.map((p) => ({
-                name: p.plan_name,
-                value: p.subscribers,
-              }))}
-              title="Plan Distribution"
-              height={350}
-            />
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex items-center justify-center h-80">
-              <p className="text-gray-500 dark:text-gray-400">No plan distribution data available</p>
-            </div>
-          )}
-
-          {/* Subscriber Flow (New vs Churned) */}
-          {isLoading ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 h-80 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-              <div className="h-full bg-gray-200 dark:bg-gray-700 rounded"></div>
-            </div>
-          ) : metrics?.subscriber_growth && metrics.subscriber_growth.length > 0 ? (
-            <BarChartComponent
-              data={metrics.subscriber_growth.slice(-6).map((m) => ({
-                name: m.month,
-                value: m.net_change,
-              }))}
-              title="Monthly Net Subscriber Change"
-              valueLabel="Net Change"
-              color="#3b82f6"
-              height={350}
-            />
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex items-center justify-center h-80">
-              <p className="text-gray-500 dark:text-gray-400">No subscriber flow data available</p>
-            </div>
-          )}
-        </div>
-
-        {/* Cohort Retention Table */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Cohort Retention
-          </h2>
-
-          {isLoading ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 animate-pulse">
-              <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            </div>
-          ) : metrics?.cohort_retention && metrics.cohort_retention.length > 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Cohort
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Size
-                      </th>
-                      {[0, 1, 2, 3, 4, 5].map((month) => (
-                        <th
-                          key={month}
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Month {month}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {metrics.cohort_retention.map((cohort) => (
-                      <tr key={cohort.cohort_month}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                          {cohort.cohort_month}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {cohort.initial_size}
-                        </td>
-                        {[0, 1, 2, 3, 4, 5].map((month) => {
-                          const retention = cohort.retention_rates[month];
-                          const bgColor = retention !== undefined
-                            ? retention >= 80
-                              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                              : retention >= 60
-                              ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
-                              : retention >= 40
-                              ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200'
-                              : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                            : '';
-                          return (
-                            <td
-                              key={month}
-                              className={`px-6 py-4 whitespace-nowrap text-sm ${bgColor}`}
-                              aria-label={
-                                retention !== undefined
-                                  ? `${formatPercentage(retention)} - ${getRetentionLabel(retention)}`
-                                  : 'No data'
-                              }
-                            >
-                              {retention !== undefined ? (
-                                <>
-                                  <span aria-hidden="true" className="mr-1">
-                                    {getRetentionSymbol(retention)}
-                                  </span>
-                                  {formatPercentage(retention)}
-                                </>
-                              ) : (
-                                '-'
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <p className="text-gray-500 dark:text-gray-400 text-center">
-                No cohort retention data available yet. Data will appear once you have subscribers
-                who have been active for at least one month.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Additional Metrics */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Recovery Metrics
-          </h2>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 animate-pulse"
-                >
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className='rounded-xl border border-border bg-background px-5 py-4 text-sm text-text-secondary'>
+                    <p className='font-semibold text-text-primary'>Operational note</p>
+                    <p className='mt-1'>Patreon metrics are managed on Patreon.</p>
                 </div>
-              ))}
-            </div>
-          ) : metrics ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MetricCard
-                title="Grace Period Recovery"
-                value={formatPercentage(metrics.grace_period_recovery)}
-                subtitle="Users recovered from payment failure"
-              />
-              <MetricCard
-                title="Total Revenue"
-                value={formatCurrency(metrics.total_revenue)}
-                subtitle="All time"
-              />
-            </div>
-          ) : null}
+            </section>
         </div>
-      </div>
     </>
-  );
-};
+);
 
 export default AdminRevenuePage;

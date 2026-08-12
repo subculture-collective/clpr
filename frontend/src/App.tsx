@@ -273,13 +273,7 @@ const AdminAPIDocsPage = lazy(() =>
         default: m.AdminAPIDocsPage,
     })),
 );
-const PricingPage = lazy(() => import('./pages/PricingPage'));
-const SubscriptionSuccessPage = lazy(
-    () => import('./pages/SubscriptionSuccessPage'),
-);
-const SubscriptionCancelPage = lazy(
-    () => import('./pages/SubscriptionCancelPage'),
-);
+const SupportPage = lazy(() => import('./pages/SupportPage'));
 const RoleBadgeTestPage = lazy(() =>
     import('./pages/RoleBadgeTestPage').then(m => ({
         default: m.RoleBadgeTestPage,
@@ -544,20 +538,10 @@ function App() {
                                             path='/leaderboards'
                                             element={<LeaderboardPage />}
                                         />
-                                        <Route
-                                            path='/pricing'
-                                            element={<PricingPage />}
-                                        />
-                                        <Route
-                                            path='/subscription/success'
-                                            element={
-                                                <SubscriptionSuccessPage />
-                                            }
-                                        />
-                                        <Route
-                                            path='/subscription/cancel'
-                                            element={<SubscriptionCancelPage />}
-                                        />
+                                        <Route path='/support' element={<SupportPage />} />
+                                        <Route path='/pricing' element={<Navigate to='/support' replace />} />
+                                        <Route path='/subscription/success' element={<Navigate to='/support' replace />} />
+                                        <Route path='/subscription/cancel' element={<Navigate to='/support' replace />} />
 
                                         {/* Forum Routes */}
                                         <Route

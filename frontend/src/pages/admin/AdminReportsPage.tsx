@@ -255,13 +255,6 @@ export function AdminReportsPage() {
                       </Button>
                     </>
                   )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => navigate(`/admin/reports/${report.id}`)}
-                  >
-                    View Details
-                  </Button>
                 </div>
               </div>
             ))}

@@ -219,11 +219,8 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		// Protected subscription endpoints (require authentication)
 		subscriptions.Use(middleware.AuthMiddleware(svcs.Auth))
 		subscriptions.GET("/me", h.Subscription.GetSubscription)
-		subscriptions.POST("/checkout", middleware.RateLimitMiddleware(infra.Redis, 5, time.Minute), h.Subscription.CreateCheckoutSession)
 		subscriptions.POST("/portal", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Subscription.CreatePortalSession)
-		subscriptions.POST("/change-plan", middleware.RateLimitMiddleware(infra.Redis, 5, time.Minute), h.Subscription.ChangeSubscriptionPlan)
 		subscriptions.POST("/cancel", middleware.RateLimitMiddleware(infra.Redis, 5, time.Minute), h.Subscription.CancelSubscription)
-		subscriptions.POST("/reactivate", middleware.RateLimitMiddleware(infra.Redis, 5, time.Minute), h.Subscription.ReactivateSubscription)
 		subscriptions.GET("/invoices", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Subscription.GetInvoices)
 	}
 

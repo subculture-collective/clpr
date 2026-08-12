@@ -31,9 +31,7 @@ export { SettingsPage } from './SettingsPage';
 export { CreatorDashboardPage } from './CreatorDashboardPage';
 export { ChatPage } from './ChatPage';
 export { StreamerClipRoomPage } from './StreamerClipRoomPage';
-export { default as PricingPage } from './PricingPage';
-export { default as SubscriptionSuccessPage } from './SubscriptionSuccessPage';
-export { default as SubscriptionCancelPage } from './SubscriptionCancelPage';
+export { default as SupportPage } from './SupportPage';
 
 // Watch Party pages
 export { WatchPartyPage } from './WatchPartyPage';

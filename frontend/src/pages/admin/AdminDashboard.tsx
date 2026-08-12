@@ -9,6 +9,10 @@ const priorityActions = [
     { label: 'Check collection automation', href: '/admin/playlist-scripts', description: 'Inspect generated playlists and scheduling rules.', icon: Sparkles },
 ];
 
+const dashboardGroups = adminNavGroups
+    .map(group => ({ ...group, items: group.items.filter(item => item.href !== '/admin/dashboard') }))
+    .filter(group => group.items.length > 0);
+
 export function AdminDashboard() {
     const today = new Intl.DateTimeFormat('en-US', {
         weekday: 'long', month: 'long', day: 'numeric',
@@ -52,7 +56,7 @@ export function AdminDashboard() {
                 <section aria-labelledby='workspace-heading'>
                     <div className='mb-4'><p className='text-xs font-bold uppercase tracking-[0.16em] text-brand'>Directory</p><h2 id='workspace-heading' className='mt-1 text-xl font-bold text-text-primary'>Every admin workspace</h2></div>
                     <div className='grid gap-4 xl:grid-cols-2'>
-                        {adminNavGroups.filter(group => group.label !== 'Overview').map(group => (
+                        {dashboardGroups.map(group => (
                             <div key={group.label} className='rounded-xl border border-border bg-surface p-5'>
                                 <h3 className='mb-3 text-xs font-bold uppercase tracking-[0.16em] text-text-tertiary'>{group.label}</h3>
                                 <div className='divide-y divide-border'>

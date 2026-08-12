@@ -8,7 +8,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     { label: 'Overview', items: [
         { label: 'Control room', href: '/admin/dashboard', description: 'Admin overview and shortcuts', icon: LayoutDashboard },
         { label: 'Platform analytics', href: '/admin/analytics', description: 'Audience and platform health', icon: BarChart3 },
-        { label: 'Revenue', href: '/admin/revenue', description: 'Subscriptions and earnings', icon: CircleDollarSign },
+        { label: 'Community support', href: '/admin/revenue', description: 'Open access and Patreon funding', icon: CircleDollarSign },
     ] },
     { label: 'Moderation', items: [
         { label: 'Review queue', href: '/admin/moderation', description: 'Prioritized moderation work', icon: Shield },

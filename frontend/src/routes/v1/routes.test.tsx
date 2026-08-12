@@ -3,6 +3,7 @@ import { MemoryRouter, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { accountRoutes, type AccountRoutePages } from './AccountRoutes';
 import { adminRoutes, type AdminRoutePages } from './AdminRoutes';
+import { adminNavItems } from '@/components/admin/adminNavigation';
 
 vi.mock('@/components/guards/AdminRoute', () => ({
     AdminRoute: ({ children }: { children: React.ReactNode }) => (
@@ -27,6 +28,30 @@ describe('versioned route boundaries', () => {
     it('wraps administration paths in the admin boundary', () => {
         render(
             <MemoryRouter initialEntries={['/admin/moderation/analytics']}>
+                <Routes>{adminRoutes(adminPages)}</Routes>
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByTestId('admin-boundary')).toContainElement(
+            screen.getByRole('heading', { name: 'Matched page' }),
+        );
+    });
+
+    it.each(adminNavItems)('registers the $label navigation target', ({ href }) => {
+        render(
+            <MemoryRouter initialEntries={[href]}>
+                <Routes>{adminRoutes(adminPages)}</Routes>
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByTestId('admin-boundary')).toContainElement(
+            screen.getByRole('heading', { name: 'Matched page' }),
+        );
+    });
+
+    it('registers the curated collection creation target', () => {
+        render(
+            <MemoryRouter initialEntries={['/admin/discovery-lists/new']}>
                 <Routes>{adminRoutes(adminPages)}</Routes>
             </MemoryRouter>,
         );

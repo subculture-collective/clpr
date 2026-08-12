@@ -79,7 +79,7 @@ func (h *SEOHandler) GetSitemap(c *gin.Context) {
 		{"/community-rules", "0.5", "monthly"},
 		{"/terms", "0.4", "monthly"},
 		{"/privacy", "0.4", "monthly"},
-		{"/pricing", "0.6", "weekly"},
+		{"/support", "0.6", "monthly"},
 	}
 
 	for _, page := range staticPages {

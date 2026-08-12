@@ -24,14 +24,12 @@ export function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <a
-                                    href='https://patreon.com/subcult'
-                                    target='_blank'
-                                    rel='noopener noreferrer'
+                                <Link
+                                    to='/support'
                                     className='text-muted-foreground hover:text-foreground transition-colors'
                                 >
-                                    Patreon
-                                </a>
+                                    Support clpr
+                                </Link>
                             </li>
                         </ul>
                     </div>

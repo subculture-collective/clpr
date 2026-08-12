@@ -46,7 +46,7 @@ test.describe('deployed candidate accessibility', () => {
         { name: 'login', path: '/login', heading: /welcome to clipper/i },
         { name: 'search', path: `/search?q=${encodeURIComponent(searchQuery)}`, heading: /search/i },
         { name: 'clip detail', path: `/clip/${clipId}`, heading: clipTitle },
-        { name: 'pricing', path: '/pricing', heading: /upgrade to clpr pro/i },
+        { name: 'community support', path: '/support', heading: /clpr is for the culture/i },
         { name: 'forum', path: '/forum', heading: /forum discussions/i },
     ];
 

@@ -230,29 +230,6 @@ async function setupIntegrationMocks(page: Page) {
         }),
     );
 
-    // Premium page fallback content (keeps pricing test deterministic)
-    await page.route('**/premium', route => {
-        if (route.request().resourceType() !== 'document')
-            return route.continue();
-
-        return route.fulfill({
-            status: 200,
-            contentType: 'text/html',
-            body: `<!doctype html>
-              <html>
-                <body>
-                  <nav role="navigation"><a href="/">Home</a></nav>
-                  <main>
-                    <h1>Premium</h1>
-                    <section data-testid="pricing">
-                      <div class="tier">Pro - $5/month</div>
-                      <div class="tier">Elite - $12/month</div>
-                    </section>
-                  </main>
-                </body>
-              </html>`,
-        });
-    });
 }
 
 // Mock user for authenticated tests
@@ -356,7 +333,6 @@ const SELECTORS = {
     clipCard: '[data-testid="clip-card"]',
     submitButton: 'button, a',
     favoriteButton: 'button',
-    premiumLink: 'a, button',
 };
 
 // Helper function to get search input
@@ -740,69 +716,18 @@ test.describe('Engagement Features', () => {
     });
 });
 
-test.describe('Premium Features', () => {
-    test('should display premium/subscription information', async ({
-        page,
-    }) => {
-        await page.goto('/');
+test.describe('Community Support', () => {
+    test('keeps account access open and Patreon optional', async ({ page }) => {
+        await page.goto('/support');
 
-        // Look for premium/pro/subscription links
-        const premiumLink = page
-            .locator('a, button')
-            .filter({ hasText: /premium|pro|subscribe|upgrade/i });
-
-        if ((await premiumLink.count()) > 0) {
-            await expect(premiumLink.first()).toBeVisible();
-        }
-    });
-
-    test('should navigate to premium page', async ({ page }) => {
-        await page.goto('/');
-
-        const premiumLink = page
-            .locator('a')
-            .filter({ hasText: /premium|pro|subscribe|upgrade/i });
-
-        if ((await premiumLink.count()) > 0) {
-            await premiumLink.first().click();
-            await page.waitForLoadState('networkidle');
-
-            expect(page.url()).toMatch(/premium|subscription|pricing/);
-        }
-    });
-
-    test('should show premium tiers and pricing', async ({ page }) => {
-        // Navigate to pricing/premium page if it exists
-        const response = await page.goto('/premium');
-
-        if (response?.status() === 200) {
-            await page.waitForLoadState('networkidle');
-
-            // Look for pricing information
-            const pricingElement = page.locator('text=/\\$[0-9]+|price|tier/i');
-            expect(await pricingElement.count()).toBeGreaterThan(0);
-        }
-    });
-
-    test.skip('should handle subscription checkout flow', async ({
-        authenticatedPage,
-    }) => {
-        // TODO: Requires Stripe integration and checkout UI
-        // Now using fixture-based authentication and Stripe test mode
-        const page = authenticatedPage;
-
-        await page.goto('/premium');
-
-        const subscribeButton = page
-            .locator('button')
-            .filter({ hasText: /subscribe|get started|buy/i });
-        await subscribeButton.first().click();
-
-        await page.waitForLoadState('networkidle');
-
-        // Should navigate to checkout or show payment form
-        const checkoutIndicator = page.locator('text=/payment|checkout|card/i');
-        await expect(checkoutIndicator.first()).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: /clpr is for the culture/i })).toBeVisible();
+        await expect(page.getByText('No account tiers')).toBeVisible();
+        await expect(page.getByText('No feature paywalls')).toBeVisible();
+        await expect(page.getByRole('link', { name: /support subcult on patreon/i })).toHaveAttribute(
+            'href',
+            'https://patreon.com/subcult',
+        );
+        await expect(page.getByText(/subscribe now|upgrade to pro/i)).toHaveCount(0);
     });
 });
 

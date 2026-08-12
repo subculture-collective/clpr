@@ -285,7 +285,7 @@ export function PrivacyPage() {
                 </a>)
               </li>
               <li><strong className="text-foreground">Error Tracking:</strong> Sentry (when enabled) for error monitoring</li>
-              <li><strong className="text-foreground">Payment Processing:</strong> Stripe for subscription payments (if applicable)</li>
+              <li><strong className="text-foreground">Optional Community Support:</strong> Patreon processes support independently under its own privacy policy. Supporting does not change your clpr account.</li>
             </ul>
             <p className="text-muted-foreground mt-4">
               We are not responsible for the privacy practices of these third parties. We encourage you to 

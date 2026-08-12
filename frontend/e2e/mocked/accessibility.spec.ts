@@ -84,7 +84,7 @@ const criticalJourneys = [
     { name: 'login', path: '/login', heading: /welcome to clipper/i },
     { name: 'search', path: '/search?q=accessible', heading: /search/i },
     { name: 'clip detail', path: `/clip/${clip.id}`, heading: clip.title },
-    { name: 'payment plans', path: '/pricing', heading: /upgrade to clpr pro/i },
+    { name: 'community support', path: '/support', heading: /clpr is for the culture/i },
     { name: 'forum', path: '/forum', heading: /forum discussions/i },
 ];
 

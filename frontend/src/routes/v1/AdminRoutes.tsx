@@ -76,6 +76,10 @@ export function adminRoutes(pages: AdminRoutePages) {
                 element={protectedPage(pages.discoveryListForm)}
             />
             <Route
+                path='/admin/discovery-lists/new'
+                element={protectedPage(pages.discoveryListForm)}
+            />
+            <Route
                 path='/admin/playlist-scripts'
                 element={protectedPage(pages.playlistScripts)}
             />
