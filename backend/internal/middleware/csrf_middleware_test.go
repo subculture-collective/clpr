@@ -4,12 +4,13 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/gin-gonic/gin"
 )
 
 func TestCSRFMiddleware_SafeMethods(t *testing.T) {
@@ -151,8 +152,8 @@ func TestCSRFMiddleware_Integration(t *testing.T) {
 	// This test requires a real Redis connection
 	// Skip if Redis is not available
 	cfg := &config.RedisConfig{
-		Host:     "localhost",
-		Port:     "6380",
+		Host:     envOrDefault("TEST_REDIS_HOST", "localhost"),
+		Port:     envOrDefault("TEST_REDIS_PORT", "6380"),
 		Password: "",
 		DB:       0,
 	}
@@ -233,4 +234,11 @@ func TestCSRFMiddleware_Integration(t *testing.T) {
 			t.Errorf("Expected status 200 on POST with valid CSRF token, got %d", w.Code)
 		}
 	})
+}
+
+func envOrDefault(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
 }
