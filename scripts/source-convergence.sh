@@ -283,6 +283,7 @@ phase_browser() {
 phase_contracts() {
     bash scripts/test-edge-contracts.sh --runtime
     bash scripts/test-blue-green-contracts.sh
+    bash scripts/test-real-e2e-runner-contract.sh
     bash scripts/test-operator-preflight.sh
 }
 

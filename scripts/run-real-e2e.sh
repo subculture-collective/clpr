@@ -108,10 +108,15 @@ for _ in {1..60}; do
             host_version="${VERSION_ID:-}"
         fi
         if [[ "$host_version" == "24.04" ]]; then
-            PLAYWRIGHT_API_BASE_URL="$api_origin" \
-                PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
-                PLAYWRIGHT_SEED_GAME_ID="release-game" \
-                npx playwright test --project=real-chromium --project=real-firefox --project=real-webkit
+            # Run browser engines sequentially. The hosted runner has 4 GiB of
+            # memory; launching all three engines concurrently makes browser
+            # processes fail nondeterministically before assertions execute.
+            for project in real-chromium real-firefox real-webkit; do
+                PLAYWRIGHT_API_BASE_URL="$api_origin" \
+                    PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
+                    PLAYWRIGHT_SEED_GAME_ID="release-game" \
+                    npx playwright test --project="$project"
+            done
         else
             PLAYWRIGHT_API_BASE_URL="$api_origin" \
                 PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \

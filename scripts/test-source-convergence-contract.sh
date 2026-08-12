@@ -49,6 +49,7 @@ required_commands=(
     'verify-secret-history.sh'
     'test:e2e:mocked'
     'run-real-e2e.sh'
+    'test-real-e2e-runner-contract.sh'
     'test-edge-contracts.sh --runtime'
     'test-blue-green-contracts.sh'
     'test-operator-preflight.sh'
