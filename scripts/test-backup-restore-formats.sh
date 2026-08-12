@@ -7,9 +7,11 @@ if ! command -v psql >/dev/null; then
         -v "$repo_root:/repo:ro" \
         -e TEST_DATABASE_HOST -e TEST_DATABASE_PORT -e TEST_DATABASE_USER \
         -e TEST_DATABASE_PASSWORD -e DRILL_LOG=/tmp/clpr-restore-format-contract.log \
+        -e VALIDATION_LOG=/tmp/clpr-backup-validation-contract.log \
         postgres:17 bash /repo/scripts/test-backup-restore-formats.sh
 fi
 export DRILL_LOG="${DRILL_LOG:-/tmp/clpr-restore-format-contract.log}"
+export VALIDATION_LOG="${VALIDATION_LOG:-/tmp/clpr-backup-validation-contract.log}"
 # shellcheck disable=SC1091
 source "$repo_root/scripts/restore-drill.sh"
 # shellcheck disable=SC1091
