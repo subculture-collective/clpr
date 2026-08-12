@@ -255,7 +255,9 @@ func TestTokenExpiration(t *testing.T) {
 	userID := uuid.New()
 
 	// Generate access token (15 min)
+	accessIssuedNotBefore := time.Now()
 	accessToken, err := manager.GenerateAccessToken(userID, "user")
+	accessIssuedNotAfter := time.Now()
 	if err != nil {
 		t.Fatalf("Failed to generate access token: %v", err)
 	}
@@ -265,17 +267,20 @@ func TestTokenExpiration(t *testing.T) {
 		t.Fatalf("Failed to validate access token: %v", err)
 	}
 
-	// Check expiration is approximately 15 minutes from now
-	expectedExpiry := time.Now().Add(15 * time.Minute)
+	// JWT NumericDate values have one-second precision. Bound the expected
+	// expiration by the wall-clock interval in which token generation occurred
+	// instead of comparing a second-truncated claim to a nanosecond timestamp.
 	actualExpiry := claims.ExpiresAt.Time
-
-	diff := actualExpiry.Sub(expectedExpiry)
-	if diff < -time.Second || diff > time.Second {
-		t.Errorf("Access token expiration not as expected. Diff: %v", diff)
+	minExpiry := accessIssuedNotBefore.Truncate(time.Second).Add(15 * time.Minute)
+	maxExpiry := accessIssuedNotAfter.Truncate(time.Second).Add(15 * time.Minute)
+	if actualExpiry.Before(minExpiry) || actualExpiry.After(maxExpiry) {
+		t.Errorf("Access token expiration %v is outside expected range [%v, %v]", actualExpiry, minExpiry, maxExpiry)
 	}
 
 	// Generate refresh token (7 days)
+	refreshIssuedNotBefore := time.Now()
 	refreshToken, err := manager.GenerateRefreshToken(userID)
+	refreshIssuedNotAfter := time.Now()
 	if err != nil {
 		t.Fatalf("Failed to generate refresh token: %v", err)
 	}
@@ -285,12 +290,10 @@ func TestTokenExpiration(t *testing.T) {
 		t.Fatalf("Failed to validate refresh token: %v", err)
 	}
 
-	// Check expiration is approximately 7 days from now
-	expectedExpiry = time.Now().Add(7 * 24 * time.Hour)
 	actualExpiry = claims.ExpiresAt.Time
-
-	diff = actualExpiry.Sub(expectedExpiry)
-	if diff < -time.Second || diff > time.Second {
-		t.Errorf("Refresh token expiration not as expected. Diff: %v", diff)
+	minExpiry = refreshIssuedNotBefore.Truncate(time.Second).Add(7 * 24 * time.Hour)
+	maxExpiry = refreshIssuedNotAfter.Truncate(time.Second).Add(7 * 24 * time.Hour)
+	if actualExpiry.Before(minExpiry) || actualExpiry.After(maxExpiry) {
+		t.Errorf("Refresh token expiration %v is outside expected range [%v, %v]", actualExpiry, minExpiry, maxExpiry)
 	}
 }
