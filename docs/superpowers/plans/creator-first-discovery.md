@@ -24,7 +24,7 @@ Production snapshot on August 11, 2026:
 - 1,176 visible clips
 - 522 distinct creators/broadcasters
 - 106 distinct Twitch category IDs
-- The most-viewed creators commonly span multiple Twitch categories: xQc spans 6, ohnePixel 5, caseoh_ 7, and Maximilian_DOOD 4.
+- The most-viewed creators commonly span multiple Twitch categories: `xQc` spans 6, `ohnePixel` 5, `caseoh_` 7, and `Maximilian_DOOD` 4.
 - All current visible clips have a missing `game_name`, even though most have a `game_id`. Creator identity is currently the more complete discovery primitive.
 
 The codebase already contains much of the needed creator infrastructure:
