@@ -113,7 +113,7 @@ for _ in {1..60}; do
         # exact checked-out workspace into the digest-pinned Playwright image;
         # a host bind mount is invalid because the Docker daemon is outside the
         # runner container.
-        browser_container="$(docker create --network host --ipc=host \
+        browser_container="$(docker create --network "container:$(hostname)" --ipc=host \
             --user "$(id -u):$(id -g)" \
             -e HOME=/tmp \
             -e "CI=${CI:-}" \
