@@ -43,6 +43,11 @@ COPY --from=builder /app/edge-routes.conf /etc/nginx/edge-routes.conf
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Static assets may retain restrictive source modes from the build context.
+# nginx runs as an unprivileged user and must be able to traverse and read all
+# published files.
+RUN chmod -R a+rX /usr/share/nginx/html
+
 # Preserve the favicon asset's canonical source while also serving the
 # conventional root URL expected by browsers and crawlers.
 RUN cp /usr/share/nginx/html/favicon_io/favicon.ico /usr/share/nginx/html/favicon.ico
