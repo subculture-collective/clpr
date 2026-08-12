@@ -184,8 +184,8 @@ phase_frontend() {
         npm audit --omit=dev --audit-level=high
         npm run lint
         npm run test:inventory
-        npm run test -- run --reporter=json --outputFile="$artifact_dir/frontend/vitest-run-1.json"
-        npm run test -- run --reporter=json --outputFile="$artifact_dir/frontend/vitest-run-2.json"
+        run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-1.json"
+        run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-2.json"
         node ../scripts/compare-vitest-runs.mjs \
             "$artifact_dir/frontend/vitest-run-1.json" \
             "$artifact_dir/frontend/vitest-run-2.json"
@@ -193,6 +193,50 @@ phase_frontend() {
         npm run bundle:check
         npm run routes:check
     )
+}
+
+run_vitest_with_diagnostics() {
+    local report="$1"
+    local status
+    set +e
+    npm run test -- run --reporter=json --outputFile="$report"
+    status=$?
+    set -e
+    if (( status == 0 )); then
+        return 0
+    fi
+
+    node - "$report" <<'NODE'
+const fs = require('node:fs');
+
+const reportPath = process.argv[2];
+if (!fs.existsSync(reportPath)) {
+  console.error(`Vitest failed before writing its JSON report: ${reportPath}`);
+  process.exit(0);
+}
+
+const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+console.error(JSON.stringify({
+  success: report.success,
+  numTotalTestSuites: report.numTotalTestSuites,
+  numFailedTestSuites: report.numFailedTestSuites,
+  numTotalTests: report.numTotalTests,
+  numFailedTests: report.numFailedTests,
+  failedResults: (report.testResults || [])
+    .filter((suite) => suite.status === 'failed')
+    .map((suite) => ({
+      name: suite.name,
+      message: suite.message,
+      failedAssertions: (suite.assertionResults || [])
+        .filter((assertion) => assertion.status === 'failed')
+        .map((assertion) => ({
+          fullName: assertion.fullName,
+          failureMessages: assertion.failureMessages,
+        })),
+    })),
+}, null, 2));
+NODE
+    return "$status"
 }
 
 phase_api_docs() {
