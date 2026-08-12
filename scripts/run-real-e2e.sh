@@ -11,8 +11,12 @@ playwright_image="${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.57.0-noble
 log_file="$repo_root/.tmp/backend-e2e.log"
 pid_file="$repo_root/.tmp/backend-e2e.pid"
 api_binary="$repo_root/.tmp/backend-e2e-api"
+browser_container=""
 
 cleanup() {
+    if [[ -n "$browser_container" ]]; then
+        docker rm -f "$browser_container" >/dev/null 2>&1 || true
+    fi
     if [[ -f "$pid_file" ]]; then
         kill "$(cat "$pid_file")" 2>/dev/null || true
         wait "$(cat "$pid_file")" 2>/dev/null || true
@@ -97,42 +101,33 @@ for _ in {1..60}; do
         curl -fsS -X POST "${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}/clips/_refresh" >/dev/null
         cd "$repo_root/frontend"
 
-        # Playwright's fallback browser installers can be unavailable or fail
-        # to finalize on unsupported hosts. Keep the gate fail-closed with the
-        # digest-pinned Ubuntu image for Firefox/WebKit while retaining native
-        # Chromium coverage.
-        host_version=""
-        if [[ -r /etc/os-release ]]; then
-            # shellcheck disable=SC1091
-            source /etc/os-release
-            host_version="${VERSION_ID:-}"
-        fi
-        if [[ "$host_version" == "24.04" ]]; then
-            # Run browser engines sequentially. The hosted runner has 4 GiB of
-            # memory; launching all three engines concurrently makes browser
-            # processes fail nondeterministically before assertions execute.
-            for project in real-chromium real-firefox real-webkit; do
-                PLAYWRIGHT_API_BASE_URL="$api_origin" \
-                    PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
-                    PLAYWRIGHT_SEED_GAME_ID="release-game" \
-                    npx playwright test --project="$project" --workers=1
-            done
-        else
-            PLAYWRIGHT_API_BASE_URL="$api_origin" \
-                PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
-                PLAYWRIGHT_SEED_GAME_ID="release-game" \
-                npx playwright test --project=real-chromium
-            docker run --rm --network host --ipc=host \
-                --user "$(id -u):$(id -g)" \
-                -e HOME=/tmp \
-                -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
-                -e PLAYWRIGHT_API_BASE_URL="$api_origin" \
-                -e PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
-                -e PLAYWRIGHT_SEED_GAME_ID=release-game \
-                -v "$repo_root:/work" -w /work/frontend \
-                "$playwright_image" \
-                npx playwright test --project=real-firefox --project=real-webkit
-        fi
+        # Keep native Chromium coverage, but use one worker so the 4 GiB
+        # hosted runner does not overload Vite or the browser process.
+        PLAYWRIGHT_API_BASE_URL="$api_origin" \
+            PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
+            PLAYWRIGHT_SEED_GAME_ID="release-game" \
+            npx playwright test --project=real-chromium --workers=1
+
+        # Native Firefox cannot create its sandbox namespace in the hosted
+        # runner container and the minimal runner image omits libpci. Copy the
+        # exact checked-out workspace into the digest-pinned Playwright image;
+        # a host bind mount is invalid because the Docker daemon is outside the
+        # runner container.
+        browser_container="$(docker create --network host --ipc=host \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
+            -e "CI=${CI:-}" \
+            -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            -e "PLAYWRIGHT_API_BASE_URL=$api_origin" \
+            -e "PLAYWRIGHT_SEED_CLIP_ID=$seed_clip_id" \
+            -e PLAYWRIGHT_SEED_GAME_ID=release-game \
+            -w /work/frontend \
+            "$playwright_image" \
+            sh -lc 'npx playwright test --project=real-firefox --workers=1 && npx playwright test --project=real-webkit --workers=1')"
+        docker cp "$repo_root/." "$browser_container:/work"
+        docker start --attach "$browser_container"
+        docker rm "$browser_container" >/dev/null
+        browser_container=""
         exit 0
     fi
     if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
