@@ -95,14 +95,11 @@ for _ in {1..60}; do
         )
         curl -fsS -X POST http://localhost:9201/clips/_refresh >/dev/null
         cd "$repo_root/frontend"
-        PLAYWRIGHT_API_BASE_URL="$api_origin" \
-            PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
-            PLAYWRIGHT_SEED_GAME_ID="release-game" \
-            npx playwright test --project=real-chromium --project=real-firefox
 
-        # Playwright 1.57 does not publish dependency installers for Ubuntu
-        # 26.04. Keep the release gate fail-closed by running WebKit in its
-        # matching, digest-pinned Ubuntu 24.04 image on unsupported hosts.
+        # Playwright's fallback browser installers can be unavailable or fail
+        # to finalize on unsupported hosts. Keep the gate fail-closed with the
+        # digest-pinned Ubuntu image for Firefox/WebKit while retaining native
+        # Chromium coverage.
         host_version=""
         if [[ -r /etc/os-release ]]; then
             # shellcheck disable=SC1091
@@ -113,8 +110,12 @@ for _ in {1..60}; do
             PLAYWRIGHT_API_BASE_URL="$api_origin" \
                 PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
                 PLAYWRIGHT_SEED_GAME_ID="release-game" \
-                npx playwright test --project=real-webkit
+                npx playwright test --project=real-chromium --project=real-firefox --project=real-webkit
         else
+            PLAYWRIGHT_API_BASE_URL="$api_origin" \
+                PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
+                PLAYWRIGHT_SEED_GAME_ID="release-game" \
+                npx playwright test --project=real-chromium
             docker run --rm --network host --ipc=host \
                 --user "$(id -u):$(id -g)" \
                 -e HOME=/tmp \
@@ -124,7 +125,7 @@ for _ in {1..60}; do
                 -e PLAYWRIGHT_SEED_GAME_ID=release-game \
                 -v "$repo_root:/work" -w /work/frontend \
                 "$playwright_image" \
-                npx playwright test --project=real-webkit
+                npx playwright test --project=real-firefox --project=real-webkit
         fi
         exit 0
     fi
