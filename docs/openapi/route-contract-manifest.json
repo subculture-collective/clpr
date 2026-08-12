@@ -455,6 +455,34 @@
     "contract_level": "route-specific"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/admin/moderators",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).ListPlatformModerators-fm",
+    "operation_id": "listPlatformModerators",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/moderators",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).AddPlatformModerator-fm",
+    "operation_id": "addPlatformModerator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/moderators/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).RevokePlatformModerator-fm",
+    "operation_id": "revokePlatformModerator",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/moderators/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UpdatePlatformModerator-fm",
+    "operation_id": "updatePlatformModerator",
+    "contract_level": "route-specific"
+  },
+  {
     "method": "POST",
     "path": "/api/v1/admin/nsfw/batch-detect",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).BatchDetect-fm",
@@ -487,6 +515,13 @@
     "path": "/api/v1/admin/nsfw/metrics",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*NSFWHandler).GetMetrics-fm",
     "operation_id": "getApiV1AdminNsfwMetrics",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/openapi.json",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminOpenAPIHandler).Get-fm",
+    "operation_id": "getAdminOpenAPI",
     "contract_level": "route-specific"
   },
   {
@@ -609,6 +644,13 @@
     "contract_level": "route-specific"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/admin/tags",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).ListAdminTags-fm",
+    "operation_id": "getApiV1AdminTags",
+    "contract_level": "route-specific"
+  },
+  {
     "method": "POST",
     "path": "/api/v1/admin/tags",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).CreateTag-fm",
@@ -634,6 +676,41 @@
     "path": "/api/v1/admin/tags/blacklist/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).RemoveBlacklistedTag-fm",
     "operation_id": "deleteApiV1AdminTagsBlacklistId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tags/promotion-queue",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagPromotionHandler).List-fm",
+    "operation_id": "getApiV1AdminTagsPromotionQueue",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tags/promotion-queue/{id}/approve",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagPromotionHandler).Approve-fm",
+    "operation_id": "postApiV1AdminTagsPromotionQueueIdApprove",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tags/promotion-queue/{id}/reject",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagPromotionHandler).Reject-fm",
+    "operation_id": "postApiV1AdminTagsPromotionQueueIdReject",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/tags/suppressions/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).RestoreTag-fm",
+    "operation_id": "deleteApiV1AdminTagSuppression",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tags/suppressions/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).SuppressTag-fm",
+    "operation_id": "postApiV1AdminTagSuppression",
     "contract_level": "route-specific"
   },
   {

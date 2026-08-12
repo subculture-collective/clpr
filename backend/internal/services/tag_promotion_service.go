@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrPromotionNotFound      = errors.New("tag promotion queue entry not found")
+	ErrPromotionNotFound       = errors.New("tag promotion queue entry not found")
 	ErrPromotionAlreadyPending = errors.New("tag already has a pending promotion request")
 	ErrPromotionNotPending     = errors.New("tag promotion entry is not in pending status")
 	ErrTagNotFound             = errors.New("tag not found") // shadows repository.ErrTagNotFound
@@ -166,6 +166,49 @@ func (s *TagPromotionService) GetPendingQueue(ctx context.Context) ([]models.Tag
 		ORDER BY unique_users DESC, usage_count DESC
 	`
 	return s.queryQueueItems(ctx, query)
+}
+
+func (s *TagPromotionService) GetQueue(ctx context.Context, status string, limit, offset int) ([]models.TagPromotionQueueItem, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM tag_promotion_queue WHERE status = $1`, status).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("counting queue items: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `SELECT id, tag_slug, usage_count, unique_users, status,
+		reviewed_by, reviewed_at, promoted_at, created_at, updated_at
+		FROM tag_promotion_queue WHERE status = $1
+		ORDER BY unique_users DESC, usage_count DESC LIMIT $2 OFFSET $3`, status, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("querying queue items: %w", err)
+	}
+	defer rows.Close()
+	items := []models.TagPromotionQueueItem{}
+	for rows.Next() {
+		var item models.TagPromotionQueueItem
+		if err := rows.Scan(&item.ID, &item.TagSlug, &item.UsageCount, &item.UniqueUsers,
+			&item.Status, &item.ReviewedBy, &item.ReviewedAt, &item.PromotedAt,
+			&item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		items = append(items, item)
+	}
+	return items, total, rows.Err()
+}
+
+func (s *TagPromotionService) GetQueueItemByID(ctx context.Context, id uuid.UUID) (*models.TagPromotionQueueItem, error) {
+	var item models.TagPromotionQueueItem
+	err := s.pool.QueryRow(ctx, `SELECT id, tag_slug, usage_count, unique_users, status,
+		reviewed_by, reviewed_at, promoted_at, created_at, updated_at
+		FROM tag_promotion_queue WHERE id = $1`, id).Scan(
+		&item.ID, &item.TagSlug, &item.UsageCount, &item.UniqueUsers,
+		&item.Status, &item.ReviewedBy, &item.ReviewedAt, &item.PromotedAt,
+		&item.CreatedAt, &item.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrPromotionNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("querying queue item: %w", err)
+	}
+	return &item, nil
 }
 
 // GetQueueItemBySlug returns a specific queue entry by tag slug and optional status filter.

@@ -46,8 +46,8 @@ export function AdminWebhookDLQPage() {
             setError(null);
             const response = await getWebhookDLQItems(page, 20);
             setItems(response.items || []);
-            setTotalPages(response.pagination.total_pages);
-            setTotal(response.pagination.total);
+            setTotalPages(Math.max(0, response.pagination?.total_pages ?? 0));
+            setTotal(Math.max(0, response.pagination?.total ?? 0));
         } catch (err: unknown) {
             const error = err as { response?: { data?: { error?: string } } };
             setError(error.response?.data?.error || 'Failed to load DLQ items');
@@ -192,12 +192,12 @@ export function AdminWebhookDLQPage() {
             <Card className='mb-6'>
                 <div className='p-4'>
                     <div className='flex flex-wrap gap-6'>
-                        <div>
+                        {totalPages > 0 && <div>
                             <p className='text-sm text-muted-foreground'>
                                 Total Failed Deliveries
                             </p>
                             <p className='text-2xl font-bold'>{total}</p>
-                        </div>
+                        </div>}
                         <div>
                             <p className='text-sm text-muted-foreground'>
                                 Current Page

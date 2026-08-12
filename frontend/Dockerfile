@@ -6,13 +6,14 @@ FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy source code and environment file
-COPY . .
+COPY frontend/ .
+COPY docs/openapi/generated /app/public/docs/openapi/generated
 
 # Use production environment for build
 ARG NODE_ENV=production
@@ -37,7 +38,7 @@ LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
       org.opencontainers.image.source="${OCI_SOURCE}"
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/edge-routes.conf /etc/nginx/edge-routes.conf
 
 # Copy built assets from builder

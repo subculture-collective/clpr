@@ -102,6 +102,96 @@ func (h *AdminUserHandler) ListUsers(c *gin.Context) {
 	})
 }
 
+// ListPlatformModerators handles GET /api/v1/admin/moderators.
+func (h *AdminUserHandler) ListPlatformModerators(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "25"))
+	if err != nil || limit < 1 || limit > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be between 1 and 100"})
+		return
+	}
+	users, total, err := h.userRepo.AdminSearchUsers(c.Request.Context(), "", models.RoleModerator, "", limit, (page-1)*limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve platform moderators"})
+		return
+	}
+	totalPages := 0
+	if total > 0 {
+		totalPages = (total + limit - 1) / limit
+	}
+	c.JSON(http.StatusOK, gin.H{"items": users, "total": total, "page": page, "limit": limit, "total_pages": totalPages})
+}
+
+func (h *AdminUserHandler) applyPlatformModeratorRole(c *gin.Context, userID uuid.UUID, role, reason string) {
+	actorID, ok := authenticatedUserID(c)
+	if !ok {
+		return
+	}
+	if reason == "" {
+		reason = "Platform moderator role changed to " + role
+	}
+	if err := h.userRepo.ApplyAdminUserMutation(c.Request.Context(), userID, actorID, repository.AdminUserActionRole, role, reason); err != nil {
+		writeAdminUserMutationError(c, err, "Failed to update platform moderator")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Platform moderator updated successfully"})
+}
+
+// AddPlatformModerator handles POST /api/v1/admin/moderators.
+func (h *AdminUserHandler) AddPlatformModerator(c *gin.Context) {
+	var req struct {
+		UserID uuid.UUID `json:"user_id" binding:"required"`
+		Reason string    `json:"reason" binding:"omitempty,max=1000"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.UserID == uuid.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "A valid user_id is required"})
+		return
+	}
+	h.applyPlatformModeratorRole(c, req.UserID, models.RoleModerator, req.Reason)
+}
+
+// UpdatePlatformModerator handles PATCH /api/v1/admin/moderators/:id.
+func (h *AdminUserHandler) UpdatePlatformModerator(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	var req struct {
+		Reason string `json:"reason" binding:"omitempty,max=1000"`
+	}
+	if c.Request.ContentLength != 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+			return
+		}
+	}
+	h.applyPlatformModeratorRole(c, userID, models.RoleModerator, req.Reason)
+}
+
+// RevokePlatformModerator handles DELETE /api/v1/admin/moderators/:id.
+func (h *AdminUserHandler) RevokePlatformModerator(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	var req struct {
+		Reason string `json:"reason" binding:"omitempty,max=1000"`
+	}
+	if c.Request.ContentLength != 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+			return
+		}
+	}
+	h.applyPlatformModeratorRole(c, userID, models.RoleUser, req.Reason)
+}
+
 // BanUser handles POST /api/v1/admin/users/:id/ban
 func (h *AdminUserHandler) BanUser(c *gin.Context) {
 	userIDStr := c.Param("id")

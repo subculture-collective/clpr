@@ -51,6 +51,37 @@ func TestAdminUpdateKarmaAcceptsZeroAndRejectsMalformedIdentity(t *testing.T) {
 	}
 }
 
+func TestPlatformModeratorEndpointsRejectMalformedInputsBeforeRepositoryAccess(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		method string
+		path   string
+		body   string
+		call   func(*gin.Context)
+	}{
+		{http.MethodGet, "/api/v1/admin/moderators?page=0", "", (&AdminUserHandler{}).ListPlatformModerators},
+		{http.MethodGet, "/api/v1/admin/moderators?limit=101", "", (&AdminUserHandler{}).ListPlatformModerators},
+		{http.MethodPost, "/api/v1/admin/moderators", `{"user_id":"invalid"}`, (&AdminUserHandler{}).AddPlatformModerator},
+		{http.MethodPatch, "/api/v1/admin/moderators/invalid", `{}`, (&AdminUserHandler{}).UpdatePlatformModerator},
+		{http.MethodDelete, "/api/v1/admin/moderators/invalid", `{}`, (&AdminUserHandler{}).RevokePlatformModerator},
+	}
+	for _, test := range tests {
+		t.Run(test.method+test.path, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(test.method, test.path, strings.NewReader(test.body))
+			ctx.Request.Header.Set("Content-Type", "application/json")
+			if strings.HasSuffix(test.path, "/invalid") {
+				ctx.Params = gin.Params{{Key: "id", Value: "invalid"}}
+			}
+			test.call(ctx)
+			if recorder.Code != http.StatusBadRequest {
+				t.Fatalf("expected status %d, got %d", http.StatusBadRequest, recorder.Code)
+			}
+		})
+	}
+}
+
 func TestAwardBadgeRejectsMalformedIdentityWithoutPanicking(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	recorder := httptest.NewRecorder()

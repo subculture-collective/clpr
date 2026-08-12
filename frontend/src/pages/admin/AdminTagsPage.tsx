@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Trash2 } from 'lucide-react';
+import { EyeOff, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { Container, Card, CardHeader, CardBody, Button, Spinner, SEO } from '../../components';
 import { Input } from '../../components/ui';
 import { apiClient } from '@/lib/api';
@@ -63,21 +63,22 @@ export function AdminTagsPage() {
 
   const { data: tagResponse, isLoading: tagsLoading } = useQuery({
     queryKey: ['admin', 'tags', 'active'],
-    queryFn: () => tagApi.listTags({ sort: 'alphabetical', limit: 100 }),
+    queryFn: () => tagApi.listAdminTags(),
   });
   const activeTags = (tagResponse?.tags ?? []).filter(tag =>
     `${tag.name} ${tag.slug}`.toLowerCase().includes(tagSearch.trim().toLowerCase()),
   );
 
-  const removeTagMutation = useMutation({
-    mutationFn: (id: string) => tagApi.deleteTag(id),
+  const suppressTagMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => tagApi.suppressTag(id, reason),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'tags', 'active'] });
       void queryClient.invalidateQueries({ queryKey: ['tags'] });
-      showToast('Tag removed', 'success');
+      showToast('Tag suppressed', 'success');
     },
-    onError: () => showToast('Failed to remove tag', 'error'),
+    onError: () => showToast('Failed to suppress tag', 'error'),
   });
+  const restoreTagMutation = useMutation({ mutationFn: (id: string) => tagApi.restoreTag(id), onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['admin', 'tags', 'active'] }); void queryClient.invalidateQueries({ queryKey: ['tags'] }); showToast('Tag restored', 'success'); }, onError: () => showToast('Failed to restore tag', 'error') });
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +125,7 @@ export function AdminTagsPage() {
                   <tr key={tag.id} className='border-b border-border'>
                     <td className='py-3 px-4'><span className='font-medium'>{tag.name}</span><span className='ml-2 text-sm text-text-secondary'>{tag.slug}</span></td>
                     <td className='py-3 px-4 text-right text-text-secondary'>{tag.usage_count > 0 ? tag.usage_count.toLocaleString() : '—'}</td>
-                    <td className='py-3 px-4 text-right'><Button variant='ghost' size='sm' className='text-red-600' disabled={removeTagMutation.isPending} onClick={() => { if (window.confirm(`Remove ${tag.name} from clpr and all clips?`)) removeTagMutation.mutate(tag.id); }} aria-label={`Remove tag ${tag.name}`}><Trash2 className='w-4 h-4' /></Button></td>
+                    <td className='py-3 px-4 text-right'>{tag.suppressed_at ? <Button variant='ghost' size='sm' disabled={restoreTagMutation.isPending} onClick={() => restoreTagMutation.mutate(tag.id)} aria-label={`Restore tag ${tag.name}`}><RotateCcw className='w-4 h-4' /></Button> : <Button variant='ghost' size='sm' className='text-red-600' disabled={suppressTagMutation.isPending} onClick={() => { const reason = window.prompt(`Why should ${tag.name} be hidden?`); if (reason?.trim()) suppressTagMutation.mutate({ id: tag.id, reason: reason.trim() }); }} aria-label={`Suppress tag ${tag.name}`}><EyeOff className='w-4 h-4' /></Button>}</td>
                   </tr>
                 ))}</tbody>
               </table>

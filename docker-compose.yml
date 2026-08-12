@@ -72,8 +72,8 @@ services:
 
   clpr-frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: clpr-frontend
     networks: [projects]
     depends_on:

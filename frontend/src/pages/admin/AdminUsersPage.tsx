@@ -4,6 +4,7 @@ import { Container, Card, CardHeader, CardBody, Button, Input } from '../../comp
 import { Search, Shield, Ban, TrendingUp, MessageSquare, MessageSquareOff, Eye } from 'lucide-react';
 import axios, { AxiosError } from 'axios';
 import { Modal } from '@/components/ui/Modal';
+import { useSearchParams } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -227,8 +228,9 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
 }
 
 export function AdminUsersPage() {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState(() => searchParams.get('role') || 'all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);

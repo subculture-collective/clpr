@@ -16,6 +16,7 @@ type Handlers struct {
 	Clip                *handlers.ClipHandler
 	Favorite            *handlers.FavoriteHandler
 	Tag                 *handlers.TagHandler
+	TagPromotion        *handlers.TagPromotionHandler
 	Search              *handlers.SearchHandler
 	Report              *handlers.ReportHandler
 	Reputation          *handlers.ReputationHandler
@@ -26,6 +27,7 @@ type Handlers struct {
 	Subscription        *handlers.SubscriptionHandler
 	User                *handlers.UserHandler
 	AdminUser           *handlers.AdminUserHandler
+	AdminOpenAPI        *handlers.AdminOpenAPIHandler
 	UserSettings        *handlers.UserSettingsHandler
 	Consent             *handlers.ConsentHandler
 	Contact             *handlers.ContactHandler
@@ -202,6 +204,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Clip:                clipHandler,
 		Favorite:            favoriteHandler,
 		Tag:                 tagHandler,
+		TagPromotion:        handlers.NewTagPromotionHandler(svcs.TagPromotion),
 		Search:              searchHandler,
 		Report:              reportHandler,
 		Reputation:          reputationHandler,
@@ -212,6 +215,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Subscription:        subscriptionHandler,
 		User:                userHandler,
 		AdminUser:           adminUserHandler,
+		AdminOpenAPI:        handlers.NewAdminOpenAPIHandler(),
 		UserSettings:        userSettingsHandler,
 		Consent:             consentHandler,
 		Contact:             contactHandler,

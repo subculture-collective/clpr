@@ -199,6 +199,7 @@ phase_api_docs() {
     mkdir -p "$artifact_dir/openapi"
     node --test scripts/tests/verify-openapi-lint-result.test.js
     npm run openapi:lint
+    npm run openapi:embed:check
     ./node_modules/.bin/redocly bundle docs/openapi/openapi.yaml \
         -o "$artifact_dir/openapi/openapi-bundled.yaml"
     ./node_modules/.bin/redocly build-docs docs/openapi/openapi.yaml \
@@ -290,7 +291,7 @@ phase_images() {
 
     docker build "${build_args[@]}" -f backend/Dockerfile -t "$backend_image" backend
     docker build "${build_args[@]}" -f backend/Dockerfile.crawler -t "$crawler_image" backend
-    docker build "${build_args[@]}" -f frontend/Dockerfile -t "$frontend_image" frontend
+    docker build "${build_args[@]}" -f frontend/Dockerfile -t "$frontend_image" .
     assert_image_contract "$backend_image" '10001:10001'
     assert_image_contract "$crawler_image" '10001:10001'
     assert_image_contract "$frontend_image" '101:101'

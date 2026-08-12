@@ -296,15 +296,15 @@ func (r *AnalyticsRepository) GetPlatformOverviewMetrics(ctx context.Context) (*
 			LIMIT 1
 		)
 		SELECT
-			COALESCE(total_users, 0),
-			COALESCE(active_users_daily, 0),
-			COALESCE(active_users_monthly, 0),
-			COALESCE(total_clips, 0),
-			COALESCE(new_clips_today, 0),
-			COALESCE(total_votes, 0),
-			COALESCE(total_comments, 0),
-			COALESCE(avg_session_duration, 0)
-		FROM latest_analytics
+			(SELECT COUNT(*) FROM users),
+			(SELECT active_users_daily FROM latest_analytics),
+			(SELECT active_users_monthly FROM latest_analytics),
+			(SELECT COUNT(*) FROM clips WHERE is_removed = FALSE),
+			(SELECT COUNT(*) FROM clips WHERE is_removed = FALSE AND imported_at >= CURRENT_DATE),
+			(SELECT COUNT(*) FROM votes),
+			(SELECT COUNT(*) FROM comments),
+			(SELECT avg_session_duration FROM latest_analytics),
+			NOW()
 	`
 
 	var metrics models.PlatformOverviewMetrics
@@ -317,16 +317,17 @@ func (r *AnalyticsRepository) GetPlatformOverviewMetrics(ctx context.Context) (*
 		&metrics.TotalVotes,
 		&metrics.TotalComments,
 		&metrics.AvgSessionDuration,
+		&metrics.GeneratedAt,
 	)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			// Return zero-value metrics when no analytics data exists yet
-			return &models.PlatformOverviewMetrics{}, nil
+			return nil, err
 		}
 		return nil, err
 	}
 
+	metrics.Source = "canonical"
 	return &metrics, nil
 }
 

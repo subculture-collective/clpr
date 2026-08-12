@@ -20,7 +20,9 @@
     "openapi:validate": "npm run openapi:lint && npm run openapi:bundle",
     "openapi:serve": "npx http-server docs/openapi -p 8081 -o /index.html",
     "openapi:generate-docs": "node scripts/generate-api-docs.js",
-    "openapi:changelog": "node scripts/generate-api-changelog.js"
+    "openapi:changelog": "node scripts/generate-api-changelog.js",
+    "openapi:embed": "redocly bundle docs/openapi/openapi.yaml -o backend/internal/openapi/generated/openapi.json --ext json",
+    "openapi:embed:check": "node scripts/verify-embedded-openapi.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

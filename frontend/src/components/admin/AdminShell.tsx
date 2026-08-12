@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { adminNavGroups, adminNavItems } from './adminNavigation';
+import { SEO } from '../SEO';
 
 function itemIsActive(pathname: string, href: string) {
     if (href === '/admin/dashboard') return pathname === href;
@@ -51,7 +52,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         .find(item => itemIsActive(location.pathname, item.href));
 
     return (
-        <div className='admin-workspace min-h-[calc(100vh-4rem)] bg-background'>
+        <><SEO title={`${current?.label ?? 'Administration'} - Admin`} description={current?.description ?? 'clpr administration workspace.'} noindex /><div className='admin-workspace min-h-[calc(100vh-4rem)] bg-background'>
             <div className='border-b border-border bg-surface/80 backdrop-blur-xl lg:hidden'>
                 <div className='flex items-center justify-between px-4 py-3'>
                     <div>
@@ -91,6 +92,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     <div className='admin-content min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-8'>{children}</div>
                 </section>
             </div>
-        </div>
+        </div></>
     );
 }

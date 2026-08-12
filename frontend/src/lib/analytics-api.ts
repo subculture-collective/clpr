@@ -72,13 +72,15 @@ export interface UserAnalytics {
 
 export interface PlatformOverviewMetrics {
   total_users: number;
-  active_users_daily: number;
-  active_users_monthly: number;
+  active_users_daily: number | null;
+  active_users_monthly: number | null;
   total_clips: number;
   clips_added_today: number;
   total_votes: number;
   total_comments: number;
-  avg_session_duration: number;
+  avg_session_duration: number | null;
+  generated_at: string;
+  source: 'canonical' | 'snapshot';
 }
 
 export interface GameMetric {

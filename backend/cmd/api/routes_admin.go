@@ -13,6 +13,8 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 	admin.Use(middleware.RequireRole("admin", "moderator"))
 	admin.Use(middleware.RequireMFAForAdminMiddleware(svcs.MFA)) // Enforce MFA for admin/moderator actions
 	{
+		admin.GET("/openapi.json", middleware.RequireRole("admin"), h.AdminOpenAPI.Get)
+
 		// Clip sync (if available)
 		if h.ClipSync != nil {
 			sync := admin.Group("/sync")
@@ -26,9 +28,15 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 		adminTags := admin.Group("/tags")
 		adminTags.Use(middleware.RequireRole("admin"))
 		{
+			adminTags.GET("", h.Tag.ListAdminTags)
 			adminTags.POST("", h.Tag.CreateTag)
 			adminTags.PUT("/:id", h.Tag.UpdateTag)
 			adminTags.DELETE("/:id", h.Tag.DeleteTag)
+			adminTags.POST("/suppressions/:id", h.Tag.SuppressTag)
+			adminTags.DELETE("/suppressions/:id", h.Tag.RestoreTag)
+			adminTags.GET("/promotion-queue", h.TagPromotion.List)
+			adminTags.POST("/promotion-queue/:id/approve", h.TagPromotion.Approve)
+			adminTags.POST("/promotion-queue/:id/reject", h.TagPromotion.Reject)
 
 			// Tag blacklist management
 			adminTags.GET("/blacklist", h.Tag.ListBlacklistedTags)
@@ -86,6 +94,15 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminUsers.POST("/:id/lift-comment-suspension", middleware.RequirePermission(models.PermissionManageUsers), h.AdminUser.LiftCommentSuspension)
 			adminUsers.GET("/:id/comment-suspension-history", middleware.RequirePermission(models.PermissionManageUsers), h.AdminUser.GetCommentSuspensionHistory)
 			adminUsers.POST("/:id/toggle-comment-review", middleware.RequirePermission(models.PermissionManageUsers), h.AdminUser.ToggleCommentReview)
+		}
+
+		platformModerators := admin.Group("/moderators")
+		platformModerators.Use(middleware.RequirePermission(models.PermissionManageUsers))
+		{
+			platformModerators.GET("", h.AdminUser.ListPlatformModerators)
+			platformModerators.POST("", h.AdminUser.AddPlatformModerator)
+			platformModerators.PATCH("/:id", h.AdminUser.UpdatePlatformModerator)
+			platformModerators.DELETE("/:id", h.AdminUser.RevokePlatformModerator)
 		}
 
 		// Account type management (admin only)

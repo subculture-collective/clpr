@@ -26,6 +26,7 @@ type Services struct {
 	Comment                  *services.CommentService
 	Clip                     *services.ClipService
 	AutoTag                  *services.AutoTagService
+	TagPromotion             *services.TagPromotionService
 	TopicClassification      *services.TopicClassificationService
 	Reputation               *services.ReputationService
 	Analytics                *services.AnalyticsService
@@ -370,6 +371,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Comment:                  commentService,
 		Clip:                     clipService,
 		AutoTag:                  autoTagService,
+		TagPromotion:             services.NewTagPromotionService(pool),
 		TopicClassification:      topicClassificationService,
 		Reputation:               reputationService,
 		Analytics:                analyticsService,

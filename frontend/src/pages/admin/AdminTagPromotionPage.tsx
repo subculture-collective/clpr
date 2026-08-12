@@ -110,7 +110,7 @@ export function AdminTagPromotionPage() {
                         {item.unique_users}
                       </td>
                       <td className='py-3 px-4 text-sm text-text-secondary'>
-                        {item.clip_count}
+                        {item.usage_count}
                       </td>
                       <td className='py-3 px-4'>
                         <div className='flex justify-end gap-2'>
