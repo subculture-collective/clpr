@@ -3,7 +3,6 @@ import { Container, Card, CardBody, SEO, Button } from '../components';
 
 const CHROME_STORE_URL = 'https://chrome.google.com/webstore/detail/clpr';
 const FIREFOX_STORE_URL = 'https://addons.mozilla.org/firefox/addon/clpr';
-const SOURCE_URL = 'https://git.subcult.tv/subculture-collective/clpr';
 
 interface FeatureProps {
     icon: React.ReactNode;
@@ -65,14 +64,6 @@ export function ExtensionPage() {
                             <Button variant="secondary" size="lg">
                                 Add to Firefox
                             </Button>
-                        </a>
-                        <a
-                            href={SOURCE_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-11 items-center px-4 font-medium underline underline-offset-4"
-                        >
-                            View source
                         </a>
                     </div>
                 </div>

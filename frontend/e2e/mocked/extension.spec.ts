@@ -11,7 +11,7 @@ test.describe('mocked UI smoke', () => {
             page.getByRole('link', { name: 'Get Clipper for Chrome' }),
         ).toHaveAttribute('href', /chrome|extension/);
         await expect(
-            page.getByRole('link', { name: 'View source' }),
-        ).toHaveAttribute('href', /git\.subcult\.tv/);
+            page.getByRole('link', { name: 'Get Clipper for Firefox' }),
+        ).toHaveAttribute('href', /addons\.mozilla\.org/);
     });
 });
