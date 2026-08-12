@@ -9,15 +9,23 @@ async function expectNoSeriousAxeViolations(page: Page) {
     await page.addScriptTag({ content: axe.source });
     const violations = await page.evaluate(async () => {
         const result = await window.axe.run(document, {
-            runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
+            runOnly: {
+                type: 'tag',
+                values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+            },
         });
         return result.violations
-            .filter(({ impact }) => impact === 'critical' || impact === 'serious')
+            .filter(
+                ({ impact }) => impact === 'critical' || impact === 'serious',
+            )
             .map(({ id, impact, help, nodes }) => ({
                 id,
                 impact,
                 help,
-                nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary })),
+                nodes: nodes.map(({ target, failureSummary }) => ({
+                    target,
+                    failureSummary,
+                })),
             }));
     });
     expect(violations).toEqual([]);
@@ -30,10 +38,10 @@ test.describe('deployed candidate accessibility', () => {
     test.beforeEach(async ({ page }) => {
         consoleErrors = [];
         pageErrors = [];
-        page.on('console', message => {
+        page.on('console', (message) => {
             if (message.type() === 'error') consoleErrors.push(message.text());
         });
-        page.on('pageerror', error => pageErrors.push(error.message));
+        page.on('pageerror', (error) => pageErrors.push(error.message));
     });
 
     test.afterEach(() => {
@@ -43,10 +51,18 @@ test.describe('deployed candidate accessibility', () => {
 
     const journeys = [
         { name: 'home', path: '/', heading: /trending/i },
-        { name: 'login', path: '/login', heading: /welcome to clipper/i },
-        { name: 'search', path: `/search?q=${encodeURIComponent(searchQuery)}`, heading: /search/i },
+        { name: 'login', path: '/login', heading: /welcome to clpr/i },
+        {
+            name: 'search',
+            path: `/search?q=${encodeURIComponent(searchQuery)}`,
+            heading: /search/i,
+        },
         { name: 'clip detail', path: `/clip/${clipId}`, heading: clipTitle },
-        { name: 'community support', path: '/support', heading: /clpr is for the culture/i },
+        {
+            name: 'community support',
+            path: '/support',
+            heading: /clpr is for the culture/i,
+        },
         { name: 'forum', path: '/forum', heading: /forum discussions/i },
     ];
 
@@ -55,11 +71,20 @@ test.describe('deployed candidate accessibility', () => {
         { name: 'mobile', width: 375, height: 812 },
     ]) {
         for (const journey of journeys) {
-            test(`${journey.name} is axe-clean on ${viewport.name}`, async ({ page }) => {
+            test(`${journey.name} is axe-clean on ${viewport.name}`, async ({
+                page,
+            }) => {
                 await page.setViewportSize(viewport);
                 const response = await page.goto(journey.path);
-                expect(response?.ok(), `${journey.path} must load from the candidate`).toBe(true);
-                await expect(page.getByRole('heading', { name: journey.heading }).first()).toBeVisible();
+                expect(
+                    response?.ok(),
+                    `${journey.path} must load from the candidate`,
+                ).toBe(true);
+                await expect(
+                    page
+                        .getByRole('heading', { name: journey.heading })
+                        .first(),
+                ).toBeVisible();
                 await expectNoSeriousAxeViolations(page);
             });
         }
@@ -67,22 +92,116 @@ test.describe('deployed candidate accessibility', () => {
 
     test('keyboard focus reaches main content', async ({ page }) => {
         await page.goto('/login');
-        const skipLink = page.getByRole('link', { name: 'Skip to main content' });
+        const skipLink = page.getByRole('link', {
+            name: 'Skip to main content',
+        });
         await skipLink.press('Enter');
         await expect(page.locator('#main-content')).toBeFocused();
     });
 
-    test('200-percent-equivalent viewport reflows and reduced motion is honored', async ({ page }) => {
+    test('200-percent-equivalent viewport reflows and reduced motion is honored', async ({
+        page,
+    }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.setViewportSize({ width: 320, height: 568 });
         await page.goto(`/search?q=${encodeURIComponent(searchQuery)}`);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-        expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+        expect(
+            await page.evaluate(() => document.documentElement.scrollWidth),
+        ).toBeLessThanOrEqual(320);
+        expect(
+            await page.evaluate(
+                () => matchMedia('(prefers-reduced-motion: reduce)').matches,
+            ),
+        ).toBe(true);
     });
+});
+
+test.describe('blocking candidate performance budgets', () => {
+    for (const viewport of [
+        { name: 'desktop', width: 1280, height: 800 },
+        { name: 'mobile', width: 390, height: 844 },
+    ]) {
+        test(`${viewport.name} homepage stays within launch budgets`, async ({
+            page,
+            browserName,
+        }) => {
+            test.skip(
+                browserName !== 'chromium',
+                'PerformanceObserver long-task parity is enforced in Chromium',
+            );
+
+            await page.addInitScript(() => {
+                (
+                    window as Window & {
+                        __clprCLS?: number;
+                        __clprTBT?: number;
+                    }
+                ).__clprCLS = 0;
+                (
+                    window as Window & {
+                        __clprCLS?: number;
+                        __clprTBT?: number;
+                    }
+                ).__clprTBT = 0;
+                new PerformanceObserver((list) => {
+                    for (const entry of list.getEntries()) {
+                        const shift = entry as PerformanceEntry & {
+                            value: number;
+                            hadRecentInput: boolean;
+                        };
+                        if (!shift.hadRecentInput)
+                            window.__clprCLS =
+                                (window.__clprCLS ?? 0) + shift.value;
+                    }
+                }).observe({ type: 'layout-shift', buffered: true });
+                new PerformanceObserver((list) => {
+                    for (const entry of list.getEntries()) {
+                        window.__clprTBT =
+                            (window.__clprTBT ?? 0) +
+                            Math.max(0, entry.duration - 50);
+                    }
+                }).observe({ type: 'longtask', buffered: true });
+            });
+            await page.setViewportSize(viewport);
+            const response = await page.goto('/', { waitUntil: 'networkidle' });
+            expect(response?.ok()).toBe(true);
+            await page.waitForTimeout(1_000);
+
+            const metrics = await page.evaluate(() => ({
+                cls: window.__clprCLS ?? 0,
+                tbt: window.__clprTBT ?? 0,
+                domElements: document.getElementsByTagName('*').length,
+                resources: performance.getEntriesByType('resource').length + 1,
+                twitchIframes: document.querySelectorAll(
+                    'iframe[src*="twitch.tv"]',
+                ).length,
+            }));
+
+            expect(metrics.cls, 'CLS').toBeLessThanOrEqual(0.1);
+            expect(
+                metrics.twitchIframes,
+                'pre-interaction Twitch iframes',
+            ).toBe(0);
+            expect(
+                metrics.domElements,
+                'initial DOM elements',
+            ).toBeLessThanOrEqual(1_500);
+            expect(
+                metrics.resources,
+                'initial resource requests',
+            ).toBeLessThanOrEqual(45);
+            expect(
+                metrics.tbt,
+                'observed total blocking time',
+            ).toBeLessThanOrEqual(200);
+        });
+    }
 });
 
 declare global {
     interface Window {
         axe: typeof axe;
+        __clprCLS?: number;
+        __clprTBT?: number;
     }
 }

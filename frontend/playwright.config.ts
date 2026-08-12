@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const apiOrigin =
     process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:18088';
+const chromiumExecutable = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 /**
  * Playwright E2E Test Configuration
@@ -73,12 +74,22 @@ export default defineConfig({
     projects: [
         {
             name: 'mocked-chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: chromiumExecutable
+                    ? { executablePath: chromiumExecutable }
+                    : undefined,
+            },
             testMatch: /mocked\/.*\.spec\.ts/,
         },
         {
             name: 'real-chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: chromiumExecutable
+                    ? { executablePath: chromiumExecutable }
+                    : undefined,
+            },
             testMatch: /real-backend\/.*\.spec\.ts/,
         },
         {
@@ -97,7 +108,9 @@ export default defineConfig({
     webServer: {
         command:
             `VITE_AUTO_CONSENT=true VITE_ENABLE_ANALYTICS=false VITE_API_BASE_URL=${apiOrigin}/api/v1 VITE_STRIPE_PRO_MONTHLY_PRICE_ID=price_e2e_monthly VITE_STRIPE_PRO_YEARLY_PRICE_ID=price_e2e_yearly` +
-            (process.env.E2E_CDN_FAILOVER_MODE === 'true' ? ' VITE_CDN_FAILOVER_MODE=true' : '') +
+            (process.env.E2E_CDN_FAILOVER_MODE === 'true'
+                ? ' VITE_CDN_FAILOVER_MODE=true'
+                : '') +
             ' npm run dev -- --host 127.0.0.1',
         url: 'http://127.0.0.1:5173',
         reuseExistingServer: !process.env.CI,
