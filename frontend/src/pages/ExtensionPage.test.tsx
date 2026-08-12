@@ -72,15 +72,8 @@ describe('ExtensionPage', () => {
         expect(rows.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders the open source section with repository link', () => {
+    it('does not publish a repository link', () => {
         renderPage();
-        const repositoryLink = screen.getByRole('link', {
-            name: /view source/i,
-        });
-        expect(repositoryLink).toBeInTheDocument();
-        expect(repositoryLink).toHaveAttribute(
-            'href',
-            expect.stringContaining('git.subcult.tv'),
-        );
+        expect(screen.queryByRole('link', { name: /view source/i })).not.toBeInTheDocument();
     });
 });

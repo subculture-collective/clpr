@@ -1,11 +1,8 @@
-import { Link } from 'react-router-dom';
 import { Search, MousePointer, Tag, PenLine, Zap, Lock } from 'lucide-react';
 import { Container, Card, CardBody, SEO, Button } from '../components';
 
 const CHROME_STORE_URL = 'https://chrome.google.com/webstore/detail/clpr';
 const FIREFOX_STORE_URL = 'https://addons.mozilla.org/firefox/addon/clpr';
-const GITHUB_EXTENSION_URL =
-    'https://git.subcult.tv/subculture-collective/clpr/tree/main/extension';
 
 interface FeatureProps {
     icon: React.ReactNode;
@@ -176,26 +173,6 @@ export function ExtensionPage() {
                     </CardBody>
                 </Card>
 
-                {/* Open source */}
-                <Card>
-                    <CardBody>
-                        <h2 className="text-2xl font-semibold mb-4">Open source</h2>
-                        <p className="text-muted-foreground mb-4">
-                            The Clipper extension is open source and available on GitHub.
-                            Contributions, bug reports, and feature requests are welcome.
-                        </p>
-                        <div className="flex flex-wrap gap-3">
-                            <a
-                                href={GITHUB_EXTENSION_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <Button variant="secondary">View source</Button>
-                            </a>
-                            <Button asChild variant="ghost"><Link to="/about">About Clipper</Link></Button>
-                        </div>
-                    </CardBody>
-                </Card>
             </Container>
         </>
     );

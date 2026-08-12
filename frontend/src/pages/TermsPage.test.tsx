@@ -128,7 +128,7 @@ describe('TermsPage', () => {
         expect(
             screen.getByText(/14\. Contact Information/i)
         ).toBeInTheDocument();
-        expect(screen.getByText(/legal@clpr.com/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/legal@clpr.tv/i).length).toBeGreaterThan(0);
     });
 
     it('mentions dispute resolution', () => {
@@ -138,10 +138,7 @@ describe('TermsPage', () => {
             </MemoryRouter>
         );
 
-        expect(
-            screen.getByText(/11\. Dispute Resolution and Arbitration/i)
-        ).toBeInTheDocument();
-        const arbitrationElements = screen.getAllByText(/Binding Arbitration/i);
-        expect(arbitrationElements.length).toBeGreaterThan(0);
+        expect(screen.getByText(/11\. Disputes/i)).toBeInTheDocument();
+        expect(screen.getByText(/court with proper jurisdiction/i)).toBeInTheDocument();
     });
 });

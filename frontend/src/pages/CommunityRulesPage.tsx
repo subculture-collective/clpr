@@ -1,7 +1,7 @@
 import { Container, Card, CardBody } from '../components';
 
 export function CommunityRulesPage() {
-  const lastUpdated = 'January 15, 2025';
+  const lastUpdated = 'August 11, 2026';
 
   return (
     <Container className="py-8 max-w-4xl">
@@ -162,9 +162,8 @@ export function CommunityRulesPage() {
               If you have questions about these rules or want to report a concern, you can:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-              <li>Open an issue on our <a href="https://git.subcult.tv/subculture-collective/clpr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub repository</a></li>
               <li>Contact the moderation team through the platform's report feature</li>
-              <li>Join our community Discord for general questions</li>
+              <li>Email <a href="mailto:support@clpr.tv" className="text-primary hover:underline">support@clpr.tv</a> for questions or concerns</li>
             </ul>
             <p className="text-muted-foreground mt-4">
               Thank you for helping make clpr a great place for creators, viewers, and clip fans.

@@ -101,7 +101,7 @@ describe('PrivacyPage', () => {
         );
 
         expect(screen.getByText('Contact Us')).toBeInTheDocument();
-        expect(screen.getByText(/privacy@clpr.com/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/privacy@clpr.tv/i).length).toBeGreaterThan(0);
     });
 
     it('mentions third-party services', () => {

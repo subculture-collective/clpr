@@ -25,12 +25,12 @@ export function Footer() {
                             </li>
                             <li>
                                 <a
-                                    href='https://git.subcult.tv/subculture-collective/clpr'
+                                    href='https://patreon.com/subcult'
                                     target='_blank'
                                     rel='noopener noreferrer'
                                     className='text-muted-foreground hover:text-foreground transition-colors'
                                 >
-                                    {t('footer.githubRepo')}
+                                    Patreon
                                 </a>
                             </li>
                         </ul>

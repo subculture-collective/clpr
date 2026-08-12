@@ -113,16 +113,14 @@ describe('DocsPage', () => {
     expect(mockedAxios.get).toHaveBeenCalledWith('/api/v1/docs/getting-started/user-guide.md');
   });
 
-  it('renders external resources links', async () => {
+  it('does not render repository resources', async () => {
     render(
       <MemoryRouter>
         <DocsPage />
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole('heading', { name: /external resources/i })).toBeInTheDocument();
-    expect(screen.getByText('GitHub Repository')).toBeInTheDocument();
-    expect(screen.getByText('Issue Tracker')).toBeInTheDocument();
-    expect(screen.getByText('Discussions')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /documentation hub/i })).toBeInTheDocument();
+    expect(screen.queryByText('GitHub Repository')).not.toBeInTheDocument();
   });
 });

@@ -216,6 +216,6 @@ describe('ContactPage', () => {
         expect(screen.getByText(/Other Ways to Get Help/i)).toBeInTheDocument();
         expect(screen.getByText(/Community Guidelines/i)).toBeInTheDocument();
         expect(screen.getByText(/Report Content/i)).toBeInTheDocument();
-        expect(screen.getByText(/GitHub Issues/i)).toBeInTheDocument();
+        expect(screen.getByText(/Email support/i)).toBeInTheDocument();
     });
 });

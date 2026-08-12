@@ -214,21 +214,7 @@ export function ContactPage() {
                 for faster moderation.
               </p>
             </div>
-            <div>
-              <h3 className="font-medium text-foreground mb-1">GitHub Issues</h3>
-              <p className="text-sm text-muted-foreground">
-                For bug reports or feature requests, you can also open an issue on our{' '}
-                <a
-                  href="https://git.subcult.tv/subculture-collective/clpr/issues"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  GitHub repository
-                </a>
-                .
-              </p>
-            </div>
+            <div><h3 className="font-medium text-foreground mb-1">Email support</h3><p className="text-sm text-muted-foreground">For account, bug, or feature questions, email <a href="mailto:support@clpr.tv" className="text-primary hover:underline">support@clpr.tv</a>.</p></div>
           </div>
         </CardBody>
       </Card>

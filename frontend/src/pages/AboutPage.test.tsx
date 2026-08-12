@@ -3,110 +3,39 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { AboutPage } from './AboutPage';
 
-// Mock the components (include SEO to avoid helmet interactions in tests)
 vi.mock('../components', () => ({
-    Container: ({ children }: { children: React.ReactNode }) => (
-        <div>{children}</div>
-    ),
-    Card: ({ children, id }: { children: React.ReactNode; id?: string }) => (
-        <div id={id}>{children}</div>
-    ),
-    CardBody: ({ children }: { children: React.ReactNode }) => (
-        <div>{children}</div>
-    ),
-    SEO: () => null,
+  Container: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SEO: () => null,
 }));
 
 describe('AboutPage', () => {
-    it('renders the page title', () => {
-        render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
+  const renderPage = () => render(<MemoryRouter><AboutPage /></MemoryRouter>);
 
-        expect(screen.getByText('About clpr')).toBeInTheDocument();
-    });
+  it('presents clpr as creator-first live culture discovery', () => {
+    renderPage();
+    expect(screen.getByRole('heading', { name: /find the creators/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /more than gaming/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /made for discovery/i })).toBeInTheDocument();
+  });
 
-    it('displays the last updated date', () => {
-        render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
+  it('shows the favorites feature once with one checkmark', () => {
+    renderPage();
+    const favorite = screen.getByText('Save favorites for later viewing').closest('li');
+    expect(favorite).toHaveTextContent('✓Save favorites for later viewing');
+    expect(favorite?.querySelectorAll('span')).toHaveLength(2);
+  });
 
-        expect(screen.getByText(/Last updated:/i)).toBeInTheDocument();
-    });
+  it('does not advertise development or repository links', () => {
+    const { container } = renderPage();
+    expect(container).not.toHaveTextContent(/open source|technology stack|github/i);
+  });
 
-    it('renders key sections with headings', () => {
-        render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
-
-        expect(screen.getByText('What is clpr?')).toBeInTheDocument();
-        expect(screen.getByText('How It Works')).toBeInTheDocument();
-        expect(screen.getByText('Key Features')).toBeInTheDocument();
-        expect(screen.getByText('Open Source & Community')).toBeInTheDocument();
-        expect(screen.getByText('Technology Stack')).toBeInTheDocument();
-        expect(screen.getByText('Get in Touch')).toBeInTheDocument();
-    });
-
-    it('positions clpr around creators and live culture', () => {
-        const { container } = render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
-
-        expect(
-            screen.getByText(/people and moments shaping live culture/i),
-        ).toBeInTheDocument();
-        expect(container).not.toHaveTextContent(/gaming community/i);
-    });
-
-    it('has anchor IDs for navigation', () => {
-        const { container } = render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
-
-        expect(container.querySelector('#what-is-clpr')).toBeInTheDocument();
-        expect(container.querySelector('#how-it-works')).toBeInTheDocument();
-        expect(container.querySelector('#features')).toBeInTheDocument();
-        expect(container.querySelector('#open-source')).toBeInTheDocument();
-        expect(container.querySelector('#tech-stack')).toBeInTheDocument();
-        expect(container.querySelector('#contact')).toBeInTheDocument();
-    });
-
-    it('links to GitHub repository', () => {
-        render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
-
-        const githubLinks = screen.getAllByText('View on GitHub');
-        expect(githubLinks.length).toBeGreaterThan(0);
-        expect(githubLinks[0]).toHaveAttribute(
-            'href',
-            'https://git.subcult.tv/subculture-collective/clpr'
-        );
-    });
-
-    it('links to privacy and terms pages', () => {
-        render(
-            <MemoryRouter>
-                <AboutPage />
-            </MemoryRouter>
-        );
-
-        const privacyLink = screen.getByText('Privacy Policy');
-        expect(privacyLink).toHaveAttribute('href', '/privacy');
-
-        const termsLink = screen.getByText('Terms of Service');
-        expect(termsLink).toHaveAttribute('href', '/terms');
-    });
+  it('links to community rules, contact, and Patreon', () => {
+    renderPage();
+    expect(screen.getByRole('link', { name: /community rules/i })).toHaveAttribute('href', '/community-rules');
+    expect(screen.getByRole('link', { name: /contact us/i })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('link', { name: /patreon/i })).toHaveAttribute('href', 'https://patreon.com/subcult');
+  });
 });

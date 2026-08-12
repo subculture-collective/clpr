@@ -95,12 +95,12 @@ export function MiniFooter() {
                   About clpr
                 </Link>
                 <a
-                  href="https://git.subcult.tv/subculture-collective/clpr"
+                  href="https://patreon.com/subcult"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-sm text-foreground hover:text-primary-500 transition-colors"
                 >
-                  GitHub
+                  Patreon
                 </a>
               </div>
             </div>

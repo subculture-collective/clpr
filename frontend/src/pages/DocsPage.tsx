@@ -17,7 +17,6 @@ import {
     extractTextFromChildren,
 } from '../lib/markdown-utils';
 import type { ProcessedMarkdown } from '../lib/markdown-utils';
-import { PenLine } from 'lucide-react';
 import axios from 'axios';
 
 interface DocNode {
@@ -364,16 +363,6 @@ export function DocsPage() {
                                 >
                                     ← Back to Documentation Index
                                 </button>
-                                {selectedDoc.github_url && (
-                                    <a
-                                        href={selectedDoc.github_url}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        className='text-sm text-primary hover:underline flex items-center gap-1'
-                                    >
-                                        <PenLine size={14} strokeWidth={1.75} className='inline mr-1' /> Edit on GitHub
-                                    </a>
-                                )}
                             </div>
                             <Card>
                                 <CardBody className='prose prose-invert max-w-none'>
@@ -498,55 +487,6 @@ export function DocsPage() {
                                 </Card>
                             )}
 
-                            {/* Additional Resources */}
-                            <Card className='mt-8'>
-                                <CardBody>
-                                    <h2 className='text-2xl font-semibold mb-4'>
-                                        External Resources
-                                    </h2>
-                                    <div className='space-y-3'>
-                                        <div>
-                                            <a
-                                                href='https://git.subcult.tv/subculture-collective/clpr'
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                className='text-primary hover:underline font-medium'
-                                            >
-                                                GitHub Repository
-                                            </a>
-                                            <p className='text-sm text-muted-foreground'>
-                                                View source code and open issues
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <a
-                                                href='https://git.subcult.tv/subculture-collective/clpr/issues'
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                className='text-primary hover:underline font-medium'
-                                            >
-                                                Issue Tracker
-                                            </a>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Report bugs or request features
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <a
-                                                href='https://git.subcult.tv/subculture-collective/clpr/discussions'
-                                                target='_blank'
-                                                rel='noopener noreferrer'
-                                                className='text-primary hover:underline font-medium'
-                                            >
-                                                Discussions
-                                            </a>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Ask questions and share ideas
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardBody>
-                            </Card>
                         </div>
 
                 }

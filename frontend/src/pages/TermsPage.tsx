@@ -2,13 +2,13 @@ import { Container, Card, CardBody, SEO } from '../components';
 import { Link } from 'react-router-dom';
 
 export function TermsPage() {
-  const lastUpdated = 'January 15, 2025';
+  const lastUpdated = 'August 11, 2026';
 
   return (
     <>
       <SEO
         title="Terms of Service"
-        description="Read Clipper's Terms of Service. Learn about eligibility, user conduct, content policies, and your rights and responsibilities when using our platform."
+        description="Read clpr's Terms of Service, including eligibility, conduct, content, and account responsibilities."
         canonicalUrl="/terms"
       />
       <Container className="py-8 max-w-4xl">
@@ -22,11 +22,11 @@ export function TermsPage() {
         <Card>
           <CardBody>
             <p className="text-muted-foreground mb-4">
-              Welcome to Clipper! These Terms of Service ("Terms") govern your access to and use of the Clipper 
+              Welcome to clpr. These Terms of Service ("Terms") govern your access to and use of the clpr
               platform, including our website, services, and applications (collectively, the "Service").
             </p>
             <p className="text-muted-foreground mb-4">
-              By accessing or using Clipper, you agree to be bound by these Terms and our{' '}
+              By accessing or using clpr, you agree to be bound by these Terms and our{' '}
               <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>. 
               If you don't agree to these Terms, please don't use our Service.
             </p>
@@ -155,7 +155,7 @@ export function TermsPage() {
                 <p className="text-muted-foreground">
                   The Service and its original content (excluding user submissions), features, and functionality 
                   are owned by Clipper and are protected by copyright, trademark, and other intellectual property 
-                  laws. Our source code is available under an open-source license on GitHub.
+                  laws.
                 </p>
               </div>
 
@@ -177,7 +177,7 @@ export function TermsPage() {
             <h2 className="text-2xl font-semibold mb-4">5. Copyright and DMCA</h2>
             <p className="text-muted-foreground mb-4">
               We respect intellectual property rights. If you believe content on Clipper infringes your copyright, 
-              please submit a DMCA takedown notice to us via our GitHub repository with:
+              please follow our <a href="/legal/dmca" className="text-primary hover:underline">DMCA Copyright Policy</a> and send the notice to dmca@clpr.tv with:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
               <li>Identification of the copyrighted work claimed to be infringed</li>
@@ -303,40 +303,21 @@ export function TermsPage() {
           </CardBody>
         </Card>
 
-        {/* Dispute Resolution */}
+        {/* Disputes */}
         <Card id="dispute-resolution">
           <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">11. Dispute Resolution and Arbitration</h2>
+            <h2 className="text-2xl font-semibold mb-4">11. Disputes</h2>
             
             <div className="space-y-3">
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-foreground">Informal Resolution</h3>
                 <p className="text-muted-foreground">
                   Before filing a claim, you agree to try to resolve the dispute informally by contacting us 
-                  through our GitHub repository. We'll try to resolve it within 60 days.
+                  at legal@clpr.tv. We will make a good-faith effort to resolve it within 60 days.
                 </p>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Binding Arbitration</h3>
-                <p className="text-muted-foreground mb-2">
-                  If we can't resolve the dispute informally, you agree that all disputes will be resolved 
-                  through binding arbitration rather than in court, except for:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-                  <li>Small claims court actions</li>
-                  <li>Intellectual property disputes</li>
-                  <li>Claims for injunctive relief</li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Class Action Waiver</h3>
-                <p className="text-muted-foreground">
-                  You agree that disputes will be resolved on an individual basis only, not as a class action, 
-                  consolidated action, or representative action.
-                </p>
-              </div>
+              <p className="text-muted-foreground">Nothing in these Terms limits rights or remedies that cannot be limited under applicable law. Any unresolved dispute will be handled by a court with proper jurisdiction under applicable law.</p>
             </div>
           </CardBody>
         </Card>
@@ -375,8 +356,7 @@ export function TermsPage() {
                 our consent. We may assign them without restriction.
               </li>
               <li>
-                <strong className="text-foreground">Governing Law:</strong> These Terms are governed by the 
-                laws of the jurisdiction where Clipper is based.
+                <strong className="text-foreground">Governing Law:</strong> Applicable law governs these Terms without limiting any mandatory consumer protections that apply where you live.
               </li>
             </ul>
           </CardBody>
@@ -391,22 +371,11 @@ export function TermsPage() {
             </p>
             <ul className="space-y-2 text-muted-foreground ml-4">
               <li>
-                <strong className="text-foreground">GitHub:</strong>{' '}
-                <a
-                  href="https://git.subcult.tv/subculture-collective/clpr/issues"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Open an issue
-                </a>
-              </li>
-              <li>
-                <strong className="text-foreground">Email:</strong> legal@clpr.com (for legal inquiries)
+                <strong className="text-foreground">Email:</strong>{' '}<a href="mailto:legal@clpr.tv" className="text-primary hover:underline">legal@clpr.tv</a>
               </li>
             </ul>
             <p className="text-muted-foreground mt-4">
-              Thank you for using Clipper! We're excited to have you in our creator and clip community.
+              Thank you for using clpr.
             </p>
           </CardBody>
         </Card>

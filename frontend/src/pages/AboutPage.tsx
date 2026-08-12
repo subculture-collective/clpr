@@ -1,241 +1,64 @@
-import { Container, Card, CardBody, SEO } from '../components';
 import { Link } from 'react-router-dom';
+import { Card, CardBody, Container, SEO } from '../components';
+
+const features = [
+  'Discover creators across topics and communities',
+  'Browse curated collections of standout moments',
+  'Save favorites for later viewing',
+  'Give clips uppies and join the conversation',
+  'Submit Twitch clips worth sharing',
+  'Follow what is trending, rising, and new',
+];
 
 export function AboutPage() {
-  const lastUpdated = 'January 15, 2025';
-
   return (
     <>
-      <SEO
-        title="About"
-        description="Learn about clpr, an open-source platform for discovering the creators and moments shaping live culture."
-        canonicalUrl="/about"
-      />
-      <Container className="py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">About clpr</h1>
-        <p className="text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
-      </div>
+      <SEO title='About' description='clpr helps people discover the creators and moments shaping live culture.' canonicalUrl='/about' />
+      <Container className='py-8 max-w-4xl'>
+        <div className='mb-8'>
+          <p className='text-sm font-semibold uppercase tracking-widest text-primary mb-3'>Live culture, clipped</p>
+          <h1 className='text-4xl font-bold mb-4'>Find the creators everyone will be talking about.</h1>
+          <p className='text-lg text-muted-foreground max-w-3xl'>clpr brings together memorable Twitch moments so you can discover people worth following—not just whatever category happens to be live.</p>
+        </div>
 
-      <div className="space-y-6">
-        {/* What is clpr */}
-        <Card id="what-is-clpr">
-          <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">What is clpr?</h2>
-            <p className="text-muted-foreground mb-4">
-              clpr is a modern, open-source platform for discovering and sharing the people and moments shaping live culture.
-              We bring together memorable Twitch clips from creators across IRL, reactions, news, politics, music,
-              sports, creative streams, gaming, and everything in between.
-            </p>
-            <p className="text-muted-foreground mb-4">
-              Our mission is to help people find creators worth following and moments worth talking about.
-              Whether it is a sharp reaction, an unfolding news story, an unforgettable performance, or an impossible play,
-              clpr brings it together in one place.
-            </p>
-            <p className="text-muted-foreground">
-              Built with React, TypeScript, and modern web technologies, clpr is designed to be fast, responsive, 
-              and accessible on any device.
-            </p>
-          </CardBody>
-        </Card>
+        <div className='space-y-6'>
+          <Card><CardBody>
+            <h2 className='text-2xl font-semibold mb-4'>More than gaming</h2>
+            <p className='text-muted-foreground mb-4'>Live creators move freely between IRL, reactions, music, news, politics, sports, art, gaming, and conversations that do not fit neatly into a box. clpr is built around those creators and the moments their communities remember.</p>
+            <p className='text-muted-foreground'>Browse by creator, topic, tag, or Twitch category. Curated collections bring related clips together, while community activity helps timely moments rise.</p>
+          </CardBody></Card>
 
-        {/* How It Works */}
-        <Card id="how-it-works">
-          <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">How It Works</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Automated Clip Discovery</h3>
-                <p className="text-muted-foreground">
-                  We automatically sync and index clips from Twitch, ensuring you never miss the hottest moments 
-                  from creators and communities across Twitch.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Smart Browsing & Search</h3>
-                <p className="text-muted-foreground">
-                  Browse clips by creator, topic, tag, or Twitch category. Our search makes it easy to find exactly
-                  what you're looking for, from specific conversations to trending moments.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Community-Driven Curation</h3>
-                <p className="text-muted-foreground">
-                  Save your favorite clips, upvote the best moments, and see what's trending in the community. 
-                  Our feeds (New, Top, Rising) help surface the content that matters most.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Creator Features</h3>
-                <p className="text-muted-foreground">
-                  Track your clips' performance with analytics, build your audience, and connect with fans 
-                  who appreciate your best moments.
-                </p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Features */}
-        <Card id="features">
-          <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">Key Features</h2>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Discover creators across topics and communities</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Advanced search and filtering options</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Save favorites for later viewing</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Upvote and comment on clips</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Submit your own Twitch clips</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Track trending and rising content</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Creator analytics and insights</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Dark mode and responsive design</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Leaderboards and community stats</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">✓</span>
-                <span className="text-muted-foreground">Notification system for updates</span>
-              </li>
+          <Card><CardBody>
+            <h2 className='text-2xl font-semibold mb-4'>What you can do</h2>
+            <ul className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+              {features.map(feature => (
+                <li key={feature} className='flex items-start'>
+                  <span aria-hidden='true' className='text-primary mr-2'>✓</span>
+                  <span className='text-muted-foreground'>{feature}</span>
+                </li>
+              ))}
             </ul>
-          </CardBody>
-        </Card>
+          </CardBody></Card>
 
-        {/* Open Source */}
-        <Card id="open-source">
-          <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">Open Source & Community</h2>
-            <p className="text-muted-foreground mb-4">
-              clpr is proudly open source! Our code is available on GitHub, and we welcome contributions 
-              from developers, designers, creators, and live-culture enthusiasts.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <a
-                href="https://git.subcult.tv/subculture-collective/clpr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                View on GitHub
-              </a>
-              <a
-                href="https://git.subcult.tv/subculture-collective/clpr/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 border border-border rounded-md hover:bg-accent transition-colors"
-              >
-                Report Issues
-              </a>
-              <a
-                href="https://git.subcult.tv/subculture-collective/clpr/blob/main/CONTRIBUTING.md"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 border border-border rounded-md hover:bg-accent transition-colors"
-              >
-                Contribute
-              </a>
+          <Card><CardBody>
+            <h2 className='text-2xl font-semibold mb-4'>Made for discovery</h2>
+            <div className='grid gap-5 md:grid-cols-3'>
+              <div><h3 className='font-semibold mb-1'>Creator-first</h3><p className='text-sm text-muted-foreground'>The person behind the moment stays at the center, with a clear path back to their Twitch presence.</p></div>
+              <div><h3 className='font-semibold mb-1'>Community-shaped</h3><p className='text-sm text-muted-foreground'>Uppies, saves, comments, and viewing activity help surface clips people genuinely care about.</p></div>
+              <div><h3 className='font-semibold mb-1'>Broad by design</h3><p className='text-sm text-muted-foreground'>Topics and tags connect moments across categories instead of treating every stream like a single subject.</p></div>
             </div>
-          </CardBody>
-        </Card>
+          </CardBody></Card>
 
-        {/* Technology Stack */}
-        <Card id="tech-stack">
-          <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">Technology Stack</h2>
-            <p className="text-muted-foreground mb-4">
-              clpr is built with modern, production-ready technologies:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Frontend</h3>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• React 19 with TypeScript</li>
-                  <li>• Vite for build tooling</li>
-                  <li>• TailwindCSS for styling</li>
-                  <li>• React Router for navigation</li>
-                  <li>• TanStack Query for data fetching</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">Backend</h3>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• Python with FastAPI</li>
-                  <li>• PostgreSQL database</li>
-                  <li>• Redis for caching</li>
-                  <li>• Twitch API integration</li>
-                  <li>• Docker for deployment</li>
-                </ul>
-              </div>
+          <Card><CardBody>
+            <h2 className='text-2xl font-semibold mb-4'>Be part of it</h2>
+            <p className='text-muted-foreground mb-4'>Watch, save, vote, share, and submit the moments that deserve a wider audience. Please read our <Link to='/community-rules' className='text-primary hover:underline'>community rules</Link> and help keep clpr welcoming to creators and viewers alike.</p>
+            <div className='flex flex-wrap gap-4'>
+              <Link to='/contact' className='inline-flex px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90'>Contact us</Link>
+              <a href='https://patreon.com/subcult' target='_blank' rel='noopener noreferrer' className='inline-flex px-4 py-2 border border-border rounded-md hover:bg-accent'>Support us on Patreon</a>
             </div>
-          </CardBody>
-        </Card>
-
-        {/* Contact */}
-        <Card id="contact">
-          <CardBody>
-            <h2 className="text-2xl font-semibold mb-4">Get in Touch</h2>
-            <p className="text-muted-foreground mb-4">
-              Have questions, feedback, or just want to connect? We'd love to hear from you!
-            </p>
-            <div className="space-y-2 text-muted-foreground">
-              <p>
-                <strong className="text-foreground">Community:</strong> Join our{' '}
-                <Link to="/community-rules" className="text-primary hover:underline">
-                  community
-                </Link>{' '}
-                and follow our guidelines
-              </p>
-              <p>
-                <strong className="text-foreground">Development:</strong> Contribute on{' '}
-                <a
-                  href="https://git.subcult.tv/subculture-collective/clpr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  GitHub
-                </a>
-              </p>
-              <p>
-                <strong className="text-foreground">Legal:</strong> Review our{' '}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>{' '}
-                and{' '}
-                <Link to="/terms" className="text-primary hover:underline">
-                  Terms of Service
-                </Link>
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-    </Container>
+          </CardBody></Card>
+        </div>
+      </Container>
     </>
   );
 }
