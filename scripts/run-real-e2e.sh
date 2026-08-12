@@ -115,7 +115,7 @@ for _ in {1..60}; do
                 PLAYWRIGHT_API_BASE_URL="$api_origin" \
                     PLAYWRIGHT_SEED_CLIP_ID="$seed_clip_id" \
                     PLAYWRIGHT_SEED_GAME_ID="release-game" \
-                    npx playwright test --project="$project"
+                    npx playwright test --project="$project" --workers=1
             done
         else
             PLAYWRIGHT_API_BASE_URL="$api_origin" \
