@@ -27,14 +27,21 @@ export function CategoriesNav() {
         const fetchAll = async () => {
             try {
                 const [featuredRes, tagsRes, creatorsRes] = await Promise.all([
-                    categoryApi.listCategories({ type: 'topic', featured: true }),
+                    categoryApi.listCategories({
+                        type: 'topic',
+                        featured: true,
+                        public: true,
+                    }),
                     tagApi.listTags({ sort: 'popularity', limit: 20 }),
                     fetchPopularBroadcasters(20),
                 ]);
 
                 let featuredTopics = featuredRes.categories || [];
                 if (featuredTopics.length === 0) {
-                    const all = await categoryApi.listCategories({ type: 'topic' });
+                    const all = await categoryApi.listCategories({
+                        type: 'topic',
+                        public: true,
+                    });
                     featuredTopics = all.categories || [];
                 }
                 setTopics(featuredTopics);
@@ -83,11 +90,7 @@ export function CategoriesNav() {
     }
 
     // Hide if no data at all
-    if (
-        topics.length === 0 &&
-        tags.length === 0 &&
-        creators.length === 0
-    ) {
+    if (topics.length === 0 && tags.length === 0 && creators.length === 0) {
         return null;
     }
 
@@ -98,24 +101,24 @@ export function CategoriesNav() {
     ];
 
     // Only show tabs that have data
-    const visibleTabs = tabs.filter(t => t.count > 0);
+    const visibleTabs = tabs.filter((t) => t.count > 0);
 
     return (
-        <div className='border-b border-border bg-background'>
-            <div className='container mx-auto px-4'>
-                <div className='relative flex items-center'>
+        <div className="border-b border-border bg-background">
+            <div className="container mx-auto px-4">
+                <div className="relative flex items-center">
                     {/* Tab selector */}
                     {visibleTabs.length > 1 && (
-                        <div className='flex items-center gap-1 pr-3 mr-3 border-r border-border shrink-0'>
-                            {visibleTabs.map(tab => (
+                        <div className="flex items-center gap-1 pr-3 mr-3 border-r border-border shrink-0">
+                            {visibleTabs.map((tab) => (
                                 <button
                                     key={tab.key}
-                                    type='button'
+                                    type="button"
                                     onClick={() => setActiveTab(tab.key)}
                                     className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap cursor-pointer ${
-                                        activeTab === tab.key ?
-                                            'bg-brand text-white'
-                                        :   'text-muted-foreground hover:text-foreground hover:bg-muted'
+                                        activeTab === tab.key
+                                            ? 'bg-brand text-white'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                     }`}
                                 >
                                     {tab.label}
@@ -125,80 +128,93 @@ export function CategoriesNav() {
                     )}
 
                     {/* Scrollable items */}
-                    <div className='relative flex-1 min-w-0'>
+                    <div className="relative flex-1 min-w-0">
                         {canScrollLeft && (
                             <button
-                                type='button'
+                                type="button"
                                 onClick={() => scrollByAmount('left')}
-                                className='absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer'
-                                aria-label='Scroll left'
+                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer"
+                                aria-label="Scroll left"
                             >
-                                <ChevronLeft size={16} strokeWidth={2} aria-hidden='true' />
+                                <ChevronLeft
+                                    size={16}
+                                    strokeWidth={2}
+                                    aria-hidden="true"
+                                />
                             </button>
                         )}
 
                         {canScrollRight && (
                             <button
-                                type='button'
+                                type="button"
                                 onClick={() => scrollByAmount('right')}
-                                className='absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer'
-                                aria-label='Scroll right'
+                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer"
+                                aria-label="Scroll right"
                             >
-                                <ChevronRight size={16} strokeWidth={2} aria-hidden='true' />
+                                <ChevronRight
+                                    size={16}
+                                    strokeWidth={2}
+                                    aria-hidden="true"
+                                />
                             </button>
                         )}
 
                         <div
                             ref={scrollRef}
-                            className='flex items-center gap-2 overflow-x-auto py-2 scrollbar-hide px-6'
-                            role='navigation'
+                            className="flex items-center gap-2 overflow-x-auto py-2 scrollbar-hide px-6"
+                            role="navigation"
                             aria-label={`Browse ${activeTab}`}
                         >
-                            {activeTab === 'creators' &&
+                            {activeTab === 'creators' && (
                                 <>
                                     <Link
-                                        to='/creators'
-                                        className='flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-white whitespace-nowrap'
+                                        to="/creators"
+                                        className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-white whitespace-nowrap"
                                     >
                                         Explore creators
                                     </Link>
-                                    {creators.map(creator => (
+                                    {creators.map((creator) => (
                                         <Link
                                             key={creator.broadcaster_id}
                                             to={`/broadcaster/${creator.broadcaster_id}`}
-                                            className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors"
                                         >
-                                            <span className='w-2 h-2 rounded-full bg-primary-500 shrink-0' />
-                                            <span>{creator.broadcaster_name}</span>
-                                            <span className='text-xs text-muted-foreground'>
+                                            <span className="w-2 h-2 rounded-full bg-primary-500 shrink-0" />
+                                            <span>
+                                                {creator.broadcaster_name}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
                                                 {creator.clip_count} clips
                                             </span>
                                         </Link>
                                     ))}
                                 </>
-                            }
+                            )}
 
                             {activeTab === 'topics' &&
-                                topics.map(topic => (
+                                topics.map((topic) => (
                                     <Link
                                         key={topic.id}
                                         to={`/topics/${topic.slug}`}
-                                        className='flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors"
                                     >
-                                        <CategoryIcon icon={topic.icon} size='sm' />
+                                        <CategoryIcon
+                                            icon={topic.icon}
+                                            size="sm"
+                                        />
                                         <span>{topic.name}</span>
                                     </Link>
                                 ))}
 
                             {activeTab === 'tags' &&
-                                tags.map(tag => (
+                                tags.map((tag) => (
                                     <Link
                                         key={tag.id}
                                         to={`/tags/${encodeURIComponent(tag.slug)}`}
-                                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors"
                                     >
                                         <span
-                                            className='w-2 h-2 rounded-full shrink-0'
+                                            className="w-2 h-2 rounded-full shrink-0"
                                             style={{
                                                 backgroundColor:
                                                     tag.color || '#6366f1',
@@ -206,13 +222,12 @@ export function CategoriesNav() {
                                         />
                                         <span>#{tag.name}</span>
                                         {tag.usage_count > 0 && (
-                                            <span className='text-xs text-muted-foreground'>
+                                            <span className="text-xs text-muted-foreground">
                                                 {tag.usage_count}
                                             </span>
                                         )}
                                     </Link>
                                 ))}
-
                         </div>
                     </div>
                 </div>

@@ -25,7 +25,9 @@ function expectStableSearchArrays(payload: SearchPayload) {
 
 test.describe('real-backend launch smoke', () => {
     test.beforeAll(async ({ request }) => {
-        const fixture = await request.get(`${apiBaseUrl}/api/v1/clips/${seedClipId}`);
+        const fixture = await request.get(
+            `${apiBaseUrl}/api/v1/clips/${seedClipId}`,
+        );
         expect(fixture.status(), 'seeded search fixture must exist').toBe(200);
         await expect(fixture.json()).resolves.toMatchObject({
             data: {
@@ -52,17 +54,20 @@ test.describe('real-backend launch smoke', () => {
             page.getByRole('heading', { name: /trending/i }),
         ).toBeVisible();
         await expect(
-            page.getByRole('heading', { name: 'Curated Collections' }),
+            page.getByRole('link', { name: 'CLPR release smoke clip' }),
         ).toBeVisible();
+        await expect(
+            page.getByRole('heading', { name: 'Curated Collections' }),
+        ).toHaveCount(0);
     });
 
     test('public empty search returns stable arrays and renders without a page error', async ({
         page,
     }) => {
         const pageErrors: Error[] = [];
-        page.on('pageerror', error => pageErrors.push(error));
+        page.on('pageerror', (error) => pageErrors.push(error));
         const searchResponse = page.waitForResponse(
-            response =>
+            (response) =>
                 response.url().includes('/api/v1/search?') &&
                 response.request().method() === 'GET',
         );
@@ -88,36 +93,49 @@ test.describe('real-backend launch smoke', () => {
         page,
     }) => {
         const searchResponse = page.waitForResponse(
-            response => response.url().includes('/api/v1/search?') && response.request().method() === 'GET',
+            (response) =>
+                response.url().includes('/api/v1/search?') &&
+                response.request().method() === 'GET',
         );
 
         await page.goto('/search?q=CLPR');
 
         const response = await searchResponse;
         expect(response.status()).toBe(200);
-        const payload = await response.json() as SearchPayload;
+        const payload = (await response.json()) as SearchPayload;
         expectStableSearchArrays(payload);
         expect(payload.results.clips).toEqual(
-            expect.arrayContaining([expect.objectContaining({ id: seedClipId })]),
+            expect.arrayContaining([
+                expect.objectContaining({ id: seedClipId }),
+            ]),
         );
         await expect(page.getByText('CLPR release smoke clip')).toBeVisible();
     });
 
-    test('public filtered search applies the seeded game filter', async ({ request }) => {
+    test('public filtered search applies the seeded game filter', async ({
+        request,
+    }) => {
         const response = await request.get(`${apiBaseUrl}/api/v1/search`, {
             params: { q: 'CLPR', type: 'clips', game_id: seedGameId },
         });
 
         expect(response.status()).toBe(200);
-        const payload = await response.json() as SearchPayload;
+        const payload = (await response.json()) as SearchPayload;
         expectStableSearchArrays(payload);
         expect(payload.results.clips.length).toBeGreaterThan(0);
         expect(payload.results.clips).toEqual(
-            expect.arrayContaining([expect.objectContaining({ id: seedClipId, game_id: seedGameId })]),
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: seedClipId,
+                    game_id: seedGameId,
+                }),
+            ]),
         );
     });
 
-    test('failed search requests return a stable client error without result data', async ({ request }) => {
+    test('failed search requests return a stable client error without result data', async ({
+        request,
+    }) => {
         const response = await request.get(`${apiBaseUrl}/api/v1/search`);
 
         expect(response.status()).toBe(400);
@@ -142,7 +160,9 @@ test.describe('real-backend launch smoke', () => {
             page.getByRole('heading', { name: 'CLPR release smoke clip' }),
         ).toBeVisible();
         await expect(
-            page.getByText('Release Channel', { exact: true }),
+            page
+                .getByRole('link', { name: 'Release Channel', exact: true })
+                .first(),
         ).toBeVisible();
     });
 
