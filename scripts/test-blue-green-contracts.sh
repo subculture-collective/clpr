@@ -36,51 +36,60 @@ grep -Fq 'header_up -X-CLPR-Canary' deploy/Caddyfile.blue-green.template \
 grep -Fq '/etc/caddy/runtime/Caddyfile' docker-compose.blue-green.yml \
     || fail "Caddy is not configured from external runtime state"
 
-python3 - <<'PY'
-import pathlib
-import yaml
+node <<'NODE'
+const fs = require('node:fs');
+const yaml = require('js-yaml');
 
-compose = yaml.safe_load(pathlib.Path("docker-compose.blue-green.yml").read_text())
-services = compose["services"]
-crawlers = [name for name in services if "crawler" in name]
-if crawlers != ["crawler"]:
-    raise SystemExit(f"expected exactly one shared crawler service, got {crawlers}")
-
-crawler = services["crawler"]
-expected = {
-    "user": "10001:10001",
-    "read_only": True,
-    "cap_drop": ["ALL"],
-    "security_opt": ["no-new-privileges:true"],
-    "pids_limit": 128,
-    "mem_limit": "256m",
-    "cpus": 0.5,
+const compose = yaml.load(fs.readFileSync('docker-compose.blue-green.yml', 'utf8'));
+const services = compose.services;
+const crawlers = Object.keys(services).filter((name) => name.includes('crawler'));
+if (JSON.stringify(crawlers) !== JSON.stringify(['crawler'])) {
+    throw new Error(`expected exactly one shared crawler service, got ${JSON.stringify(crawlers)}`);
 }
-for key, value in expected.items():
-    if crawler.get(key) != value:
-        raise SystemExit(f"crawler {key} is {crawler.get(key)!r}, expected {value!r}")
-if not any(item.startswith("/tmp:rw,noexec,nosuid") for item in crawler.get("tmpfs", [])):
-    raise SystemExit("crawler requires a constrained /tmp tmpfs")
 
-for name, service in services.items():
-    image = service.get("image")
-    if image and "@" not in image:
-        raise SystemExit(f"service {name} has a mutable image reference: {image}")
+const crawler = services.crawler;
+const expected = {
+    user: '10001:10001',
+    read_only: true,
+    cap_drop: ['ALL'],
+    security_opt: ['no-new-privileges:true'],
+    pids_limit: 128,
+    mem_limit: '256m',
+    cpus: 0.5,
+};
+for (const [key, value] of Object.entries(expected)) {
+    if (JSON.stringify(crawler[key]) !== JSON.stringify(value)) {
+        throw new Error(`crawler ${key} is ${JSON.stringify(crawler[key])}, expected ${JSON.stringify(value)}`);
+    }
+}
+if (!(crawler.tmpfs || []).some((item) => item.startsWith('/tmp:rw,noexec,nosuid'))) {
+    throw new Error('crawler requires a constrained /tmp tmpfs');
+}
 
-caddy = services["caddy"]
-for key, expected_value in {
-    "read_only": True,
-    "cap_drop": ["ALL"],
-    "security_opt": ["no-new-privileges:true"],
-    "pids_limit": 128,
-    "mem_limit": "256m",
-    "cpus": 0.5,
-}.items():
-    if caddy.get(key) != expected_value:
-        raise SystemExit(f"caddy {key} is not hardened")
-if any(str(port).startswith("2019:") for port in caddy.get("ports", [])):
-    raise SystemExit("Caddy admin API must not be published on the host")
-PY
+for (const [name, service] of Object.entries(services)) {
+    const image = service.image;
+    if (image && !image.includes('@')) {
+        throw new Error(`service ${name} has a mutable image reference: ${image}`);
+    }
+}
+
+const caddy = services.caddy;
+for (const [key, value] of Object.entries({
+    read_only: true,
+    cap_drop: ['ALL'],
+    security_opt: ['no-new-privileges:true'],
+    pids_limit: 128,
+    mem_limit: '256m',
+    cpus: 0.5,
+})) {
+    if (JSON.stringify(caddy[key]) !== JSON.stringify(value)) {
+        throw new Error(`caddy ${key} is not hardened`);
+    }
+}
+if ((caddy.ports || []).some((port) => String(port).startsWith('2019:'))) {
+    throw new Error('Caddy admin API must not be published on the host');
+}
+NODE
 
 for dockerfile in backend/Dockerfile backend/Dockerfile.crawler frontend/Dockerfile; do
     grep -Fq 'org.opencontainers.image.revision' "$dockerfile" \
@@ -130,21 +139,21 @@ mkdir -p "$tmp_dir/runtime"
 docker compose --env-file "$tmp_dir/.env" \
     -f docker-compose.blue-green.yml --profile green config > "$tmp_dir/compose.yml"
 
-python3 - "$tmp_dir/compose.yml" <<'PY'
-import pathlib
-import sys
-import yaml
+node - "$tmp_dir/compose.yml" <<'NODE'
+const fs = require('node:fs');
+const yaml = require('js-yaml');
 
-compose = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text())
-for name, service in compose["services"].items():
-    # Locally built PostgreSQL has a Compose-generated cache name; every
-    # registry-delivered runtime image must be immutable.
-    if "build" in service:
-        continue
-    image = service.get("image", "")
-    if "@sha256:" not in image:
-        raise SystemExit(f"rendered service {name} has a mutable image: {image}")
-PY
+const compose = yaml.load(fs.readFileSync(process.argv[2], 'utf8'));
+for (const [name, service] of Object.entries(compose.services)) {
+    // Locally built PostgreSQL has a Compose-generated cache name; every
+    // registry-delivered runtime image must be immutable.
+    if ('build' in service) continue;
+    const image = service.image || '';
+    if (!image.includes('@sha256:')) {
+        throw new Error(`rendered service ${name} has a mutable image: ${image}`);
+    }
+}
+NODE
 
 [[ "$(grep -Ec '^  crawler:$' "$tmp_dir/compose.yml")" -eq 1 ]] \
     || fail "rendered compose does not contain exactly one crawler"
