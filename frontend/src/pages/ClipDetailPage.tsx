@@ -305,7 +305,7 @@ export function ClipDetailPage() {
                             {clipTopics.topics.map(topic => (
                                 <Link
                                     key={topic.topic_id}
-                                    to={`/category/${topic.topic_slug}`}
+                                    to={`/topics/${topic.topic_slug}`}
                                     className='rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent/80'
                                 >
                                     {topic.topic_name}

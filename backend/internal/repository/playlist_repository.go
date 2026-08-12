@@ -1298,9 +1298,10 @@ func (r *PlaylistRepository) ListFeatured(ctx context.Context, currentUserID *uu
 				PARTITION BY COALESCE(script_id, id)
 				ORDER BY created_at DESC
 			) AS latest_rank
-			FROM playlists
-			WHERE (is_featured = true OR is_curated = true)
-			  AND visibility = 'public' AND deleted_at IS NULL
+			FROM playlists p
+			WHERE (p.is_featured = true OR p.is_curated = true)
+			  AND p.visibility = 'public' AND p.deleted_at IS NULL
+			  AND EXISTS (SELECT 1 FROM playlist_items pi0 WHERE pi0.playlist_id = p.id)
 		)
 		SELECT COUNT(*)
 		FROM featured_source
@@ -1323,6 +1324,7 @@ func (r *PlaylistRepository) ListFeatured(ctx context.Context, currentUserID *uu
 			FROM playlists p
 			WHERE (p.is_featured = true OR p.is_curated = true)
 			  AND p.visibility = 'public' AND p.deleted_at IS NULL
+			  AND EXISTS (SELECT 1 FROM playlist_items pi0 WHERE pi0.playlist_id = p.id)
 		)
 		SELECT
 			p.id, p.user_id, p.title, p.description, p.cover_url, p.visibility, p.share_token,

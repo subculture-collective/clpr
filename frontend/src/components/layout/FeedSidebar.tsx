@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedPlaylists, usePlaylists } from '@/hooks/usePlaylist';
 import { useTags } from '@/hooks/useTags';
-import { useDiscoveryLists } from '@/hooks/useDiscoveryLists';
 import { useQueueCount } from '@/hooks/useQueue';
 import { useIsAuthenticated } from '@/hooks';
 import { categoryApi } from '@/lib/category-api';
@@ -13,7 +12,6 @@ import {
     Tag,
     Sparkles,
     Bookmark,
-    List,
     Flame,
     Users,
 } from 'lucide-react';
@@ -80,16 +78,13 @@ export function FeedSidebar() {
 
     // Data hooks
     const { data: featuredResponse } = useFeaturedPlaylists(1, 5);
-    const featuredPlaylists = featuredResponse?.data ?? [];
+    const featuredPlaylists = (featuredResponse?.data ?? []).filter(playlist => playlist.clip_count > 0);
 
     const { data: tagsResponse } = useTags({
         sort: 'popularity',
         limit: 10,
     });
     const tags = tagsResponse?.tags ?? [];
-
-    const { data: discoveryResponse } = useDiscoveryLists({ limit: 5 });
-    const discoveryLists = (discoveryResponse as { lists?: Array<{ id: string; title: string; slug?: string; clip_count?: number }> })?.lists ?? [];
 
     const { data: topicsResponse } = useQuery({
         queryKey: ['categories', 'topic'],
@@ -161,12 +156,12 @@ export function FeedSidebar() {
 
             {/* Topics (custom categories) */}
             {topics.length > 0 && (
-                <SidebarSection title='Topics' icon={Flame} viewAllHref='/categories'>
+                <SidebarSection title='Topics' icon={Flame} viewAllHref='/topics'>
                     <div className='flex flex-wrap gap-1.5'>
                         {topics.map(topic => (
                             <Link
                                 key={topic.id}
-                                to={`/category/${topic.slug}`}
+                                to={`/topics/${topic.slug}`}
                                 className='inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium bg-surface-raised hover:bg-surface-hover rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer'
                             >
                                 {topic.name}
@@ -183,7 +178,7 @@ export function FeedSidebar() {
                         {tags.map(tag => (
                             <Link
                                 key={tag.id}
-                                to={`/tag/${encodeURIComponent(tag.slug)}`}
+                                to={`/tags/${encodeURIComponent(tag.slug)}`}
                                 className='inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-surface-raised hover:bg-surface-hover rounded-full text-text-secondary hover:text-text-primary transition-colors cursor-pointer'
                             >
                                 {tag.name}
@@ -191,31 +186,6 @@ export function FeedSidebar() {
                                     {tag.usage_count}
                                 </span>
                             </Link>
-                        ))}
-                    </div>
-                </SidebarSection>
-            )}
-
-            {/* Discovery Lists */}
-            {discoveryLists.length > 0 && (
-                <SidebarSection
-                    title='Discovery'
-                    icon={List}
-                    viewAllHref='/discover/lists'
-                >
-                    <div className='space-y-0.5'>
-                        {discoveryLists.map(list => (
-                            <SidebarLink
-                                key={list.id}
-                                to={`/discover/lists/${list.slug || list.id}`}
-                                meta={
-                                    list.clip_count !== undefined
-                                        ? `${list.clip_count} clips`
-                                        : undefined
-                                }
-                            >
-                                {list.title}
-                            </SidebarLink>
                         ))}
                     </div>
                 </SidebarSection>

@@ -28,7 +28,7 @@ export function DiscoveryListsPage() {
     const uniqueLists = new Map(
       data?.pages.flatMap((page) => page.data).map((list) => [list.id, list]),
     );
-    return [...(uniqueLists?.values() ?? [])];
+    return [...(uniqueLists?.values() ?? [])].filter(list => list.clip_count > 0);
   }, [data?.pages]);
 
   return (

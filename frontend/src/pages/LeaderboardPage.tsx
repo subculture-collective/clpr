@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
                     success: boolean;
                     data: StreamerRanking[];
                 }>('/broadcasters/rankings?limit=100');
-                setStreamerRankings(res.data?.data || []);
+                setStreamerRankings((res.data?.data || []).filter(item => item.engagement_score > 0));
                 setLeaderboard(null);
             } else {
                 const response = await fetch(
@@ -97,6 +97,9 @@ export default function LeaderboardPage() {
     const handlePageChange = (newPage: number) => {
         setSearchParams({ type, page: newPage.toString() });
     };
+
+    const rankedEntries = leaderboard?.entries.filter(entry => entry.score > 0) ?? [];
+    const displayValue = (value: number) => value > 0 ? value.toLocaleString() : '—';
 
     return (
         <div className='max-w-6xl mx-auto px-4 py-8'>
@@ -212,16 +215,16 @@ export default function LeaderboardPage() {
                                             </Link>
                                         </td>
                                         <td className='px-4 py-3 text-right text-text-primary font-semibold'>
-                                            {streamer.engagement_score.toLocaleString()}
+                                            {displayValue(streamer.engagement_score)}
                                         </td>
                                         <td className='px-4 py-3 text-right text-text-secondary'>
-                                            {streamer.total_clips.toLocaleString()}
+                                            {displayValue(streamer.total_clips)}
                                         </td>
                                         <td className='px-4 py-3 text-right text-text-secondary'>
-                                            {streamer.total_comments.toLocaleString()}
+                                            {displayValue(streamer.total_comments)}
                                         </td>
                                         <td className='px-4 py-3 text-right text-text-secondary'>
-                                            {streamer.follower_count.toLocaleString()}
+                                            {displayValue(streamer.follower_count)}
                                         </td>
                                     </tr>
                                 );
@@ -242,14 +245,14 @@ export default function LeaderboardPage() {
                     {/* Top 3 Summary */}
                     {page === 1 && (
                         <LeaderboardSummary
-                            entries={leaderboard.entries}
+                            entries={rankedEntries}
                             type={type}
                         />
                     )}
 
                     {/* Leaderboard Table */}
                     <LeaderboardTable
-                        entries={leaderboard.entries}
+                        entries={rankedEntries}
                         type={type}
                         currentUserId={user?.id}
                     />

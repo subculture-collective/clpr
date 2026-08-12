@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { TagChip } from './TagChip';
 
 describe('TagChip', () => {
-    it('links namespaced tags to the routed singular tag page', () => {
+    it('links namespaced tags to the canonical tags page', () => {
         render(
             <MemoryRouter>
                 <TagChip
@@ -21,7 +21,7 @@ describe('TagChip', () => {
 
         expect(screen.getByRole('link', { name: 'Highlights' })).toHaveAttribute(
             'href',
-            '/tag/content%2Fhighlights',
+            '/tags/content%2Fhighlights',
         );
     });
 });

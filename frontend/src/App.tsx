@@ -41,6 +41,9 @@ function LegacyGameRedirect() {
 const CategoryPage = lazy(() =>
     import('./pages/CategoryPage').then(m => ({ default: m.CategoryPage })),
 );
+const TopicsPage = lazy(() =>
+    import('./pages/TopicsPage').then(m => ({ default: m.TopicsPage })),
+);
 const BroadcasterPage = lazy(() =>
     import('./pages/BroadcasterPage').then(m => ({
         default: m.BroadcasterPage,
@@ -65,6 +68,21 @@ const UserProfilePage = lazy(() =>
 const TagPage = lazy(() =>
     import('./pages/TagPage').then(m => ({ default: m.TagPage })),
 );
+const TagsPage = lazy(() =>
+    import('./pages/TagsPage').then(m => ({ default: m.TagsPage })),
+);
+
+function LegacyTopicRedirect() {
+    const { categorySlug } = useParams<{ categorySlug: string }>();
+    const location = useLocation();
+    return <Navigate to={`/topics/${categorySlug || ''}${location.search}`} replace />;
+}
+
+function LegacyTagRedirect() {
+    const params = useParams<{ '*': string }>();
+    const location = useLocation();
+    return <Navigate to={`/tags/${params['*'] || ''}${location.search}`} replace />;
+}
 const SearchPage = lazy(() =>
     import('./pages/SearchPage').then(m => ({ default: m.SearchPage })),
 );
@@ -451,8 +469,11 @@ function App() {
                                         />
                                         <Route
                                             path='/category/:categorySlug'
-                                            element={<CategoryPage />}
+                                            element={<LegacyTopicRedirect />}
                                         />
+                                        <Route path='/categories' element={<Navigate to='/topics' replace />} />
+                                        <Route path='/topics' element={<TopicsPage />} />
+                                        <Route path='/topics/:categorySlug' element={<CategoryPage />} />
                                         <Route
                                             path='/broadcaster/:broadcasterId'
                                             element={<BroadcasterPage />}
@@ -479,8 +500,10 @@ function App() {
                                         />
                                         <Route
                                             path='/tag/*'
-                                            element={<TagPage />}
+                                            element={<LegacyTagRedirect />}
                                         />
+                                        <Route path='/tags' element={<TagsPage />} />
+                                        <Route path='/tags/:tagSlug' element={<TagPage />} />
                                         <Route
                                             path='/search'
                                             element={<SearchPage />}

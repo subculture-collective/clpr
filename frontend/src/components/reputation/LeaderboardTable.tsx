@@ -82,7 +82,7 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
                 {/* User */}
                 <td className="px-6 py-4">
                   <Link
-                    to={`/profile/${entry.username}`}
+                    to={`/user/${entry.username}`}
                     className="group flex items-center gap-3"
                   >
                     {entry.avatar_url ? (
@@ -125,9 +125,9 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
                 {type === 'engagement' && (
                   <td className="px-6 py-4">
                     <div className="space-y-1 text-sm text-right text-muted-foreground">
-                      <div className="flex items-center justify-end gap-1"><MessageSquare size={16} strokeWidth={1.75} /> {entry.total_comments?.toLocaleString() || 0} comments</div>
-                      <div className="flex items-center justify-end gap-1"><ThumbsUp size={16} strokeWidth={1.75} /> {entry.total_votes_cast?.toLocaleString() || 0} votes</div>
-                      <div className="flex items-center justify-end gap-1"><Film size={16} strokeWidth={1.75} /> {entry.total_clips_submitted?.toLocaleString() || 0} clips</div>
+                      {!!entry.total_comments && <div className="flex items-center justify-end gap-1"><MessageSquare size={16} strokeWidth={1.75} /> {entry.total_comments.toLocaleString()} comments</div>}
+                      {!!entry.total_votes_cast && <div className="flex items-center justify-end gap-1"><ThumbsUp size={16} strokeWidth={1.75} /> {entry.total_votes_cast.toLocaleString()} votes</div>}
+                      {!!entry.total_clips_submitted && <div className="flex items-center justify-end gap-1"><Film size={16} strokeWidth={1.75} /> {entry.total_clips_submitted.toLocaleString()} clips</div>}
                     </div>
                   </td>
                 )}
@@ -157,7 +157,7 @@ export function LeaderboardSummary({ entries, type }: LeaderboardSummaryProps) {
       {topThree.map((entry, index) => (
         <Link
           key={entry.user_id}
-          to={`/profile/${entry.username}`}
+          to={`/user/${entry.username}`}
           className="hover:bg-surface-hover p-6 text-center transition-colors bg-surface-raised rounded-lg"
         >
           <div className="mb-2 text-4xl"><RankMedal rank={index + 1} /></div>

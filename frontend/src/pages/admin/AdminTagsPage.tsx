@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { Container, Card, CardHeader, CardBody, Button, Spinner, SEO } from '../../components';
 import { Input } from '../../components/ui';
 import { apiClient } from '@/lib/api';
+import { tagApi } from '@/lib/tag-api';
 import { useToast } from '../../context/ToastContext';
 
 interface BlacklistEntry {
@@ -16,6 +17,7 @@ interface BlacklistEntry {
 export function AdminTagsPage() {
   const [pattern, setPattern] = useState('');
   const [reason, setReason] = useState('');
+  const [tagSearch, setTagSearch] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -23,15 +25,15 @@ export function AdminTagsPage() {
   const { data: blacklist, isLoading } = useQuery<BlacklistEntry[]>({
     queryKey: ['admin', 'tags', 'blacklist'],
     queryFn: async () => {
-      const res = await apiClient.get('/api/v1/admin/tags/blacklist');
-      return res.data;
+      const res = await apiClient.get<{ success: boolean; data: BlacklistEntry[] }>('/admin/tags/blacklist');
+      return res.data.data;
     },
   });
 
   // Add pattern mutation
   const addMutation = useMutation({
     mutationFn: async (payload: { pattern: string; reason: string }) => {
-      const res = await apiClient.post('/api/v1/admin/tags/blacklist', payload);
+      const res = await apiClient.post('/admin/tags/blacklist', payload);
       return res.data;
     },
     onSuccess: () => {
@@ -48,7 +50,7 @@ export function AdminTagsPage() {
   // Delete pattern mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiClient.delete(`/api/v1/admin/tags/blacklist/${id}`);
+      await apiClient.delete(`/admin/tags/blacklist/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'tags', 'blacklist'] });
@@ -57,6 +59,24 @@ export function AdminTagsPage() {
     onError: () => {
       showToast('Failed to remove blacklist pattern', 'error');
     },
+  });
+
+  const { data: tagResponse, isLoading: tagsLoading } = useQuery({
+    queryKey: ['admin', 'tags', 'active'],
+    queryFn: () => tagApi.listTags({ sort: 'alphabetical', limit: 100 }),
+  });
+  const activeTags = (tagResponse?.tags ?? []).filter(tag =>
+    `${tag.name} ${tag.slug}`.toLowerCase().includes(tagSearch.trim().toLowerCase()),
+  );
+
+  const removeTagMutation = useMutation({
+    mutationFn: (id: string) => tagApi.deleteTag(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tags', 'active'] });
+      void queryClient.invalidateQueries({ queryKey: ['tags'] });
+      showToast('Tag removed', 'success');
+    },
+    onError: () => showToast('Failed to remove tag', 'error'),
   });
 
   const handleAdd = (e: React.FormEvent) => {
@@ -76,16 +96,42 @@ export function AdminTagsPage() {
 
   return (
     <Container className='py-4 xs:py-6 md:py-8'>
-      <SEO title='Tag Blacklist' noindex />
+      <SEO title='Tag Management' noindex />
 
       <div className='mb-6 xs:mb-8'>
         <h1 className='text-2xl xs:text-3xl font-bold text-text-primary mb-2'>
-          Tag Blacklist
+          Tag Management
         </h1>
         <p className='text-sm xs:text-base text-text-secondary'>
-          Manage blacklisted tag patterns. Clips with tags matching these patterns will be filtered out.
+          Remove existing tags and prevent unwanted tags from being added again.
         </p>
       </div>
+
+      <Card className='mb-6'>
+        <CardHeader><h2 className='text-xl font-semibold text-text-primary'>Active Tags</h2></CardHeader>
+        <CardBody>
+          <div className='relative mb-4 max-w-md'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary' />
+            <Input value={tagSearch} onChange={event => setTagSearch(event.target.value)} placeholder='Search tags' className='pl-9' fullWidth />
+          </div>
+          {tagsLoading ? <div className='flex justify-center py-8'><Spinner size='lg' /></div> : activeTags.length === 0 ? (
+            <p className='text-center py-8 text-text-secondary'>No matching tags.</p>
+          ) : (
+            <div className='overflow-x-auto max-h-96'>
+              <table className='w-full' aria-label='Active tags'>
+                <thead className='border-b border-border'><tr><th className='text-left py-3 px-4'>Tag</th><th className='text-right py-3 px-4'>Clips</th><th className='text-right py-3 px-4'>Actions</th></tr></thead>
+                <tbody>{activeTags.map(tag => (
+                  <tr key={tag.id} className='border-b border-border'>
+                    <td className='py-3 px-4'><span className='font-medium'>{tag.name}</span><span className='ml-2 text-sm text-text-secondary'>{tag.slug}</span></td>
+                    <td className='py-3 px-4 text-right text-text-secondary'>{tag.usage_count > 0 ? tag.usage_count.toLocaleString() : '—'}</td>
+                    <td className='py-3 px-4 text-right'><Button variant='ghost' size='sm' className='text-red-600' disabled={removeTagMutation.isPending} onClick={() => { if (window.confirm(`Remove ${tag.name} from clpr and all clips?`)) removeTagMutation.mutate(tag.id); }} aria-label={`Remove tag ${tag.name}`}><Trash2 className='w-4 h-4' /></Button></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Add Pattern Form */}
       <Card className='mb-6'>

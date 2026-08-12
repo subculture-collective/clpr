@@ -27,11 +27,11 @@ vi.mock('../components/clip', () => ({
 }));
 
 describe('TagPage', () => {
-    it('renders namespaced tags from the wildcard route', () => {
+    it('renders namespaced tags from the canonical route', () => {
         render(
-            <MemoryRouter initialEntries={['/tag/content/highlights']}>
+            <MemoryRouter initialEntries={['/tags/content%2Fhighlights']}>
                 <Routes>
-                    <Route path="/tag/*" element={<TagPage />} />
+                    <Route path="/tags/:tagSlug" element={<TagPage />} />
                 </Routes>
             </MemoryRouter>
         );
@@ -44,9 +44,9 @@ describe('TagPage', () => {
 
     it('renders ClipFeed with tag filter when tagSlug is provided', () => {
         render(
-            <MemoryRouter initialEntries={['/tag/gaming']}>
+            <MemoryRouter initialEntries={['/tags/gaming']}>
                 <Routes>
-                    <Route path="/tag/:tagSlug" element={<TagPage />} />
+                    <Route path="/tags/:tagSlug" element={<TagPage />} />
                 </Routes>
             </MemoryRouter>
         );
@@ -67,9 +67,9 @@ describe('TagPage', () => {
 
     it('renders different tag correctly', () => {
         render(
-            <MemoryRouter initialEntries={['/tag/funny']}>
+            <MemoryRouter initialEntries={['/tags/funny']}>
                 <Routes>
-                    <Route path="/tag/:tagSlug" element={<TagPage />} />
+                    <Route path="/tags/:tagSlug" element={<TagPage />} />
                 </Routes>
             </MemoryRouter>
         );
@@ -83,9 +83,9 @@ describe('TagPage', () => {
 
     it('handles missing tagSlug gracefully', () => {
         render(
-            <MemoryRouter initialEntries={['/tag/']}>
+            <MemoryRouter initialEntries={['/tags/']}>
                 <Routes>
-                    <Route path="/tag/:tagSlug?" element={<TagPage />} />
+                    <Route path="/tags/:tagSlug?" element={<TagPage />} />
                 </Routes>
             </MemoryRouter>
         );

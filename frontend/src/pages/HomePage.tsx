@@ -37,7 +37,9 @@ export function HomePage() {
         1,
         8,
     );
-    const featuredPlaylists = featuredPlaylistsResponse?.data ?? [];
+    const featuredPlaylists = (featuredPlaylistsResponse?.data ?? []).filter(
+        playlist => playlist.clip_count > 0,
+    );
 
     useEffect(() => {
         const container = carouselRef.current;

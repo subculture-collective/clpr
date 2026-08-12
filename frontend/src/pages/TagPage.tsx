@@ -3,8 +3,7 @@ import { Container, SEO } from '../components';
 import { ClipFeed } from '../components/clip';
 
 export function TagPage() {
-  const params = useParams<{ tagSlug: string; '*': string }>();
-  const tagSlug = params.tagSlug || params['*'];
+  const { tagSlug } = useParams<{ tagSlug: string }>();
 
   if (!tagSlug) {
     return (
@@ -21,7 +20,7 @@ export function TagPage() {
       <SEO
         title={`#${tagSlug}`}
         description={`Explore Twitch clips tagged with ${tagSlug}. Watch, vote, and discover the best ${tagSlug} moments from the community.`}
-        canonicalUrl={`/tag/${tagSlug}`}
+        canonicalUrl={`/tags/${tagSlug}`}
       />
       <Container className="py-8">
         <ClipFeed

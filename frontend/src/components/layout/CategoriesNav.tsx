@@ -182,7 +182,7 @@ export function CategoriesNav() {
                                 topics.map(topic => (
                                     <Link
                                         key={topic.id}
-                                        to={`/category/${topic.slug}`}
+                                        to={`/topics/${topic.slug}`}
                                         className='flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
                                     >
                                         <CategoryIcon icon={topic.icon} size='sm' />
@@ -194,7 +194,7 @@ export function CategoriesNav() {
                                 tags.map(tag => (
                                     <Link
                                         key={tag.id}
-                                        to={`/tag/${encodeURIComponent(tag.slug)}`}
+                                        to={`/tags/${encodeURIComponent(tag.slug)}`}
                                         className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
                                     >
                                         <span
