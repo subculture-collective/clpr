@@ -7,7 +7,7 @@ services:
             POSTGRES_PASSWORD: clpr_password
             POSTGRES_DB: clpr_test
         ports:
-            - '5437:5432'
+            - '${TEST_DATABASE_PORT:-5437}:5432'
         tmpfs:
             - /var/lib/postgresql/data
         healthcheck:

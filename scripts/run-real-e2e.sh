@@ -70,7 +70,7 @@ SQL
     source .env.test
     set +a
     PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
-        DB_HOST=localhost DB_PORT=5437 DB_USER=clpr \
+        DB_HOST=localhost DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
         DB_PASSWORD=clpr_password DB_NAME=clpr_test \
         REDIS_HOST=localhost REDIS_PORT="${TEST_REDIS_PORT:-6380}" \
         OPENSEARCH_URL=http://localhost:9201 \
@@ -88,7 +88,7 @@ for _ in {1..60}; do
             # shellcheck disable=SC1091
             source .env.test
             set +a
-            DB_HOST=localhost DB_PORT=5437 DB_USER=clpr \
+            DB_HOST=localhost DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
                 DB_PASSWORD=clpr_password DB_NAME=clpr_test \
                 OPENSEARCH_URL=http://localhost:9201 \
                 go run ./cmd/backfill-search -batch 100
