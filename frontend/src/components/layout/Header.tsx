@@ -62,17 +62,15 @@ export function Header() {
                     {/* Logo */}
                     <Link
                         to='/'
-                        className='flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md'
+                        className='flex items-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md'
                         aria-label='clpr.tv home'
                     >
-                        <svg width='20' height='20' viewBox='0 0 20 20' fill='none' aria-hidden='true'>
-                            <path
-                                d='M5 3.87a1 1 0 011.53-.85l9.94 6.13a1 1 0 010 1.7l-9.94 6.13A1 1 0 015 16.13V3.87z'
-                                fill='rgb(var(--color-brand))'
-                            />
-                        </svg>
-                        <span className='font-heading text-[22px] font-bold text-gradient'>clpr</span>
-                        <span className='font-heading text-sm font-medium text-text-secondary'>.tv</span>
+                        <img
+                            src='/clpr-logo.svg'
+                            alt=''
+                            aria-hidden='true'
+                            className='h-9 w-auto'
+                        />
                     </Link>
 
                     {/* Navigation (desktop) */}
