@@ -2,13 +2,18 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-if ! command -v psql >/dev/null; then
-    exec docker run --rm --network host \
-        -v "$repo_root:/repo:ro" \
+if [[ "${CLPR_POSTGRES_CLIENT_CONTAINER:-}" == "1" ]] || ! command -v psql >/dev/null; then
+    tar -C "$repo_root" -cf - \
+        scripts/test-backup-restore-formats.sh \
+        scripts/restore-drill.sh \
+        scripts/validate-backup.sh | \
+    docker run --rm -i --network host \
         -e TEST_DATABASE_HOST -e TEST_DATABASE_PORT -e TEST_DATABASE_USER \
         -e TEST_DATABASE_PASSWORD -e DRILL_LOG=/tmp/clpr-restore-format-contract.log \
         -e VALIDATION_LOG=/tmp/clpr-backup-validation-contract.log \
-        postgres:17 bash /repo/scripts/test-backup-restore-formats.sh
+        postgres:17 bash -c \
+        'mkdir -p /repo && tar -xf - -C /repo && exec bash /repo/scripts/test-backup-restore-formats.sh'
+    exit $?
 fi
 export DRILL_LOG="${DRILL_LOG:-/tmp/clpr-restore-format-contract.log}"
 export VALIDATION_LOG="${VALIDATION_LOG:-/tmp/clpr-backup-validation-contract.log}"

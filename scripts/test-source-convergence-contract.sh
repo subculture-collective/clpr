@@ -16,6 +16,7 @@ bash -n scripts/verify-gitea-actions-runtime.sh
 node --check scripts/compare-vitest-runs.mjs
 node --test scripts/tests/compare-vitest-runs.test.mjs
 bash scripts/tests/configure-test-service-host.test.sh
+bash scripts/tests/test-backup-restore-formats-container.test.sh
 bash scripts/source-convergence.sh --verify
 
 if bash scripts/source-convergence.sh >/dev/null 2>&1; then
