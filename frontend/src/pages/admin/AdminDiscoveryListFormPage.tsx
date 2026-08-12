@@ -208,7 +208,7 @@ export function AdminDiscoveryListFormPage() {
       <div className="mb-6">
         <Link to="/admin/discovery-lists" className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-2">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Discovery Lists
+          Back to Curated Collections
         </Link>
         <h1 className="text-3xl font-bold">
           {isEditing ? 'Edit Discovery List' : 'Create Discovery List'}

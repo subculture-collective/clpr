@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { Route } from 'react-router-dom';
 import { AdminRoute } from '@/components/guards/AdminRoute';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 type Page = ComponentType;
 
@@ -37,7 +38,7 @@ export interface AdminRoutePages {
 function protectedPage(PageComponent: Page) {
     return (
         <AdminRoute>
-            <PageComponent />
+            <AdminShell><PageComponent /></AdminShell>
         </AdminRoute>
     );
 }

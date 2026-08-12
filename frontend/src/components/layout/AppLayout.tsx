@@ -17,6 +17,7 @@ export function AppLayout() {
     const location = useLocation();
     const navigationType = useNavigationType();
     const { isAuthenticated } = useAuth();
+    const isAdminWorkspace = location.pathname.startsWith('/admin/') || location.pathname === '/moderation/users';
     const scrollPositionsRef = useRef(new Map<string, number>());
 
     // Initialize offline cache on app start
@@ -49,13 +50,13 @@ export function AppLayout() {
         <div className='min-h-screen flex flex-col bg-background text-foreground transition-theme'>
             <SkipLink targetId='main-content' label='Skip to main content' />
             <Header />
-            <CategoriesNav />
+            {!isAdminWorkspace && <CategoriesNav />}
             <main id='main-content' className='flex-1' tabIndex={-1}>
                 <Outlet />
             </main>
-            <Footer />
+            {!isAdminWorkspace && <Footer />}
             <OfflineIndicator />
-            {isAuthenticated && (
+            {isAuthenticated && !isAdminWorkspace && (
                 <Suspense fallback={null}>
                     <QueueWidget />
                 </Suspense>

@@ -81,9 +81,9 @@ export function AdminDiscoveryListsPage() {
     <Container className="py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Discovery Lists Management</h1>
+          <h1 className="text-3xl font-bold mb-2">Curated Collections</h1>
           <p className="text-muted-foreground">
-            Create and manage curated discovery lists
+            Create and manage editorial clip collections
           </p>
         </div>
         <Button asChild>
@@ -96,12 +96,12 @@ export function AdminDiscoveryListsPage() {
 
       <Card>
         <CardHeader>
-          <h2 className="text-xl font-semibold">All Discovery Lists</h2>
+          <h2 className="text-xl font-semibold">All Collections</h2>
         </CardHeader>
         <CardBody>
           {!lists || lists.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg">No discovery lists yet</p>
+              <p className="text-lg">No curated collections yet</p>
               <p className="text-sm mt-2">Create your first discovery list to get started</p>
             </div>
           ) : (

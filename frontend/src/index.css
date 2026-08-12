@@ -717,6 +717,81 @@
     animation: vote-pulse 200ms ease-out;
 }
 
+/* Admin control room: a dense, quiet operational surface shared by every admin page. */
+.admin-workspace {
+    background-image:
+        linear-gradient(rgb(var(--color-border) / 0.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(var(--color-border) / 0.14) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+}
+
+.admin-content > div {
+    width: 100%;
+}
+
+.admin-content h1 {
+    color: rgb(var(--color-text-primary)) !important;
+    font-family: 'Syne', 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.03em;
+}
+
+.admin-content h2,
+.admin-content h3 {
+    color: rgb(var(--color-text-primary));
+}
+
+.admin-content table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin-content thead {
+    background: rgb(var(--color-surface-raised));
+}
+
+.admin-content th {
+    color: rgb(var(--color-text-secondary)) !important;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-content tbody tr {
+    transition: background-color 150ms ease;
+}
+
+.admin-content tbody tr:hover {
+    background: rgb(var(--color-surface-hover) / 0.55);
+}
+
+.admin-content input,
+.admin-content select,
+.admin-content textarea {
+    border-color: rgb(var(--color-border));
+    background-color: rgb(var(--color-surface-raised));
+    color: rgb(var(--color-text-primary));
+}
+
+.admin-content input:focus,
+.admin-content select:focus,
+.admin-content textarea:focus {
+    border-color: rgb(var(--color-brand));
+    outline: 2px solid rgb(var(--color-brand) / 0.18);
+    outline-offset: 1px;
+}
+
+@media (max-width: 767px) {
+    .admin-content table {
+        min-width: 720px;
+    }
+
+    .admin-content h1 {
+        font-size: 1.75rem !important;
+        line-height: 2.1rem !important;
+    }
+}
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
     *,

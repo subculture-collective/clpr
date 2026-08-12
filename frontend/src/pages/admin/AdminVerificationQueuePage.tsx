@@ -22,10 +22,12 @@ import {
 // Helper function to extract error message from API error
 function getErrorMessage(error: unknown): string {
     if (typeof error === 'object' && error !== null && 'response' in error) {
-        const apiError = error as { response?: { data?: { error?: string } } };
-        return apiError.response?.data?.error || 'An error occurred';
+        const apiError = error as { response?: { data?: { error?: string | { message?: string }; message?: string } } };
+        const responseError = apiError.response?.data?.error;
+        if (typeof responseError === 'string') return responseError;
+        return responseError?.message || apiError.response?.data?.message || 'The review could not be saved.';
     }
-    return 'An error occurred';
+    return error instanceof Error ? error.message : 'The review could not be saved.';
 }
 
 export function AdminVerificationQueuePage() {
@@ -45,6 +47,8 @@ export function AdminVerificationQueuePage() {
     const [selectedApplication, setSelectedApplication] = useState<VerificationApplication | null>(null);
     const [reviewNotes, setReviewNotes] = useState('');
     const [reviewDecision, setReviewDecision] = useState<'approved' | 'rejected'>('approved');
+    const [isReviewing, setIsReviewing] = useState(false);
+    const [reviewError, setReviewError] = useState<string | null>(null);
 
     const loadApplications = useCallback(async () => {
         try {
@@ -92,6 +96,7 @@ export function AdminVerificationQueuePage() {
         setSelectedApplication(app);
         setReviewDecision(decision);
         setReviewNotes('');
+        setReviewError(null);
         setReviewModalOpen(true);
     };
 
@@ -101,6 +106,8 @@ export function AdminVerificationQueuePage() {
         }
 
         try {
+            setIsReviewing(true);
+            setReviewError(null);
             await reviewVerificationApplication(selectedApplication.id, {
                 decision: reviewDecision,
                 notes: reviewNotes || undefined,
@@ -109,10 +116,11 @@ export function AdminVerificationQueuePage() {
             setReviewModalOpen(false);
             setSelectedApplication(null);
             setReviewNotes('');
-            loadApplications();
-            loadStats();
+            await Promise.all([loadApplications(), loadStats()]);
         } catch (err: unknown) {
-            setError(getErrorMessage(err));
+            setReviewError(getErrorMessage(err));
+        } finally {
+            setIsReviewing(false);
         }
     };
 
@@ -139,13 +147,14 @@ export function AdminVerificationQueuePage() {
     };
 
     return (
-        <Container>
-            <div className="py-8">
+        <Container maxWidth="full" className="px-0">
+            <div>
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-brand">Trust &amp; identity</p>
+                    <h1 className="text-3xl font-bold text-text-primary mb-2">
                         Creator Verification Queue
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-text-secondary">
                         Review and manage creator verification applications
                     </p>
                 </div>
@@ -253,9 +262,9 @@ export function AdminVerificationQueuePage() {
                     <div className="space-y-4">
                         {applications.map((app) => (
                             <Card key={app.id} className="p-6">
-                                <div className="flex items-start justify-between">
+                                <div className="flex flex-col items-start justify-between gap-5 lg:flex-row">
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
+                                        <div className="flex flex-wrap items-center gap-3 mb-2">
                                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                                 Application #{app.id.slice(0, 8)}
                                             </h3>
@@ -323,11 +332,12 @@ export function AdminVerificationQueuePage() {
                                     </div>
 
                                     {app.status === 'pending' && (
-                                        <div className="flex gap-2 ml-4">
+                                        <div className="flex w-full gap-2 lg:ml-4 lg:w-auto">
                                             <Button
                                                 size="sm"
                                                 variant="primary"
                                                 onClick={() => openReviewModal(app, 'approved')}
+                                                className="flex-1 lg:flex-none"
                                             >
                                                 Approve
                                             </Button>
@@ -335,6 +345,7 @@ export function AdminVerificationQueuePage() {
                                                 size="sm"
                                                 variant="danger"
                                                 onClick={() => openReviewModal(app, 'rejected')}
+                                                className="flex-1 lg:flex-none"
                                             >
                                                 Reject
                                             </Button>
@@ -348,11 +359,12 @@ export function AdminVerificationQueuePage() {
 
                 {/* Review Modal */}
                 <Modal
-                    isOpen={reviewModalOpen}
-                    onClose={() => setReviewModalOpen(false)}
+                    open={reviewModalOpen}
+                    onClose={() => { if (!isReviewing) setReviewModalOpen(false); }}
                     title={`${reviewDecision === 'approved' ? 'Approve' : 'Reject'} Application`}
                 >
                     <div className="space-y-4">
+                        {reviewError && <Alert variant="error" onDismiss={() => setReviewError(null)}>{reviewError}</Alert>}
                         <p className="text-gray-600 dark:text-gray-400">
                             {reviewDecision === 'approved'
                                 ? 'Are you sure you want to approve this verification application? The user will receive a verified badge.'
@@ -384,14 +396,16 @@ export function AdminVerificationQueuePage() {
                             <Button
                                 variant="secondary"
                                 onClick={() => setReviewModalOpen(false)}
+                                disabled={isReviewing}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 variant={reviewDecision === 'approved' ? 'primary' : 'danger'}
                                 onClick={handleReview}
+                                loading={isReviewing}
                             >
-                                {reviewDecision === 'approved' ? 'Approve' : 'Reject'}
+                                {isReviewing ? 'Saving decision' : reviewDecision === 'approved' ? 'Approve' : 'Reject'}
                             </Button>
                         </div>
                     </div>

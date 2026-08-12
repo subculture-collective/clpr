@@ -1,301 +1,77 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Container, Grid, Card, CardHeader, CardBody } from '../../components';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, CheckCircle2, Clock3, ShieldCheck, Sparkles } from 'lucide-react';
+import { adminNavGroups } from '../../components/admin/adminNavigation';
+import { SEO } from '../../components';
 
-const quickDocLinks = [
-    {
-        name: 'API Reference',
-        path: '/admin/api-docs',
-        description: 'Interactive API documentation',
-        isRoute: true,
-    },
-    {
-        name: 'Runbook',
-        path: 'operations/runbook',
-        description: 'Incident response procedures',
-    },
-    {
-        name: 'Deployment',
-        path: 'operations/deployment',
-        description: 'Deploy to production',
-    },
-    {
-        name: 'Monitoring',
-        path: 'operations/monitoring',
-        description: 'Metrics and alerts',
-    },
-    {
-        name: 'Database',
-        path: 'backend/database',
-        description: 'Schema and migrations',
-    },
-    {
-        name: 'Feature Flags',
-        path: 'operations/feature-flags',
-        description: 'Toggle features',
-    },
+const priorityActions = [
+    { label: 'Review moderation queue', href: '/admin/moderation', description: 'Work through the highest-priority reports and flagged content.', icon: ShieldCheck },
+    { label: 'Review creator verification', href: '/admin/verification', description: 'Approve or reject pending creator applications.', icon: CheckCircle2 },
+    { label: 'Check collection automation', href: '/admin/playlist-scripts', description: 'Inspect generated playlists and scheduling rules.', icon: Sparkles },
 ];
 
 export function AdminDashboard() {
-    const navigate = useNavigate();
-
-    const handleDocClick = (path: string, isRoute: boolean = false) => {
-        if (isRoute) {
-            // Navigate to route directly
-            navigate(path);
-        } else {
-            // Navigate to docs page with the specific document
-            navigate(`/docs?doc=${path}`);
-        }
-    };
+    const today = new Intl.DateTimeFormat('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric',
+    }).format(new Date());
 
     return (
-        <Container className='py-4 xs:py-6 md:py-8'>
-            <h1 className='text-2xl xs:text-3xl font-bold mb-6 xs:mb-8'>
-                Admin Dashboard
-            </h1>
-
-            {/* Quick Documentation Access */}
-            <Card className='mb-6 xs:mb-8'>
-                <CardHeader>
-                    <div className='flex justify-between items-center'>
-                        <h2 className='text-xl font-semibold'>
-                            📚 Quick Documentation
-                        </h2>
-                        <Link
-                            to='/docs'
-                            className='text-sm text-primary hover:underline'
-                        >
-                            View All Docs →
-                        </Link>
+        <>
+            <SEO title='Admin Control Room' noindex />
+            <div className='mx-auto max-w-7xl'>
+                <header className='relative mb-8 overflow-hidden rounded-2xl border border-border bg-surface px-6 py-7 sm:px-8 sm:py-9'>
+                    <div aria-hidden='true' className='absolute -right-20 -top-28 h-72 w-72 rounded-full bg-brand/10 blur-3xl' />
+                    <div className='relative max-w-3xl'>
+                        <div className='mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-brand'>
+                            <span className='h-1.5 w-1.5 rounded-full bg-emerald-400' />
+                            {today}
+                        </div>
+                        <h1 className='font-accent text-3xl font-extrabold tracking-tight text-text-primary sm:text-4xl'>Keep clpr moving.</h1>
+                        <p className='mt-3 max-w-2xl text-sm leading-6 text-text-secondary sm:text-base'>One workspace for community safety, creator discovery, content operations, and platform health.</p>
                     </div>
-                </CardHeader>
-                <CardBody>
-                    <Grid cols={1} gap={3} responsive={{ sm: 2, md: 3 }}>
-                        {quickDocLinks.map(doc => (
-                            <button
-                                key={doc.path}
-                                onClick={() => handleDocClick(doc.path, doc.isRoute)}
-                                className='text-left p-3 border border-border rounded-lg hover:bg-accent transition-colors'
-                            >
-                                <h3 className='font-semibold text-sm mb-1'>
-                                    {doc.name}
-                                </h3>
-                                <p className='text-xs text-muted-foreground'>
-                                    {doc.description}
-                                </p>
-                            </button>
+                </header>
+
+                <section className='mb-9' aria-labelledby='priority-heading'>
+                    <div className='mb-4 flex items-end justify-between'>
+                        <div><p className='text-xs font-bold uppercase tracking-[0.16em] text-brand'>Start here</p><h2 id='priority-heading' className='mt-1 text-xl font-bold text-text-primary'>Priority workflows</h2></div>
+                        <span className='hidden items-center gap-1.5 text-xs text-text-tertiary sm:flex'><Clock3 className='h-3.5 w-3.5' /> Live workspace</span>
+                    </div>
+                    <div className='grid gap-4 lg:grid-cols-3'>
+                        {priorityActions.map(action => {
+                            const Icon = action.icon;
+                            return (
+                                <Link key={action.href} to={action.href} className='group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-brand/60 hover:shadow-lg'>
+                                    <div className='mb-5 flex items-start justify-between'><span className='rounded-lg bg-brand/10 p-2.5 text-brand'><Icon className='h-5 w-5' /></span><ArrowUpRight className='h-4 w-4 text-text-tertiary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand' /></div>
+                                    <h3 className='font-semibold text-text-primary'>{action.label}</h3>
+                                    <p className='mt-1.5 text-sm leading-5 text-text-secondary'>{action.description}</p>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                <section aria-labelledby='workspace-heading'>
+                    <div className='mb-4'><p className='text-xs font-bold uppercase tracking-[0.16em] text-brand'>Directory</p><h2 id='workspace-heading' className='mt-1 text-xl font-bold text-text-primary'>Every admin workspace</h2></div>
+                    <div className='grid gap-4 xl:grid-cols-2'>
+                        {adminNavGroups.filter(group => group.label !== 'Overview').map(group => (
+                            <div key={group.label} className='rounded-xl border border-border bg-surface p-5'>
+                                <h3 className='mb-3 text-xs font-bold uppercase tracking-[0.16em] text-text-tertiary'>{group.label}</h3>
+                                <div className='divide-y divide-border'>
+                                    {group.items.map(item => {
+                                        const Icon = item.icon;
+                                        return (
+                                            <Link key={item.href} to={item.href} className='group flex items-center gap-3 py-3 first:pt-1 last:pb-1'>
+                                                <span className='rounded-md bg-surface-raised p-2 text-text-secondary group-hover:bg-brand/10 group-hover:text-brand'><Icon className='h-4 w-4' /></span>
+                                                <span className='min-w-0 flex-1'><span className='block text-sm font-medium text-text-primary'>{item.label}</span><span className='block truncate text-xs text-text-tertiary'>{item.description}</span></span>
+                                                <ArrowUpRight className='h-4 w-4 text-text-tertiary group-hover:text-brand' />
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         ))}
-                    </Grid>
-                </CardBody>
-            </Card>
-
-            {/* Admin Tools */}
-            <h2 className='text-xl font-semibold mb-4'>Admin Tools</h2>
-            <Grid
-                cols={1}
-                gap={4}
-                responsive={{ sm: 1, md: 2, lg: 3 }}
-                className='xs:gap-6'
-            >
-                <Link to='/admin/clips' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Clip Moderation
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Review and moderate clips submitted to the
-                                platform
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/comments' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Comment Moderation
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Manage and moderate user comments
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/users' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                User Management
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Manage user accounts and permissions
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/reports' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Reports
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Review user reports and take action
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/sync' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Sync Controls
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Manually trigger Twitch clip synchronization
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/analytics' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Platform Analytics
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                View platform metrics and user engagement
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/revenue' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Revenue Dashboard
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                MRR, churn, ARPU, and subscription metrics
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/verification' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Creator Verification
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Review and manage creator verification
-                                applications
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/campaigns' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Ad Campaigns
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Manage campaigns, creatives, and view
-                                performance
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/discovery-lists' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Discovery Lists
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Create and manage curated discovery lists
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/webhooks/dlq' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Webhook DLQ
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                View and replay failed webhook deliveries
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/tags' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Tag Management
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Manage blacklisted tag patterns and filters
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-                <Link to='/admin/topics' className='touch-target'>
-                    <Card hover clickable>
-                        <CardHeader>
-                            <h3 className='text-lg xs:text-xl font-semibold'>
-                                Topic Moderation
-                            </h3>
-                        </CardHeader>
-                        <CardBody>
-                            <p className='text-sm xs:text-base text-muted-foreground'>
-                                Correct clip topics and merge or split the taxonomy
-                            </p>
-                        </CardBody>
-                    </Card>
-                </Link>
-
-            </Grid>
-        </Container>
+                    </div>
+                </section>
+            </div>
+        </>
     );
 }

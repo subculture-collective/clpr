@@ -389,7 +389,7 @@ export function AdminWebhookDLQPage() {
 
             {/* Action Confirmation Modal */}
             <Modal
-                isOpen={actionModalOpen}
+                open={actionModalOpen}
                 onClose={() => !isProcessing && setActionModalOpen(false)}
                 title={
                     actionType === 'replay'
@@ -464,7 +464,7 @@ export function AdminWebhookDLQPage() {
 
             {/* Payload View Modal */}
             <Modal
-                isOpen={payloadModalOpen}
+                open={payloadModalOpen}
                 onClose={() => setPayloadModalOpen(false)}
                 title='Webhook Payload'
             >
