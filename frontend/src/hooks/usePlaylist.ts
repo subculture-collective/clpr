@@ -202,6 +202,25 @@ export const usePlaylist = (id: string, page = 1, limit = 20) => {
     });
 };
 
+export const useInfinitePlaylist = (id: string, limit = 100) => {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            id,
+        );
+    return useInfiniteQuery({
+        queryKey: ['playlist', id, 'infinite', safeLimit],
+        queryFn: ({ pageParam }) =>
+            isUuid
+                ? fetchPlaylist(id, pageParam, safeLimit)
+                : fetchPlaylistByShareToken(id, pageParam, safeLimit),
+        initialPageParam: 1,
+        getNextPageParam: lastPage =>
+            lastPage.meta.has_next ? lastPage.meta.page + 1 : undefined,
+        enabled: !!id,
+    });
+};
+
 export const useCreatePlaylist = () => {
     const queryClient = useQueryClient();
 

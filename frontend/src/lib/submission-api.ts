@@ -82,7 +82,17 @@ export async function getUserSubmissions(
       params: { page, limit },
     }
   );
-  return response.data;
+  const payload = response.data;
+  return {
+    success: payload?.success ?? true,
+    data: Array.isArray(payload?.data) ? payload.data : [],
+    meta: {
+      page: payload?.meta?.page ?? page,
+      limit: payload?.meta?.limit ?? limit,
+      total: payload?.meta?.total ?? 0,
+      total_pages: payload?.meta?.total_pages ?? 0,
+    },
+  };
 }
 
 /**

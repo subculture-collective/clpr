@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useRef } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { Link } from 'react-router-dom';
-import { Alert, Button, Card, CardBody, CardHeader, Container, Input, Stack, Toggle } from '../components';
+import { Alert, Button, Card, CardBody, CardHeader, Container, Input, Stack, TextArea, Toggle } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useConsent } from '../context/ConsentContext';
 import type { UpdateProfileRequest, UpdateSettingsRequest } from '../lib/user-settings-api';

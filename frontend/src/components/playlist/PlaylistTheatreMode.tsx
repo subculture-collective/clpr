@@ -34,6 +34,7 @@ interface PlaylistTheatreModeProps {
     onItemRemove?: (itemId: string) => void;
     onReorder?: (itemId: string, newPosition: number) => void;
     onClipUpdated?: (clipId: string) => void;
+    onReachEnd?: () => void;
     onClose?: () => void;
     isQueue?: boolean; // True for queue, false for playlist
     contained?: boolean; // True for embedded mode, false for full-screen
@@ -143,6 +144,7 @@ export function PlaylistTheatreMode({
     onItemRemove,
     onReorder,
     onClipUpdated: _onClipUpdated,
+    onReachEnd,
     onClose,
     isQueue = false,
     contained = false,
@@ -178,16 +180,20 @@ export function PlaylistTheatreMode({
         const nextItem = items[currentIndex + 1];
         if (nextItem) {
             onItemClick(nextItem);
+        } else {
+            onReachEnd?.();
         }
-    }, [items, currentItemId, onItemClick]);
+    }, [items, currentItemId, onItemClick, onReachEnd]);
 
     // Skip to next clip
     const handleSkipNext = useCallback(() => {
         const currentIndex = items.findIndex(item => item.id === currentItemId);
         if (currentIndex < items.length - 1) {
             onItemClick(items[currentIndex + 1]);
+        } else if (currentIndex === items.length - 1) {
+            onReachEnd?.();
         }
-    }, [items, currentItemId, onItemClick]);
+    }, [items, currentItemId, onItemClick, onReachEnd]);
 
     // Skip to previous clip
     const handleSkipPrev = useCallback(() => {

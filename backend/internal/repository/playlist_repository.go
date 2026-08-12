@@ -382,8 +382,16 @@ func (r *PlaylistRepository) ListPublic(ctx context.Context, currentUserID *uuid
 	// Get total count
 	countQuery := `
 		SELECT COUNT(*)
-		FROM playlists
-		WHERE visibility = 'public' AND deleted_at IS NULL
+		FROM playlists p
+		WHERE p.visibility = 'public' AND p.deleted_at IS NULL
+		  AND EXISTS (
+			SELECT 1
+			FROM playlist_items pi
+			JOIN clips c ON c.id = pi.clip_id
+			WHERE pi.playlist_id = p.id
+			  AND c.is_removed = FALSE
+			  AND c.is_hidden = FALSE
+		  )
 	`
 
 	var total int
@@ -399,7 +407,7 @@ func (r *PlaylistRepository) ListPublic(ctx context.Context, currentUserID *uuid
 			p.view_count, p.share_count, p.like_count, p.follower_count, p.bookmark_count,
 			p.is_curated, p.is_featured, p.display_order, p.script_id, p.slug,
 			p.created_at, p.updated_at, p.deleted_at,
-			COALESCE(COUNT(pi.id), 0) AS clip_count,
+			COALESCE(COUNT(visible_clip.id), 0) AS clip_count,
 			EXISTS (
 				SELECT 1
 				FROM playlist_items pi2
@@ -409,11 +417,15 @@ func (r *PlaylistRepository) ListPublic(ctx context.Context, currentUserID *uuid
 			) AS has_processing_clips
 		FROM playlists p
 		LEFT JOIN playlist_items pi ON p.id = pi.playlist_id
+		LEFT JOIN clips visible_clip ON visible_clip.id = pi.clip_id
+			AND visible_clip.is_removed = FALSE
+			AND visible_clip.is_hidden = FALSE
 		WHERE p.visibility = 'public' AND p.deleted_at IS NULL
 		GROUP BY p.id, p.user_id, p.title, p.description, p.cover_url, p.visibility, p.share_token,
 		         p.view_count, p.share_count, p.like_count, p.follower_count, p.bookmark_count,
 		         p.is_curated, p.is_featured, p.display_order, p.script_id, p.slug,
 		         p.created_at, p.updated_at, p.deleted_at
+		HAVING COUNT(visible_clip.id) > 0
 		ORDER BY p.like_count DESC, p.created_at DESC
 		LIMIT $1 OFFSET $2
 	`

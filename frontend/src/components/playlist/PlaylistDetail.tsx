@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui';
 import { useAuth, useIsAuthenticated, useToast } from '@/hooks';
 import {
-    usePlaylist,
+    useInfinitePlaylist,
     useUpdatePlaylist,
     useCopyPlaylist,
     useLikePlaylist,
@@ -35,7 +35,29 @@ export function PlaylistDetail() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const isAuthenticated = useIsAuthenticated();
-    const { data, isLoading } = usePlaylist(id || '', 1, 500);
+    const playlistQuery = useInfinitePlaylist(id || '');
+    const {
+        isLoading,
+        isError,
+        error,
+        refetch,
+        hasNextPage,
+        fetchNextPage,
+        isFetchingNextPage,
+    } = playlistQuery;
+    const data = useMemo(() => {
+        const first = playlistQuery.data?.pages[0];
+        if (!first) return undefined;
+        return {
+            ...first,
+            data: {
+                ...first.data,
+                clips: playlistQuery.data.pages.flatMap(
+                    page => page.data.clips ?? [],
+                ),
+            },
+        };
+    }, [playlistQuery.data]);
     const likeMutation = useLikePlaylist();
     const unlikeMutation = useUnlikePlaylist();
     const bookmarkMutation = useBookmarkPlaylist();
@@ -77,6 +99,18 @@ export function PlaylistDetail() {
     const handleItemClick = useCallback((item: PlaylistItem) => {
         setCurrentItemId(item.id);
     }, []);
+
+    const loadNextPage = () => {
+        if (!hasNextPage || isFetchingNextPage) return;
+        const previousCount = playlistItems.length;
+        void fetchNextPage().then(result => {
+            const clips = result.data?.pages.flatMap(page => page.data.clips ?? []) ?? [];
+            const nextClip = clips[previousCount];
+            if (nextClip && data?.data.id) {
+                setCurrentItemId(`${data.data.id}-${nextClip.id}`);
+            }
+        });
+    };
 
     const handleItemRemove = useCallback(
         (itemId: string) => {
@@ -240,6 +274,31 @@ export function PlaylistDetail() {
         );
     }
 
+    if (isError) {
+        const status = (error as { response?: { status?: number } })?.response
+            ?.status;
+        const message =
+            status === 404 ? 'Playlist not found'
+            : status === 403 ? 'You do not have permission to view this playlist'
+            : status === 400 ? 'This playlist request is invalid'
+            : 'The playlist could not be loaded';
+        const actionClass =
+            'min-h-11 rounded-md border border-border px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400';
+        return (
+            <div className='py-12 text-center'>
+                <p className='mb-4 text-muted-foreground'>{message}</p>
+                <div className='flex justify-center gap-3'>
+                    <button className={actionClass} onClick={() => void refetch()}>
+                        Retry
+                    </button>
+                    <button className={actionClass} onClick={() => navigate('/playlists')}>
+                        Back to playlists
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (!data?.data) {
         return (
             <div className='text-center py-12 text-muted-foreground'>
@@ -301,10 +360,23 @@ export function PlaylistDetail() {
                         onItemRemove={canEdit ? handleItemRemove : undefined}
                         onReorder={canEdit ? handleReorder : undefined}
                         onClipUpdated={handleClipUpdated}
+                        onReachEnd={loadNextPage}
                         onClose={() => navigate(`/playlists/${id}/theatre`)}
                         isQueue={false}
                         contained={true}
                     />
+                    {hasNextPage && (
+                        <div className='mt-4 flex justify-center'>
+                            <button
+                                type='button'
+                                className='min-h-11 rounded-md border border-border px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400 disabled:opacity-60'
+                                disabled={isFetchingNextPage}
+                                onClick={loadNextPage}
+                            >
+                                {isFetchingNextPage ? 'Loading…' : 'Load more clips'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

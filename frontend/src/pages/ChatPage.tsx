@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Plus } from 'lucide-react';
+import { listChannels } from '../lib/chat-api';
 
 /**
  * ChatPage - Main page for the live chat system
@@ -32,19 +33,12 @@ export function ChatPage() {
       setLoading(true);
       setError(null);
 
-      // Fetch channels from API
-      const response = await fetch('/api/chat/channels');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch channels');
-      }
-
-      const data = await response.json();
-      setChannels(data.channels || data || []);
+      const data = await listChannels();
+      setChannels(data);
 
       // Auto-select first channel if available
-      if ((data.channels || data).length > 0 && !selectedChannel) {
-        setSelectedChannel((data.channels || data)[0].id);
+      if (data.length > 0 && !selectedChannel) {
+        setSelectedChannel(data[0].id);
       }
     } catch (err) {
       console.error('Error fetching channels:', err);

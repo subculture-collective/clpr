@@ -115,6 +115,16 @@ export interface ModerationLogResponse {
     limit: number;
 }
 
+/** List chat channels visible to the current user. */
+export async function listChannels(): Promise<Channel[]> {
+    const response = await apiClient.get<
+        Channel[] | { channels?: Channel[] | null }
+    >('/chat/channels');
+    const payload = response.data;
+    if (Array.isArray(payload)) return payload;
+    return Array.isArray(payload?.channels) ? payload.channels : [];
+}
+
 // Ban a user from a channel
 export async function banUser(
     channelId: string,

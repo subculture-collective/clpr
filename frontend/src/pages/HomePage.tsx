@@ -67,6 +67,16 @@ export function HomePage() {
             />
             <FeedLayout sidebar={<FeedSidebar />}>
                 {/* Curated Collections Section */}
+                {isLoading && (
+                    <section className='mb-8 min-h-[330px] overflow-hidden' aria-label='Loading curated collections' aria-busy='true'>
+                        <div className='mb-4 h-8 w-56 animate-pulse rounded bg-surface' />
+                        <div className='flex gap-6 overflow-hidden'>
+                            {[0, 1, 2].map(item => (
+                                <div key={item} className='h-[270px] w-[320px] shrink-0 animate-pulse rounded-xl bg-surface' />
+                            ))}
+                        </div>
+                    </section>
+                )}
                 {!isLoading && featuredPlaylists.length > 0 && (
                     <div className='mb-8 overflow-hidden'>
                         <div className='flex items-center justify-between mb-4'>
@@ -109,7 +119,7 @@ export function HomePage() {
                                     <button
                                         type='button'
                                         onClick={() => scrollCarousel('left')}
-                                        className='h-9 w-9 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center cursor-pointer'
+                                        className='h-11 w-11 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center cursor-pointer'
                                         aria-label='Scroll curated collections left'
                                     >
                                         <ChevronLeft className='h-4 w-4' />
@@ -121,7 +131,7 @@ export function HomePage() {
                                     <button
                                         type='button'
                                         onClick={() => scrollCarousel('right')}
-                                        className='h-9 w-9 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center cursor-pointer'
+                                        className='h-11 w-11 rounded-full border border-border bg-background/90 shadow-md hover:bg-background transition-colors flex items-center justify-center cursor-pointer'
                                         aria-label='Scroll curated collections right'
                                     >
                                         <ChevronRight className='h-4 w-4' />
