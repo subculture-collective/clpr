@@ -28,7 +28,12 @@ if STRIPE_MODE=live STRIPE_TEST_SECRET_KEY=sk_live_forbidden \
 fi
 
 tmp_dir="$(mktemp -d)"
-trap 'rm -rf "$tmp_dir"' EXIT
+k6_container=""
+cleanup() {
+    [[ -z "$k6_container" ]] || docker rm -f "$k6_container" >/dev/null 2>&1 || true
+    rm -rf "$tmp_dir"
+}
+trap cleanup EXIT
 if TARGET_ENVIRONMENT=staging ALLOW_STAGING_LOAD=true \
     STAGING_BASE_URL=https://clpr.tv CLIP_ID=fixture \
     STAGING_AUTH_TOKEN=redacted STAGING_ADMIN_TOKEN=redacted \
@@ -111,11 +116,13 @@ yaml.safe_load(pathlib.Path(".gitea/workflows/operator-preflight.yml").read_text
 PY
 
 for profile in baseline stress soak; do
-    docker run --rm \
-        -v "$repo_root/backend/tests/load/release.js:/release.js:ro" \
+    k6_container="$(docker create \
         grafana/k6:0.57.0@sha256:70af91f86cd8e142e0544a4edaf79835a80033f71974b92edd5ac36fd4442a7b \
-        inspect -e "PROFILE=$profile" --execution-requirements /release.js \
-        > "$tmp_dir/k6-$profile.json"
+        inspect -e "PROFILE=$profile" --execution-requirements /release.js)"
+    docker cp "$repo_root/backend/tests/load/release.js" "$k6_container:/release.js"
+    docker start --attach "$k6_container" > "$tmp_dir/k6-$profile.json"
+    docker rm "$k6_container" >/dev/null
+    k6_container=""
 done
 
 python3 - "$tmp_dir" <<'PY'
