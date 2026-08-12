@@ -223,7 +223,7 @@ export function ClipDetailPage() {
                 canonicalUrl={`/clip/${clip.id}`}
                 ogType='video.other'
                 ogImage={clip.thumbnail_url || undefined}
-                twitterCard='player'
+                imageAlt={`${clip.title} — ${clip.creator_name}`}
                 structuredData={structuredData}
             />
             <Container className='py-4 xs:py-6 md:py-8'>

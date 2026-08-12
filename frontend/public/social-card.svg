@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="social-title social-description">
+  <title id="social-title">clpr — Discover creators and live moments</title>
+  <desc id="social-description">A dark social preview card with the clpr logo and creator-first discovery message.</desc>
+  <defs>
+    <radialGradient id="violet-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#7c3aed" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff2bc2"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0f0f14"/>
+  <circle cx="1005" cy="74" r="410" fill="url(#violet-glow)"/>
+  <circle cx="155" cy="620" r="330" fill="url(#violet-glow)" opacity=".58"/>
+  <path fill="none" stroke="url(#edge)" stroke-width="12" d="M74 106V60h1052v510H674"/>
+  <image href="clpr-logo.svg" x="132" y="166" width="535" height="247"/>
+  <text x="136" y="478" fill="#e8e8ed" font-family="Inter,system-ui,sans-serif" font-size="39" font-weight="600">Creators. Moments. Live culture.</text>
+  <text x="138" y="528" fill="#9898a8" font-family="Inter,system-ui,sans-serif" font-size="24">Discover clips by creator, topic, tag, or collection.</text>
+  <image href="favicon.svg" x="965" y="420" width="92" height="92"/>
+  <text x="1074" y="478" fill="#e8e8ed" font-family="Inter,system-ui,sans-serif" font-size="26" font-weight="700">clpr.tv</text>
+</svg>

@@ -1,12 +1,12 @@
 {
-    "name": "clpr - Community-Driven Twitch Clip Curation",
+    "name": "clpr - Discover Creators and Live Moments",
     "short_name": "clpr",
     "description": "Discover the creators and moments shaping live culture. Browse Twitch clips by creator, topic, tag, or collection.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#6366f1",
+    "background_color": "#0f0f14",
+    "theme_color": "#7c3aed",
     "orientation": "portrait-primary",
     "share_target": {
         "action": "/submit",

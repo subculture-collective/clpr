@@ -7,6 +7,9 @@ export interface SEOProps {
     canonicalUrl?: string;
     ogType?: 'website' | 'article' | 'video.other';
     ogImage?: string;
+    imageAlt?: string;
+    imageWidth?: string;
+    imageHeight?: string;
     ogVideo?: string;
     ogVideoType?: string;
     ogVideoWidth?: string;
@@ -20,11 +23,13 @@ export interface SEOProps {
     structuredData?: Record<string, unknown>;
 }
 
-const DEFAULT_TITLE = 'Clipper - Community-Driven Twitch Clip Curation';
+const DEFAULT_TITLE = 'clpr - Discover Creators and Live Moments';
 const DEFAULT_DESCRIPTION =
-    'Discover, share, and vote on memorable Twitch clips from creators across live culture.';
-const DEFAULT_IMAGE = '/clpr-banner-1021px.png';
-const SITE_NAME = 'Clipper';
+    'Discover the creators and moments shaping live culture. Browse Twitch clips by creator, topic, tag, or collection.';
+const DEFAULT_IMAGE = '/social-card.png';
+const DEFAULT_IMAGE_ALT = 'clpr — Discover creators and live moments';
+const SITE_NAME = 'clpr';
+const TWITTER_HANDLE = '@clpr_tv';
 
 export function SEO({
     title,
@@ -32,6 +37,9 @@ export function SEO({
     canonicalUrl,
     ogType = 'website',
     ogImage = DEFAULT_IMAGE,
+    imageAlt = DEFAULT_IMAGE_ALT,
+    imageWidth,
+    imageHeight,
     ogVideo,
     ogVideoType,
     ogVideoWidth,
@@ -52,6 +60,10 @@ export function SEO({
         :   window.location.href.split('?')[0];
     const fullOgImage =
         ogImage.startsWith('http') ? ogImage : `${baseUrl}${ogImage}`;
+    const resolvedImageWidth =
+        imageWidth ?? (ogImage === DEFAULT_IMAGE ? '1200' : undefined);
+    const resolvedImageHeight =
+        imageHeight ?? (ogImage === DEFAULT_IMAGE ? '630' : undefined);
 
     useEffect(() => {
         // Update meta theme-color based on dark mode if needed
@@ -78,11 +90,20 @@ export function SEO({
 
             {/* Open Graph Meta Tags */}
             <meta property='og:site_name' content={SITE_NAME} />
+            <meta property='og:locale' content='en_US' />
             <meta property='og:title' content={fullTitle} />
             <meta property='og:description' content={description} />
             <meta property='og:type' content={ogType} />
             <meta property='og:url' content={fullCanonicalUrl} />
             <meta property='og:image' content={fullOgImage} />
+            <meta property='og:image:secure_url' content={fullOgImage} />
+            {resolvedImageWidth && (
+                <meta property='og:image:width' content={resolvedImageWidth} />
+            )}
+            {resolvedImageHeight && (
+                <meta property='og:image:height' content={resolvedImageHeight} />
+            )}
+            <meta property='og:image:alt' content={imageAlt} />
             {ogVideo && <meta property='og:video' content={ogVideo} />}
             {ogVideoType && (
                 <meta property='og:video:type' content={ogVideoType} />
@@ -96,9 +117,14 @@ export function SEO({
 
             {/* Twitter Card Meta Tags */}
             <meta name='twitter:card' content={twitterCard} />
+            <meta name='twitter:site' content={TWITTER_HANDLE} />
+            <meta name='twitter:creator' content={TWITTER_HANDLE} />
+            <meta name='twitter:domain' content='clpr.tv' />
+            <meta name='twitter:url' content={fullCanonicalUrl} />
             <meta name='twitter:title' content={fullTitle} />
             <meta name='twitter:description' content={description} />
             <meta name='twitter:image' content={fullOgImage} />
+            <meta name='twitter:image:alt' content={imageAlt} />
             {twitterPlayer && (
                 <meta name='twitter:player' content={twitterPlayer} />
             )}
