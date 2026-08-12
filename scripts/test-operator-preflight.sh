@@ -102,7 +102,6 @@ done
 python3 - <<'PY'
 import json
 import pathlib
-import yaml
 
 for path in pathlib.Path("release-evidence/templates").glob("*.json"):
     record = json.loads(path.read_text())
@@ -111,9 +110,14 @@ for path in pathlib.Path("release-evidence/templates").glob("*.json"):
     for key, value in record.items():
         if isinstance(value, bool) and value is not False:
             raise SystemExit(f"{path}: {key} must default false")
-
-yaml.safe_load(pathlib.Path(".gitea/workflows/operator-preflight.yml").read_text())
 PY
+
+node <<'NODE'
+const fs = require('node:fs');
+const yaml = require('js-yaml');
+
+yaml.load(fs.readFileSync('.gitea/workflows/operator-preflight.yml', 'utf8'));
+NODE
 
 for profile in baseline stress soak; do
     k6_container="$(docker create \
