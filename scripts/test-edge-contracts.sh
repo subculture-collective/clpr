@@ -113,12 +113,18 @@ command -v curl >/dev/null || fail "curl is required for --runtime"
 tmp_dir="$(mktemp -d)"
 caddy_container="clpr-edge-contract-${RANDOM}-$$"
 frontend_container="clpr-frontend-contract-${RANDOM}-$$"
+validation_container=""
 edge_port=$((20000 + RANDOM % 3000))
 backend_port=$((23000 + RANDOM % 3000))
 frontend_port=$((26000 + RANDOM % 3000))
 backend_pid=""
+runtime_network=host
+if docker inspect "$(hostname)" >/dev/null 2>&1; then
+  runtime_network="container:$(hostname)"
+fi
 
 cleanup() {
+  [[ -z "$validation_container" ]] || docker rm -f "$validation_container" >/dev/null 2>&1 || true
   docker rm -f "$caddy_container" >/dev/null 2>&1 || true
   docker rm -f "$frontend_container" >/dev/null 2>&1 || true
   [[ -z "$backend_pid" ]] || kill "$backend_pid" >/dev/null 2>&1 || true
@@ -180,24 +186,28 @@ awk '/^http:\/\/clpr\.tv/{exit} {print}' "$tmp_dir/Caddyfile.rendered" \
       -E \
       -e "s/clpr-backend-(blue|green):8080/127.0.0.1:$backend_port/g" \
       -e "s/clpr-frontend-(blue|green):8080/127.0.0.1:$frontend_port/g" \
-      -e "s|output file /var/log/caddy/access.log|output file $tmp_dir/access.log|" \
+      -e 's|output file /var/log/caddy/access.log|output file /tmp/access.log|' \
   > "$tmp_dir/Caddyfile"
 
-docker run --rm \
-  -v "$tmp_dir/nginx.conf:/etc/nginx/nginx.conf:ro" \
-  -v "$tmp_dir/edge-routes.conf:/etc/nginx/edge-routes.conf:ro" \
-  nginx:1.29-alpine nginx -t >/dev/null
+validation_container="$(docker create nginx:1.29-alpine nginx -t)"
+docker cp "$tmp_dir/nginx.conf" "$validation_container:/etc/nginx/nginx.conf"
+docker cp "$tmp_dir/edge-routes.conf" "$validation_container:/etc/nginx/edge-routes.conf"
+docker start --attach "$validation_container" >/dev/null
+docker rm "$validation_container" >/dev/null
+validation_container=""
 
-docker run --rm \
-  -v "$tmp_dir/Caddyfile:/etc/caddy/Caddyfile:ro" \
-  -v "$tmp_dir:$tmp_dir" \
-  caddy:2 caddy validate --config /etc/caddy/Caddyfile >/dev/null
+validation_container="$(docker create caddy:2 caddy validate --config /etc/caddy/Caddyfile)"
+docker cp "$tmp_dir/Caddyfile" "$validation_container:/etc/caddy/Caddyfile"
+docker start --attach "$validation_container" >/dev/null
+docker rm "$validation_container" >/dev/null
+validation_container=""
 
-docker run -d --name "$frontend_container" --network host \
-  -v "$tmp_dir/nginx.conf:/etc/nginx/nginx.conf:ro" \
-  -v "$tmp_dir/edge-routes.conf:/etc/nginx/edge-routes.conf:ro" \
-  -v "$tmp_dir/frontend:/usr/share/nginx/html:ro" \
+docker create --name "$frontend_container" --network "$runtime_network" \
   nginx:1.29-alpine nginx -g 'daemon off;' >/dev/null
+docker cp "$tmp_dir/nginx.conf" "$frontend_container:/etc/nginx/nginx.conf"
+docker cp "$tmp_dir/edge-routes.conf" "$frontend_container:/etc/nginx/edge-routes.conf"
+docker cp "$tmp_dir/frontend/." "$frontend_container:/usr/share/nginx/html"
+docker start "$frontend_container" >/dev/null
 
 for _ in $(seq 1 30); do
   if curl --silent --fail "http://127.0.0.1:$frontend_port/health.html" >/dev/null; then
@@ -207,10 +217,10 @@ for _ in $(seq 1 30); do
 done
 curl --silent --fail "http://127.0.0.1:$frontend_port/health.html" >/dev/null || fail "nginx did not become ready"
 
-docker run -d --name "$caddy_container" --network host \
-  -v "$tmp_dir/Caddyfile:/etc/caddy/Caddyfile:ro" \
-  -v "$tmp_dir:$tmp_dir" \
+docker create --name "$caddy_container" --network "$runtime_network" \
   caddy:2 caddy run --config /etc/caddy/Caddyfile >/dev/null
+docker cp "$tmp_dir/Caddyfile" "$caddy_container:/etc/caddy/Caddyfile"
+docker start "$caddy_container" >/dev/null
 
 for _ in $(seq 1 30); do
   if curl --silent --fail "http://127.0.0.1:$edge_port/health" >/dev/null; then
