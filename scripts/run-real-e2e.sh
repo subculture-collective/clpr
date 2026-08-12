@@ -72,7 +72,7 @@ SQL
     PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
         DB_HOST=localhost DB_PORT=5437 DB_USER=clpr \
         DB_PASSWORD=clpr_password DB_NAME=clpr_test \
-        REDIS_HOST=localhost REDIS_PORT=6380 \
+        REDIS_HOST=localhost REDIS_PORT="${TEST_REDIS_PORT:-6380}" \
         OPENSEARCH_URL=http://localhost:9201 \
         CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 \
         RATE_LIMIT_WHITELIST_IPS=127.0.0.1 FEATURE_ANALYTICS=false \

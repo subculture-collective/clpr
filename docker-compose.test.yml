@@ -20,7 +20,7 @@ services:
         image: redis:7-alpine
         container_name: clpr-redis-test
         ports:
-            - '6380:6379'
+            - '${TEST_REDIS_PORT:-6380}:6379'
         tmpfs:
             - /data
         command: redis-server --appendonly yes --maxmemory 64mb --maxmemory-policy allkeys-lru
