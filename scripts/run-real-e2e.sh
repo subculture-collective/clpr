@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+test_service_host=${TEST_SERVICE_HOST:-localhost}
 api_port=${E2E_API_PORT:-18088}
 api_origin="http://127.0.0.1:${api_port}"
 seed_clip_id="00000000-0000-4000-8000-000000000001"
@@ -70,10 +71,10 @@ SQL
     source .env.test
     set +a
     PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
-        DB_HOST=localhost DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
+        DB_HOST="${TEST_DATABASE_HOST:-$test_service_host}" DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
         DB_PASSWORD=clpr_password DB_NAME=clpr_test \
-        REDIS_HOST=localhost REDIS_PORT="${TEST_REDIS_PORT:-6380}" \
-        OPENSEARCH_URL=http://localhost:9201 \
+        REDIS_HOST="${TEST_REDIS_HOST:-$test_service_host}" REDIS_PORT="${TEST_REDIS_PORT:-6380}" \
+        OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}" \
         CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 \
         RATE_LIMIT_WHITELIST_IPS=127.0.0.1 FEATURE_ANALYTICS=false \
         "$api_binary"
@@ -88,12 +89,12 @@ for _ in {1..60}; do
             # shellcheck disable=SC1091
             source .env.test
             set +a
-            DB_HOST=localhost DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
+            DB_HOST="${TEST_DATABASE_HOST:-$test_service_host}" DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
                 DB_PASSWORD=clpr_password DB_NAME=clpr_test \
-                OPENSEARCH_URL=http://localhost:9201 \
+                OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}" \
                 go run ./cmd/backfill-search -batch 100
         )
-        curl -fsS -X POST http://localhost:9201/clips/_refresh >/dev/null
+        curl -fsS -X POST "${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}/clips/_refresh" >/dev/null
         cd "$repo_root/frontend"
 
         # Playwright's fallback browser installers can be unavailable or fail

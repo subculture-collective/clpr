@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+test_service_host=${TEST_SERVICE_HOST:-localhost}
 compose=(docker compose -f "$repo_root/docker-compose.test.yml")
 api_port=${CHAOS_API_PORT:-18089}
 api_origin="http://127.0.0.1:${api_port}"
@@ -25,8 +26,8 @@ mkdir -p "$repo_root/.tmp"
     source .env.test
     set +a
     PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
-        DB_HOST=localhost DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr DB_PASSWORD=clpr_password DB_NAME=clpr_test \
-        REDIS_HOST=localhost REDIS_PORT="${TEST_REDIS_PORT:-6380}" OPENSEARCH_URL=http://localhost:9201 \
+        DB_HOST="${TEST_DATABASE_HOST:-$test_service_host}" DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr DB_PASSWORD=clpr_password DB_NAME=clpr_test \
+        REDIS_HOST="${TEST_REDIS_HOST:-$test_service_host}" REDIS_PORT="${TEST_REDIS_PORT:-6380}" OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}" \
         CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 RATE_LIMIT_WHITELIST_IPS=127.0.0.1 \
         FEATURE_ANALYTICS=false go run ./cmd/api
 ) >"$log_file" 2>&1 &
@@ -70,7 +71,7 @@ wait_for_status 200
 for _ in {1..30}; do
     if "${compose[@]}" exec -T postgres-test pg_isready -U clpr -d clpr_test >/dev/null 2>&1; then
         migrate -path "$repo_root/backend/migrations" \
-            -database "postgresql://clpr:clpr_password@localhost:${TEST_DATABASE_PORT:-5437}/clpr_test?sslmode=disable" up
+            -database "postgresql://clpr:clpr_password@${TEST_DATABASE_HOST:-$test_service_host}:${TEST_DATABASE_PORT:-5437}/clpr_test?sslmode=disable" up
         break
     fi
     sleep 1

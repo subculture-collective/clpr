@@ -11,7 +11,15 @@ vars:
   DB_URL: 'postgresql://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable'
   TEST_DB_PORT:
     sh: 'printf "%s" "${TEST_DATABASE_PORT:-5437}"'
-  TEST_DB_URL: 'postgresql://clpr:clpr_password@localhost:{{.TEST_DB_PORT}}/clpr_test?sslmode=disable'
+  TEST_SERVICE_HOST:
+    sh: 'printf "%s" "${TEST_SERVICE_HOST:-localhost}"'
+  TEST_DB_HOST:
+    sh: 'printf "%s" "${TEST_DATABASE_HOST:-${TEST_SERVICE_HOST:-localhost}}"'
+  TEST_REDIS_HOST:
+    sh: 'printf "%s" "${TEST_REDIS_HOST:-${TEST_SERVICE_HOST:-localhost}}"'
+  TEST_OPENSEARCH_URL:
+    sh: 'printf "%s" "${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:9201}"'
+  TEST_DB_URL: 'postgresql://clpr:clpr_password@{{.TEST_DB_HOST}}:{{.TEST_DB_PORT}}/clpr_test?sslmode=disable'
   MIGRATIONS_PATH: 'backend/migrations'
   BACKEND_BIN_DIR:
     sh: 'if [ -d backend/bin ] && [ ! -w backend/bin ]; then echo .tmp/bin; else echo backend/bin; fi'
@@ -158,12 +166,12 @@ tasks:
     desc: Set up test containers and migrations
     aliases: [test-setup]
     cmds:
-      - cd backend && bash setup-test-env.sh
+      - cd backend && TEST_SERVICE_HOST='{{.TEST_SERVICE_HOST}}' TEST_DATABASE_HOST='{{.TEST_DB_HOST}}' TEST_REDIS_HOST='{{.TEST_REDIS_HOST}}' OPENSEARCH_URL='{{.TEST_OPENSEARCH_URL}}' bash setup-test-env.sh
       - '{{.TEST_COMPOSE}} up -d'
       - bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T redis-test redis-cli ping >/dev/null 2>&1; then echo "Redis is ready"; exit 0; fi; sleep 1; done; echo "Redis failed to become ready"; exit 1'
       - bash -c 'for i in {1..60}; do if docker compose -f docker-compose.test.yml exec -T postgres-test pg_isready -U clpr -d clpr_test >/dev/null 2>&1; then echo "PostgreSQL is ready"; exit 0; fi; sleep 1; done; echo "PostgreSQL failed to become ready"; exit 1'
       - task: migrate:test:up
-      - bash -c 'for i in {1..60}; do if curl -f -s http://localhost:9201/_cluster/health >/dev/null 2>&1; then echo "OpenSearch is ready"; exit 0; fi; sleep 1; done; echo "OpenSearch failed to become ready"; exit 1'
+      - bash -c 'for i in {1..60}; do if curl -f -s "{{.TEST_OPENSEARCH_URL}}/_cluster/health" >/dev/null 2>&1; then echo "OpenSearch is ready"; exit 0; fi; sleep 1; done; echo "OpenSearch failed to become ready"; exit 1'
 
   test:teardown:
     desc: Stop test containers
@@ -182,8 +190,8 @@ tasks:
             cd backend &&
             set -a && source .env.test && set +a &&
             PORT=18088 GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
-            DB_HOST=localhost DB_PORT=${TEST_DATABASE_PORT:-5437} DB_USER=clpr DB_PASSWORD=clpr_password DB_NAME=clpr_test \
-            REDIS_HOST=localhost REDIS_PORT=${TEST_REDIS_PORT:-6380} OPENSEARCH_URL=http://localhost:9201 \
+            DB_HOST=${TEST_DATABASE_HOST:-${TEST_SERVICE_HOST:-localhost}} DB_PORT=${TEST_DATABASE_PORT:-5437} DB_USER=clpr DB_PASSWORD=clpr_password DB_NAME=clpr_test \
+            REDIS_HOST=${TEST_REDIS_HOST:-${TEST_SERVICE_HOST:-localhost}} REDIS_PORT=${TEST_REDIS_PORT:-6380} OPENSEARCH_URL=${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:9201} \
             CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 RATE_LIMIT_WHITELIST_IPS=127.0.0.1 \
             FEATURE_ANALYTICS=false go run ./cmd/api
           ') > .tmp/backend-e2e.log 2>&1 & echo $! > .tmp/backend-e2e.pid

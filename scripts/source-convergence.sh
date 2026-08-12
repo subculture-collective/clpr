@@ -264,6 +264,8 @@ phase_secrets() {
 
 phase_browser() {
     (
+        # shellcheck disable=SC1091 # Repository-local environment resolver.
+        source scripts/configure-test-service-host.sh
         # shellcheck disable=SC2329 # Invoked through the EXIT trap.
         cleanup_browser_services() {
             task test:teardown >/dev/null 2>&1 || true

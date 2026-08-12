@@ -32,13 +32,13 @@ fi
 export STRIPE_WEBHOOK_SECRET="${TEST_STRIPE_WEBHOOK_SECRET}"
 
 # OpenSearch/Elasticsearch configuration for semantic search
-if [ -z "$OPENSEARCH_URL" ]; then
-    export OPENSEARCH_URL="http://localhost:9201"
+if [ -z "${OPENSEARCH_URL:-}" ]; then
+    export OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:9201}"
     echo -e "${GREEN}✓ Set OPENSEARCH_URL=${OPENSEARCH_URL}${NC}"
 fi
 
 # Test database configuration
-export TEST_DATABASE_HOST="${TEST_DATABASE_HOST:-localhost}"
+export TEST_DATABASE_HOST="${TEST_DATABASE_HOST:-${TEST_SERVICE_HOST:-localhost}}"
 export TEST_DATABASE_PORT="${TEST_DATABASE_PORT:-5437}"
 export TEST_DATABASE_USER="${TEST_DATABASE_USER:-clpr}"
 export TEST_DATABASE_PASSWORD="${TEST_DATABASE_PASSWORD:-clpr_password}"
@@ -48,7 +48,7 @@ export TEST_DATABASE_NAME="${TEST_DATABASE_NAME:-clpr_test}"
 export TEST_DATABASE_URL="postgres://${TEST_DATABASE_USER}:${TEST_DATABASE_PASSWORD}@${TEST_DATABASE_HOST}:${TEST_DATABASE_PORT}/${TEST_DATABASE_NAME}?sslmode=disable"
 
 # Redis test configuration
-export TEST_REDIS_HOST="${TEST_REDIS_HOST:-localhost}"
+export TEST_REDIS_HOST="${TEST_REDIS_HOST:-${TEST_SERVICE_HOST:-localhost}}"
 export TEST_REDIS_PORT="${TEST_REDIS_PORT:-6380}"
 
 echo -e "${GREEN}✓ Test database configured${NC}"
