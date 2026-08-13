@@ -99,7 +99,7 @@ const AdminAnalyticsPage: React.FC = () => {
                             <MetricCard
                                 title="Total Users"
                                 value={overview.total_users}
-                                subtitle="Registered accounts"
+                                subtitle="Signed-in non-staff users"
                             />
                             <MetricCard
                                 title="Daily Active Users"

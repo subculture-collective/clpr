@@ -2,11 +2,35 @@ import { render, waitFor } from '@testing-library/react';
 import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { describe, expect, it } from 'vitest';
 import { SEO } from './SEO';
+import { resolveSiteUrl } from '../lib/site-url';
 
 const meta = (selector: string) =>
     document.head.querySelector<HTMLMetaElement>(selector)?.content;
+const canonical = () =>
+    document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
 
 describe('SEO social metadata', () => {
+    it('treats a relative configured base as an application path, not a host', () => {
+        expect(resolveSiteUrl('/search', '/', 'https://clpr.tv')).toBe(
+            'https://clpr.tv/search',
+        );
+    });
+
+    it('resolves route canonicals against an absolute site origin', async () => {
+        render(
+            <HelmetProvider>
+                <SEO canonicalUrl='/search' />
+            </HelmetProvider>,
+        );
+
+        await waitFor(() => {
+            expect(canonical()).toBe(`${window.location.origin}/search`);
+        });
+        expect(meta('meta[property="og:url"]')).toBe(
+            `${window.location.origin}/search`,
+        );
+    });
+
     it('publishes the branded default card and clpr social account', async () => {
         render(
             <HelmetProvider>

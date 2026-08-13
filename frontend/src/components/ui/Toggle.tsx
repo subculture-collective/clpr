@@ -30,7 +30,7 @@ export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
                     <label
                         htmlFor={toggleId}
                         className={cn(
-                            'relative inline-flex items-center cursor-pointer',
+                            'relative inline-flex min-h-11 min-w-11 items-center justify-center cursor-pointer',
                             disabled && 'opacity-50 cursor-not-allowed'
                         )}
                     >

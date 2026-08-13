@@ -20,8 +20,15 @@ ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 ARG VITE_API_BASE_URL=/api/v1
 ARG VITE_BASE_URL=/
+ARG VITE_PUBLIC_SITE_URL=https://clpr.tv
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ENV VITE_BASE_URL=${VITE_BASE_URL}
+ENV VITE_PUBLIC_SITE_URL=${VITE_PUBLIC_SITE_URL}
+
+RUN case "$VITE_PUBLIC_SITE_URL" in \
+      http://*|https://*) ;; \
+      *) echo "VITE_PUBLIC_SITE_URL must be an absolute HTTP(S) origin" >&2; exit 1 ;; \
+    esac
 
 # Remove dev .env file so .env.production is used
 RUN rm -f .env .env.local

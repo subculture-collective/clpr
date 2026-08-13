@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
+import { effectiveConsentValue } from '../../lib/consent-display';
 
 export interface ConsentBannerProps {
   /** Additional CSS classes */
@@ -67,7 +68,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
               <strong>Do Not Track detected:</strong> We respect your browser's Do Not Track setting.
-              Personalized ads and analytics tracking will be disabled even if you consent.
+              Optional consent is effectively off while this signal is enabled. Your saved choices are retained but are not used.
             </p>
           </div>
         )}
@@ -152,7 +153,8 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Functional</h3>
                   <Toggle
-                    checked={pendingPreferences.functional}
+                    aria-label="Functional consent"
+                    checked={effectiveConsentValue(pendingPreferences.functional, doNotTrack)}
                     onChange={(e) => setPendingPreferences(prev => ({
                       ...prev,
                       functional: e.target.checked
@@ -172,7 +174,8 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Analytics</h3>
                   <Toggle
-                    checked={pendingPreferences.analytics}
+                    aria-label="Analytics consent"
+                    checked={effectiveConsentValue(pendingPreferences.analytics, doNotTrack)}
                     onChange={(e) => setPendingPreferences(prev => ({
                       ...prev,
                       analytics: e.target.checked
@@ -192,7 +195,8 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Advertising</h3>
                   <Toggle
-                    checked={pendingPreferences.advertising}
+                    aria-label="Advertising consent"
+                    checked={effectiveConsentValue(pendingPreferences.advertising, doNotTrack)}
                     onChange={(e) => setPendingPreferences(prev => ({
                       ...prev,
                       advertising: e.target.checked

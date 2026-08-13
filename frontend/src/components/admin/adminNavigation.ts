@@ -34,7 +34,7 @@ export const adminNavGroups: AdminNavGroup[] = [
         { label: 'Sync controls', href: '/admin/sync', description: 'Twitch ingestion controls', icon: Radio },
         { label: 'Webhook failures', href: '/admin/webhooks/dlq', description: 'Replay failed deliveries', icon: Webhook },
         { label: 'Campaigns', href: '/admin/campaigns', description: 'Promotional campaigns', icon: Megaphone },
-        { label: 'Users', href: '/admin/users', description: 'Accounts and access', icon: Users },
+        { label: 'Identity Records', href: '/admin/users', description: 'Signed-in users, imported creators, and staff identities', icon: Users },
         { label: 'API reference', href: '/admin/api-docs', description: 'Administrative API docs', icon: BookOpen },
     ] },
 ];

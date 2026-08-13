@@ -28,6 +28,12 @@ interface UsersResponse {
   total: number;
   page: number;
   per_page: number;
+  summary: {
+    signed_in_users: number;
+    unclaimed_creators: number;
+    staff: number;
+    other: number;
+  };
 }
 
 interface UserActionModalProps {
@@ -502,11 +508,11 @@ export function AdminUsersPage() {
 
       {/* Stats */}
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardBody className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Users</p>
+                <p className="text-sm text-muted-foreground">Identity Records</p>
                 <p className="text-2xl font-bold">{data.total}</p>
               </div>
             </CardBody>
@@ -514,16 +520,32 @@ export function AdminUsersPage() {
           <Card>
             <CardBody className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">On This Page</p>
-                <p className="text-2xl font-bold">{data?.users?.length ?? 0}</p>
+                <p className="text-sm text-muted-foreground">Signed-in Users</p>
+                <p className="text-2xl font-bold">{data.summary?.signed_in_users ?? 0}</p>
               </div>
             </CardBody>
           </Card>
           <Card>
             <CardBody className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Page</p>
-                <p className="text-2xl font-bold">{page} / {totalPages}</p>
+                <p className="text-sm text-muted-foreground">Unclaimed Creators</p>
+                <p className="text-2xl font-bold">{data.summary?.unclaimed_creators ?? 0}</p>
+              </div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Staff</p>
+                <p className="text-2xl font-bold">{data.summary?.staff ?? 0}</p>
+              </div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Other Identities</p>
+                <p className="text-2xl font-bold">{data.summary?.other ?? 0}</p>
               </div>
             </CardBody>
           </Card>

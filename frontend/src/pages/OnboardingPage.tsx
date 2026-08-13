@@ -70,13 +70,16 @@ export function OnboardingPage() {
     const current = steps[step];
 
     return (
-        <main className='min-h-[calc(100vh-4rem)] bg-background px-4 py-10 sm:py-16'>
+        <section
+            aria-labelledby='onboarding-heading'
+            className='min-h-[calc(100vh-4rem)] bg-background px-4 py-10 sm:py-16'
+        >
             <SEO title='Shape your feed' description='Follow creators and choose the topics and moments you want on Clpr.' noindex />
             <div className='mx-auto max-w-5xl'>
                 <div className='mb-10 flex items-center justify-between gap-6'>
                     <div>
                         <p className='mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary-500'>{current.eyebrow}</p>
-                        <h1 className='text-4xl font-black tracking-tight sm:text-6xl'>{current.title}</h1>
+                        <h1 id='onboarding-heading' className='text-4xl font-black tracking-tight sm:text-6xl'>{current.title}</h1>
                         <p className='mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg'>{current.detail}</p>
                     </div>
                     <div className='hidden rounded-full border border-primary-500/30 bg-primary-500/10 p-4 text-primary-500 sm:block'>
@@ -151,6 +154,6 @@ export function OnboardingPage() {
                     )}
                 </footer>
             </div>
-        </main>
+        </section>
     );
 }

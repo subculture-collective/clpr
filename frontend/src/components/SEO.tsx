@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Helmet, HelmetProvider } from '@dr.pogodin/react-helmet';
+import { resolveSiteUrl } from '../lib/site-url';
 
 export interface SEOProps {
     title?: string;
@@ -53,13 +54,16 @@ export function SEO({
     structuredData,
 }: SEOProps) {
     const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
-    const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
-    const fullCanonicalUrl = canonicalUrl
-        ? `${baseUrl}${canonicalUrl}`
-        : window.location.href.split('?')[0];
+    const configuredSiteUrl =
+        import.meta.env.VITE_PUBLIC_SITE_URL || import.meta.env.VITE_BASE_URL;
+    const fullCanonicalUrl = resolveSiteUrl(
+        canonicalUrl ?? window.location.pathname,
+        configuredSiteUrl,
+        window.location.origin,
+    );
     const fullOgImage = ogImage.startsWith('http')
         ? ogImage
-        : `${baseUrl}${ogImage}`;
+        : resolveSiteUrl(ogImage, configuredSiteUrl, window.location.origin);
     const resolvedImageWidth =
         imageWidth ?? (ogImage === DEFAULT_IMAGE ? '1200' : undefined);
     const resolvedImageHeight =

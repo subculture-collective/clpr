@@ -91,7 +91,7 @@
     "notFoundCode": "404"
   },
   "login": {
-    "welcome": "Bienvenido a Clipper",
+    "welcome": "Bienvenido a clpr",
     "subtitle": "Inicia sesión para votar, comentar y guardar tus clips favoritos",
     "continueWithTwitch": "Continuar con Twitch",
     "termsAgreement": "Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad"

@@ -17,6 +17,12 @@ vi.mock('@/components/guards/ProtectedRoute', () => ({
     ),
 }));
 
+vi.mock('@/components/SEO', () => ({
+    SEO: ({ title, noindex }: { title: string; noindex?: boolean }) => (
+        <div data-testid='route-metadata' data-title={title} data-noindex={String(noindex)} />
+    ),
+}));
+
 function Page() {
     return <h1>Matched page</h1>;
 }
@@ -34,6 +40,23 @@ describe('versioned route boundaries', () => {
 
         expect(screen.getByTestId('admin-boundary')).toContainElement(
             screen.getByRole('heading', { name: 'Matched page' }),
+        );
+    });
+
+    it('assigns unique noindex metadata to administration routes', () => {
+        render(
+            <MemoryRouter initialEntries={['/admin/users']}>
+                <Routes>{adminRoutes(adminPages)}</Routes>
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByTestId('route-metadata')).toHaveAttribute(
+            'data-title',
+            'Identity Records - Admin',
+        );
+        expect(screen.getByTestId('route-metadata')).toHaveAttribute(
+            'data-noindex',
+            'true',
         );
     });
 
@@ -70,6 +93,23 @@ describe('versioned route boundaries', () => {
 
         expect(screen.getByTestId('account-boundary')).toContainElement(
             screen.getByRole('heading', { name: 'Matched page' }),
+        );
+    });
+
+    it('assigns unique noindex metadata to authenticated routes', () => {
+        render(
+            <MemoryRouter initialEntries={['/settings']}>
+                <Routes>{accountRoutes(accountPages)}</Routes>
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByTestId('route-metadata')).toHaveAttribute(
+            'data-title',
+            'Settings',
+        );
+        expect(screen.getByTestId('route-metadata')).toHaveAttribute(
+            'data-noindex',
+            'true',
         );
     });
 

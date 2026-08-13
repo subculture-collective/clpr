@@ -22,7 +22,7 @@
         /* Text hierarchy */
         --color-text-primary: 232 232 237;
         --color-text-secondary: 152 152 168;
-        --color-text-tertiary: 104 104 120;
+        --color-text-tertiary: 144 144 160;
         --color-text-disabled: 68 68 82;
 
         /* Brand */
@@ -38,7 +38,7 @@
         --color-cta-hover: 99 102 241;
 
         /* Focus */
-        --color-focus-ring: 124 58 237;
+        --color-focus-ring: 167 139 250;
 
         /* Thread depth colors (violet-pink warm family) */
         --color-thread-0: 124 58 237;
@@ -59,7 +59,7 @@
         --color-muted: 34 34 51;
         --color-muted-foreground: 152 152 168;
         --color-input: 42 42 58;
-        --color-ring: 124 58 237;
+        --color-ring: 167 139 250;
 
         /* Font settings */
         font-synthesis: none;

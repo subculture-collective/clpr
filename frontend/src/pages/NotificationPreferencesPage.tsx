@@ -470,7 +470,7 @@ interface ToggleSwitchProps {
   disabled?: boolean;
 }
 
-function ToggleSwitch({ label, description, checked, onChange, disabled = false }: ToggleSwitchProps) {
+export function ToggleSwitch({ label, description, checked, onChange, disabled = false }: ToggleSwitchProps) {
   return (
     <div className="flex items-start justify-between">
       <div className="flex-1">
@@ -481,17 +481,23 @@ function ToggleSwitch({ label, description, checked, onChange, disabled = false 
       </div>
       <button
         type="button"
+        role="switch"
+        aria-label={label}
+        aria-checked={checked}
         onClick={onChange}
         disabled={disabled}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-          checked ? 'bg-primary-600' : 'bg-muted'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`relative inline-flex h-11 w-12 flex-shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
+          aria-hidden="true"
+          className={`relative inline-flex h-6 w-11 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${checked ? 'bg-primary-600' : 'bg-muted'}`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              checked ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </span>
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ import {
 } from '../components';
 import { useConsent } from '../context/ConsentContext';
 import { useState, useEffect, useRef } from 'react';
+import { effectiveConsentValue } from '../lib/consent-display';
 
 /**
  * Cookie Settings Page
@@ -57,7 +58,7 @@ export function CookieSettingsPage() {
           {doNotTrack && (
             <Alert variant="info" className="mb-6">
               <strong>Do Not Track detected:</strong> Your browser has Do Not Track enabled. 
-              Tracking cookies will be disabled regardless of your settings.
+              Optional consent is effectively off. Your saved choices are retained but are not used while this signal remains enabled.
             </Alert>
           )}
 
@@ -151,7 +152,8 @@ export function CookieSettingsPage() {
                   </p>
                 </div>
                 <Toggle
-                  checked={consent.functional}
+                  aria-label="Functional cookies"
+                  checked={effectiveConsentValue(consent.functional, doNotTrack)}
                   onChange={(e) => handleConsentChange('functional', e.target.checked)}
                   disabled={doNotTrack}
                 />
@@ -197,7 +199,8 @@ export function CookieSettingsPage() {
                   </p>
                 </div>
                 <Toggle
-                  checked={consent.analytics}
+                  aria-label="Analytics cookies"
+                  checked={effectiveConsentValue(consent.analytics, doNotTrack)}
                   onChange={(e) => handleConsentChange('analytics', e.target.checked)}
                   disabled={doNotTrack}
                 />
@@ -248,7 +251,8 @@ export function CookieSettingsPage() {
                   </p>
                 </div>
                 <Toggle
-                  checked={consent.advertising}
+                  aria-label="Advertising cookies"
+                  checked={effectiveConsentValue(consent.advertising, doNotTrack)}
                   onChange={(e) => handleConsentChange('advertising', e.target.checked)}
                   disabled={doNotTrack}
                 />

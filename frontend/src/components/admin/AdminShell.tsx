@@ -30,7 +30,7 @@ function AdminNavigation({ onNavigate }: { onNavigate?: () => void }) {
                                     to={item.href}
                                     onClick={onNavigate}
                                     aria-current={active ? 'page' : undefined}
-                                    className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${active ? 'bg-brand text-white shadow-sm' : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'}`}
+                                    className={`group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${active ? 'bg-brand text-white shadow-sm' : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'}`}
                                 >
                                     <Icon className='h-4 w-4 shrink-0' strokeWidth={1.8} />
                                     <span className='truncate font-medium'>{item.label}</span>
@@ -59,7 +59,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         <p className='text-[10px] font-bold uppercase tracking-[0.2em] text-brand'>clpr control room</p>
                         <p className='text-sm font-semibold text-text-primary'>{current?.label ?? 'Administration'}</p>
                     </div>
-                    <button type='button' onClick={() => setMobileOpen(value => !value)} className='rounded-lg border border-border bg-surface-raised p-2 text-text-primary' aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}>
+                    <button type='button' onClick={() => setMobileOpen(value => !value)} className='flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-surface-raised p-2 text-text-primary' aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}>
                         {mobileOpen ? <X className='h-5 w-5' /> : <Menu className='h-5 w-5' />}
                     </button>
                 </div>

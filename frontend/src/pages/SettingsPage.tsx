@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Alert, Button, Card, CardBody, CardHeader, Container, Input, Stack, TextArea, Toggle } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useConsent } from '../context/ConsentContext';
+import { effectiveConsentValue } from '../lib/consent-display';
 import type { UpdateProfileRequest, UpdateSettingsRequest } from '../lib/user-settings-api';
 import { getUserSettings, updateProfile, updateUserSettings } from '../lib/user-settings-api';
 
@@ -253,15 +254,15 @@ export function SettingsPage() {
                             {doNotTrack && (
                                 <Alert variant='info' className='mb-4'>
                                     <strong>Do Not Track enabled:</strong> Your browser has Do Not Track enabled.
-                                    Personalized ads and analytics will be automatically disabled regardless of your
-                                    consent settings.
+                                    Optional consent is effectively off. Your saved choices are retained but are not
+                                    used while this signal remains enabled.
                                 </Alert>
                             )}
                             <Stack direction='vertical' gap={4}>
                                 <Toggle
                                     label='Functional Cookies'
                                     helperText='Remember your preferences like language, theme, and other settings'
-                                    checked={consent.functional}
+                                    checked={effectiveConsentValue(consent.functional, doNotTrack)}
                                     onChange={(e) => {
                                         updateConsent({
                                             functional: e.target.checked,
@@ -275,7 +276,7 @@ export function SettingsPage() {
                                 <Toggle
                                     label='Analytics Tracking'
                                     helperText='Help us improve clpr by allowing anonymous usage analytics'
-                                    checked={consent.analytics}
+                                    checked={effectiveConsentValue(consent.analytics, doNotTrack)}
                                     onChange={(e) => {
                                         updateConsent({
                                             analytics: e.target.checked,
@@ -289,7 +290,7 @@ export function SettingsPage() {
                                 <Toggle
                                     label='Personalized Advertising'
                                     helperText='Allow ads tailored to your interests. Without this, you will see contextual ads based on page content.'
-                                    checked={consent.advertising}
+                                    checked={effectiveConsentValue(consent.advertising, doNotTrack)}
                                     onChange={(e) => {
                                         updateConsent({
                                             advertising: e.target.checked,
