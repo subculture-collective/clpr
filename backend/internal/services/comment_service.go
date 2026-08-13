@@ -34,6 +34,8 @@ const (
 	KarmaPerDownvote = -1
 )
 
+const creatorModerationHiddenCommentMessage = "This comment is hidden because your account is restricted from interacting with this creator's content."
+
 // CommentService handles comment business logic
 type CommentService struct {
 	repo                *repository.CommentRepository
@@ -43,6 +45,7 @@ type CommentService struct {
 	sanitizer           *bluemonday.Policy
 	notificationService *NotificationService
 	toxicityClassifier  *ToxicityClassifier
+	creatorModeration   CreatorModerationChecker
 }
 
 // NewCommentService creates a new CommentService
@@ -85,11 +88,18 @@ func NewCommentService(repo *repository.CommentRepository, clipRepo *repository.
 	}
 }
 
+// SetCreatorModerationService configures creator-scoped moderation checks.
+func (s *CommentService) SetCreatorModerationService(creatorModeration CreatorModerationChecker) {
+	s.creatorModeration = creatorModeration
+}
+
 // CommentTreeNode represents a comment with nested replies
 type CommentTreeNode struct {
 	repository.CommentWithAuthor
-	RenderedContent string            `json:"rendered_content"`
-	Replies         []CommentTreeNode `json:"replies,omitempty"`
+	RenderedContent             string            `json:"rendered_content"`
+	IsHiddenByCreatorModeration bool              `json:"is_hidden_by_creator_moderation"`
+	CreatorModerationMessage    string            `json:"creator_moderation_message,omitempty"`
+	Replies                     []CommentTreeNode `json:"replies,omitempty"`
 }
 
 // CreateCommentRequest represents a request to create a comment
@@ -141,6 +151,79 @@ func (s *CommentService) ValidateCreateComment(ctx context.Context, req *CreateC
 	return nil
 }
 
+func (s *CommentService) creatorInteractionRestrictionForClip(ctx context.Context, clipID uuid.UUID, userID *uuid.UUID) (bool, string, error) {
+	if s.creatorModeration == nil || userID == nil || *userID == uuid.Nil {
+		return true, "", nil
+	}
+	if s.clipRepo == nil {
+		return false, "", fmt.Errorf("clip repository is not configured")
+	}
+
+	clip, err := s.clipRepo.GetByID(ctx, clipID)
+	if err != nil {
+		return false, "", err
+	}
+	if clip.CreatorAccountID == nil || *clip.CreatorAccountID == uuid.Nil {
+		return true, "", nil
+	}
+
+	allowed, message, err := s.creatorModeration.CanInteract(ctx, *clip.CreatorAccountID, *userID)
+	if err != nil {
+		return false, "", err
+	}
+
+	return allowed, message, nil
+}
+
+func (s *CommentService) creatorCommentRestrictionForClip(ctx context.Context, clipID uuid.UUID, userID *uuid.UUID) (bool, string, error) {
+	if s.creatorModeration == nil || userID == nil || *userID == uuid.Nil {
+		return true, "", nil
+	}
+	if s.clipRepo == nil {
+		return false, "", fmt.Errorf("clip repository is not configured")
+	}
+
+	clip, err := s.clipRepo.GetByID(ctx, clipID)
+	if err != nil {
+		return false, "", err
+	}
+	if clip.CreatorAccountID == nil || *clip.CreatorAccountID == uuid.Nil {
+		return true, "", nil
+	}
+
+	allowed, message, err := s.creatorModeration.CanComment(ctx, *clip.CreatorAccountID, *userID)
+	if err != nil {
+		return false, "", err
+	}
+
+	return allowed, message, nil
+}
+
+func (s *CommentService) applyCreatorModerationVisibility(ctx context.Context, clipID uuid.UUID, userID *uuid.UUID, nodes []CommentTreeNode) ([]CommentTreeNode, error) {
+	allowed, _, err := s.creatorInteractionRestrictionForClip(ctx, clipID, userID)
+	if err != nil || allowed {
+		return nodes, nil
+	}
+
+	if userID == nil || *userID == uuid.Nil {
+		return nodes, nil
+	}
+	for i := range nodes {
+		s.markRestrictedComments(&nodes[i], *userID)
+	}
+	return nodes, nil
+}
+
+func (s *CommentService) markRestrictedComments(node *CommentTreeNode, userID uuid.UUID) {
+	if node.UserID == userID {
+		node.IsHiddenByCreatorModeration = true
+		node.CreatorModerationMessage = creatorModerationHiddenCommentMessage
+	}
+	for i := range node.Replies {
+		s.markRestrictedComments(&node.Replies[i], userID)
+	}
+}
+
 // CreateComment creates a new comment
 func (s *CommentService) CreateComment(ctx context.Context, req *CreateCommentRequest, clipID, userID uuid.UUID) (*repository.CommentWithAuthor, error) {
 	// Check if user can comment (not suspended)
@@ -159,6 +242,16 @@ func (s *CommentService) CreateComment(ctx context.Context, req *CreateCommentRe
 			return nil, fmt.Errorf("your comment privileges are suspended until %s. Please contact support if you believe this is a mistake", suspendedUntil.Format("2006-01-02 15:04 MST"))
 		}
 		return nil, fmt.Errorf("comment privileges are currently suspended. Please try again later or contact support if you believe this is a mistake")
+	}
+
+	if s.creatorModeration != nil {
+		allowed, message, err := s.creatorCommentRestrictionForClip(ctx, clipID, &userID)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, &CreatorModerationError{Message: message}
+		}
 	}
 
 	// Validate request
@@ -276,6 +369,15 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID, userID uu
 	if err != nil {
 		return fmt.Errorf("comment not found")
 	}
+	if s.creatorModeration != nil {
+		allowed, message, err := s.creatorCommentRestrictionForClip(ctx, comment.ClipID, &userID)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return &CreatorModerationError{Message: message}
+		}
+	}
 
 	// Check if user can edit
 	if !isAdmin && comment.UserID != userID {
@@ -343,6 +445,15 @@ func (s *CommentService) VoteOnComment(ctx context.Context, commentID, userID uu
 	comment, err := s.repo.GetByID(ctx, commentID, nil)
 	if err != nil {
 		return fmt.Errorf("comment not found")
+	}
+	if s.creatorModeration != nil {
+		allowed, message, err := s.creatorInteractionRestrictionForClip(ctx, comment.ClipID, &userID)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return &CreatorModerationError{Message: message}
+		}
 	}
 
 	// Get previous vote
@@ -427,7 +538,7 @@ func (s *CommentService) ListComments(ctx context.Context, clipID uuid.UUID, sor
 		nodes = append(nodes, node)
 	}
 
-	return nodes, nil
+	return s.applyCreatorModerationVisibility(ctx, clipID, userID, nodes)
 }
 
 // ListCommentsWithReplies retrieves comments for a clip with optional nested replies
@@ -464,7 +575,7 @@ func (s *CommentService) ListCommentsWithReplies(ctx context.Context, clipID uui
 		nodes = append(nodes, node)
 	}
 
-	return nodes, nil
+	return s.applyCreatorModerationVisibility(ctx, clipID, userID, nodes)
 }
 
 // buildReplyTree recursively builds a tree of replies up to MaxNestingDepth
@@ -512,6 +623,10 @@ func (s *CommentService) buildReplyTree(ctx context.Context, parentID uuid.UUID,
 
 // GetReplies retrieves replies to a comment
 func (s *CommentService) GetReplies(ctx context.Context, parentID uuid.UUID, limit, offset int, userID *uuid.UUID) ([]CommentTreeNode, error) {
+	parentComment, err := s.repo.GetByID(ctx, parentID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load parent comment: %w", err)
+	}
 	replies, err := s.repo.GetReplies(ctx, parentID, limit, offset, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get replies: %w", err)
@@ -528,7 +643,7 @@ func (s *CommentService) GetReplies(ctx context.Context, parentID uuid.UUID, lim
 		nodes = append(nodes, node)
 	}
 
-	return nodes, nil
+	return s.applyCreatorModerationVisibility(ctx, parentComment.ClipID, userID, nodes)
 }
 
 // RenderMarkdown processes and sanitizes markdown content

@@ -4,6 +4,8 @@ import (
 	"log"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/storage"
 )
 
 // Handlers holds all HTTP handler instances.
@@ -159,6 +161,14 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	var liveStatusHandler *handlers.LiveStatusHandler
 	var streamHandler *handlers.StreamHandler
 	var twitchOAuthHandler *handlers.TwitchOAuthHandler
+	var clipStorage storage.ClipStorage
+	uploadValidator := services.NewUploadValidator(cfg.ClipSource, nil)
+
+	if storageClient, err := storage.NewS3ClipStorage(cfg.ClipStorage); err != nil {
+		log.Printf("WARNING: hosted uploads disabled: %v", err)
+	} else {
+		clipStorage = storageClient
+	}
 
 	if svcs.ClipSync != nil {
 		clipSyncHandler = handlers.NewClipSyncHandler(svcs.ClipSync)
@@ -175,7 +185,8 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	}
 
 	if svcs.Submission != nil {
-		submissionHandler = handlers.NewSubmissionHandler(svcs.Submission)
+		svcs.Submission.SetClipStorage(clipStorage)
+		submissionHandler = handlers.NewSubmissionHandler(svcs.Submission, uploadValidator, clipStorage)
 		// Create moderation handler using services from submission service
 		abuseDetector := svcs.Submission.GetAbuseDetector()
 		moderationEventService := svcs.Submission.GetModerationEventService()

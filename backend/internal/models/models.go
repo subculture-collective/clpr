@@ -125,6 +125,7 @@ type Clip struct {
 	Title                string     `json:"title" db:"title"`
 	CreatorName          string     `json:"creator_name" db:"creator_name"`
 	CreatorID            *string    `json:"creator_id,omitempty" db:"creator_id"`
+	CreatorAccountID     *uuid.UUID `json:"creator_account_id,omitempty" db:"creator_account_id"`
 	BroadcasterName      string     `json:"broadcaster_name" db:"broadcaster_name"`
 	BroadcasterID        *string    `json:"broadcaster_id,omitempty" db:"broadcaster_id"`
 	GameID               *string    `json:"game_id,omitempty" db:"game_id"`
@@ -158,6 +159,20 @@ type Clip struct {
 	DMCANoticeID     *uuid.UUID `json:"dmca_notice_id,omitempty" db:"dmca_notice_id"`
 	DMCARemovedAt    *time.Time `json:"dmca_removed_at,omitempty" db:"dmca_removed_at"`
 	DMCAReinstatedAt *time.Time `json:"dmca_reinstated_at,omitempty" db:"dmca_reinstated_at"`
+	// Generalized source and upload fields
+	SourceType       string          `json:"source_type" db:"source_type"`
+	SourcePlatform   string          `json:"source_platform" db:"source_platform"`
+	SourceURL        *string         `json:"source_url,omitempty" db:"source_url"`
+	SourceID         *string         `json:"source_id,omitempty" db:"source_id"`
+	SourceMetadata   json.RawMessage `json:"source_metadata,omitempty" db:"source_metadata"`
+	DurationSeconds  *int            `json:"duration_seconds,omitempty" db:"duration_seconds"`
+	DurationVerified bool            `json:"duration_verified" db:"duration_verified"`
+	StorageProvider  *string         `json:"storage_provider,omitempty" db:"storage_provider"`
+	StorageBucket    *string         `json:"storage_bucket,omitempty" db:"storage_bucket"`
+	StorageKey       *string         `json:"storage_key,omitempty" db:"storage_key"`
+	OriginalFilename *string         `json:"original_filename,omitempty" db:"original_filename"`
+	MimeType         *string         `json:"mime_type,omitempty" db:"mime_type"`
+	FileSizeBytes    *int64          `json:"file_size_bytes,omitempty" db:"file_size_bytes"`
 	// Stream clip fields
 	StreamSource *string    `json:"stream_source,omitempty" db:"stream_source"` // 'twitch' or 'stream'
 	Status       *string    `json:"status,omitempty" db:"status"`               // 'ready', 'processing', 'failed'
@@ -623,22 +638,99 @@ type ClipSubmission struct {
 	ReviewedAt              *time.Time `json:"reviewed_at,omitempty" db:"reviewed_at"`
 	CreatedAt               time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt               time.Time  `json:"updated_at" db:"updated_at"`
+	// Generalized source and upload fields
+	SourceType              string          `json:"source_type" db:"source_type"`
+	SourcePlatform          string          `json:"source_platform" db:"source_platform"`
+	SourceURL               *string         `json:"source_url,omitempty" db:"source_url"`
+	SourceID                *string         `json:"source_id,omitempty" db:"source_id"`
+	SourceMetadata          json.RawMessage `json:"source_metadata,omitempty" db:"source_metadata"`
+	DurationSeconds         *int            `json:"duration_seconds,omitempty" db:"duration_seconds"`
+	DurationVerified        bool            `json:"duration_verified" db:"duration_verified"`
+	StorageProvider         *string         `json:"storage_provider,omitempty" db:"storage_provider"`
+	StorageBucket           *string         `json:"storage_bucket,omitempty" db:"storage_bucket"`
+	StorageKey              *string         `json:"storage_key,omitempty" db:"storage_key"`
+	OriginalFilename        *string         `json:"original_filename,omitempty" db:"original_filename"`
+	MimeType                *string         `json:"mime_type,omitempty" db:"mime_type"`
+	FileSizeBytes           *int64          `json:"file_size_bytes,omitempty" db:"file_size_bytes"`
+	UploadStatus            string          `json:"upload_status" db:"upload_status"`
+	DurationValidationError *string         `json:"duration_validation_error,omitempty" db:"duration_validation_error"`
+	StorageVisibility       string          `json:"storage_visibility" db:"storage_visibility"`
 	// Metadata from Twitch
-	CreatorName     *string  `json:"creator_name,omitempty" db:"creator_name"`
-	CreatorID       *string  `json:"creator_id,omitempty" db:"creator_id"`
-	BroadcasterName *string  `json:"broadcaster_name,omitempty" db:"broadcaster_name"`
-	BroadcasterID   *string  `json:"broadcaster_id,omitempty" db:"broadcaster_id"`
-	GameID          *string  `json:"game_id,omitempty" db:"game_id"`
-	GameName        *string  `json:"game_name,omitempty" db:"game_name"`
-	ThumbnailURL    *string  `json:"thumbnail_url,omitempty" db:"thumbnail_url"`
-	Duration        *float64 `json:"duration,omitempty" db:"duration"`
-	ViewCount       int      `json:"view_count" db:"view_count"`
+	CreatorName      *string    `json:"creator_name,omitempty" db:"creator_name"`
+	CreatorID        *string    `json:"creator_id,omitempty" db:"creator_id"`
+	CreatorAccountID *uuid.UUID `json:"creator_account_id,omitempty" db:"creator_account_id"`
+	BroadcasterName  *string    `json:"broadcaster_name,omitempty" db:"broadcaster_name"`
+	BroadcasterID    *string    `json:"broadcaster_id,omitempty" db:"broadcaster_id"`
+	GameID           *string    `json:"game_id,omitempty" db:"game_id"`
+	GameName         *string    `json:"game_name,omitempty" db:"game_name"`
+	ThumbnailURL     *string    `json:"thumbnail_url,omitempty" db:"thumbnail_url"`
+	Duration         *float64   `json:"duration,omitempty" db:"duration"`
+	ViewCount        int        `json:"view_count" db:"view_count"`
 }
 
 // ClipSubmissionWithUser includes user information
 type ClipSubmissionWithUser struct {
 	ClipSubmission
 	User *User `json:"user,omitempty"`
+}
+
+// CreatorAccount represents a local creator identity managed by a user.
+type CreatorAccount struct {
+	ID          uuid.UUID `json:"id" db:"id"`
+	OwnerUserID uuid.UUID `json:"owner_user_id" db:"owner_user_id"`
+	DisplayName string    `json:"display_name" db:"display_name"`
+	Slug        string    `json:"slug" db:"slug"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// CreatorPlatformAccount links a creator to an external platform account.
+type CreatorPlatformAccount struct {
+	ID                    uuid.UUID  `json:"id" db:"id"`
+	CreatorID             uuid.UUID  `json:"creator_id" db:"creator_id"`
+	Platform              string     `json:"platform" db:"platform"`
+	PlatformUserID        string     `json:"platform_user_id" db:"platform_user_id"`
+	PlatformDisplayName   string     `json:"platform_display_name" db:"platform_display_name"`
+	ProfileURL            *string    `json:"profile_url,omitempty" db:"profile_url"`
+	CanImportBans         bool       `json:"can_import_bans" db:"can_import_bans"`
+	CanSyncBansOutbound   bool       `json:"can_sync_bans_outbound" db:"can_sync_bans_outbound"`
+	CanImportModerators   bool       `json:"can_import_moderators" db:"can_import_moderators"`
+	CanVerifyOwnership    bool       `json:"can_verify_ownership" db:"can_verify_ownership"`
+	CanFetchMetadata      bool       `json:"can_fetch_metadata" db:"can_fetch_metadata"`
+	AccessTokenEncrypted  *string    `json:"access_token_encrypted,omitempty" db:"access_token_encrypted"`
+	RefreshTokenEncrypted *string    `json:"refresh_token_encrypted,omitempty" db:"refresh_token_encrypted"`
+	TokenExpiresAt        *time.Time `json:"token_expires_at,omitempty" db:"token_expires_at"`
+	CreatedAt             time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt             time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+// CreatorModerator represents a creator-scoped moderator assignment.
+type CreatorModerator struct {
+	ID             uuid.UUID  `json:"id" db:"id"`
+	CreatorID      uuid.UUID  `json:"creator_id" db:"creator_id"`
+	UserID         *uuid.UUID `json:"user_id,omitempty" db:"user_id"`
+	Platform       *string    `json:"platform,omitempty" db:"platform"`
+	PlatformUserID *string    `json:"platform_user_id,omitempty" db:"platform_user_id"`
+	Permissions    []string   `json:"permissions" db:"permissions"`
+	Source         string     `json:"source" db:"source"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+}
+
+// CreatorBan represents a local creator-level restriction.
+type CreatorBan struct {
+	ID                   uuid.UUID  `json:"id" db:"id"`
+	CreatorID            uuid.UUID  `json:"creator_id" db:"creator_id"`
+	TargetUserID         *uuid.UUID `json:"target_user_id,omitempty" db:"target_user_id"`
+	TargetPlatform       *string    `json:"target_platform,omitempty" db:"target_platform"`
+	TargetPlatformUserID *string    `json:"target_platform_user_id,omitempty" db:"target_platform_user_id"`
+	Source               string     `json:"source" db:"source"`
+	Reason               *string    `json:"reason,omitempty" db:"reason"`
+	Scopes               []string   `json:"scopes" db:"scopes"`
+	ExpiresAt            *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	CreatedByUserID      *uuid.UUID `json:"created_by_user_id,omitempty" db:"created_by_user_id"`
+	SyncStatus           string     `json:"sync_status" db:"sync_status"`
+	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // SubmissionStats represents submission statistics for a user

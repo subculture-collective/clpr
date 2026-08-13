@@ -9,6 +9,7 @@ import { tagApi } from '../lib/tag-api';
 // Mock the API calls
 vi.mock('../lib/submission-api', () => ({
     submitClip: vi.fn(),
+    submitClipUpload: vi.fn(),
     getUserSubmissions: vi.fn(),
     checkClipStatus: vi.fn(),
     getClipMetadata: vi.fn(),
@@ -67,6 +68,7 @@ describe('SubmitClipPage', () => {
     };
 
     const mockSubmitClip = vi.mocked(submissionApi.submitClip);
+    const mockSubmitClipUpload = vi.mocked(submissionApi.submitClipUpload);
     const mockGetUserSubmissions = vi.mocked(submissionApi.getUserSubmissions);
     const mockCheckClipStatus = vi.mocked(submissionApi.checkClipStatus);
     const mockGetClipMetadata = vi.mocked(submissionApi.getClipMetadata);
@@ -262,6 +264,127 @@ describe('SubmitClipPage', () => {
             await user.type(reasonTextarea, 'This is an amazing play');
 
             expect(reasonTextarea).toHaveValue('This is an amazing play');
+        });
+    });
+
+    describe('Source Selection', () => {
+        beforeEach(() => {
+            mockUseAuth.mockReturnValue({
+                user: mockUser,
+                isAuthenticated: true,
+                login: vi.fn(),
+                logout: vi.fn(),
+                isLoading: false,
+                isAdmin: false,
+                isModerator: false,
+                isModeratorOrAdmin: false,
+                refreshUser: vi.fn(),
+            });
+        });
+
+        it('switches to external URLs without running Twitch metadata helpers', async () => {
+            const user = userEvent.setup();
+
+            render(<SubmitClipPage />);
+
+            await user.click(
+                screen.getByRole('radio', { name: /external url/i })
+            );
+
+            const externalUrlInput = screen.getByLabelText(/External URL/i);
+            await user.type(
+                externalUrlInput,
+                'https://www.youtube.com/watch?v=abc123'
+            );
+
+            expect(mockCheckClipStatus).not.toHaveBeenCalled();
+            expect(mockGetClipMetadata).not.toHaveBeenCalled();
+
+            const submitButton = screen.getByRole('button', {
+                name: /Submit Clip/,
+            });
+            await user.click(submitButton);
+
+            await waitFor(() => {
+                expect(mockSubmitClip).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        clip_url: 'https://www.youtube.com/watch?v=abc123',
+                        source_type: 'external',
+                        source_platform: 'youtube',
+                        source_url: 'https://www.youtube.com/watch?v=abc123',
+                    })
+                );
+            });
+        });
+
+        it('uploads files through the upload endpoint', async () => {
+            const user = userEvent.setup();
+            const file = new File(['fake video bytes'], 'highlight.mp4', {
+                type: 'video/mp4',
+            });
+
+            mockSubmitClipUpload.mockResolvedValue({
+                success: true,
+                message: 'Clip uploaded successfully',
+                submission: {
+                    id: 'submission-upload-123',
+                    user_id: 'user-123',
+                    twitch_clip_id: 'upload-123',
+                    twitch_clip_url: 'https://clips.twitch.tv/upload-123',
+                    title: 'Upload Title',
+                    creator_name: 'Test Creator',
+                    broadcaster_name: 'Test Streamer',
+                    view_count: 0,
+                    source_type: 'upload',
+                    source_platform: 'upload',
+                    source_url: 'https://cdn.example.com/upload.mp4',
+                    original_filename: 'highlight.mp4',
+                    mime_type: 'video/mp4',
+                    is_nsfw: false,
+                    status: 'pending',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    file_size_bytes: 1024,
+                },
+            });
+
+            render(<SubmitClipPage />);
+
+            await user.click(
+                screen.getByRole('radio', { name: /upload video/i })
+            );
+
+            const fileInput = screen.getByLabelText(/Video File/i);
+            await user.upload(fileInput, file);
+
+            expect(screen.getByText('highlight.mp4')).toBeInTheDocument();
+
+            const titleInput = screen.getByLabelText(/Custom Title/);
+            await user.type(titleInput, 'Upload Title');
+
+            const reasonTextarea = screen.getByLabelText(/Submission Reason/);
+            await user.type(reasonTextarea, 'Hosted clip needs review');
+
+            const submitButton = screen.getByRole('button', {
+                name: /Upload Clip/,
+            });
+            await user.click(submitButton);
+
+            await waitFor(() => {
+                expect(mockSubmitClipUpload).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        file,
+                        custom_title: 'Upload Title',
+                        is_nsfw: false,
+                        submission_reason: 'Hosted clip needs review',
+                    }),
+                    expect.any(Function)
+                );
+            });
+
+            expect(mockSubmitClip).not.toHaveBeenCalled();
+            expect(mockCheckClipStatus).not.toHaveBeenCalled();
+            expect(mockGetClipMetadata).not.toHaveBeenCalled();
         });
     });
 

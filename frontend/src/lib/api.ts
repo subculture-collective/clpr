@@ -54,6 +54,15 @@ const isUnauthorizedError = (error: AxiosError): boolean =>
 // Request interceptor to add CSRF token to state-changing requests
 apiClient.interceptors.request.use(
   (config) => {
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      // Let Axios/the browser set multipart/form-data with the generated boundary.
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+      } else {
+        delete config.headers['Content-Type'];
+      }
+    }
+
     // Only add CSRF token for state-changing methods
     if (config.method && ['post', 'put', 'delete', 'patch'].includes(config.method.toLowerCase())) {
       if (csrfToken) {

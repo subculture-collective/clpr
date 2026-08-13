@@ -1051,6 +1051,11 @@ func (h *ClipHandler) VoteOnClip(c *gin.Context) {
 	// Process vote
 	err = h.clipService.VoteOnClip(c.Request.Context(), userID, clipID, req.Vote)
 	if err != nil {
+		var moderationErr *services.CreatorModerationError
+		if errors.As(err, &moderationErr) {
+			c.JSON(http.StatusForbidden, StandardResponse{Success: false, Error: &ErrorInfo{Code: "FORBIDDEN", Message: moderationErr.Message}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -1116,6 +1121,11 @@ func (h *ClipHandler) AddFavorite(c *gin.Context) {
 	// Add favorite
 	err = h.clipService.AddFavorite(c.Request.Context(), userID, clipID)
 	if err != nil {
+		var moderationErr *services.CreatorModerationError
+		if errors.As(err, &moderationErr) {
+			c.JSON(http.StatusForbidden, StandardResponse{Success: false, Error: &ErrorInfo{Code: "FORBIDDEN", Message: moderationErr.Message}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -1166,6 +1176,11 @@ func (h *ClipHandler) RemoveFavorite(c *gin.Context) {
 	// Remove favorite
 	err = h.clipService.RemoveFavorite(c.Request.Context(), userID, clipID)
 	if err != nil {
+		var moderationErr *services.CreatorModerationError
+		if errors.As(err, &moderationErr) {
+			c.JSON(http.StatusForbidden, StandardResponse{Success: false, Error: &ErrorInfo{Code: "FORBIDDEN", Message: moderationErr.Message}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{

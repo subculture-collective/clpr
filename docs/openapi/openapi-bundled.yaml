@@ -2274,6 +2274,67 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/submissions/upload:
+    post:
+      tags:
+        - Submissions
+      summary: Upload a clip for moderation
+      description: Uploads an authenticated user's video clip to private pending storage for validation and moderation.
+      operationId: submitClipUpload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                custom_title:
+                  type: string
+                submission_reason:
+                  type: string
+                is_nsfw:
+                  type: boolean
+      responses:
+        '201':
+          description: Upload submitted for moderation
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - message
+                  - submission
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  submission:
+                    $ref: '#/components/schemas/Submission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          description: Upload exceeds the configured size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/submissions/stats:
     get:
       tags:

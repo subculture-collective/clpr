@@ -2717,6 +2717,13 @@
   },
   {
     "method": "POST",
+    "path": "/api/v1/submissions/upload",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).SubmitUpload-fm",
+    "operation_id": "submitClipUpload",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
     "path": "/api/v1/subscriptions/cancel",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CancelSubscription-fm",
     "operation_id": "postApiV1SubscriptionsCancel",

@@ -21,6 +21,8 @@ type ApiComment = {
   is_edited?: boolean;
   is_removed: boolean;
   removed_reason?: string;
+  is_hidden_by_creator_moderation?: boolean;
+  creator_moderation_message?: string;
   created_at: string;
   updated_at: string;
   author_username: string;
@@ -54,6 +56,8 @@ const normalizeComment = (comment: ApiComment, depth = 0): Comment => {
     is_deleted: comment.is_removed && comment.content === '[deleted]',
     is_removed: comment.is_removed,
     removed_reason: comment.removed_reason,
+    is_hidden_by_creator_moderation: comment.is_hidden_by_creator_moderation,
+    creator_moderation_message: comment.creator_moderation_message,
     depth,
     reply_count: childCount,
     child_count: childCount,

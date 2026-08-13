@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios';
 import apiClient from './api';
 import type {
   SubmitClipRequest,
@@ -33,6 +34,13 @@ export interface ClipMetadata {
   url: string;
 }
 
+export interface SubmitClipUploadRequest {
+  file: File;
+  custom_title?: string;
+  is_nsfw: boolean;
+  submission_reason?: string;
+}
+
 /**
  * Submit a clip for moderation
  */
@@ -43,6 +51,30 @@ export async function submitClip(
     '/submissions',
     request
   );
+  return response.data;
+}
+
+/**
+ * Upload a clip video for moderation
+ */
+export async function submitClipUpload(
+  request: SubmitClipUploadRequest,
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+): Promise<SubmissionResponse> {
+  const formData = new FormData();
+  formData.append('file', request.file);
+  formData.append('custom_title', request.custom_title?.trim() || '');
+  formData.append('is_nsfw', String(request.is_nsfw));
+  formData.append('submission_reason', request.submission_reason?.trim() || '');
+
+  const response = await apiClient.post<SubmissionResponse>(
+    '/submissions/upload',
+    formData,
+    {
+      onUploadProgress,
+    }
+  );
+
   return response.data;
 }
 

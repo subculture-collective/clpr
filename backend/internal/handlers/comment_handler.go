@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -19,6 +20,15 @@ func NewCommentHandler(commentService *services.CommentService) *CommentHandler 
 	return &CommentHandler{
 		commentService: commentService,
 	}
+}
+
+func writeCreatorModerationError(c *gin.Context, err error) bool {
+	var moderationErr *services.CreatorModerationError
+	if errors.As(err, &moderationErr) {
+		c.JSON(http.StatusForbidden, gin.H{"error": moderationErr.Message})
+		return true
+	}
+	return false
 }
 
 // ListComments handles GET /clips/:id/comments
@@ -122,6 +132,9 @@ func (h *CommentHandler) CreateComment(c *gin.Context) {
 	// Create comment
 	comment, err := h.commentService.CreateComment(c.Request.Context(), &req, clipID, userID)
 	if err != nil {
+		if writeCreatorModerationError(c, err) {
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -177,6 +190,9 @@ func (h *CommentHandler) UpdateComment(c *gin.Context) {
 
 	// Update comment
 	if err := h.commentService.UpdateComment(c.Request.Context(), commentID, userID, req.Content, isAdmin); err != nil {
+		if writeCreatorModerationError(c, err) {
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -281,6 +297,9 @@ func (h *CommentHandler) VoteOnComment(c *gin.Context) {
 
 	// Vote on comment
 	if err := h.commentService.VoteOnComment(c.Request.Context(), commentID, userID, req.Vote); err != nil {
+		if writeCreatorModerationError(c, err) {
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
