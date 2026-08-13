@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, memo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, memo } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'react-router-dom';
 import { Spinner, Button, ScrollToTop } from '@/components/ui';
@@ -22,6 +22,8 @@ interface ClipFeedProps {
     /** When true, uses simplified cards focused on discovery and posting */
     discoverMode?: boolean;
 }
+
+const FEED_WINDOW_SIZE = 12;
 
 // Map legacy 'hot' to 'trending' for consistency
 const normalizeSortOption = (sort: SortOption): SortOption => {
@@ -73,7 +75,10 @@ export function ClipFeed({
     const containerRef = useRef<HTMLDivElement>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullDistance, setPullDistance] = useState(0);
-    const [visibleCount, setVisibleCount] = useState(12);
+    const [visibleCount, setVisibleCount] = useState(FEED_WINDOW_SIZE);
+    const [windowStart, setWindowStart] = useState(0);
+    const [topSpacerHeight, setTopSpacerHeight] = useState(0);
+    const cardWindowRef = useRef<HTMLDivElement>(null);
     const touchStartRef = useRef<number>(0);
     const scrollTopRef = useRef<number>(0);
 
@@ -110,13 +115,43 @@ export function ClipFeed({
     // Get all clips from all pages
     const clips = data?.pages.flatMap((page) => page.clips) ?? [];
     const validClips = clips.filter((clip) => clip?.id);
-    const visibleClips = validClips.slice(0, visibleCount);
+    const visibleClips = validClips.slice(windowStart, visibleCount);
     const hasBufferedClips = visibleCount < validClips.length;
     const filterKey = JSON.stringify(filters);
 
     useEffect(() => {
-        setVisibleCount(12);
+        setVisibleCount(FEED_WINDOW_SIZE);
+        setWindowStart(0);
+        setTopSpacerHeight(0);
     }, [filterKey]);
+
+    useLayoutEffect(() => {
+        const nextWindowStart = Math.max(0, visibleCount - FEED_WINDOW_SIZE);
+        const cardWindow = cardWindowRef.current;
+        if (nextWindowStart <= windowStart || !cardWindow) return;
+
+        const activeElement = document.activeElement;
+        const focusedCard = activeElement instanceof Element
+            ? activeElement.closest<HTMLElement>('[data-feed-index]')
+            : null;
+        const focusedIndex = Number(focusedCard?.dataset.feedIndex);
+        if (focusedCard && Number.isFinite(focusedIndex) && focusedIndex < nextWindowStart) {
+            return;
+        }
+
+        const firstRetainedCard = cardWindow.querySelector<HTMLElement>(
+            `[data-feed-index="${nextWindowStart}"]`,
+        );
+        if (!firstRetainedCard) return;
+
+        const removedHeight = Math.max(
+            0,
+            firstRetainedCard.getBoundingClientRect().top -
+                cardWindow.getBoundingClientRect().top,
+        );
+        setTopSpacerHeight((height) => height + removedHeight);
+        setWindowStart(nextWindowStart);
+    }, [visibleCount, windowStart]);
 
     // Intersection observer for infinite scroll
     const { ref: loadMoreRef, inView } = useInView({
@@ -128,7 +163,7 @@ export function ClipFeed({
         if (!inView || isFetchingNextPage) return;
 
         if (hasBufferedClips) {
-            setVisibleCount((count) => Math.min(count + 12, validClips.length));
+            setVisibleCount((count) => Math.min(count + FEED_WINDOW_SIZE, validClips.length));
         } else if (hasNextPage) {
             void fetchNextPage();
         }
@@ -143,7 +178,7 @@ export function ClipFeed({
 
     const handleLoadMore = useCallback(() => {
         if (hasBufferedClips) {
-            setVisibleCount((count) => Math.min(count + 12, validClips.length));
+            setVisibleCount((count) => Math.min(count + FEED_WINDOW_SIZE, validClips.length));
             return;
         }
         void fetchNextPage();
@@ -350,17 +385,26 @@ export function ClipFeed({
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                 >
-                    <div className="space-y-6">
-                        {visibleClips.map((clip) =>
-                            discoverMode ? (
-                                <MemoizedDiscoverClipCard
-                                    key={clip.id}
-                                    clip={clip}
-                                />
-                            ) : (
-                                <MemoizedClipCard key={clip.id} clip={clip} />
-                            ),
-                        )}
+                    {topSpacerHeight > 0 && (
+                        <div
+                            aria-hidden='true'
+                            data-testid='feed-top-spacer'
+                            style={{ height: topSpacerHeight }}
+                        />
+                    )}
+                    <div ref={cardWindowRef} className="space-y-6">
+                        {visibleClips.map((clip, offset) => {
+                            const clipIndex = windowStart + offset;
+                            return (
+                                <div key={clip.id} data-feed-index={clipIndex}>
+                                    {discoverMode ? (
+                                        <MemoizedDiscoverClipCard clip={clip} />
+                                    ) : (
+                                        <MemoizedClipCard clip={clip} />
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     {/* Load more trigger */}
