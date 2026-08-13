@@ -2,7 +2,7 @@ import { TagList } from '@/components/tag/TagList';
 import { Badge } from '@/components/ui';
 import { VerifiedBadge } from '@/components/user';
 import { useClipFavorite, useClipVote } from '@/hooks/useClips';
-import { useIsAuthenticated, useToast } from '@/hooks';
+import { useIsAuthenticated, useMediaQuery, useToast } from '@/hooks';
 import { cn, formatCompactNumber, formatDuration, formatTimestamp } from '@/lib/utils';
 import type { Clip } from '@/types/clip';
 import { Link } from 'react-router-dom';
@@ -17,18 +17,37 @@ import {
     Heart,
     Eye,
     Check,
+    MoreHorizontal,
 } from 'lucide-react';
+import { useEffect } from 'react';
+import { useInView } from 'react-intersection-observer';
 
 interface ClipCardProps {
     clip: Clip;
+    active?: boolean;
+    autoplay?: boolean;
+    onActivate?: (clipId: string) => void;
+    onVisibilityChange?: (clipId: string, visible: boolean) => void;
 }
 
-export function ClipCard({ clip }: ClipCardProps) {
+export function ClipCard({
+    clip,
+    active = false,
+    autoplay = false,
+    onActivate,
+    onVisibilityChange,
+}: ClipCardProps) {
     const isAuthenticated = useIsAuthenticated();
     const voteMutation = useClipVote();
     const favoriteMutation = useClipFavorite();
     const isVoting = voteMutation.isPending;
     const toast = useToast();
+    const isDesktop = useMediaQuery('(min-width: 768px)');
+    const { ref: visibilityRef, inView } = useInView({ threshold: 0.6 });
+
+    useEffect(() => {
+        onVisibilityChange?.(clip.id, inView);
+    }, [clip.id, inView, onVisibilityChange]);
 
     const handleVote = (voteType: 1 | -1) => {
         // Avoid duplicate same-direction votes
@@ -57,12 +76,13 @@ export function ClipCard({ clip }: ClipCardProps) {
 
     return (
         <div
-            className='bg-card border-border rounded-xl hover:shadow-lg transition-shadow border lazy-render'
+            ref={visibilityRef}
+            className='bg-card border-y md:border border-border md:rounded-xl md:hover:shadow-lg transition-shadow lazy-render scroll-mt-28 snap-start'
             data-testid='clip-card'
         >
-            <div className='flex flex-col xs:flex-row gap-4 xs:gap-6 p-4 xs:p-5 md:p-6'>
+            <div className='flex flex-col md:flex-row gap-3 md:gap-6 py-4 md:p-6'>
                 {/* Vote sidebar - horizontal on mobile, vertical on larger screens */}
-                <div className='flex xs:flex-col items-center justify-center xs:justify-start xs:w-10 gap-3 xs:gap-2 order-2 xs:order-1 shrink-0'>
+                {isDesktop && <div className='flex flex-col items-center justify-start w-10 gap-2 order-1 shrink-0'>
                     <button
                         onClick={() => handleVote(1)}
                         disabled={!isAuthenticated || isVoting}
@@ -119,21 +139,21 @@ export function ClipCard({ clip }: ClipCardProps) {
                             strokeWidth={1.75}
                         />
                     </button>
-                </div>
+                </div>}
 
                 {/* Main content */}
-                <div className='flex-1 min-w-0 order-1 xs:order-2'>
+                <div className='flex-1 min-w-0 order-1 md:order-2'>
                     {/* Title */}
                     <Link
                         to={`/clip/${clip.id}`}
-                        className='hover:text-primary-500 block mb-2 transition-colors touch-target cursor-pointer'
+                        className='hover:text-primary-400 block mb-2 px-4 md:px-0 transition-colors touch-target cursor-pointer'
                     >
-                        <h3 className='line-clamp-2 text-base xs:text-xl font-semibold leading-snug'>
+                        <h2 className='line-clamp-2 text-lg md:text-xl font-semibold leading-snug'>
                             {clip.title}
-                        </h3>
+                        </h2>
                     </Link>
                     {/* Metadata */}
-                    <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 xs:gap-2 mb-3 text-xs leading-tight'>
+                    <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 md:gap-2 mb-3 px-4 md:px-0 text-xs leading-tight'>
                         <span className='flex items-center gap-1 font-medium'>
                             <Link
                                 to={`/broadcaster/${
@@ -209,6 +229,9 @@ export function ClipCard({ clip }: ClipCardProps) {
                             clipId={clip.twitch_clip_id}
                             thumbnailUrl={clip.thumbnail_url}
                             title={clip.title}
+                            active={active}
+                            autoplay={autoplay}
+                            onActivate={() => onActivate?.(clip.id)}
                         />
 
                         {/* Duration badge */}
@@ -279,21 +302,40 @@ export function ClipCard({ clip }: ClipCardProps) {
                     </div>
 
                     {/* Tags */}
-                    <div className='mb-3'>
-                        <TagList clipId={clip.id} maxVisible={5} />
+                    <div className='mb-2 px-4 md:px-0'>
+                        <TagList clipId={clip.id} maxVisible={2} />
                     </div>
 
                     {/* Action bar */}
-                    <div className='flex flex-wrap items-center gap-3 xs:gap-4 text-xs'>
+                    <div className='flex items-center gap-1 px-2 md:px-0 text-xs'>
+                        {!isDesktop && <div className='flex items-center min-h-11'>
+                            <button
+                                onClick={() => handleVote(1)}
+                                disabled={!isAuthenticated || isVoting}
+                                className={cn('grid size-11 place-items-center rounded-full', clip.user_vote === 1 ? 'text-upvote' : 'text-muted-foreground')}
+                                aria-label={isAuthenticated ? 'Upvote' : 'Log in to upvote'}
+                            >
+                                <ArrowBigUp size={21} fill={clip.user_vote === 1 ? 'currentColor' : 'none'} />
+                            </button>
+                            <span className={cn('min-w-7 text-center text-xs font-bold', voteColor)}>{formatCompactNumber(clip.vote_score)}</span>
+                            <button
+                                onClick={() => handleVote(-1)}
+                                disabled={!isAuthenticated || isVoting}
+                                className={cn('grid size-11 place-items-center rounded-full', clip.user_vote === -1 ? 'text-downvote' : 'text-muted-foreground')}
+                                aria-label={isAuthenticated ? 'Downvote' : 'Log in to downvote'}
+                            >
+                                <ArrowBigDown size={21} fill={clip.user_vote === -1 ? 'currentColor' : 'none'} />
+                            </button>
+                        </div>}
                         <Link
                             to={`/clip/${clip.id}#comments`}
-                            className='text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors touch-target min-h-11 cursor-pointer'
+                            className='text-muted-foreground hover:text-foreground flex min-w-11 items-center justify-center gap-1.5 transition-colors touch-target min-h-11 cursor-pointer'
                         >
                             <MessageSquare size={18} className='shrink-0' strokeWidth={1.75} />
-                            <span className='hidden xs:inline'>
+                            <span className='hidden md:inline'>
                                 {formatCompactNumber(clip.comment_count)} comments
                             </span>
-                            <span className='xs:hidden'>
+                            <span className='md:hidden'>
                                 {formatCompactNumber(clip.comment_count)}
                             </span>
                         </Link>
@@ -302,7 +344,7 @@ export function ClipCard({ clip }: ClipCardProps) {
                             onClick={handleFavorite}
                             disabled={!isAuthenticated}
                             className={cn(
-                                'flex items-center gap-1.5 transition-colors touch-target min-h-11',
+                                'flex min-w-11 items-center justify-center gap-1.5 transition-colors touch-target min-h-11',
                                 clip.is_favorited ?
                                     'text-primary-500'
                                 :   'text-muted-foreground hover:text-foreground',
@@ -332,16 +374,27 @@ export function ClipCard({ clip }: ClipCardProps) {
                             <span>{formatCompactNumber(clip.favorite_count)}</span>
                         </button>
 
-                        <AddToPlaylistButton clipId={clip.id} />
-
-                        <AddToQueueButton clipId={clip.id} />
-
                         <ShareButton clipId={clip.id} clipTitle={clip.title} />
 
-                        <span className='text-muted-foreground flex items-center gap-1'>
+                        <span className='ml-auto text-muted-foreground hidden sm:flex items-center gap-1'>
                             <Eye size={18} strokeWidth={1.75} />
                             <span>{formatCompactNumber(clip.view_count)}</span>
                         </span>
+
+                        <details className='relative md:hidden'>
+                            <summary className='grid size-11 list-none place-items-center rounded-full text-muted-foreground hover:bg-surface-hover cursor-pointer' aria-label='More clip actions'>
+                                <MoreHorizontal size={21} aria-hidden='true' />
+                            </summary>
+                            <div className='absolute bottom-12 right-0 z-30 flex min-w-44 flex-col gap-1 rounded-xl border border-border bg-background p-2 shadow-xl'>
+                                <AddToPlaylistButton clipId={clip.id} />
+                                <AddToQueueButton clipId={clip.id} />
+                                <Link to={`/clip/${clip.id}`} className='flex min-h-11 items-center px-2 text-sm text-muted-foreground'>View clip details</Link>
+                            </div>
+                        </details>
+                        <div className='hidden md:flex items-center gap-4'>
+                            <AddToPlaylistButton clipId={clip.id} />
+                            <AddToQueueButton clipId={clip.id} />
+                        </div>
                     </div>
                 </div>
             </div>

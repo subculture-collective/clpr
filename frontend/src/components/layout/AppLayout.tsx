@@ -4,6 +4,7 @@ import { SkipLink } from '../ui/SkipLink';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { CategoriesNav } from './CategoriesNav';
+import { MobileBottomNav } from './MobileBottomNav';
 import { OfflineIndicator } from '../OfflineIndicator';
 import { useOfflineCacheInit } from '@/hooks/useOfflineCache';
 import { useSyncManager } from '@/hooks/useSyncManager';
@@ -51,10 +52,11 @@ export function AppLayout() {
             <SkipLink targetId='main-content' label='Skip to main content' />
             <Header />
             {!isAdminWorkspace && <CategoriesNav />}
-            <main id='main-content' className='flex-1' tabIndex={-1}>
+            <main id='main-content' className='flex-1 pb-20 md:pb-0' tabIndex={-1}>
                 <Outlet />
             </main>
-            {!isAdminWorkspace && <Footer />}
+            {!isAdminWorkspace && <div className='pb-20 md:pb-0'><Footer /></div>}
+            {!isAdminWorkspace && <MobileBottomNav />}
             <OfflineIndicator />
             {isAuthenticated && !isAdminWorkspace && (
                 <Suspense fallback={null}>

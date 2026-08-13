@@ -23,6 +23,7 @@ import {
     X,
     MoreHorizontal,
     ChevronDown,
+    Search,
 } from 'lucide-react';
 
 export function Header() {
@@ -156,6 +157,11 @@ export function Header() {
 
                     {/* Right Side Actions */}
                     <div className='flex items-center gap-2'>
+                        <Button asChild variant='ghost' size='sm' className='md:hidden'>
+                            <Link to='/search' aria-label='Search clips and creators'>
+                                <Search size={20} strokeWidth={1.75} />
+                            </Link>
+                        </Button>
                         {/* User Menu or Login */}
                         {isAuthenticated ?
                             <div className='hidden md:flex items-center gap-2'>

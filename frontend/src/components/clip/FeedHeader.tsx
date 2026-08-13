@@ -2,11 +2,12 @@ import type { FormEvent } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Crown, Eye, Flame, MessageSquare, Star, TrendingUp } from 'lucide-react';
+import { Clock, Crown, Eye, Flame, MessageSquare, PlayCircle, Star, TrendingUp } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { cn } from '@/lib/utils';
 import type { SortOption, TimeFrame } from '@/types/clip';
+import type { FeedAutoplayPreference } from '@/hooks';
 
 const sortIcons: Record<SortOption, React.ReactNode> = {
     trending: <Flame size={16} strokeWidth={1.75} />,
@@ -28,6 +29,8 @@ interface FeedHeaderProps {
     timeframe?: TimeFrame;
     onSortChange?: (sort: SortOption) => void;
     onTimeframeChange?: (timeframe: TimeFrame) => void;
+    autoplayPreference?: FeedAutoplayPreference;
+    onAutoplayPreferenceChange?: (value: FeedAutoplayPreference) => void;
 }
 
 const sortOptions: { value: SortOption; label: string }[] = [
@@ -56,6 +59,8 @@ export function FeedHeader({
     timeframe,
     onSortChange,
     onTimeframeChange,
+    autoplayPreference,
+    onAutoplayPreferenceChange,
 }: FeedHeaderProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -91,7 +96,7 @@ export function FeedHeader({
         onTimeframeChange;
 
     return (
-        <div className='mb-6'>
+        <div className='mb-4 px-4 md:mb-6 md:px-0'>
             {/* Main header row */}
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex-1 min-w-0'>
@@ -105,10 +110,22 @@ export function FeedHeader({
                     )}
                 </div>
 
-                <div className='flex flex-col sm:flex-row gap-2 sm:items-center'>
+                <div className='flex flex-row flex-wrap gap-2 sm:items-center'>
+                    {autoplayPreference && onAutoplayPreferenceChange && (
+                        <button
+                            type='button'
+                            onClick={() => onAutoplayPreferenceChange(autoplayPreference === 'manual' ? 'muted' : 'manual')}
+                            className='inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-foreground hover:bg-muted'
+                            aria-pressed={autoplayPreference === 'muted'}
+                            title='Choose whether visible clips play automatically'
+                        >
+                            <PlayCircle size={17} aria-hidden='true' />
+                            {autoplayPreference === 'muted' ? 'Autoplay on' : 'Tap to play'}
+                        </button>
+                    )}
                     {/* Sort dropdown */}
                     {showFilters && (
-                        <div className='relative flex items-center'>
+                        <div className='relative flex flex-1 items-center sm:flex-none'>
                             <span className='absolute left-2.5 pointer-events-none text-muted-foreground'>
                                 {sort && sortIcons[sort]}
                             </span>
@@ -119,7 +136,7 @@ export function FeedHeader({
                                     onSortChange(e.target.value as SortOption)
                                 }
                                 className={cn(
-                                    'w-full sm:w-auto pl-8 pr-3 py-2 rounded-lg border text-sm transition-colors',
+                                    'w-full min-h-11 sm:w-auto pl-8 pr-3 py-2 rounded-lg border text-sm transition-colors',
                                     'bg-background text-foreground',
                                     'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
                                     'border-border hover:border-primary-300',
@@ -138,7 +155,7 @@ export function FeedHeader({
                     {showSearch && (
                         <form
                             onSubmit={handleSearch}
-                            className='w-full sm:w-auto sm:min-w-60'
+                            className='hidden w-full sm:block sm:w-auto sm:min-w-60'
                             role='search'
                             aria-label={t('nav.search')}
                         >

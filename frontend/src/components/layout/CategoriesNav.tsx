@@ -78,19 +78,6 @@ export function CategoriesNav() {
         el.scrollBy({ left: delta, behavior: 'smooth' });
     };
 
-    if (loading) {
-        return null;
-    }
-
-    // Hide if no data at all
-    if (
-        topics.length === 0 &&
-        tags.length === 0 &&
-        creators.length === 0
-    ) {
-        return null;
-    }
-
     const tabs: { key: NavTab; label: string; count: number }[] = [
         { key: 'creators', label: 'Creators', count: creators.length },
         { key: 'topics', label: 'Topics', count: topics.length },
@@ -101,9 +88,14 @@ export function CategoriesNav() {
     const visibleTabs = tabs.filter(t => t.count > 0);
 
     return (
-        <div className='border-b border-border bg-background'>
-            <div className='container mx-auto px-4'>
-                <div className='relative flex items-center'>
+        <div className='border-b border-border bg-background' aria-busy={loading}>
+            <nav className='flex min-h-12 items-center gap-2 overflow-x-auto px-4 md:hidden scrollbar-hide' aria-label='Discover creators, topics, and tags'>
+                <Link to='/creators' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Creators</Link>
+                <Link to='/topics' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Topics</Link>
+                <Link to='/tags' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Tags</Link>
+            </nav>
+            <div className='container mx-auto hidden min-h-12 px-4 md:block'>
+                <div className='relative flex min-h-12 items-center'>
                     {/* Tab selector */}
                     {visibleTabs.length > 1 && (
                         <div className='flex items-center gap-1 pr-3 mr-3 border-r border-border shrink-0'>
