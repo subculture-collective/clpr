@@ -12,6 +12,7 @@ log_file="$repo_root/.tmp/backend-e2e.log"
 pid_file="$repo_root/.tmp/backend-e2e.pid"
 api_binary="$repo_root/.tmp/backend-e2e-api"
 browser_container=""
+browser_network=()
 
 cleanup() {
     if [[ -n "$browser_container" ]]; then
@@ -113,7 +114,12 @@ for _ in {1..60}; do
         # exact checked-out workspace into the digest-pinned Playwright image;
         # a host bind mount is invalid because the Docker daemon is outside the
         # runner container.
-        browser_container="$(docker create --network "container:$(hostname)" --ipc=host \
+        if docker inspect --type container "$(hostname)" >/dev/null 2>&1; then
+            browser_network=(--network "container:$(hostname)")
+        else
+            browser_network=(--network host)
+        fi
+        browser_container="$(docker create "${browser_network[@]}" --ipc=host \
             --user "$(id -u):$(id -g)" \
             -e HOME=/tmp \
             -e "CI=${CI:-}" \
