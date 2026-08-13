@@ -1239,6 +1239,39 @@ func (r *UserRepository) AdminSearchUsers(ctx context.Context, searchQuery strin
 	return users, total, nil
 }
 
+// GetAdminIdentitySummary reports mutually exclusive identity categories.
+// Only active role=user records are product users; imported creators and staff
+// remain visible to administrators without inflating that metric.
+func (r *UserRepository) GetAdminIdentitySummary(ctx context.Context) (*models.AdminIdentitySummary, error) {
+	const query = `
+		WITH classified AS (
+			SELECT CASE
+				WHEN account_status = 'active' AND role = 'user' THEN 'signed_in_users'
+				WHEN account_status = 'unclaimed' AND role = 'user' THEN 'unclaimed_creators'
+				WHEN role IN ('admin', 'moderator') THEN 'staff'
+				ELSE 'other'
+			END AS category
+			FROM users
+		)
+		SELECT
+			COUNT(*) FILTER (WHERE category = 'signed_in_users'),
+			COUNT(*) FILTER (WHERE category = 'unclaimed_creators'),
+			COUNT(*) FILTER (WHERE category = 'staff'),
+			COUNT(*) FILTER (WHERE category = 'other')
+		FROM classified
+	`
+	var summary models.AdminIdentitySummary
+	if err := r.db.QueryRow(ctx, query).Scan(
+		&summary.SignedInUsers,
+		&summary.UnclaimedCreators,
+		&summary.Staff,
+		&summary.Other,
+	); err != nil {
+		return nil, err
+	}
+	return &summary, nil
+}
+
 // SearchUsersForAutocomplete searches users by username prefix for chat mentions and autocomplete
 // Returns up to 'limit' users whose username starts with the query string
 func (r *UserRepository) SearchUsersForAutocomplete(ctx context.Context, query string, limit int) ([]*models.User, error) {

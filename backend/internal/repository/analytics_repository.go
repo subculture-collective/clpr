@@ -296,7 +296,7 @@ func (r *AnalyticsRepository) GetPlatformOverviewMetrics(ctx context.Context) (*
 			LIMIT 1
 		)
 		SELECT
-			(SELECT COUNT(*) FROM users),
+			(SELECT COUNT(*) FROM users WHERE account_status = 'active' AND role = 'user'),
 			(SELECT active_users_daily FROM latest_analytics),
 			(SELECT active_users_monthly FROM latest_analytics),
 			(SELECT COUNT(*) FROM clips WHERE is_removed = FALSE),

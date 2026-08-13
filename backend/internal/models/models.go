@@ -1052,6 +1052,14 @@ type PlatformOverviewMetrics struct {
 	Source             string    `json:"source"`
 }
 
+// AdminIdentitySummary separates product users from imported creator and staff identities.
+type AdminIdentitySummary struct {
+	SignedInUsers     int64 `json:"signed_in_users"`
+	UnclaimedCreators int64 `json:"unclaimed_creators"`
+	Staff             int64 `json:"staff"`
+	Other             int64 `json:"other"`
+}
+
 // ContentMetrics represents content-related metrics for admin dashboard
 type ContentMetrics struct {
 	MostPopularGames    []GameMetric    `json:"most_popular_games"`

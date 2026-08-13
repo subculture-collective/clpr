@@ -9107,6 +9107,26 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/tags:
+    get:
+      tags:
+        - Admin
+        - Tags
+      summary: List tags including suppressed records
+      operationId: getApiV1AdminTags
+      responses:
+        '200':
+          description: Administrative tag list
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       tags:
         - Admin
@@ -9333,6 +9353,140 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/admin/tags/promotion-queue:
+    get:
+      tags:
+        - Admin
+        - Tags
+      summary: List tag promotion candidates
+      description: Returns a paginated moderation queue. Administrator MFA is required.
+      operationId: getApiV1AdminTagsPromotionQueue
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - approved
+              - rejected
+            default: pending
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Promotion queue
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - page
+                  - limit
+                  - total_pages
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  total:
+                    type: integer
+                    minimum: 0
+                  page:
+                    type: integer
+                    minimum: 1
+                  limit:
+                    type: integer
+                    minimum: 1
+                  total_pages:
+                    type: integer
+                    minimum: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/admin/tags/promotion-queue/{id}/approve:
+    post:
+      tags:
+        - Admin
+        - Tags
+      summary: Approve a tag promotion
+      operationId: postApiV1AdminTagsPromotionQueueIdApprove
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Promotion approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/admin/tags/promotion-queue/{id}/reject:
+    post:
+      tags:
+        - Admin
+        - Tags
+      summary: Reject a tag promotion
+      operationId: postApiV1AdminTagsPromotionQueueIdReject
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Promotion rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/v1/admin/tags/{id}:
     delete:
       tags:
@@ -9406,6 +9560,78 @@ paths:
           $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/admin/tags/suppressions/{id}:
+    post:
+      tags:
+        - Admin
+        - Tags
+      summary: Suppress a tag from public surfaces
+      operationId: postApiV1AdminTagSuppression
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '200':
+          description: Tag suppressed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Admin
+        - Tags
+      summary: Restore a suppressed tag
+      operationId: deleteApiV1AdminTagSuppression
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Tag restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/admin/users:
     get:
       tags:
@@ -9464,6 +9690,158 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/admin/moderators:
+    get:
+      tags:
+        - Admin
+        - Moderation
+      summary: List platform moderators
+      operationId: listPlatformModerators
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        '200':
+          description: Platform moderators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformModeratorPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Admin
+        - Moderation
+      summary: Add a platform moderator
+      operationId: addPlatformModerator
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPlatformModeratorRequest'
+      responses:
+        '200':
+          description: Platform moderator added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserMutationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/admin/openapi.json:
+    get:
+      tags:
+        - Admin
+      summary: Get the running backend OpenAPI contract
+      operationId: getAdminOpenAPI
+      responses:
+        '200':
+          description: Bundled OpenAPI document embedded in the running backend
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/admin/moderators/{id}:
+    patch:
+      tags:
+        - Admin
+        - Moderation
+      summary: Confirm or update platform moderator access
+      operationId: updatePlatformModerator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminOptionalReasonRequest'
+      responses:
+        '200':
+          description: Platform moderator updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserMutationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Admin
+        - Moderation
+      summary: Revoke platform moderator access
+      operationId: revokePlatformModerator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminOptionalReasonRequest'
+      responses:
+        '200':
+          description: Platform moderator revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserMutationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/admin/users/{id}/badges:
     post:
       tags:
@@ -15947,6 +16325,7 @@ components:
         - total
         - page
         - per_page
+        - summary
       properties:
         users:
           type: array
@@ -15963,6 +16342,33 @@ components:
           type: integer
           minimum: 1
           maximum: 100
+        summary:
+          $ref: '#/components/schemas/AdminIdentitySummary'
+    AdminIdentitySummary:
+      type: object
+      additionalProperties: false
+      required:
+        - signed_in_users
+        - unclaimed_creators
+        - staff
+        - other
+      properties:
+        signed_in_users:
+          type: integer
+          minimum: 0
+          description: Active non-staff product accounts that completed sign-in.
+        unclaimed_creators:
+          type: integer
+          minimum: 0
+          description: Imported creator identities that have not signed in.
+        staff:
+          type: integer
+          minimum: 0
+          description: Administrator and platform moderator identities.
+        other:
+          type: integer
+          minimum: 0
+          description: Service, pending, merged, and other identity records.
     AdminUserMutationResponse:
       type: object
       required:
@@ -15970,6 +16376,45 @@ components:
       properties:
         message:
           type: string
+    PlatformModeratorPage:
+      type: object
+      required:
+        - items
+        - total
+        - page
+        - limit
+        - total_pages
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total_pages:
+          type: integer
+          minimum: 0
+    AddPlatformModeratorRequest:
+      type: object
+      required:
+        - user_id
+      additionalProperties: false
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 1000
     AdminReasonRequest:
       type: object
       required:

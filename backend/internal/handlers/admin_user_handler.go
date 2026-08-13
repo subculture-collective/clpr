@@ -93,12 +93,20 @@ func (h *AdminUserHandler) ListUsers(c *gin.Context) {
 		})
 		return
 	}
+	summary, err := h.userRepo.GetAdminIdentitySummary(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve identity summary",
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"users":    users,
 		"total":    total,
 		"page":     page,
 		"per_page": perPage,
+		"summary":  summary,
 	})
 }
 

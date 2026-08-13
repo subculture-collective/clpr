@@ -12258,7 +12258,7 @@ components:
 
     AdminUserListResponse:
       type: object
-      required: [users, total, page, per_page]
+      required: [users, total, page, per_page, summary]
       properties:
         users:
           type: array
@@ -12267,6 +12267,17 @@ components:
         total: {type: integer, minimum: 0}
         page: {type: integer, minimum: 1}
         per_page: {type: integer, minimum: 1, maximum: 100}
+        summary: {$ref: '#/components/schemas/AdminIdentitySummary'}
+
+    AdminIdentitySummary:
+      type: object
+      additionalProperties: false
+      required: [signed_in_users, unclaimed_creators, staff, other]
+      properties:
+        signed_in_users: {type: integer, minimum: 0, description: 'Active non-staff product accounts that completed sign-in.'}
+        unclaimed_creators: {type: integer, minimum: 0, description: 'Imported creator identities that have not signed in.'}
+        staff: {type: integer, minimum: 0, description: 'Administrator and platform moderator identities.'}
+        other: {type: integer, minimum: 0, description: 'Service, pending, merged, and other identity records.'}
 
     AdminUserMutationResponse:
       type: object
