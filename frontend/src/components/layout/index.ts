@@ -12,4 +12,5 @@ export { Footer } from './Footer';
 export { MiniFooter } from './MiniFooter';
 export { AppLayout } from './AppLayout';
 export { CategoriesNav } from './CategoriesNav';
+export { MobileBottomNav } from './MobileBottomNav';
 export { LanguageSwitcher } from './LanguageSwitcher';

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useCallback, memo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, memo, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'react-router-dom';
 import { Spinner, Button, ScrollToTop } from '@/components/ui';
@@ -10,6 +10,8 @@ import { EmptyState } from './EmptyState';
 import { FeedHeader } from './FeedHeader';
 import { useClipFeed } from '@/hooks/useClips';
 import type { SortOption, TimeFrame, ClipFeedFilters } from '@/types/clip';
+import { useFeedAutoplayPreference } from '@/hooks';
+import { SettingsEvents, SubmissionEvents, trackEvent } from '@/lib/telemetry';
 
 interface ClipFeedProps {
     title?: string;
@@ -21,6 +23,8 @@ interface ClipFeedProps {
     useSortTitle?: boolean;
     /** When true, uses simplified cards focused on discovery and posting */
     discoverMode?: boolean;
+    insertAfter?: number;
+    insertedContent?: ReactNode;
 }
 
 const FEED_WINDOW_SIZE = 12;
@@ -33,6 +37,8 @@ const normalizeSortOption = (sort: SortOption): SortOption => {
 // Memoized ClipCard wrapper for performance
 const MemoizedClipCard = memo(ClipCard, (prevProps, nextProps) => {
     return (
+        prevProps.active === nextProps.active &&
+        prevProps.autoplay === nextProps.autoplay &&
         prevProps.clip.id === nextProps.clip.id &&
         prevProps.clip.vote_score === nextProps.clip.vote_score &&
         prevProps.clip.user_vote === nextProps.clip.user_vote &&
@@ -70,6 +76,8 @@ export function ClipFeed({
     showSearch = false,
     useSortTitle = true,
     discoverMode = false,
+    insertAfter = 5,
+    insertedContent,
 }: ClipFeedProps) {
     const [searchParams, setSearchParams] = useSearchParams();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -79,6 +87,10 @@ export function ClipFeed({
     const [windowStart, setWindowStart] = useState(0);
     const [topSpacerHeight, setTopSpacerHeight] = useState(0);
     const cardWindowRef = useRef<HTMLDivElement>(null);
+    const [activeClipId, setActiveClipId] = useState<string | null>(null);
+    const visibleClipIdsRef = useRef(new Set<string>());
+    const { preference: autoplayPreference, setPreference: setAutoplayPreference } =
+        useFeedAutoplayPreference();
     const touchStartRef = useRef<number>(0);
     const scrollTopRef = useRef<number>(0);
 
@@ -152,6 +164,54 @@ export function ClipFeed({
         setTopSpacerHeight((height) => height + removedHeight);
         setWindowStart(nextWindowStart);
     }, [visibleCount, windowStart]);
+
+    const handleVisibilityChange = useCallback(
+        (clipId: string, visible: boolean) => {
+            const visibleIds = visibleClipIdsRef.current;
+            if (visible) {
+                visibleIds.add(clipId);
+                if (autoplayPreference === 'muted') {
+                    setActiveClipId(clipId);
+                    trackEvent(SubmissionEvents.SUBMISSION_PLAY_STARTED, {
+                        clip_id: clipId,
+                        playback_mode: 'muted_autoplay',
+                        section_name: 'clip_feed',
+                    });
+                }
+                return;
+            }
+
+            visibleIds.delete(clipId);
+            setActiveClipId(current => {
+                if (current !== clipId) return current;
+                return autoplayPreference === 'muted'
+                    ? (visibleIds.values().next().value ?? null)
+                    : null;
+            });
+        },
+        [autoplayPreference],
+    );
+
+    const handleAutoplayPreferenceChange = useCallback(
+        (value: 'manual' | 'muted') => {
+            setAutoplayPreference(value);
+            if (value === 'manual') setActiveClipId(null);
+            trackEvent(SettingsEvents.FEED_AUTOPLAY_CHANGED, {
+                setting_name: 'feed_autoplay',
+                new_value: value,
+            });
+        },
+        [setAutoplayPreference],
+    );
+
+    const handleActivate = useCallback((clipId: string) => {
+        setActiveClipId(clipId);
+        trackEvent(SubmissionEvents.SUBMISSION_PLAY_STARTED, {
+            clip_id: clipId,
+            playback_mode: 'manual',
+            section_name: 'clip_feed',
+        });
+    }, []);
 
     // Intersection observer for infinite scroll
     const { ref: loadMoreRef, inView } = useInView({
@@ -280,6 +340,8 @@ export function ClipFeed({
                     timeframe={timeframe}
                     onSortChange={handleSortChange}
                     onTimeframeChange={handleTimeframeChange}
+                    autoplayPreference={autoplayPreference}
+                    onAutoplayPreferenceChange={handleAutoplayPreferenceChange}
                 />
             )}
 
@@ -392,7 +454,7 @@ export function ClipFeed({
                             style={{ height: topSpacerHeight }}
                         />
                     )}
-                    <div ref={cardWindowRef} className="space-y-6">
+                    <div ref={cardWindowRef} className='space-y-5 md:space-y-6 snap-y snap-proximity motion-reduce:snap-none'>
                         {visibleClips.map((clip, offset) => {
                             const clipIndex = windowStart + offset;
                             return (
@@ -400,7 +462,16 @@ export function ClipFeed({
                                     {discoverMode ? (
                                         <MemoizedDiscoverClipCard clip={clip} />
                                     ) : (
-                                        <MemoizedClipCard clip={clip} />
+                                        <MemoizedClipCard
+                                            clip={clip}
+                                            active={activeClipId === clip.id}
+                                            autoplay={autoplayPreference === 'muted'}
+                                            onActivate={handleActivate}
+                                            onVisibilityChange={handleVisibilityChange}
+                                        />
+                                    )}
+                                    {insertedContent && clipIndex + 1 === insertAfter && (
+                                        <div className='mt-5 md:mt-8'>{insertedContent}</div>
                                     )}
                                 </div>
                             );
@@ -433,10 +504,10 @@ export function ClipFeed({
             )}
 
             {/* Scroll to top button */}
-            <ScrollToTop threshold={500} />
+            <div className='hidden md:block'><ScrollToTop threshold={500} /></div>
 
             {/* Mini footer for quick access to footer links */}
-            <MiniFooter />
+            <div className='hidden md:block'><MiniFooter /></div>
         </div>
     );
 }

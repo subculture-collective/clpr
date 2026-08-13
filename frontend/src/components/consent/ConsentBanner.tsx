@@ -4,7 +4,6 @@ import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
-import { effectiveConsentValue } from '../../lib/consent-display';
 
 export interface ConsentBannerProps {
   /** Additional CSS classes */
@@ -55,40 +54,42 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg',
+        'fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto bg-background border-t border-border shadow-2xl md:bottom-0 md:max-h-none',
         'animate-in slide-in-from-bottom duration-300',
         className
       )}
-      role="region"
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="consent-banner-title"
       aria-describedby="consent-banner-description"
     >
-      <div className="max-w-6xl mx-auto p-4 md:p-6">
+      <div className="max-w-6xl mx-auto p-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] md:p-6">
         {doNotTrack && (
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
               <strong>Do Not Track detected:</strong> We respect your browser's Do Not Track setting.
-              Optional consent is effectively off while this signal is enabled. Your saved choices are retained but are not used.
+              Personalized ads and analytics tracking will be disabled even if you consent.
             </p>
           </div>
         )}
 
         {!showDetails ? (
           // Simple view
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
             <div className="flex-1">
-              <h2 id="consent-banner-title" className="text-lg font-semibold mb-1">
+              <h2 id="consent-banner-title" className="text-base md:text-lg font-semibold mb-1">
                 Privacy & Cookie Preferences
               </h2>
-              <p id="consent-banner-description" className="text-sm text-muted-foreground">
-                We use cookies and similar technologies to personalize ads, analyze traffic,
-                and improve your experience. You can customize your preferences or accept/reject all.{' '}
-                <Link to="/privacy" className="text-primary-500 underline underline-offset-2">
-                  Learn more in our Privacy Policy
+              <p id="consent-banner-description" className="text-xs md:text-sm text-muted-foreground">
+                <span className='md:hidden'>Choose whether clpr may use optional cookies for analytics and personalization. </span>
+                <span className='hidden md:inline'>We use cookies and similar technologies to personalize ads, analyze traffic,
+                and improve your experience. You can customize your preferences or accept/reject all. </span>
+                <Link to="/privacy" className="font-semibold text-violet-300 underline underline-offset-2">
+                  Privacy Policy
                 </Link>
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            <div className="grid grid-cols-3 gap-2 w-full md:flex md:w-auto">
               <Button
                 variant="ghost"
                 size="sm"
@@ -101,12 +102,12 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 variant="outline"
                 size="sm"
                 onClick={rejectAll}
-                className="flex-1 md:flex-none"
+                className="flex-1 border-violet-400 text-violet-300 md:flex-none"
               >
                 Reject All
               </Button>
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
                 onClick={acceptAll}
                 className="flex-1 md:flex-none"
@@ -153,8 +154,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Functional</h3>
                   <Toggle
-                    aria-label="Functional consent"
-                    checked={effectiveConsentValue(pendingPreferences.functional, doNotTrack)}
+                    checked={pendingPreferences.functional}
                     onChange={(e) => setPendingPreferences(prev => ({
                       ...prev,
                       functional: e.target.checked
@@ -174,8 +174,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Analytics</h3>
                   <Toggle
-                    aria-label="Analytics consent"
-                    checked={effectiveConsentValue(pendingPreferences.analytics, doNotTrack)}
+                    checked={pendingPreferences.analytics}
                     onChange={(e) => setPendingPreferences(prev => ({
                       ...prev,
                       analytics: e.target.checked
@@ -195,8 +194,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Advertising</h3>
                   <Toggle
-                    aria-label="Advertising consent"
-                    checked={effectiveConsentValue(pendingPreferences.advertising, doNotTrack)}
+                    checked={pendingPreferences.advertising}
                     onChange={(e) => setPendingPreferences(prev => ({
                       ...prev,
                       advertising: e.target.checked
@@ -217,6 +215,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                 variant="outline"
                 size="sm"
                 onClick={rejectAll}
+                className='border-violet-400 text-violet-300'
               >
                 Reject All
               </Button>

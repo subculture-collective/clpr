@@ -8,11 +8,13 @@ import { useConsent } from '../context/ConsentContext';
 import { effectiveConsentValue } from '../lib/consent-display';
 import type { UpdateProfileRequest, UpdateSettingsRequest } from '../lib/user-settings-api';
 import { getUserSettings, updateProfile, updateUserSettings } from '../lib/user-settings-api';
+import { useFeedAutoplayPreference } from '../hooks';
 
 export function SettingsPage() {
     const { user, refreshUser } = useAuth();
     const queryClient = useQueryClient();
     const { consent, updateConsent, doNotTrack, resetConsent } = useConsent();
+    const { preference: feedAutoplay, setPreference: setFeedAutoplay } = useFeedAutoplayPreference();
 
     // Refs to store timeout IDs for success messages (cleaned up on unmount)
     const profileTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -185,6 +187,20 @@ export function SettingsPage() {
                                     {profileError && <Alert variant='error'>{profileError}</Alert>}
                                 </Stack>
                             </form>
+                        </CardBody>
+                    </Card>
+
+                    <Card className='mb-6'>
+                        <CardHeader>
+                            <h2 className='text-xl font-semibold'>Playback</h2>
+                        </CardHeader>
+                        <CardBody>
+                            <Toggle
+                                label='Muted feed autoplay'
+                                helperText='Automatically play the most visible clip without sound. Only one Twitch player is loaded at a time.'
+                                checked={feedAutoplay === 'muted'}
+                                onChange={event => setFeedAutoplay(event.target.checked ? 'muted' : 'manual')}
+                            />
                         </CardBody>
                     </Card>
 

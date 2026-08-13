@@ -178,6 +178,7 @@ export const SettingsEvents = {
   SETTINGS_VIEWED: 'settings_viewed',
   LANGUAGE_CHANGED: 'language_changed',
   NOTIFICATION_PREFERENCES_CHANGED: 'notification_preferences_changed',
+  FEED_AUTOPLAY_CHANGED: 'feed_autoplay_changed',
 
   // Privacy
   PRIVACY_SETTINGS_CHANGED: 'privacy_settings_changed',

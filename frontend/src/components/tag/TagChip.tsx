@@ -24,9 +24,16 @@ export const TagChip: React.FC<TagChipProps> = ({
 
   const baseClasses = `inline-flex items-center gap-1 rounded-full font-medium transition-all hover:opacity-80 cursor-pointer ${sizeClasses[size]}`;
 
+  const backgroundColor = tag.color || '#6D28D9';
+  const hex = backgroundColor.match(/^#([0-9a-f]{6})$/i)?.[1];
+  const luminance = hex
+    ? (0.2126 * parseInt(hex.slice(0, 2), 16) +
+        0.7152 * parseInt(hex.slice(2, 4), 16) +
+        0.0722 * parseInt(hex.slice(4, 6), 16)) / 255
+    : 0;
   const style: React.CSSProperties = {
-    backgroundColor: tag.color || "#7C3AED",
-    color: "#ffffff",
+    backgroundColor,
+    color: luminance > 0.56 ? '#111318' : '#ffffff',
   };
 
   const handleClick = (e: React.MouseEvent) => {

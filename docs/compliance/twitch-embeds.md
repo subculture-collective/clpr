@@ -75,32 +75,37 @@ const embedUrl = `https://clips.twitch.tv/embed?clip=${clipId}&parent=${parentDo
 - ✅ Proper title attribute for accessibility
 - ✅ Error handling for unavailable clips
 
-#### Lazy Loading Strategy
+#### Feed Loading Strategy
 
-**Implementation:** Thumbnail click-to-play
+**Implementation:** Controlled thumbnail click-to-play with optional remembered muted autoplay
 
 ```tsx
-// Initial state: Shows thumbnail with play button
-<div onClick={handleLoadClick}>
+// Initial state: every inactive clip is a lightweight thumbnail
+<button onClick={onActivate}>
   <img src={thumbnailUrl} alt={title} />
   <div>Click to play</div>
-</div>
+</button>
 
-// After click: Loads actual Twitch embed
-<iframe src={embedUrl} ... />
+// The feed owns activeClipId and mounts at most one official embed
+{active && <iframe src={embedUrl} ... />}
 ```
 
 **Benefits:**
 1. **Performance** - Reduces initial page load
-2. **User Control** - Explicit consent before video loads
+2. **User Control** - Explicit activation by default; muted autoplay is opt-in
 3. **Bandwidth** - Saves data for users
-4. **Twitch API Load** - Reduces embed script loads
+4. **Resource Control** - Unmounting the prior iframe prevents off-screen playback
 
 **Compliance:**
 - ✅ Uses official Twitch thumbnail URLs
 - ✅ No custom video preview generation
 - ✅ Embed loaded only on user interaction
 - ✅ Respects user's choice to view content
+- ✅ Only one feed iframe is mounted at a time
+
+The mobile feed uses the full available viewport width. On narrow portrait
+screens it recommends landscape orientation while retaining the official
+Twitch player, branding, controls, attribution, and direct Twitch fallback.
 
 #### Parent Domain Configuration
 
