@@ -79,8 +79,21 @@ func NewClipRepository(pool *pgxpool.Pool) *ClipRepository {
 	}
 }
 
+func normalizeClipSourceFields(clip *models.Clip) {
+	if clip.SourceType == "" {
+		clip.SourceType = "twitch"
+	}
+	if clip.SourcePlatform == "" {
+		clip.SourcePlatform = "twitch"
+	}
+	if len(clip.SourceMetadata) == 0 {
+		clip.SourceMetadata = json.RawMessage(`{}`)
+	}
+}
+
 // Create inserts a new clip into the database
 func (r *ClipRepository) Create(ctx context.Context, clip *models.Clip) error {
+	normalizeClipSourceFields(clip)
 	query := `
 		INSERT INTO clips (
 			id, twitch_clip_id, twitch_clip_url, embed_url, title,
@@ -192,6 +205,7 @@ func (r *ClipRepository) PublishAutomatedClip(ctx context.Context, clip *models.
 
 // CreateStreamClip inserts a new clip created from a stream into the database
 func (r *ClipRepository) CreateStreamClip(ctx context.Context, clip *models.Clip) error {
+	normalizeClipSourceFields(clip)
 	query := `
 		INSERT INTO clips (
 			id, twitch_clip_id, twitch_clip_url, embed_url, title,

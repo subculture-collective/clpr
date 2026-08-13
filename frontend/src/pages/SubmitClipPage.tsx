@@ -235,9 +235,6 @@ export function SubmitClipPage() {
     const [recentSubmissions, setRecentSubmissions] = useState<
         ClipSubmission[]
     >([]);
-    const [karmaRequired, setKarmaRequired] = useState(100);
-    const [karmaRequirementEnabled, setKarmaRequirementEnabled] =
-        useState(true);
     const selectedSource = formData.source_type ?? 'twitch';
     const selectedExternalPlatform =
         selectedSource === 'external' && formData.clip_url ?

@@ -106,6 +106,21 @@ func getSubmissionBySourceIdentity(ctx context.Context, querier sourceSubmission
 
 // Create creates a new clip submission
 func (r *SubmissionRepository) Create(ctx context.Context, submission *models.ClipSubmission) error {
+	if submission.SourceType == "" {
+		submission.SourceType = "twitch"
+	}
+	if submission.SourcePlatform == "" {
+		submission.SourcePlatform = "twitch"
+	}
+	if len(submission.SourceMetadata) == 0 {
+		submission.SourceMetadata = []byte(`{}`)
+	}
+	if submission.UploadStatus == "" {
+		submission.UploadStatus = "none"
+	}
+	if submission.StorageVisibility == "" {
+		submission.StorageVisibility = "private"
+	}
 	query := `
 		INSERT INTO clip_submissions (
 			id, user_id, clip_id, twitch_clip_id, twitch_clip_url, title, custom_title,
