@@ -55,10 +55,10 @@ required_commands=(
     'test-operator-preflight.sh'
     'Dockerfile.crawler'
     'HIGH,CRITICAL'
-    'spdx-json='
+    '-o spdx-json'
 )
 for command in "${required_commands[@]}"; do
-    grep -Fq "$command" scripts/source-convergence.sh || fail "missing gate command: $command"
+    grep -Fq -- "$command" scripts/source-convergence.sh || fail "missing gate command: $command"
 done
 
 python3 - <<'PY'
@@ -74,9 +74,9 @@ steps = jobs['converge'].get('steps', [])
 uses = [step.get('uses', '') for step in steps]
 if any('download-artifact' in action for action in uses):
     raise SystemExit('cross-run artifact downloads are forbidden in Gitea convergence')
-uploads = [step for step in steps if 'upload-artifact@v4' in step.get('uses', '')]
+uploads = [step for step in steps if 'upload-artifact@v3' in step.get('uses', '')]
 if len(uploads) != 1:
-    raise SystemExit('exactly one same-run upload-artifact@v4 step is required')
+    raise SystemExit('exactly one same-run upload-artifact@v3 step is required')
 if not uploads[0]['uses'].startswith('https://github.com/'):
     raise SystemExit('Gitea action source URL must be explicit')
 if uploads[0].get('with', {}).get('if-no-files-found') != 'error':
@@ -110,13 +110,19 @@ if not required_names <= actual_names:
 candidate_text = pathlib.Path('.gitea/workflows/immutable-candidate.yml').read_text()
 for required in [
     'candidate-manifest.json', 'docker push', 'cosign sign --yes',
-    'cosign verify', 'spdx-json=', 'HIGH,CRITICAL', 'OCI_REVISION',
+    'cosign verify', '-o spdx-json', 'HIGH,CRITICAL', 'OCI_REVISION',
     'backend_digest', 'frontend_digest', 'crawler_digest',
 ]:
     if required not in candidate_text:
         raise SystemExit(f'immutable candidate workflow is missing: {required}')
 if ':latest' in candidate_text:
     raise SystemExit('immutable candidate workflow must not use latest tags')
+if '-v "$evidence_dir:/evidence"' in candidate_text:
+    raise SystemExit('immutable candidate evidence must not use runner-private bind mounts')
+
+convergence_text = pathlib.Path('scripts/source-convergence.sh').read_text()
+if '-v "$artifact_dir/images:/evidence"' in convergence_text:
+    raise SystemExit('image evidence must not use runner-private bind mounts')
 
 for path in [
     '.gitea/workflows/source-convergence.yml',

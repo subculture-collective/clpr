@@ -304,17 +304,15 @@ scan_image() {
     local report="$2"
     docker run --rm \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "$artifact_dir/trivy-cache:/root/.cache/trivy" \
         "$TRIVY_IMAGE" image --scanners vuln --ignore-unfixed \
         --severity HIGH,CRITICAL --exit-code 1 "$image" >/dev/null
     # Produce the retained report only after the blocking scan passes.
     docker run --rm \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "$artifact_dir/trivy-cache:/root/.cache/trivy" \
-        -v "$artifact_dir/images:/evidence" \
         "$TRIVY_IMAGE" image --scanners vuln --ignore-unfixed \
-        --severity HIGH,CRITICAL --format json \
-        --output "/evidence/$report" "$image"
+        --severity HIGH,CRITICAL --format json "$image" \
+        >"$artifact_dir/images/$report"
+    [[ -s "$artifact_dir/images/$report" ]] || fail "$image scan report was not produced"
 }
 
 generate_image_sbom() {
@@ -322,15 +320,15 @@ generate_image_sbom() {
     local report="$2"
     docker run --rm \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "$artifact_dir/images:/evidence" \
-        "$SYFT_IMAGE" "docker:$image" -o "spdx-json=/evidence/$report"
+        "$SYFT_IMAGE" "docker:$image" -o spdx-json \
+        >"$artifact_dir/images/$report"
     [[ -s "$artifact_dir/images/$report" ]] || fail "$image SBOM was not produced"
 }
 
 phase_images() {
     require_command docker
     docker info >/dev/null || fail "Docker daemon is unavailable"
-    mkdir -p "$artifact_dir/images" "$artifact_dir/trivy-cache"
+    mkdir -p "$artifact_dir/images"
     local backend_image="clpr-convergence-backend:$candidate_sha"
     local crawler_image="clpr-convergence-crawler:$candidate_sha"
     local frontend_image="clpr-convergence-frontend:$candidate_sha"

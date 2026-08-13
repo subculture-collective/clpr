@@ -81,7 +81,7 @@ jobs:
       - run: bash scripts/source-convergence.sh --phase browser
       - name: Upload browser diagnostics
         if: always()
-        uses: https://github.com/actions/upload-artifact@v4
+        uses: https://github.com/actions/upload-artifact@v3
         with:
           name: gitea-browser-${{ gitea.sha }}
           path: |
@@ -103,7 +103,7 @@ jobs:
       - run: bash scripts/source-convergence.sh --phase images
       - name: Upload image security evidence
         if: always()
-        uses: https://github.com/actions/upload-artifact@v4
+        uses: https://github.com/actions/upload-artifact@v3
         with:
           name: gitea-image-security-${{ gitea.sha }}
           path: .tmp/source-convergence

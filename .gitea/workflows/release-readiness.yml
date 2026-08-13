@@ -55,7 +55,7 @@ jobs:
           node scripts/verify-release-evidence.js 2>&1 | tee .tmp/release-evidence-verification.txt
       - name: Upload verification record only
         if: always()
-        uses: https://github.com/actions/upload-artifact@v4
+        uses: https://github.com/actions/upload-artifact@v3
         with:
           name: release-evidence-verification-${{ gitea.sha }}
           path: .tmp/release-evidence-verification.txt

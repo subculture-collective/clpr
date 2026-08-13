@@ -74,7 +74,7 @@ jobs:
           test -n "$COSIGN_PRIVATE_KEY"
           test -n "$COSIGN_PUBLIC_KEY"
           evidence_dir="$PWD/.tmp/release-candidate"
-          mkdir -p "$evidence_dir/trivy-cache"
+          mkdir -p "$evidence_dir"
 
           build_candidate() {
             name="$1"
@@ -93,15 +93,15 @@ jobs:
 
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
-              -v "$evidence_dir/trivy-cache:/root/.cache/trivy" \
-              -v "$evidence_dir:/evidence" \
               "$TRIVY_IMAGE" image --scanners vuln --ignore-unfixed \
               --severity HIGH,CRITICAL --exit-code 1 --format json \
-              --output "/evidence/$name-trivy.json" "$image"
+              "$image" >"$evidence_dir/$name-trivy.json"
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
-              -v "$evidence_dir:/evidence" \
-              "$SYFT_IMAGE" "docker:$image" -o "spdx-json=/evidence/$name.spdx.json"
+              "$SYFT_IMAGE" "docker:$image" -o spdx-json \
+              >"$evidence_dir/$name.spdx.json"
+            test -s "$evidence_dir/$name-trivy.json"
+            test -s "$evidence_dir/$name.spdx.json"
 
             docker push "$image"
             repository_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")"
@@ -139,7 +139,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$candidate_sha"
           test "$(git status --porcelain=v1 --untracked-files=all)" = ''
       - name: Upload immutable candidate manifest and supply-chain records
-        uses: https://github.com/actions/upload-artifact@v4
+        uses: https://github.com/actions/upload-artifact@v3
         with:
           name: release-candidate-manifest
           path: .tmp/release-candidate
