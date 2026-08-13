@@ -33,6 +33,10 @@ describe('TwitchEmbed', () => {
       'src',
       expect.stringContaining('clips.twitch.tv/embed'),
     );
+    expect(screen.getByTitle('A good clip')).toHaveAttribute(
+      'src',
+      expect.stringContaining('autoplay=true'),
+    );
   });
 
   it('unmounts the iframe when the feed deactivates the clip', () => {

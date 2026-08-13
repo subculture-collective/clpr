@@ -31,7 +31,8 @@ export function TwitchEmbed({
     useVolumePreference();
   const embedMuted = active ? volumePreferredMuted : muted;
   const parentDomain = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  const embedUrl = `https://clips.twitch.tv/embed?clip=${encodeURIComponent(clipId)}&parent=${encodeURIComponent(parentDomain)}&autoplay=${autoplay ? 'true' : 'false'}&muted=${embedMuted ? 'true' : 'false'}`;
+  const shouldAutoplay = active || autoplay;
+  const embedUrl = `https://clips.twitch.tv/embed?clip=${encodeURIComponent(clipId)}&parent=${encodeURIComponent(parentDomain)}&autoplay=${shouldAutoplay ? 'true' : 'false'}&muted=${embedMuted ? 'true' : 'false'}`;
 
   useEffect(() => {
     if (!active || !embedMuted || hasSetPreference) return;
