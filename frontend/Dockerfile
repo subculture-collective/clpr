@@ -45,8 +45,8 @@ LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
       org.opencontainers.image.source="${OCI_SOURCE}"
 
 # Copy custom nginx config
-COPY frontend/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /app/edge-routes.conf /etc/nginx/edge-routes.conf
+COPY --chmod=0444 frontend/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder --chmod=0444 /app/edge-routes.conf /etc/nginx/edge-routes.conf
 
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html

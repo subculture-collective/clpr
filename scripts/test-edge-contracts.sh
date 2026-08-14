@@ -63,7 +63,8 @@ require_literal frontend/nginx.conf 'location = /manifest.webmanifest {'
 require_literal frontend/nginx.conf 'include /etc/nginx/edge-routes.conf;'
 require_literal frontend/nginx.conf 'location @spa_route {'
 require_literal frontend/Dockerfile 'cp /usr/share/nginx/html/favicon_io/favicon.ico /usr/share/nginx/html/favicon.ico'
-require_literal frontend/Dockerfile 'COPY --from=builder /app/edge-routes.conf /etc/nginx/edge-routes.conf'
+require_literal frontend/Dockerfile 'COPY --chmod=0444 frontend/nginx.conf /etc/nginx/nginx.conf'
+require_literal frontend/Dockerfile 'COPY --from=builder --chmod=0444 /app/edge-routes.conf /etc/nginx/edge-routes.conf'
 
 (cd frontend && node scripts/generate-edge-routes.mjs --check) || fail "React and edge route manifests differ"
 
