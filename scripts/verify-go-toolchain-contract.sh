@@ -21,7 +21,7 @@ for dockerfile in backend/Dockerfile backend/Dockerfile.crawler; do
     || fail "$dockerfile must use the approved Go ${expected_version} builder digest"
 done
 
-if rg -q '1\.26\.5' backend/go.mod backend/Dockerfile backend/Dockerfile.crawler; then
+if grep -Eq '1\.26\.5' backend/go.mod backend/Dockerfile backend/Dockerfile.crawler; then
   fail "vulnerable Go 1.26.5 release remains in an executable build input"
 fi
 
