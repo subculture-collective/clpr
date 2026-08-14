@@ -78,7 +78,12 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           npm --prefix frontend ci
           npm --prefix frontend exec -- playwright install --with-deps chromium firefox webkit
-      - run: bash scripts/source-convergence.sh --phase browser
+      - name: Run browser gate with isolated test services
+        shell: bash
+        run: |
+          set -euo pipefail
+          source scripts/configure-hosted-test-ports.sh
+          bash scripts/source-convergence.sh --phase browser
       - name: Upload browser diagnostics
         if: always()
         uses: https://github.com/actions/upload-artifact@v3

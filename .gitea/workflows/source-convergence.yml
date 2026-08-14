@@ -55,6 +55,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source scripts/configure-hosted-test-ports.sh
           mkdir -p .tmp/source-convergence
           bash scripts/source-convergence.sh --all 2>&1 \
             | tee .tmp/source-convergence/workflow.log

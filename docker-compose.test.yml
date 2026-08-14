@@ -1,7 +1,7 @@
 services:
     postgres-test:
         image: pgvector/pgvector:pg17
-        container_name: clpr-postgres-test
+        container_name: 'clpr-postgres-test-${TEST_RUN_SLOT:-local}'
         environment:
             POSTGRES_USER: clpr
             POSTGRES_PASSWORD: clpr_password
@@ -18,7 +18,7 @@ services:
 
     redis-test:
         image: redis:7-alpine
-        container_name: clpr-redis-test
+        container_name: 'clpr-redis-test-${TEST_RUN_SLOT:-local}'
         ports:
             - '${TEST_REDIS_PORT:-6380}:6379'
         tmpfs:
@@ -32,7 +32,7 @@ services:
 
     opensearch-test:
         image: opensearchproject/opensearch:2.11.1
-        container_name: clpr-opensearch-test
+        container_name: 'clpr-opensearch-test-${TEST_RUN_SLOT:-local}'
         environment:
             - discovery.type=single-node
             - 'OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m'
@@ -40,8 +40,8 @@ services:
             - 'DISABLE_INSTALL_DEMO_CONFIG=true'
             - 'bootstrap.system_call_filter=false'
         ports:
-            - '9201:9200'
-            - '9601:9600'
+            - '${TEST_OPENSEARCH_PORT:-9201}:9200'
+            - '${TEST_OPENSEARCH_METRICS_PORT:-9601}:9600'
         volumes:
             - opensearch-test-data:/usr/share/opensearch/data
         healthcheck:

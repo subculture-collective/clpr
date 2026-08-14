@@ -52,11 +52,13 @@ jobs:
           npm --prefix frontend exec -- playwright install --with-deps chromium firefox webkit
       - name: Converge candidate source before image generation
         shell: bash
-        run: >-
-          bash scripts/source-convergence.sh
-          --phase contract --phase backend --phase frontend
-          --phase api-docs --phase docs --phase secrets
-          --phase browser --phase contracts
+        run: |
+          set -euo pipefail
+          source scripts/configure-hosted-test-ports.sh
+          bash scripts/source-convergence.sh \
+            --phase contract --phase backend --phase frontend \
+            --phase api-docs --phase docs --phase secrets \
+            --phase browser --phase contracts
       - name: Authenticate to GHCR
         shell: bash
         run: |

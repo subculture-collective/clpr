@@ -18,7 +18,7 @@ vars:
   TEST_REDIS_HOST:
     sh: 'printf "%s" "${TEST_REDIS_HOST:-${TEST_SERVICE_HOST:-localhost}}"'
   TEST_OPENSEARCH_URL:
-    sh: 'printf "%s" "${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:9201}"'
+    sh: 'printf "%s" "${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:${TEST_OPENSEARCH_PORT:-9201}}"'
   TEST_DB_URL: 'postgresql://clpr:clpr_password@{{.TEST_DB_HOST}}:{{.TEST_DB_PORT}}/clpr_test?sslmode=disable'
   MIGRATIONS_PATH: 'backend/migrations'
   BACKEND_BIN_DIR:
