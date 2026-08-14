@@ -49,6 +49,11 @@ for workflow in \
     || fail "$workflow does not isolate its browser test services"
 done
 
+[[ "$(grep -c 'bash scripts/acquire-hosted-heavy-lock.sh' .gitea/workflows/release-gates.yml)" -eq 2 ]] \
+  || fail "release browser and image gates must both acquire the hosted heavy lock"
+[[ "$(grep -c 'bash scripts/release-hosted-heavy-lock.sh' .gitea/workflows/release-gates.yml)" -eq 2 ]] \
+  || fail "release browser and image gates must both release the hosted heavy lock"
+
 for script in \
   scripts/acquire-hosted-heavy-lock.sh \
   scripts/release-hosted-heavy-lock.sh; do
