@@ -35,23 +35,24 @@ for expected in \
   grep -Fq "$expected" <<<"$rendered" || fail "compose output is missing: $expected"
 done
 
-[[ "$(grep -c '^    concurrency:' .gitea/workflows/release-gates.yml)" -ge 1 ]] \
-  || fail "release browser gate is not serialized with other hosted heavy gates"
-for workflow in \
-  .gitea/workflows/source-convergence.yml \
-  .gitea/workflows/immutable-candidate.yml; do
-  grep -Fq 'group: clpr-hosted-heavy' "$workflow" \
-    || fail "$workflow does not serialize its hosted heavy gate"
-  grep -Fq 'cancel-in-progress: false' "$workflow" \
-    || fail "$workflow may cancel a release gate in progress"
-done
-
 for workflow in \
   .gitea/workflows/release-gates.yml \
   .gitea/workflows/source-convergence.yml \
   .gitea/workflows/immutable-candidate.yml; do
+  ! grep -Fq 'group: clpr-hosted-heavy' "$workflow" \
+    || fail "$workflow still relies on Gitea concurrency cancellation semantics"
+  grep -Fq 'bash scripts/acquire-hosted-heavy-lock.sh' "$workflow" \
+    || fail "$workflow does not acquire the hosted heavy lock"
+  grep -Fq 'bash scripts/release-hosted-heavy-lock.sh' "$workflow" \
+    || fail "$workflow does not release the hosted heavy lock"
   grep -Fq 'source scripts/configure-hosted-test-ports.sh' "$workflow" \
     || fail "$workflow does not isolate its browser test services"
+done
+
+for script in \
+  scripts/acquire-hosted-heavy-lock.sh \
+  scripts/release-hosted-heavy-lock.sh; do
+  [[ -x "$script" ]] || fail "$script is not executable"
 done
 
 echo "hosted test port contract passed"
