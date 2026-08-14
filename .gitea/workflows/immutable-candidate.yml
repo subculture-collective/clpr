@@ -8,6 +8,9 @@ jobs:
     name: Build, scan, sign, and publish immutable candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+    concurrency:
+      group: clpr-hosted-heavy
+      cancel-in-progress: false
     env:
       OCI_SOURCE: https://git.subcult.tv/subculture-collective/clpr
       REGISTRY_ROOT: ghcr.io/subculture-collective/clpr

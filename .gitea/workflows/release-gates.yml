@@ -56,6 +56,9 @@ jobs:
     name: Browser gate (Chromium, Firefox, WebKit)
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    concurrency:
+      group: clpr-hosted-heavy
+      cancel-in-progress: false
     steps:
       - uses: https://github.com/actions/checkout@v4
         with:

@@ -23,6 +23,8 @@ source scripts/configure-hosted-test-ports.sh 3573
 rendered="$(docker compose -f docker-compose.test.yml config)"
 for expected in \
   'name: clpr-test-3573' \
+  'name: clpr-hosted-tests' \
+  'external: true' \
   'container_name: clpr-postgres-test-3573' \
   'container_name: clpr-redis-test-3573' \
   'container_name: clpr-opensearch-test-3573' \
@@ -31,6 +33,17 @@ for expected in \
   'published: "43573"' \
   'published: "53573"'; do
   grep -Fq "$expected" <<<"$rendered" || fail "compose output is missing: $expected"
+done
+
+[[ "$(grep -c '^    concurrency:' .gitea/workflows/release-gates.yml)" -ge 1 ]] \
+  || fail "release browser gate is not serialized with other hosted heavy gates"
+for workflow in \
+  .gitea/workflows/source-convergence.yml \
+  .gitea/workflows/immutable-candidate.yml; do
+  grep -Fq 'group: clpr-hosted-heavy' "$workflow" \
+    || fail "$workflow does not serialize its hosted heavy gate"
+  grep -Fq 'cancel-in-progress: false' "$workflow" \
+    || fail "$workflow may cancel a release gate in progress"
 done
 
 for workflow in \

@@ -12,6 +12,9 @@ jobs:
     name: Complete local-equivalent source gate
     runs-on: ubuntu-24.04
     timeout-minutes: 180
+    concurrency:
+      group: clpr-hosted-heavy
+      cancel-in-progress: false
     steps:
       # Gitea 1.27 supports fully qualified action URLs. Keeping them explicit
       # avoids dependence on the server's DEFAULT_ACTIONS_URL setting.

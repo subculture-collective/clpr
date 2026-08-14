@@ -56,3 +56,11 @@ services:
 
 volumes:
     opensearch-test-data:
+
+# Hosted jobs publish every dependency on a run-scoped host port, so they can
+# reuse one user-defined network instead of allocating a subnet per project.
+# Unique container names, volumes, projects, and ports preserve run isolation.
+networks:
+    default:
+        name: clpr-hosted-tests
+        external: true
