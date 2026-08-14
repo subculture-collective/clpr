@@ -120,7 +120,7 @@ jobs:
 
           build_candidate backend backend backend/Dockerfile 10001:10001
           build_candidate crawler backend backend/Dockerfile.crawler 10001:10001
-          build_candidate frontend frontend frontend/Dockerfile 101:101
+          build_candidate frontend . frontend/Dockerfile 101:101
 
           built_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           python3 - "$evidence_dir/candidate-manifest.json" "$candidate_sha" \

@@ -119,6 +119,8 @@ for required in [
         raise SystemExit(f'immutable candidate workflow is missing: {required}')
 if ':latest' in candidate_text:
     raise SystemExit('immutable candidate workflow must not use latest tags')
+if 'build_candidate frontend . frontend/Dockerfile 101:101' not in candidate_text:
+    raise SystemExit('frontend candidate must build from the repository-root context')
 if '-v "$evidence_dir:/evidence"' in candidate_text:
     raise SystemExit('immutable candidate evidence must not use runner-private bind mounts')
 
