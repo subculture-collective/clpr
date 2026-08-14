@@ -167,8 +167,13 @@ for (const path of ['/submit', '/settings', '/admin/moderation']) {
 
 test('skip link transfers keyboard focus to main content', async ({ page }) => {
     await page.goto('/login');
+    await expect(
+        page.getByRole('button', { name: /continue with twitch/i }),
+    ).toBeVisible();
     const skipLink = page.getByRole('link', { name: 'Skip to main content' });
-    await skipLink.press('Enter');
+    await skipLink.focus();
+    await expect(skipLink).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();
 });
 

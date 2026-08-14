@@ -46,6 +46,22 @@ describe('SkipLink', () => {
     expect(target).toHaveFocus();
   });
 
+  it('focuses target element when activated with Enter', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <SkipLink targetId="target" label="Skip" />
+        <div id="target" tabIndex={-1}>Target</div>
+      </>
+    );
+
+    await user.tab();
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('Target')).toHaveFocus();
+  });
+
   it('is hidden by default but visible on focus', () => {
     render(
       <>
