@@ -2,7 +2,7 @@ module git.subcult.tv/subculture-collective/clpr
 
 go 1.25.0
 
-toolchain go1.26.5
+toolchain go1.26.6
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.43.5

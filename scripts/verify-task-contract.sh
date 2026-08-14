@@ -62,4 +62,6 @@ for reference in "${unsupported_references[@]}"; do
   fi
 done
 
+bash scripts/verify-go-toolchain-contract.sh
+
 echo "task contract: verified"
