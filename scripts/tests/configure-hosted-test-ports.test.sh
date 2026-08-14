@@ -39,25 +39,18 @@ for workflow in \
   .gitea/workflows/release-gates.yml \
   .gitea/workflows/source-convergence.yml \
   .gitea/workflows/immutable-candidate.yml; do
-  ! grep -Fq 'group: clpr-hosted-heavy' "$workflow" \
-    || fail "$workflow still relies on Gitea concurrency cancellation semantics"
-  grep -Fq 'bash scripts/acquire-hosted-heavy-lock.sh' "$workflow" \
-    || fail "$workflow does not acquire the hosted heavy lock"
-  grep -Fq 'bash scripts/release-hosted-heavy-lock.sh' "$workflow" \
-    || fail "$workflow does not release the hosted heavy lock"
+  ! grep -Fq 'clpr-hosted-heavy' "$workflow" \
+    || fail "$workflow still relies on unsupported hosted locking"
   grep -Fq 'source scripts/configure-hosted-test-ports.sh' "$workflow" \
     || fail "$workflow does not isolate its browser test services"
 done
 
-[[ "$(grep -c 'bash scripts/acquire-hosted-heavy-lock.sh' .gitea/workflows/release-gates.yml)" -eq 2 ]] \
-  || fail "release browser and image gates must both acquire the hosted heavy lock"
-[[ "$(grep -c 'bash scripts/release-hosted-heavy-lock.sh' .gitea/workflows/release-gates.yml)" -eq 2 ]] \
-  || fail "release browser and image gates must both release the hosted heavy lock"
-
-for script in \
-  scripts/acquire-hosted-heavy-lock.sh \
-  scripts/release-hosted-heavy-lock.sh; do
-  [[ -x "$script" ]] || fail "$script is not executable"
-done
+grep -A4 '^  image-security:' .gitea/workflows/release-gates.yml \
+  | grep -Fq 'needs: browser' \
+  || fail "release image security must wait for the browser gate"
+grep -Fq 'workflow_dispatch:' .gitea/workflows/source-convergence.yml \
+  || fail "source convergence must remain manually dispatchable"
+! grep -Eq '^  (push|pull_request):' .gitea/workflows/source-convergence.yml \
+  || fail "source convergence must not duplicate automatic release gates"
 
 echo "hosted test port contract passed"

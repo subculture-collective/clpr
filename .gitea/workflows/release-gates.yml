@@ -60,8 +60,6 @@ jobs:
       - uses: https://github.com/actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Wait for the hosted heavy runner lock
-        run: bash scripts/acquire-hosted-heavy-lock.sh
       - uses: https://github.com/actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
@@ -98,20 +96,16 @@ jobs:
             .tmp/release-critical-tests.json
           if-no-files-found: warn
           retention-days: 30
-      - name: Release the hosted heavy runner lock
-        if: always()
-        run: bash scripts/release-hosted-heavy-lock.sh
 
   image-security:
     name: Image scan and SBOM gate
+    needs: browser
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: https://github.com/actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Wait for the hosted heavy runner lock
-        run: bash scripts/acquire-hosted-heavy-lock.sh
       - run: bash scripts/source-convergence.sh --phase images
       - name: Upload image security evidence
         if: always()
@@ -122,6 +116,3 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
-      - name: Release the hosted heavy runner lock
-        if: always()
-        run: bash scripts/release-hosted-heavy-lock.sh

@@ -23,8 +23,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Wait for the hosted heavy runner lock
-        run: bash scripts/acquire-hosted-heavy-lock.sh
       - uses: https://github.com/actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
@@ -150,6 +148,3 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
-      - name: Release the hosted heavy runner lock
-        if: always()
-        run: bash scripts/release-hosted-heavy-lock.sh
