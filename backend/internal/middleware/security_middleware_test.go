@@ -116,7 +116,6 @@ func TestContentSecurityPolicyAllowsRequiredProvidersAndRejectsArbitraryScripts(
 	csp := ContentSecurityPolicy()
 	for _, required := range []string{
 		"https://embed.twitch.tv",
-		"https://checkout.stripe.com",
 		"https://us-assets.i.posthog.com",
 		"https://www.googletagmanager.com",
 		"https://*.ingest.sentry.io",

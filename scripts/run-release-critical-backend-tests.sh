@@ -17,8 +17,8 @@ test_status=${PIPESTATUS[0]}
 set -e
 (( test_status == 0 )) || exit "$test_status"
 
-go test -count=1 -coverprofile="$(dirname "$results")/engagement-repository.cover" -tags=integration ./internal/repository -run 'TestWebhookRetryClaimsAreExclusiveAcrossWorkers|TestEngagementContract'
-go test -count=1 -tags=integration ./tests/integration/premium -run TestSignedStripeWebhookLifecycleReconcilesLegacyBillingIdempotently
+go test -count=1 -coverprofile="$(dirname "$results")/engagement-repository.cover" -tags=integration ./internal/repository -run TestEngagementContract
+go test -count=1 ./cmd/api -run TestBillingRetirement
 (cd "$repo_root" && python3 scripts/verify-engagement-coverage.py "$(dirname "$results")/engagement-unit.cover" "$(dirname "$results")/engagement-repository.cover")
 bash "$repo_root/scripts/test-backup-restore-formats.sh"
 

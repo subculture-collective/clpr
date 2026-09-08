@@ -33,7 +33,6 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 	if schedulers.Engagement != nil {
 		schedulers.Engagement.Stop()
 	}
-	schedulers.WebhookRetry.Stop()
 	schedulers.OutboundWebhook.Stop()
 	schedulers.Export.Stop()
 	schedulers.EmailMetrics.Stop()

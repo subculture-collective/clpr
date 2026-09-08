@@ -11,7 +11,6 @@ scripts=(
     scripts/run-real-backend-journeys.sh
     scripts/run-release-load-profiles.sh
     scripts/run-staging-rollback-evidence.sh
-    scripts/run-stripe-test-evidence.sh
     scripts/seed-release-identities.sh
     scripts/verify-gitea-release-controls.sh
     scripts/restore-drill.sh
@@ -21,11 +20,6 @@ for script in "${scripts[@]}"; do bash -n "$script"; done
 node scripts/validate-operator-journeys.mjs
 bash scripts/release-operator-preflight.sh --dry-run >/dev/null
 
-if STRIPE_MODE=live STRIPE_TEST_SECRET_KEY=sk_live_forbidden \
-    bash scripts/run-stripe-test-evidence.sh --execute >/dev/null 2>&1; then
-    echo "Stripe harness accepted live mode/key" >&2
-    exit 1
-fi
 
 tmp_dir="$(mktemp -d)"
 k6_container=""

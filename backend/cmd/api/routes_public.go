@@ -116,7 +116,7 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 	operational.GET("/cache/check", h.Monitoring.GetCacheHealth)
 
 	// Webhook monitoring endpoint
-	operational.GET("/webhooks", h.WebhookMonitoring.GetWebhookRetryStats)
+	operational.GET("/webhooks", h.WebhookMonitoring.GetWebhookStats)
 
 	// Prometheus metrics endpoint (unauthenticated, for internal scraping)
 	operational.GET("/metrics", gin.WrapH(promhttp.Handler()))

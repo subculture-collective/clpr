@@ -14,7 +14,6 @@ type SchedulerGroup struct {
 	Reputation      *scheduler.ReputationScheduler
 	HotScore        *scheduler.HotScoreScheduler
 	TrendingScore   *scheduler.TrendingScoreScheduler
-	WebhookRetry    *scheduler.WebhookRetryScheduler
 	OutboundWebhook *scheduler.OutboundWebhookScheduler
 	Embedding       *scheduler.EmbeddingScheduler // may be nil
 	Export          *scheduler.ExportScheduler
@@ -52,10 +51,6 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 	// Start trending score scheduler (runs every 60 minutes)
 	sg.TrendingScore = scheduler.NewTrendingScoreScheduler(repos.Clip, 60)
 	go sg.TrendingScore.Start(context.Background())
-
-	// Start webhook retry scheduler (runs every 1 minute)
-	sg.WebhookRetry = scheduler.NewWebhookRetryScheduler(svcs.WebhookRetry, cfg.Jobs.WebhookRetryIntervalMinutes, cfg.Jobs.WebhookRetryBatchSize)
-	go sg.WebhookRetry.Start(context.Background())
 
 	// Start outbound webhook delivery scheduler (runs every 30 seconds, batch size 50)
 	sg.OutboundWebhook = scheduler.NewOutboundWebhookScheduler(svcs.OutboundWebhook, 30*time.Second, 50)

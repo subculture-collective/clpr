@@ -35,7 +35,7 @@ func TestMutationAuthorizationBoundary(t *testing.T) {
 		{name: "anonymous mutation denied", method: http.MethodPatch, path: "/resource/1", want: http.StatusUnauthorized},
 		{name: "invalid token denied", method: http.MethodDelete, path: "/resource/1", header: "Bearer bad", want: http.StatusUnauthorized},
 		{name: "valid token allowed", method: http.MethodPut, path: "/resource/1", header: "Bearer valid", auth: boundaryAuth{valid: true}, want: http.StatusNoContent},
-		{name: "reviewed public callback allowed", method: http.MethodPost, path: "/api/v1/webhooks/stripe", want: http.StatusNoContent},
+		{name: "reviewed public callback allowed", method: http.MethodPost, path: "/api/v1/webhooks/sendgrid", want: http.StatusNoContent},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -13,7 +13,7 @@ required_paths=(
   "backend/go.mod"
   "backend/run-tests-verbose.sh"
   "backend/setup-test-env.sh"
-  "backend/tests/integration/premium"
+  "backend/cmd/api/billing_retirement_test.go"
   "docker-compose.test.yml"
 )
 

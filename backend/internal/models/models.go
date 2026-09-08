@@ -968,13 +968,7 @@ const (
 	NotificationTypeNewReport            = "new_report"
 	NotificationTypePendingSubmissions   = "pending_submissions"
 	NotificationTypeSystemAlert          = "system_alert"
-	// Dunning notification types
-	NotificationTypePaymentFailed          = "payment_failed"
-	NotificationTypePaymentRetry           = "payment_retry"
-	NotificationTypeGracePeriodWarning     = "grace_period_warning"
-	NotificationTypeSubscriptionDowngraded = "subscription_downgraded"
 	// Invoice notification types
-	NotificationTypeInvoiceFinalized = "invoice_finalized"
 	// Export notification types
 	NotificationTypeExportCompleted = "export_completed"
 	NotificationTypeExportFailed    = "export_failed"
@@ -1349,101 +1343,6 @@ type Subscription struct {
 	LastStripeEventCreated int64      `json:"-" db:"last_stripe_event_created"`
 	CreatedAt              time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt              time.Time  `json:"updated_at" db:"updated_at"`
-}
-
-type PublicSubscription struct {
-	Status             string     `json:"status"`
-	Tier               string     `json:"tier"`
-	CurrentPeriodStart *time.Time `json:"current_period_start,omitempty"`
-	CurrentPeriodEnd   *time.Time `json:"current_period_end,omitempty"`
-	CancelAtPeriodEnd  bool       `json:"cancel_at_period_end"`
-	CanceledAt         *time.Time `json:"canceled_at,omitempty"`
-	TrialStart         *time.Time `json:"trial_start,omitempty"`
-	TrialEnd           *time.Time `json:"trial_end,omitempty"`
-	GracePeriodEnd     *time.Time `json:"grace_period_end,omitempty"`
-}
-
-type PublicInvoice struct {
-	ID               string `json:"id"`
-	Status           string `json:"status"`
-	Currency         string `json:"currency"`
-	AmountDue        int64  `json:"amount_due"`
-	AmountPaid       int64  `json:"amount_paid"`
-	HostedInvoiceURL string `json:"hosted_invoice_url,omitempty"`
-	InvoicePDF       string `json:"invoice_pdf,omitempty"`
-	PeriodStart      int64  `json:"period_start"`
-	PeriodEnd        int64  `json:"period_end"`
-	Created          int64  `json:"created"`
-}
-
-// SubscriptionEvent represents an event in subscription lifecycle for audit logging
-type SubscriptionEvent struct {
-	ID             uuid.UUID  `json:"id" db:"id"`
-	SubscriptionID *uuid.UUID `json:"subscription_id,omitempty" db:"subscription_id"`
-	EventType      string     `json:"event_type" db:"event_type"`
-	StripeEventID  *string    `json:"stripe_event_id,omitempty" db:"stripe_event_id"`
-	Payload        string     `json:"payload" db:"payload"` // JSONB stored as string
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-}
-
-// WebhookRetryQueue represents a webhook event pending retry
-type WebhookRetryQueue struct {
-	ID            uuid.UUID  `json:"id" db:"id"`
-	StripeEventID string     `json:"stripe_event_id" db:"stripe_event_id"`
-	EventType     string     `json:"event_type" db:"event_type"`
-	Payload       string     `json:"payload" db:"payload"` // JSONB stored as string
-	RetryCount    int        `json:"retry_count" db:"retry_count"`
-	MaxRetries    int        `json:"max_retries" db:"max_retries"`
-	NextRetryAt   *time.Time `json:"next_retry_at,omitempty" db:"next_retry_at"`
-	LastError     *string    `json:"last_error,omitempty" db:"last_error"`
-	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at" db:"updated_at"`
-}
-
-// WebhookDeadLetterQueue represents a permanently failed webhook event
-type WebhookDeadLetterQueue struct {
-	ID                uuid.UUID `json:"id" db:"id"`
-	StripeEventID     string    `json:"stripe_event_id" db:"stripe_event_id"`
-	EventType         string    `json:"event_type" db:"event_type"`
-	Payload           string    `json:"payload" db:"payload"` // JSONB stored as string
-	RetryCount        int       `json:"retry_count" db:"retry_count"`
-	Error             string    `json:"error" db:"error"`
-	OriginalTimestamp time.Time `json:"original_timestamp" db:"original_timestamp"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-}
-
-// CancelSubscriptionRequest represents a request to cancel a subscription
-type CancelSubscriptionRequest struct {
-	Immediate *bool `json:"immediate" binding:"required"` // If true, cancel immediately. Otherwise, cancel at period end.
-}
-
-// PaymentFailure represents a failed payment attempt for a subscription
-type PaymentFailure struct {
-	ID                    uuid.UUID  `json:"id" db:"id"`
-	SubscriptionID        uuid.UUID  `json:"subscription_id" db:"subscription_id"`
-	StripeInvoiceID       string     `json:"stripe_invoice_id" db:"stripe_invoice_id"`
-	StripePaymentIntentID *string    `json:"stripe_payment_intent_id,omitempty" db:"stripe_payment_intent_id"`
-	AmountDue             int64      `json:"amount_due" db:"amount_due"` // Amount in cents
-	Currency              string     `json:"currency" db:"currency"`
-	AttemptCount          int        `json:"attempt_count" db:"attempt_count"`
-	FailureReason         *string    `json:"failure_reason,omitempty" db:"failure_reason"`
-	NextRetryAt           *time.Time `json:"next_retry_at,omitempty" db:"next_retry_at"`
-	Resolved              bool       `json:"resolved" db:"resolved"`
-	ResolvedAt            *time.Time `json:"resolved_at,omitempty" db:"resolved_at"`
-	CreatedAt             time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt             time.Time  `json:"updated_at" db:"updated_at"`
-}
-
-// DunningAttempt represents a communication attempt to a user about failed payment
-type DunningAttempt struct {
-	ID               uuid.UUID  `json:"id" db:"id"`
-	PaymentFailureID uuid.UUID  `json:"payment_failure_id" db:"payment_failure_id"`
-	UserID           uuid.UUID  `json:"user_id" db:"user_id"`
-	AttemptNumber    int        `json:"attempt_number" db:"attempt_number"`
-	NotificationType string     `json:"notification_type" db:"notification_type"` // payment_failed, payment_retry, grace_period_warning, subscription_downgraded
-	EmailSent        bool       `json:"email_sent" db:"email_sent"`
-	EmailSentAt      *time.Time `json:"email_sent_at,omitempty" db:"email_sent_at"`
-	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
 }
 
 // ContactMessage represents a contact form submission

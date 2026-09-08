@@ -130,10 +130,6 @@
       "description": "Creator verification"
     },
     {
-      "name": "Subscriptions",
-      "description": "Premium subscriptions"
-    },
-    {
       "name": "Webhooks",
       "description": "Webhook management"
     },
@@ -22640,134 +22636,6 @@
         }
       }
     },
-    "/api/v1/subscriptions/cancel": {
-      "post": {
-        "tags": [
-          "Subscriptions"
-        ],
-        "summary": "Cancel the current subscription",
-        "operationId": "postApiV1SubscriptionsCancel",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelSubscriptionRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Cancellation applied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubscriptionMessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
-          },
-          "503": {
-            "$ref": "#/components/responses/ServiceUnavailable"
-          }
-        }
-      }
-    },
-    "/api/v1/subscriptions/invoices": {
-      "get": {
-        "tags": [
-          "Subscriptions"
-        ],
-        "summary": "List public invoice summaries",
-        "operationId": "getApiV1SubscriptionsInvoices",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 10
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Invoices returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "maxItems": 100,
-                  "items": {
-                    "$ref": "#/components/schemas/PublicInvoice"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
-          },
-          "503": {
-            "$ref": "#/components/responses/ServiceUnavailable"
-          }
-        }
-      }
-    },
-    "/api/v1/subscriptions/me": {
-      "get": {
-        "tags": [
-          "Subscriptions"
-        ],
-        "summary": "Get the public subscription state",
-        "operationId": "getApiV1SubscriptionsMe",
-        "responses": {
-          "200": {
-            "description": "Subscription returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicSubscription"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
-          }
-        }
-      }
-    },
     "/api/v1/twitch/auth": {
       "delete": {
         "tags": [
@@ -23825,63 +23693,6 @@
         }
       }
     },
-    "/api/v1/webhooks/stripe": {
-      "post": {
-        "tags": [
-          "Webhooks"
-        ],
-        "summary": "Process a signed Stripe event",
-        "operationId": "postApiV1WebhooksStripe",
-        "parameters": [
-          {
-            "name": "Stripe-Signature",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 8192
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "maxProperties": 100,
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Event accepted or already processed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StripeWebhookResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLarge"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
-          },
-          "503": {
-            "$ref": "#/components/responses/ServiceUnavailable"
-          }
-        }
-      }
-    },
     "/clips/best/{path}": {
       "get": {
         "tags": [
@@ -24607,16 +24418,6 @@
       },
       "ServiceUnavailable": {
         "description": "Service Unavailable - Service is temporarily unavailable",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            }
-          }
-        }
-      },
-      "PayloadTooLarge": {
-        "description": "Request payload exceeds the endpoint limit",
         "content": {
           "application/json": {
             "schema": {
@@ -28977,23 +28778,11 @@
       "WebhookOperationsStats": {
         "type": "object",
         "required": [
-          "pending_retries",
-          "dlq_items",
-          "timestamp"
+          "active_subscriptions",
+          "pending_deliveries",
+          "recent_deliveries"
         ],
         "properties": {
-          "pending_retries": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "dlq_items": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
           "active_subscriptions": {
             "type": "integer",
             "minimum": 0
@@ -29041,16 +28830,12 @@
         "type": "object",
         "required": [
           "status",
-          "webhooks",
           "unavailable_components"
         ],
         "properties": {
           "status": {
             "type": "string",
             "const": "degraded"
-          },
-          "webhooks": {
-            "$ref": "#/components/schemas/WebhookOperationsStats"
           },
           "unavailable_components": {
             "type": "array",
@@ -32484,143 +32269,6 @@
           }
         }
       },
-      "PublicSubscription": {
-        "type": "object",
-        "required": [
-          "status",
-          "tier",
-          "cancel_at_period_end"
-        ],
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "inactive",
-              "active",
-              "trialing",
-              "past_due",
-              "canceled",
-              "unpaid"
-            ]
-          },
-          "tier": {
-            "type": "string",
-            "enum": [
-              "free",
-              "pro"
-            ]
-          },
-          "current_period_start": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "current_period_end": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "cancel_at_period_end": {
-            "type": "boolean"
-          },
-          "canceled_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "trial_start": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "trial_end": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "grace_period_end": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "PublicInvoice": {
-        "type": "object",
-        "required": [
-          "id",
-          "status",
-          "currency",
-          "amount_due",
-          "amount_paid",
-          "period_start",
-          "period_end",
-          "created"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "draft",
-              "open",
-              "paid",
-              "uncollectible",
-              "void"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 3
-          },
-          "amount_due": {
-            "type": "integer"
-          },
-          "amount_paid": {
-            "type": "integer"
-          },
-          "hosted_invoice_url": {
-            "type": "string",
-            "format": "uri"
-          },
-          "invoice_pdf": {
-            "type": "string",
-            "format": "uri"
-          },
-          "period_start": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "period_end": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "created": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "CancelSubscriptionRequest": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "immediate"
-        ],
-        "properties": {
-          "immediate": {
-            "type": "boolean"
-          }
-        }
-      },
-      "SubscriptionMessageResponse": {
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        }
-      },
       "TwitchAuthStatus": {
         "type": "object",
         "required": [
@@ -33441,18 +33089,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/VerificationApplication"
-          }
-        }
-      },
-      "StripeWebhookResponse": {
-        "type": "object",
-        "required": [
-          "received"
-        ],
-        "properties": {
-          "received": {
-            "type": "boolean",
-            "const": true
           }
         }
       },

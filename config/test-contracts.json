@@ -56,12 +56,6 @@
   "Real API and public account boundaries": [
     "frontend/e2e/real-backend/launch-smoke.spec.ts"
   ],
-  "Legacy billing reconciliation and retirement": [
-    "backend/internal/handlers/subscription_webhook_handler_test.go",
-    "backend/internal/services/subscription_service_test.go",
-    "backend/tests/integration/premium/subscription_lifecycle_contract_test.go",
-    "backend/internal/repository/webhook_repository_integration_contract_test.go"
-  ],
   "Recent engagement and immutable feed pagination": [
     "backend/internal/repository/engagement_repository_test.go",
     "backend/internal/scheduler/engagement_scheduler_test.go",
@@ -72,5 +66,10 @@
     "frontend/e2e/real-backend/authenticated-journeys.spec.ts",
     "backend/config/test_fixture_security_test.go",
     "backend/pkg/twitch/fixture_transport_test.go"
+  ],
+  "Free accounts and billing retirement": [
+    "backend/cmd/api/billing_retirement_test.go",
+    "scripts/tests/verify-release-evidence.test.js",
+    "backend/internal/handlers/webhook_monitoring_handler_contract_test.go"
   ]
 }

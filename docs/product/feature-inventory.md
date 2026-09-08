@@ -593,11 +593,11 @@ premium-specific rate multipliers are retired. Optional external support links
 remain. Ordinary abuse controls apply regardless of historical billing status.
 
 Historical billing tables, migrations, receipts, and audit records are retained.
-The remaining billing API serves existing records, cancellation, invoices, and
-signed webhook reconciliation. Outbound webhook subscriptions are unrelated and
-remain supported. Legacy cancellation/invoice access requires configured Stripe
-credentials and `LEGACY_BILLING_SERVICING=true`; signed webhook reconciliation
-requires configured verification secrets independently of outbound servicing.
+The complete provider and database inventory found no outstanding obligations.
+The billing API, Stripe client, billing retry worker, dunning, and billing email
+runtime are removed. A read-only historical subscription adapter remains for
+personal-data exports. Outbound webhook subscriptions and SendGrid signature
+verification are unrelated and remain supported.
 
 Provider obligations must be established by a complete read-only inventory.
 Empty application tables alone do not establish that obligations are zero.

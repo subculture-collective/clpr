@@ -96,8 +96,6 @@ tags:
     description: Personalized recommendations
   - name: Verification
     description: Creator verification
-  - name: Subscriptions
-    description: Premium subscriptions
   - name: Webhooks
     description: Webhook management
   - name: Chat
@@ -3447,7 +3445,6 @@ paths:
   # - Recommendations (ML-powered clip recommendations)
   # - Notifications (in-app and push notifications)
   # - Verification (creator verification system)
-  # - Subscriptions (premium tiers via Stripe)
   # - Webhooks (outbound webhook subscriptions)
   # - Contact forms
   # - Chat (real-time chat channels with WebSocket)
@@ -11147,46 +11144,6 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
-  /api/v1/subscriptions/cancel:
-    post:
-      tags: [Subscriptions]
-      summary: Cancel the current subscription
-      operationId: postApiV1SubscriptionsCancel
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CancelSubscriptionRequest'}}}}
-      responses:
-        '200': {description: Cancellation applied, content: {application/json: {schema: {$ref: '#/components/schemas/SubscriptionMessageResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '409': {$ref: '#/components/responses/Conflict'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
-
-  /api/v1/subscriptions/invoices:
-    get:
-      tags: [Subscriptions]
-      summary: List public invoice summaries
-      operationId: getApiV1SubscriptionsInvoices
-      parameters:
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 10}}
-      responses:
-        '200': {description: Invoices returned, content: {application/json: {schema: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/PublicInvoice'}}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/subscriptions/me:
-    get:
-      tags: [Subscriptions]
-      summary: Get the public subscription state
-      operationId: getApiV1SubscriptionsMe
-      responses:
-        '200': {description: Subscription returned, content: {application/json: {schema: {$ref: '#/components/schemas/PublicSubscription'}}}}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
   /api/v1/twitch/auth:
     delete:
       tags: [Twitch OAuth]
@@ -11499,25 +11456,6 @@ paths:
         '200': {description: Application returned, content: {application/json: {schema: {$ref: '#/components/schemas/VerificationApplicationGetResponse'}}}}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '404': {$ref: '#/components/responses/NotFound'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/webhooks/stripe:
-    post:
-      tags: [Webhooks]
-      summary: Process a signed Stripe event
-      operationId: postApiV1WebhooksStripe
-      parameters:
-        - {name: Stripe-Signature, in: header, required: true, schema: {type: string, minLength: 1, maxLength: 8192}}
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: {type: object, maxProperties: 100, additionalProperties: true}
-      responses:
-        '200': {description: Event accepted or already processed, content: {application/json: {schema: {$ref: '#/components/schemas/StripeWebhookResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '413': {$ref: '#/components/responses/PayloadTooLarge'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
   /clips/best/{path}:
@@ -12022,12 +11960,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-
-    PayloadTooLarge:
-      description: Request payload exceeds the endpoint limit
-      content:
-        application/json:
-          schema: {$ref: '#/components/schemas/Error'}
 
     InternalServerError:
       description: Internal Server Error - Request processing failed
@@ -13703,11 +13635,8 @@ components:
 
     WebhookOperationsStats:
       type: object
-      required: [pending_retries, dlq_items, timestamp]
+      required: [active_subscriptions, pending_deliveries, recent_deliveries]
       properties:
-        pending_retries: {type: integer, minimum: 0}
-        dlq_items: {type: integer, minimum: 0}
-        timestamp: {type: string, format: date-time}
         active_subscriptions: {type: integer, minimum: 0}
         pending_deliveries: {type: integer, minimum: 0}
         recent_deliveries:
@@ -13726,10 +13655,9 @@ components:
 
     WebhookOperationsDegradedResponse:
       type: object
-      required: [status, webhooks, unavailable_components]
+      required: [status, unavailable_components]
       properties:
         status: {type: string, const: degraded}
-        webhooks: {$ref: '#/components/schemas/WebhookOperationsStats'}
         unavailable_components:
           type: array
           items: {type: string, const: delivery_stats}
@@ -14864,48 +14792,6 @@ components:
         following: {type: boolean}
         notifications_enabled: {type: boolean}
 
-    PublicSubscription:
-      type: object
-      required: [status, tier, cancel_at_period_end]
-      properties:
-        status: {type: string, enum: [inactive, active, trialing, past_due, canceled, unpaid]}
-        tier: {type: string, enum: [free, pro]}
-        current_period_start: {type: string, format: date-time}
-        current_period_end: {type: string, format: date-time}
-        cancel_at_period_end: {type: boolean}
-        canceled_at: {type: string, format: date-time}
-        trial_start: {type: string, format: date-time}
-        trial_end: {type: string, format: date-time}
-        grace_period_end: {type: string, format: date-time}
-
-    PublicInvoice:
-      type: object
-      required: [id, status, currency, amount_due, amount_paid, period_start, period_end, created]
-      properties:
-        id: {type: string}
-        status: {type: string, enum: [draft, open, paid, uncollectible, void]}
-        currency: {type: string, minLength: 3, maxLength: 3}
-        amount_due: {type: integer}
-        amount_paid: {type: integer}
-        hosted_invoice_url: {type: string, format: uri}
-        invoice_pdf: {type: string, format: uri}
-        period_start: {type: integer, format: int64}
-        period_end: {type: integer, format: int64}
-        created: {type: integer, format: int64}
-
-    CancelSubscriptionRequest:
-      type: object
-      additionalProperties: false
-      required: [immediate]
-      properties:
-        immediate: {type: boolean}
-
-    SubscriptionMessageResponse:
-      type: object
-      required: [message]
-      properties:
-        message: {type: string}
-
     TwitchAuthStatus:
       type: object
       required: [authenticated, connected, bot_authorized, clip_download_authorized]
@@ -15170,12 +15056,6 @@ components:
       properties:
         success: {type: boolean, const: true}
         data: {$ref: '#/components/schemas/VerificationApplication'}
-
-    StripeWebhookResponse:
-      type: object
-      required: [received]
-      properties:
-        received: {type: boolean, const: true}
 
     PlaylistListItem:
       allOf:
@@ -15812,17 +15692,7 @@ components:
   # - POST /applications - Apply for verification (auth, rate limited - 1/h)
   # - GET /applications/me - Get application status (auth)
   #
-  # SUBSCRIPTIONS (/api/v1/subscriptions/*)
-  # - GET /me - Get subscription details (auth)
-  # - POST /checkout - Create checkout session (auth, rate limited - 5/min)
-  # - POST /portal - Create billing portal session (auth, rate limited - 10/min)
-  # - POST /change-plan - Change subscription plan (auth, rate limited - 5/min)
-  # - POST /cancel - Cancel subscription (auth, rate limited - 5/min)
-  # - POST /reactivate - Reactivate subscription (auth, rate limited - 5/min)
-  # - GET /invoices - Get invoices (auth, rate limited - 10/min)
-  #
   # WEBHOOKS (/api/v1/webhooks/*)
-  # - POST /stripe - Stripe webhook handler (no auth, signature verified)
   # - POST /sendgrid - SendGrid webhook handler (no auth, signature verified)
   # - GET /events - Get supported events (rate limited - 60/min)
   # - POST / - Create webhook subscription (auth, rate limited - 10/h)

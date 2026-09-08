@@ -363,17 +363,6 @@ tasks:
       - cd backend && go test -v -tags=integration ./tests/integration/{{.PKG}}/...
       - task: test:teardown
 
-  test-integration-premium:
-    desc: Run premium integration tests
-    cmds:
-      - task test:integration:pkg PKG=premium
-  test-integration-stripe:
-    desc: Run Stripe-focused premium integration tests
-    cmds:
-      - task: test:setup
-      - cd backend && go test -v -tags=integration ./tests/integration/premium/... -run 'TestWebhook.*|TestEntitlement.*|TestProration.*|TestPaymentFailure.*'
-      - task: test:teardown
-
   migrate:up:
     desc: Run database migrations up
     aliases: [migrate-up]

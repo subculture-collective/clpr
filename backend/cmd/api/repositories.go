@@ -29,9 +29,7 @@ type Repositories struct {
 	Analytics             *repository.AnalyticsRepository
 	AuditLog              *repository.AuditLogRepository
 	Subscription          *repository.SubscriptionRepository
-	Webhook               *repository.WebhookRepository
 	OutboundWebhook       *repository.OutboundWebhookRepository
-	Dunning               *repository.DunningRepository
 	Contact               *repository.ContactRepository
 	Ad                    *repository.AdRepository
 	Export                *repository.ExportRepository
@@ -70,6 +68,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		RefreshToken:          repository.NewRefreshTokenRepository(pool),
 		UserSettings:          repository.NewUserSettingsRepository(pool),
 		AccountDeletion:       repository.NewAccountDeletionRepository(pool),
+		Subscription:          repository.NewSubscriptionRepository(pool),
 		Consent:               repository.NewConsentRepository(pool),
 		Clip:                  repository.NewClipRepository(pool),
 		ClipTopic:             repository.NewClipTopicRepository(pool),
@@ -86,10 +85,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		EmailNotification:     repository.NewEmailNotificationRepository(pool),
 		Analytics:             repository.NewAnalyticsRepository(pool),
 		AuditLog:              repository.NewAuditLogRepository(pool),
-		Subscription:          repository.NewSubscriptionRepository(pool),
-		Webhook:               repository.NewWebhookRepository(pool),
 		OutboundWebhook:       repository.NewOutboundWebhookRepository(pool),
-		Dunning:               repository.NewDunningRepository(pool),
 		Contact:               repository.NewContactRepository(pool),
 		Ad:                    repository.NewAdRepository(pool),
 		Export:                repository.NewExportRepository(pool),

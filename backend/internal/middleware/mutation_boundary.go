@@ -26,7 +26,6 @@ var PublicMutationPaths = map[string]string{
 	"POST /api/v1/clips/batch-media":         "read-only batch lookup",
 	"POST /api/v1/clips/:id/track-view":      "rate-limited aggregate telemetry",
 	"POST /api/v1/events":                    "rate-limited aggregate telemetry",
-	"POST /api/v1/webhooks/stripe":           "Stripe signature verification",
 	"POST /api/v1/webhooks/sendgrid":         "SendGrid signature verification",
 	"POST /api/v1/contact":                   "rate-limited public contact form",
 	"POST /api/v1/ads/track/:id":             "rate-limited aggregate telemetry",

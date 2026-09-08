@@ -34,9 +34,6 @@ type Services struct {
 	Engagement               *services.EngagementService
 	AuditLog                 *services.AuditLogService
 	AccountMerge             *services.AccountMergeService
-	Dunning                  *services.DunningService
-	Subscription             *services.SubscriptionService
-	WebhookRetry             *services.WebhookRetryService
 	UserSettings             *services.UserSettingsService
 	Ad                       *services.AdService
 	EmailMetrics             *services.EmailMetricsService
@@ -146,11 +143,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		repos.WatchHistory,
 	)
 
-	// Initialize dunning service before subscription service
-	dunningService := services.NewDunningService(repos.Dunning, repos.Subscription, repos.User, emailService, auditLogService)
-
-	subscriptionService := services.NewSubscriptionService(repos.Subscription, repos.User, repos.Webhook, cfg, auditLogService, dunningService, emailService)
-	webhookRetryService := services.NewWebhookRetryService(repos.Webhook, subscriptionService)
 	userSettingsService := services.NewUserSettingsService(repos.User, repos.UserSettings, repos.AccountDeletion, repos.Clip, repos.Vote, repos.Favorite, repos.Comment, repos.Submission, repos.Subscription, repos.Consent, auditLogService)
 	adService := services.NewAdService(repos.Ad, infra.Redis)
 
@@ -382,9 +374,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Engagement:               engagementService,
 		AuditLog:                 auditLogService,
 		AccountMerge:             accountMergeService,
-		Dunning:                  dunningService,
-		Subscription:             subscriptionService,
-		WebhookRetry:             webhookRetryService,
 		UserSettings:             userSettingsService,
 		Ad:                       adService,
 		EmailMetrics:             emailMetricsService,

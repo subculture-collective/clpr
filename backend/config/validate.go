@@ -89,9 +89,6 @@ func (c *Config) validateEnabledFeatures(releaseProfile bool) error {
 	if c.Twitch.TestFixtureURL != "" && (releaseProfile || !c.AllowsTestLogin()) {
 		return fmt.Errorf("Twitch test fixture is restricted to development fixtures")
 	}
-	if c.FeatureFlags.LegacyBillingServicing && (strings.TrimSpace(c.Stripe.SecretKey) == "" || len(c.Stripe.WebhookSecrets) == 0) {
-		return fmt.Errorf("legacy billing servicing requires Stripe key and webhook secret")
-	}
 	if c.Email.Enabled && (strings.TrimSpace(c.Email.SendGridAPIKey) == "" || strings.TrimSpace(c.Email.FromEmail) == "" ||
 		(releaseProfile && strings.TrimSpace(c.Email.SendGridWebhookPublicKey) == "")) {
 		return fmt.Errorf("email notifications require SENDGRID_API_KEY, EMAIL_FROM_ADDRESS, and a release-profile webhook public key")

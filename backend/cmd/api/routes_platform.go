@@ -208,20 +208,8 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		verification.GET("/applications/me", h.Verification.GetApplication)
 	}
 
-	// Legacy billing servicing only: paid enrollment and entitlements are retired.
-	subscriptions := v1.Group("/subscriptions")
-	{
-		// Webhook endpoint (public, no auth required)
-		v1.POST("/webhooks/stripe", h.Subscription.HandleWebhook)
-		// SendGrid webhook endpoint (public, no auth required, signature verified internally)
-		v1.POST("/webhooks/sendgrid", h.SendGridWebhook.HandleWebhook)
-
-		// Protected subscription endpoints (require authentication)
-		subscriptions.Use(middleware.AuthMiddleware(svcs.Auth))
-		subscriptions.GET("/me", h.Subscription.GetSubscription)
-		subscriptions.POST("/cancel", middleware.RateLimitMiddleware(infra.Redis, 5, time.Minute), h.Subscription.CancelSubscription)
-		subscriptions.GET("/invoices", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Subscription.GetInvoices)
-	}
+	// SendGrid verifies its provider signature internally.
+	v1.POST("/webhooks/sendgrid", h.SendGridWebhook.HandleWebhook)
 
 	// Outbound webhook subscription routes
 	webhooks := v1.Group("/webhooks")

@@ -20,7 +20,6 @@ type Config struct {
 	CORS            CORSConfig
 	WebSocket       WebSocketConfig
 	OpenSearch      OpenSearchConfig
-	Stripe          StripeConfig
 	Sentry          SentryConfig
 	Email           EmailConfig
 	Embedding       EmbeddingConfig
@@ -122,18 +121,6 @@ type OpenSearchConfig struct {
 	InsecureSkipVerify bool
 }
 
-// StripeConfig holds Stripe payment configuration
-type StripeConfig struct {
-	SecretKey            string
-	WebhookSecrets       []string
-	ProMonthlyPriceID    string
-	ProYearlyPriceID     string
-	ProMonthlyPriceCents int // Monthly price in cents (e.g., 999 for $9.99)
-	ProYearlyPriceCents  int // Full yearly price in cents (e.g., 9999 for $99.99/year) - service layer converts to monthly equivalent
-	TaxEnabled           bool // Enable automatic tax calculation via Stripe Tax
-	InvoicePDFEnabled    bool // Enable sending invoice PDFs via email
-}
-
 // SentryConfig holds Sentry error tracking configuration
 type SentryConfig struct {
 	DSN              string
@@ -166,17 +153,16 @@ type EmbeddingConfig struct {
 
 // FeatureFlagsConfig holds feature flag configuration
 type FeatureFlagsConfig struct {
-	RecentEngagement       bool
-	SemanticSearch         bool
-	LegacyBillingServicing bool
-	EmailNotifications     bool
-	PushNotifications      bool
-	Analytics              bool
-	Moderation             bool
-	DiscoveryLists         bool
-	StreamClipCreation     bool
-	LiveFeed               bool
-	WatchParties           bool
+	RecentEngagement   bool
+	SemanticSearch     bool
+	EmailNotifications bool
+	PushNotifications  bool
+	Analytics          bool
+	Moderation         bool
+	DiscoveryLists     bool
+	StreamClipCreation bool
+	LiveFeed           bool
+	WatchParties       bool
 }
 
 // KarmaConfig holds karma system configuration
@@ -189,8 +175,6 @@ type KarmaConfig struct {
 // JobsConfig holds background job interval configuration
 type JobsConfig struct {
 	HotClipsRefreshIntervalMinutes int
-	WebhookRetryIntervalMinutes    int
-	WebhookRetryBatchSize          int
 }
 
 // RateLimitConfig holds rate limiting configuration
@@ -498,16 +482,6 @@ func Load() (*Config, error) {
 			Password:           getEnv("OPENSEARCH_PASSWORD", ""),
 			InsecureSkipVerify: getEnv("OPENSEARCH_INSECURE_SKIP_VERIFY", "true") == "true",
 		},
-		Stripe: StripeConfig{
-			SecretKey:            getEnv("STRIPE_SECRET_KEY", ""),
-			WebhookSecrets:       collectStripeWebhookSecrets(),
-			ProMonthlyPriceID:    getEnv("STRIPE_PRO_MONTHLY_PRICE_ID", ""),
-			ProYearlyPriceID:     getEnv("STRIPE_PRO_YEARLY_PRICE_ID", ""),
-			ProMonthlyPriceCents: getEnvInt("STRIPE_PRO_MONTHLY_PRICE_CENTS", 999), // Default: $9.99/month
-			ProYearlyPriceCents:  getEnvInt("STRIPE_PRO_YEARLY_PRICE_CENTS", 9999), // Default: $99.99/year (full yearly price)
-			TaxEnabled:           getEnv("STRIPE_TAX_ENABLED", "false") == "true",
-			InvoicePDFEnabled:    getEnv("STRIPE_INVOICE_PDF_ENABLED", "false") == "true",
-		},
 		Sentry: SentryConfig{
 			DSN:              getEnv("SENTRY_DSN", ""),
 			Environment:      getEnv("SENTRY_ENVIRONMENT", "development"),
@@ -533,17 +507,16 @@ func Load() (*Config, error) {
 			Enabled:                  getEnv("EMBEDDING_ENABLED", "false") == "true",
 		},
 		FeatureFlags: FeatureFlagsConfig{
-			RecentEngagement:       getEnvBool("FEATURE_RECENT_ENGAGEMENT", false),
-			SemanticSearch:         getEnv("FEATURE_SEMANTIC_SEARCH", "false") == "true",
-			LegacyBillingServicing: getEnv("LEGACY_BILLING_SERVICING", "false") == "true",
-			EmailNotifications:     getEnv("FEATURE_EMAIL_NOTIFICATIONS", "false") == "true",
-			PushNotifications:      getEnv("FEATURE_PUSH_NOTIFICATIONS", "false") == "true",
-			Analytics:              getEnv("FEATURE_ANALYTICS", "true") == "true",
-			Moderation:             getEnv("FEATURE_MODERATION", "true") == "true",
-			DiscoveryLists:         getEnv("FEATURE_DISCOVERY_LISTS", "false") == "true",
-			StreamClipCreation:     getEnvBool("FEATURE_STREAM_CLIP_CREATION", false),
-			LiveFeed:               getEnvBool("FEATURE_LIVE_FEED", false),
-			WatchParties:           getEnvBool("FEATURE_WATCH_PARTIES", false),
+			RecentEngagement:   getEnvBool("FEATURE_RECENT_ENGAGEMENT", false),
+			SemanticSearch:     getEnv("FEATURE_SEMANTIC_SEARCH", "false") == "true",
+			EmailNotifications: getEnv("FEATURE_EMAIL_NOTIFICATIONS", "false") == "true",
+			PushNotifications:  getEnv("FEATURE_PUSH_NOTIFICATIONS", "false") == "true",
+			Analytics:          getEnv("FEATURE_ANALYTICS", "true") == "true",
+			Moderation:         getEnv("FEATURE_MODERATION", "true") == "true",
+			DiscoveryLists:     getEnv("FEATURE_DISCOVERY_LISTS", "false") == "true",
+			StreamClipCreation: getEnvBool("FEATURE_STREAM_CLIP_CREATION", false),
+			LiveFeed:           getEnvBool("FEATURE_LIVE_FEED", false),
+			WatchParties:       getEnvBool("FEATURE_WATCH_PARTIES", false),
 		},
 		Karma: KarmaConfig{
 			InitialKarmaPoints:        getEnvInt("KARMA_INITIAL_POINTS", 100),
@@ -552,8 +525,6 @@ func Load() (*Config, error) {
 		},
 		Jobs: JobsConfig{
 			HotClipsRefreshIntervalMinutes: getEnvInt("HOT_CLIPS_REFRESH_INTERVAL_MINUTES", 5),
-			WebhookRetryIntervalMinutes:    getEnvInt("WEBHOOK_RETRY_INTERVAL_MINUTES", 1),
-			WebhookRetryBatchSize:          getEnvInt("WEBHOOK_RETRY_BATCH_SIZE", 100),
 		},
 		RateLimit: RateLimitConfig{
 			// Unauthenticated: 100 requests per 15 minutes per IP
@@ -787,21 +758,4 @@ func clampFloat(value, min, max float64) float64 {
 		return max
 	}
 	return value
-}
-
-// collectStripeWebhookSecrets gathers the configured Stripe webhook secrets, supporting
-// one primary secret plus optional alternates without requiring multiple endpoints.
-func collectStripeWebhookSecrets() []string {
-	secrets := make([]string, 0, 3)
-	add := func(raw string) {
-		if v := strings.TrimSpace(raw); v != "" {
-			secrets = append(secrets, v)
-		}
-	}
-	add(getEnv("STRIPE_WEBHOOK_SECRET", ""))
-	add(getEnv("STRIPE_WEBHOOK_SECRET_ALT", ""))
-	for _, part := range strings.Split(getEnv("STRIPE_WEBHOOK_SECRETS", ""), ",") {
-		add(part)
-	}
-	return secrets
 }

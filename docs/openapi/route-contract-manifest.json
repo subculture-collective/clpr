@@ -2709,27 +2709,6 @@
     "contract_level": "route-specific"
   },
   {
-    "method": "POST",
-    "path": "/api/v1/subscriptions/cancel",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CancelSubscription-fm",
-    "operation_id": "postApiV1SubscriptionsCancel",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/subscriptions/invoices",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetInvoices-fm",
-    "operation_id": "getApiV1SubscriptionsInvoices",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/subscriptions/me",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetSubscription-fm",
-    "operation_id": "getApiV1SubscriptionsMe",
-    "contract_level": "route-specific"
-  },
-  {
     "method": "GET",
     "path": "/api/v1/tags",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).ListTags-fm",
@@ -3248,13 +3227,6 @@
     "contract_level": "route-specific"
   },
   {
-    "method": "POST",
-    "path": "/api/v1/webhooks/stripe",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).HandleWebhook-fm",
-    "operation_id": "postApiV1WebhooksStripe",
-    "contract_level": "route-specific"
-  },
-  {
     "method": "DELETE",
     "path": "/api/v1/webhooks/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookSubscriptionHandler).DeleteSubscription-fm",
@@ -3369,7 +3341,7 @@
   {
     "method": "GET",
     "path": "/internal/operations/webhooks",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookMonitoringHandler).GetWebhookRetryStats-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*WebhookMonitoringHandler).GetWebhookStats-fm",
     "operation_id": "getInternalOperationsWebhooks",
     "contract_level": "route-specific"
   },

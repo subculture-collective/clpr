@@ -20,17 +20,6 @@ else
     echo -e "${GREEN}✓ Using existing MFA_ENCRYPTION_KEY${NC}"
 fi
 
-# Stripe webhook secret for webhook signature testing
-if [ -z "$TEST_STRIPE_WEBHOOK_SECRET" ]; then
-    export TEST_STRIPE_WEBHOOK_SECRET="whsec_test_$(openssl rand -hex 24)"
-    echo -e "${GREEN}✓ Generated TEST_STRIPE_WEBHOOK_SECRET${NC}"
-else
-    echo -e "${GREEN}✓ Using existing TEST_STRIPE_WEBHOOK_SECRET${NC}"
-fi
-
-# Set Stripe webhook secret for the main config too
-export STRIPE_WEBHOOK_SECRET="${TEST_STRIPE_WEBHOOK_SECRET}"
-
 # OpenSearch/Elasticsearch configuration for semantic search
 if [ -z "${OPENSEARCH_URL:-}" ]; then
     export OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:9201}"
@@ -106,10 +95,6 @@ cat > .env.test <<EOF
 
 # MFA Configuration
 MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}
-
-# Stripe Configuration
-TEST_STRIPE_WEBHOOK_SECRET=${TEST_STRIPE_WEBHOOK_SECRET}
-STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
 
 # OpenSearch Configuration
 OPENSEARCH_URL=${OPENSEARCH_URL}

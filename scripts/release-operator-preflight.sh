@@ -9,7 +9,6 @@ mode="${1:---dry-run}"
 node scripts/validate-operator-journeys.mjs
 bash scripts/seed-release-identities.sh --dry-run
 bash scripts/run-real-backend-journeys.sh --dry-run
-bash scripts/run-stripe-test-evidence.sh --dry-run
 bash scripts/run-release-load-profiles.sh --dry-run
 bash scripts/run-isolated-restore-evidence.sh --dry-run
 bash scripts/run-staging-rollback-evidence.sh --dry-run

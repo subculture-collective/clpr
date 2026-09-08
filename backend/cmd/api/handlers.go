@@ -26,7 +26,6 @@ type Handlers struct {
 	Analytics           *handlers.AnalyticsHandler
 	Engagement          *handlers.EngagementHandler
 	AuditLog            *handlers.AuditLogHandler
-	Subscription        *handlers.SubscriptionHandler
 	User                *handlers.UserHandler
 	AdminUser           *handlers.AdminUserHandler
 	AdminOpenAPI        *handlers.AdminOpenAPIHandler
@@ -83,7 +82,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	authHandler := handlers.NewAuthHandler(svcs.Auth, cfg)
 	mfaHandler := handlers.NewMFAHandler(svcs.MFA, cfg)
 	monitoringHandler := handlers.NewMonitoringHandler(infra.Redis)
-	webhookMonitoringHandler := handlers.NewWebhookMonitoringHandler(svcs.WebhookRetry, svcs.OutboundWebhook)
 	commentHandler := handlers.NewCommentHandler(svcs.Comment)
 	clipHandler := handlers.NewClipHandler(
 		svcs.Clip,
@@ -111,7 +109,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	analyticsHandler := handlers.NewAnalyticsHandler(svcs.Analytics)
 	engagementHandler := handlers.NewEngagementHandler(svcs.Engagement, svcs.Auth)
 	auditLogHandler := handlers.NewAuditLogHandler(svcs.AuditLog)
-	subscriptionHandler := handlers.NewSubscriptionHandler(svcs.Subscription)
 	userHandler := handlers.NewUserHandler(repos.Clip, repos.Vote, repos.Comment, repos.User, repos.Broadcaster, svcs.AccountMerge)
 	adminUserHandler := handlers.NewAdminUserHandler(repos.User, repos.AuditLog, svcs.Auth)
 	userSettingsHandler := handlers.NewUserSettingsHandler(svcs.UserSettings, svcs.Auth)
@@ -122,6 +119,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
 	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
+	webhookMonitoringHandler := handlers.NewWebhookMonitoringHandler(svcs.OutboundWebhook)
 	webhookSubscriptionHandler := handlers.NewWebhookSubscriptionHandler(svcs.OutboundWebhook)
 	webhookDLQHandler := handlers.NewWebhookDLQHandler(svcs.OutboundWebhook)
 	configHandler := handlers.NewConfigHandler(cfg)
@@ -224,7 +222,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Analytics:           analyticsHandler,
 		Engagement:          engagementHandler,
 		AuditLog:            auditLogHandler,
-		Subscription:        subscriptionHandler,
 		User:                userHandler,
 		AdminUser:           adminUserHandler,
 		AdminOpenAPI:        handlers.NewAdminOpenAPIHandler(),
