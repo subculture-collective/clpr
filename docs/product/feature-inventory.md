@@ -52,16 +52,20 @@ release-ready. Status must be backed by registered routes, buildable clients,
 and executable tests. The production-readiness audit supersedes earlier raw
 counts that included planned or missing artifacts.
 
-- **Backend**: Go API with a passing default test suite; integration and skip
-  coverage remain release gaps.
-- **Frontend**: React web app with a successful production build; lint, unit,
-  and browser gates remain under remediation.
+- **Backend**: Go API with package, race, vet, PostgreSQL integration,
+  migration, and engagement coverage checks in source convergence.
+- **Frontend**: React web app with production typecheck, lint, reachability,
+  ownership, critical coverage, build budgets, and three-engine browser gates.
 - **Mobile**: No tracked buildable application. Mobile documents describe a
   possible future client and are not current product availability.
-- **Infrastructure**: Five tracked workflows at this revision; mandatory source
-  CI, browser, security, and performance gates are not yet present.
-- **Documentation**: Historical feature entries may still require evidence
-  correction. Use the status legend and remediation plan for release decisions.
+- **Infrastructure**: Authoritative Gitea workflows cover operator preflight,
+  release gates, complete source convergence, immutable images, and release
+  readiness. Workflow availability does not prove branch-protection enforcement
+  or a passing result for a particular revision.
+- **Documentation**: Historical feature entries below describe implementation
+  scope and may still require evidence correction. A “complete” label does not
+  establish provider acceptance, enabled release scope, or production readiness.
+  Use revision-bound release evidence for those decisions.
 
 ### Status Legend
 
@@ -712,11 +716,11 @@ anomaly-scoring analytics implementation has been removed. See
 
 #### 13.1 CI/CD Pipelines
 
-- **Status**: ⚠️ incomplete | **Workflows**: 5 tracked GitHub Actions workflows
-- **Features**: Documentation, OpenAPI, migration, backup, and restore checks
-- **Workflows**: `backup-validation.yml`, `docs.yml`, `migration-drills.yml`, `openapi.yml`, `restore-drill.yml`
-- **Tests**: Source build/test/browser/security gates are not currently enforced
-- **Gaps**: Mandatory source CI, Playwright, dependency/secret scanning, container scanning, performance budgets, and immutable release artifacts
+- **Status**: 🟡 implemented; release acceptance depends on revision-specific results and operator evidence
+- **Authoritative workflows**: `.gitea/workflows/operator-preflight.yml`, `release-gates.yml`, `source-convergence.yml`, `immutable-candidate.yml`, and `release-readiness.yml`
+- **Features**: Source build/test/browser/security checks, documentation and OpenAPI validation, migrations, bundle budgets, scanned and signed immutable images, and operational evidence verification
+- **Tests**: Complete source convergence executes the maintained local-equivalent gates; hosted artifacts identify the tested revision. Separate operational qualification records load, restore, and rollback outcomes.
+- **Gaps**: Required-check enforcement and independent review must be established separately. Provider billing reconciliation, fresh staging OAuth, protected evidence hosting, and all final acceptance contracts remain prerequisites for promotion.
 
 #### 13.2 Deployment & Infrastructure
 
