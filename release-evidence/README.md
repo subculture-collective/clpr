@@ -79,9 +79,9 @@ Blue/green execution accepts `CONTAINER_PREFIX`, `DOCKER_NETWORK`, and
 `CANDIDATE_CA_DIR` to isolate container names, networking, and certificate trust.
 Migrations require TLS (`MIGRATION_SSLMODE`, default `require`).
 Protected restores require an executable `APPLICATION_SMOKE_RUNNER`, invoked
-with the restored database name and smoke URL before the HTTP smoke check.
-The runner must start the candidate against that restored database and leave
-it available for the subsequent check.
+with the restored database name and smoke URL. The runner must start the
+candidate against that restored database, execute its HTTP smoke, and stop
+the temporary runtime before returning so database cleanup can complete.
 
 For a full soak, provide `STAGING_AUTH_FIXTURES_FILE` with per-profile arrays
 (`baseline`, `stress`, `soak`), one entry per VU. Each entry contains independent

@@ -407,8 +407,7 @@ validate_application_smoke() {
             log_error "Restored database application runner failed"
             return 1
         }
-    fi
-    if ! curl --fail --silent --show-error "$APPLICATION_SMOKE_URL" >/dev/null; then
+    elif ! curl --fail --silent --show-error "$APPLICATION_SMOKE_URL" >/dev/null; then
         log_error "Isolated restored-application smoke failed"
         return 1
     fi
