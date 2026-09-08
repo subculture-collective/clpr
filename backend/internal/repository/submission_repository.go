@@ -608,7 +608,7 @@ func (r *SubmissionRepository) ListPendingWithFilters(ctx context.Context, filte
 			s.source_type, s.source_platform, s.source_url, s.source_id, s.source_metadata,
 			s.duration_seconds, s.duration_verified, s.storage_provider, s.storage_bucket, s.storage_key,
 			s.original_filename, s.mime_type, s.file_size_bytes, s.upload_status, s.duration_validation_error, s.storage_visibility,
-			s.creator_name, s.creator_id, s.broadcaster_name, s.broadcaster_id, s.broadcaster_name_override,
+			s.creator_name, s.creator_id, s.creator_account_id, s.broadcaster_name, s.broadcaster_id, s.broadcaster_name_override,
 			s.game_id, s.game_name, s.thumbnail_url, s.duration, s.view_count,
 			u.id, u.twitch_id, u.username, u.display_name, u.email, u.avatar_url,
 			u.bio, u.karma_points, u.role, u.is_banned, u.created_at, u.updated_at, u.last_login_at

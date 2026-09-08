@@ -178,6 +178,8 @@ export function ModerationQueuePage() {
                             {submissions.map((submission) => (
                                 <div
                                     key={submission.id}
+                                    role='article'
+                                    aria-label={submission.custom_title || submission.title || 'Untitled submission'}
                                     className='bg-background-secondary p-6 rounded-lg'
                                 >
                                     <div className='lg:flex-row flex flex-col gap-4'>
