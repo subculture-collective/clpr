@@ -5,11 +5,11 @@ import {
     Badge,
     Button,
     Card,
-    Container,
     Modal,
     Spinner,
     TextArea,
-} from '../../components';
+} from '../ui';
+import { Container } from '../layout/Container';
 import { useAuth } from '../../context/AuthContext';
 import {
     approveQueueItem,
@@ -124,7 +124,9 @@ export function ModerationQueueView({
             // Only handle shortcuts when not in an input field
             if (
                 e.target instanceof HTMLInputElement ||
-                e.target instanceof HTMLTextAreaElement
+                e.target instanceof HTMLTextAreaElement ||
+                e.target instanceof HTMLSelectElement ||
+                (e.target instanceof HTMLElement && e.target.isContentEditable)
             ) {
                 return;
             }
@@ -249,6 +251,7 @@ export function ModerationQueueView({
                 {error && (
                     <Alert variant='error' className='mb-6'>
                         {error}
+                        <Button variant='outline' className='mt-3' disabled={isLoading} onClick={loadQueue}>Try again</Button>
                     </Alert>
                 )}
 
@@ -286,10 +289,10 @@ export function ModerationQueueView({
                 <Card className='p-4 mb-6'>
                     <div className='flex gap-4 items-center'>
                         <div className='flex-1'>
-                            <label className='block mb-2 text-sm font-medium'>
+                            <label htmlFor='moderation-status' className='block mb-2 text-sm font-medium'>
                                 Status
                             </label>
-                            <select
+                            <select id='moderation-status'
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 className='bg-background-secondary border-border focus:ring-primary focus:border-primary block px-3 py-2 w-full rounded border'
@@ -354,7 +357,7 @@ export function ModerationQueueView({
                         <div className='flex justify-center py-12'>
                             <Spinner size='lg' />
                         </div>
-                    ) : !items || items.length === 0 ? (
+                    ) : items.length === 0 && !error ? (
                         <div className='py-12 text-center'>
                             <p className='text-muted-foreground'>
                                 No {contentType}s in the moderation queue.

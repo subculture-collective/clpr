@@ -15,8 +15,8 @@
 6. [Component Specifications](#6-component-specifications)
 7. [Animation & Motion](#7-animation--motion)
 8. [Accessibility](#8-accessibility)
-9. [Tailwind Configuration](#9-tailwind-configuration)
-10. [Migration Notes](#10-migration-notes)
+9. [Active theme configuration](#9-active-theme-configuration)
+10. [Maintenance and verification](#10-maintenance-and-verification)
 
 ---
 
@@ -50,50 +50,50 @@ All colors defined as CSS custom properties using space-separated RGB for Tailwi
 
 | Token                    | RGB        | Hex       | Usage                                                     |
 | ------------------------ | ---------- | --------- | --------------------------------------------------------- |
-| `--color-background`     | `15 15 20` | `#0F0F14` | Page background — warm dark, less sterile than pure black |
-| `--color-surface`        | `26 26 36` | `#1A1A24` | Cards, panels, comment containers                         |
-| `--color-surface-raised` | `34 34 51` | `#222233` | Comment input, modals, elevated panels, dropdowns         |
-| `--color-surface-hover`  | `42 42 60` | `#2A2A3C` | Hover state for interactive surfaces                      |
-| `--color-border`         | `42 42 58` | `#2A2A3A` | Borders, dividers, thread lines                           |
-| `--color-border-subtle`  | `34 34 48` | `#222230` | Subtle separators within cards                            |
+| `--clpr-background`     | `15 15 20` | `#0F0F14` | Page background — warm dark, less sterile than pure black |
+| `--clpr-surface`        | `26 26 36` | `#1A1A24` | Cards, panels, comment containers                         |
+| `--clpr-surface-raised` | `34 34 51` | `#222233` | Comment input, modals, elevated panels, dropdowns         |
+| `--clpr-surface-hover`  | `42 42 60` | `#2A2A3C` | Hover state for interactive surfaces                      |
+| `--clpr-border`         | `42 42 58` | `#2A2A3A` | Borders, dividers, thread lines                           |
+| `--clpr-border-subtle`  | `34 34 48` | `#222230` | Subtle separators within cards                            |
 
 ### Text Hierarchy
 
 | Token                    | RGB           | Hex       | Contrast on Surface | Usage                                                 |
 | ------------------------ | ------------- | --------- | ------------------- | ----------------------------------------------------- |
-| `--color-text-primary`   | `232 232 237` | `#E8E8ED` | ~12:1               | Comment body, headings, primary content               |
-| `--color-text-secondary` | `152 152 168` | `#9898A8` | ~5.5:1              | Timestamps, usernames, metadata                       |
-| `--color-text-tertiary`  | `104 104 120` | `#686878` | ~3.2:1              | Neutral vote counts, placeholders (not for body text) |
-| `--color-text-disabled`  | `68 68 82`    | `#444452` | ~2:1                | Disabled states only                                  |
+| `--clpr-text-primary`   | `232 232 237` | `#E8E8ED` | ~12:1               | Comment body, headings, primary content               |
+| `--clpr-text-secondary` | `152 152 168` | `#9898A8` | ~5.5:1              | Timestamps, usernames, metadata                       |
+| `--clpr-text-tertiary`  | `144 144 160` | `#9090A0` | ~6.0:1              | Neutral vote counts, placeholders (not for body text) |
+| `--clpr-text-disabled`  | `68 68 82`    | `#444452` | ~2:1                | Disabled states only                                  |
 
 ### Brand & Accent
 
 | Token                 | Hex         | Usage                                                      |
 | --------------------- | ----------- | ---------------------------------------------------------- |
-| `--color-brand`       | `#7C3AED`   | Brand violet — links, active tab indicators, user mentions |
-| `--color-brand-hover` | `#6D28D9`   | Hover state for brand elements                             |
-| `--color-brand-muted` | `#7C3AED26` | 15% opacity — subtle brand tint backgrounds                |
+| `--clpr-brand`       | `#7C3AED`   | Brand violet — links, active tab indicators, user mentions |
+| `--clpr-brand-hover` | `#6D28D9`   | Hover state for brand elements                             |
+| `--clpr-brand-muted` | `#7C3AED26` | 15% opacity — subtle brand tint backgrounds                |
 
 ### Interaction Colors
 
 | Token                    | Hex         | Usage                                   |
 | ------------------------ | ----------- | --------------------------------------- |
-| `--color-upvote`         | `#F97316`   | Upvote active state — warm orange       |
-| `--color-upvote-hover`   | `#F9731626` | Upvote hover background (15% opacity)   |
-| `--color-downvote`       | `#6366F1`   | Downvote active state — indigo          |
-| `--color-downvote-hover` | `#6366F126` | Downvote hover background (15% opacity) |
-| `--color-cta`            | `#818CF8`   | Reply button, primary actions — indigo  |
-| `--color-cta-hover`      | `#6366F1`   | CTA hover state                         |
-| `--color-focus-ring`     | `#7C3AED`   | Focus outline for keyboard navigation   |
+| `--clpr-upvote`         | `#F97316`   | Upvote active state — warm orange       |
+| `--clpr-upvote-hover`   | `#F9731626` | Upvote hover background (15% opacity)   |
+| `--clpr-downvote`       | `#6366F1`   | Downvote active state — indigo          |
+| `--clpr-downvote-hover` | `#6366F126` | Downvote hover background (15% opacity) |
+| `--clpr-cta`            | `#818CF8`   | Reply button, primary actions — indigo  |
+| `--clpr-cta-hover`      | `#6366F1`   | CTA hover state                         |
+| `--clpr-focus-ring`     | `#7C3AED`   | Focus outline for keyboard navigation   |
 
 ### Semantic Colors
 
 | Token             | Hex       | Usage                                         |
 | ----------------- | --------- | --------------------------------------------- |
-| `--color-success` | `#22C55E` | Success states, positive feedback             |
-| `--color-warning` | `#F59E0B` | Warnings, edit indicators                     |
-| `--color-error`   | `#EF4444` | Errors, delete confirmations, removed content |
-| `--color-info`    | `#6366F1` | Informational, tips (indigo — matches brand)  |
+| `--clpr-success` | `#22C55E` | Success states, positive feedback             |
+| `--clpr-warning` | `#F59E0B` | Warnings, edit indicators                     |
+| `--clpr-error`   | `#EF4444` | Errors, delete confirmations, removed content |
+| `--clpr-info`    | `#6366F1` | Informational, tips (indigo — matches brand)  |
 
 ### Thread Colors
 
@@ -101,12 +101,12 @@ Nested comment threads use progressively subtle left-border colors:
 
 | Depth    | Border Color       | Hex       |
 | -------- | ------------------ | --------- |
-| 0 (root) | `--color-brand`    | `#7C3AED` |
-| 1        | `--color-thread-1` | `#A855F7` |
-| 2        | `--color-thread-2` | `#C084FC` |
-| 3        | `--color-thread-3` | `#E879A8` |
-| 4        | `--color-thread-4` | `#F0ABAB` |
-| 5+       | `--color-border`   | `#2A2A3A` |
+| 0 (root) | `--clpr-brand`    | `#7C3AED` |
+| 1        | `--clpr-thread-1` | `#A855F7` |
+| 2        | `--clpr-thread-2` | `#C084FC` |
+| 3        | `--clpr-thread-3` | `#E879A8` |
+| 4        | `--clpr-thread-4` | `#F0ABAB` |
+| 5+       | `--clpr-border`   | `#2A2A3A` |
 
 Thread colors stay in the violet-pink warm family for cohesion with the brand palette. Colored thread lines help users visually trace reply chains in deep threads.
 
@@ -125,13 +125,13 @@ Thread colors stay in the violet-pink warm family for cohesion with the brand pa
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
 ```
 
-```typescript
-// tailwind.config.ts
-fontFamily: {
-  sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-  heading: ['Space Grotesk', 'system-ui', 'sans-serif'],
-  accent: ['Syne', 'Space Grotesk', 'system-ui', 'sans-serif'],
-  mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+```css
+/* frontend/src/index.css */
+@theme inline {
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
+  --font-accent: Syne, "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 ```
 
@@ -146,7 +146,7 @@ fontFamily: {
 | Card heading (h3)      | Space Grotesk | 18px / 1.125rem  | 600    | 1.3         | -0.01em        | `text-primary`    |
 | Subsection (h4)        | Space Grotesk | 16px / 1rem      | 600    | 1.35        | -0.005em       | `text-primary`    |
 | **Comment body**       | Inter         | 14px / 0.875rem  | 400    | 1.6         | 0              | `text-primary`    |
-| **Comment author**     | Space Grotesk | 13px / 0.8125rem | 600    | 1.3         | 0              | `brand` (linked)  |
+| **Comment author**     | Space Grotesk | 13px / 0.8125rem | 600    | 1.3         | 0              | `link` (linked)  |
 | **Comment timestamp**  | Inter         | 12px / 0.75rem   | 400    | 1.4         | 0.01em         | `text-secondary`  |
 | **Comment score**      | Inter         | 13px / 0.8125rem | 600    | 1           | 0              | context-dependent |
 | **Reply action**       | Inter         | 12px / 0.75rem   | 500    | 1.4         | 0.01em         | `cta`             |
@@ -163,22 +163,22 @@ fontFamily: {
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 0.875rem; /* 14px */
     line-height: 1.6;
-    color: var(--color-text-primary);
+    color: var(--clpr-text-primary);
 }
 
 .comment-body p + p {
     margin-top: 0.5rem;
 }
 .comment-body blockquote {
-    border-left: 2px solid var(--color-border);
+    border-left: 2px solid var(--clpr-border);
     padding-left: 0.75rem;
-    color: var(--color-text-secondary);
+    color: var(--clpr-text-secondary);
     font-style: italic;
 }
 .comment-body code {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.8125rem; /* 13px */
-    background: var(--color-surface-raised);
+    background: var(--clpr-surface-raised);
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
 }
@@ -188,7 +188,7 @@ fontFamily: {
     overflow-x: auto;
 }
 .comment-body a {
-    color: var(--color-brand);
+    color: var(--clpr-brand);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -231,9 +231,9 @@ Unchanged from current config:
 | ----- | --------- | ---------------------------------------------- |
 | `xs`  | 375px     | Mobile — single column, stacked layout         |
 | `sm`  | 640px     | Wide mobile — minor padding adjustments        |
-| `md`  | 768px     | Tablet — comment panel appears as bottom sheet |
-| `lg`  | 1024px    | Desktop — side-by-side clip + comments         |
-| `xl`  | 1280px    | Wide desktop — wider comment panel             |
+| `md`  | 768px     | Tablet — playback and discussion remain stacked |
+| `lg`  | 1024px    | Desktop — feed sidebar; stacked clip discussion         |
+| `xl`  | 1280px    | Wide desktop — playback beside discussion             |
 | `2xl` | 1536px    | Ultra-wide — max-width container               |
 
 ### Container
@@ -241,7 +241,7 @@ Unchanged from current config:
 ```css
 .container {
     width: 100%;
-    max-width: 1440px; /* wider than current 1280 to accommodate side-by-side */
+    max-width: 1440px; /* shared with Container and page-container */
     margin: 0 auto;
     padding-inline: 1rem; /* mobile */
 }
@@ -442,7 +442,7 @@ Used on the full ClipDetailPage comment panel.
 
 **Spacing**:
 
-- Between comments: `padding-y: 12px`, separated by `border-bottom: 1px solid var(--color-border-subtle)`
+- Between comments: `padding-y: 12px`, separated by `border-bottom: 1px solid var(--clpr-border-subtle)`
 - Vote button touch targets: 32x32px minimum
 - Gap between vote column and content: 8px
 
@@ -553,7 +553,7 @@ Same color states, smaller touch targets (28x28), no background on hover.
 - Comment count: `font-heading`, 14px, weight 600
 - Sort dropdown: `text-secondary`, 12px, with current sort highlighted in `text-primary`
 - Sort options: Best (default), New, Top, Old, Controversial
-- Divider below: `border-bottom: 1px solid var(--color-border)`
+- Divider below: `border-bottom: 1px solid var(--clpr-border)`
 
 ### 6.6 ClipCard (with comment preview)
 
@@ -578,9 +578,9 @@ Standard card used in feeds and search results:
 | Element             | Spec                                                                      |
 | ------------------- | ------------------------------------------------------------------------- |
 | Card background     | `color-surface`                                                           |
-| Card border         | `1px solid var(--color-border-subtle)`                                    |
+| Card border         | `1px solid var(--clpr-border-subtle)`                                    |
 | Card radius         | `rounded-md` (8px)                                                        |
-| Card hover          | `background: var(--color-surface-hover)`, transition 150ms                |
+| Card hover          | `background: var(--clpr-surface-hover)`, transition 150ms                |
 | Thumbnail           | `aspect-ratio: 16/9`, `object-fit: cover`, `rounded-md` top corners       |
 | Title               | `font-heading`, 15px, weight 600, `line-clamp-2`                          |
 | Metadata            | 12px, `text-secondary`                                                    |
@@ -610,7 +610,7 @@ Standard card used in feeds and search results:
 | Inactive tab          | `text-secondary`                                                   |
 | Active tab            | `text-primary`, bottom border 2px `color-brand`                    |
 | Badge (count)         | 11px, weight 600, `color-brand` background, white text, pill shape |
-| Tab bar border-bottom | `1px solid var(--color-border)`                                    |
+| Tab bar border-bottom | `1px solid var(--clpr-border)`                                    |
 
 ---
 
@@ -669,7 +669,7 @@ All text tokens verified against their intended background:
 | ------------------------------ | ------ | ------------------------------------------ |
 | `text-primary` on `surface`    | ~12:1  | AAA                                        |
 | `text-secondary` on `surface`  | ~5.5:1 | AA                                         |
-| `text-tertiary` on `surface`   | ~3.2:1 | AA Large only (use for non-essential info) |
+| `text-tertiary` on `surface`   | ~6.0:1 | AA Large only (use for non-essential info) |
 | `brand` on `surface`           | ~4.8:1 | AA                                         |
 | `upvote` on `surface`          | ~5.2:1 | AA                                         |
 | `cta` on `surface`             | ~4.6:1 | AA                                         |
@@ -677,7 +677,7 @@ All text tokens verified against their intended background:
 
 ### Focus Management
 
-- All interactive elements show `outline: 2px solid var(--color-focus-ring)` with `outline-offset: 2px` on `:focus-visible`
+- All interactive elements show `outline: 2px solid var(--clpr-focus-ring)` with `outline-offset: 2px` on `:focus-visible`
 - Comment threads are navigable with `Tab` / `Shift+Tab`
 - Vote buttons announce score change to screen readers via `aria-live="polite"`
 - Comment form uses `aria-label="Write a comment"` when placeholder-only
@@ -708,265 +708,32 @@ All text tokens verified against their intended background:
 
 ---
 
-## 9. Tailwind Configuration
+## 9. Active theme configuration
 
-### CSS Custom Properties (index.css)
+`frontend/src/index.css` is the single active Tailwind 4 theme entry. There is no legacy JavaScript Tailwind configuration file. It declares:
 
-```css
-@layer base {
-    :root {
-        /* Background & Surface */
-        --color-background: 15 15 20;
-        --color-surface: 26 26 36;
-        --color-surface-raised: 34 34 51;
-        --color-surface-hover: 42 42 60;
+- `@import 'tailwindcss' source('./')` with test sources excluded from utility discovery.
+- `@custom-variant dark` bound to the application's `.dark` root class.
+- A rem-based `xs` breakpoint (23.4375rem), ordered with Tailwind's standard breakpoints.
+- Native font, semantic color, spacing-independent layering, and animation tokens.
+- Raw RGB channels named `--clpr-*`; generated Tailwind colors retain their `--color-*` namespace. Do not use a complete CSS color where channel values are expected.
 
-        /* Borders */
-        --color-border: 42 42 58;
-        --color-border-subtle: 34 34 48;
+Use `Container` for page wrappers and `page-container` in the shared navigation. Both cap content at 1440px and use 16px, 24px, and 32px responsive gutters. Avoid Tailwind's built-in `container` utility where the shared page width is intended.
 
-        /* Text */
-        --color-text-primary: 232 232 237;
-        --color-text-secondary: 152 152 168;
-        --color-text-tertiary: 104 104 120;
-        --color-text-disabled: 68 68 82;
+Use `text-link` for small accent text and links. Brand violet belongs on filled controls and decorative elements. Links within paragraphs need a persistent underline. Provider-supplied tag colors use linearized sRGB luminance to choose black or white text; unsupported color strings fall back to the standard violet.
 
-        /* Brand */
-        --color-brand: 124 58 237;
-        --color-brand-hover: 109 40 217;
+Clip detail switches to a two-column grid at `xl` (1280px): flexible playback and a 24rem discussion panel. At smaller widths the discussion follows playback. On wide screens the discussion list scrolls independently while its composer remains visible. Full comment text and author/moderation actions remain available in that panel.
 
-        /* Interaction */
-        --color-upvote: 249 115 22;
-        --color-downvote: 99 102 241;
-        --color-cta: 59 130 246;
-        --color-cta-hover: 37 99 235;
+The feed uses measured two-way virtualization, stable clip IDs, and an overscan region. Keep the focused row mounted. A failed later page must retain loaded clips and offer a retry; returning upward must restore earlier rows.
 
-        /* Focus */
-        --color-focus-ring: 124 58 237;
+## 10. Maintenance and verification
 
-        /* Thread depth colors (violet-pink warm family) */
-        --color-thread-0: 124 58 237;
-        --color-thread-1: 168 85 247;
-        --color-thread-2: 192 132 252;
-        --color-thread-3: 232 121 168;
-        --color-thread-4: 240 171 171;
+Treat the implementation and executed browser evidence as authoritative. Design examples elsewhere in this document describe visual intent; they do not establish that a feature is enabled or released.
 
-        /* Nav height for sticky calculations */
-        --nav-height: 56px;
-
-        /* Font rendering */
-        font-synthesis: none;
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-}
-```
-
-### Tailwind Config Additions (tailwind.config.ts)
-
-```typescript
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
-    darkMode: 'class',
-    content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-    theme: {
-        screens: {
-            xs: '375px',
-            sm: '640px',
-            md: '768px',
-            lg: '1024px',
-            xl: '1280px',
-            '2xl': '1536px',
-        },
-        extend: {
-            fontFamily: {
-                sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                heading: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
-                mono: [
-                    '"JetBrains Mono"',
-                    'ui-monospace',
-                    'SFMono-Regular',
-                    'monospace',
-                ],
-            },
-            colors: {
-                // Surfaces
-                background: 'rgb(var(--color-background) / <alpha-value>)',
-                surface: {
-                    DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
-                    raised: 'rgb(var(--color-surface-raised) / <alpha-value>)',
-                    hover: 'rgb(var(--color-surface-hover) / <alpha-value>)',
-                },
-
-                // Borders
-                border: {
-                    DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
-                    subtle: 'rgb(var(--color-border-subtle) / <alpha-value>)',
-                },
-
-                // Text
-                'text-primary':
-                    'rgb(var(--color-text-primary) / <alpha-value>)',
-                'text-secondary':
-                    'rgb(var(--color-text-secondary) / <alpha-value>)',
-                'text-tertiary':
-                    'rgb(var(--color-text-tertiary) / <alpha-value>)',
-                'text-disabled':
-                    'rgb(var(--color-text-disabled) / <alpha-value>)',
-
-                // Brand
-                brand: {
-                    DEFAULT: 'rgb(var(--color-brand) / <alpha-value>)',
-                    hover: 'rgb(var(--color-brand-hover) / <alpha-value>)',
-                },
-
-                // Interaction
-                upvote: 'rgb(var(--color-upvote) / <alpha-value>)',
-                downvote: 'rgb(var(--color-downvote) / <alpha-value>)',
-                cta: {
-                    DEFAULT: 'rgb(var(--color-cta) / <alpha-value>)',
-                    hover: 'rgb(var(--color-cta-hover) / <alpha-value>)',
-                },
-
-                // Thread lines
-                thread: {
-                    0: 'rgb(var(--color-thread-0) / <alpha-value>)',
-                    1: 'rgb(var(--color-thread-1) / <alpha-value>)',
-                    2: 'rgb(var(--color-thread-2) / <alpha-value>)',
-                    3: 'rgb(var(--color-thread-3) / <alpha-value>)',
-                    4: 'rgb(var(--color-thread-4) / <alpha-value>)',
-                },
-
-                // Semantic (keep existing palettes)
-                primary: {
-                    50: '#f5f3ff',
-                    100: '#ede9fe',
-                    200: '#ddd6fe',
-                    300: '#c4b5fd',
-                    400: '#a78bfa',
-                    500: '#7C3AED',
-                    600: '#6D28D9',
-                    700: '#5B21B6',
-                    800: '#4C1D95',
-                    900: '#3B1578',
-                    950: '#2E1065',
-                },
-                success: {
-                    50: '#f0fdf4',
-                    100: '#dcfce7',
-                    200: '#bbf7d0',
-                    300: '#86efac',
-                    400: '#4ade80',
-                    500: '#22c55e',
-                    600: '#16a34a',
-                    700: '#15803d',
-                    800: '#166534',
-                    900: '#14532d',
-                    950: '#052e16',
-                },
-                warning: {
-                    50: '#fffbeb',
-                    100: '#fef3c7',
-                    200: '#fde68a',
-                    300: '#fcd34d',
-                    400: '#fbbf24',
-                    500: '#f59e0b',
-                    600: '#d97706',
-                    700: '#b45309',
-                    800: '#92400e',
-                    900: '#78350f',
-                    950: '#451a03',
-                },
-                error: {
-                    50: '#fef2f2',
-                    100: '#fee2e2',
-                    200: '#fecaca',
-                    300: '#fca5a5',
-                    400: '#f87171',
-                    500: '#ef4444',
-                    600: '#dc2626',
-                    700: '#b91c1c',
-                    800: '#991b1b',
-                    900: '#7f1d1d',
-                    950: '#450a0a',
-                },
-                info: {
-                    50: '#ecfeff',
-                    100: '#cffafe',
-                    200: '#a5f3fc',
-                    300: '#67e8f9',
-                    400: '#22d3ee',
-                    500: '#06b6d4',
-                    600: '#0891b2',
-                    700: '#0e7490',
-                    800: '#155e75',
-                    900: '#164e63',
-                    950: '#083344',
-                },
-            },
-
-            // ... keep existing zIndex, keyframes, animation
-        },
-    },
-    plugins: [],
-};
-
-export default config;
-```
-
----
-
-## 10. Migration Notes
-
-### What Changes
-
-| Area                  | Before                       | After                               |
-| --------------------- | ---------------------------- | ----------------------------------- |
-| **Background**        | `#0A0A0A` (pure dark)        | `#0F0F14` (warm dark)               |
-| **Cards**             | `#171717` (neutral gray)     | `#1A1A24` (violet-tinted surface)   |
-| **Borders**           | `#262626` (neutral)          | `#2A2A3A` (violet-tinted)           |
-| **Text**              | `#FAFAFA` (pure white)       | `#E8E8ED` (softer)                  |
-| **Muted text**        | `#A3A3A3`                    | `#9898A8` (cooler)                  |
-| **Primary brand**     | `#9146FF` (Twitch purple)    | `#7C3AED` (own violet)              |
-| **Font: headings**    | system-ui                    | Space Grotesk                       |
-| **Font: body**        | system-ui                    | Inter                               |
-| **Font: code**        | ui-monospace                 | JetBrains Mono                      |
-| **ClipDetail layout** | Single column                | Side-by-side (lg+)                  |
-| **Playlist sidebar**  | Queue only                   | Queue + Chat tabs                   |
-| **PlaylistCard**      | No comment info              | Comment count + top comment preview |
-| **Comment input**     | Bottom of section            | Sticky (always visible)             |
-| **Thread lines**      | Single color `border-border` | Depth-colored thread lines          |
-
-### What Stays the Same
-
-- Dark mode only (no light mode toggle)
-- Responsive breakpoints (xs through 2xl)
-- Icon library (Lucide React)
-- Animation durations and easing (minor refinements only)
-- Comment threading logic (recursive, up to depth 10)
-- Markdown support in comments
-- Auto-save drafts
-- Optimistic voting updates
-- Sort options (Best, New, Top, Old, Controversial)
-- Moderation features (delete, remove, report)
-- Keyboard shortcuts pattern
-
-### Migration Order
-
-1. **Fonts** — Add Google Fonts import, update `fontFamily` in Tailwind config. Lowest risk, highest visual impact.
-2. **Color tokens** — Update CSS custom properties in `index.css`. Replace `--color-background`, `--color-card`, `--color-foreground`, etc. with new tokens. Audit all hardcoded hex values.
-3. **Thread lines** — Add depth-colored borders to `CommentTree`. Contained change, improves readability immediately.
-4. **Comment density modes** — Add compact variant to `CommentItem`. Required before sidebar integration.
-5. **Sticky comment input** — Make `CommentForm` sticky at bottom of its scroll container. Small layout change with large usability impact.
-6. **ClipDetailPage layout** — Restructure to side-by-side grid. Largest change. Desktop-first, mobile keeps current stacked layout.
-7. **Playlist sidebar tabs** — Add tab system and compact comment stream to `PlaylistTheatreMode`. Depends on steps 4 and 5.
-8. **PlaylistCard preview** — Add comment count and top comment snippet to cards. Requires backend to return top comment with playlist/clip data.
-
-### Backend Requirements
-
-Steps 1-6 are frontend-only. Steps 7-8 may need:
-
-- **Playlist clip comments endpoint** — fetch comments for the currently playing clip within playlist context (may already exist via the clip comments endpoint)
-- **Top comment on clip** — include `top_comment` (highest score) in clip list responses for card previews. New field on the API response, or a separate lightweight query.
+- Verify 390px, 768px, and 1440px layouts with populated public, member, moderator, and administrator fixtures. Check narrow reflow and magnification separately.
+- Exercise keyboard navigation, Escape and focus restoration, disclosure semantics, and cookie-banner focus visibility. Automated accessibility checks complement these interactions.
+- Keep touch controls comfortably sized: primary actions, voting, playlist actions, and search controls use 44px targets. Inline text links and dense tags still need adequate separation.
+- Preserve entered settings and comment drafts across background refreshes and recoverable failures. Distinguish unavailable data from a valid empty state.
+- Run production typechecking, lint, source reachability, ownership, component coverage, browser contracts, route checks, and the bundle gate.
+- Application CSS is bounded at 128 KiB raw and 21 KiB gzip. The raw ceiling accounts for restored native theme utilities; compressed size is independently enforced. Initial application JavaScript remains bounded at 550 KiB.
+- Keep screenshots and test reports outside tracked source. Record the exact source revision and distinguish source-browser checks from immutable-image qualification.

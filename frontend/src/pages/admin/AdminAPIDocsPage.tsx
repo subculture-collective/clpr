@@ -229,7 +229,7 @@ export function AdminAPIDocsPage() {
                             ? 'noopener noreferrer'
                             : undefined
                     }
-                    className="text-primary hover:underline"
+                    className="text-link underline underline-offset-2"
                 >
                     {children}
                 </a>
@@ -395,7 +395,7 @@ export function AdminAPIDocsPage() {
                                     href="/docs/openapi/openapi.yaml"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-primary hover:underline"
+                                    className="text-sm text-link underline underline-offset-2"
                                 >
                                     📄 View OpenAPI Spec
                                 </a>
@@ -502,7 +502,7 @@ export function AdminAPIDocsPage() {
                                     href="http://localhost:8081"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
+                                    className="text-link underline underline-offset-2"
                                 >
                                     http://localhost:8081
                                 </a>

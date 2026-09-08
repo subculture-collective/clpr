@@ -1,25 +1,25 @@
 ---
 title: "Feature Inventory"
-summary: "> **Last Updated**: 2026-01-14"
+summary: "Maintained feature scope and verification map"
 tags: ["product"]
 area: "product"
 status: "draft"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2026-01-29
+last_reviewed: 2026-09-08
 ---
 
 # Feature Inventory & Verification Map
 
-> **Last Updated**: 2026-07-12
+> **Last Updated**: 2026-09-08
 >
-> **Sweep**: Production-readiness evidence correction
+> **Sweep**: Free-account candidate scope and UI maintenance
 >
 > **Purpose**: Complete inventory of all features in the Clipper platform, documenting status, location, tests, typing, and documentation coverage.
 >
 > **Scope**: Covers the tracked backend API, frontend web app, infrastructure, and documentation. Native mobile material is planning documentation only.
 >
-> **Current evidence**: 5 tracked workflows; no buildable mobile workspace; source CI and E2E release gates are under remediation.
+> **Current evidence**: Maintained source, real-backend browser, release-evidence, and immutable-image workflows exist. Their passing results are revision-specific. Production promotion additionally requires reconciled provider obligations, fresh staging OAuth, review, and protected operational evidence. No buildable native mobile workspace is present.
 
 ---
 

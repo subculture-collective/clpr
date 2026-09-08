@@ -146,7 +146,7 @@ export function ModerationQueuePage() {
                 <Card className='p-4 mb-6'>
                     <div className='flex items-center justify-between'>
                         <div>
-                            <div className='text-2xl font-bold'>{total}</div>
+                            <div className='text-2xl font-bold'>{error && submissions.length === 0 ? '—' : total}</div>
                             <div className='text-muted-foreground text-sm'>
                                 Pending Submissions
                             </div>
@@ -167,7 +167,7 @@ export function ModerationQueuePage() {
                         <div className='flex justify-center py-12'>
                             <Spinner size='lg' />
                         </div>
-                    ) : !submissions || submissions.length === 0 ? (
+                    ) : submissions.length === 0 && !error ? (
                         <div className='py-12 text-center'>
                             <p className='text-muted-foreground'>
                                 No pending submissions to review.
@@ -313,7 +313,7 @@ export function ModerationQueuePage() {
                                                                         key={
                                                                             tag
                                                                         }
-                                                                        className='bg-primary/10 text-primary px-2 py-1 text-xs rounded'
+                                                                        className='bg-primary/10 text-link px-2 py-1 text-xs rounded'
                                                                     >
                                                                         {tag}
                                                                     </span>

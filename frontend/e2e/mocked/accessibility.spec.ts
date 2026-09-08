@@ -38,7 +38,7 @@ async function mockPublicApi(page: Page) {
             body = { error: 'unauthorized' };
         } else if (/\/clips\/[^/]+\/topics$/.test(url.pathname)) {
             body = { topics: [] };
-        } else if (/\/clips\/[^/]+$/.test(url.pathname)) {
+        } else if (/\/api\/v1\/clips\/[^/]+$/.test(url.pathname)) {
             body = { success: true, data: clip };
         } else if (url.pathname.includes('/comments')) {
             body = { comments: [], total: 0, has_more: false };
@@ -51,11 +51,9 @@ async function mockPublicApi(page: Page) {
             };
         } else if (url.pathname.includes('/feeds/clips')) {
             body = {
+                success: true,
                 clips: [clip],
-                total: 1,
-                page: 1,
-                total_pages: 1,
-                has_more: false,
+                pagination: { total: 1, offset: 0, limit: 10, total_pages: 1, has_more: false },
             };
         } else if (url.pathname.includes('/forum/threads')) {
             body = { threads: [], total: 0 };
@@ -247,3 +245,40 @@ declare global {
         axe: typeof axe;
     }
 }
+
+
+test('cookie preferences remain nonmodal and do not cover keyboard focus', async ({ page }) => {
+    await mockPublicApi(page);
+    await page.addInitScript(() => {
+        localStorage.removeItem('clpr_consent_preferences');
+        window.__CLPR_ANALYTICS_CONFIG__ = { enabled: false, autoConsent: false };
+    });
+    for (const width of [390, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto('/?sort=new');
+        const banner = page.getByRole('region', { name: 'Privacy & Cookie Preferences' });
+        await expect(banner).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Accessible Demo Clip', exact: true })).toBeVisible({ timeout: pageReadinessTimeout });
+        await expect(banner).not.toHaveAttribute('aria-modal');
+        let reachedClip = false;
+        for (let step = 0; step < 40; step++) {
+            await page.keyboard.press('Tab');
+            await expect.poll(() => page.evaluate(() => {
+                const target = document.activeElement as HTMLElement;
+                const overlay = document.querySelector('[aria-labelledby="consent-banner-title"]')!;
+                if (!target.matches('a,button,input,select,textarea,summary') || overlay.contains(target)) return false;
+                const rect = target.getBoundingClientRect();
+                const bannerRect = overlay.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0 && rect.bottom > bannerRect.top && rect.top < bannerRect.bottom;
+            })).toBe(false);
+            reachedClip ||= await page.evaluate(() => document.activeElement?.textContent?.includes('Accessible Demo Clip') ?? false);
+        }
+        expect(reachedClip).toBe(true);
+        await page.getByRole('button', { name: 'Customize', exact: true }).click();
+        for (const name of ['Functional cookies', 'Analytics cookies', 'Advertising cookies']) {
+            await expect(page.getByRole('switch', { name, exact: true })).toBeVisible();
+        }
+        await page.keyboard.press('Escape');
+        await expect(page.getByRole('button', { name: 'Customize', exact: true })).toBeFocused();
+    }
+});

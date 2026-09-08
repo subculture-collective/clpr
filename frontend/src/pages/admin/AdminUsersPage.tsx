@@ -471,6 +471,7 @@ export function AdminUsersPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   type="text"
+                  aria-label="Search users"
                   placeholder="Search by username, email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -480,6 +481,7 @@ export function AdminUsersPage() {
             </div>
             <div>
               <select
+                aria-label="Filter users by role"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="w-full p-2 border border-border rounded-md bg-background"
@@ -492,6 +494,7 @@ export function AdminUsersPage() {
             </div>
             <div>
               <select
+                aria-label="Filter users by status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full p-2 border border-border rounded-md bg-background"

@@ -12,6 +12,7 @@ export function PlaylistsPage() {
             />
             <Container>
                 <div className="py-8">
+                    <h1 className="mb-6 text-2xl font-semibold">Your playlists</h1>
                     <PlaylistManager />
                 </div>
                 <MiniFooter />

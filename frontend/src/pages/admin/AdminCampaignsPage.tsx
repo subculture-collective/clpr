@@ -143,7 +143,7 @@ const AdminCampaignsPage: React.FC = () => {
               onClick={() => setActiveTab('campaigns')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'campaigns'
-                  ? 'border-primary text-primary'
+                  ? 'border-primary text-link'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -153,7 +153,7 @@ const AdminCampaignsPage: React.FC = () => {
               onClick={() => setActiveTab('reports')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'reports'
-                  ? 'border-primary text-primary'
+                  ? 'border-primary text-link'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
@@ -285,7 +285,7 @@ const AdminCampaignsPage: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <button
                                 onClick={() => handleEdit(campaign)}
-                                className="text-primary hover:text-primary/80 mr-4"
+                                className="text-link hover:text-link/80 mr-4"
                               >
                                 Edit
                               </button>
@@ -906,7 +906,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                 id="is_active"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                className="h-4 w-4 text-link focus:ring-primary border-gray-300 rounded"
               />
               <label
                 htmlFor="is_active"

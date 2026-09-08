@@ -312,7 +312,7 @@ export function AdminPlaylistScriptsPage() {
                                                     {script.last_generated_playlist_id && (
                                                         <Link
                                                             to={`/playlists/${script.last_generated_playlist_id}`}
-                                                            className='inline-flex items-center gap-1 text-xs text-primary-500 hover:underline mt-0.5'
+                                                            className='inline-flex items-center gap-1 text-xs text-link hover:underline mt-0.5'
                                                         >
                                                             View playlist{' '}
                                                             <ExternalLink className='w-3 h-3' />

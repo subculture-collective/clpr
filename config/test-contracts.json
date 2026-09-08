@@ -6,7 +6,8 @@
     "backend/internal/services/account_merge_service_test.go",
     "backend/pkg/jwt/jwt_test.go",
     "frontend/src/lib/secure-storage.encrypted.test.ts",
-    "frontend/src/lib/pkce.test.ts"
+    "frontend/src/lib/pkce.test.ts",
+    "frontend/src/lib/auth-return.test.ts"
   ],
   "Authorization, CSRF, and mutation boundaries": [
     "backend/internal/middleware/auth_middleware_test.go",
@@ -19,7 +20,8 @@
   "Consent and personal data": [
     "frontend/src/context/ConsentContext.test.tsx",
     "frontend/e2e/mocked/consent.spec.ts",
-    "backend/internal/handlers/user_scope_hardening_test.go"
+    "backend/internal/handlers/user_scope_hardening_test.go",
+    "frontend/src/pages/SettingsPage.test.tsx"
   ],
   "Feed, search, and pagination": [
     "frontend/src/components/clip/ClipFeed.windowing.test.tsx",
@@ -47,7 +49,9 @@
     "frontend/src/components/ui/Modal.test.tsx",
     "frontend/src/components/ui/SkipLink.test.tsx",
     "frontend/src/test/accessibility.test.tsx",
-    "frontend/e2e/mocked/accessibility.spec.ts"
+    "frontend/e2e/mocked/accessibility.spec.ts",
+    "frontend/src/components/tag/TagChip.test.tsx",
+    "frontend/src/pages/OnboardingPage.test.tsx"
   ],
   "Real API and public account boundaries": [
     "frontend/e2e/real-backend/launch-smoke.spec.ts"

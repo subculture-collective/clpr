@@ -215,7 +215,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 				)}
 
 				{/* Title */}
-				<h3 className="text-base font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-primary-500 transition-colors leading-snug">
+				<h3 className="text-base font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-link transition-colors leading-snug">
 					{playlist.title}
 				</h3>
 
@@ -289,7 +289,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 								type="button"
 								onClick={handleLikeClick}
 								disabled={likeMutation.isPending || unlikeMutation.isPending}
-								className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+								className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded px-2 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-link cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
 								title={
 									isAuthenticated
 										? isLiked
@@ -300,7 +300,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 							>
 								<Heart
 									size={14}
-									className={cn(isLiked && "fill-current text-primary-500")}
+									className={cn(isLiked && "fill-current text-link")}
 								/>
 								<span className="font-medium text-foreground/90">
 									{likeCount}
@@ -313,7 +313,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 								disabled={
 									bookmarkMutation.isPending || unbookmarkMutation.isPending
 								}
-								className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+								className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded px-2 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-link cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
 								title={
 									isAuthenticated
 										? isBookmarked
@@ -324,7 +324,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 							>
 								<Bookmark
 									size={14}
-									className={cn(isBookmarked && "fill-current text-primary-500")}
+									className={cn(isBookmarked && "fill-current text-link")}
 								/>
 								<span className="font-medium text-foreground/90">
 									{bookmarkCount}
@@ -341,7 +341,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 									}
 									onShare={trackShare}
 									showLabel={false}
-									buttonClassName="inline-flex min-h-0 items-center rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500"
+									buttonClassName="inline-flex min-h-0 items-center rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-link"
 									iconClassName="h-3.5 w-3.5"
 									preventLinkNavigation={true}
 								/>

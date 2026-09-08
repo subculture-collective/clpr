@@ -1,4 +1,4 @@
-import { ModerationQueueView } from '../../components/moderation';
+import { ModerationQueueView } from '../../components/moderation/ModerationQueueView';
 
 export function AdminClipsPage() {
     return (

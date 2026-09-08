@@ -82,5 +82,17 @@
     "lines": 80,
     "branches": 80,
     "functions": 80
+  },
+  "src/components/clip/VirtualClipList.tsx": {
+    "statements": 90,
+    "lines": 90,
+    "branches": 60,
+    "functions": 80
+  },
+  "src/lib/auth-return.ts": {
+    "statements": 100,
+    "lines": 100,
+    "branches": 80,
+    "functions": 100
   }
 }

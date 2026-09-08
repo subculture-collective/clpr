@@ -150,7 +150,7 @@ export function AdminVerificationQueuePage() {
         <Container maxWidth="full" className="px-0">
             <div>
                 <div className="mb-6">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-brand">Trust &amp; identity</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-link">Trust &amp; identity</p>
                     <h1 className="text-3xl font-bold text-text-primary mb-2">
                         Creator Verification Queue
                     </h1>

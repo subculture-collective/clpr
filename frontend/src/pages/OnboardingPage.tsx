@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,7 @@ const steps = [
 
 export function OnboardingPage() {
     const navigate = useNavigate();
+    const headingRef = useRef<HTMLHeadingElement>(null);
     const [step, setStep] = useState(0);
     const [creators, setCreators] = useState<string[]>([]);
     const [topics, setTopics] = useState<string[]>([]);
@@ -68,6 +69,12 @@ export function OnboardingPage() {
     };
     const selectionCount = creators.length + topics.length + tags.length;
     const current = steps[step];
+    const currentQuery = [creatorQuery, topicQuery, tagQuery][step];
+    const optionCount = [creatorOptions.length, topicQuery.data?.categories?.length ?? 0, tagQuery.data?.tags?.length ?? 0][step];
+    const changeStep = (next: number) => {
+        setStep(next);
+        requestAnimationFrame(() => headingRef.current?.focus());
+    };
 
     return (
         <section
@@ -78,16 +85,16 @@ export function OnboardingPage() {
             <div className='mx-auto max-w-5xl'>
                 <div className='mb-10 flex items-center justify-between gap-6'>
                     <div>
-                        <p className='mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary-500'>{current.eyebrow}</p>
-                        <h1 id='onboarding-heading' className='text-4xl font-black tracking-tight sm:text-6xl'>{current.title}</h1>
+                        <p className='mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-link'>{current.eyebrow}</p>
+                        <h1 ref={headingRef} tabIndex={-1} id='onboarding-heading' className='text-4xl font-black tracking-tight sm:text-6xl'>{current.title}</h1>
                         <p className='mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg'>{current.detail}</p>
                     </div>
-                    <div className='hidden rounded-full border border-primary-500/30 bg-primary-500/10 p-4 text-primary-500 sm:block'>
+                    <div className='hidden rounded-full border border-primary-500/30 bg-primary-500/10 p-4 text-link sm:block'>
                         <Sparkles aria-hidden='true' />
                     </div>
                 </div>
 
-                <div className='mb-8 grid grid-cols-3 gap-2' aria-label='Onboarding progress'>
+                <div className='mb-8 grid grid-cols-3 gap-2' role='progressbar' aria-label='Onboarding progress' aria-valuemin={1} aria-valuemax={3} aria-valuenow={step + 1} aria-valuetext={current.eyebrow}>
                     {steps.map((item, index) => (
                         <div key={item.title} className={`h-1.5 rounded-full ${index <= step ? 'bg-primary-500' : 'bg-muted'}`} />
                     ))}
@@ -98,7 +105,7 @@ export function OnboardingPage() {
                         {creatorOptions.map(creator => {
                             const selected = creators.includes(creator.broadcaster_id);
                             return (
-                                <button key={creator.broadcaster_id} type='button' onClick={() => toggle(creator.broadcaster_id, creators, setCreators)}
+                                <button key={creator.broadcaster_id} type='button' aria-pressed={selected} disabled={mutation.isPending} onClick={() => toggle(creator.broadcaster_id, creators, setCreators)}
                                     className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition ${selected ? 'border-primary-500 bg-primary-500/10' : 'border-border bg-card hover:border-primary-500/50'}`}>
                                     <img src={creator.latest_clip_thumbnail || '/og-image.svg'} alt='' className='mb-3 aspect-square w-full rounded-xl object-cover' />
                                     <span className='block truncate font-bold'>{creator.broadcaster_name}</span>
@@ -114,7 +121,7 @@ export function OnboardingPage() {
                     <section className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
                         {(topicQuery.data?.categories || []).map(topic => {
                             const selected = topics.includes(topic.slug);
-                            return <button key={topic.id} type='button' onClick={() => toggle(topic.slug, topics, setTopics)}
+                            return <button key={topic.id} type='button' aria-pressed={selected} disabled={mutation.isPending} onClick={() => toggle(topic.slug, topics, setTopics)}
                                 className={`rounded-2xl border p-5 text-left transition ${selected ? 'border-primary-500 bg-primary-500/10' : 'border-border bg-card hover:border-primary-500/50'}`}>
                                 <span className='flex items-center justify-between text-lg font-bold'>{topic.name}{selected && <Check size={20} />}</span>
                                 {topic.description && <span className='mt-2 block text-sm text-muted-foreground'>{topic.description}</span>}
@@ -127,7 +134,7 @@ export function OnboardingPage() {
                     <section className='flex flex-wrap gap-3'>
                         {(tagQuery.data?.tags || []).map(tag => {
                             const selected = tags.includes(tag.id);
-                            return <button key={tag.id} type='button' onClick={() => toggle(tag.id, tags, setTags)}
+                            return <button key={tag.id} type='button' aria-pressed={selected} disabled={mutation.isPending} onClick={() => toggle(tag.id, tags, setTags)}
                                 className={`rounded-full border px-5 py-3 font-semibold transition ${selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-border bg-card hover:border-primary-500/50'}`}>
                                 {tag.name}{selected && <Check className='ml-2 inline' size={16} />}
                             </button>;
@@ -135,24 +142,31 @@ export function OnboardingPage() {
                     </section>
                 )}
 
-                {(creatorQuery.isError || topicQuery.isError || tagQuery.isError) && (
-                    <p className='mt-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive'>Some choices could not be loaded. You can continue with the selections that are available.</p>
+                {!currentQuery.isLoading && !currentQuery.isError && optionCount === 0 && <p role='status' className='py-6 text-muted-foreground'>No choices are available for this step. You can continue or skip for now.</p>}
+                {currentQuery.isLoading && <p role='status' className='py-6 text-muted-foreground'>Loading choices…</p>}
+                {currentQuery.isError && (
+                    <div role='alert' className='mt-6 rounded-lg border border-border p-4'>
+                        <p>These choices could not be loaded. You can retry or skip this step.</p>
+                        <Button variant='outline' className='mt-3' disabled={currentQuery.isFetching} onClick={() => currentQuery.refetch()}>Try again</Button>
+                    </div>
                 )}
-                {mutation.isError && <p className='mt-6 text-sm text-destructive'>We could not save your feed yet. Please try again.</p>}
+                {mutation.isError && <p role='alert' className='mt-6 text-sm text-error-400'>We could not save your feed yet. Your selections are still here. Please try again.</p>}
+                <p className='mt-6 text-sm text-muted-foreground'>All choices are optional. You can change your interests later.</p>
 
-                <footer className='mt-10 flex items-center justify-between border-t border-border pt-6'>
-                    <Button variant='ghost' disabled={step === 0 || mutation.isPending} onClick={() => setStep(value => value - 1)}>
+                <footer className='mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6'>
+                    <Button variant='ghost' disabled={step === 0 || mutation.isPending} onClick={() => changeStep(step - 1)}>
                         <ChevronLeft size={18} /> Back
                     </Button>
                     <span className='text-sm text-muted-foreground'>{selectionCount} selected</span>
                     {step < 2 ? (
-                        <Button onClick={() => setStep(value => value + 1)}>Continue <ChevronRight size={18} /></Button>
+                        <Button onClick={() => changeStep(step + 1)}>Continue <ChevronRight size={18} /></Button>
                     ) : (
-                        <Button disabled={selectionCount === 0 || mutation.isPending} onClick={() => mutation.mutate({ followed_creators: creators, preferred_topics: topics, preferred_tags: tags })}>
-                            {mutation.isPending ? 'Shaping your feed…' : 'Build my feed'}
+                        <Button disabled={mutation.isPending} onClick={() => selectionCount === 0 ? navigate('/', { replace: true }) : mutation.mutate({ followed_creators: creators, preferred_topics: topics, preferred_tags: tags })}>
+                            {mutation.isPending ? 'Shaping your feed…' : selectionCount === 0 ? 'Browse clips' : 'Build my feed'}
                         </Button>
                     )}
                 </footer>
+                <Button variant='ghost' className='mt-3' disabled={mutation.isPending} onClick={() => navigate('/', { replace: true })}>Skip for now</Button>
             </div>
         </section>
     );

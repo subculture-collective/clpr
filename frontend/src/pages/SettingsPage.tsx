@@ -13,6 +13,9 @@ import { useFeedAutoplayPreference } from '../hooks';
 export function SettingsPage() {
     const { user, refreshUser } = useAuth();
     const queryClient = useQueryClient();
+    const profileDirty = useRef(false);
+    const settingsDirty = useRef(false);
+    const profileOwner = useRef<string | undefined>(undefined);
     const { consent, updateConsent, doNotTrack, resetConsent } = useConsent();
     const { preference: feedAutoplay, setPreference: setFeedAutoplay } = useFeedAutoplayPreference();
 
@@ -49,14 +52,17 @@ export function SettingsPage() {
     const [consentSuccess, setConsentSuccess] = useState(false);
 
     // Load user settings
-    const { data: settings, isLoading: settingsLoading } = useQuery({
-        queryKey: ['userSettings'],
+    const { data: settings, isLoading: settingsLoading, isError: settingsLoadError, isFetching: settingsFetching, refetch: refetchSettings } = useQuery({
+        queryKey: ['userSettings', user?.id],
+        enabled: !!user,
         queryFn: getUserSettings,
     });
 
     // Initialize form data when user or settings load
     useEffect(() => {
-        if (user) {
+        if (user && (!profileDirty.current || profileOwner.current !== user.id)) {
+            profileOwner.current = user.id;
+            profileDirty.current = false;
             setProfileData({
                 display_name: user.display_name,
                 bio: user.bio || null,
@@ -65,7 +71,7 @@ export function SettingsPage() {
     }, [user]);
 
     useEffect(() => {
-        if (settings) {
+        if (settings && !settingsDirty.current) {
             setSettingsData({
                 profile_visibility: settings.profile_visibility,
                 show_karma_publicly: settings.show_karma_publicly,
@@ -82,6 +88,7 @@ export function SettingsPage() {
 
         try {
             await updateProfile(profileData);
+            profileDirty.current = false;
             await refreshUser();
             setProfileSuccess(true);
             profileTimeoutRef.current = setTimeout(() => setProfileSuccess(false), 3000);
@@ -101,7 +108,8 @@ export function SettingsPage() {
 
         try {
             await updateUserSettings(settingsData);
-            queryClient.invalidateQueries({ queryKey: ['userSettings'] });
+            settingsDirty.current = false;
+            await queryClient.invalidateQueries({ queryKey: ['userSettings', user?.id] });
             setSettingsSuccess(true);
             settingsTimeoutRef.current = setTimeout(() => setSettingsSuccess(false), 3000);
         } catch {
@@ -133,7 +141,8 @@ export function SettingsPage() {
                             <h2 className='text-lg xs:text-xl font-semibold'>Profile</h2>
                         </CardHeader>
                         <CardBody>
-                            <form onSubmit={handleProfileSubmit}>
+                            <form onSubmit={handleProfileSubmit} onChangeCapture={() => { profileDirty.current = true; setProfileSuccess(false); }}>
+                                <fieldset disabled={isSavingProfile}>
                                 <Stack direction='vertical' gap={4}>
                                     {showTwitchName && (
                                         <Input
@@ -186,6 +195,7 @@ export function SettingsPage() {
                                     {profileSuccess && <Alert variant='success'>Profile updated successfully!</Alert>}
                                     {profileError && <Alert variant='error'>{profileError}</Alert>}
                                 </Stack>
+                                </fieldset>
                             </form>
                         </CardBody>
                     </Card>
@@ -197,7 +207,7 @@ export function SettingsPage() {
                         <CardBody>
                             <Toggle
                                 label='Muted feed autoplay'
-                                helperText='Automatically play the most visible clip without sound. Only one Twitch player is loaded at a time.'
+                                helperText='Play clips without sound as you browse.'
                                 checked={feedAutoplay === 'muted'}
                                 onChange={event => setFeedAutoplay(event.target.checked ? 'muted' : 'manual')}
                             />
@@ -210,10 +220,12 @@ export function SettingsPage() {
                             <h2 className='text-xl font-semibold'>Privacy Settings</h2>
                         </CardHeader>
                         <CardBody>
+                            {settingsLoadError && <Alert variant='error'>Privacy settings could not be loaded. Your changes have been kept.<Button className='mt-3' variant='outline' disabled={settingsFetching} onClick={() => refetchSettings()}>Try again</Button></Alert>}
                             {settingsLoading ? (
                                 <div className='text-center py-4'>Loading settings...</div>
-                            ) : (
-                                <form onSubmit={handleSettingsSubmit}>
+                            ) : settings ? (
+                                <form onSubmit={handleSettingsSubmit} onChangeCapture={() => { settingsDirty.current = true; setSettingsSuccess(false); }}>
+                                    <fieldset disabled={isSavingSettings}>
                                     <Stack direction='vertical' gap={4}>
                                         <div>
                                             <label htmlFor='profile-visibility' className='block text-sm font-medium mb-2'>Profile Visibility</label>
@@ -257,8 +269,9 @@ export function SettingsPage() {
                                         )}
                                         {settingsError && <Alert variant='error'>{settingsError}</Alert>}
                                     </Stack>
+                                </fieldset>
                                 </form>
-                            )}
+                            ) : null}
                         </CardBody>
                     </Card>
 
@@ -339,7 +352,7 @@ export function SettingsPage() {
                                 {consentSuccess && <Alert variant='success'>Privacy preferences updated!</Alert>}
                                 <p className='text-xs text-muted-foreground'>
                                     Learn more about how we use your data in our{' '}
-                                    <Link to='/privacy' className='text-primary-500 hover:underline'>
+                                    <Link to='/privacy' className='text-link underline underline-offset-4'>
                                         Privacy Policy
                                     </Link>
                                 </p>

@@ -256,7 +256,7 @@ export function AdminDiscoveryListFormPage() {
                 id="isFeatured"
                 checked={isFeatured}
                 onChange={(e) => setIsFeatured(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="w-4 h-4 rounded border-gray-300 text-link focus:ring-primary"
               />
               <label htmlFor="isFeatured" className="text-sm font-medium">
                 Featured List

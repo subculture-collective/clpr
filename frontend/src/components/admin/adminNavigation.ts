@@ -6,7 +6,7 @@ export type AdminNavGroup = { label: string; items: AdminNavItem[] };
 
 export const adminNavGroups: AdminNavGroup[] = [
     { label: 'Overview', items: [
-        { label: 'Control room', href: '/admin/dashboard', description: 'Admin overview and shortcuts', icon: LayoutDashboard },
+        { label: 'Overview', href: '/admin/dashboard', description: 'Admin overview and shortcuts', icon: LayoutDashboard },
         { label: 'Platform analytics', href: '/admin/analytics', description: 'Audience and platform health', icon: BarChart3 },
     ] },
     { label: 'Moderation', items: [

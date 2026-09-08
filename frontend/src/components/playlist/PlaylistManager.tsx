@@ -18,8 +18,8 @@ type Tab = 'mine' | 'bookmarked';
 export function PlaylistManager() {
     const [activeTab, setActiveTab] = useState<Tab>('mine');
 
-    const { data, isLoading } = usePlaylists();
-    const { data: bookmarksData, isLoading: bookmarksLoading } = useQuery({
+    const { data, isLoading, isError, isFetching, refetch } = usePlaylists();
+    const { data: bookmarksData, isLoading: bookmarksLoading, isError: bookmarksError, isFetching: bookmarksFetching, refetch: refetchBookmarks } = useQuery({
         queryKey: ['playlists', 'bookmarked'],
         queryFn: () => fetchBookmarkedPlaylists(1, 50),
         enabled: activeTab === 'bookmarked',
@@ -101,12 +101,13 @@ export function PlaylistManager() {
     return (
         <div className="space-y-6">
             {/* Header with tabs */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-1">
                     <button
                         type="button"
+                        aria-pressed={activeTab === 'mine'}
                         onClick={() => setActiveTab('mine')}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
+                        className={`flex min-h-11 items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                             activeTab === 'mine'
                                 ? 'bg-brand text-white'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -117,8 +118,9 @@ export function PlaylistManager() {
                     </button>
                     <button
                         type="button"
+                        aria-pressed={activeTab === 'bookmarked'}
                         onClick={() => setActiveTab('bookmarked')}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
+                        className={`flex min-h-11 items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                             activeTab === 'bookmarked'
                                 ? 'bg-brand text-white'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -227,11 +229,12 @@ export function PlaylistManager() {
             {/* My Playlists tab */}
             {activeTab === 'mine' && (
                 <>
+                    {isError && <div role='alert' className='rounded-lg border border-border p-4'><p>Your playlists could not be loaded.</p><Button className='mt-3' variant='outline' disabled={isFetching} onClick={() => refetch()}>Try again</Button></div>}
                     {isLoading ? (
                         <div className="flex justify-center py-12">
                             <Spinner size="lg" />
                         </div>
-                    ) : myPlaylists.length === 0 ? (
+                    ) : myPlaylists.length === 0 && !isError ? (
                         <div className="text-center py-12 text-muted-foreground">
                             <ListMusic className="h-12 w-12 mx-auto mb-3 opacity-40" />
                             <p>You don't have any playlists yet.</p>
@@ -242,23 +245,24 @@ export function PlaylistManager() {
                             {myPlaylists.map((playlist) => (
                                 <div key={playlist.id} className="relative group">
                                     <PlaylistCard playlist={playlist} />
-                                    <div className="absolute top-5 right-5 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute top-5 right-5 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
                                         <button
                                             aria-label={`Edit ${playlist.title}`}
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 startEdit(playlist);
                                             }}
-                                            className="p-2 bg-background/90 rounded-lg hover:bg-surface-hover transition cursor-pointer"
+                                            className="min-h-11 min-w-11 p-2 bg-background/90 rounded-lg hover:bg-surface-hover transition cursor-pointer"
                                         >
                                             <Edit2 className="h-4 w-4 text-muted-foreground" />
                                         </button>
                                         <button
+                                            aria-label={`Delete ${playlist.title}`}
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 handleDelete(playlist.id);
                                             }}
-                                            className="p-2 bg-background/90 rounded-lg hover:bg-error-900/50 transition cursor-pointer"
+                                            className="min-h-11 min-w-11 p-2 bg-background/90 rounded-lg hover:bg-error-900/50 transition cursor-pointer"
                                         >
                                             <Trash2 className="h-4 w-4 text-error-400" />
                                         </button>
@@ -273,11 +277,12 @@ export function PlaylistManager() {
             {/* Bookmarked tab */}
             {activeTab === 'bookmarked' && (
                 <>
+                    {bookmarksError && <div role='alert' className='rounded-lg border border-border p-4'><p>Bookmarked playlists could not be loaded.</p><Button className='mt-3' variant='outline' disabled={bookmarksFetching} onClick={() => refetchBookmarks()}>Try again</Button></div>}
                     {bookmarksLoading ? (
                         <div className="flex justify-center py-12">
                             <Spinner size="lg" />
                         </div>
-                    ) : bookmarkedPlaylists.length === 0 ? (
+                    ) : bookmarkedPlaylists.length === 0 && !bookmarksError ? (
                         <div className="text-center py-12 text-muted-foreground">
                             <Bookmark className="h-12 w-12 mx-auto mb-3 opacity-40" />
                             <p>No bookmarked playlists yet.</p>

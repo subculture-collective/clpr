@@ -52,4 +52,13 @@ describe('OnboardingPage', () => {
             preferred_tags: ['tag-1'],
         });
     });
+    it('allows browsing without preferences and avoids an invalid empty submission', async () => {
+        const user = userEvent.setup();
+        render(<OnboardingPage />);
+        await user.click(screen.getByRole('button', { name: /Continue/ }));
+        await user.click(screen.getByRole('button', { name: /Continue/ }));
+        await user.click(screen.getByRole('button', { name: 'Browse clips' }));
+        expect(completeOnboarding).not.toHaveBeenCalled();
+        expect(followBroadcaster).not.toHaveBeenCalled();
+    });
 });

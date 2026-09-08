@@ -142,8 +142,8 @@ export function AdminReportsPage() {
       <Card className="p-4 mb-6">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-2">Status</label>
-            <select
+            <label htmlFor="report-status" className="block text-sm font-medium mb-2">Status</label>
+            <select id="report-status"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -160,8 +160,8 @@ export function AdminReportsPage() {
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-2">Type</label>
-            <select
+            <label htmlFor="report-type" className="block text-sm font-medium mb-2">Type</label>
+            <select id="report-type"
               value={typeFilter}
               onChange={(e) => {
                 setTypeFilter(e.target.value);
@@ -207,7 +207,7 @@ export function AdminReportsPage() {
                 key={report.id}
                 className="p-4 bg-background-secondary rounded-lg border border-border"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     {getTypeIcon(report.reportable_type)}
                     <div>
@@ -305,7 +305,7 @@ export function AdminReportsPage() {
             </p>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Notes (optional)</label>
+              <label htmlFor="report-action-notes" className="block text-sm font-medium mb-2">Notes (optional)</label>
               <TextArea
                 value={actionNotes}
                 onChange={(e) => setActionNotes(e.target.value)}

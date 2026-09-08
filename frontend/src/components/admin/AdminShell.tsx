@@ -56,25 +56,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <div className='border-b border-border bg-surface/80 backdrop-blur-xl lg:hidden'>
                 <div className='flex items-center justify-between px-4 py-3'>
                     <div>
-                        <p className='text-[10px] font-bold uppercase tracking-[0.2em] text-brand'>clpr control room</p>
+                        <p className='text-[10px] font-bold uppercase tracking-[0.2em] text-link'>clpr administration</p>
                         <p className='text-sm font-semibold text-text-primary'>{current?.label ?? 'Administration'}</p>
                     </div>
-                    <button type='button' onClick={() => setMobileOpen(value => !value)} className='flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-surface-raised p-2 text-text-primary' aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}>
+                    <button type='button' onClick={() => setMobileOpen(value => !value)} className='flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-surface-raised p-2 text-text-primary' aria-expanded={mobileOpen} aria-controls={mobileOpen ? 'admin-mobile-navigation' : undefined} aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}>
                         {mobileOpen ? <X className='h-5 w-5' /> : <Menu className='h-5 w-5' />}
                     </button>
                 </div>
-                {mobileOpen && <div className='max-h-[70vh] overflow-y-auto border-t border-border px-3 py-4'><AdminNavigation onNavigate={() => setMobileOpen(false)} /></div>}
+                {mobileOpen && <div id='admin-mobile-navigation' className='max-h-[70vh] overflow-y-auto border-t border-border px-3 py-4'><AdminNavigation onNavigate={() => setMobileOpen(false)} /></div>}
             </div>
 
-            <div className='mx-auto grid w-full max-w-[1600px] lg:grid-cols-[252px_minmax(0,1fr)]'>
+            <div className='mx-auto grid min-w-0 w-full max-w-[1600px] grid-cols-[minmax(0,1fr)] lg:grid-cols-[252px_minmax(0,1fr)]'>
                 <aside className='hidden border-r border-border bg-surface/45 lg:block'>
                     <div className='sticky top-0 max-h-screen overflow-y-auto px-4 py-7'>
                         <div className='mb-7 px-3'>
-                            <div className='mb-2 flex items-center gap-2'>
-                                <span className='h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]' />
-                                <span className='text-[10px] font-bold uppercase tracking-[0.2em] text-text-tertiary'>Operator online</span>
-                            </div>
-                            <h2 className='font-accent text-xl font-extrabold tracking-tight text-text-primary'>Control room</h2>
+                            <h2 className='font-accent text-xl font-extrabold tracking-tight text-text-primary'>Administration</h2>
                             <p className='mt-1 text-xs leading-5 text-text-secondary'>Moderation, discovery, and platform operations.</p>
                         </div>
                         <AdminNavigation />
