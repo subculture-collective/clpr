@@ -82,3 +82,11 @@ Protected restores require an executable `APPLICATION_SMOKE_RUNNER`, invoked
 with the restored database name and smoke URL before the HTTP smoke check.
 The runner must start the candidate against that restored database and leave
 it available for the subsequent check.
+
+For a full soak, provide `STAGING_AUTH_FIXTURES_FILE` with per-profile arrays
+(`baseline`, `stress`, `soak`), one entry per VU. Each entry contains independent
+`member.refresh_token` and `admin.refresh_token` values for disposable users.
+The load client rotates these through the real refresh endpoint every 14 minutes.
+`STAGING_LOCAL_IPS` selects already provisioned source addresses in the chosen
+Docker network namespace, allowing each VU and the rate-limit probe to use an
+independent address without changing application abuse controls.

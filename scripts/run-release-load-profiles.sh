@@ -22,8 +22,10 @@ fi
 [[ "${ALLOW_STAGING_LOAD:-}" == "true" ]] || { echo "ALLOW_STAGING_LOAD=true is required" >&2; exit 1; }
 : "${STAGING_BASE_URL:?STAGING_BASE_URL is required}"
 : "${CLIP_ID:?CLIP_ID is required}"
-: "${STAGING_AUTH_TOKEN:?STAGING_AUTH_TOKEN is required}"
-: "${STAGING_ADMIN_TOKEN:?STAGING_ADMIN_TOKEN is required}"
+if [[ -z "${STAGING_AUTH_FIXTURES_FILE:-}" ]]; then
+    : "${STAGING_AUTH_TOKEN:?STAGING_AUTH_TOKEN is required}"
+    : "${STAGING_ADMIN_TOKEN:?STAGING_ADMIN_TOKEN is required}"
+fi
 : "${EVIDENCE_OUTPUT_DIR:?EVIDENCE_OUTPUT_DIR is required}"
 
 python3 - "$STAGING_BASE_URL" <<'PY'
@@ -48,6 +50,13 @@ if [[ -n "${STAGING_CA_FILE:-}" ]]; then
     [[ -f "$STAGING_CA_FILE" ]] || { echo "STAGING_CA_FILE must exist" >&2; exit 1; }
     network_args+=(-v "$(realpath "$STAGING_CA_FILE"):/staging-ca.pem:ro" -e SSL_CERT_FILE=/staging-ca.pem)
 fi
+if [[ -n "${STAGING_AUTH_FIXTURES_FILE:-}" ]]; then
+    [[ -f "$STAGING_AUTH_FIXTURES_FILE" ]] || { echo "STAGING_AUTH_FIXTURES_FILE must exist" >&2; exit 1; }
+    network_args+=(-v "$(realpath "$STAGING_AUTH_FIXTURES_FILE"):/auth-fixtures.json:ro" -e AUTH_FIXTURES_FILE=/auth-fixtures.json)
+fi
+if [[ -n "${STAGING_LOCAL_IPS:-}" ]]; then
+    network_args+=(-e "K6_LOCAL_IPS=$STAGING_LOCAL_IPS")
+fi
 
 for profile in baseline stress soak; do
     echo "Running $profile release profile"
@@ -56,8 +65,8 @@ for profile in baseline stress soak; do
         -v "$EVIDENCE_OUTPUT_DIR:/evidence" \
         -e "BASE_URL=$STAGING_BASE_URL" \
         -e "CLIP_ID=$CLIP_ID" \
-        -e "AUTH_TOKEN=$STAGING_AUTH_TOKEN" \
-        -e "ADMIN_TOKEN=$STAGING_ADMIN_TOKEN" \
+        -e "AUTH_TOKEN=${STAGING_AUTH_TOKEN:-}" \
+        -e "ADMIN_TOKEN=${STAGING_ADMIN_TOKEN:-}" \
         -e "PROFILE=$profile" \
         -e "SOAK_DURATION=${SOAK_DURATION:-30m}" \
         "$K6_IMAGE" run --summary-export "/evidence/k6-$profile-summary.json" /release.js

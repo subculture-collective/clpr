@@ -7,6 +7,9 @@ const adminToken = __ENV.ADMIN_TOKEN || token;
 const clipID = __ENV.CLIP_ID || '';
 const searchQuery = encodeURIComponent(__ENV.SEARCH_QUERY || 'speedrun');
 const profile = __ENV.PROFILE || 'baseline';
+// Each VU owns its refresh tokens throughout the 30-minute soak.
+const fixtureProfiles = __ENV.AUTH_FIXTURES_FILE ? JSON.parse(open(__ENV.AUTH_FIXTURES_FILE)) : null;
+const sessions = {};
 
 const profiles = {
   baseline: { vus: 5, duration: '1m' },
@@ -53,14 +56,35 @@ export function releaseTraffic() {
   releaseJourneys[__ITER % releaseJourneys.length]();
 }
 
-function headers(value = token) {
+function headers(role = 'member') {
+  let value = role === 'admin' ? adminToken : token;
+  if (fixtureProfiles) {
+    const fixture = fixtureProfiles[profile]?.[__VU - 1]?.[role];
+    if (!fixture?.refresh_token) fail('Missing per-VU authenticated load fixture');
+    const session = sessions[role] || (sessions[role] = { refresh: fixture.refresh_token, refreshAt: 0 });
+    if (Date.now() >= session.refreshAt) {
+      // Keep member and admin refresh cookies from overriding each other's body.
+      http.cookieJar().clear(baseURL);
+      const response = http.post(`${baseURL}/api/v1/auth/refresh`, JSON.stringify({ refresh_token: session.refresh }), {
+        headers: { 'Content-Type': 'application/json' }, responseType: 'text', tags: { journey: 'auth' },
+      });
+      if (!check(response, { 'load session refresh succeeds': r => r.status === 200 })) fail('Load session refresh failed');
+      const renewed = response.json();
+      if (!renewed.access_token || !renewed.refresh_token) fail('Load session refresh omitted credentials');
+      session.access = renewed.access_token;
+      session.refresh = renewed.refresh_token;
+      session.refreshAt = Date.now() + 14 * 60 * 1000;
+      http.cookieJar().clear(baseURL);
+    }
+    value = session.access;
+  }
   return value ? { Authorization: `Bearer ${value}` } : {};
 }
 
 export function setup() {
   if (!clipID) fail('CLIP_ID must identify a repository-owned load fixture');
-  if (!token) fail('AUTH_TOKEN must identify a disposable load-test user');
-  if (!adminToken) fail('ADMIN_TOKEN must identify a disposable moderator/admin');
+  if (!fixtureProfiles && !token) fail('AUTH_TOKEN must identify a disposable load-test user');
+  if (!fixtureProfiles && !adminToken) fail('ADMIN_TOKEN must identify a disposable moderator/admin');
   if (__ENV.REQUIRE_MUTATIONS === 'true' && !__ENV.SUBMISSION_URL) fail('SUBMISSION_URL is required when mutations are enabled');
 }
 
@@ -105,7 +129,7 @@ export function submission() {
 
 export function moderation() {
   expectStatus(http.get(`${baseURL}/api/v1/admin/moderation/queue`, {
-    headers: headers(adminToken), tags: { journey: 'moderation' },
+    headers: headers('admin'), tags: { journey: 'moderation' },
   }), [200], 'moderation queue');
 }
 
