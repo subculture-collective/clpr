@@ -112,7 +112,7 @@ export function comments() {
 }
 
 export function auth() {
-  expectStatus(http.get(`${baseURL}/api/v1/users/me`, { headers: headers(), tags: { journey: 'auth' } }), [200], 'authenticated profile');
+  expectStatus(http.get(`${baseURL}/api/v1/auth/me`, { headers: headers(), tags: { journey: 'auth' } }), [200], 'authenticated profile');
 }
 
 export function submission() {
