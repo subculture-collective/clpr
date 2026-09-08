@@ -1783,10 +1783,15 @@ paths:
     get:
       tags: [Tags]
       summary: Get tag hierarchy tree
-      description: Returns the full tag hierarchy. If root query param is provided, returns the subtree rooted at that slug. Otherwise returns all root tags with immediate children attached.
+      description: |
+        With a nonempty root slug, returns that tag and its descendants, nested
+        to at most ten levels below the root. An unknown root returns an empty
+        tags array with status 200. Without a root, or with an empty root,
+        returns all root tags with their immediate children attached. In this
+        latter mode a failed child lookup leaves that parent's children omitted;
+        failure to load the root tags or the requested subtree returns 500.
       operationId: getTagTree
       security: []
-      x-clpr-router-derived: true
       parameters:
         - name: root
           in: query
@@ -1801,15 +1806,25 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [tags]
                 properties:
                   tags:
                     type: array
                     items:
                       $ref: '#/components/schemas/TagTreeNode'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
-          $ref: '#/components/responses/InternalServerError'
+          description: Root tag or subtree lookup failed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+                    enum: [failed to fetch tag tree, failed to fetch root tags]
 
   /api/v1/tags/{slug}:
     get:
@@ -13412,6 +13427,7 @@ components:
         - name
         - slug
         - usage_count
+        - created_at
       properties:
         id:
           type: string

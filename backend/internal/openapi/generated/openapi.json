@@ -2835,10 +2835,9 @@
           "Tags"
         ],
         "summary": "Get tag hierarchy tree",
-        "description": "Returns the full tag hierarchy. If root query param is provided, returns the subtree rooted at that slug. Otherwise returns all root tags with immediate children attached.",
+        "description": "With a nonempty root slug, returns that tag and its descendants, nested\nto at most ten levels below the root. An unknown root returns an empty\ntags array with status 200. Without a root, or with an empty root,\nreturns all root tags with their immediate children attached. In this\nlatter mode a failed child lookup leaves that parent's children omitted;\nfailure to load the root tags or the requested subtree returns 500.\n",
         "operationId": "getTagTree",
         "security": [],
-        "x-clpr-router-derived": true,
         "parameters": [
           {
             "name": "root",
@@ -2857,6 +2856,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "tags"
+                  ],
                   "properties": {
                     "tags": {
                       "type": "array",
@@ -2869,11 +2871,30 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "500": {
-            "$ref": "#/components/responses/InternalServerError"
+            "description": "Root tag or subtree lookup failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "failed to fetch tag tree",
+                        "failed to fetch root tags"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -28281,7 +28302,8 @@
           "id",
           "name",
           "slug",
-          "usage_count"
+          "usage_count",
+          "created_at"
         ],
         "properties": {
           "id": {

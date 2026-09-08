@@ -16,6 +16,14 @@ try {
         '--ext',
         'json',
     ], { stdio: 'ignore' });
+    const specification = JSON.parse(readFileSync(generated, 'utf8'));
+    for (const [route, operations] of Object.entries(specification.paths)) {
+        for (const [method, operation] of Object.entries(operations)) {
+            if (operation?.['x-clpr-router-derived'] === true) {
+                throw new Error(`transitional OpenAPI contract: ${method.toUpperCase()} ${route}; document the actual handler contract before qualification`);
+            }
+        }
+    }
     if (readFileSync(generated, 'utf8') !== readFileSync(committed, 'utf8')) {
         throw new Error('embedded OpenAPI artifact is stale; run npm run openapi:embed');
     }
