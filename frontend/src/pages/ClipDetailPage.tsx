@@ -226,7 +226,9 @@ export function ClipDetailPage() {
                 imageAlt={`${clip.title} — ${clip.creator_name}`}
                 structuredData={structuredData}
             />
-            <Container className='py-4 xs:py-6 md:py-8'>
+            <Container className='py-4 md:py-8'>
+                <div className='grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]'>
+                <div className='min-w-0'>
                 {/* Video Player — full width */}
                 <div className='mb-6'>
                     {clip.video_url ?
@@ -317,10 +319,12 @@ export function ClipDetailPage() {
                     {/* Actions row — matching PlaylistDetail stats row */}
                     <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
                         <button
+                            aria-label={`Upvote: ${clip.vote_score} votes`}
+                            aria-pressed={clip.user_vote === 1}
                             onClick={() => handleVote(1)}
                             disabled={!isAuthenticated || isVoting || isBanned}
                             className={cn(
-                                'inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors cursor-pointer',
+                                'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 py-2 transition-colors cursor-pointer',
                                 clip.user_vote === 1
                                     ? 'text-upvote bg-upvote/10'
                                     : 'hover:bg-accent hover:text-foreground',
@@ -329,7 +333,7 @@ export function ClipDetailPage() {
                             )}
                             title={isAuthenticated ? 'Upvote' : 'Log in to vote'}
                         >
-                            <svg className='h-3.5 w-3.5' fill={clip.user_vote === 1 ? 'currentColor' : 'none'} stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                            <svg className='h-5 w-5' fill={clip.user_vote === 1 ? 'currentColor' : 'none'} stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
                                 <path d='M12 4l8 8h-6v8h-4v-8H4z' />
                             </svg>
                             <span className='font-medium text-foreground/90'>
@@ -339,14 +343,14 @@ export function ClipDetailPage() {
 
                         <button
                             onClick={() => {
-                                if (!isBanned) {
-                                    document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' });
-                                }
+                                const discussion = document.getElementById('comments');
+                                discussion?.focus({ preventScroll: true });
+                                discussion?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
                             }}
-                            disabled={isBanned}
-                            className='inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
+                            aria-label={`Read discussion: ${clip.comment_count} comments`}
+                            className='inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 py-2 transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
                         >
-                            <svg className='h-3.5 w-3.5' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                            <svg className='h-5 w-5' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
                                 <path strokeLinecap='round' strokeLinejoin='round' d='M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z' />
                             </svg>
                             <span className='font-medium text-foreground/90'>
@@ -355,10 +359,12 @@ export function ClipDetailPage() {
                         </button>
 
                         <button
+                            aria-label={clip.is_favorited ? 'Remove from saved clips' : 'Save clip'}
+                            aria-pressed={!!clip.is_favorited}
                             onClick={() => handleFavorite()}
                             disabled={!isAuthenticated || isBanned}
                             className={cn(
-                                'inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors cursor-pointer',
+                                'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 py-2 transition-colors cursor-pointer',
                                 clip.is_favorited
                                     ? 'text-red-500'
                                     : 'hover:bg-accent hover:text-foreground',
@@ -367,7 +373,7 @@ export function ClipDetailPage() {
                             )}
                             title={isAuthenticated ? (clip.is_favorited ? 'Unfavorite' : 'Favorite') : 'Log in to favorite'}
                         >
-                            <svg className='h-3.5 w-3.5' fill={clip.is_favorited ? 'currentColor' : 'none'} stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
+                            <svg className='h-5 w-5' fill={clip.is_favorited ? 'currentColor' : 'none'} stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
                                 <path strokeLinecap='round' strokeLinejoin='round' d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' />
                             </svg>
                             <span className='font-medium text-foreground/90'>
@@ -379,21 +385,24 @@ export function ClipDetailPage() {
                             shareUrl={clipUrl}
                             shareTitle={clip.title}
                             showLabel={false}
-                            buttonClassName='inline-flex min-h-0 items-center rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
-                            iconClassName='h-3.5 w-3.5'
+                            buttonClassName='inline-flex min-h-11 min-w-11 items-center justify-center rounded px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
+                            iconClassName='h-5 w-5'
                         />
                     </div>
                 </div>
 
-                {/* Comments */}
-                <div id='comments'>
+                </div>
+                <section id='comments' aria-label='Discussion' tabIndex={-1} className='min-w-0 scroll-mt-24 rounded-lg border border-border bg-surface-raised p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:self-start xl:overflow-hidden'>
                     <CommentSection
                         clipId={clip.id}
+                        variant='compact'
+                        className='xl:h-[calc(100dvh-10rem)]'
                         currentUserId={user?.id}
                         isAdmin={user?.role === 'admin'}
                         isBanned={!!isBanned}
                         banReason={banReason}
                     />
+                </section>
                 </div>
             </Container>
         </>

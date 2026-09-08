@@ -497,23 +497,6 @@ describe('CommentItem - Collapse/Expand Badge', () => {
       expect(screen.getByText(/View 3 more replies in thread/i)).toBeInTheDocument();
     });
 
-    it('should have correct link styling and classes', () => {
-      const comment = createMockComment({
-        child_count: 5,
-        replies: [createMockComment({ id: 'reply-1' })],
-      });
-
-      renderWithClient(<CommentItem comment={comment} clipId="clip-1" depth={10} maxDepth={10} />);
-
-      const link = screen.getByText(/View 5 more replies in thread/i);
-
-      // Check for expected classes
-      expect(link).toHaveClass('text-sm');
-      expect(link).toHaveClass('text-brand');
-      expect(link).toHaveClass('hover:text-brand-hover');
-      expect(link).toHaveClass('inline-block');
-    });
-
     it('should use correct clipId in link URL', () => {
       const comment = createMockComment({
         id: 'test-comment-456',

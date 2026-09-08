@@ -62,10 +62,11 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
         className={cn(
           'rounded hover:bg-surface-hover transition-colors cursor-pointer',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          isCompact ? 'p-0.5' : 'min-w-8 min-h-8 p-1.5',
+          isCompact ? 'p-0.5' : 'min-w-11 min-h-11 p-2.5',
           isUpvoted ? 'text-upvote' : 'text-text-tertiary'
         )}
         aria-label="Upvote"
+        aria-pressed={isUpvoted}
         title="Upvote"
       >
         <svg
@@ -104,10 +105,11 @@ export const CommentVoteButtons: React.FC<CommentVoteButtonsProps> = ({
         className={cn(
           'rounded hover:bg-surface-hover transition-colors cursor-pointer',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          isCompact ? 'p-0.5' : 'min-w-8 min-h-8 p-1.5',
+          isCompact ? 'p-0.5' : 'min-w-11 min-h-11 p-2.5',
           isDownvoted ? 'text-downvote' : 'text-text-tertiary'
         )}
         aria-label="Downvote"
+        aria-pressed={isDownvoted}
         title="Downvote"
       >
         <svg

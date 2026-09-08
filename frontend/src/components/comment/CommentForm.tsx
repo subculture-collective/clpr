@@ -357,7 +357,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                                             {...props}
                                             target='_blank'
                                             rel='noopener noreferrer'
-                                            className='text-primary-500 hover:text-primary-600 underline'
+                                            className='text-link hover:text-link underline'
                                         />
                                     ),
                                     // Code blocks

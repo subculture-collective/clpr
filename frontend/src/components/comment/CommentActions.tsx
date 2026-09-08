@@ -105,20 +105,23 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
         );
     };
 
-    const handleShare = () => {
-        const url = `${window.location.origin}/clips/${clipId}#comment-${commentId}`;
-        navigator.clipboard.writeText(url).then(() => {
+    const handleShare = async () => {
+        const url = `${window.location.origin}/clip/${clipId}#comment-${commentId}`;
+        try {
+            await navigator.clipboard.writeText(url);
             toast.success('Link copied to clipboard!');
-        });
+        } catch {
+            toast.error('The link could not be copied. Please try again.');
+        }
     };
 
     return (
         <>
-            <div className={cn('flex items-center gap-3 text-[12px]', className)}>
+            <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]', className)}>
                 {canReply && (
                     <button
                         onClick={onReply}
-                        className='text-muted-foreground hover:text-cta transition-colors font-medium cursor-pointer'
+                        className='min-h-11 min-w-11 text-muted-foreground hover:text-link transition-colors font-medium cursor-pointer'
                     >
                         Reply
                     </button>
@@ -127,7 +130,7 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                 {!isCompact && canEdit && (
                     <button
                         onClick={onEdit}
-                        className='text-muted-foreground hover:text-cta transition-colors font-medium cursor-pointer'
+                        className='min-h-11 min-w-11 text-muted-foreground hover:text-link transition-colors font-medium cursor-pointer'
                     >
                         Edit
                     </button>
@@ -145,7 +148,7 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                 {!isCompact && (
                     <button
                         onClick={handleShare}
-                        className='text-muted-foreground hover:text-cta transition-colors font-medium cursor-pointer'
+                        className='min-h-11 min-w-11 text-muted-foreground hover:text-link transition-colors font-medium cursor-pointer'
                     >
                         Share
                     </button>

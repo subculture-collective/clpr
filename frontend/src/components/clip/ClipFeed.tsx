@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useCallback, memo, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, memo, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'react-router-dom';
 import { Spinner, Button, ScrollToTop } from '@/components/ui';
@@ -8,6 +8,7 @@ import { DiscoverClipCard } from './DiscoverClipCard';
 import { ClipCardSkeleton } from './ClipCardSkeleton';
 import { EmptyState } from './EmptyState';
 import { FeedHeader } from './FeedHeader';
+import { VirtualClipList } from './VirtualClipList';
 import { useClipFeed } from '@/hooks/useClips';
 import type { SortOption, TimeFrame, ClipFeedFilters } from '@/types/clip';
 import { useFeedAutoplayPreference } from '@/hooks';
@@ -27,45 +28,14 @@ interface ClipFeedProps {
     insertedContent?: ReactNode;
 }
 
-const FEED_WINDOW_SIZE = 12;
-
 // Map legacy 'hot' to 'trending' for consistency
 const normalizeSortOption = (sort: SortOption): SortOption => {
     return sort === 'hot' ? 'trending' : sort;
 };
 
-// Memoized ClipCard wrapper for performance
-const MemoizedClipCard = memo(ClipCard, (prevProps, nextProps) => {
-    return (
-        prevProps.active === nextProps.active &&
-        prevProps.autoplay === nextProps.autoplay &&
-        prevProps.clip.id === nextProps.clip.id &&
-        prevProps.clip.vote_score === nextProps.clip.vote_score &&
-        prevProps.clip.user_vote === nextProps.clip.user_vote &&
-        prevProps.clip.is_favorited === nextProps.clip.is_favorited &&
-        prevProps.clip.comment_count === nextProps.clip.comment_count &&
-        prevProps.clip.favorite_count === nextProps.clip.favorite_count &&
-        prevProps.clip.watch_progress?.progress_percent ===
-            nextProps.clip.watch_progress?.progress_percent &&
-        prevProps.clip.watch_progress?.completed ===
-            nextProps.clip.watch_progress?.completed &&
-        // Detect when watch_progress changes from undefined to defined or vice versa
-        (prevProps.clip.watch_progress === undefined) ===
-            (nextProps.clip.watch_progress === undefined)
-    );
-});
-
-// Memoized DiscoverClipCard wrapper for performance
-const MemoizedDiscoverClipCard = memo(
-    DiscoverClipCard,
-    (prevProps, nextProps) => {
-        return (
-            prevProps.clip.id === nextProps.clip.id &&
-            prevProps.clip.view_count === nextProps.clip.view_count &&
-            prevProps.clip.submitted_by?.id === nextProps.clip.submitted_by?.id
-        );
-    },
-);
+// React's shallow comparison respects every clip field as the card evolves.
+const MemoizedClipCard = memo(ClipCard);
+const MemoizedDiscoverClipCard = memo(DiscoverClipCard);
 
 export function ClipFeed({
     title = 'Clip Feed',
@@ -83,10 +53,6 @@ export function ClipFeed({
     const containerRef = useRef<HTMLDivElement>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullDistance, setPullDistance] = useState(0);
-    const [visibleCount, setVisibleCount] = useState(FEED_WINDOW_SIZE);
-    const [windowStart, setWindowStart] = useState(0);
-    const [topSpacerHeight, setTopSpacerHeight] = useState(0);
-    const cardWindowRef = useRef<HTMLDivElement>(null);
     const [activeClipId, setActiveClipId] = useState<string | null>(null);
     const visibleClipIdsRef = useRef(new Set<string>());
     const { preference: autoplayPreference, setPreference: setAutoplayPreference } =
@@ -121,49 +87,12 @@ export function ClipFeed({
         isFetchingNextPage,
         isLoading,
         isError,
+        isFetchNextPageError,
         refetch,
     } = useClipFeed(filters);
 
-    // Get all clips from all pages
-    const clips = data?.pages.flatMap((page) => page.clips) ?? [];
-    const validClips = clips.filter((clip) => clip?.id);
-    const visibleClips = validClips.slice(windowStart, visibleCount);
-    const hasBufferedClips = visibleCount < validClips.length;
+    const validClips = useMemo(() => data?.pages.flatMap((page) => page.clips).filter((clip) => clip?.id) ?? [], [data?.pages]);
     const filterKey = JSON.stringify(filters);
-
-    useEffect(() => {
-        setVisibleCount(FEED_WINDOW_SIZE);
-        setWindowStart(0);
-        setTopSpacerHeight(0);
-    }, [filterKey]);
-
-    useLayoutEffect(() => {
-        const nextWindowStart = Math.max(0, visibleCount - FEED_WINDOW_SIZE);
-        const cardWindow = cardWindowRef.current;
-        if (nextWindowStart <= windowStart || !cardWindow) return;
-
-        const activeElement = document.activeElement;
-        const focusedCard = activeElement instanceof Element
-            ? activeElement.closest<HTMLElement>('[data-feed-index]')
-            : null;
-        const focusedIndex = Number(focusedCard?.dataset.feedIndex);
-        if (focusedCard && Number.isFinite(focusedIndex) && focusedIndex < nextWindowStart) {
-            return;
-        }
-
-        const firstRetainedCard = cardWindow.querySelector<HTMLElement>(
-            `[data-feed-index="${nextWindowStart}"]`,
-        );
-        if (!firstRetainedCard) return;
-
-        const removedHeight = Math.max(
-            0,
-            firstRetainedCard.getBoundingClientRect().top -
-                cardWindow.getBoundingClientRect().top,
-        );
-        setTopSpacerHeight((height) => height + removedHeight);
-        setWindowStart(nextWindowStart);
-    }, [visibleCount, windowStart]);
 
     const handleVisibilityChange = useCallback(
         (clipId: string, visible: boolean) => {
@@ -218,31 +147,12 @@ export function ClipFeed({
         threshold: 0.5,
     });
 
-    // Load more when the trigger element comes into view
+    // Stop automatic retries after an error; the visible action retries deliberately.
     useEffect(() => {
-        if (!inView || isFetchingNextPage) return;
+        if (inView && hasNextPage && !isFetchingNextPage && !isError) void fetchNextPage();
+    }, [inView, hasNextPage, isFetchingNextPage, isError, fetchNextPage]);
 
-        if (hasBufferedClips) {
-            setVisibleCount((count) => Math.min(count + FEED_WINDOW_SIZE, validClips.length));
-        } else if (hasNextPage) {
-            void fetchNextPage();
-        }
-    }, [
-        inView,
-        hasBufferedClips,
-        hasNextPage,
-        isFetchingNextPage,
-        fetchNextPage,
-        validClips.length,
-    ]);
-
-    const handleLoadMore = useCallback(() => {
-        if (hasBufferedClips) {
-            setVisibleCount((count) => Math.min(count + FEED_WINDOW_SIZE, validClips.length));
-            return;
-        }
-        void fetchNextPage();
-    }, [fetchNextPage, hasBufferedClips, validClips.length]);
+    const handleLoadMore = useCallback(() => { void fetchNextPage(); }, [fetchNextPage]);
 
     // Pull-to-refresh handlers for mobile web
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -402,27 +312,16 @@ export function ClipFeed({
                 </div>
             )}
 
-            {/* Error state */}
             {isError && (
-                <EmptyState
-                    title="Error loading clips"
-                    message="Something went wrong. Please try again later."
-                    icon={
-                        <svg
-                            className="w-16 h-16"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
-                    }
-                />
+                <div role='alert' className='mb-5 rounded-lg border border-error-800 bg-error-950/40 p-4'>
+                    <p className='font-medium text-error-200'>
+                        {validClips.length ? "We couldn't update this feed." : "We couldn't load the clips."}
+                    </p>
+                    <p className='mt-1 text-sm text-text-secondary'>Your filters and any loaded clips are still here.</p>
+                    <Button variant='outline' className='mt-3' onClick={() => { void (isFetchNextPageError ? fetchNextPage() : refetch()); }}>
+                        Try again
+                    </Button>
+                </div>
             )}
 
             {/* Empty state */}
@@ -458,46 +357,34 @@ export function ClipFeed({
             )}
 
             {/* Clips list with pull-to-refresh */}
-            {!isLoading && !isError && validClips.length > 0 && (
+            {validClips.length > 0 && (
                 <div
                     ref={containerRef}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                 >
-                    {topSpacerHeight > 0 && (
-                        <div
-                            aria-hidden='true'
-                            data-testid='feed-top-spacer'
-                            style={{ height: topSpacerHeight }}
-                        />
-                    )}
-                    <div ref={cardWindowRef} className='space-y-5 md:space-y-6 snap-y snap-proximity motion-reduce:snap-none'>
-                        {visibleClips.map((clip, offset) => {
-                            const clipIndex = windowStart + offset;
-                            return (
-                                <div key={clip.id} data-feed-index={clipIndex}>
-                                    {discoverMode ? (
-                                        <MemoizedDiscoverClipCard clip={clip} />
-                                    ) : (
-                                        <MemoizedClipCard
-                                            clip={clip}
-                                            active={activeClipId === clip.id}
-                                            autoplay={autoplayPreference === 'muted'}
-                                            onActivate={handleActivate}
-                                            onVisibilityChange={handleVisibilityChange}
-                                        />
-                                    )}
-                                    {insertedContent && clipIndex + 1 === insertAfter && (
-                                        <div className='mt-5 md:mt-8'>{insertedContent}</div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <VirtualClipList key={filterKey + (engagement?.generation ?? '')} clips={validClips}>
+                        {(clip, clipIndex) => (
+                            <>
+                                {discoverMode ? <MemoizedDiscoverClipCard clip={clip} /> : (
+                                    <MemoizedClipCard
+                                        clip={clip}
+                                        active={activeClipId === clip.id}
+                                        autoplay={autoplayPreference === 'muted'}
+                                        onActivate={handleActivate}
+                                        onVisibilityChange={handleVisibilityChange}
+                                    />
+                                )}
+                                {insertedContent && clipIndex + 1 === insertAfter && (
+                                    <div className='mt-5 md:mt-8'>{insertedContent}</div>
+                                )}
+                            </>
+                        )}
+                    </VirtualClipList>
 
                     {/* Load more trigger */}
-                    {(hasBufferedClips || hasNextPage) && (
+                    {hasNextPage && !isError && (
                         <div
                             ref={loadMoreRef}
                             className="py-8 flex justify-center"
@@ -513,7 +400,7 @@ export function ClipFeed({
                     )}
 
                     {/* End of results */}
-                    {!hasNextPage && validClips.length > 0 && (
+                    {!hasNextPage && !isError && validClips.length > 0 && (
                         <div className="text-center py-8 text-muted-foreground">
                             <p>You've reached the end!</p>
                         </div>

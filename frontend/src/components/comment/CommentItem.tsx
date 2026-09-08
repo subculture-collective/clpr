@@ -60,7 +60,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           )}
         </div>
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <div className="text-sm text-muted-foreground italic py-2">
             {creatorRestrictionMessage}
           </div>
@@ -82,7 +82,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           {shouldShowContinueThread && (
             <a
               href={`/clips/${clipId}/comments/${comment.id}`}
-              className="mt-4 inline-block text-sm text-brand hover:text-brand-hover transition-colors cursor-pointer"
+              className="mt-4 inline-block text-sm text-link hover:text-link-hover transition-colors cursor-pointer"
             >
               View {comment.child_count} more {comment.child_count === 1 ? 'reply' : 'replies'} in thread →
             </a>
@@ -139,7 +139,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           )}
         </div>
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <div className="text-sm text-muted-foreground italic py-2">
             {comment.is_deleted ? '[deleted by user]' : '[removed by moderator]'}
             {comment.removed_reason && isAdmin && ` - ${comment.removed_reason}`}
@@ -163,7 +163,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           {shouldShowContinueThread && (
             <a
               href={`/clips/${clipId}/comments/${comment.id}`}
-              className="mt-4 inline-block text-sm text-brand hover:text-brand-hover transition-colors cursor-pointer"
+              className="mt-4 inline-block text-sm text-link hover:text-link-hover transition-colors cursor-pointer"
             >
               View {comment.child_count} more {comment.child_count === 1 ? 'reply' : 'replies'} in thread →
             </a>
@@ -201,7 +201,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       {/* Comment content */}
       <div className="flex-1 min-w-0">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
           <Avatar
             src={comment.user_avatar}
             alt={comment.username}
@@ -210,7 +210,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           />
           <span
             className={cn(
-              'text-brand',
+              'min-w-0 break-words text-link',
               isCompact
                 ? 'font-medium text-[12px]'
                 : 'font-heading text-[13px] font-semibold'
@@ -274,7 +274,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                         {...props}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-brand hover:text-brand-hover underline"
+                        className="text-link hover:text-link-hover underline"
                       />
                     ),
                     // Code blocks
@@ -354,7 +354,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             {shouldShowContinueThread && (
               <a
                 href={`/clips/${clipId}/comments/${comment.id}`}
-                className="mt-4 inline-block text-sm text-brand hover:text-brand-hover transition-colors cursor-pointer"
+                className="mt-4 inline-block text-sm text-link hover:text-link-hover transition-colors cursor-pointer"
               >
                 View {comment.child_count} more {comment.child_count === 1 ? 'reply' : 'replies'} in thread →
               </a>

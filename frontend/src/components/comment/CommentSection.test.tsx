@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CommentSection } from './CommentSection';
@@ -63,7 +64,7 @@ const createQueryClient = () => {
 
 const renderWithClient = (ui: React.ReactElement) => {
   const queryClient = createQueryClient();
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(<MemoryRouter initialEntries={['/clip/clip-1']}><QueryClientProvider client={queryClient}>{ui}</QueryClientProvider></MemoryRouter>);
 };
 
 describe('CommentSection', () => {
@@ -87,15 +88,20 @@ describe('CommentSection', () => {
       expect(spinner).toBeInTheDocument();
     });
 
-    it('should show error message when fetch fails', async () => {
+    it('offers a retry without showing a false empty state when fetch fails', async () => {
       const error = new Error('Failed to load comments');
       vi.mocked(commentApi.fetchComments).mockRejectedValue(error);
 
       renderWithClient(<CommentSection clipId="clip-1" />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Error loading comments/i)).toBeInTheDocument();
+        expect(screen.getByText(/Comments could not be loaded/i)).toBeInTheDocument();
       });
+      expect(screen.queryByText(/No comments yet/i)).not.toBeInTheDocument();
+      vi.mocked(commentApi.fetchComments).mockResolvedValue({ comments: [], total: 0, page: 1, limit: 10, has_more: false });
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }));
+      expect(await screen.findByText(/No comments yet/i)).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
   });
 
@@ -133,7 +139,7 @@ describe('CommentSection', () => {
       renderWithClient(<CommentSection clipId="clip-1" />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Please log in to comment/i)).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Log in/i })).toBeInTheDocument();
       });
     });
   });
@@ -203,11 +209,11 @@ describe('CommentSection', () => {
       renderWithClient(<CommentSection clipId="clip-1" />);
 
       await waitFor(() => {
-        const sortSelect = screen.getByLabelText(/Sort by:/i);
+        const sortSelect = screen.getByLabelText(/Sort:/i);
         expect(sortSelect).toBeInTheDocument();
       });
 
-      const sortSelect = screen.getByLabelText(/Sort by:/i) as HTMLSelectElement;
+      const sortSelect = screen.getByLabelText(/Sort:/i) as HTMLSelectElement;
       const options = Array.from(sortSelect.options).map((opt) => opt.value);
 
       expect(options).toContain('best');
@@ -231,7 +237,7 @@ describe('CommentSection', () => {
       renderWithClient(<CommentSection clipId="clip-1" />);
 
       await waitFor(() => {
-        const sortSelect = screen.getByLabelText(/Sort by:/i) as HTMLSelectElement;
+        const sortSelect = screen.getByLabelText(/Sort:/i) as HTMLSelectElement;
         expect(sortSelect.value).toBe('best');
       });
     });
@@ -252,7 +258,7 @@ describe('CommentSection', () => {
       renderWithClient(<CommentSection clipId="clip-1" />);
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/Sort by:/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Sort:/i)).toBeInTheDocument();
       });
 
       // Should have been called once with 'best' sort
@@ -264,7 +270,7 @@ describe('CommentSection', () => {
         includeReplies: true,
       }));
 
-      const sortSelect = screen.getByLabelText(/Sort by:/i);
+      const sortSelect = screen.getByLabelText(/Sort:/i);
       await user.selectOptions(sortSelect, 'new');
 
       // Should be called again with 'new' sort
@@ -295,8 +301,8 @@ describe('CommentSection', () => {
       renderWithClient(<CommentSection clipId="clip-1" />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Please log in to comment/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Log In/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Log in/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Log in/i })).toHaveAttribute('href', '/login');
       });
     });
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button, Spinner } from '@/components/ui';
 import { CommentTree } from './CommentTree';
@@ -28,6 +29,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     const [sort, setSort] = React.useState<CommentSortOption>('best');
     const isAuthenticated = useIsAuthenticated();
     const isCompact = variant === 'compact';
+    const location = useLocation();
+    const sortId = React.useId();
 
     const {
         data,
@@ -36,6 +39,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        isFetchNextPageError,
+        isFetching,
+        refetch,
     } = useComments(clipId, sort);
 
     const totalComments = data?.pages[0]?.total || 0;
@@ -44,30 +50,46 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         [data],
     );
 
-    if (error) {
-        return (
-            <div className={cn('space-y-4', className)}>
-                <div className='text-center py-8'>
-                    <p className='text-error-500'>Error loading comments</p>
-                    <p className='text-sm text-muted-foreground mt-2'>
-                        {error instanceof Error ?
-                            error.message
-                        :   'Something went wrong'}
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    const recovery = error ? (
+        <div role='alert' className='rounded-lg border border-border p-4 text-sm'>
+            <p>{allComments.length ? 'More comments could not be loaded. Your discussion is still here.' : 'Comments could not be loaded.'}</p>
+            <Button variant='outline' className='mt-3' disabled={isFetching}
+                onClick={() => isFetchNextPageError ? fetchNextPage() : refetch()}>
+                Try again
+            </Button>
+        </div>
+    ) : null;
+    const signIn = (
+        <p className='py-3 text-sm text-muted-foreground'>
+            <Link to='/login' state={{ from: location }} className='text-link underline underline-offset-4'>Log in</Link> to join the discussion.
+        </p>
+    );
+    const sortControl = (
+        <div className='flex items-center gap-2'>
+            <label htmlFor={sortId} className='text-sm text-muted-foreground'>Sort:</label>
+            <select id={sortId} value={sort}
+                onChange={e => setSort(e.target.value as CommentSortOption)}
+                className='min-h-11 rounded-md border border-border bg-background px-2 text-sm'>
+                <option value='best'>Best</option>
+                <option value='top'>Top</option>
+                <option value='new'>New</option>
+                <option value='old'>Old</option>
+                <option value='controversial'>Controversial</option>
+            </select>
+        </div>
+    );
 
     if (isCompact) {
         return (
             <div className={cn('flex flex-col', className)}>
                 {/* Header */}
-                <div className='flex items-center justify-between mb-3'>
+                <div className='flex flex-wrap items-center justify-between gap-2 mb-3'>
                     <h2 className='text-[14px] font-semibold'>
                         Comments ({totalComments.toLocaleString()})
                     </h2>
+                    {sortControl}
                 </div>
+                {recovery}
 
                 {isBanned && (
                     <div
@@ -80,12 +102,12 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                 )}
 
                 {/* Scrollable comments area */}
-                <div className='flex-1 overflow-y-auto'>
+                <div className='min-h-0 flex-1 xl:overflow-y-auto'>
                     {isLoading ?
                         <div className='flex justify-center py-8'>
                             <Spinner size='lg' />
                         </div>
-                    : allComments.length === 0 ?
+                    : allComments.length === 0 && !error ?
                         <div className='text-center py-8'>
                             <p className='text-sm font-semibold mb-1'>
                                 No comments yet
@@ -102,10 +124,10 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                                 isAdmin={isAdmin}
                                 depth={0}
                                 maxDepth={2}
-                                variant='compact'
+                                variant='expanded'
                             />
 
-                            {hasNextPage && (
+                            {hasNextPage && !error && (
                                 <div className='flex justify-center pt-3'>
                                     <Button
                                         onClick={() => fetchNextPage()}
@@ -123,9 +145,10 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                     }
                 </div>
 
-                {/* Sticky comment form at bottom */}
+                {!isAuthenticated && signIn}
+                {/* Comment composer */}
                 {isAuthenticated && !isBanned && (
-                    <div className='sticky bottom-0 pt-3'>
+                    <div className='shrink-0 border-t border-border bg-surface-raised pt-3'>
                         <CommentForm
                             clipId={clipId}
                             placeholder='Add a comment...'
@@ -144,30 +167,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                     Comments ({totalComments.toLocaleString()})
                 </h2>
 
-                {/* Sort dropdown */}
-                <div className='flex items-center gap-2'>
-                    <label
-                        htmlFor='sort-select'
-                        className='text-sm text-muted-foreground'
-                    >
-                        Sort by:
-                    </label>
-                    <select
-                        id='sort-select'
-                        value={sort}
-                        onChange={e =>
-                            setSort(e.target.value as CommentSortOption)
-                        }
-                        className='px-3 py-1.5 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer'
-                    >
-                        <option value='best'>Best</option>
-                        <option value='top'>Top</option>
-                        <option value='new'>New</option>
-                        <option value='old'>Old</option>
-                        <option value='controversial'>Controversial</option>
-                    </select>
-                </div>
+                {sortControl}
             </div>
+            {recovery}
 
             {isBanned && (
                 <div
@@ -182,17 +184,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
             {/* Add comment button/form */}
             <div>
                 {!isAuthenticated ?
-                    <div className='text-center py-6 border border-border rounded-lg'>
-                        <p className='text-muted-foreground mb-3'>
-                            Please log in to comment
-                        </p>
-                        <Button
-                            onClick={() => (window.location.href = '/login')}
-                            variant='primary'
-                        >
-                            Log In
-                        </Button>
-                    </div>
+                    signIn
                 : !isBanned ?
                     <CommentForm
                         clipId={clipId}
@@ -206,7 +198,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                 <div className='flex justify-center py-12'>
                     <Spinner size='lg' />
                 </div>
-            : allComments.length === 0 ?
+            : allComments.length === 0 && !error ?
                 /* Empty state */
                 <div className='text-center py-12 border border-border rounded-lg'>
                     <p className='text-xl font-semibold mb-2'>
@@ -228,7 +220,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                     />
 
                     {/* Load more button */}
-                    {hasNextPage && (
+                    {hasNextPage && !error && (
                         <div className='flex justify-center pt-4'>
                             <Button
                                 onClick={() => fetchNextPage()}
