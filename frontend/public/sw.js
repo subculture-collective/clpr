@@ -26,8 +26,8 @@ self.addEventListener('install', (event) => {
       // The install event will fail, and the service worker will not activate.
     })
   );
-  // Force the waiting service worker to become the active service worker
-  self.skipWaiting();
+  // Updates wait for the page to request activation via SKIP_WAITING.
+  // The first installation activates normally without forcing a page reload.
 });
 
 // Activate event - clean up old caches

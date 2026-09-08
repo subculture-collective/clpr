@@ -93,11 +93,22 @@ test('member submits clips and sees persisted moderator approval and rejection',
             await page.goto('/submit');
             await page.getByLabel('Twitch Clip URL').fill(`https://clips.twitch.tv/${slug}`);
             await page.getByLabel('Twitch Clip URL').blur();
-            const submitted = page.waitForResponse(response => response.url().endsWith('/api/v1/submissions') && response.request().method() === 'POST');
-            await page.getByRole('button', { name: 'Submit Clip', exact: true }).click();
-            const response = await submitted;
-            expect(response.status(), await response.text()).toBe(201);
-            const submission = (await response.json()).submission as { id: string; status: string };
+            const button = page.getByRole('button', { name: 'Submit Clip', exact: true });
+            await expect(button).toBeEnabled();
+            const [response] = await Promise.all([
+                page.waitForResponse(response => response.url().endsWith('/api/v1/submissions') && response.request().method() === 'POST'),
+                button.click(),
+            ]);
+            expect(response.status()).toBe(201);
+            await expect(page.getByRole('heading', { name: 'Submission Successful!' })).toBeVisible();
+            // Verify persistence independently of the browser's response-body
+            // decoder, which differs for service-worker responses in Firefox.
+            const saved = await context.request.get(`${api}/api/v1/submissions`);
+            expect(saved.status()).toBe(200);
+            const submission = (await saved.json()).data.find(
+                (record: { twitch_clip_id: string }) => record.twitch_clip_id === slug,
+            ) as { id: string; status: string };
+            expect(submission).toBeDefined();
             expect(submission.status).toBe('pending');
             const reviewed = await mutate(moderator, `/admin/submissions/${submission.id}/${outcome}`, 'POST', outcome === 'reject' ? { reason: 'Candidate rejection contract' } : {});
             expect(reviewed.status(), await reviewed.text()).toBe(200);
