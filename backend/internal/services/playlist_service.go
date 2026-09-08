@@ -403,6 +403,9 @@ func (s *PlaylistService) ListFeaturedPlaylists(ctx context.Context, userID *uui
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list featured playlists: %w", err)
 	}
+	if playlists == nil {
+		playlists = []*models.PlaylistListItem{}
+	}
 	return playlists, total, nil
 }
 
