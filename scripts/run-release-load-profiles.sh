@@ -60,7 +60,7 @@ fi
 
 for profile in baseline stress soak; do
     echo "Running $profile release profile"
-    docker run --rm "${network_args[@]}" \
+    docker run --rm --user "$(id -u):$(id -g)" "${network_args[@]}" \
         -v "$PWD/backend/tests/load/release.js:/release.js:ro" \
         -v "$EVIDENCE_OUTPUT_DIR:/evidence" \
         -e "BASE_URL=$STAGING_BASE_URL" \
