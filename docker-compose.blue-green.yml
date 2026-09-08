@@ -18,9 +18,9 @@ services:
                 [
                     'CMD',
                     'wget',
-                    '--spider',
-                    '-q',
-                    'http://localhost:8080/health',
+                    '-qO',
+                    '/dev/null',
+                    'http://127.0.0.1:8080/health',
                 ]
             interval: 30s
             timeout: 10s
@@ -92,9 +92,9 @@ services:
                 [
                     'CMD',
                     'wget',
-                    '--spider',
-                    '-q',
-                    'http://localhost:8080/health.html',
+                    '-qO',
+                    '/dev/null',
+                    'http://127.0.0.1:8080/health.html',
                 ]
             interval: 30s
             timeout: 10s
@@ -128,9 +128,9 @@ services:
                 [
                     'CMD',
                     'wget',
-                    '--spider',
-                    '-q',
-                    'http://localhost:8080/health',
+                    '-qO',
+                    '/dev/null',
+                    'http://127.0.0.1:8080/health',
                 ]
             interval: 30s
             timeout: 10s
@@ -204,9 +204,9 @@ services:
                 [
                     'CMD',
                     'wget',
-                    '--spider',
-                    '-q',
-                    'http://localhost:8080/health.html',
+                    '-qO',
+                    '/dev/null',
+                    'http://127.0.0.1:8080/health.html',
                 ]
             interval: 30s
             timeout: 10s
@@ -344,8 +344,8 @@ services:
                 [
                     'CMD',
                     'wget',
-                    '--spider',
-                    '-q',
+                    '-qO',
+                    '/dev/null',
                     'http://localhost:2019/config/',
                 ]
             interval: 30s

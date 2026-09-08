@@ -247,8 +247,8 @@ stop_slot() {
 
 health_once() {
     local slot="$1"
-    docker exec "${CONTAINER_PREFIX}-backend-$slot" wget --spider -q http://localhost:8080/health \
-        && docker exec "${CONTAINER_PREFIX}-frontend-$slot" wget --spider -q http://localhost:8080/health.html
+    docker exec "${CONTAINER_PREFIX}-backend-$slot" wget -qO /dev/null http://127.0.0.1:8080/health \
+        && docker exec "${CONTAINER_PREFIX}-frontend-$slot" wget -qO /dev/null http://127.0.0.1:8080/health.html
 }
 
 health_check() {
