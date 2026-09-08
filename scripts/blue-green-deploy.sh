@@ -300,7 +300,7 @@ canary_smoke() {
                     "$CANARY_BASE_URL$path"
         )"
         if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] \
-            || ! grep -Eiq "^X-CLPR-Served-Slot: $slot[[:space:]]*$" "$headers"; then
+            || ! grep -Eiq "^X-CLPR-Served-Slot: ${slot}[[:space:]]*$" "$headers"; then
             rm -f "$headers"
             log ERROR "Canary smoke failed for $path (HTTP $status)"
             return 1

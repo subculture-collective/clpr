@@ -106,7 +106,9 @@ token='contract-token-0123456789-ABCDEFGH'
 # status alone must never accept a response from the wrong application slot.
 (
     eval "$(sed -n '/^canary_smoke() {$/,/^}$/p' scripts/blue-green-deploy.sh)"
+    # shellcheck disable=SC2329 # Called by the production function loaded above.
     log() { :; }
+    # shellcheck disable=SC2329 # Called by the production function loaded above.
     curl() {
         local headers=''
         while (($#)); do
@@ -117,7 +119,7 @@ token='contract-token-0123456789-ABCDEFGH'
         printf 'HTTP/1.1 %s\r\nX-Clpr-Served-Slot: %s\r\n\r\n' "$fixture_status" "$fixture_slot" > "$headers"
         printf '%s' "$fixture_status"
     }
-    CANARY_TOKEN="$token" CANARY_PATHS=/health CANARY_BASE_URL=https://candidate.invalid
+    export CANARY_TOKEN="$token" CANARY_PATHS=/health CANARY_BASE_URL=https://candidate.invalid
     fixture_status=200 fixture_slot=green
     canary_smoke green || fail "valid CRLF canary response rejected"
     fixture_slot=blue
