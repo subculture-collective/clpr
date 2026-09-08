@@ -80,13 +80,20 @@ INSERT INTO clips (
     'https://clips.twitch.tv/embed?clip=clpr-release-smoke',
     'CLPR release smoke clip', 'Release Tester', 'release-tester',
     'Release Channel', 'release-channel', 'release-game',
-    'Release Readiness', 'en', 30, 42, NOW(), '$seed_user_id'
+    'Release Readiness', 'en', 30, 42, NOW(), NULL
 )
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
     is_removed = false,
     is_hidden = false,
     submitted_by_user_id = EXCLUDED.submitted_by_user_id;
+
+-- Imported clips are searchable without a submitter; hidden and DMCA-removed
+-- catalog entries must stay out of both PostgreSQL and OpenSearch results.
+INSERT INTO clips(id,twitch_clip_id,twitch_clip_url,embed_url,title,creator_name,
+ broadcaster_name,view_count,created_at,is_hidden,dmca_removed)
+VALUES ('00000000-0000-4000-8000-000000000091','clpr-hidden','https://clips.twitch.tv/clpr-hidden','','CLPR hidden launch fixture','Release Tester','Release Channel',1,now(),true,false),
+ ('00000000-0000-4000-8000-000000000092','clpr-dmca','https://clips.twitch.tv/clpr-dmca','','CLPR removed launch fixture','Release Tester','Release Channel',1,now(),false,true);
 
 -- A second real fixture observation supplies measured gain for rollout coverage.
 SELECT record_twitch_observation('$seed_clip_id',52,clock_timestamp());

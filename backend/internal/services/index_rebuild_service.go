@@ -160,7 +160,7 @@ func (s *IndexRebuildService) indexClipsToVersionedIndex(ctx context.Context, in
 			       game_id, game_name, language, thumbnail_url, duration,
 			       view_count, created_at, imported_at, vote_score,
 			       comment_count, favorite_count, is_featured, is_nsfw,
-			       is_removed, removed_reason, submitted_by_user_id
+			       is_removed, removed_reason, submitted_by_user_id, is_hidden, dmca_removed
 			FROM clips
 			WHERE is_removed = false
 			ORDER BY id
@@ -182,7 +182,7 @@ func (s *IndexRebuildService) indexClipsToVersionedIndex(ctx context.Context, in
 				&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
 				&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
 				&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
-				&clip.SubmittedByUserID,
+				&clip.SubmittedByUserID, &clip.IsHidden, &clip.DMCARemoved,
 			)
 			if err != nil {
 				rows.Close()
@@ -245,6 +245,10 @@ func (s *IndexRebuildService) bulkIndexClipsToIndex(ctx context.Context, indexNa
 		doc := map[string]interface{}{
 			"id":               clip.ID.String(),
 			"twitch_clip_id":   clip.TwitchClipID,
+			"twitch_clip_url":  clip.TwitchClipURL,
+			"embed_url":        clip.EmbedURL,
+			"thumbnail_url":    clip.ThumbnailURL,
+			"duration":         clip.Duration,
 			"title":            clip.Title,
 			"creator_name":     clip.CreatorName,
 			"creator_id":       clip.CreatorID,
@@ -260,6 +264,8 @@ func (s *IndexRebuildService) bulkIndexClipsToIndex(ctx context.Context, indexNa
 			"is_featured":      clip.IsFeatured,
 			"is_nsfw":          clip.IsNSFW,
 			"is_removed":       clip.IsRemoved,
+			"is_hidden":        clip.IsHidden,
+			"dmca_removed":     clip.DMCARemoved,
 			"created_at":       clip.CreatedAt,
 			"imported_at":      clip.ImportedAt,
 			"engagement_score": engagementScore,
@@ -718,11 +724,12 @@ func (s *IndexRebuildService) indexGamesToVersionedIndex(ctx context.Context, in
 
 	for {
 		query := `
-			SELECT game_id, game_name, COUNT(*) as clip_count
-			FROM clips
-			WHERE game_id IS NOT NULL AND game_name IS NOT NULL AND is_removed = false
-			GROUP BY game_id, game_name
-			ORDER BY game_id
+			SELECT c.game_id, COALESCE(c.game_name,g.name), COUNT(*) as clip_count
+			FROM clips c LEFT JOIN games g ON g.twitch_game_id=c.game_id
+			WHERE c.game_id IS NOT NULL AND COALESCE(c.game_name,g.name) IS NOT NULL
+			  AND NOT c.is_removed AND NOT c.is_hidden AND NOT c.dmca_removed
+			GROUP BY c.game_id, COALESCE(c.game_name,g.name)
+			ORDER BY c.game_id
 			LIMIT $1 OFFSET $2
 		`
 

@@ -114,8 +114,18 @@ test.describe('real-backend launch smoke', () => {
         expectStableSearchArrays(payload);
         expect(payload.results.clips).toEqual(
             expect.arrayContaining([
-                expect.objectContaining({ id: seedClipId }),
+                expect.objectContaining({
+                    id: seedClipId,
+                    twitch_clip_url: 'https://clips.twitch.tv/clpr-release-smoke',
+                    embed_url: 'https://clips.twitch.tv/embed?clip=clpr-release-smoke',
+                }),
             ]),
+        );
+        expect(payload.results.clips.map(clip => clip.id)).not.toEqual(
+            expect.arrayContaining(['00000000-0000-4000-8000-000000000091']),
+        );
+        expect(payload.results.clips.map(clip => clip.id)).not.toEqual(
+            expect.arrayContaining(['00000000-0000-4000-8000-000000000092']),
         );
         await expect(page.getByText('CLPR release smoke clip')).toBeVisible();
     });

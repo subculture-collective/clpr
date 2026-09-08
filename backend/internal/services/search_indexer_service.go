@@ -104,6 +104,10 @@ func (s *SearchIndexerService) IndexClip(ctx context.Context, clip *models.Clip)
 	doc := map[string]interface{}{
 		"id":               clip.ID.String(),
 		"twitch_clip_id":   clip.TwitchClipID,
+		"twitch_clip_url":  clip.TwitchClipURL,
+		"embed_url":        clip.EmbedURL,
+		"thumbnail_url":    clip.ThumbnailURL,
+		"duration":         clip.Duration,
 		"title":            clip.Title,
 		"creator_name":     clip.CreatorName,
 		"creator_id":       clip.CreatorID,
@@ -119,13 +123,15 @@ func (s *SearchIndexerService) IndexClip(ctx context.Context, clip *models.Clip)
 		"is_featured":      clip.IsFeatured,
 		"is_nsfw":          clip.IsNSFW,
 		"is_removed":       clip.IsRemoved,
+		"is_hidden":        clip.IsHidden,
+		"dmca_removed":     clip.DMCARemoved,
 		"created_at":       clip.CreatedAt,
 		"imported_at":      clip.ImportedAt,
 		"engagement_score": engagementScore,
 		"recency_score":    recencyScore,
 	}
 
-	// Include submitted_by_user_id so we can filter out unsubmitted clips
+	// Preserve submission provenance without making it a search eligibility rule
 	if clip.SubmittedByUserID != nil {
 		doc["submitted_by_user_id"] = clip.SubmittedByUserID.String()
 	}
@@ -303,6 +309,10 @@ func (s *SearchIndexerService) BulkIndexClips(ctx context.Context, clips []model
 		doc := map[string]interface{}{
 			"id":               clip.ID.String(),
 			"twitch_clip_id":   clip.TwitchClipID,
+			"twitch_clip_url":  clip.TwitchClipURL,
+			"embed_url":        clip.EmbedURL,
+			"thumbnail_url":    clip.ThumbnailURL,
+			"duration":         clip.Duration,
 			"title":            clip.Title,
 			"creator_name":     clip.CreatorName,
 			"creator_id":       clip.CreatorID,
@@ -318,13 +328,15 @@ func (s *SearchIndexerService) BulkIndexClips(ctx context.Context, clips []model
 			"is_featured":      clip.IsFeatured,
 			"is_nsfw":          clip.IsNSFW,
 			"is_removed":       clip.IsRemoved,
+			"is_hidden":        clip.IsHidden,
+			"dmca_removed":     clip.DMCARemoved,
 			"created_at":       clip.CreatedAt,
 			"imported_at":      clip.ImportedAt,
 			"engagement_score": engagementScore,
 			"recency_score":    recencyScore,
 		}
 
-		// Include submitted_by_user_id so we can filter out unsubmitted clips
+		// Preserve submission provenance without making it a search eligibility rule
 		if clip.SubmittedByUserID != nil {
 			doc["submitted_by_user_id"] = clip.SubmittedByUserID.String()
 		}

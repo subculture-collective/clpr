@@ -96,8 +96,8 @@ func (r *SearchRepository) Search(ctx context.Context, req *models.SearchRequest
 // searchClips searches for clips
 func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Clip, int, error) {
 	// Build WHERE clause with filters
-	// Belt-and-suspenders: only search user-submitted clips (scraped clips are in discovery_clips)
-	whereClause := "c.is_removed = false AND c.submitted_by_user_id IS NOT NULL"
+	// Imported and submitted clips share the public catalog.
+	whereClause := "c.is_removed = false AND c.is_hidden = false AND c.dmca_removed = false"
 	args := []interface{}{}
 	argPos := 1
 
@@ -283,12 +283,12 @@ func (r *SearchRepository) searchCreators(ctx context.Context, tsQuery string, r
 
 // searchGames searches for games (aggregated from clips)
 func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.GameSearchResult, int, error) {
-	whereClause := "c.game_id IS NOT NULL AND c.game_name IS NOT NULL AND c.is_removed = false AND c.submitted_by_user_id IS NOT NULL"
+	whereClause := "c.game_id IS NOT NULL AND COALESCE(c.game_name,g.name) IS NOT NULL AND c.is_removed = false AND c.is_hidden = false AND c.dmca_removed = false"
 	args := []interface{}{}
 	argPos := 1
 
 	if tsQuery != "" {
-		whereClause += fmt.Sprintf(" AND to_tsvector('english', c.game_name) @@ to_tsquery('english', %s)", utils.SQLPlaceholder(argPos))
+		whereClause += fmt.Sprintf(" AND to_tsvector('english', COALESCE(c.game_name,g.name)) @@ to_tsquery('english', %s)", utils.SQLPlaceholder(argPos))
 		args = append(args, tsQuery)
 		argPos++
 	}
@@ -296,7 +296,7 @@ func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req 
 	// Get total count
 	countQuery := fmt.Sprintf(`
 		SELECT COUNT(DISTINCT c.game_id)
-		FROM clips c
+		FROM clips c LEFT JOIN games g ON g.twitch_game_id=c.game_id
 		WHERE %s
 	`, whereClause)
 	var totalCount int
@@ -313,10 +313,10 @@ func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req 
 	}
 
 	query := fmt.Sprintf(`
-		SELECT c.game_id, c.game_name, COUNT(*) as clip_count
-		FROM clips c
+		SELECT c.game_id, COALESCE(c.game_name,g.name), COUNT(*) as clip_count
+		FROM clips c LEFT JOIN games g ON g.twitch_game_id=c.game_id
 		WHERE %s
-		GROUP BY c.game_id, c.game_name
+		GROUP BY c.game_id, COALESCE(c.game_name,g.name)
 		ORDER BY %s
 		LIMIT %s OFFSET %s
 	`, whereClause, orderBy, utils.SQLPlaceholder(argPos), utils.SQLPlaceholder(argPos+1))

@@ -439,7 +439,10 @@ func (s *OpenSearchService) buildClipQuery(req *models.SearchRequest) map[string
 	must := []map[string]interface{}{}
 	filter := []map[string]interface{}{
 		{"term": map[string]interface{}{"is_removed": false}},
-		{"exists": map[string]interface{}{"field": "submitted_by_user_id"}},
+		{"bool": map[string]interface{}{"must_not": []map[string]interface{}{
+			{"term": map[string]interface{}{"is_hidden": true}},
+			{"term": map[string]interface{}{"dmca_removed": true}},
+		}}},
 	}
 
 	// Add text search if query is provided with language-specific fields
