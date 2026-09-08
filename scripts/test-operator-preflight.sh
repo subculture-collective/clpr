@@ -79,6 +79,7 @@ restore_error="$(TARGET_ENVIRONMENT=isolated ALLOW_ISOLATED_RESTORE=true \
     BACKUP_FILE_OVERRIDE="$tmp_dir/backup.sql.gz" BACKUP_TIMESTAMP=2026-08-09T00:00:00Z \
     POSTGRES_HOST=prod-db.example POSTGRES_PORT=5432 POSTGRES_USER=restore_drill \
     POSTGRES_PASSWORD=redacted APPLICATION_SMOKE_URL=https://restore-app.example/health \
+    APPLICATION_SMOKE_RUNNER=/bin/false \
     EVIDENCE_OUTPUT_DIR="$tmp_dir/evidence" \
     bash scripts/run-isolated-restore-evidence.sh --execute 2>&1 || true)"
 grep -Fq 'production PostgreSQL endpoints are forbidden' <<<"$restore_error" \
