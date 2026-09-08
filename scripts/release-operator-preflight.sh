@@ -17,7 +17,8 @@ bash scripts/run-staging-rollback-evidence.sh --dry-run
 if [[ "$mode" == "--dry-run" ]]; then
     cat <<'EOF'
 Dry-run contracts passed. This is not release evidence. Hosted controls,
-disposable identity state, Stripe test mode, staging load, isolated restore,
+disposable identity state, billing-retirement inventory and any required legacy
+servicing verification, staging load, isolated restore,
 rollback, JWT exposure review, key-rotation determination, and the full-history
 secret-scan disposition remain fail-closed until protected operator runs supply
 passing evidence.

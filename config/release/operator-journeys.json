@@ -30,10 +30,6 @@
     { "id": "logout-and-session-expiry", "role": "user", "required": true }
   ],
   "required_secret_names": [
-    "STRIPE_TEST_SECRET_KEY",
-    "STRIPE_TEST_WEBHOOK_SECRET",
-    "STRIPE_TEST_MONTHLY_PRICE_ID",
-    "STRIPE_TEST_YEARLY_PRICE_ID",
     "STAGING_BASE_URL",
     "E2E_USER_STORAGE_STATE",
     "E2E_MODERATOR_STORAGE_STATE",
