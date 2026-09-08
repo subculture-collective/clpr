@@ -3,6 +3,7 @@
 import datetime
 import http.server
 import json
+import pathlib
 import sys
 import urllib.parse
 
@@ -43,4 +44,7 @@ class Provider(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    http.server.ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1])), Provider).serve_forever()
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1])), Provider)
+    if len(sys.argv) > 2:
+        pathlib.Path(sys.argv[2]).write_text(str(server.server_port))
+    server.serve_forever()

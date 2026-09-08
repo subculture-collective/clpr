@@ -12,18 +12,21 @@ log_file="$repo_root/.tmp/backend-e2e.log"
 pid_file="$repo_root/.tmp/backend-e2e.pid"
 api_binary="$repo_root/.tmp/backend-e2e-api"
 browser_container=""
+api_pid=""
 provider_pid=""
-provider_port=${E2E_PROVIDER_PORT:-18089}
+provider_port=${E2E_PROVIDER_PORT:-0}
+provider_port_file=""
 browser_network=()
 
 cleanup() {
     if [[ -n "$provider_pid" ]]; then kill "$provider_pid" 2>/dev/null || true; wait "$provider_pid" 2>/dev/null || true; fi
+    if [[ -n "$provider_port_file" ]]; then rm -f "$provider_port_file"; fi
     if [[ -n "$browser_container" ]]; then
         docker rm -f "$browser_container" >/dev/null 2>&1 || true
     fi
-    if [[ -f "$pid_file" ]]; then
-        kill "$(cat "$pid_file")" 2>/dev/null || true
-        wait "$(cat "$pid_file")" 2>/dev/null || true
+    if [[ -n "$api_pid" ]]; then
+        kill "$api_pid" 2>/dev/null || true
+        wait "$api_pid" 2>/dev/null || true
         rm -f "$pid_file"
     fi
 }
@@ -92,11 +95,15 @@ SQL
 
 docker compose -f "$repo_root/docker-compose.test.yml" exec -T redis-test redis-cli FLUSHDB >/dev/null
 
-python3 "$repo_root/scripts/twitch-test-provider.py" "$provider_port" >"$repo_root/.tmp/twitch-test-provider.log" 2>&1 &
+provider_port_file=$(mktemp "$repo_root/.tmp/twitch-provider-port.XXXXXX")
+python3 "$repo_root/scripts/twitch-test-provider.py" "$provider_port" "$provider_port_file" >"$repo_root/.tmp/twitch-test-provider.log" 2>&1 &
 provider_pid=$!
 for attempt in {1..30}; do
-    if curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null; then break; fi
     if ! kill -0 "$provider_pid" 2>/dev/null; then echo "Fixture provider failed to start" >&2; exit 1; fi
+    if [[ -s "$provider_port_file" ]]; then
+        provider_port=$(cat "$provider_port_file")
+        if curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null; then break; fi
+    fi
     sleep 0.1
 done
 curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null
@@ -107,7 +114,7 @@ curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null
     # shellcheck disable=SC1091
     source .env.test
     set +a
-    TWITCH_TEST_FIXTURE_URL="http://127.0.0.1:$provider_port" TWITCH_CLIENT_ID=test_client_id TWITCH_CLIENT_SECRET=test_client_secret \
+    exec env TWITCH_TEST_FIXTURE_URL="http://127.0.0.1:$provider_port" TWITCH_CLIENT_ID=test_client_id TWITCH_CLIENT_SECRET=test_client_secret \
         ENVIRONMENT=development PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
         DB_HOST="${TEST_DATABASE_HOST:-$test_service_host}" DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
         DB_PASSWORD=clpr_password DB_NAME=clpr_test \
@@ -117,7 +124,8 @@ curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null
         RATE_LIMIT_WHITELIST_IPS=127.0.0.1 FEATURE_ANALYTICS=false FEATURE_RECENT_ENGAGEMENT=true \
         "$api_binary"
 ) >"$log_file" 2>&1 &
-echo $! >"$pid_file"
+api_pid=$!
+echo "$api_pid" >"$pid_file"
 
 for _ in {1..60}; do
     if curl -fsS "$api_origin/health/live" >/dev/null 2>&1; then

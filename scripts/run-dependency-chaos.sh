@@ -7,6 +7,7 @@ compose=(docker compose -f "$repo_root/docker-compose.test.yml")
 api_port=${CHAOS_API_PORT:-18089}
 api_origin="http://127.0.0.1:${api_port}"
 log_file="$repo_root/.tmp/backend-chaos.log"
+api_binary="$repo_root/.tmp/backend-chaos-api"
 backend_pid=""
 
 cleanup() {
@@ -19,17 +20,22 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 mkdir -p "$repo_root/.tmp"
+if curl -fsS "$api_origin/health/live" >/dev/null 2>&1; then
+    echo "Chaos port $api_port is already occupied by an unowned API" >&2
+    exit 1
+fi
+(cd "$repo_root/backend" && go build -o "$api_binary" ./cmd/api)
 (
     cd "$repo_root/backend"
     set -a
     # shellcheck disable=SC1091
     source .env.test
     set +a
-    PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
+    exec env PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
         DB_HOST="${TEST_DATABASE_HOST:-$test_service_host}" DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr DB_PASSWORD=clpr_password DB_NAME=clpr_test \
         REDIS_HOST="${TEST_REDIS_HOST:-$test_service_host}" REDIS_PORT="${TEST_REDIS_PORT:-6380}" OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}" \
         CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 RATE_LIMIT_WHITELIST_IPS=127.0.0.1 \
-        FEATURE_ANALYTICS=false go run ./cmd/api
+        FEATURE_ANALYTICS=false "$api_binary"
 ) >"$log_file" 2>&1 &
 backend_pid=$!
 
