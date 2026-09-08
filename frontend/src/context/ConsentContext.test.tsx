@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import axios from 'axios';
+import apiClient from '../lib/api';
 import { ConsentProvider, useConsent } from './ConsentContext';
 import { disableGoogleAnalytics } from '../lib/google-analytics';
 import { disablePostHog } from '../lib/posthog-analytics';
@@ -24,7 +24,7 @@ const { authState } = vi.hoisted(() => ({
     authState: { user: null as null | { id: string } },
 }));
 
-vi.mock('axios', () => ({
+vi.mock('../lib/api', () => ({
     default: {
         get: vi.fn(),
         post: vi.fn().mockResolvedValue({ data: { success: true } }),
@@ -167,7 +167,7 @@ describe('ConsentContext', () => {
 
     it('should converge backend consent when a signed-in user withdraws analytics', async () => {
         authState.user = { id: 'user-1' };
-        vi.mocked(axios.get).mockResolvedValue({ data: { success: false } });
+        vi.mocked(apiClient.get).mockResolvedValue({ data: { success: false } });
 
         render(
             <ConsentProvider>
@@ -179,8 +179,8 @@ describe('ConsentContext', () => {
         fireEvent.click(screen.getByTestId('reject-all'));
 
         await waitFor(() => {
-            expect(axios.post).toHaveBeenLastCalledWith(
-                '/api/v1/users/me/consent',
+            expect(apiClient.post).toHaveBeenLastCalledWith(
+                '/users/me/consent',
                 expect.objectContaining({
                     essential: true,
                     analytics: false,

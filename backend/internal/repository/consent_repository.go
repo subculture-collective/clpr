@@ -81,7 +81,7 @@ func (r *ConsentRepository) GetConsent(ctx context.Context, userID uuid.UUID) (*
 	query := `
 		SELECT 
 			id, user_id, essential, functional, analytics, advertising,
-			consent_date, ip_address, user_agent, expires_at, created_at, updated_at
+			consent_date, host(ip_address), user_agent, expires_at, created_at, updated_at
 		FROM user_cookie_consents
 		WHERE user_id = $1
 		ORDER BY consent_date DESC

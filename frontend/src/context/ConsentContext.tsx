@@ -20,7 +20,7 @@ import {
     configureAnalytics,
 } from '../lib/telemetry';
 import { useAuth } from './AuthContext';
-import axios from 'axios';
+import apiClient from '../lib/api';
 import { getAnalyticsRuntimeConfig } from '../lib/runtime-config';
 
 /**
@@ -165,7 +165,7 @@ async function syncConsentToBackend(
     preferences: ConsentPreferences,
 ): Promise<void> {
     try {
-        await axios.post('/api/v1/users/me/consent', {
+        await apiClient.post('/users/me/consent', {
             essential: preferences.essential,
             functional: preferences.functional,
             analytics: preferences.analytics,
@@ -182,7 +182,7 @@ async function syncConsentToBackend(
  */
 async function loadConsentFromBackend(): Promise<ConsentPreferences | null> {
     try {
-        const response = await axios.get('/api/v1/users/me/consent');
+        const response = await apiClient.get('/users/me/consent');
         if (response.data?.success && response.data?.data) {
             const data = response.data.data;
             return {
