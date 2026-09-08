@@ -29,13 +29,41 @@ func (f *engagementFake) ClaimDue(context.Context, int) ([]repository.Engagement
 	}
 	return f.clips, nil
 }
-func (f *engagementFake) Observe(_ context.Context, id uuid.UUID, count int, at time.Time) error {
+func (f *engagementFake) Observe(ctx context.Context, id uuid.UUID, count int, at time.Time) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	f.observed[id] = count
 	return nil
 }
-func (f *engagementFake) PollFailed(_ context.Context, id uuid.UUID) error {
+func (f *engagementFake) PollFailed(ctx context.Context, id uuid.UUID) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	f.failed = append(f.failed, id)
 	return nil
+}
+
+func TestEngagementDeadlineStillRecordsMissedObservation(t *testing.T) {
+	for _, phase := range []string{"provider", "persistence"} {
+		t.Run(phase, func(t *testing.T) {
+			id := uuid.New()
+			store := &engagementFake{clips: []repository.EngagementPollClip{{ID: id, TwitchID: "slow-provider"}}, observed: map[uuid.UUID]int{}}
+			provider := engagementProviderFunc(func(ctx context.Context, _ *twitch.ClipParams) (*twitch.ClipsResponse, error) {
+				<-ctx.Done()
+				if phase == "persistence" {
+					return &twitch.ClipsResponse{Data: []twitch.Clip{{ID: "slow-provider", ViewCount: 25}}}, nil
+				}
+				return nil, ctx.Err()
+			})
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+			defer cancel()
+			err := NewEngagementScheduler(store, provider).poll(ctx)
+			require.ErrorIs(t, err, context.DeadlineExceeded)
+			require.Equal(t, []uuid.UUID{id}, store.failed, "the exhausted network budget must not cancel failure bookkeeping")
+			require.Empty(t, store.observed)
+		})
+	}
 }
 
 type engagementProviderFunc func(context.Context, *twitch.ClipParams) (*twitch.ClipsResponse, error)

@@ -86,27 +86,37 @@ func (s *EngagementScheduler) poll(ctx context.Context) error {
 		response, err := s.provider.GetClips(ctx, &twitch.ClipParams{ClipIDs: ids})
 		observed := time.Now().UTC()
 		if err != nil {
-			for _, c := range clips {
-				_ = s.store.PollFailed(ctx, c.ID)
-			}
-			return fmt.Errorf("engagement provider request: %w", err)
+			return s.recordFailedBatch(ctx, clips, fmt.Errorf("engagement provider request: %w", err))
 		}
 		counts := map[string]int{}
 		for _, c := range response.Data {
 			counts[c.ID] = c.ViewCount
 		}
-		for _, c := range clips {
+		for i, c := range clips {
 			count, ok := counts[c.TwitchID]
 			if !ok {
 				if err = s.store.PollFailed(ctx, c.ID); err != nil {
-					return err
+					return s.recordFailedBatch(ctx, clips[i:], err)
 				}
 				continue
 			}
 			if err = s.store.Observe(ctx, c.ID, count, observed); err != nil {
-				return err
+				return s.recordFailedBatch(ctx, clips[i:], err)
 			}
 		}
 	}
 	return nil
+}
+
+func (s *EngagementScheduler) recordFailedBatch(ctx context.Context, clips []repository.EngagementPollClip, cause error) error {
+	// The polling budget may expire during network I/O or persistence. Record
+	// only unfinished observations under a separate, bounded cleanup budget.
+	failureCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	for _, clip := range clips {
+		if err := s.store.PollFailed(failureCtx, clip.ID); err != nil {
+			return fmt.Errorf("%w; record missed observation: %w", cause, err)
+		}
+	}
+	return cause
 }
