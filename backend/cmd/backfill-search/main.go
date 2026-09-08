@@ -146,7 +146,7 @@ func backfillUsers(ctx context.Context, db *database.DB, indexer *services.Searc
 
 	for {
 		query := `
-			SELECT id, twitch_id, username, display_name, email, avatar_url,
+			SELECT id, twitch_id, username, COALESCE(display_name, username), email, avatar_url,
 			       bio, karma_points, role, is_banned, created_at, updated_at, last_login_at
 			FROM users
 			WHERE is_banned = false

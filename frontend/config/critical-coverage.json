@@ -76,5 +76,11 @@
     "lines": 88,
     "branches": 77,
     "functions": 94
+  },
+  "src/hooks/useClipFeed.ts": {
+    "statements": 80,
+    "lines": 80,
+    "branches": 80,
+    "functions": 80
   }
 }

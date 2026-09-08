@@ -130,6 +130,13 @@ func NewClient(cfg *config.TwitchConfig, redis *redispkg.Client) (*Client, error
 		Timeout: 30 * time.Second,
 	}
 
+	if cfg.TestFixtureURL != "" {
+		transport, err := fixtureTransport(cfg.TestFixtureURL, cfg.ClientID, cfg.ClientSecret)
+		if err != nil {
+			return nil, err
+		}
+		httpClient.Transport = transport
+	}
 	cache := NewRedisCache(redis)
 	authManager := NewAuthManager(cfg.ClientID, cfg.ClientSecret, httpClient, cache)
 	rateLimiter := NewRateLimiter(rateLimitPerMin)

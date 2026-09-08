@@ -216,8 +216,9 @@ export function SettingsPage() {
                                 <form onSubmit={handleSettingsSubmit}>
                                     <Stack direction='vertical' gap={4}>
                                         <div>
-                                            <label className='block text-sm font-medium mb-2'>Profile Visibility</label>
+                                            <label htmlFor='profile-visibility' className='block text-sm font-medium mb-2'>Profile Visibility</label>
                                             <select
+                                                id='profile-visibility'
                                                 value={settingsData.profile_visibility || 'public'}
                                                 onChange={(e) =>
                                                     setSettingsData({

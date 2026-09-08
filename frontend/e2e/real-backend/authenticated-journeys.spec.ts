@@ -1,0 +1,113 @@
+import { randomUUID } from 'node:crypto';
+import { expect, test, type BrowserContext } from '@playwright/test';
+
+const api = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:18088';
+
+async function login(context: BrowserContext, browser: string, role: string) {
+    await context.clearCookies();
+    const response = await context.request.post(`${api}/api/v1/auth/test-login`, {
+        data: { username: `clpr-e2e-${browser}-${role}` },
+    });
+    expect(response.status()).toBe(200);
+    return (await response.json()).user as { id: string };
+}
+
+async function mutate(context: BrowserContext, path: string, method: string, data?: unknown) {
+    await context.request.get(`${api}/api/v1/auth/me`);
+    const csrf = (await context.cookies(api)).find(cookie => cookie.name === 'csrf_token')?.value;
+    expect(csrf).toBeTruthy();
+    return context.request.fetch(`${api}/api/v1${path}`, {
+        method, data, headers: { 'X-CSRF-Token': decodeURIComponent(csrf!) },
+    });
+}
+
+test('profile and privacy survive a fresh session; logout and invalid sessions lose access', async ({ page, context, browserName }) => {
+    await login(context, browserName, 'member');
+    await page.goto('/settings');
+    const display = `Candidate ${browserName}`;
+    await page.getByLabel('Display Name', { exact: true }).fill(display);
+    await page.getByRole('button', { name: 'Save Profile', exact: true }).click();
+    await expect(page.getByText('Profile updated successfully!')).toBeVisible();
+    await page.getByLabel('Profile Visibility', { exact: true }).selectOption('private');
+    await page.getByRole('button', { name: 'Save Settings', exact: true }).click();
+    await expect(page.getByText('Settings updated successfully!')).toBeVisible();
+    expect((await mutate(context, '/auth/logout', 'POST')).status()).toBe(200);
+    expect((await context.request.get(`${api}/api/v1/auth/me`)).status()).toBe(401);
+    await login(context, browserName, 'member');
+    await page.reload();
+    await expect(page.getByLabel('Display Name', { exact: true })).toHaveValue(display);
+    await expect(page.getByLabel('Profile Visibility', { exact: true })).toHaveValue('private');
+    await context.clearCookies();
+    await context.addCookies([{ name: 'access_token', value: 'expired-invalid-session', url: api }]);
+    await page.reload();
+    await expect(page.getByLabel('Display Name', { exact: true })).toHaveCount(0);
+    expect((await context.request.get(`${api}/api/v1/users/me/settings`)).status()).toBe(401);
+});
+
+test('private playlist persists edits and excludes another member; privileged operations enforce scope', async ({ page, context, browser, browserName }) => {
+    await login(context, browserName, 'member');
+    await page.goto('/playlists');
+    const title = `Private ${randomUUID()}`;
+    await page.getByRole('button', { name: 'Create Playlist', exact: true }).click();
+    await page.getByLabel('Title', { exact: false }).fill(title);
+    await page.getByLabel('Visibility', { exact: true }).selectOption('private');
+    const created = page.waitForResponse(response => response.url().endsWith('/api/v1/playlists') && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    const response = await created;
+    expect(response.status(), await response.text()).toBe(201);
+    const playlist = (await response.json()).data as { id: string };
+    await page.getByRole('button', { name: `Edit ${title}`, exact: true }).click();
+    await page.getByLabel('Title', { exact: false }).fill(`${title} edited`);
+    await page.getByRole('button', { name: 'Update', exact: true }).click();
+    await expect(page.getByText(`${title} edited`, { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(`${title} edited`, { exact: true })).toBeVisible();
+    const other = await browser.newContext();
+    try {
+        const second = await login(other, browserName, 'second');
+        expect((await other.request.get(`${api}/api/v1/playlists/${playlist.id}`)).status()).toBe(404);
+        expect((await mutate(other, `/playlists/${playlist.id}`, 'PATCH', { title: 'Unauthorized edit' })).status()).toBe(403);
+        expect((await other.request.get(`${api}/api/v1/admin/users`)).status()).toBe(403);
+        expect((await mutate(other, '/admin/submissions/00000000-0000-4000-8000-000000000001/approve', 'POST')).status()).toBe(403);
+        await login(other, browserName, 'scoped');
+        const ban = await mutate(other, '/moderation/ban', 'POST', {
+            channelId: '00000000-0000-4000-8000-000000009902', userId: second.id, reason: 'scope contract',
+        });
+        expect(ban.status()).toBe(403);
+        await login(other, browserName, 'admin');
+        expect((await other.request.get(`${api}/api/v1/admin/users`)).status()).toBe(200);
+    } finally {
+        await other.close();
+        expect((await mutate(context, `/playlists/${playlist.id}`, 'DELETE')).status()).toBe(200);
+    }
+});
+
+test('member submits clips and sees persisted moderator approval and rejection', async ({ page, context, browser, browserName }) => {
+    await login(context, browserName, 'member');
+    const moderator = await browser.newContext();
+    try {
+        await login(moderator, browserName, 'moderator');
+        for (const outcome of ['approve', 'reject']) {
+            await login(context, browserName, outcome === 'approve' ? 'member' : 'second');
+            const slug = `clpr-e2e-${randomUUID()}`;
+            await page.goto('/submit');
+            await page.getByLabel('Twitch Clip URL').fill(`https://clips.twitch.tv/${slug}`);
+            await page.getByLabel('Twitch Clip URL').blur();
+            const submitted = page.waitForResponse(response => response.url().endsWith('/api/v1/submissions') && response.request().method() === 'POST');
+            await page.getByRole('button', { name: 'Submit Clip', exact: true }).click();
+            const response = await submitted;
+            expect(response.status(), await response.text()).toBe(201);
+            const submission = (await response.json()).submission as { id: string; status: string };
+            expect(submission.status).toBe('pending');
+            const reviewed = await mutate(moderator, `/admin/submissions/${submission.id}/${outcome}`, 'POST', outcome === 'reject' ? { reason: 'Candidate rejection contract' } : {});
+            expect(reviewed.status(), await reviewed.text()).toBe(200);
+            await page.goto('/submissions');
+            const persisted = await context.request.get(`${api}/api/v1/submissions`);
+            expect(persisted.status()).toBe(200);
+            const payload = await persisted.json();
+            expect(payload.data.find((record: { id: string }) => record.id === submission.id))
+                .toMatchObject({ id: submission.id, status: outcome === 'approve' ? 'approved' : 'rejected' });
+            await expect(page.getByText(`Candidate submission ${slug}`, { exact: true })).toBeVisible();
+        }
+    } finally { await moderator.close(); }
+});

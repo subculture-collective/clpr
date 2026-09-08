@@ -70,7 +70,9 @@ function expectStatus(response, statuses, name) {
 }
 
 export function feed() {
-  expectStatus(http.get(`${baseURL}/api/v1/feeds/clips`, { tags: { journey: 'feed' } }), [200], 'feed');
+  const periods = ['hour', 'day', 'week', 'month', 'year', 'all'];
+  const period = periods[(__VU + __ITER) % periods.length];
+  expectStatus(http.get(`${baseURL}/api/v1/feeds/clips?sort=trending&timeframe=${period}`, { tags: { journey: 'feed' } }), [200], 'feed');
 }
 
 export function clipDetail() {

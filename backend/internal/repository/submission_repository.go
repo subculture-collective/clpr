@@ -462,7 +462,7 @@ func (r *SubmissionRepository) ListByUser(ctx context.Context, userID uuid.UUID,
 			source_type, source_platform, source_url, source_id, source_metadata,
 			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
 			original_filename, mime_type, file_size_bytes, upload_status, duration_validation_error, storage_visibility,
-			creator_name, creator_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
+			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id, broadcaster_name_override,
 			game_id, game_name, thumbnail_url, duration, view_count
 		FROM clip_submissions
 		WHERE user_id = $1

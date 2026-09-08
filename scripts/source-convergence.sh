@@ -187,6 +187,7 @@ phase_frontend() {
         npm run code:unused
         npm run test:inventory
         run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-1.json" --coverage
+        npm run test:coverage:verify
         run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-2.json"
         node ../scripts/compare-vitest-runs.mjs \
             "$artifact_dir/frontend/vitest-run-1.json" \

@@ -112,6 +112,9 @@ jobs:
         run: npm run code:unused
       - name: Unit tests
         run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
+      - name: Verify protected sources were measured
+        working-directory: frontend
+        run: npm run test:coverage:verify
       - name: Verify critical test ownership and discovery
         run: npm run test:inventory
       - run: npm run build

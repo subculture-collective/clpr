@@ -1163,7 +1163,7 @@ func (r *UserRepository) AdminSearchUsers(ctx context.Context, searchQuery strin
 	// Build dynamic query based on filters
 	baseQuery := `
 		SELECT
-			id, twitch_id, username, display_name, email, avatar_url, bio,
+			id, twitch_id, username, COALESCE(display_name, username), email, avatar_url, bio,
 			karma_points, role, account_type, is_banned, account_status, created_at, updated_at, last_login_at
 		FROM users
 		WHERE 1=1

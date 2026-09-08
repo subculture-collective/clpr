@@ -42,12 +42,6 @@
     "backend/internal/services/upload_validator_test.go",
     "backend/internal/handlers/moderation_admin_contract_test.go"
   ],
-  "Payments and webhook idempotency": [
-    "backend/internal/handlers/subscription_webhook_handler_test.go",
-    "backend/internal/services/subscription_service_test.go",
-    "backend/tests/integration/premium/subscription_lifecycle_contract_test.go",
-    "backend/internal/repository/webhook_repository_integration_contract_test.go"
-  ],
   "Accessible interaction": [
     "frontend/src/components/ui/Button.test.tsx",
     "frontend/src/components/ui/Modal.test.tsx",
@@ -57,5 +51,22 @@
   ],
   "Real API and public account boundaries": [
     "frontend/e2e/real-backend/launch-smoke.spec.ts"
+  ],
+  "Legacy billing reconciliation and retirement": [
+    "backend/internal/handlers/subscription_webhook_handler_test.go",
+    "backend/internal/services/subscription_service_test.go",
+    "backend/tests/integration/premium/subscription_lifecycle_contract_test.go",
+    "backend/internal/repository/webhook_repository_integration_contract_test.go"
+  ],
+  "Recent engagement and immutable feed pagination": [
+    "backend/internal/repository/engagement_repository_test.go",
+    "backend/internal/scheduler/engagement_scheduler_test.go",
+    "backend/internal/handlers/engagement_cursor_test.go",
+    "frontend/src/hooks/useClipFeed.test.tsx"
+  ],
+  "Authenticated persisted member and moderation journeys": [
+    "frontend/e2e/real-backend/authenticated-journeys.spec.ts",
+    "backend/config/test_fixture_security_test.go",
+    "backend/pkg/twitch/fixture_transport_test.go"
   ]
 }

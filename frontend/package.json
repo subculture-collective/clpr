@@ -26,7 +26,8 @@
     "test:e2e:ui": "playwright test --ui",
     "code:unused": "node scripts/check-unused-source.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run code:unused && npm run test:inventory && npm run test:coverage"
+    "check": "npm run typecheck && npm run lint && npm run code:unused && npm run test:inventory && npm run test:coverage && npm run test:coverage:verify",
+    "test:coverage:verify": "node scripts/verify-critical-coverage.mjs"
   },
   "dependencies": {
     "@dr.pogodin/react-helmet": "^3.0.4",

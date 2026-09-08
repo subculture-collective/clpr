@@ -12,9 +12,12 @@ log_file="$repo_root/.tmp/backend-e2e.log"
 pid_file="$repo_root/.tmp/backend-e2e.pid"
 api_binary="$repo_root/.tmp/backend-e2e-api"
 browser_container=""
+provider_pid=""
+provider_port=${E2E_PROVIDER_PORT:-18089}
 browser_network=()
 
 cleanup() {
+    if [[ -n "$provider_pid" ]]; then kill "$provider_pid" 2>/dev/null || true; wait "$provider_pid" 2>/dev/null || true; fi
     if [[ -n "$browser_container" ]]; then
         docker rm -f "$browser_container" >/dev/null 2>&1 || true
     fi
@@ -39,6 +42,8 @@ mkdir -p "$repo_root/.tmp"
 # browser suite exercises a real repository read instead of only static pages.
 docker compose -f "$repo_root/docker-compose.test.yml" exec -T postgres-test \
     psql --username=clpr --dbname=clpr_test --set=ON_ERROR_STOP=1 <<SQL
+-- This harness owns the Compose test services and starts each journey run fresh.
+TRUNCATE users, clips, clip_submissions, engagement_generations CASCADE;
 INSERT INTO users (
     id, twitch_id, username, display_name, role, account_type, account_status
 ) VALUES (
@@ -48,6 +53,18 @@ INSERT INTO users (
 ON CONFLICT (id) DO UPDATE SET
     is_banned = false,
     account_status = 'active';
+
+-- Separate persistent identities per browser prevent cross-project interference.
+INSERT INTO users(twitch_id,username,display_name,role,account_type,account_status,created_at,karma_points,moderator_scope,moderation_channels)
+SELECT 'clpr-e2e-'||browser||'-'||kind,'clpr-e2e-'||browser||'-'||kind,
+ 'Candidate '||kind,
+ CASE WHEN kind IN ('moderator','scoped') THEN 'moderator' WHEN kind='admin' THEN 'admin' ELSE 'user' END,
+ 'member','active',now()-interval '30 days',100,
+ CASE WHEN kind='moderator' THEN 'site' WHEN kind='scoped' THEN 'community' ELSE NULL END,
+ CASE WHEN kind='scoped' THEN ARRAY['00000000-0000-4000-8000-000000009901'::uuid] ELSE NULL END
+FROM unnest(ARRAY['chromium','firefox','webkit']) browser CROSS JOIN unnest(ARRAY['member','second','moderator','admin','scoped']) kind
+ON CONFLICT(twitch_id) DO UPDATE SET role=EXCLUDED.role,moderator_scope=EXCLUDED.moderator_scope,
+ moderation_channels=EXCLUDED.moderation_channels,is_banned=false,account_status='active';
 
 INSERT INTO clips (
     id, twitch_clip_id, twitch_clip_url, embed_url, title,
@@ -67,7 +84,22 @@ ON CONFLICT (id) DO UPDATE SET
     is_removed = false,
     is_hidden = false,
     submitted_by_user_id = EXCLUDED.submitted_by_user_id;
+
+-- A second real fixture observation supplies measured gain for rollout coverage.
+SELECT record_twitch_observation('$seed_clip_id',52,clock_timestamp());
+DELETE FROM engagement_generations;
 SQL
+
+docker compose -f "$repo_root/docker-compose.test.yml" exec -T redis-test redis-cli FLUSHDB >/dev/null
+
+python3 "$repo_root/scripts/twitch-test-provider.py" "$provider_port" >"$repo_root/.tmp/twitch-test-provider.log" 2>&1 &
+provider_pid=$!
+for attempt in {1..30}; do
+    if curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null; then break; fi
+    if ! kill -0 "$provider_pid" 2>/dev/null; then echo "Fixture provider failed to start" >&2; exit 1; fi
+    sleep 0.1
+done
+curl -fsS "http://127.0.0.1:$provider_port/health" >/dev/null
 
 (
     cd "$repo_root/backend"
@@ -75,13 +107,14 @@ SQL
     # shellcheck disable=SC1091
     source .env.test
     set +a
-    PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
+    TWITCH_TEST_FIXTURE_URL="http://127.0.0.1:$provider_port" TWITCH_CLIENT_ID=test_client_id TWITCH_CLIENT_SECRET=test_client_secret \
+        ENVIRONMENT=development PORT="$api_port" GIN_MODE=debug BASE_URL=http://127.0.0.1:5173 \
         DB_HOST="${TEST_DATABASE_HOST:-$test_service_host}" DB_PORT="${TEST_DATABASE_PORT:-5437}" DB_USER=clpr \
         DB_PASSWORD=clpr_password DB_NAME=clpr_test \
         REDIS_HOST="${TEST_REDIS_HOST:-$test_service_host}" REDIS_PORT="${TEST_REDIS_PORT:-6380}" \
         OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://$test_service_host:9201}" \
         CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173 \
-        RATE_LIMIT_WHITELIST_IPS=127.0.0.1 FEATURE_ANALYTICS=false \
+        RATE_LIMIT_WHITELIST_IPS=127.0.0.1 FEATURE_ANALYTICS=false FEATURE_RECENT_ENGAGEMENT=true \
         "$api_binary"
 ) >"$log_file" 2>&1 &
 echo $! >"$pid_file"

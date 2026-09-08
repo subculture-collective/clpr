@@ -12,13 +12,14 @@ source .env.test
 set +a
 
 set +e
-go test -count=1 -json ./internal/handlers ./internal/middleware ./pkg/jwt | tee "$results" >/dev/null
+go test -count=1 -coverprofile="$(dirname "$results")/engagement-unit.cover" -json ./internal/handlers ./internal/middleware ./pkg/jwt ./internal/scheduler | tee "$results" >/dev/null
 test_status=${PIPESTATUS[0]}
 set -e
 (( test_status == 0 )) || exit "$test_status"
 
-go test -count=1 -tags=integration ./internal/repository -run TestWebhookRetryClaimsAreExclusiveAcrossWorkers
-go test -count=1 -tags=integration ./tests/integration/premium -run TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently
+go test -count=1 -coverprofile="$(dirname "$results")/engagement-repository.cover" -tags=integration ./internal/repository -run 'TestWebhookRetryClaimsAreExclusiveAcrossWorkers|TestEngagementContract'
+go test -count=1 -tags=integration ./tests/integration/premium -run TestSignedStripeWebhookLifecycleReconcilesLegacyBillingIdempotently
+(cd "$repo_root" && python3 scripts/verify-engagement-coverage.py "$(dirname "$results")/engagement-unit.cover" "$(dirname "$results")/engagement-repository.cover")
 bash "$repo_root/scripts/test-backup-restore-formats.sh"
 
 if grep -q '"Action":"skip"' "$results"; then

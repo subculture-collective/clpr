@@ -71,7 +71,7 @@ func NewSubmissionService(
 ) *SubmissionService {
 	var abuseDetector *SubmissionAbuseDetector
 	var moderationEvents *ModerationEventService
-	testFixturesEnabled := strings.EqualFold(cfg.Server.Environment, "test") || cfg.Server.GinMode != "release" || strings.EqualFold(os.Getenv("ENABLE_TEST_FIXTURES"), "true") || strings.EqualFold(os.Getenv("E2E_TEST_MODE"), "true")
+	testFixturesEnabled := cfg.AllowsTestLogin()
 	bypassRateLimits := testFixturesEnabled && strings.EqualFold(os.Getenv("SUBMISSION_BYPASS_RATE_LIMIT"), "true")
 	allowDuplicateSubmission := testFixturesEnabled && strings.EqualFold(os.Getenv("SUBMISSION_ALLOW_DUPLICATES"), "true")
 

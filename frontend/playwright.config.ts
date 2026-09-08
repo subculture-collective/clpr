@@ -109,12 +109,14 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command:
-            `VITE_AUTO_CONSENT=true VITE_ENABLE_ANALYTICS=false VITE_API_BASE_URL=${apiOrigin}/api/v1 VITE_STRIPE_PRO_MONTHLY_PRICE_ID=price_e2e_monthly VITE_STRIPE_PRO_YEARLY_PRICE_ID=price_e2e_yearly` +
-            (process.env.E2E_CDN_FAILOVER_MODE === 'true'
-                ? ' VITE_CDN_FAILOVER_MODE=true'
-                : '') +
-            ' npm run build && npm run preview -- --host 127.0.0.1 --port 5173 --strictPort',
+        env: {
+            VITE_AUTO_CONSENT: 'true',
+            VITE_ENABLE_ANALYTICS: 'false',
+            VITE_API_BASE_URL: apiOrigin + '/api/v1',
+            VITE_DEV_API_PROXY_TARGET: apiOrigin,
+            ...(process.env.E2E_CDN_FAILOVER_MODE === 'true' ? { VITE_CDN_FAILOVER_MODE: 'true' } : {}),
+        },
+        command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 5173 --strictPort',
         url: 'http://127.0.0.1:5173',
         reuseExistingServer: false,
         timeout: 120 * 1000, // 120 seconds for CI environments

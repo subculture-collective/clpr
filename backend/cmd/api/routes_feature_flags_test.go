@@ -1,12 +1,26 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
 	"github.com/gin-gonic/gin"
 )
+
+func TestReleaseRouterRejectsTestLoginEvenWithDevelopmentEnvironment(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	cfg := &config.Config{Server: config.ServerConfig{Environment: "development", GinMode: "release"}}
+	registerAuthRoutes(router.Group("/api/v1"), zeroHandlers(), &Services{}, &Infrastructure{Config: cfg})
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/api/v1/auth/test-login", nil))
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("release test-login returned %d; want 404", w.Code)
+	}
+}
 
 func TestIncompleteFeatureRoutesDefaultAbsent(t *testing.T) {
 	gin.SetMode(gin.TestMode)

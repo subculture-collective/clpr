@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { User } from '../lib/auth-api';
+import { allowTestConsole } from '../test/setup';
 
 const authApi = vi.hoisted(() => ({
     getCurrentUser: vi.fn(),
@@ -24,6 +25,8 @@ vi.mock('../lib/telemetry', () => ({
 vi.mock('../lib/api', () => ({ setUnauthorizedHandler: vi.fn() }));
 
 import { AuthProvider, useAuth } from './AuthContext';
+import { setUnauthorizedHandler } from '../lib/api';
+import { resetUser } from '../lib/telemetry';
 
 const user = (username: string): User => ({
     id: `id-${username}`,
@@ -37,11 +40,12 @@ const user = (username: string): User => ({
 });
 
 function AuthConsumer() {
-    const { isLoading, user: currentUser, refreshUser } = useAuth();
+    const { isLoading, user: currentUser, refreshUser, logout } = useAuth();
     return (
         <div>
             <span>{isLoading ? 'loading' : currentUser?.username ?? 'anonymous'}</span>
             <button onClick={() => void refreshUser()}>Refresh user</button>
+            <button onClick={() => void logout()}>Logout</button>
         </div>
     );
 }
@@ -84,5 +88,31 @@ describe('AuthProvider session restoration', () => {
 
         await waitFor(() => expect(screen.getByText('updated')).toBeVisible());
         expect(authApi.getCurrentUser).toHaveBeenNthCalledWith(2);
+    });
+
+    it('clears a revoked session once when concurrent requests become unauthorized', async () => {
+        authApi.getCurrentUser.mockResolvedValueOnce({ ...user('revoked'), is_verified: true });
+        render(<AuthProvider><AuthConsumer /></AuthProvider>);
+        await screen.findByText('revoked');
+        const unauthorized = vi.mocked(setUnauthorizedHandler).mock.calls.at(-1)?.[0];
+        expect(unauthorized).toBeTypeOf('function');
+        await act(async () => { unauthorized?.(); unauthorized?.(); });
+        expect(await screen.findByText('anonymous')).toBeVisible();
+        expect(localStorage.getItem('auth_session_hint')).toBeNull();
+        expect(resetUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes local access even when the logout endpoint fails, preserving preferences', async () => {
+        allowTestConsole('error', /Logout error: Error: network unavailable/);
+        authApi.getCurrentUser.mockResolvedValueOnce(user('leaving'));
+        authApi.logout.mockRejectedValueOnce(new Error('network unavailable'));
+        localStorage.setItem('theme', 'dark');
+        const browserUser = userEvent.setup();
+        render(<AuthProvider><AuthConsumer /></AuthProvider>);
+        await screen.findByText('leaving');
+        await browserUser.click(screen.getByRole('button', { name: 'Logout' }));
+        expect(await screen.findByText('anonymous')).toBeVisible();
+        expect(localStorage.getItem('auth_session_hint')).toBeNull();
+        expect(localStorage.getItem('theme')).toBe('dark');
     });
 });

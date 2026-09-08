@@ -151,10 +151,11 @@ export function PlaylistManager() {
                     </h3>
                     <form onSubmit={editingPlaylist ? handleUpdate : handleCreate} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            <label htmlFor="playlist-title" className="block text-sm font-medium text-muted-foreground mb-2">
                                 Title <span className="text-error-500">*</span>
                             </label>
                             <input
+                                id="playlist-title"
                                 type="text"
                                 value={formData.title}
                                 onChange={(e) =>
@@ -167,10 +168,11 @@ export function PlaylistManager() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            <label htmlFor="playlist-description" className="block text-sm font-medium text-muted-foreground mb-2">
                                 Description
                             </label>
                             <textarea
+                                id="playlist-description"
                                 value={formData.description}
                                 onChange={(e) =>
                                     setFormData({ ...formData, description: e.target.value })
@@ -182,10 +184,11 @@ export function PlaylistManager() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            <label htmlFor="playlist-visibility" className="block text-sm font-medium text-muted-foreground mb-2">
                                 Visibility
                             </label>
                             <select
+                                id="playlist-visibility"
                                 value={formData.visibility}
                                 onChange={(e) =>
                                     setFormData({
@@ -241,6 +244,7 @@ export function PlaylistManager() {
                                     <PlaylistCard playlist={playlist} />
                                     <div className="absolute top-5 right-5 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
+                                            aria-label={`Edit ${playlist.title}`}
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 startEdit(playlist);

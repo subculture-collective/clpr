@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // AuthHandler handles authentication endpoints
@@ -180,7 +180,7 @@ func (h *AuthHandler) HandlePKCECallback(c *gin.Context) {
 // TestLogin provides a deterministic login flow for E2E/local environments without Twitch OAuth
 func (h *AuthHandler) TestLogin(c *gin.Context) {
 	// Guard: disable in production/release modes
-	if h.cfg.Server.GinMode == "release" || strings.EqualFold(h.cfg.Server.Environment, "production") {
+	if !h.cfg.AllowsTestLogin() {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Test login is disabled in production"})
 		return
 	}

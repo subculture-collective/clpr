@@ -40,9 +40,18 @@ mkdir -p "$EVIDENCE_OUTPUT_DIR"
 [[ -d "$EVIDENCE_OUTPUT_DIR" && -w "$EVIDENCE_OUTPUT_DIR" ]] \
     || { echo "EVIDENCE_OUTPUT_DIR must be writable" >&2; exit 1; }
 
+network_args=()
+if [[ -n "${STAGING_DOCKER_NETWORK:-}" ]]; then
+    network_args+=(--network "$STAGING_DOCKER_NETWORK")
+fi
+if [[ -n "${STAGING_CA_FILE:-}" ]]; then
+    [[ -f "$STAGING_CA_FILE" ]] || { echo "STAGING_CA_FILE must exist" >&2; exit 1; }
+    network_args+=(-v "$(realpath "$STAGING_CA_FILE"):/staging-ca.pem:ro" -e SSL_CERT_FILE=/staging-ca.pem)
+fi
+
 for profile in baseline stress soak; do
     echo "Running $profile release profile"
-    docker run --rm \
+    docker run --rm "${network_args[@]}" \
         -v "$PWD/backend/tests/load/release.js:/release.js:ro" \
         -v "$EVIDENCE_OUTPUT_DIR:/evidence" \
         -e "BASE_URL=$STAGING_BASE_URL" \
