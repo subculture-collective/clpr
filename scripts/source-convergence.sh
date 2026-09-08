@@ -306,15 +306,11 @@ assert_image_contract() {
 scan_image() {
     local image="$1"
     local report="$2"
+    # Retain findings on failure as well as success; the exit code still blocks.
     docker run --rm \
         -v /var/run/docker.sock:/var/run/docker.sock \
         "$TRIVY_IMAGE" image --scanners vuln --ignore-unfixed \
-        --severity HIGH,CRITICAL --exit-code 1 "$image" >/dev/null
-    # Produce the retained report only after the blocking scan passes.
-    docker run --rm \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        "$TRIVY_IMAGE" image --scanners vuln --ignore-unfixed \
-        --severity HIGH,CRITICAL --format json "$image" \
+        --severity HIGH,CRITICAL --exit-code 1 --format json "$image" \
         >"$artifact_dir/images/$report"
     [[ -s "$artifact_dir/images/$report" ]] || fail "$image scan report was not produced"
 }
