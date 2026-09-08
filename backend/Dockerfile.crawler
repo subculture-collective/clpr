@@ -22,7 +22,7 @@ ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
 LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
       org.opencontainers.image.source="${OCI_SOURCE}"
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add --upgrade ca-certificates 'libcrypto3>=3.5.8-r0' 'libssl3>=3.5.8-r0'
 
 RUN addgroup -S -g 10001 clpr && adduser -S -D -H -u 10001 -G clpr clpr \
     && mkdir -p /app && chown -R clpr:clpr /app
