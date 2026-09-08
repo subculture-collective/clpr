@@ -2748,7 +2748,7 @@
     "path": "/api/v1/tags/tree",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*TagHandler).GetTagTree-fm",
     "operation_id": "getTagTree",
-    "contract_level": "transitional"
+    "contract_level": "route-specific"
   },
   {
     "method": "GET",
