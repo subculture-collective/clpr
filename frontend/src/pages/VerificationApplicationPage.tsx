@@ -202,7 +202,7 @@ export function VerificationApplicationPage() {
                                     href={existingApplication.twitch_channel_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-primary-600 hover:underline"
+                                    className="text-sm text-link hover:underline"
                                 >
                                     {existingApplication.twitch_channel_url}
                                 </a>

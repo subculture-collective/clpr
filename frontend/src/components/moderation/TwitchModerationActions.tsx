@@ -466,7 +466,7 @@ export function TwitchModerationActions({
                                             onChange={() =>
                                                 setIsPermanent(true)
                                             }
-                                            className='h-4 w-4 text-primary-600'
+                                            className='h-4 w-4 text-link'
                                             disabled={loading}
                                         />
                                         <label
@@ -485,7 +485,7 @@ export function TwitchModerationActions({
                                             onChange={() =>
                                                 setIsPermanent(false)
                                             }
-                                            className='h-4 w-4 text-primary-600'
+                                            className='h-4 w-4 text-link'
                                             disabled={loading}
                                         />
                                         <label
@@ -521,7 +521,7 @@ export function TwitchModerationActions({
                                                         duration === '3600' &&
                                                         !customDuration
                                                     ) ?
-                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-link dark:text-primary-300'
                                                     :   'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                             >
@@ -539,7 +539,7 @@ export function TwitchModerationActions({
                                                         duration === '86400' &&
                                                         !customDuration
                                                     ) ?
-                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-link dark:text-primary-300'
                                                     :   'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                             >
@@ -557,7 +557,7 @@ export function TwitchModerationActions({
                                                         duration === '604800' &&
                                                         !customDuration
                                                     ) ?
-                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-link dark:text-primary-300'
                                                     :   'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                             >
@@ -576,7 +576,7 @@ export function TwitchModerationActions({
                                                             '1209600' &&
                                                         !customDuration
                                                     ) ?
-                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-link dark:text-primary-300'
                                                     :   'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                             >
@@ -595,7 +595,7 @@ export function TwitchModerationActions({
                                                 disabled={loading}
                                                 className={`w-full px-3 py-2 text-sm border rounded-md transition-colors text-left ${
                                                     customDuration ?
-                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                                                        'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-link dark:text-primary-300'
                                                     :   'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                             >

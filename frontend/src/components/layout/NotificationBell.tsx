@@ -119,7 +119,7 @@ export function NotificationBell() {
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllAsRead}
-                                className='text-primary-600 hover:text-primary-700 text-sm cursor-pointer'
+                                className='text-link hover:text-link text-sm cursor-pointer'
                             >
                                 Mark all as read
                             </button>
@@ -170,7 +170,7 @@ export function NotificationBell() {
                             <div className='bg-muted/50 p-3 border-t border-border'>
                                 <Link
                                     to='/notifications'
-                                    className='text-primary-600 hover:text-primary-700 block text-sm font-medium text-center cursor-pointer'
+                                    className='text-link hover:text-link block text-sm font-medium text-center cursor-pointer'
                                     onClick={() => setIsOpen(false)}
                                 >
                                     See all notifications

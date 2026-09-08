@@ -59,7 +59,7 @@ export function UserMenu() {
             <button
                 ref={buttonRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className='flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900'
+                className='flex min-h-11 items-center gap-2 px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900'
                 aria-expanded={isOpen}
                 aria-haspopup='true'
                 aria-label='User menu'
@@ -184,7 +184,7 @@ export function UserMenu() {
                                 <div className='border-t border-border my-1'></div>
                                 <Link
                                     to='/admin/dashboard'
-                                    className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors text-primary-600 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                                    className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors text-link cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                                     onClick={() => setIsOpen(false)}
                                     role='menuitem'
                                     tabIndex={-1}

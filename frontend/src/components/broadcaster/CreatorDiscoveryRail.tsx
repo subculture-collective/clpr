@@ -69,7 +69,7 @@ export function CreatorDiscoveryRail({
                                     loading='lazy'
                                 />
                             ) : (
-                                <div className='flex h-full items-center justify-center bg-[radial-gradient(circle_at_top_left,rgb(var(--color-brand)/0.28),transparent_55%)] font-heading text-6xl font-bold text-brand/40'>
+                                <div className='flex h-full items-center justify-center bg-[radial-gradient(circle_at_top_left,rgb(var(--clpr-brand)/0.28),transparent_55%)] font-heading text-6xl font-bold text-link/40'>
                                     {creator.broadcaster_name.slice(0, 1).toUpperCase()}
                                 </div>
                             )}

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     /**
      * Maximum width of the container
-     * @default 'default' (1280px)
+     * @default 'default' (1440px)
      */
     maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full' | 'default';
     /**
@@ -16,13 +16,13 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const maxWidthClasses = {
-    sm: 'max-w-screen-sm',
-    md: 'max-w-screen-md',
-    lg: 'max-w-screen-lg',
-    xl: 'max-w-screen-xl',
-    '2xl': 'max-w-screen-2xl',
+    sm: 'max-w-[640px]',
+    md: 'max-w-[768px]',
+    lg: 'max-w-[1024px]',
+    xl: 'max-w-[1280px]',
+    '2xl': 'max-w-[1536px]',
     full: 'max-w-full',
-    default: 'max-w-[1600px]', // Wider default for more breathing room
+    default: 'max-w-[1440px]',
 };
 
 /**
@@ -37,7 +37,7 @@ export const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
             <div
                 ref={ref}
                 className={cn(
-                    'w-full px-3 xs:px-4 sm:px-6 lg:px-8',
+                    'w-full min-w-0 px-4 sm:px-6 lg:px-8',
                     maxWidthClasses[maxWidth],
                     center && 'mx-auto',
                     className,

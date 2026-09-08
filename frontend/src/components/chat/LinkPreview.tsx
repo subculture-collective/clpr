@@ -57,7 +57,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary-600 dark:text-primary-400 hover:underline break-all inline-flex items-center gap-1"
+        className="text-link dark:text-primary-400 hover:underline break-all inline-flex items-center gap-1"
       >
         {url}
         <ExternalLink className="w-3 h-3 flex-shrink-0" />
@@ -92,7 +92,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
               {metadata.description}
             </div>
           )}
-          <div className="flex items-center gap-1 mt-2 text-xs text-primary-600 dark:text-primary-400">
+          <div className="flex items-center gap-1 mt-2 text-xs text-link dark:text-primary-400">
             <ExternalLink className="w-3 h-3" />
             <span className="truncate">{new URL(metadata.url).hostname}</span>
           </div>

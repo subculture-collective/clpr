@@ -10,8 +10,8 @@ interface FeedLayoutProps {
 
 export function FeedLayout({ children, sidebar, className }: FeedLayoutProps) {
     return (
-        <Container className={cn('px-0 xs:px-0 sm:px-0 py-3 md:px-4 md:py-8', className)}>
-            <div className='grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 lg:gap-8'>
+        <Container className={cn('py-3 md:py-8', className)}>
+            <div className='grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8'>
                 {/* Main content */}
                 <div className='min-w-0'>{children}</div>
 

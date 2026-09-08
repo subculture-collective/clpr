@@ -123,7 +123,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 			</div>
 
 			{/* Title */}
-			<h3 className="text-base font-semibold text-foreground mb-1 line-clamp-2 group-hover:text-primary-500 transition-colors leading-snug">
+			<h3 className="text-base font-semibold text-foreground mb-1 line-clamp-2 group-hover:text-link transition-colors leading-snug">
 				{clip.title}
 			</h3>
 
@@ -156,8 +156,8 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						onClick={(e) => handleVote(e, 1)}
 						disabled={!isAuthenticated || voteMutation.isPending}
 						className={cn(
-							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
-							clip.user_vote === 1 && "text-primary-500",
+							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+							clip.user_vote === 1 && "text-link",
 						)}
 						title={isAuthenticated ? "Upvote" : "Log in to vote"}
 						aria-label={isAuthenticated ? `Upvote ${clip.title}` : "Log in to vote"}
@@ -177,8 +177,8 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						onClick={(e) => handleVote(e, -1)}
 						disabled={!isAuthenticated || voteMutation.isPending}
 						className={cn(
-							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
-							clip.user_vote === -1 && "text-primary-500",
+							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+							clip.user_vote === -1 && "text-link",
 						)}
 						title={isAuthenticated ? "Downvote" : "Log in to vote"}
 						aria-label={isAuthenticated ? `Downvote ${clip.title}` : "Log in to vote"}
@@ -196,8 +196,8 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						onClick={handleFavorite}
 						disabled={!isAuthenticated}
 						className={cn(
-							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
-							clip.is_favorited && "text-primary-500",
+							"inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded px-2 transition-colors motion-reduce:transition-none hover:bg-accent hover:text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+							clip.is_favorited && "text-link",
 						)}
 						title={
 							isAuthenticated
@@ -211,7 +211,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 					>
 						<Heart
 							size={14}
-							className={cn(clip.is_favorited && "fill-current text-primary-500")}
+							className={cn(clip.is_favorited && "fill-current text-link")}
 						/>
 						<span className="font-medium text-foreground/90">
 							{formatCompactNumber(clip.favorite_count)}
@@ -223,7 +223,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						clipId={clip.id}
 						clipTitle={clip.title}
 						showLabel={false}
-						buttonClassName="inline-flex min-h-0 items-center rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500"
+						buttonClassName="inline-flex min-h-0 items-center rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-link"
 						iconClassName="h-3.5 w-3.5"
 						preventLinkNavigation={true}
 					/>

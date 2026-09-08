@@ -21,7 +21,7 @@ const sizeClasses = {
 };
 
 const colorClasses = {
-  primary: 'text-primary-500',
+  primary: 'text-link',
   secondary: 'text-secondary-500',
   white: 'text-white',
   current: 'text-current',

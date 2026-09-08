@@ -55,7 +55,7 @@ export function AddToQueueButton({ clipId }: AddToQueueButtonProps) {
             disabled={!isAuthenticated || addToQueue.isPending || isInQueue}
             className={`flex items-center gap-1.5 transition-colors touch-target min-h-11 ${
                 isInQueue ?
-                    'text-brand cursor-default'
+                    'text-link cursor-default'
                 : !isAuthenticated ?
                     'text-muted-foreground opacity-50 cursor-not-allowed hover:bg-transparent'
                 :   'text-muted-foreground hover:text-foreground cursor-pointer'

@@ -53,7 +53,7 @@ export function BookmarkedPlaylistsPage() {
                             <p className='text-sm mt-2'>
                                 <Link
                                     to='/playlists/discover'
-                                    className='text-primary-500 hover:underline'
+                                    className='text-link hover:underline'
                                 >
                                     Discover playlists
                                 </Link>{' '}

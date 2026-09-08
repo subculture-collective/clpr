@@ -19,6 +19,7 @@ export function AppLayout() {
     const navigationType = useNavigationType();
     const { isAuthenticated } = useAuth();
     const isAdminWorkspace = location.pathname.startsWith('/admin/') || location.pathname === '/moderation/users';
+    const isDiscovery = location.pathname === '/' || /^\/(discover|creators|broadcaster|categories|twitch-category|topics|tags|search)(\/|$)/.test(location.pathname);
     const scrollPositionsRef = useRef(new Map<string, number>());
 
     // Initialize offline cache on app start
@@ -51,8 +52,8 @@ export function AppLayout() {
         <div className='min-h-screen flex flex-col bg-background text-foreground transition-theme'>
             <SkipLink targetId='main-content' label='Skip to main content' />
             <Header />
-            {!isAdminWorkspace && <CategoriesNav />}
-            <main id='main-content' className='flex-1 pb-20 md:pb-0' tabIndex={-1}>
+            {isDiscovery && <CategoriesNav />}
+            <main id='main-content' className='min-w-0 flex-1 pb-20 md:pb-0' tabIndex={-1}>
                 <Outlet />
             </main>
             {!isAdminWorkspace && <div className='pb-20 md:pb-0'><Footer /></div>}

@@ -109,7 +109,7 @@ export function MessageContent({ content, onMentionClick }: MessageContentProps)
           elements.push(
             <span
               key={`mention-${idx}`}
-              className="text-primary-600 dark:text-primary-400 hover:underline cursor-pointer font-medium"
+              className="text-link dark:text-primary-400 hover:underline cursor-pointer font-medium"
               role="button"
               tabIndex={0}
               onClick={() => handleMentionClick(matchText)}

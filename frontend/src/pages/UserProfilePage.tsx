@@ -445,7 +445,7 @@ export function UserProfilePage() {
                                                         {activity.clip_title && (
                                                             <Link
                                                                 to={`/clip/${activity.clip_id}`}
-                                                                className='text-primary hover:underline text-sm mt-1 block'
+                                                                className='text-link underline underline-offset-2 text-sm mt-1 block'
                                                             >
                                                                 {
                                                                     activity.clip_title
@@ -536,7 +536,7 @@ export function UserProfilePage() {
                                                         <div>
                                                             <Link
                                                                 to={`/user/${follower.username}`}
-                                                                className='font-semibold hover:text-primary'
+                                                                className='font-semibold hover:text-link'
                                                             >
                                                                 {
                                                                     follower.display_name
@@ -638,7 +638,7 @@ export function UserProfilePage() {
                                                             <div>
                                                                 <Link
                                                                     to={`/user/${followedUser.username}`}
-                                                                    className='font-semibold hover:text-primary'
+                                                                    className='font-semibold hover:text-link'
                                                                 >
                                                                     {
                                                                         followedUser.display_name

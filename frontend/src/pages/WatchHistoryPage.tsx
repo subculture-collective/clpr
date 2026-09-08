@@ -100,7 +100,7 @@ export function WatchHistoryPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="page-container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Watch History</h1>
           <p className="text-muted-foreground mb-6">Sign in to view your watch history</p>
@@ -116,7 +116,7 @@ export function WatchHistoryPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Watch History</h1>

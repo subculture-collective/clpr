@@ -280,7 +280,7 @@ export function PrivacyPage() {
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
               <li><strong className="text-foreground">Twitch:</strong> For authentication and clip data (see{' '}
-                <a href="https://www.twitch.tv/p/legal/privacy-notice/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a href="https://www.twitch.tv/p/legal/privacy-notice/" target="_blank" rel="noopener noreferrer" className="text-link underline underline-offset-2">
                   Twitch Privacy Policy
                 </a>)
               </li>
@@ -340,7 +340,7 @@ export function PrivacyPage() {
             </p>
             <ul className="space-y-2 text-muted-foreground ml-4">
               <li>
-                <strong className="text-foreground">Email:</strong>{' '}<a href="mailto:privacy@clpr.tv" className="text-primary hover:underline">privacy@clpr.tv</a>
+                <strong className="text-foreground">Email:</strong>{' '}<a href="mailto:privacy@clpr.tv" className="text-link underline underline-offset-2">privacy@clpr.tv</a>
               </li>
             </ul>
           </CardBody>

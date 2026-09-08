@@ -5,7 +5,7 @@ export function MiniFooter() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="fixed bottom-4 left-4 xs:bottom-8 xs:left-8 z-40">
+    <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] left-4 xs:left-8 z-40">
       {/* Collapsed state - Icon button */}
       {!isExpanded && (
         <button
@@ -89,7 +89,7 @@ export function MiniFooter() {
               <div className="space-y-1">
                 <Link
                   to="/about"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                   onClick={() => setIsExpanded(false)}
                 >
                   About clpr
@@ -98,7 +98,7 @@ export function MiniFooter() {
                   href="https://patreon.com/subcult"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                 >
                   Patreon
                 </a>
@@ -112,21 +112,21 @@ export function MiniFooter() {
               <div className="space-y-1">
                 <Link
                   to="/privacy"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                   onClick={() => setIsExpanded(false)}
                 >
                   Privacy Policy
                 </Link>
                 <Link
                   to="/terms"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                   onClick={() => setIsExpanded(false)}
                 >
                   Terms of Service
                 </Link>
                 <Link
                   to="/legal/dmca"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                   onClick={() => setIsExpanded(false)}
                 >
                   DMCA Policy
@@ -143,7 +143,7 @@ export function MiniFooter() {
                   href="https://discord.gg/TFwB4aJRef"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                 >
                   Discord
                 </a>
@@ -151,7 +151,7 @@ export function MiniFooter() {
                   href="https://x.com/clpr_tv"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-sm text-foreground hover:text-primary-500 transition-colors"
+                  className="block text-sm text-foreground hover:text-link transition-colors"
                 >
                   Twitter
                 </a>

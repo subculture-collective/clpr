@@ -50,7 +50,7 @@ export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
                         />
                         <div
                             className={cn(
-                                'w-11 h-6 rounded-full transition-colors duration-200',
+                                'relative w-11 h-6 shrink-0 rounded-full transition-colors duration-200',
                                 'bg-neutral-300 dark:bg-neutral-600',
                                 'peer-checked:bg-primary-500',
                                 'peer-focus:ring-2 peer-focus:ring-primary-500 peer-focus:ring-offset-2',

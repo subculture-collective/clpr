@@ -167,7 +167,7 @@ export function CategoryIcon({ icon, size = 'md', className = '' }: CategoryIcon
     if (NamedIcon) {
         return (
             <span
-                className={`inline-flex items-center justify-center rounded-lg bg-brand/10 text-brand ${config.container} ${className}`}
+                className={`inline-flex items-center justify-center rounded-lg bg-brand/10 text-link ${config.container} ${className}`}
                 aria-hidden='true'
             >
                 <NamedIcon size={config.icon} strokeWidth={1.75} />
@@ -180,7 +180,7 @@ export function CategoryIcon({ icon, size = 'md', className = '' }: CategoryIcon
     if (EmojiIcon) {
         return (
             <span
-                className={`inline-flex items-center justify-center rounded-lg bg-brand/10 text-brand ${config.container} ${className}`}
+                className={`inline-flex items-center justify-center rounded-lg bg-brand/10 text-link ${config.container} ${className}`}
                 aria-hidden='true'
             >
                 <EmojiIcon size={config.icon} strokeWidth={1.75} />
@@ -191,7 +191,7 @@ export function CategoryIcon({ icon, size = 'md', className = '' }: CategoryIcon
     // Fallback: render the raw value in a styled container
     return (
         <span
-            className={`inline-flex items-center justify-center rounded-lg bg-brand/10 text-brand ${config.container} ${config.emoji} leading-none ${className}`}
+            className={`inline-flex items-center justify-center rounded-lg bg-brand/10 text-link ${config.container} ${config.emoji} leading-none ${className}`}
             aria-hidden='true'
         >
             {icon}

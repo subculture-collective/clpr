@@ -14,7 +14,7 @@ export function DMCAPage() {
 
           <Card><CardBody>
             <h2 className='text-2xl font-semibold mb-4'>Send a takedown notice</h2>
-            <p className='text-muted-foreground mb-4'>Email your notice to <a href='mailto:dmca@clpr.tv' className='text-primary hover:underline'>dmca@clpr.tv</a>. A complete notice should include:</p>
+            <p className='text-muted-foreground mb-4'>Email your notice to <a href='mailto:dmca@clpr.tv' className='text-link underline underline-offset-2'>dmca@clpr.tv</a>. A complete notice should include:</p>
             <ul className='list-disc list-inside space-y-2 text-muted-foreground ml-4'>
               <li>Your physical or electronic signature.</li>
               <li>Identification of the copyrighted work, or a representative list if several works on one site are covered.</li>
@@ -28,7 +28,7 @@ export function DMCAPage() {
 
           <Card><CardBody>
             <h2 className='text-2xl font-semibold mb-4'>Counter-notices</h2>
-            <p className='text-muted-foreground mb-4'>If material you submitted was removed because of mistake or misidentification, you may email a counter-notice to <a href='mailto:dmca@clpr.tv' className='text-primary hover:underline'>dmca@clpr.tv</a> containing:</p>
+            <p className='text-muted-foreground mb-4'>If material you submitted was removed because of mistake or misidentification, you may email a counter-notice to <a href='mailto:dmca@clpr.tv' className='text-link underline underline-offset-2'>dmca@clpr.tv</a> containing:</p>
             <ul className='list-disc list-inside space-y-2 text-muted-foreground ml-4'>
               <li>Your physical or electronic signature.</li>
               <li>Identification of the removed material and where it appeared before removal.</li>
@@ -42,7 +42,7 @@ export function DMCAPage() {
           <Card><CardBody>
             <h2 className='text-2xl font-semibold mb-4'>Repeat infringement and misrepresentation</h2>
             <p className='text-muted-foreground mb-3'>When appropriate, we may terminate accounts of repeat infringers. Knowingly making a material misrepresentation in a notice or counter-notice may create liability under 17 U.S.C. § 512(f).</p>
-            <p className='text-muted-foreground'>DMCA notices are legal documents. For non-copyright reports, use the report control on the relevant content or contact <a href='mailto:support@clpr.tv' className='text-primary hover:underline'>support@clpr.tv</a>.</p>
+            <p className='text-muted-foreground'>DMCA notices are legal documents. For non-copyright reports, use the report control on the relevant content or contact <a href='mailto:support@clpr.tv' className='text-link underline underline-offset-2'>support@clpr.tv</a>.</p>
           </CardBody></Card>
         </div>
       </Container>

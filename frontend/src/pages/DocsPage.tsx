@@ -161,7 +161,7 @@ export function DocsPage() {
                             </>
                         :   <button
                                 onClick={() => fetchDoc(node.path)}
-                                className='text-left text-primary hover:underline block py-1'
+                                className='text-left text-link underline underline-offset-2 block py-1'
                             >
                                 {node.name.replace(/-/g, ' ')}
                             </button>
@@ -192,7 +192,7 @@ export function DocsPage() {
                     return (
                         <button
                             onClick={() => fetchDoc(cleanPath)}
-                            className='text-primary hover:underline'
+                            className='text-link underline underline-offset-2'
                         >
                             {children}
                         </button>
@@ -209,7 +209,7 @@ export function DocsPage() {
                                 'noopener noreferrer'
                             :   undefined
                         }
-                        className='text-primary hover:underline'
+                        className='text-link underline underline-offset-2'
                     >
                         {children}
                     </a>
@@ -359,7 +359,7 @@ export function DocsPage() {
                             <div className='flex justify-between items-center mb-4'>
                                 <button
                                     onClick={handleBackToIndex}
-                                    className='text-primary hover:underline flex items-center gap-2'
+                                    className='text-link underline underline-offset-2 flex items-center gap-2'
                                 >
                                     ← Back to Documentation Index
                                 </button>
@@ -442,7 +442,7 @@ export function DocsPage() {
                                                         }}
                                                         className='text-left w-full hover:bg-accent p-2 rounded transition-colors'
                                                     >
-                                                        <h3 className='font-semibold text-primary mb-1'>
+                                                        <h3 className='font-semibold text-link mb-1'>
                                                             {result.name}
                                                         </h3>
                                                         <p className='text-sm text-muted-foreground mb-2'>

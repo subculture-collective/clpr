@@ -153,7 +153,7 @@ export function ContactPage() {
               <p className="text-sm text-muted-foreground">
                 <strong className="text-foreground">Privacy Notice:</strong> By submitting this form, 
                 you agree to our{' '}
-                <Link to="/privacy" className="text-primary hover:underline">
+                <Link to="/privacy" className="text-link underline underline-offset-2">
                   Privacy Policy
                 </Link>
                 . We will only use your contact information to respond to your inquiry and will not 
@@ -201,7 +201,7 @@ export function ContactPage() {
               <h3 className="font-medium text-foreground mb-1">Community Guidelines</h3>
               <p className="text-sm text-muted-foreground">
                 Review our{' '}
-                <Link to="/community-rules" className="text-primary hover:underline">
+                <Link to="/community-rules" className="text-link underline underline-offset-2">
                   Community Rules
                 </Link>{' '}
                 for information on acceptable behavior and content standards.
@@ -214,7 +214,7 @@ export function ContactPage() {
                 for faster moderation.
               </p>
             </div>
-            <div><h3 className="font-medium text-foreground mb-1">Email support</h3><p className="text-sm text-muted-foreground">For account, bug, or feature questions, email <a href="mailto:support@clpr.tv" className="text-primary hover:underline">support@clpr.tv</a>.</p></div>
+            <div><h3 className="font-medium text-foreground mb-1">Email support</h3><p className="text-sm text-muted-foreground">For account, bug, or feature questions, email <a href="mailto:support@clpr.tv" className="text-link underline underline-offset-2">support@clpr.tv</a>.</p></div>
           </div>
         </CardBody>
       </Card>

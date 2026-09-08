@@ -106,7 +106,7 @@ export function NotificationPreferencesPage() {
           <div className="mb-6">
             <Link
               to="/notifications"
-              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 mb-2 inline-block"
+              className="text-sm text-link hover:text-link dark:text-primary-400 dark:hover:text-primary-300 mb-2 inline-block"
             >
               ← Back to Notifications
             </Link>

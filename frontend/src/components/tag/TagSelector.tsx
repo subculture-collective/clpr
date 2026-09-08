@@ -238,7 +238,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                                     <button
                                         type='button'
                                         onClick={() => void handleCreateTag()}
-                                        className='text-brand hover:underline cursor-pointer'
+                                        className='text-link hover:underline cursor-pointer'
                                         disabled={!searchQuery.trim()}
                                     >
                                         Add &ldquo;{searchQuery.trim()}&rdquo; as a new tag

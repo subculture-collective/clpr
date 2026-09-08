@@ -101,7 +101,7 @@ export function CookieSettingsPage() {
                     Required for the website to function
                   </p>
                 </div>
-                <span className="text-xs bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-3 py-1 rounded">
+                <span className="text-xs bg-primary-100 dark:bg-primary-900 text-link dark:text-primary-300 px-3 py-1 rounded">
                   Always Active
                 </span>
               </div>

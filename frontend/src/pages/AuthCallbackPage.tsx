@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { handleOAuthCallback } from '../lib/auth-api';
 import { trackEvent, AuthEvents } from '../lib/telemetry';
 import { fetchRecommendationPreferences } from '../lib/recommendation-api';
+import { getAuthReturnTo } from '../lib/auth-return';
 
 export function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -76,7 +77,7 @@ export function AuthCallbackPage() {
         });
 
         // Get the intended destination from session storage or default to home
-        const returnTo = sessionStorage.getItem('auth_return_to') || '/';
+        const returnTo = getAuthReturnTo(sessionStorage.getItem('auth_return_to'));
         sessionStorage.removeItem('auth_return_to');
 
         if (returnTo === '/') {

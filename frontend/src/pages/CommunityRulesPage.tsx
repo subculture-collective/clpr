@@ -163,7 +163,7 @@ export function CommunityRulesPage() {
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
               <li>Contact the moderation team through the platform's report feature</li>
-              <li>Email <a href="mailto:support@clpr.tv" className="text-primary hover:underline">support@clpr.tv</a> for questions or concerns</li>
+              <li>Email <a href="mailto:support@clpr.tv" className="text-link underline underline-offset-2">support@clpr.tv</a> for questions or concerns</li>
             </ul>
             <p className="text-muted-foreground mt-4">
               Thank you for helping make clpr a great place for creators, viewers, and clip fans.

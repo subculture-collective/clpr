@@ -46,7 +46,7 @@ export function NotificationItem({
         <div
             className={`p-4 border-b border-border transition-colors cursor-pointer ${
                 !notification.is_read
-                    ? 'bg-brand-tint hover:bg-brand-tint-hover border-l-[3px] border-l-[rgb(var(--color-brand))]'
+                    ? 'bg-brand-tint hover:bg-brand-tint-hover border-l-[3px] border-l-[rgb(var(--clpr-brand))]'
                     : 'hover:bg-surface-hover'
             }`}
             onClick={onClick}

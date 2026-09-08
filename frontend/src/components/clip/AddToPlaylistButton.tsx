@@ -104,7 +104,7 @@ export function AddToPlaylistButton({ clipId }: AddToPlaylistButtonProps) {
                                 disabled={addMutation.isPending}
                                 className='w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors disabled:opacity-50 flex items-center gap-3 cursor-pointer'
                             >
-                                <div className='w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0'>
+                                <div className='w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-link dark:text-primary-400 shrink-0'>
                                     <ListMusic size={20} strokeWidth={1.75} />
                                 </div>
                                 <div className='min-w-0 flex-1'>

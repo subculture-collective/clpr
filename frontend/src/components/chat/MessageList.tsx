@@ -84,7 +84,7 @@ export function MessageList({
           ) : (
             <button
               onClick={onLoadMore}
-              className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+              className="text-xs text-link dark:text-primary-400 hover:underline"
             >
               Load more messages
             </button>

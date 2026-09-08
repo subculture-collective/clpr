@@ -7,7 +7,7 @@ import { useState } from 'react';
 function TagGroup({ title, tags }: { title: string; tags: Array<{ id: string; slug: string; name: string; usage_count: number }> }) {
     if (tags.length === 0) return null;
     return <section className='mb-8'><h2 className='mb-3 text-xl font-semibold'>{title}</h2><div className='flex flex-wrap gap-3'>{tags.map(tag => (
-        <Link key={tag.id} to={`/tags/${encodeURIComponent(tag.slug)}`} className='inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400'>
+        <Link key={tag.id} to={`/tags/${encodeURIComponent(tag.slug)}`} className='inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground hover:border-brand hover:text-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400'>
             <span>#{tag.name}</span>{tag.usage_count > 0 && <span className='text-xs text-muted-foreground'>{tag.usage_count.toLocaleString()}</span>}
         </Link>
     ))}</div></section>;

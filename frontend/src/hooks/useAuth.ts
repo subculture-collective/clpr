@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { getAuthReturnTo } from '../lib/auth-return';
 
 /**
  * Hook to access auth state
@@ -37,7 +38,7 @@ export function useRequireAuth() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Store the current location for redirect after login
-      sessionStorage.setItem('auth_return_to', location.pathname);
+      sessionStorage.setItem('auth_return_to', getAuthReturnTo(location));
       navigate('/login', { replace: true, state: { from: location } });
     }
   }, [isAuthenticated, isLoading, navigate, location]);

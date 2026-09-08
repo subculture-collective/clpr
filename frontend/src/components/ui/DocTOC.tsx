@@ -53,7 +53,7 @@ function TOCList({ entries, onNavigate, level = 0 }: TOCListProps) {
                     <a
                         href={`#${entry.id}`}
                         onClick={(e) => onNavigate(e, entry.id)}
-                        className='text-primary hover:underline block'
+                        className='text-link underline underline-offset-2 block'
                     >
                         {entry.text}
                     </a>

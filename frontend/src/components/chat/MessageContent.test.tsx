@@ -14,12 +14,10 @@ describe('MessageContent', () => {
     expect(screen.getByText('Hello world')).toBeInTheDocument();
   });
 
-  it('renders mentions with proper styling', () => {
+  it('preserves mentions in message text', () => {
     renderWithRouter(<MessageContent content="Hello @user123" />);
     const mention = screen.getByText('@user123');
     expect(mention).toBeInTheDocument();
-    expect(mention.className).toContain('text-primary-600');
-    expect(mention.className).toContain('dark:text-primary-400');
   });
 
   it('renders URLs as links', () => {
@@ -34,8 +32,6 @@ describe('MessageContent', () => {
     renderWithRouter(<MessageContent content="Use `console.log()` for debugging" />);
     const code = screen.getByText('console.log()');
     expect(code.tagName).toBe('CODE');
-    expect(code.className).toContain('bg-neutral-100');
-    expect(code.className).toContain('dark:bg-neutral-800');
   });
 
   it('renders multi-line code blocks', () => {

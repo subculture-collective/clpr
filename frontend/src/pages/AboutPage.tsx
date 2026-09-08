@@ -16,7 +16,7 @@ export function AboutPage() {
       <SEO title='About' description='clpr helps people discover the creators and moments shaping live culture.' canonicalUrl='/about' />
       <Container className='py-8 max-w-4xl'>
         <div className='mb-8'>
-          <p className='text-sm font-semibold uppercase tracking-widest text-primary mb-3'>Live culture, clipped</p>
+          <p className='text-sm font-semibold uppercase tracking-widest text-link mb-3'>Live culture, clipped</p>
           <h1 className='text-4xl font-bold mb-4'>Find the creators everyone will be talking about.</h1>
           <p className='text-lg text-muted-foreground max-w-3xl'>clpr brings together memorable Twitch moments so you can discover people worth following—not just whatever category happens to be live.</p>
         </div>
@@ -33,7 +33,7 @@ export function AboutPage() {
             <ul className='grid grid-cols-1 md:grid-cols-2 gap-3'>
               {features.map(feature => (
                 <li key={feature} className='flex items-start'>
-                  <span aria-hidden='true' className='text-primary mr-2'>✓</span>
+                  <span aria-hidden='true' className='text-link mr-2'>✓</span>
                   <span className='text-muted-foreground'>{feature}</span>
                 </li>
               ))}
@@ -51,7 +51,7 @@ export function AboutPage() {
 
           <Card><CardBody>
             <h2 className='text-2xl font-semibold mb-4'>Be part of it</h2>
-            <p className='text-muted-foreground mb-4'>Watch, save, vote, share, and submit the moments that deserve a wider audience. Please read our <Link to='/community-rules' className='text-primary hover:underline'>community rules</Link> and help keep clpr welcoming to creators and viewers alike.</p>
+            <p className='text-muted-foreground mb-4'>Watch, save, vote, share, and submit the moments that deserve a wider audience. Please read our <Link to='/community-rules' className='text-link underline underline-offset-2'>community rules</Link> and help keep clpr welcoming to creators and viewers alike.</p>
             <div className='flex flex-wrap gap-4'>
               <Link to='/contact' className='inline-flex px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90'>Contact us</Link>
               <a href='https://patreon.com/subcult' target='_blank' rel='noopener noreferrer' className='inline-flex px-4 py-2 border border-border rounded-md hover:bg-accent'>Support us on Patreon</a>

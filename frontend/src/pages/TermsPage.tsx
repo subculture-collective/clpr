@@ -27,7 +27,7 @@ export function TermsPage() {
             </p>
             <p className="text-muted-foreground mb-4">
               By accessing or using clpr, you agree to be bound by these Terms and our{' '}
-              <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>. 
+              <Link to="/privacy" className="text-link underline underline-offset-2">Privacy Policy</Link>.
               If you don't agree to these Terms, please don't use our Service.
             </p>
             <p className="text-muted-foreground">
@@ -111,7 +111,7 @@ export function TermsPage() {
             </ul>
             <p className="text-muted-foreground mt-4">
               For more details, please review our{' '}
-              <Link to="/community-rules" className="text-primary hover:underline">
+              <Link to="/community-rules" className="text-link underline underline-offset-2">
                 Community Rules
               </Link>.
             </p>
@@ -177,7 +177,7 @@ export function TermsPage() {
             <h2 className="text-2xl font-semibold mb-4">5. Copyright and DMCA</h2>
             <p className="text-muted-foreground mb-4">
               We respect intellectual property rights. If you believe content on Clipper infringes your copyright, 
-              please follow our <a href="/legal/dmca" className="text-primary hover:underline">DMCA Copyright Policy</a> and send the notice to dmca@clpr.tv with:
+              please follow our <a href="/legal/dmca" className="text-link underline underline-offset-2">DMCA Copyright Policy</a> and send the notice to dmca@clpr.tv with:
             </p>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
               <li>Identification of the copyrighted work claimed to be infringed</li>
@@ -367,7 +367,7 @@ export function TermsPage() {
             </p>
             <ul className="space-y-2 text-muted-foreground ml-4">
               <li>
-                <strong className="text-foreground">Email:</strong>{' '}<a href="mailto:legal@clpr.tv" className="text-primary hover:underline">legal@clpr.tv</a>
+                <strong className="text-foreground">Email:</strong>{' '}<a href="mailto:legal@clpr.tv" className="text-link underline underline-offset-2">legal@clpr.tv</a>
               </li>
             </ul>
             <p className="text-muted-foreground mt-4">

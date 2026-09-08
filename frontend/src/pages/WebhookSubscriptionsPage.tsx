@@ -232,7 +232,7 @@ export function WebhookSubscriptionsPage() {
                             integrate with your own applications.{' '}
                             <Link
                                 to="/docs"
-                                className="text-primary-500 hover:underline"
+                                className="text-link hover:underline"
                             >
                                 Learn more
                             </Link>
@@ -283,7 +283,7 @@ export function WebhookSubscriptionsPage() {
                                                         (event) => (
                                                             <span
                                                                 key={event}
-                                                                className="px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded"
+                                                                className="px-2 py-1 text-xs bg-primary-100 text-link rounded"
                                                             >
                                                                 {event}
                                                             </span>

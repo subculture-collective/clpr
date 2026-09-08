@@ -27,7 +27,7 @@ export function MobileBottomNav() {
           <Link
             key={item.label}
             to={destination}
-            state={item.protected && !isAuthenticated ? { from: location } : undefined}
+            state={item.protected && !isAuthenticated ? { from: { pathname: item.to } } : undefined}
             className={cn(
               'relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold transition-colors',
               active ? 'text-violet-300' : 'text-neutral-300 hover:text-white',

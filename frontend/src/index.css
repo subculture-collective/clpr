@@ -1,8 +1,170 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
-@import 'tailwindcss';
+@import 'tailwindcss' source('./');
+@source not './**/*.test.*';
+@source not './test';
+@source not './__tests__';
 
-/* Custom breakpoints for Tailwind v4 */
-@custom-variant xs (@media (min-width: 375px));
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Active Tailwind 4 tokens. Channel values below also support custom CSS. */
+@theme inline {
+    --breakpoint-xs: 23.4375rem;
+    --color-surface: rgb(var(--clpr-surface));
+    --color-surface-raised: rgb(var(--clpr-surface-raised));
+    --color-surface-hover: rgb(var(--clpr-surface-hover));
+    --color-brand: rgb(var(--clpr-brand));
+    --color-primary: rgb(var(--clpr-brand));
+    --color-primary-foreground: #ffffff;
+    --color-destructive: #f87171;
+    --color-background-secondary: rgb(var(--clpr-surface-raised));
+    --color-brand-hover: rgb(var(--clpr-brand-hover));
+    --color-upvote: rgb(var(--clpr-upvote));
+    --color-downvote: rgb(var(--clpr-downvote));
+    --color-cta: rgb(var(--clpr-cta));
+    --color-cta-hover: rgb(var(--clpr-cta-hover));
+    --color-thread-0: rgb(var(--clpr-thread-0));
+    --color-thread-1: rgb(var(--clpr-thread-1));
+    --color-thread-2: rgb(var(--clpr-thread-2));
+    --color-thread-3: rgb(var(--clpr-thread-3));
+    --color-thread-4: rgb(var(--clpr-thread-4));
+    --color-primary-50: #f5f3ff;
+    --color-primary-100: #ede9fe;
+    --color-primary-200: #ddd6fe;
+    --color-primary-300: #c4b5fd;
+    --color-primary-400: #a78bfa;
+    --color-primary-500: #7C3AED;
+    --color-primary-600: #6D28D9;
+    --color-primary-700: #5B21B6;
+    --color-primary-800: #4C1D95;
+    --color-primary-900: #3B1578;
+    --color-primary-950: #2E1065;
+    --color-secondary-50: #fff0fb;
+    --color-secondary-100: #ffe0f7;
+    --color-secondary-200: #ffc2ef;
+    --color-secondary-300: #ff94e2;
+    --color-secondary-400: #ff5ed3;
+    --color-secondary-500: #ff2bc2;
+    --color-secondary-600: #e600a8;
+    --color-secondary-700: #b80085;
+    --color-secondary-800: #8f0067;
+    --color-secondary-900: #6f0052;
+    --color-secondary-950: #3f002e;
+    --color-success-50: #f0fdf4;
+    --color-success-100: #dcfce7;
+    --color-success-200: #bbf7d0;
+    --color-success-300: #86efac;
+    --color-success-400: #4ade80;
+    --color-success-500: #22c55e;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
+    --color-success-800: #166534;
+    --color-success-900: #14532d;
+    --color-success-950: #052e16;
+    --color-warning-50: #fffbeb;
+    --color-warning-100: #fef3c7;
+    --color-warning-200: #fde68a;
+    --color-warning-300: #fcd34d;
+    --color-warning-400: #fbbf24;
+    --color-warning-500: #f59e0b;
+    --color-warning-600: #d97706;
+    --color-warning-700: #b45309;
+    --color-warning-800: #92400e;
+    --color-warning-900: #78350f;
+    --color-warning-950: #451a03;
+    --color-error-50: #fef2f2;
+    --color-error-100: #fee2e2;
+    --color-error-200: #fecaca;
+    --color-error-300: #fca5a5;
+    --color-error-400: #f87171;
+    --color-error-500: #ef4444;
+    --color-error-600: #dc2626;
+    --color-error-700: #b91c1c;
+    --color-error-800: #991b1b;
+    --color-error-900: #7f1d1d;
+    --color-error-950: #450a0a;
+    --color-info-50: #eef2ff;
+    --color-info-100: #e0e7ff;
+    --color-info-200: #c7d2fe;
+    --color-info-300: #a5b4fc;
+    --color-info-400: #818cf8;
+    --color-info-500: #6366f1;
+    --color-info-600: #4f46e5;
+    --color-info-700: #4338ca;
+    --color-info-800: #3730a3;
+    --color-info-900: #312e81;
+    --color-info-950: #1e1b4b;
+    --color-background: rgb(var(--clpr-background));
+    --color-border: rgb(var(--clpr-border));
+    --color-border-subtle: rgb(var(--clpr-border-subtle));
+    --color-text-primary: rgb(var(--clpr-text-primary));
+    --color-text-secondary: rgb(var(--clpr-text-secondary));
+    --color-text-tertiary: rgb(var(--clpr-text-tertiary));
+    --color-text-disabled: rgb(var(--clpr-text-disabled));
+    --color-link: rgb(var(--clpr-link));
+    --color-link-hover: rgb(var(--clpr-link-hover));
+    --color-focus-ring: rgb(var(--clpr-focus-ring));
+    --color-foreground: rgb(var(--clpr-foreground));
+    --color-card: rgb(var(--clpr-card));
+    --color-card-foreground: rgb(var(--clpr-card-foreground));
+    --color-popover: rgb(var(--clpr-popover));
+    --color-popover-foreground: rgb(var(--clpr-popover-foreground));
+    --color-muted: rgb(var(--clpr-muted));
+    --color-muted-foreground: rgb(var(--clpr-muted-foreground));
+    --color-input: rgb(var(--clpr-input));
+    --color-ring: rgb(var(--clpr-ring));
+    --color-accent: rgb(var(--clpr-surface-hover));
+    --color-accent-foreground: rgb(var(--clpr-text-primary));
+    --color-subtle: rgb(var(--clpr-border-subtle));
+    --color-brand-tint: rgb(var(--clpr-brand) / 0.08);
+    --color-brand-tint-hover: rgb(var(--clpr-brand) / 0.12);
+    --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-heading: "Space Grotesk", system-ui, -apple-system, sans-serif;
+    --font-accent: Syne, "Space Grotesk", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --z-index-dropdown: 1000;
+    --z-index-sticky: 1020;
+    --z-index-fixed: 1030;
+    --z-index-modal-backdrop: 1040;
+    --z-index-modal: 1050;
+    --z-index-popover: 1060;
+    --z-index-tooltip: 1070;
+    --animate-fade-in: fade-in 0.2s ease-in-out;
+    --animate-fade-out: fade-out 0.2s ease-in-out;
+    --animate-slide-in-right: slide-in-right 0.3s ease-out;
+    --animate-slide-in-left: slide-in-left 0.3s ease-out;
+    --animate-slide-in-up: slide-in-up 0.3s ease-out;
+    --animate-slide-in-down: slide-in-down 0.3s ease-out;
+    --animate-shimmer: shimmer 2s infinite;
+    --animate-vote-pulse: vote-pulse 200ms ease-out;
+    @keyframes fade-in {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+    @keyframes fade-out {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    @keyframes slide-in-right {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(0); }
+    }
+    @keyframes slide-in-left {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(0); }
+    }
+    @keyframes slide-in-up {
+        0% { transform: translateY(100%); }
+        100% { transform: translateY(0); }
+    }
+    @keyframes slide-in-down {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(0); }
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+}
 
 /* Base layer - custom CSS resets and base styles */
 @layer base {
@@ -10,56 +172,56 @@
         /* === Swiss Dark Design System Tokens === */
 
         /* Background & Surface */
-        --color-background: 15 15 20;
-        --color-surface: 26 26 36;
-        --color-surface-raised: 34 34 51;
-        --color-surface-hover: 42 42 60;
+        --clpr-background: 15 15 20;
+        --clpr-surface: 26 26 36;
+        --clpr-surface-raised: 34 34 51;
+        --clpr-surface-hover: 42 42 60;
 
         /* Borders */
-        --color-border: 42 42 58;
-        --color-border-subtle: 34 34 48;
+        --clpr-border: 42 42 58;
+        --clpr-border-subtle: 34 34 48;
 
         /* Text hierarchy */
-        --color-text-primary: 232 232 237;
-        --color-text-secondary: 152 152 168;
-        --color-text-tertiary: 144 144 160;
-        --color-text-disabled: 68 68 82;
+        --clpr-text-primary: 232 232 237;
+        --clpr-text-secondary: 152 152 168;
+        --clpr-text-tertiary: 144 144 160;
+        --clpr-text-disabled: 68 68 82;
 
         /* Brand */
-        --color-brand: 124 58 237;
-        --color-brand-hover: 109 40 217;
-        --color-link: 167 139 250;
-        --color-link-hover: 196 181 253;
+        --clpr-brand: 124 58 237;
+        --clpr-brand-hover: 109 40 217;
+        --clpr-link: 167 139 250;
+        --clpr-link-hover: 196 181 253;
 
         /* Interaction */
-        --color-upvote: 249 115 22;
-        --color-downvote: 99 102 241;
-        --color-cta: 129 140 248;
-        --color-cta-hover: 99 102 241;
+        --clpr-upvote: 249 115 22;
+        --clpr-downvote: 99 102 241;
+        --clpr-cta: 129 140 248;
+        --clpr-cta-hover: 99 102 241;
 
         /* Focus */
-        --color-focus-ring: 167 139 250;
+        --clpr-focus-ring: 167 139 250;
 
         /* Thread depth colors (violet-pink warm family) */
-        --color-thread-0: 124 58 237;
-        --color-thread-1: 168 85 247;
-        --color-thread-2: 192 132 252;
-        --color-thread-3: 232 121 168;
-        --color-thread-4: 240 171 171;
+        --clpr-thread-0: 124 58 237;
+        --clpr-thread-1: 168 85 247;
+        --clpr-thread-2: 192 132 252;
+        --clpr-thread-3: 232 121 168;
+        --clpr-thread-4: 240 171 171;
 
         /* Nav height for sticky calculations */
-        --nav-height: 56px;
+        --nav-height: 64px;
 
         /* === Backward-compatible aliases (old token names → new values) === */
-        --color-foreground: 232 232 237;
-        --color-card: 26 26 36;
-        --color-card-foreground: 232 232 237;
-        --color-popover: 34 34 51;
-        --color-popover-foreground: 232 232 237;
-        --color-muted: 34 34 51;
-        --color-muted-foreground: 152 152 168;
-        --color-input: 42 42 58;
-        --color-ring: 167 139 250;
+        --clpr-foreground: 232 232 237;
+        --clpr-card: 26 26 36;
+        --clpr-card-foreground: 232 232 237;
+        --clpr-popover: 34 34 51;
+        --clpr-popover-foreground: 232 232 237;
+        --clpr-muted: 34 34 51;
+        --clpr-muted-foreground: 152 152 168;
+        --clpr-input: 42 42 58;
+        --clpr-ring: 167 139 250;
 
         /* Font settings */
         font-synthesis: none;
@@ -70,13 +232,12 @@
 
     body {
         @apply font-sans antialiased;
-        background-color: rgb(var(--color-background));
-        color: rgb(var(--color-foreground));
+        background-color: rgb(var(--clpr-background));
+        color: rgb(var(--clpr-foreground));
         margin: 0;
         min-width: 320px;
         min-height: 100vh;
-        /* Prevent horizontal scroll on mobile */
-        overflow-x: hidden;
+        color-scheme: dark;
     }
 
     h1,
@@ -118,11 +279,11 @@
 
     a {
         @apply transition-colors;
-        color: rgb(var(--color-link));
+        color: rgb(var(--clpr-link));
     }
 
     a:hover {
-        color: rgb(var(--color-link-hover));
+        color: rgb(var(--clpr-link-hover));
     }
 
     button {
@@ -130,136 +291,20 @@
     }
 
     button:focus-visible {
-        outline: 2px solid rgb(var(--color-focus-ring));
+        outline: 2px solid rgb(var(--clpr-focus-ring));
         outline-offset: 2px;
     }
 
     :where(a, input, select, textarea, summary, [tabindex]):focus-visible {
-        outline: 2px solid rgb(var(--color-focus-ring));
+        outline: 2px solid rgb(var(--clpr-focus-ring));
         outline-offset: 2px;
     }
 }
 
 /* Components layer - custom component styles */
 @layer components {
-    /* === Backward-compatible utility classes (consumed by ~317 existing usages) === */
-    .bg-background {
-        background-color: rgb(var(--color-background));
-    }
-
-    .bg-card {
-        background-color: rgb(var(--color-card));
-    }
-
-    .bg-muted {
-        background-color: rgb(var(--color-muted));
-    }
-
-    .text-foreground {
-        color: rgb(var(--color-foreground));
-    }
-
-    .text-muted-foreground {
-        color: rgb(var(--color-muted-foreground));
-    }
-
-    .border-border {
-        border-color: rgb(var(--color-border));
-    }
-
-    .ring-ring {
-        --tw-ring-color: rgb(var(--color-ring));
-    }
-
-    /* === New design system utility classes === */
-    .bg-surface {
-        background-color: rgb(var(--color-surface));
-    }
-
-    .bg-surface-raised {
-        background-color: rgb(var(--color-surface-raised));
-    }
-
-    .bg-surface-hover {
-        background-color: rgb(var(--color-surface-hover));
-    }
-
-    .text-text-primary {
-        color: rgb(var(--color-text-primary));
-    }
-
-    .text-text-secondary {
-        color: rgb(var(--color-text-secondary));
-    }
-
-    .text-text-tertiary {
-        color: rgb(var(--color-text-tertiary));
-    }
-
-    .text-text-disabled {
-        color: rgb(var(--color-text-disabled));
-    }
-
-    .border-subtle {
-        border-color: rgb(var(--color-border-subtle));
-    }
-
-    .text-brand {
-        color: rgb(var(--color-brand));
-    }
-
-    .text-upvote {
-        color: rgb(var(--color-upvote));
-    }
-
-    .text-downvote {
-        color: rgb(var(--color-downvote));
-    }
-
-    .text-cta {
-        color: rgb(var(--color-cta));
-    }
-
-    .bg-brand {
-        background-color: rgb(var(--color-brand));
-    }
-
-    .bg-brand-hover {
-        background-color: rgb(var(--color-brand-hover));
-    }
-
-    .border-brand {
-        border-color: rgb(var(--color-brand));
-    }
-
-    /* Brand tint utilities for notifications */
-    .bg-brand-tint {
-        background-color: rgb(var(--color-brand) / 0.08);
-    }
-
-    .hover\:bg-brand-tint-hover:hover {
-        background-color: rgb(var(--color-brand) / 0.12);
-    }
-
-    /* Thread depth border colors */
-    .border-thread-0 {
-        border-color: rgb(var(--color-thread-0));
-    }
-    .border-thread-1 {
-        border-color: rgb(var(--color-thread-1));
-    }
-    .border-thread-2 {
-        border-color: rgb(var(--color-thread-2));
-    }
-    .border-thread-3 {
-        border-color: rgb(var(--color-thread-3));
-    }
-    .border-thread-4 {
-        border-color: rgb(var(--color-thread-4));
-    }
-
     /* Container utility */
-    .container {
+    .page-container {
         @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
         max-width: 1440px;
     }
@@ -267,7 +312,7 @@
     /* Focus visible utility */
     .focus-visible {
         @apply outline-none;
-        box-shadow: 0 0 0 2px rgb(var(--color-focus-ring));
+        box-shadow: 0 0 0 2px rgb(var(--clpr-focus-ring));
     }
 
     /* Smooth transitions */
@@ -283,7 +328,7 @@
         font-family: 'Inter', system-ui, sans-serif;
         font-size: 0.875rem;
         line-height: 1.6;
-        color: rgb(var(--color-text-primary));
+        color: rgb(var(--clpr-text-primary));
     }
 
     .comment-body p + p {
@@ -291,16 +336,16 @@
     }
 
     .comment-body blockquote {
-        border-left: 2px solid rgb(var(--color-border));
+        border-left: 2px solid rgb(var(--clpr-border));
         padding-left: 0.75rem;
-        color: rgb(var(--color-text-secondary));
+        color: rgb(var(--clpr-text-secondary));
         font-style: italic;
     }
 
     .comment-body code {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
         font-size: 0.8125rem;
-        background: rgb(var(--color-surface-raised));
+        background: rgb(var(--clpr-surface-raised));
         padding: 0.125rem 0.375rem;
         border-radius: 4px;
     }
@@ -312,7 +357,7 @@
     }
 
     .comment-body a {
-        color: rgb(var(--color-brand));
+        color: rgb(var(--clpr-link));
         text-decoration: underline;
         text-underline-offset: 2px;
     }
@@ -333,7 +378,7 @@
         font-family: 'Inter', system-ui, sans-serif;
         font-size: 0.9375rem; /* 15px */
         line-height: 1.75;
-        color: rgb(var(--color-text-primary));
+        color: rgb(var(--clpr-text-primary));
     }
 
     .forum-body p + p {
@@ -341,9 +386,9 @@
     }
 
     .forum-body blockquote {
-        border-left: 3px solid rgb(var(--color-border));
+        border-left: 3px solid rgb(var(--clpr-border));
         padding-left: 1rem;
-        color: rgb(var(--color-text-secondary));
+        color: rgb(var(--clpr-text-secondary));
         font-style: italic;
         margin-top: 0.5rem;
         margin-bottom: 0.5rem;
@@ -352,7 +397,7 @@
     .forum-body code {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
         font-size: 0.8125rem;
-        background: rgb(var(--color-surface-raised));
+        background: rgb(var(--clpr-surface-raised));
         padding: 0.125rem 0.5rem;
         border-radius: 4px;
     }
@@ -365,13 +410,13 @@
     }
 
     .forum-body a {
-        color: rgb(var(--color-link));
+        color: rgb(var(--clpr-link));
         text-decoration: underline;
         text-underline-offset: 2px;
     }
 
     .forum-body a:hover {
-        color: rgb(var(--color-link-hover));
+        color: rgb(var(--clpr-link-hover));
     }
 
     .forum-body ul,
@@ -395,7 +440,7 @@
     .forum-body h4 {
         margin-top: 1.25rem;
         margin-bottom: 0.5rem;
-        color: rgb(var(--color-text-primary));
+        color: rgb(var(--clpr-text-primary));
     }
 
     .forum-body h1 { font-size: 1.5rem; }
@@ -403,7 +448,7 @@
     .forum-body h3 { font-size: 1.125rem; }
 
     .forum-body hr {
-        border-color: rgb(var(--color-border));
+        border-color: rgb(var(--clpr-border));
         margin-top: 1rem;
         margin-bottom: 1rem;
     }
@@ -420,160 +465,21 @@
 
     .forum-body th,
     .forum-body td {
-        border: 1px solid rgb(var(--color-border));
+        border: 1px solid rgb(var(--clpr-border));
         padding: 0.5rem 0.75rem;
         text-align: left;
     }
 
     .forum-body th {
-        background: rgb(var(--color-surface-raised));
+        background: rgb(var(--clpr-surface-raised));
         font-weight: 600;
     }
 
-    /* Clip detail side-by-side layout */
-    .clip-detail-layout {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-    }
 
-    @media (min-width: 1024px) {
-        .clip-detail-layout {
-            grid-template-columns: 1fr 420px;
-            grid-template-rows: 1fr;
-            max-height: calc(100vh - var(--nav-height));
-        }
-    }
-
-    @media (min-width: 1280px) {
-        .clip-detail-layout {
-            grid-template-columns: 1fr 480px;
-        }
-    }
 }
 
 /* Utilities layer - custom utility classes */
 @layer utilities {
-    /* Button color utilities - explicitly define them to ensure they're generated */
-    .bg-primary-50 {
-        background-color: #f5f3ff;
-    }
-    .bg-primary-100 {
-        background-color: #ede9fe;
-    }
-    .bg-primary-200 {
-        background-color: #ddd6fe;
-    }
-    .bg-primary-300 {
-        background-color: #c4b5fd;
-    }
-    .bg-primary-400 {
-        background-color: #a78bfa;
-    }
-    .bg-primary-500 {
-        background-color: #7c3aed;
-    }
-    .bg-primary-600 {
-        background-color: #6d28d9;
-    }
-    .bg-primary-700 {
-        background-color: #5b21b6;
-    }
-    .bg-primary-800 {
-        background-color: #4c1d95;
-    }
-    .bg-primary-900 {
-        background-color: #3b1578;
-    }
-    .bg-primary-950 {
-        background-color: #2e1065;
-    }
-
-    .bg-secondary-50 {
-        background-color: #fff0fb;
-    }
-    .bg-secondary-100 {
-        background-color: #ffe0f7;
-    }
-    .bg-secondary-200 {
-        background-color: #ffc2ef;
-    }
-    .bg-secondary-300 {
-        background-color: #ff94e2;
-    }
-    .bg-secondary-400 {
-        background-color: #ff5ed3;
-    }
-    .bg-secondary-500 {
-        background-color: #ff2bc2;
-    }
-    .bg-secondary-600 {
-        background-color: #e600a8;
-    }
-    .bg-secondary-700 {
-        background-color: #b80085;
-    }
-    .bg-secondary-800 {
-        background-color: #8f0067;
-    }
-    .bg-secondary-900 {
-        background-color: #6f0052;
-    }
-    .bg-secondary-950 {
-        background-color: #3f002e;
-    }
-
-    .bg-error-50 {
-        background-color: #fef2f2;
-    }
-    .bg-error-100 {
-        background-color: #fee2e2;
-    }
-    .bg-error-200 {
-        background-color: #fecaca;
-    }
-    .bg-error-300 {
-        background-color: #fca5a5;
-    }
-    .bg-error-400 {
-        background-color: #f87171;
-    }
-    .bg-error-500 {
-        background-color: #ef4444;
-    }
-    .bg-error-600 {
-        background-color: #dc2626;
-    }
-    .bg-error-700 {
-        background-color: #b91c1c;
-    }
-    .bg-error-800 {
-        background-color: #991b1b;
-    }
-    .bg-error-900 {
-        background-color: #7f1d1d;
-    }
-    .bg-error-950 {
-        background-color: #450a0a;
-    }
-
-    .text-primary-50 {
-        color: #f5f3ff;
-    }
-    .text-primary-500 {
-        color: #7c3aed;
-    }
-    .text-primary-600 {
-        color: #6d28d9;
-    }
-
-    .border-primary-50 {
-        border-color: #f5f3ff;
-    }
-    .border-primary-500 {
-        border-color: #7c3aed;
-    }
-
     /* Minimum touch target size for accessibility */
     .touch-target {
         min-width: 44px;
@@ -611,16 +517,16 @@
     }
 
     .scrollbar-thin::-webkit-scrollbar-track {
-        background-color: rgb(var(--color-surface));
+        background-color: rgb(var(--clpr-surface));
     }
 
     .scrollbar-thin::-webkit-scrollbar-thumb {
-        background-color: rgb(var(--color-surface-hover));
+        background-color: rgb(var(--clpr-surface-hover));
         border-radius: 9999px;
     }
 
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background-color: rgb(var(--color-text-tertiary));
+        background-color: rgb(var(--clpr-text-tertiary));
     }
 
     /* Hide scrollbar but keep functionality */
@@ -636,18 +542,6 @@
     /* Smooth inertial scrolling on iOS */
     .scrolling-touch {
         -webkit-overflow-scrolling: touch;
-    }
-
-    /* Text gradient utility */
-    .text-gradient {
-        background-clip: text;
-        -webkit-background-clip: text;
-        color: transparent;
-        background-image: linear-gradient(
-            to right,
-            rgb(var(--color-brand)),
-            rgb(167 139 250)
-        );
     }
 
     /* Screen reader only - hides content visually but keeps it accessible */
@@ -676,26 +570,6 @@
         white-space: normal;
     }
 
-    /* Performance optimizations for smooth scrolling */
-    .smooth-scroll {
-        -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
-    }
-
-    /* GPU acceleration for better performance */
-    .gpu-accelerated {
-        transform: translateZ(0);
-        will-change: transform;
-        backface-visibility: hidden;
-        perspective: 1000px;
-    }
-
-    /* Optimize animations for 60fps */
-    .optimize-60fps {
-        transform: translateZ(0);
-        will-change: transform, opacity;
-    }
-
     /* Content visibility for lazy rendering */
     .lazy-render {
         content-visibility: auto;
@@ -722,28 +596,21 @@
     animation: vote-pulse 200ms ease-out;
 }
 
-/* Admin control room: a dense, quiet operational surface shared by every admin page. */
-.admin-workspace {
-    background-image:
-        linear-gradient(rgb(var(--color-border) / 0.14) 1px, transparent 1px),
-        linear-gradient(90deg, rgb(var(--color-border) / 0.14) 1px, transparent 1px);
-    background-size: 32px 32px;
-    background-position: -1px -1px;
-}
-
 .admin-content > div {
+    min-width: 0;
+    max-width: 100%;
     width: 100%;
 }
 
 .admin-content h1 {
-    color: rgb(var(--color-text-primary)) !important;
+    color: rgb(var(--clpr-text-primary)) !important;
     font-family: 'Syne', 'Space Grotesk', system-ui, sans-serif;
     letter-spacing: -0.03em;
 }
 
 .admin-content h2,
 .admin-content h3 {
-    color: rgb(var(--color-text-primary));
+    color: rgb(var(--clpr-text-primary));
 }
 
 .admin-content table {
@@ -752,11 +619,11 @@
 }
 
 .admin-content thead {
-    background: rgb(var(--color-surface-raised));
+    background: rgb(var(--clpr-surface-raised));
 }
 
 .admin-content th {
-    color: rgb(var(--color-text-secondary)) !important;
+    color: rgb(var(--clpr-text-secondary)) !important;
     font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -767,22 +634,22 @@
 }
 
 .admin-content tbody tr:hover {
-    background: rgb(var(--color-surface-hover) / 0.55);
+    background: rgb(var(--clpr-surface-hover) / 0.55);
 }
 
 .admin-content input,
 .admin-content select,
 .admin-content textarea {
-    border-color: rgb(var(--color-border));
-    background-color: rgb(var(--color-surface-raised));
-    color: rgb(var(--color-text-primary));
+    border-color: rgb(var(--clpr-border));
+    background-color: rgb(var(--clpr-surface-raised));
+    color: rgb(var(--clpr-text-primary));
 }
 
 .admin-content input:focus,
 .admin-content select:focus,
 .admin-content textarea:focus {
-    border-color: rgb(var(--color-brand));
-    outline: 2px solid rgb(var(--color-brand) / 0.18);
+    border-color: rgb(var(--clpr-brand));
+    outline: 2px solid rgb(var(--clpr-brand) / 0.18);
     outline-offset: 1px;
 }
 

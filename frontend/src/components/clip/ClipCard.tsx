@@ -346,7 +346,7 @@ export function ClipCard({
                             className={cn(
                                 'flex min-w-11 items-center justify-center gap-1.5 transition-colors touch-target min-h-11',
                                 clip.is_favorited ?
-                                    'text-primary-500'
+                                    'text-link'
                                 :   'text-muted-foreground hover:text-foreground',
                                 !isAuthenticated ?
                                     'opacity-50 cursor-not-allowed hover:bg-transparent'

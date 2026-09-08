@@ -22,18 +22,19 @@ export const TagChip: React.FC<TagChipProps> = ({
     medium: "text-sm px-3 py-1",
   };
 
-  const baseClasses = `inline-flex items-center gap-1 rounded-full font-medium transition-all hover:opacity-80 cursor-pointer ${sizeClasses[size]}`;
+  const baseClasses = `inline-flex items-center gap-1 rounded-full font-medium transition-all hover:underline underline-offset-2 cursor-pointer ${sizeClasses[size]}`;
 
-  const backgroundColor = tag.color || '#6D28D9';
-  const hex = backgroundColor.match(/^#([0-9a-f]{6})$/i)?.[1];
-  const luminance = hex
-    ? (0.2126 * parseInt(hex.slice(0, 2), 16) +
-        0.7152 * parseInt(hex.slice(2, 4), 16) +
-        0.0722 * parseInt(hex.slice(4, 6), 16)) / 255
-    : 0;
+  // Compare true linearized sRGB luminance, rather than brightness, so
+  // mid-tone provider colors also receive readable text.
+  const hex = tag.color?.match(/^#([0-9a-f]{6})$/i)?.[1] || '6D28D9';
+  const channels = [0, 2, 4].map(offset => {
+    const channel = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
   const style: React.CSSProperties = {
-    backgroundColor,
-    color: luminance > 0.56 ? '#111318' : '#ffffff',
+    backgroundColor: '#' + hex,
+    color: luminance > 0.179 ? '#000000' : '#ffffff',
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -51,49 +52,24 @@ export const TagChip: React.FC<TagChipProps> = ({
     }
   };
 
-  const content = (
-    <>
-      <span>{tag.name}</span>
-      {removable && (
-        <button
-          onClick={handleRemove}
-          className="ml-1 hover:bg-white/20 rounded-full p-0.5 cursor-pointer"
-          aria-label={`Remove ${tag.name} tag`}
-        >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      )}
-    </>
+  const label = onClick ? (
+    <button type='button' onClick={handleClick} className={baseClasses} style={style}>{tag.name}</button>
+  ) : (
+    <Link to={`/tags/${encodeURIComponent(tag.slug)}`} className={baseClasses} style={style}
+      title={tag.description || `View clips tagged with ${tag.name}`}>{tag.name}</Link>
   );
 
-  if (onClick) {
-    return (
-      <button onClick={handleClick} className={baseClasses} style={style}>
-        {content}
-      </button>
-    );
-  }
-
+  if (!removable) return label;
   return (
-    <Link
-      to={`/tags/${encodeURIComponent(tag.slug)}`}
-      className={baseClasses}
-      style={style}
-      title={tag.description || `View clips tagged with ${tag.name}`}
-    >
-      {content}
-    </Link>
+    <span className='inline-flex items-center rounded-full' style={style}>
+      {label}
+      <button type='button' onClick={handleRemove}
+        className='mr-1 flex min-h-8 min-w-8 items-center justify-center rounded-full hover:bg-black/10'
+        aria-label={`Remove ${tag.name} tag`}>
+        <svg aria-hidden='true' className='h-3 w-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+        </svg>
+      </button>
+    </span>
   );
 };

@@ -225,7 +225,7 @@ export function UserSubmissionsPage() {
                                                         (tag) => (
                                                             <span
                                                                 key={tag}
-                                                                className='bg-primary/10 text-primary px-2 py-1 text-xs rounded'
+                                                                className='bg-primary/10 text-link px-2 py-1 text-xs rounded'
                                                             >
                                                                 {tag}
                                                             </span>

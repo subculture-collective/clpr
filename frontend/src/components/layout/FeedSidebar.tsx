@@ -37,7 +37,7 @@ function SidebarSection({
                 {viewAllHref && (
                     <Link
                         to={viewAllHref}
-                        className="text-[11px] text-text-secondary hover:text-brand transition-colors flex items-center gap-0.5 cursor-pointer"
+                        className="text-[11px] text-text-secondary hover:text-link transition-colors flex items-center gap-0.5 cursor-pointer"
                     >
                         All
                         <ChevronRight className="h-3 w-3" />
@@ -61,7 +61,7 @@ function SidebarLink({
     return (
         <Link
             to={to}
-            className="flex items-center justify-between py-1.5 text-[13px] text-text-primary hover:text-brand transition-colors cursor-pointer"
+            className="flex items-center justify-between py-1.5 text-[13px] text-text-primary hover:text-link transition-colors cursor-pointer"
         >
             <span className="truncate">{children}</span>
             {meta && (
@@ -222,7 +222,7 @@ export function FeedSidebar() {
                 <SidebarSection title="Queue" icon={ListMusic}>
                     <Link
                         to="/queue"
-                        className="flex items-center justify-between py-1.5 text-[13px] text-text-primary hover:text-brand transition-colors cursor-pointer"
+                        className="flex items-center justify-between py-1.5 text-[13px] text-text-primary hover:text-link transition-colors cursor-pointer"
                     >
                         <span>
                             {queueCount} {queueCount === 1 ? 'clip' : 'clips'}{' '}

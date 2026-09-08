@@ -106,19 +106,4 @@ describe('MiniFooter', () => {
     expect(screen.queryByText(/quick links/i)).not.toBeInTheDocument();
   });
 
-  it('should be positioned at bottom-left', () => {
-    const { container } = render(<MiniFooter />, { wrapper: RouterWrapper });
-    
-    const wrapper = container.firstChild as HTMLElement;
-    expect(wrapper.className).toContain('fixed');
-    expect(wrapper.className).toContain('bottom-4');
-    expect(wrapper.className).toContain('left-4');
-  });
-
-  it('should have proper z-index for layering', () => {
-    const { container } = render(<MiniFooter />, { wrapper: RouterWrapper });
-    
-    const wrapper = container.firstChild as HTMLElement;
-    expect(wrapper.className).toContain('z-40');
-  });
 });

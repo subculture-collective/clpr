@@ -451,7 +451,7 @@ export function PlaylistDetail() {
                                 likeMutation.isPending ||
                                 unlikeMutation.isPending
                             }
-                            className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-60'
+                            className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-link disabled:cursor-not-allowed disabled:opacity-60'
                             title={
                                 isAuthenticated
                                     ? isLiked
@@ -464,7 +464,7 @@ export function PlaylistDetail() {
                                 className={cn(
                                     'h-3.5 w-3.5',
                                     isLiked &&
-                                        'fill-current text-primary-500',
+                                        'fill-current text-link',
                                 )}
                             />
                             <span className='font-medium text-foreground/90'>
@@ -480,7 +480,7 @@ export function PlaylistDetail() {
                                 bookmarkMutation.isPending ||
                                 unbookmarkMutation.isPending
                             }
-                            className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-60'
+                            className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-link disabled:cursor-not-allowed disabled:opacity-60'
                             title={
                                 isAuthenticated
                                     ? isBookmarked
@@ -493,7 +493,7 @@ export function PlaylistDetail() {
                                 className={cn(
                                     'h-3.5 w-3.5',
                                     isBookmarked &&
-                                        'fill-current text-primary-500',
+                                        'fill-current text-link',
                                 )}
                             />
                             <span className='font-medium text-foreground/90'>
@@ -512,7 +512,7 @@ export function PlaylistDetail() {
                                 }
                                 onShare={trackShare}
                                 showLabel={false}
-                                buttonClassName='inline-flex min-h-0 items-center rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500'
+                                buttonClassName='inline-flex min-h-0 items-center rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-link'
                                 iconClassName='h-3.5 w-3.5'
                             />
                         )}
@@ -522,7 +522,7 @@ export function PlaylistDetail() {
                             <button
                                 type='button'
                                 onClick={() => setShowCopyModal(true)}
-                                className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-primary-500 cursor-pointer'
+                                className='inline-flex items-center gap-1 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-link cursor-pointer'
                                 title='Copy playlist'
                             >
                                 <Copy className='h-3.5 w-3.5' />

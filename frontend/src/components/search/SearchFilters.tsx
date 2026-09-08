@@ -83,7 +83,7 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
                     {hasFilters && (
                         <button
                             onClick={handleClearFilters}
-                            className='text-sm text-primary hover:underline'
+                            className='text-sm text-link underline underline-offset-2'
                         >
                             Clear all
                         </button>

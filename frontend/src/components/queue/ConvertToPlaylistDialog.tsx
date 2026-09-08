@@ -107,7 +107,7 @@ export function ConvertToPlaylistDialog({
                                 onChange={e =>
                                     setOnlyUnplayed(e.target.checked)
                                 }
-                                className='mt-0.5 w-4 h-4 text-primary-600 border-border rounded focus:ring-primary-500'
+                                className='mt-0.5 w-4 h-4 text-link border-border rounded focus:ring-primary-500'
                             />
                             <div className='flex-1'>
                                 <span className='text-sm font-medium'>
@@ -124,7 +124,7 @@ export function ConvertToPlaylistDialog({
                                 type='checkbox'
                                 checked={clearQueue}
                                 onChange={e => setClearQueue(e.target.checked)}
-                                className='mt-0.5 w-4 h-4 text-primary-600 border-border rounded focus:ring-primary-500'
+                                className='mt-0.5 w-4 h-4 text-link border-border rounded focus:ring-primary-500'
                             />
                             <div className='flex-1'>
                                 <span className='text-sm font-medium'>

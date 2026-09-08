@@ -94,7 +94,7 @@ export function CategoriesNav() {
                 <Link to='/topics' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Topics</Link>
                 <Link to='/tags' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Tags</Link>
             </nav>
-            <div className='container mx-auto hidden min-h-12 px-4 md:block'>
+            <div className='page-container mx-auto hidden min-h-12 px-4 md:block'>
                 <div className='relative flex min-h-12 items-center'>
                     {/* Tab selector */}
                     {visibleTabs.length > 1 && (

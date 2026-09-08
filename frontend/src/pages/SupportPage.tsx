@@ -60,7 +60,7 @@ export default function SupportPage() {
                             const Icon = item.icon;
                             return (
                                 <article key={item.title} className='bg-surface p-6 sm:p-8'>
-                                    <span className='mb-8 inline-flex rounded-xl bg-brand/10 p-3 text-brand'><Icon className='h-5 w-5' /></span>
+                                    <span className='mb-8 inline-flex rounded-xl bg-brand/10 p-3 text-link'><Icon className='h-5 w-5' /></span>
                                     <h2 className='text-lg font-bold text-text-primary'>{item.title}</h2>
                                     <p className='mt-2 text-sm leading-6 text-text-secondary'>{item.description}</p>
                                 </article>

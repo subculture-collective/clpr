@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConsent } from '../../context/ConsentContext';
 import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
@@ -32,36 +32,89 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
     advertising: consent.advertising,
   });
 
-  // Update pending preferences when consent changes (e.g., from settings page)
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const detailsTitleRef = useRef<HTMLHeadingElement>(null);
+  const customizeRef = useRef<HTMLButtonElement>(null);
+  const wasDetailed = useRef(false);
+
   useEffect(() => {
-    queueMicrotask(() => {
-      setPendingPreferences({
-        functional: consent.functional,
-        analytics: consent.analytics,
-        advertising: consent.advertising,
+    if (showDetails) detailsTitleRef.current?.focus();
+    else if (wasDetailed.current) customizeRef.current?.focus();
+    wasDetailed.current = showDetails;
+  }, [showDetails]);
+
+  useEffect(() => {
+    const banner = bannerRef.current;
+    if (!showConsentBanner || !banner) return;
+    const previousPadding = document.body.style.paddingBottom;
+    const previousBannerHeight = document.documentElement.style.getPropertyValue('--consent-banner-height');
+    const previousScrollPadding = document.documentElement.style.scrollPaddingBottom;
+    let focusFrame = 0;
+    const reserveSpace = () => {
+      const rect = banner.getBoundingClientRect();
+      document.documentElement.style.setProperty('--consent-banner-height', `${rect.height}px`);
+      document.body.style.paddingBottom = `${rect.height}px`;
+      document.documentElement.style.scrollPaddingBottom = `${window.innerHeight - rect.top + 16}px`;
+    };
+    const revealFocus = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || banner.contains(target)) return;
+      cancelAnimationFrame(focusFrame);
+      focusFrame = requestAnimationFrame(() => {
+        const rect = target.getBoundingClientRect();
+        const overlay = banner.getBoundingClientRect();
+        if (rect.bottom > overlay.top && rect.top < overlay.bottom) {
+          window.scrollBy({ top: rect.bottom - overlay.top + 16, behavior: 'instant' });
+        }
       });
-    });
-  }, [consent.functional, consent.analytics, consent.advertising]);
+    };
+    reserveSpace();
+    const observer = new ResizeObserver(reserveSpace);
+    observer.observe(banner);
+    window.addEventListener('resize', reserveSpace);
+    document.addEventListener('focusin', revealFocus);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(focusFrame);
+      window.removeEventListener('resize', reserveSpace);
+      document.removeEventListener('focusin', revealFocus);
+      if (previousBannerHeight) document.documentElement.style.setProperty('--consent-banner-height', previousBannerHeight);
+      else document.documentElement.style.removeProperty('--consent-banner-height');
+      document.body.style.paddingBottom = previousPadding;
+      document.documentElement.style.scrollPaddingBottom = previousScrollPadding;
+    };
+  }, [showConsentBanner]);
+
+  const finish = (save: () => void) => {
+    save();
+    requestAnimationFrame(() => document.getElementById('main-content')?.focus({ preventScroll: true }));
+  };
 
   if (!showConsentBanner) {
     return null;
   }
 
   const handleSavePreferences = () => {
-    updateConsent(pendingPreferences);
+    finish(() => updateConsent(pendingPreferences));
   };
 
   return (
     <div
+      ref={bannerRef}
       className={cn(
-        'fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto bg-background border-t border-border shadow-2xl md:bottom-0 md:max-h-none',
+        'fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto bg-background border-t border-border shadow-2xl md:bottom-0',
         'animate-in slide-in-from-bottom duration-300',
         className
       )}
-      role="dialog"
-      aria-modal="true"
+      role="region"
       aria-labelledby="consent-banner-title"
-      aria-describedby="consent-banner-description"
+      aria-describedby={showDetails ? undefined : "consent-banner-description"}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && showDetails) {
+          event.preventDefault();
+          setShowDetails(false);
+        }
+      }}
     >
       <div className="max-w-6xl mx-auto p-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] md:p-6">
         {doNotTrack && (
@@ -93,7 +146,12 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowDetails(true)}
+                ref={customizeRef}
+                aria-expanded={showDetails}
+                onClick={() => {
+                  setPendingPreferences({ functional: consent.functional, analytics: consent.analytics, advertising: consent.advertising });
+                  setShowDetails(true);
+                }}
                 className="flex-1 md:flex-none"
               >
                 Customize
@@ -101,7 +159,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={rejectAll}
+                onClick={() => finish(rejectAll)}
                 className="flex-1 border-violet-400 text-violet-300 md:flex-none"
               >
                 Reject All
@@ -109,7 +167,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={acceptAll}
+                onClick={() => finish(acceptAll)}
                 className="flex-1 md:flex-none"
               >
                 Accept All
@@ -120,12 +178,12 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
           // Detailed view
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 id="consent-banner-title" className="text-lg font-semibold">
+              <h2 ref={detailsTitleRef} tabIndex={-1} id="consent-banner-title" className="text-lg font-semibold">
                 Customize Privacy Preferences
               </h2>
               <button
                 onClick={() => setShowDetails(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
                 aria-label="Close detailed preferences"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -139,7 +197,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <div className="p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium">Essential</h3>
-                  <span className="text-xs bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-2 py-1 rounded">
+                  <span className="text-xs bg-primary-100 dark:bg-primary-900 text-link dark:text-primary-300 px-2 py-1 rounded">
                     Always Active
                   </span>
                 </div>
@@ -159,7 +217,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                       ...prev,
                       functional: e.target.checked
                     }))}
-                    disabled={doNotTrack}
+                    aria-label="Functional cookies"
                     aria-describedby="functional-description"
                   />
                 </div>
@@ -180,6 +238,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                       analytics: e.target.checked
                     }))}
                     disabled={doNotTrack}
+                    aria-label="Analytics cookies"
                     aria-describedby="analytics-description"
                   />
                 </div>
@@ -200,6 +259,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
                       advertising: e.target.checked
                     }))}
                     disabled={doNotTrack}
+                    aria-label="Advertising cookies"
                     aria-describedby="advertising-description"
                   />
                 </div>
@@ -214,7 +274,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={rejectAll}
+                onClick={() => finish(rejectAll)}
                 className='border-violet-400 text-violet-300'
               >
                 Reject All
@@ -222,7 +282,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={acceptAll}
+                onClick={() => finish(acceptAll)}
               >
                 Accept All
               </Button>
@@ -237,11 +297,11 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
 
             <p className="text-xs text-muted-foreground text-center">
               You can change these preferences at any time in{' '}
-              <Link to="/settings" className="text-primary-500 hover:underline">
+              <Link to="/settings" className="text-link underline underline-offset-2">
                 Settings
               </Link>
               {' '}or{' '}
-              <Link to="/privacy" className="text-primary-500 hover:underline">
+              <Link to="/privacy" className="text-link underline underline-offset-2">
                 Privacy Policy
               </Link>
             </p>

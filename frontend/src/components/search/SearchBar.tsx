@@ -169,13 +169,12 @@ export function SearchBar({
                         placeholder='Search clips, creators, tags, categories...'
                         aria-label='Search'
                         autoFocus={autoFocus}
-                        className='pr-10'
+                        className={query ? 'pr-24' : 'pr-12'}
                         data-testid='search-input'
                     />
                     <button
                         type='submit'
-                        className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
-                        tabIndex={-1}
+                        className='absolute right-1 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground'
                         aria-label='Search'
                     >
                         <svg
@@ -202,7 +201,7 @@ export function SearchBar({
                                 setShowSuggestions(false);
                                 inputRef.current?.focus();
                             }}
-                            className='absolute right-10 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
+                            className='absolute right-12 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground'
                             aria-label='Clear search'
                         >
                             <svg

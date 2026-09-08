@@ -159,7 +159,7 @@ export function QueueWidget() {
         return (
             <button
                 onClick={handleExpand}
-                className='fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer'
+                className='fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer'
                 aria-label='Open queue'
             >
                 <ListMusic className='h-5 w-5' />
@@ -171,7 +171,7 @@ export function QueueWidget() {
     // Playing state - miniplayer with queue
     if (widgetState === 'playing' && currentClip?.clip) {
         return (
-            <div className='fixed bottom-6 right-6 z-50 w-80 bg-card border border-border rounded-xl shadow-2xl overflow-hidden'>
+            <div className='fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-80 bg-card border border-border rounded-xl shadow-2xl overflow-hidden'>
                 {/* Header */}
                 <div className='flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border'>
                     <div className='flex items-center gap-2'>
@@ -218,7 +218,7 @@ export function QueueWidget() {
                 <div className='p-3'>
                     <Link
                         to={`/clip/${currentClip.clip_id}`}
-                        className='font-medium text-sm line-clamp-1 hover:text-brand transition-colors cursor-pointer'
+                        className='font-medium text-sm line-clamp-1 hover:text-link transition-colors cursor-pointer'
                     >
                         {currentClip.clip.title}
                     </Link>
@@ -240,7 +240,7 @@ export function QueueWidget() {
                                 onClick={() => setShuffleEnabled(!shuffleEnabled)}
                                 className={cn(
                                     'p-1.5 rounded transition-colors cursor-pointer',
-                                    shuffleEnabled ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground',
+                                    shuffleEnabled ? 'text-link bg-brand/10' : 'text-muted-foreground hover:text-foreground',
                                 )}
                                 aria-label={shuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'}
                                 title='Shuffle'
@@ -267,7 +267,7 @@ export function QueueWidget() {
                                 onClick={() => setLoopEnabled(!loopEnabled)}
                                 className={cn(
                                     'p-1.5 rounded transition-colors cursor-pointer',
-                                    loopEnabled ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground',
+                                    loopEnabled ? 'text-link bg-brand/10' : 'text-muted-foreground hover:text-foreground',
                                 )}
                                 aria-label={loopEnabled ? 'Disable loop' : 'Enable loop'}
                                 title='Loop'
@@ -307,7 +307,7 @@ export function QueueWidget() {
                             >
                                 <GripVertical className='h-3 w-3 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0' />
                                 {isCurrentItem ? (
-                                    <Play className='h-3 w-3 text-brand fill-brand shrink-0' />
+                                    <Play className='h-3 w-3 text-link fill-brand shrink-0' />
                                 ) : null}
 
                                 {/* Thumbnail */}
@@ -336,7 +336,7 @@ export function QueueWidget() {
                                 <div className='flex-1 min-w-0'>
                                     <p className={cn(
                                         'text-xs font-medium line-clamp-1',
-                                        isCurrentItem && 'text-brand',
+                                        isCurrentItem && 'text-link',
                                     )}>
                                         {item.clip?.title || 'Unknown Clip'}
                                     </p>
@@ -367,7 +367,7 @@ export function QueueWidget() {
 
     // Expanded state - full queue list
     return (
-        <div className='fixed bottom-6 right-6 z-50 w-80 max-h-[70vh] bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col'>
+        <div className='fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-80 max-h-[70vh] bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col'>
             {/* Header */}
             <div className='flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border shrink-0'>
                 <div className='flex items-center gap-2'>
@@ -418,7 +418,7 @@ export function QueueWidget() {
                         onClick={() => setShuffleEnabled(!shuffleEnabled)}
                         className={cn(
                             'p-1 rounded text-xs flex items-center gap-1 transition-colors cursor-pointer',
-                            shuffleEnabled ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground',
+                            shuffleEnabled ? 'text-link bg-brand/10' : 'text-muted-foreground hover:text-foreground',
                         )}
                         title='Shuffle'
                     >
@@ -429,7 +429,7 @@ export function QueueWidget() {
                         onClick={() => setLoopEnabled(!loopEnabled)}
                         className={cn(
                             'p-1 rounded text-xs flex items-center gap-1 transition-colors cursor-pointer',
-                            loopEnabled ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground',
+                            loopEnabled ? 'text-link bg-brand/10' : 'text-muted-foreground hover:text-foreground',
                         )}
                         title='Loop'
                     >
@@ -466,7 +466,7 @@ export function QueueWidget() {
                                 >
                                     <GripVertical className='h-3 w-3 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0' />
                                     {isCurrentItem ? (
-                                        <Play className='h-3 w-3 text-brand fill-brand shrink-0' />
+                                        <Play className='h-3 w-3 text-link fill-brand shrink-0' />
                                     ) : null}
 
                                     {/* Thumbnail */}
@@ -495,7 +495,7 @@ export function QueueWidget() {
                                     <div className='flex-1 min-w-0'>
                                         <p className={cn(
                                             'text-xs font-medium line-clamp-1',
-                                            isCurrentItem && 'text-brand',
+                                            isCurrentItem && 'text-link',
                                         )}>
                                             {item.clip?.title || 'Unknown Clip'}
                                         </p>
@@ -528,7 +528,7 @@ export function QueueWidget() {
                 <Link
                     to='/queue'
                     onClick={handleClose}
-                    className='text-xs text-primary-600 hover:text-primary-700 hover:underline cursor-pointer'
+                    className='text-xs text-link hover:text-link hover:underline cursor-pointer'
                 >
                     View full queue
                 </Link>

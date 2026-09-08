@@ -9,6 +9,8 @@ import { NotificationBell } from './NotificationBell';
 import { UserMenu } from './UserMenu';
 import {
     Home,
+    Compass,
+    Heart,
     Trophy,
     ListMusic,
     Sparkles,
@@ -34,6 +36,8 @@ export function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [moreMenuOpen, setMoreMenuOpen] = useState(false);
     const moreMenuRef = useRef<HTMLDivElement>(null);
+    const moreButtonRef = useRef<HTMLButtonElement>(null);
+    const mobileButtonRef = useRef<HTMLButtonElement>(null);
 
     const handleLogout = async () => {
         await logout();
@@ -49,8 +53,8 @@ export function Header() {
         {
             key: 'Escape',
             callback: () => {
-                if (mobileMenuOpen) setMobileMenuOpen(false);
-                if (moreMenuOpen) setMoreMenuOpen(false);
+                if (mobileMenuOpen) { setMobileMenuOpen(false); mobileButtonRef.current?.focus(); }
+                if (moreMenuOpen) { setMoreMenuOpen(false); moreButtonRef.current?.focus(); }
             },
             description: 'Close menus',
         },
@@ -58,12 +62,12 @@ export function Header() {
 
     return (
         <header className='sticky top-0 z-50 bg-background border-b border-border'>
-            <div className='container mx-auto px-4'>
+            <div className='page-container'>
                 <div className='flex items-center justify-between h-16'>
                     {/* Logo */}
                     <Link
                         to='/'
-                        className='flex items-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md'
+                        className='flex min-h-11 items-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md'
                         aria-label='clpr.tv home'
                     >
                         <img
@@ -81,13 +85,18 @@ export function Header() {
                         data-testid='main-nav'
                     >
                         <Button asChild variant='ghost' size='sm'>
-                            <Link to='/' className={`relative ${location.pathname === '/' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
+                            <Link to='/' aria-current={location.pathname === '/' ? 'page' : undefined} className={`relative ${location.pathname === '/' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
                                 <Home size={16} strokeWidth={1.75} className='mr-1.5' /> Feed
                             </Link>
                         </Button>
                         <Button asChild variant='ghost' size='sm'>
-                            <Link to='/creators' className={`relative ${location.pathname.startsWith('/creators') || location.pathname.startsWith('/broadcaster/') ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
-                                <Users size={16} strokeWidth={1.75} className='mr-1.5' /> Creators
+                            <Link to='/discover' className='aria-[current=page]:bg-surface-hover aria-[current=page]:text-link' aria-current={location.pathname.startsWith('/discover') ? 'page' : undefined}>
+                                <Compass size={16} strokeWidth={1.75} className='mr-1.5' /> Discover
+                            </Link>
+                        </Button>
+                        <Button asChild variant='ghost' size='sm'>
+                            <Link className='aria-[current=page]:bg-surface-hover aria-[current=page]:text-link' to={isAuthenticated ? '/favorites' : '/login'} state={!isAuthenticated ? { from: { pathname: '/favorites' } } : undefined} aria-current={location.pathname === '/favorites' ? 'page' : undefined}>
+                                <Heart size={16} strokeWidth={1.75} className='mr-1.5' /> Saved
                             </Link>
                         </Button>
                         {/* More dropdown */}
@@ -95,9 +104,10 @@ export function Header() {
                             <Button
                                 variant='ghost'
                                 size='sm'
+                                ref={moreButtonRef}
                                 onClick={() => setMoreMenuOpen(!moreMenuOpen)}
                                 aria-expanded={moreMenuOpen}
-                                aria-haspopup='true'
+                                aria-controls={moreMenuOpen ? 'more-navigation' : undefined}
                             >
                                 <MoreHorizontal size={16} strokeWidth={1.75} className='mr-1.5' /> More
                                 <ChevronDown
@@ -110,46 +120,29 @@ export function Header() {
                             {moreMenuOpen && (
                                 <div
                                     className='absolute left-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg overflow-hidden z-50'
-                                    role='menu'
+                                    id='more-navigation'
                                 >
+                                    <Link to='/creators' className='flex min-h-11 items-center gap-2 px-4 py-2 text-sm hover:bg-muted' onClick={() => setMoreMenuOpen(false)}>
+                                        <Users size={16} strokeWidth={1.75} /> Creators
+                                    </Link>
                                     <Link
                                         to='/leaderboards'
-                                        className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors'
+                                        className='flex min-h-11 items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors'
                                         onClick={() => setMoreMenuOpen(false)}
-                                        role='menuitem'
                                     >
                                         <Trophy size={16} strokeWidth={1.75} /> {t('nav.leaderboards')}
                                     </Link>
                                     <Link
                                         to='/playlists/discover'
-                                        className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors'
+                                        className='flex min-h-11 items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors'
                                         onClick={() => setMoreMenuOpen(false)}
-                                        role='menuitem'
                                     >
                                         <ListMusic size={16} strokeWidth={1.75} /> Playlists
                                     </Link>
-                                    {/* Watch Parties - Hidden until after launch */}
-                                    {/* <Link
-                                        to='/watch-parties/browse'
-                                        className='block px-4 py-2 text-sm hover:bg-muted transition-colors'
-                                        onClick={() => setMoreMenuOpen(false)}
-                                        role='menuitem'
-                                    >
-                                        👥 Watch Parties
-                                    </Link> */}
-                                    {/* Live Feed - Hidden until after launch */}
-                                    {/* {isAuthenticated && (
-                                        <Link
-                                            to='/discover/live'
-                                            className='block px-4 py-2 text-sm hover:bg-muted transition-colors'
-                                            onClick={() =>
-                                                setMoreMenuOpen(false)
-                                            }
-                                            role='menuitem'
-                                        >
-                                            🔴 Live
-                                        </Link>
-                                    )} */}
+
+
+
+
                                 </div>
                             )}
                         </div>
@@ -176,6 +169,7 @@ export function Header() {
                         :   <Button asChild variant='primary' size='sm' className='hidden md:inline-flex'>
                                 <Link
                                     to='/login'
+                                    state={{ from: location }}
                                     data-testid='login-button'
                                     aria-label='Login'
                                 >
@@ -189,7 +183,9 @@ export function Header() {
                             variant='ghost'
                             size='sm'
                             className='md:hidden'
+                            ref={mobileButtonRef}
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-controls={mobileMenuOpen ? 'mobile-navigation' : undefined}
                             aria-label={
                                 mobileMenuOpen ? 'Close menu' : 'Open menu'
                             }
@@ -205,10 +201,9 @@ export function Header() {
                 {mobileMenuOpen && (
                     <div
                         className='md:hidden py-4 border-t border-border'
-                        role='navigation'
-                        aria-label='Mobile navigation'
+                        id='mobile-navigation'
                     >
-                        <nav className='flex flex-col gap-1 mb-4'>
+                        <nav className='flex flex-col gap-1 mb-4' aria-label='More mobile destinations'>
                             <Button asChild variant='ghost' size='sm' className='w-full justify-start'>
                                 <Link
                                     to='/'
@@ -248,34 +243,10 @@ export function Header() {
                                     <ListMusic size={16} strokeWidth={1.75} className='mr-2' /> Playlists
                                 </Link>
                             </Button>
-                            {/* Watch Parties - Hidden until after launch */}
-                            {/* <Link
-                                to='/watch-parties/browse'
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='w-full justify-start'
-                                >
-                                    👥 Watch Parties
-                                </Button>
-                            </Link> */}
-                            {/* Live Feed - Hidden until after launch */}
-                            {/* {isAuthenticated && (
-                                <Link
-                                    to='/discover/live'
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='w-full justify-start'
-                                    >
-                                        🔴 Live
-                                    </Button>
-                                </Link>
-                            )} */}
+
+
+
+
                         </nav>
 
                         {isAuthenticated ?
@@ -351,6 +322,7 @@ export function Header() {
                         :   <Button asChild variant='primary' size='sm' className='w-full'>
                                 <Link
                                     to='/login'
+                                    state={{ from: location }}
                                     onClick={() => setMobileMenuOpen(false)}
                                     data-testid='login-button'
                                     aria-label='Login'

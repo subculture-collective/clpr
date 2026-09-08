@@ -58,7 +58,7 @@ function ItemBadge({
     children: ReactNode;
 }) {
     const toneClass =
-        tone === 'brand' ? 'border-brand/30 bg-brand/10 text-brand-200'
+        tone === 'brand' ? 'border-brand/30 bg-brand/10 text-link-200'
         : tone === 'success' ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
         : tone === 'warning' ? 'border-amber-400/30 bg-amber-500/10 text-amber-200'
         : tone === 'danger' ? 'border-rose-400/30 bg-rose-500/10 text-rose-200'
