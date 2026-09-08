@@ -399,6 +399,15 @@ validate_application_smoke() {
         log_error "APPLICATION_SMOKE_URL is required in release evidence mode"
         return 1
     fi
+    if [[ -n "${APPLICATION_SMOKE_RUNNER:-}" ]]; then
+        [[ -x "$APPLICATION_SMOKE_RUNNER" ]] || { log_error "APPLICATION_SMOKE_RUNNER must be executable"; return 1; }
+        # The protected runner receives the actual restored database, not the
+        # original application database. It must start and verify that runtime.
+        "$APPLICATION_SMOKE_RUNNER" "$TEST_DB" "$APPLICATION_SMOKE_URL" || {
+            log_error "Restored database application runner failed"
+            return 1
+        }
+    fi
     if ! curl --fail --silent --show-error "$APPLICATION_SMOKE_URL" >/dev/null; then
         log_error "Isolated restored-application smoke failed"
         return 1

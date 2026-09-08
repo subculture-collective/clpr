@@ -110,6 +110,15 @@ grep -Fq 'clpr-backend-blue:8080' "$tmp_dir/Caddyfile" \
     || fail "rendered active backend is not blue"
 grep -Fq 'clpr-frontend-green:8080' "$tmp_dir/Caddyfile" \
     || fail "rendered canary frontend is not green"
+
+CONTAINER_PREFIX=clpr-isolated-contract CANARY_TOKEN="$token" \
+TEMPLATE_FILE="$repo_root/deploy/Caddyfile.blue-green.template" \
+    bash scripts/blue-green-deploy.sh render blue green "$tmp_dir/isolated-Caddyfile"
+grep -Fq 'clpr-isolated-contract-backend-blue:8080' "$tmp_dir/isolated-Caddyfile" \
+    || fail "isolated proxy must target its own application containers"
+if grep -Fq 'clpr-backend-' "$tmp_dir/isolated-Caddyfile"; then
+    fail "isolated proxy leaked a default application target"
+fi
 grep -Fq "$token" "$tmp_dir/Caddyfile" \
     || fail "rendered canary token is missing"
 grep -Fq 'X-CLPR-Served-Slot "green"' "$tmp_dir/Caddyfile" \

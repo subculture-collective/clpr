@@ -22,6 +22,11 @@ DEFAULT_ACTIVE_SLOT="${DEFAULT_ACTIVE_SLOT:-blue}"
 MONITORING_ENABLED="${MONITORING_ENABLED:-false}"
 CRAWLER_DIGEST="${CRAWLER_DIGEST:-}"
 
+CONTAINER_PREFIX="${CONTAINER_PREFIX:-clpr}"
+DOCKER_NETWORK="${DOCKER_NETWORK:-clpr-network}"
+CANDIDATE_CA_DIR="${CANDIDATE_CA_DIR:-}"
+MIGRATION_SSLMODE="${MIGRATION_SSLMODE:-require}"
+
 ACTIVE_SLOT_FILE="$RUNTIME_DIR/active-slot"
 CURRENT_CRAWLER_FILE="$RUNTIME_DIR/crawler-current-digest"
 PREVIOUS_CRAWLER_FILE="$RUNTIME_DIR/crawler-previous-digest"
@@ -104,6 +109,9 @@ check_prerequisites() {
     esac
 
     load_deployment_env
+    [[ "$CONTAINER_PREFIX" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || die "invalid CONTAINER_PREFIX"
+    [[ "$DOCKER_NETWORK" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || die "invalid DOCKER_NETWORK"
+    [[ "$MIGRATION_SSLMODE" == require || "$MIGRATION_SSLMODE" == verify-ca || "$MIGRATION_SSLMODE" == verify-full ]] || die "migrations require TLS"
     local variable value
     for variable in \
         BACKEND_BLUE_DIGEST FRONTEND_BLUE_DIGEST \
@@ -138,10 +146,10 @@ render_runtime_config() {
 
     local rendered
     rendered="$(<"$TEMPLATE_FILE")"
-    rendered="${rendered//__ACTIVE_BACKEND__/clpr-backend-$active_slot:8080}"
-    rendered="${rendered//__ACTIVE_FRONTEND__/clpr-frontend-$active_slot:8080}"
-    rendered="${rendered//__CANARY_BACKEND__/clpr-backend-$canary_slot:8080}"
-    rendered="${rendered//__CANARY_FRONTEND__/clpr-frontend-$canary_slot:8080}"
+    rendered="${rendered//__ACTIVE_BACKEND__/${CONTAINER_PREFIX}-backend-$active_slot:8080}"
+    rendered="${rendered//__ACTIVE_FRONTEND__/${CONTAINER_PREFIX}-frontend-$active_slot:8080}"
+    rendered="${rendered//__CANARY_BACKEND__/${CONTAINER_PREFIX}-backend-$canary_slot:8080}"
+    rendered="${rendered//__CANARY_FRONTEND__/${CONTAINER_PREFIX}-frontend-$canary_slot:8080}"
     rendered="${rendered//__CANARY_SLOT__/$canary_slot}"
     rendered="${rendered//__CANARY_TOKEN__/$CANARY_TOKEN}"
 
@@ -157,7 +165,11 @@ install_runtime_config() {
     candidate="$(mktemp "$RUNTIME_DIR/Caddyfile.XXXXXX")"
     render_runtime_config "$active_slot" "$canary_slot" "$candidate"
 
-    if ! docker run --rm \
+    local cert_args=()
+    if [[ -n "$CANDIDATE_CA_DIR" ]]; then
+        cert_args+=(-v "$CANDIDATE_CA_DIR:/certs:ro")
+    fi
+    if ! docker run --rm "${cert_args[@]}" \
         -v "$candidate:/etc/caddy/Caddyfile:ro" \
         "$CADDY_IMAGE" caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
         rm -f "$candidate"
@@ -183,8 +195,8 @@ read_active_slot() {
 }
 
 reload_proxy() {
-    if docker ps --format '{{.Names}}' | grep -Fxq clpr-caddy; then
-        docker exec clpr-caddy caddy reload --config /etc/caddy/runtime/Caddyfile
+    if docker ps --format '{{.Names}}' | grep -Fxq "${CONTAINER_PREFIX}-caddy"; then
+        docker exec "${CONTAINER_PREFIX}-caddy" caddy reload --config /etc/caddy/runtime/Caddyfile
     else
         compose up -d caddy
     fi
@@ -235,8 +247,8 @@ stop_slot() {
 
 health_once() {
     local slot="$1"
-    docker exec "clpr-backend-$slot" wget --spider -q http://localhost:8080/health \
-        && docker exec "clpr-frontend-$slot" wget --spider -q http://localhost:8080/health.html
+    docker exec "${CONTAINER_PREFIX}-backend-$slot" wget --spider -q http://localhost:8080/health \
+        && docker exec "${CONTAINER_PREFIX}-frontend-$slot" wget --spider -q http://localhost:8080/health.html
 }
 
 health_check() {
@@ -260,12 +272,16 @@ run_migrations() {
         log WARN "No migrations directory found; skipping migration step"
         return 0
     }
-    docker exec clpr-postgres pg_isready \
+    docker exec "${CONTAINER_PREFIX}-postgres" pg_isready \
         -U "${POSTGRES_USER:-clpr}" -d "${POSTGRES_DB:-clpr_db}" >/dev/null
 
     local database_url
-    database_url="postgresql://${POSTGRES_USER:-clpr}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clpr_db}?sslmode=disable"
-    docker run --rm --network clpr-network \
+    database_url="postgresql://${POSTGRES_USER:-clpr}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clpr_db}?sslmode=$MIGRATION_SSLMODE"
+    local cert_args=()
+    if [[ -n "$CANDIDATE_CA_DIR" ]]; then
+        cert_args+=(-v "$CANDIDATE_CA_DIR:/certs:ro" -e PGSSLROOTCERT=/certs/ca.crt)
+    fi
+    docker run --rm --network "$DOCKER_NETWORK" "${cert_args[@]}" \
         -v "$DEPLOY_DIR/backend/migrations:/migrations:ro" \
         migrate/migrate@sha256:4d017c6fb5997127093648cab09e63d377997125c3d3dcca18e5d1c847da49fa \
         -path /migrations -database "$database_url" up

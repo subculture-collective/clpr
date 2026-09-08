@@ -72,3 +72,13 @@ node scripts/verify-release-evidence.js
 
 `RELEASE_EVIDENCE_NOW` is available only to make verifier tests deterministic;
 production workflows leave it unset and use the runner clock.
+
+For isolated local HTTPS qualification, load execution accepts
+`STAGING_DOCKER_NETWORK` and `STAGING_CA_FILE`; TLS verification stays enabled.
+Blue/green execution accepts `CONTAINER_PREFIX`, `DOCKER_NETWORK`, and
+`CANDIDATE_CA_DIR` to isolate container names, networking, and certificate trust.
+Migrations require TLS (`MIGRATION_SSLMODE`, default `require`).
+Protected restores require an executable `APPLICATION_SMOKE_RUNNER`, invoked
+with the restored database name and smoke URL before the HTTP smoke check.
+The runner must start the candidate against that restored database and leave
+it available for the subsequent check.

@@ -32,6 +32,8 @@ fi
 : "${APPLICATION_SMOKE_URL:?APPLICATION_SMOKE_URL is required}"
 : "${EVIDENCE_OUTPUT_DIR:?EVIDENCE_OUTPUT_DIR is required}"
 : "${RESTORE_TARGET_MANIFEST:?RESTORE_TARGET_MANIFEST is required}"
+: "${APPLICATION_SMOKE_RUNNER:?An executable runner bound to the restored database is required}"
+[[ -x "$APPLICATION_SMOKE_RUNNER" ]] || { echo "APPLICATION_SMOKE_RUNNER must be executable" >&2; exit 1; }
 : "${PRODUCTION_POSTGRES_HOSTS:?PRODUCTION_POSTGRES_HOSTS is required}"
 [[ -f "$BACKUP_FILE_OVERRIDE" ]] || { echo "protected backup input does not exist" >&2; exit 1; }
 [[ -f "$RESTORE_TARGET_MANIFEST" ]] || { echo "provisioned target manifest does not exist" >&2; exit 1; }
