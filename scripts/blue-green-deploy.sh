@@ -313,8 +313,8 @@ current_crawler_digest() {
     local digest=""
     if [[ -s "$CURRENT_CRAWLER_FILE" ]]; then
         digest="$(<"$CURRENT_CRAWLER_FILE")"
-    elif docker inspect clpr-crawler >/dev/null 2>&1; then
-        digest="$(docker inspect --format '{{.Config.Image}}' clpr-crawler | awk -F@ '{print $2}')"
+    elif docker inspect "${CONTAINER_PREFIX}-crawler" >/dev/null 2>&1; then
+        digest="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_PREFIX}-crawler" | awk -F@ '{print $2}')"
     fi
     if validate_digest "$digest"; then
         printf '%s\n' "$digest"
@@ -328,7 +328,7 @@ reconcile_crawler() {
     validate_digest "$digest" || die "refusing to start crawler without an immutable digest"
     log STEP "Reconciling the single shared crawler"
     CRAWLER_DIGEST="$digest" compose up -d --no-deps --force-recreate crawler
-    [[ "$(docker inspect --format '{{.State.Running}}' clpr-crawler)" == "true" ]]
+    [[ "$(docker inspect --format '{{.State.Running}}' "${CONTAINER_PREFIX}-crawler")" == "true" ]]
 }
 
 write_crawler_state() {
