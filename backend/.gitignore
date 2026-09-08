@@ -12,6 +12,7 @@ cmd/api/api
 # Ignore main binary in root of backend
 /main
 /clpr
+/seed-site-freshness
 
 # Test binary, built with `go test -c`
 *.test
