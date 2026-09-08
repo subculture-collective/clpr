@@ -26,6 +26,10 @@ jobs:
       - uses: https://github.com/actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install operator contract dependencies
+        run: npm ci
       - name: Validate safe dry-run orchestration
         run: bash scripts/test-operator-preflight.sh
       - name: Inspect versioned load profiles
