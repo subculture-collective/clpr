@@ -167,6 +167,7 @@ type EmbeddingConfig struct {
 
 // FeatureFlagsConfig holds feature flag configuration
 type FeatureFlagsConfig struct {
+	RecentEngagement     bool
 	SemanticSearch       bool
 	PremiumSubscriptions bool
 	EmailNotifications   bool
@@ -534,6 +535,7 @@ func Load() (*Config, error) {
 			Enabled:                  getEnv("EMBEDDING_ENABLED", "false") == "true",
 		},
 		FeatureFlags: FeatureFlagsConfig{
+			RecentEngagement:     getEnvBool("FEATURE_RECENT_ENGAGEMENT", false),
 			SemanticSearch:       getEnv("FEATURE_SEMANTIC_SEARCH", "false") == "true",
 			PremiumSubscriptions: getEnv("FEATURE_PREMIUM_SUBSCRIPTIONS", "false") == "true",
 			EmailNotifications:   getEnv("FEATURE_EMAIL_NOTIFICATIONS", "false") == "true",

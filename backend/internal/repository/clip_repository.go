@@ -177,7 +177,8 @@ func (r *ClipRepository) PublishAutomatedClip(ctx context.Context, clip *models.
 				WHEN EXCLUDED.view_count > clips.view_count THEN NOW()
 				ELSE clips.view_count_observed_at
 			END,
-			view_count = GREATEST(clips.view_count, EXCLUDED.view_count)
+			view_count = GREATEST(clips.view_count, EXCLUDED.view_count),
+			twitch_view_count_raw = EXCLUDED.view_count
 		RETURNING id, (xmax = 0) AS inserted
 	`
 
@@ -330,7 +331,8 @@ func (r *ClipRepository) UpdateViewCount(ctx context.Context, twitchClipID strin
 				WHEN $2 > view_count THEN NOW()
 				ELSE view_count_observed_at
 			END,
-			view_count = GREATEST(view_count, $2)
+			view_count = GREATEST(view_count, $2),
+			twitch_view_count_raw = $2
 		WHERE twitch_clip_id = $1
 	`
 
@@ -518,6 +520,8 @@ func (r *ClipRepository) GetLastSyncTime(ctx context.Context) (*time.Time, error
 
 // ClipFilters represents filters for listing clips
 type ClipFilters struct {
+	RankingGeneration   *uuid.UUID
+	RankingPeriod       string
 	CategoryID          *uuid.UUID
 	GameID              *string
 	BroadcasterID       *string
@@ -723,7 +727,16 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 
 	baseTrendingScore := "COALESCE(c.trending_score, calculate_trending_score(c.view_count, c.vote_score, c.comment_count, c.favorite_count, c.created_at))"
 	trendingScoreExpression := baseTrendingScore
-	if filters.Sort == "trending" && filters.TrendingShuffleSeed != nil && *filters.TrendingShuffleSeed != "" {
+	fromClause := "clips c"
+	if filters.RankingGeneration != nil {
+		fromClause = fmt.Sprintf("clips c JOIN engagement_rankings er ON er.clip_id=c.id AND er.generation_id=%s AND er.period=%s", utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
+		trendingScoreExpression = "er.score"
+		args = append(args, *filters.RankingGeneration, filters.RankingPeriod)
+		argIndex += 2
+		whereClauses = append(whereClauses, trendingScoreExpression+" > 0")
+	}
+
+	if filters.Sort == "trending" && filters.RankingGeneration == nil && filters.TrendingShuffleSeed != nil && *filters.TrendingShuffleSeed != "" {
 		seedPlaceholder := utils.SQLPlaceholder(argIndex)
 		// Referencing the seed in the WHERE clause also keeps the COUNT query's
 		// parameter list valid without calculating a hash during the count.
@@ -760,6 +773,12 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 
 		switch filters.Sort {
 		case "trending":
+			if filters.RankingGeneration != nil {
+				whereClauses = append(whereClauses, fmt.Sprintf("(%s < %s OR (%s = %s AND c.id < %s))", trendingScoreExpression, utils.SQLPlaceholder(argIndex), trendingScoreExpression, utils.SQLPlaceholder(argIndex+1), utils.SQLPlaceholder(argIndex+2)))
+				args = append(args, cursor.SortValue, cursor.SortValue, cursor.ClipID)
+				argIndex += 3
+				break
+			}
 			whereClauses = append(whereClauses, fmt.Sprintf(
 				"(%s < %s OR (%s = %s AND (c.created_at < %s OR (c.created_at = %s AND c.id < %s))))",
 				trendingScoreExpression, utils.SQLPlaceholder(argIndex), trendingScoreExpression, utils.SQLPlaceholder(argIndex+1),
@@ -825,6 +844,9 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 		orderBy = "ORDER BY c.vote_score DESC, c.created_at DESC, c.id DESC"
 	case "trending":
 		orderBy = "ORDER BY " + trendingScoreExpression + " DESC, c.created_at DESC, c.id DESC"
+		if filters.RankingGeneration != nil {
+			orderBy = "ORDER BY " + trendingScoreExpression + " DESC,c.id DESC"
+		}
 	case "popular":
 		// Popular: uses pre-calculated popularity_index (total engagement) with fallback
 		orderBy = "ORDER BY COALESCE(c.popularity_index, c.engagement_count, (c.view_count + c.vote_score * 2 + c.comment_count * 3 + c.favorite_count * 2)) DESC, c.created_at DESC, c.id DESC"
@@ -839,7 +861,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 	}
 
 	// Count query
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM clips c %s", whereClause)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s %s", fromClause, whereClause)
 	var total int
 	err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
@@ -852,11 +874,11 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 		SELECT
 			%s,
 			%s AS trending_score, c.hot_score, c.popularity_index, c.engagement_count
-		FROM clips c
+		FROM %s
 		%s
 		%s
 		LIMIT %s OFFSET %s
-	`, clipSelectColumns, trendingScoreExpression, whereClause, orderBy, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
+	`, clipSelectColumns, trendingScoreExpression, fromClause, whereClause, orderBy, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1))
 
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {

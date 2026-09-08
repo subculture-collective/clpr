@@ -13,20 +13,7 @@ import {
     useQueryClient,
 } from '@tanstack/react-query';
 
-// Hook for infinite scrolling clip feed
-export const useClipFeed = (filters?: ClipFeedFilters) => {
-    return useInfiniteQuery({
-        queryKey: ['clips', filters],
-        queryFn: ({ pageParam }) =>
-            clipApi.fetchClips({ cursor: pageParam || undefined, filters }),
-        getNextPageParam: lastPage => {
-            return lastPage.has_more && lastPage.cursor ?
-                    lastPage.cursor
-                :   undefined;
-        },
-        initialPageParam: '',
-    });
-};
+export { useClipFeed } from './useClipFeed';
 
 // Hook for infinite scrolling scraped clips feed
 export const useScrapedClipsFeed = (filters?: ClipFeedFilters) => {

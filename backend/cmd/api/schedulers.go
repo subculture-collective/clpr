@@ -9,6 +9,7 @@ import (
 
 // SchedulerGroup holds all background scheduler instances for graceful shutdown.
 type SchedulerGroup struct {
+	Engagement      *scheduler.EngagementScheduler
 	ClipSync        *scheduler.ClipSyncScheduler
 	Reputation      *scheduler.ReputationScheduler
 	HotScore        *scheduler.HotScoreScheduler
@@ -26,6 +27,12 @@ type SchedulerGroup struct {
 func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure) *SchedulerGroup {
 	cfg := infra.Config
 	sg := &SchedulerGroup{}
+	var engagementProvider scheduler.EngagementProvider
+	if infra.TwitchClient != nil {
+		engagementProvider = infra.TwitchClient
+	}
+	sg.Engagement = scheduler.NewEngagementScheduler(repos.Engagement, engagementProvider)
+	go sg.Engagement.Start(context.Background())
 
 	// Start background scheduler if Twitch client is available
 	if svcs.ClipSync != nil {

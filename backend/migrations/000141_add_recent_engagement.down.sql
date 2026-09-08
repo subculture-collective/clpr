@@ -1,0 +1,10 @@
+DROP TRIGGER IF EXISTS capture_comment_engagement ON comments;
+DROP TRIGGER IF EXISTS capture_favorite_engagement ON favorites;
+DROP TRIGGER IF EXISTS capture_vote_engagement ON votes;
+DROP TRIGGER IF EXISTS capture_twitch_observation_insert ON clips;
+DROP TRIGGER IF EXISTS capture_twitch_observation_update ON clips;
+DROP FUNCTION IF EXISTS capture_local_engagement();
+DROP FUNCTION IF EXISTS capture_twitch_observation();
+DROP FUNCTION IF EXISTS record_twitch_observation(UUID,INTEGER,TIMESTAMPTZ);
+DROP TABLE engagement_rankings,engagement_generations,clip_engagement_hourly,clip_local_engagement,clip_view_observations,clip_engagement_state,engagement_tracking;
+ALTER TABLE clips DROP COLUMN twitch_view_count_raw;

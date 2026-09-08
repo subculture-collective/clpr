@@ -30,6 +30,9 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 	schedulers.Reputation.Stop()
 	schedulers.HotScore.Stop()
 	schedulers.TrendingScore.Stop()
+	if schedulers.Engagement != nil {
+		schedulers.Engagement.Stop()
+	}
 	schedulers.WebhookRetry.Stop()
 	schedulers.OutboundWebhook.Stop()
 	schedulers.Export.Stop()

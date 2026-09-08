@@ -189,7 +189,7 @@ export function FeedHeader({
                                 timeframe === option.value && 'font-semibold',
                             )}
                         >
-                            {option.label}
+                            {sort === 'trending' && option.value === 'all' ? 'Since tracking began' : option.label}
                         </Button>
                     ))}
                 </div>

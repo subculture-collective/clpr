@@ -319,9 +319,10 @@ export function ClipFeed({
         week: 'Past Week',
         month: 'Past Month',
         year: 'Past Year',
-        all: 'All Time',
+        all: sort === 'trending' ? 'Since tracking began' : 'All Time',
     };
 
+    const engagement = data?.pages[0]?.engagement;
     const resolvedTitle = useSortTitle
         ? sort === 'top' || sort === 'trending'
             ? `${sortLabelMap[sort] ?? sort} — ${timeframeLabelMap[timeframe] ?? 'Past Day'}`
@@ -343,6 +344,14 @@ export function ClipFeed({
                     autoplayPreference={autoplayPreference}
                     onAutoplayPreferenceChange={handleAutoplayPreferenceChange}
                 />
+            )}
+
+            {engagement && (
+                <p role="status" className="mb-4 text-sm text-muted-foreground">
+                    Estimated observed engagement.
+                    {engagement.partial_coverage && ' History is incomplete for this period.'}
+                    {!!engagement.stale_clips && ' Some Twitch observations are stale.'}
+                </p>
             )}
 
             {/* Pull-to-refresh indicator */}
@@ -419,8 +428,10 @@ export function ClipFeed({
             {/* Empty state */}
             {!isLoading && !isError && validClips.length === 0 && (
                 <EmptyState
-                    title="No clips found"
-                    message="Try adjusting your filters or check back later."
+                    title={engagement ? 'No measured engagement yet' : 'No clips found'}
+                    message={engagement
+                        ? 'Check back after new engagement is observed.'
+                        : 'Try adjusting your filters or check back later.'}
                     icon={
                         <svg
                             className="w-16 h-16"
@@ -437,6 +448,13 @@ export function ClipFeed({
                         </svg>
                     }
                 />
+            )}
+
+            {!isLoading && !isError && validClips.length === 0 && engagement && (
+                <p className="flex justify-center gap-4">
+                    <a href="/?sort=new">Newest</a>
+                    <a href="/?sort=popular">Most Popular</a>
+                </p>
             )}
 
             {/* Clips list with pull-to-refresh */}

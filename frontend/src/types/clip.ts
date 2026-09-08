@@ -61,7 +61,22 @@ export interface Clip extends ClipSourceFields {
     };
 }
 
+export interface EngagementMetadata {
+    generation?: string;
+    period: TimeFrame;
+    published_at?: string;
+    tracking_started_at?: string;
+    coverage_started_at?: string;
+    window_start?: string;
+    oldest_observation_at?: string;
+    stale_clips?: number;
+    eligible_clips?: number;
+    partial_coverage: boolean;
+    estimated: boolean;
+}
+
 export interface ClipFeedResponse {
+    engagement?: EngagementMetadata | null;
     clips: Clip[];
     total: number;
     page: number;

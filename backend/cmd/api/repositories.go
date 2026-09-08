@@ -7,6 +7,7 @@ import (
 
 // Repositories holds all database repository instances.
 type Repositories struct {
+	Engagement            *repository.EngagementRepository
 	User                  *repository.UserRepository
 	RefreshToken          *repository.RefreshTokenRepository
 	UserSettings          *repository.UserSettingsRepository
@@ -65,6 +66,7 @@ type Repositories struct {
 
 func initRepositories(pool *pgxpool.Pool) *Repositories {
 	return &Repositories{
+		Engagement:            repository.NewEngagementRepository(pool),
 		User:                  repository.NewUserRepository(pool),
 		RefreshToken:          repository.NewRefreshTokenRepository(pool),
 		UserSettings:          repository.NewUserSettingsRepository(pool),

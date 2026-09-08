@@ -74,6 +74,7 @@ export async function fetchClips({
 
     const response = await apiClient.get<{
         success: boolean;
+        engagement?: ClipFeedResponse['engagement'];
         clips: Clip[];
         pagination: {
             limit: number;
@@ -86,6 +87,7 @@ export async function fetchClips({
     }>('/feeds/clips', { params });
 
     return {
+        engagement: response.data.engagement,
         clips: response.data.clips,
         total: response.data.pagination.total,
         // Only calculate page for offset-based pagination

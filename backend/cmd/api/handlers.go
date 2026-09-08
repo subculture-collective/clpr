@@ -131,6 +131,9 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	emailMetricsHandler := handlers.NewEmailMetricsHandler(svcs.EmailMetrics, repos.EmailLog)
 	sendgridWebhookHandler := handlers.NewSendGridWebhookHandler(repos.EmailLog, cfg.Email.SendGridWebhookPublicKey)
 	feedHandler := handlers.NewFeedHandler(svcs.Feed, svcs.Auth, repos.Vote, repos.Favorite, repos.User)
+	if cfg.FeatureFlags.RecentEngagement {
+		feedHandler.EnableRecentEngagement(repos.Engagement)
+	}
 	filterPresetHandler := handlers.NewFilterPresetHandler(svcs.FilterPreset)
 	communityHandler := handlers.NewCommunityHandler(svcs.Community, svcs.Auth)
 	discoveryListHandler := handlers.NewDiscoveryListHandler(repos.DiscoveryList, repos.Analytics)

@@ -79,6 +79,11 @@ func handleFeedError(c *gin.Context, err error, fallback string) {
 	}
 }
 
+// EnableRecentEngagement switches ranking without changing collection.
+func (h *FeedHandler) EnableRecentEngagement(repo *repository.EngagementRepository) {
+	h.engagementRepo = repo
+}
+
 // validateDateFilter validates and normalizes a date string expected to be in ISO 8601 format
 func validateDateFilter(dateStr string) (string, error) {
 	if dateStr == "" {
@@ -98,11 +103,12 @@ func validateDateFilter(dateStr string) (string, error) {
 }
 
 type FeedHandler struct {
-	feedService  *services.FeedService
-	authService  *services.AuthService
-	voteRepo     *repository.VoteRepository
-	favoriteRepo *repository.FavoriteRepository
-	userRepo     *repository.UserRepository
+	engagementRepo *repository.EngagementRepository
+	feedService    *services.FeedService
+	authService    *services.AuthService
+	voteRepo       *repository.VoteRepository
+	favoriteRepo   *repository.FavoriteRepository
+	userRepo       *repository.UserRepository
 }
 
 func NewFeedHandler(
@@ -611,7 +617,7 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		return
 	}
 	shuffleSeed := ""
-	if sort == "trending" {
+	if sort == "trending" && h.engagementRepo == nil {
 		if cursor != "" {
 			decodedCursor, decodeErr := utils.DecodeCursor(cursor)
 			if decodeErr != nil || decodedCursor == nil || decodedCursor.ShuffleSeed == "" {
@@ -659,6 +665,41 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		TrendingShuffleSeed: &shuffleSeed,
 	}
 
+	period := c.DefaultQuery("timeframe", "day")
+	if _, valid := repository.EngagementWindow(period); !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid timeframe"})
+		return
+	}
+	filters.Timeframe = &period
+	var engagement *repository.EngagementMetadata
+	if sort == "trending" && h.engagementRepo != nil {
+		var generation *uuid.UUID
+		if cursor != "" {
+			decoded, decodeErr := decodeEngagementCursor(cursor, c.Request.URL.Query())
+			if decodeErr != nil {
+				c.JSON(http.StatusConflict, gin.H{"code": "RANKING_REFRESH_REQUIRED", "error": "Refresh the feed to continue"})
+				return
+			}
+			generation = &decoded.Generation
+			cursor = utils.EncodeCursor("trending", decoded.Score, decoded.ClipID, 0)
+		}
+		engagement, err = h.engagementRepo.Resolve(c.Request.Context(), period, generation)
+		if errors.Is(err, repository.ErrRankingExpired) {
+			if generation != nil {
+				c.JSON(http.StatusConflict, gin.H{"code": "RANKING_REFRESH_REQUIRED", "error": "Refresh the feed to continue"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"success": true, "clips": []services.ClipWithUserContext{}, "pagination": gin.H{"limit": limit, "offset": 0, "has_more": false, "total": 0}, "engagement": gin.H{"period": period, "estimated": true, "partial_coverage": true, "pending": true}})
+			return
+		}
+		if err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Recent engagement is temporarily unavailable"})
+			return
+		}
+		filters.RankingGeneration = &engagement.Generation
+		filters.RankingPeriod = period
+		filters.TrendingShuffleSeed = nil
+	}
 	// Apply cursor if provided (takes precedence over offset)
 	if cursor != "" {
 		filters.Cursor = &cursor
@@ -744,6 +785,9 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 			sortValue = float64(lastClip.CreatedAt.Unix())
 		}
 		encodedCursor := utils.EncodeCursorWithShuffleSeed(sort, sortValue, lastClip.ID, lastClip.CreatedAt.Unix(), shuffleSeed)
+		if engagement != nil {
+			encodedCursor = encodeEngagementCursor(engagement.Generation, lastClip.ID, lastClip.TrendingScore, c.Request.URL.Query())
+		}
 		nextCursor = &encodedCursor
 	}
 
@@ -771,6 +815,7 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		"success":    true,
 		"clips":      clips,
 		"pagination": paginationResponse,
+		"engagement": engagement,
 		"filters_applied": gin.H{
 			"twitch_categories": twitchCategories,
 			"games":             twitchCategories,
