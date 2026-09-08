@@ -90,7 +90,10 @@ export function setup() {
 
 function expectStatus(response, statuses, name) {
   check(response, { [`${name} returns ${statuses.join('/')}`]: r => statuses.includes(r.status) });
-  sleep(0.2);
+  // Sustained user traffic must fit the ordinary 1,000-request/hour IP budget.
+  // Four seconds between actions caps each VU at 900 requests/hour; the
+  // separate rateLimit scenario still deliberately exercises burst rejection.
+  sleep(4);
 }
 
 export function feed() {
