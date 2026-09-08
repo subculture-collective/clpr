@@ -62,6 +62,21 @@ test('private playlist persists edits and excludes another member; privileged op
     await expect(page.getByText(`${title} edited`, { exact: true })).toBeVisible();
     await page.reload();
     await expect(page.getByText(`${title} edited`, { exact: true })).toBeVisible();
+    // Back navigation must not recover private data from the preceding session.
+    await page.goto(`/playlists/${playlist.id}`);
+    await expect(page.getByRole('heading', { name: `${title} edited`, exact: true })).toBeVisible();
+    const rejectCookies = page.getByRole('button', { name: 'Reject All', exact: true });
+    if (await rejectCookies.isVisible()) await rejectCookies.click();
+    await page.getByRole('button', { name: 'User menu', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Logout', exact: true }).click();
+    await expect(page).toHaveURL(/\/$/);
+    expect((await context.request.get(`${api}/api/v1/playlists/${playlist.id}`)).status()).toBe(404);
+    await page.goBack({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: `${title} edited`, exact: true })).toHaveCount(0);
+    await expect(page.getByText('Playlist not found', { exact: true })).toBeVisible();
+    await login(context, browserName, 'member');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: `${title} edited`, exact: true })).toBeVisible();
     const other = await browser.newContext();
     try {
         const second = await login(other, browserName, 'second');
