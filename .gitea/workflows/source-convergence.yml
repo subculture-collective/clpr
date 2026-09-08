@@ -63,7 +63,11 @@ jobs:
         uses: https://github.com/actions/upload-artifact@v3
         with:
           name: source-convergence-${{ gitea.sha }}
-          path: .tmp/source-convergence
+          # Keep diagnostic evidence; the build-only executable is delivered
+          # separately in the signed application image, not in this report.
+          path: |
+            .tmp/source-convergence
+            !.tmp/source-convergence/**/backend/api
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
