@@ -102,6 +102,30 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 token='contract-token-0123456789-ABCDEFGH'
 
+# Exercise the actual canary check with HTTP wire-format headers. A successful
+# status alone must never accept a response from the wrong application slot.
+(
+    eval "$(sed -n '/^canary_smoke() {$/,/^}$/p' scripts/blue-green-deploy.sh)"
+    log() { :; }
+    curl() {
+        local headers=''
+        while (($#)); do
+            if [[ "$1" == --dump-header ]]; then headers="$2"; shift; fi
+            shift
+        done
+        cat >/dev/null
+        printf 'HTTP/1.1 %s\r\nX-Clpr-Served-Slot: %s\r\n\r\n' "$fixture_status" "$fixture_slot" > "$headers"
+        printf '%s' "$fixture_status"
+    }
+    CANARY_TOKEN="$token" CANARY_PATHS=/health CANARY_BASE_URL=https://candidate.invalid
+    fixture_status=200 fixture_slot=green
+    canary_smoke green || fail "valid CRLF canary response rejected"
+    fixture_slot=blue
+    if canary_smoke green; then fail "wrong-slot response accepted"; fi
+    fixture_slot=green fixture_status=503
+    if canary_smoke green; then fail "unhealthy canary response accepted"; fi
+)
+
 CANARY_TOKEN="$token" \
 TEMPLATE_FILE="$repo_root/deploy/Caddyfile.blue-green.template" \
     bash scripts/blue-green-deploy.sh render blue green "$tmp_dir/Caddyfile"
