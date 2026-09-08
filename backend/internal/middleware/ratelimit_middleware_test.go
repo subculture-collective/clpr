@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 )
 
 func TestRateLimitMiddleware_FallbackInitialization(t *testing.T) {
@@ -218,7 +218,7 @@ func TestRateLimitMiddleware_AdminBypass(t *testing.T) {
 	})
 	router.Use(func(c *gin.Context) {
 		// Check admin bypass logic
-		_, isAdmin := getUserRateLimitMultiplier(c, nil)
+		_, isAdmin := getUserRateLimitMultiplier(c)
 		if isAdmin {
 			c.Header("X-RateLimit-Bypass", "admin")
 			c.Next()
@@ -249,70 +249,6 @@ func TestRateLimitMiddleware_AdminBypass(t *testing.T) {
 	}
 }
 
-func TestRateLimitMiddleware_PremiumMultiplier(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	// Reset global fallback limiters
-	userFallbackLimiter = NewInMemoryRateLimiter(10, time.Second)
-
-	router := gin.New()
-	router.Use(func(c *gin.Context) {
-		// Simulate auth middleware setting user with premium subscription
-		c.Set("user_id", "premium-user-123")
-		c.Set("user_role", "user")
-		c.Set("subscription_tier", "pro")
-		c.Next()
-	})
-	router.Use(func(c *gin.Context) {
-		// Test multiplier calculation
-		multiplier, _ := getUserRateLimitMultiplier(c, nil)
-		baseLimit := 2
-		effectiveLimit := int(float64(baseLimit) * multiplier)
-
-		// Use fallback limiter with effective limit
-		key := fmt.Sprintf("test-premium-%v", c.GetString("user_id"))
-		allowed, remaining := userFallbackLimiter.Allow(key)
-
-		if !allowed {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": "rate limited"})
-			c.Abort()
-			return
-		}
-
-		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", effectiveLimit))
-		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
-		c.Next()
-	})
-	router.GET("/test", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
-	})
-
-	// Premium user gets 5x multiplier, so 2 * 5 = 10 requests
-	for i := 0; i < 10; i++ {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/test", nil)
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Errorf("premium request %d: expected status 200, got %d", i+1, w.Code)
-		}
-
-		// Check rate limit header shows effective limit
-		if limit := w.Header().Get("X-RateLimit-Limit"); limit != "10" {
-			t.Errorf("premium request %d: expected X-RateLimit-Limit=10, got %s", i+1, limit)
-		}
-	}
-
-	// 11th request should be blocked
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusTooManyRequests {
-		t.Errorf("11th premium request: expected status 429, got %d", w.Code)
-	}
-}
-
 func TestRateLimitMiddleware_BasicUserLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -329,7 +265,7 @@ func TestRateLimitMiddleware_BasicUserLimit(t *testing.T) {
 	})
 	router.Use(func(c *gin.Context) {
 		// Test multiplier calculation
-		multiplier, _ := getUserRateLimitMultiplier(c, nil)
+		multiplier, _ := getUserRateLimitMultiplier(c)
 		baseLimit := 3
 		effectiveLimit := int(float64(baseLimit) * multiplier)
 
@@ -413,11 +349,11 @@ func TestGetUserRateLimitMultiplier(t *testing.T) {
 			wantIsAdmin:    true,
 		},
 		{
-			name:             "premium user with UUID",
+			name:             "historical paid status does not change limits",
 			userID:           premiumUUID,
 			userRole:         "user",
 			subscriptionTier: "pro",
-			wantMultiplier:   5.0,
+			wantMultiplier:   1.0,
 			wantIsAdmin:      false,
 		},
 		{
@@ -444,7 +380,7 @@ func TestGetUserRateLimitMultiplier(t *testing.T) {
 				c.Set("subscription_tier", tt.subscriptionTier)
 			}
 
-			multiplier, isAdmin := getUserRateLimitMultiplier(c, nil)
+			multiplier, isAdmin := getUserRateLimitMultiplier(c)
 
 			if multiplier != tt.wantMultiplier {
 				t.Errorf("got multiplier=%f, want %f", multiplier, tt.wantMultiplier)

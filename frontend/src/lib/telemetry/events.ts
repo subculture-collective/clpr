@@ -112,39 +112,6 @@ export const EngagementEvents = {
 } as const;
 
 /**
- * Premium/Subscription Events
- */
-export const PremiumEvents = {
-  // Pricing Page
-  PRICING_PAGE_VIEWED: 'pricing_page_viewed',
-  PRICING_TIER_CLICKED: 'pricing_tier_clicked',
-
-  // Checkout Flow
-  CHECKOUT_STARTED: 'checkout_started',
-  CHECKOUT_PAYMENT_INFO_ENTERED: 'checkout_payment_info_entered',
-  CHECKOUT_COMPLETED: 'checkout_completed',
-  CHECKOUT_FAILED: 'checkout_failed',
-  CHECKOUT_CANCELLED: 'checkout_cancelled',
-
-  // Subscription Management
-  SUBSCRIPTION_CREATED: 'subscription_created',
-  SUBSCRIPTION_UPDATED: 'subscription_updated',
-  SUBSCRIPTION_CANCELLED: 'subscription_cancelled',
-  SUBSCRIPTION_RESUMED: 'subscription_resumed',
-  SUBSCRIPTION_PAYMENT_FAILED: 'subscription_payment_failed',
-
-  // Upgrade/Downgrade
-  UPGRADE_MODAL_VIEWED: 'upgrade_modal_viewed',
-  UPGRADE_CLICKED: 'upgrade_clicked',
-  DOWNGRADE_CLICKED: 'downgrade_clicked',
-
-  // Feature Paywalls
-  PAYWALL_VIEWED: 'paywall_viewed',
-  PAYWALL_DISMISSED: 'paywall_dismissed',
-  PAYWALL_UPGRADE_CLICKED: 'paywall_upgrade_clicked',
-} as const;
-
-/**
  * Navigation Events
  */
 export const NavigationEvents = {
@@ -239,8 +206,6 @@ export interface BaseEventProperties {
   // User context
   user_id?: string;
   is_authenticated?: boolean;
-  is_premium?: boolean;
-  premium_tier?: string;
   signup_date?: string;
 
   // Session context
@@ -369,7 +334,6 @@ export type EventName =
   | typeof AuthEvents[keyof typeof AuthEvents]
   | typeof SubmissionEvents[keyof typeof SubmissionEvents]
   | typeof EngagementEvents[keyof typeof EngagementEvents]
-  | typeof PremiumEvents[keyof typeof PremiumEvents]
   | typeof NavigationEvents[keyof typeof NavigationEvents]
   | typeof SettingsEvents[keyof typeof SettingsEvents]
   | typeof ErrorEvents[keyof typeof ErrorEvents]

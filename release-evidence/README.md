@@ -36,9 +36,12 @@ the future. Every boolean declared by the corresponding template must be true.
 
 Evidence-specific assertions are:
 
-- `stripe-test-mode.json`: `mode` is `test`; checkout, signed webhooks,
-  duplicate/out-of-order handling, dunning recovery, cancellation,
-  reconciliation, and entitlement activation/revocation passed.
+- `billing-retirement.json`: free access and absence of paid enrollment verified;
+  read-only database and complete provider inventory recorded as counts. Zero
+  obligations requires all counts to be zero. Otherwise signed, duplicate and
+  out-of-order webhooks, cancellation, invoices, and reconciliation must pass
+  through the retained legacy-servicing module. Missing provider credentials
+  block this evidence; local empty tables do not prove provider state.
 - `hosted-ci.json`: the required candidate workflow passed, branch protection
   requires it, and the supported hosted runner passed WebKit.
 - `security-operations.json`: possible JWT exposure was reviewed, affected keys

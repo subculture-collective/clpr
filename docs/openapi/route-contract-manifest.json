@@ -582,13 +582,6 @@
   },
   {
     "method": "GET",
-    "path": "/api/v1/admin/revenue",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*RevenueHandler).GetRevenueMetrics-fm",
-    "operation_id": "getApiV1AdminRevenue",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
     "path": "/api/v1/admin/submissions",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubmissionHandler).ListPendingSubmissions-fm",
     "operation_id": "getApiV1AdminSubmissions",
@@ -977,13 +970,6 @@
     "path": "/api/v1/auth/refresh",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).RefreshToken-fm",
     "operation_id": "refreshToken",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/auth/test-login",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).TestLogin-fm",
-    "operation_id": "testLogin",
     "contract_level": "route-specific"
   },
   {
@@ -2741,13 +2727,6 @@
     "path": "/api/v1/subscriptions/me",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).GetSubscription-fm",
     "operation_id": "getApiV1SubscriptionsMe",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/subscriptions/portal",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SubscriptionHandler).CreatePortalSession-fm",
-    "operation_id": "postApiV1SubscriptionsPortal",
     "contract_level": "route-specific"
   },
   {

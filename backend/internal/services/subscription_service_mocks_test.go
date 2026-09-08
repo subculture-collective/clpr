@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stripe/stripe-go/v81"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // MockSubscriptionRepository is a mock implementation of SubscriptionRepositoryInterface

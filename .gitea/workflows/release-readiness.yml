@@ -37,7 +37,7 @@ jobs:
             -H "Authorization: Bearer $EVIDENCE_TOKEN" \
             "$CANDIDATE_MANIFEST_URL" \
             -o .tmp/protected-evidence/candidate-manifest.json
-          for file in hosted-ci security-operations stripe-test-mode load-and-soak restore rollback; do
+          for file in hosted-ci security-operations billing-retirement load-and-soak restore rollback; do
             curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
               -H "Authorization: Bearer $EVIDENCE_TOKEN" \
               "${EVIDENCE_BASE_URL%/}/$file.json" \

@@ -139,40 +139,6 @@ trackEvent(EngagementEvents.FAVORITE_ADDED, {
 });
 ```
 
-### 4. Premium/Subscription Events
-
-```typescript
-import { PremiumEvents } from '@/lib/telemetry';
-
-// Pricing page
-trackEvent(PremiumEvents.PRICING_PAGE_VIEWED);
-trackEvent(PremiumEvents.PRICING_TIER_CLICKED, {
-  tier: 'pro',
-  billing_period: 'yearly'
-});
-
-// Checkout
-trackEvent(PremiumEvents.CHECKOUT_STARTED, {
-  tier: 'pro',
-  billing_period: 'monthly',
-  price: 4.99
-});
-trackEvent(PremiumEvents.CHECKOUT_COMPLETED, {
-  tier: 'pro',
-  billing_period: 'monthly'
-});
-
-// Subscription management
-trackEvent(PremiumEvents.SUBSCRIPTION_CANCELLED, {
-  cancel_reason: 'Too expensive'
-});
-
-// Paywalls
-trackEvent(PremiumEvents.PAYWALL_VIEWED, {
-  feature: 'advanced_search'
-});
-```
-
 ### 5. Navigation Events
 
 ```typescript
@@ -264,8 +230,6 @@ User identification is handled automatically by the `AuthContext`. When a user l
 identifyUser('user123', {
   user_id: 'user123',
   username: 'john_doe',
-  is_premium: true,
-  premium_tier: 'pro',
   signup_date: '2024-01-15',
   is_verified: true
 });
@@ -283,7 +247,6 @@ import { identifyUser, resetUser } from '@/lib/telemetry';
 identifyUser('user123', {
   user_id: 'user123',
   username: 'john_doe',
-  is_premium: true
 });
 
 // On logout
@@ -463,31 +426,6 @@ trackEvent(EngagementEvents.UPVOTE_CLICKED, { target_id: 'abc' });
 trackEvent(SubmissionEvents.SUBMISSION_SHARED, { 
   clip_id: 'abc',
   share_platform: 'twitter' 
-});
-```
-
-### Premium Conversion Funnel
-
-```typescript
-// 1. View pricing page
-trackEvent(PremiumEvents.PRICING_PAGE_VIEWED);
-
-// 2. Select tier
-trackEvent(PremiumEvents.PRICING_TIER_CLICKED, {
-  tier: 'pro',
-  billing_period: 'yearly'
-});
-
-// 3. Start checkout
-trackEvent(PremiumEvents.CHECKOUT_STARTED, {
-  tier: 'pro',
-  billing_period: 'yearly'
-});
-
-// 4. Complete purchase
-trackEvent(PremiumEvents.SUBSCRIPTION_CREATED, {
-  tier: 'pro',
-  billing_period: 'yearly'
 });
 ```
 

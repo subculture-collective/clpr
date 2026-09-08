@@ -234,7 +234,6 @@ const PersonalStatsPage = lazy(() => import('./pages/PersonalStatsPage'));
 const AdminAnalyticsPage = lazy(
     () => import('./pages/admin/AdminAnalyticsPage'),
 );
-const AdminRevenuePage = lazy(() => import('./pages/admin/AdminRevenuePage'));
 const AdminCampaignsPage = lazy(
     () => import('./pages/admin/AdminCampaignsPage'),
 );
@@ -631,7 +630,6 @@ function App() {
                                                 webhookDlq: AdminWebhookDLQPage,
                                                 sync: AdminSyncPage,
                                                 analytics: AdminAnalyticsPage,
-                                                revenue: AdminRevenuePage,
                                                 campaigns: AdminCampaignsPage,
                                                 submissions: ModerationQueuePage,
                                                 moderation: AdminModerationQueuePage,

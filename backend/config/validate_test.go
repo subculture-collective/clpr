@@ -45,7 +45,7 @@ func TestValidateProfiles(t *testing.T) {
 		{name: "local clip storage", mutate: func(c *Config) { c.Clip.StorageProvider = "local" }, wantErr: "durable and non-local"},
 		{name: "incomplete feature enabled", mutate: func(c *Config) { c.FeatureFlags.WatchParties = true }, wantErr: "must remain disabled"},
 		{name: "CDN enabled", mutate: func(c *Config) { c.CDN.Enabled = true }, wantErr: "CDN and mirroring"},
-		{name: "premium missing Stripe config", mutate: func(c *Config) { c.FeatureFlags.PremiumSubscriptions = true }, wantErr: "premium subscriptions require"},
+		{name: "legacy billing missing Stripe config", mutate: func(c *Config) { c.FeatureFlags.LegacyBillingServicing = true }, wantErr: "legacy billing servicing requires"},
 		{name: "insecure telemetry", mutate: func(c *Config) { c.Telemetry.Enabled = true; c.Telemetry.Insecure = true }, wantErr: "TELEMETRY_INSECURE"},
 	}
 
@@ -71,7 +71,7 @@ func TestValidateDevelopmentAllowsLocalDefaultsButValidatesEnabledFeatures(t *te
 		Server:       ServerConfig{Environment: "development", GinMode: "debug", BaseURL: "http://localhost:5173"},
 		CORS:         CORSConfig{AllowedOrigins: "http://localhost:5173"},
 		WebSocket:    WebSocketConfig{AllowedOrigins: []string{"http://localhost:5173"}},
-		FeatureFlags: FeatureFlagsConfig{PremiumSubscriptions: true},
+		FeatureFlags: FeatureFlagsConfig{LegacyBillingServicing: true},
 	}
 	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "Stripe") {
 		t.Fatalf("Validate() error = %v, want missing Stripe configuration", err)

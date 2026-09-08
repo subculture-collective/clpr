@@ -29,6 +29,10 @@ function validEvidence(filename, overrides = {}) {
     evidence_url: `https://evidence.example.test/runs/${filename}`,
     owner: 'release-test-fixture',
     ...REQUIREMENTS[filename],
+    ...(filename === 'billing-retirement.json' ? {
+      obligation_status: 'zero',
+      inventory: { database_obligations: 0, provider_obligations: 0, pending_billing_work: 0, provider_inventory_complete: true },
+    } : {}),
     ...overrides,
   };
 }

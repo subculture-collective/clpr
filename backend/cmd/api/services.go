@@ -38,7 +38,6 @@ type Services struct {
 	Subscription             *services.SubscriptionService
 	WebhookRetry             *services.WebhookRetryService
 	UserSettings             *services.UserSettingsService
-	Revenue                  *services.RevenueService
 	Ad                       *services.AdService
 	EmailMetrics             *services.EmailMetricsService
 	Cache                    *services.CacheService
@@ -153,7 +152,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	subscriptionService := services.NewSubscriptionService(repos.Subscription, repos.User, repos.Webhook, cfg, auditLogService, dunningService, emailService)
 	webhookRetryService := services.NewWebhookRetryService(repos.Webhook, subscriptionService)
 	userSettingsService := services.NewUserSettingsService(repos.User, repos.UserSettings, repos.AccountDeletion, repos.Clip, repos.Vote, repos.Favorite, repos.Comment, repos.Submission, repos.Subscription, repos.Consent, auditLogService)
-	revenueService := services.NewRevenueService(repos.Revenue, cfg)
 	adService := services.NewAdService(repos.Ad, infra.Redis)
 
 	// Initialize email monitoring and metrics service
@@ -388,7 +386,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Subscription:             subscriptionService,
 		WebhookRetry:             webhookRetryService,
 		UserSettings:             userSettingsService,
-		Revenue:                  revenueService,
 		Ad:                       adService,
 		EmailMetrics:             emailMetricsService,
 		Cache:                    cacheService,

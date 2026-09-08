@@ -18,7 +18,7 @@ import (
 	"github.com/stripe/stripe-go/v81/webhook"
 )
 
-func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing.T) {
+func TestSignedStripeWebhookLifecycleReconcilesLegacyBillingIdempotently(t *testing.T) {
 	pool := testutil.SetupTestDB(t)
 	t.Cleanup(pool.Close)
 	ctx := context.Background()
@@ -49,7 +49,7 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 	created := subscriptionEvent("evt_created_"+userID.String(), "customer.subscription.created", baseTime,
 		subscriptionID, customerID, "active", "price_monthly_contract")
 	require.NoError(t, deliverSigned(service, secret, created))
-	assertSubscription(t, ctx, repo, service, userID, "active", "pro", true)
+	assertSubscription(t, ctx, repo, userID, "active", "pro")
 
 	// A completed receipt makes replay a no-op and the unique event log remains singular.
 	require.NoError(t, deliverSigned(service, secret, created))
@@ -57,16 +57,16 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 	require.NoError(t, pool.QueryRow(ctx, "SELECT COUNT(*) FROM subscription_events WHERE stripe_event_id = $1", "evt_created_"+userID.String()).Scan(&createdEvents))
 	require.Equal(t, 1, createdEvents)
 
-	// A unique but older update must not revoke newer entitlement state.
+	// A unique but older update must not overwrite newer billing state.
 	stale := subscriptionEvent("evt_stale_"+userID.String(), "customer.subscription.updated", baseTime-60,
 		subscriptionID, customerID, "canceled", "price_monthly_contract")
 	require.NoError(t, deliverSigned(service, secret, stale))
-	assertSubscription(t, ctx, repo, service, userID, "active", "pro", true)
+	assertSubscription(t, ctx, repo, userID, "active", "pro")
 
 	failedInvoice := fmt.Sprintf(`{"id":"evt_failed_%s","object":"event","api_version":"2025-02-24.acacia","type":"invoice.payment_failed","created":%d,"data":{"object":{"id":"in_failed_%s","object":"invoice","subscription":"%s","customer":"%s","amount_due":999,"currency":"usd"}}}`,
 		userID, baseTime+60, userID, subscriptionID, customerID)
 	require.NoError(t, deliverSigned(service, secret, []byte(failedInvoice)))
-	assertSubscription(t, ctx, repo, service, userID, "past_due", "pro", true)
+	assertSubscription(t, ctx, repo, userID, "past_due", "pro")
 	var unresolvedFailures int
 	require.NoError(t, pool.QueryRow(ctx, "SELECT COUNT(*) FROM payment_failures WHERE subscription_id = (SELECT id FROM subscriptions WHERE user_id = $1) AND resolved = false", userID).Scan(&unresolvedFailures))
 	require.Equal(t, 1, unresolvedFailures)
@@ -77,7 +77,7 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 	paidInvoice := fmt.Sprintf(`{"id":"evt_paid_%s","object":"event","api_version":"2025-02-24.acacia","type":"invoice.paid","created":%d,"data":{"object":{"id":"in_paid_%s","object":"invoice","subscription":"%s","customer":"%s","amount_paid":999,"currency":"usd"}}}`,
 		userID, baseTime+90, userID, subscriptionID, customerID)
 	require.NoError(t, deliverSigned(service, secret, []byte(paidInvoice)))
-	assertSubscription(t, ctx, repo, service, userID, "active", "pro", true)
+	assertSubscription(t, ctx, repo, userID, "active", "pro")
 	var remainingFailures int
 	require.NoError(t, pool.QueryRow(ctx, "SELECT COUNT(*) FROM payment_failures WHERE subscription_id = (SELECT id FROM subscriptions WHERE user_id = $1) AND resolved = false", userID).Scan(&remainingFailures))
 	require.Zero(t, remainingFailures)
@@ -88,10 +88,10 @@ func TestSignedStripeWebhookLifecyclePersistsEntitlementsIdempotently(t *testing
 	deleted := subscriptionEvent("evt_deleted_"+userID.String(), "customer.subscription.deleted", baseTime+120,
 		subscriptionID, customerID, "canceled", "price_monthly_contract")
 	require.NoError(t, deliverSigned(service, secret, deleted))
-	assertSubscription(t, ctx, repo, service, userID, "canceled", "free", false)
+	assertSubscription(t, ctx, repo, userID, "canceled", "free")
 
 	require.Error(t, service.HandleWebhook(ctx, created, "t=1,v1=invalid"))
-	assertSubscription(t, ctx, repo, service, userID, "canceled", "free", false)
+	assertSubscription(t, ctx, repo, userID, "canceled", "free")
 }
 
 func subscriptionEvent(eventID, eventType string, created int64, subscriptionID, customerID, status, priceID string) []byte {
@@ -104,11 +104,10 @@ func deliverSigned(service *services.SubscriptionService, secret string, payload
 	return service.HandleWebhook(context.Background(), payload, signed.Header)
 }
 
-func assertSubscription(t *testing.T, ctx context.Context, repo *repository.SubscriptionRepository, service *services.SubscriptionService, userID uuid.UUID, status, tier string, entitled bool) {
+func assertSubscription(t *testing.T, ctx context.Context, repo *repository.SubscriptionRepository, userID uuid.UUID, status, tier string) {
 	t.Helper()
 	subscription, err := repo.GetByUserID(ctx, userID)
 	require.NoError(t, err)
 	require.Equal(t, status, subscription.Status)
 	require.Equal(t, tier, subscription.Tier)
-	require.Equal(t, entitled, service.IsProUser(ctx, userID))
 }

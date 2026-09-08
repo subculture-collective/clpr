@@ -419,7 +419,7 @@ func (s *EmailService) prepareEmailContent(
 		subject = "Payment Retry Scheduled"
 		htmlBody, textBody = s.preparePaymentRetryEmail(data)
 	case models.NotificationTypeGracePeriodWarning:
-		subject = "Your Premium Access Will End Soon"
+		subject = "Historical Billing Grace Period Ending"
 		htmlBody, textBody = s.prepareGracePeriodWarningEmail(data)
 	case models.NotificationTypeSubscriptionDowngraded:
 		subject = "Your Subscription Has Been Downgraded"
@@ -844,16 +844,16 @@ func (s *EmailService) preparePaymentFailedEmail(data map[string]interface{}) (h
         
         <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
             <p style="margin: 0; color: #856404;">
-                <strong>Don't worry!</strong> Your premium access will continue until <strong>%s</strong> while we attempt to retry the payment.
+                <strong>Don't worry!</strong> The historical billing grace period ends on <strong>%s</strong>. Your free CLPR access is unaffected.
             </p>
         </div>
         
         <p style="font-size: 16px;">
-            Please update your payment method to ensure uninterrupted access to your Pro features.
+            Review the historical invoice or contact support about the outstanding balance.
         </p>
         
         <p style="text-align: center; margin-top: 30px;">
-            <a href="%s/settings/billing" style="display: inline-block; background: #f5576c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Update Payment Method</a>
+            <a href="%s/settings" style="display: inline-block; background: #f5576c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Account Settings</a>
         </p>
         
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
@@ -871,11 +871,11 @@ func (s *EmailService) preparePaymentFailedEmail(data map[string]interface{}) (h
 
 We were unable to process your subscription payment of %s.
 
-Don't worry! Your premium access will continue until %s while we attempt to retry the payment.
+Don't worry! The historical billing grace period ends on %s. Your free CLPR access is unaffected.
 
-Please update your payment method to ensure uninterrupted access to your Pro features.
+Review the historical invoice or contact support about the outstanding balance.
 
-Update your payment method: %s/settings/billing
+Update your payment method: %s/settings
 
 Invoice ID: %s
 
@@ -921,7 +921,7 @@ func (s *EmailService) preparePaymentRetryEmail(data map[string]interface{}) (ht
         </div>
         
         <p style="text-align: center; margin-top: 30px;">
-            <a href="%s/settings/billing" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Update Payment Method</a>
+            <a href="%s/settings" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Account Settings</a>
         </p>
     </div>
 </body>
@@ -937,7 +937,7 @@ Attempt #%v
 
 To avoid service interruption, please ensure your payment method is up to date.
 
-Update your payment method: %s/settings/billing
+Update your payment method: %s/settings
 `, amountDue, nextRetryAt, attemptCount, s.baseURL)
 
 	return html, text
@@ -959,17 +959,17 @@ func (s *EmailService) prepareGracePeriodWarningEmail(data map[string]interface{
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: linear-gradient(135deg, #fc4a1a 0%%, #f7b733 100%%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Your Premium Access Ends Soon</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Historical Billing Grace Period Ending</h1>
     </div>
     
     <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Your premium access will end in <strong>%v days</strong> on <strong>%s</strong> due to an outstanding payment.
+            The historical billing grace period ends in <strong>%v days</strong> on <strong>%s</strong>. Free CLPR access is unaffected.
         </p>
         
         <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; border-radius: 5px;">
             <p style="margin: 0; color: #721c24;">
-                <strong>Action Required:</strong> Update your payment method to keep your premium features.
+                <strong>Action Required:</strong> Review the outstanding historical invoice with support.
             </p>
         </div>
         
@@ -989,18 +989,18 @@ func (s *EmailService) prepareGracePeriodWarningEmail(data map[string]interface{
         </ul>
         
         <p style="text-align: center; margin-top: 30px;">
-            <a href="%s/settings/billing" style="display: inline-block; background: #dc3545; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Update Payment Method Now</a>
+            <a href="%s/settings" style="display: inline-block; background: #dc3545; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Account Settings Now</a>
         </p>
     </div>
 </body>
 </html>
 `, daysRemaining, gracePeriodEnd, amountDue, gracePeriodEnd, s.baseURL)
 
-	text = fmt.Sprintf(`Your Premium Access Ends Soon
+	text = fmt.Sprintf(`Historical Billing Grace Period Ending
 
-Your premium access will end in %v days on %s due to an outstanding payment.
+The historical billing grace period ends in %v days on %s. Free CLPR access is unaffected.
 
-Action Required: Update your payment method to keep your premium features.
+Action Required: Review the outstanding historical invoice with support.
 
 Outstanding amount: %s
 
@@ -1010,7 +1010,7 @@ After %s, your subscription will be downgraded to the free tier and you'll lose 
 - Priority support
 - Ad-free experience
 
-Update your payment method now: %s/settings/billing
+Update your payment method now: %s/settings
 `, daysRemaining, gracePeriodEnd, amountDue, gracePeriodEnd, s.baseURL)
 
 	return html, text
@@ -1033,21 +1033,21 @@ func (s *EmailService) prepareSubscriptionDowngradedEmail(data map[string]interf
     
     <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
         <p style="font-size: 16px; margin-bottom: 20px;">
-            Your premium subscription has been downgraded to the free tier due to an unsuccessful payment.
+            A historical subscription record was updated after an unsuccessful payment.
         </p>
         
         <p style="font-size: 16px;">
-            You now have access to our free tier features, but premium features are no longer available.
+            CLPR accounts are free, and your access is unchanged.
         </p>
         
         <div style="background: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; margin: 20px 0; border-radius: 5px;">
             <p style="margin: 0; color: #0c5460;">
-                <strong>Want to restore your premium access?</strong> Update your payment method and resubscribe anytime.
+                <strong>Questions about the balance?</strong> Contact support to review the historical record.
             </p>
         </div>
         
         <p style="text-align: center; margin-top: 30px;">
-            <a href="%s/premium" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Resubscribe to Pro</a>
+            <a href="%s/settings" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Account settings</a>
         </p>
         
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
@@ -1062,13 +1062,13 @@ func (s *EmailService) prepareSubscriptionDowngradedEmail(data map[string]interf
 
 	text = fmt.Sprintf(`Subscription Downgraded
 
-Your premium subscription has been downgraded to the free tier due to an unsuccessful payment.
+A historical subscription record was updated after an unsuccessful payment.
 
-You now have access to our free tier features, but premium features are no longer available.
+CLPR accounts are free, and your access is unchanged.
 
-Want to restore your premium access? Update your payment method and resubscribe anytime.
+Questions about the balance? Contact support to review the historical record.
 
-Resubscribe to Pro: %s/premium
+Account settings: %s/settings
 
 We're sorry to see you go! If you have any questions or feedback, please contact our support team.
 `, s.baseURL)
@@ -2026,7 +2026,7 @@ func (s *EmailService) SendDisputeNotification(ctx context.Context, user *models
         </p>
         
         <p style="text-align: center; margin-top: 30px;">
-            <a href="%s/settings/billing" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Billing Details</a>
+            <a href="%s/settings" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Billing Details</a>
         </p>
         
         <p style="font-size: 14px; color: #666; margin-top: 30px;">
@@ -2051,7 +2051,7 @@ What should you do?
 • If you didn't initiate this dispute, please contact your bank.
 • If you have questions, please reach out to our support team.
 
-View your billing details: %s/settings/billing
+View your billing details: %s/settings
 
 If you have any questions or concerns, please contact our support team. We're here to help!
 `, html.EscapeString(user.DisplayName), s.baseURL)

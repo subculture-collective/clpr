@@ -15,9 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/stripe/stripe-go/v81"
-	portalsession "github.com/stripe/stripe-go/v81/billingportal/session"
-	"github.com/stripe/stripe-go/v81/checkout/session"
-	"github.com/stripe/stripe-go/v81/customer"
 	"github.com/stripe/stripe-go/v81/invoice"
 	"github.com/stripe/stripe-go/v81/subscription"
 	"github.com/stripe/stripe-go/v81/webhook"
@@ -30,7 +27,7 @@ var (
 	ErrInvalidPriceID = errors.New("invalid price ID")
 	// ErrStripeCustomerNotFound indicates the Stripe customer was not found
 	ErrStripeCustomerNotFound = errors.New("stripe customer not found")
-	// ErrSubscriptionsUnavailable indicates checkout is intentionally disabled.
+	// ErrSubscriptionsUnavailable indicates legacy servicing is unavailable.
 	ErrSubscriptionsUnavailable = errors.New("subscriptions are unavailable")
 	ErrInvalidWebhookSignature  = errors.New("invalid webhook signature")
 )
@@ -110,180 +107,6 @@ func (s *SubscriptionService) GetRepository() repository.SubscriptionRepositoryI
 	return s.repo
 }
 
-// GetOrCreateCustomer gets or creates a Stripe customer for the user
-func (s *SubscriptionService) GetOrCreateCustomer(ctx context.Context, user *models.User) (string, error) {
-	// Check if user already has a subscription with customer ID
-	sub, err := s.repo.GetByUserID(ctx, user.ID)
-	if err == nil && sub.StripeCustomerID != "" {
-		return sub.StripeCustomerID, nil
-	}
-
-	// Create new Stripe customer
-	params := &stripe.CustomerParams{
-		Metadata: map[string]string{
-			"user_id":  user.ID.String(),
-			"username": user.Username,
-		},
-	}
-	if user.Email != nil && *user.Email != "" {
-		params.Email = stripe.String(*user.Email)
-	}
-
-	if user.DisplayName != "" {
-		params.Name = stripe.String(user.DisplayName)
-	}
-
-	cust, err := customer.New(params)
-	if err != nil {
-		return "", fmt.Errorf("failed to create Stripe customer: %w", err)
-	}
-
-	// Create or update subscription record with customer ID
-	if sub == nil {
-		sub = &models.Subscription{
-			UserID:           user.ID,
-			StripeCustomerID: cust.ID,
-			Status:           "inactive",
-			Tier:             "free",
-		}
-		if err := s.repo.Create(ctx, sub); err != nil {
-			return "", fmt.Errorf("failed to create subscription record: %w", err)
-		}
-	}
-
-	// Log audit event
-	if s.auditLogSvc != nil {
-		_ = s.auditLogSvc.LogSubscriptionEvent(ctx, user.ID, "customer_created", map[string]interface{}{
-			"stripe_customer_id": cust.ID,
-		})
-	}
-
-	return cust.ID, nil
-}
-
-// CreateCheckoutSession creates a Stripe Checkout session for subscription
-func (s *SubscriptionService) CreateCheckoutSession(ctx context.Context, user *models.User, priceID string, couponCode *string) (*models.CreateCheckoutSessionResponse, error) {
-	// Checkout must never fabricate success. Development tests should inject a
-	// Stripe client; disabled or incomplete deployments return an explicit
-	// service-unavailable error just like production.
-	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
-		return nil, ErrSubscriptionsUnavailable
-	}
-
-	// Validate price ID
-	if priceID != s.cfg.Stripe.ProMonthlyPriceID && priceID != s.cfg.Stripe.ProYearlyPriceID {
-		return nil, ErrInvalidPriceID
-	}
-
-	// Get or create Stripe customer
-	customerID, err := s.GetOrCreateCustomer(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create checkout session with idempotency key
-	idempotencyKey := fmt.Sprintf("checkout_%s_%s", user.ID.String(), priceID)
-
-	params := &stripe.CheckoutSessionParams{
-		Customer: stripe.String(customerID),
-		Mode:     stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			{
-				Price:    stripe.String(priceID),
-				Quantity: stripe.Int64(1),
-			},
-		},
-		SuccessURL: stripe.String(s.cfg.Stripe.SuccessURL + "?session_id={CHECKOUT_SESSION_ID}"),
-		CancelURL:  stripe.String(s.cfg.Stripe.CancelURL),
-		Metadata: map[string]string{
-			"user_id": user.ID.String(),
-		},
-		// Enable promotion codes by default
-		AllowPromotionCodes: stripe.Bool(true),
-	}
-
-	// Enable Stripe Tax for automatic tax calculation if configured
-	if s.cfg.Stripe.TaxEnabled {
-		params.AutomaticTax = &stripe.CheckoutSessionAutomaticTaxParams{
-			Enabled: stripe.Bool(true),
-		}
-		// Require billing address collection for tax calculation
-		params.BillingAddressCollection = stripe.String("required")
-	}
-
-	// Apply coupon code if provided
-	if couponCode != nil && *couponCode != "" {
-		params.Discounts = []*stripe.CheckoutSessionDiscountParams{
-			{
-				Coupon: stripe.String(*couponCode),
-			},
-		}
-	}
-
-	params.SetIdempotencyKey(idempotencyKey)
-
-	sess, err := session.New(params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create checkout session: %w", err)
-	}
-
-	// Log audit event
-	metadata := map[string]interface{}{
-		"session_id": sess.ID,
-		"price_id":   priceID,
-	}
-	if couponCode != nil && *couponCode != "" {
-		metadata["coupon_code"] = *couponCode
-	}
-	if s.auditLogSvc != nil {
-		_ = s.auditLogSvc.LogSubscriptionEvent(ctx, user.ID, "checkout_session_created", metadata)
-	}
-
-	return &models.CreateCheckoutSessionResponse{
-		SessionID:  sess.ID,
-		SessionURL: sess.URL,
-	}, nil
-}
-
-// CreatePortalSession creates a Stripe Customer Portal session
-func (s *SubscriptionService) CreatePortalSession(ctx context.Context, user *models.User) (*models.CreatePortalSessionResponse, error) {
-	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
-		return nil, ErrSubscriptionsUnavailable
-	}
-
-	// Get subscription to find customer ID
-	sub, err := s.repo.GetByUserID(ctx, user.ID)
-	if err != nil {
-		return nil, ErrSubscriptionNotFound
-	}
-
-	if sub.StripeCustomerID == "" {
-		return nil, ErrStripeCustomerNotFound
-	}
-
-	// Create portal session
-	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(sub.StripeCustomerID),
-		ReturnURL: stripe.String(s.cfg.Stripe.SuccessURL),
-	}
-
-	sess, err := portalsession.New(params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create portal session: %w", err)
-	}
-
-	// Log audit event
-	if s.auditLogSvc != nil {
-		_ = s.auditLogSvc.LogSubscriptionEvent(ctx, user.ID, "portal_session_created", map[string]interface{}{
-			"session_id": sess.ID,
-		})
-	}
-
-	return &models.CreatePortalSessionResponse{
-		PortalURL: sess.URL,
-	}, nil
-}
-
 // GetSubscriptionByUserID retrieves a user's subscription
 func (s *SubscriptionService) GetSubscriptionByUserID(ctx context.Context, userID uuid.UUID) (*models.Subscription, error) {
 	sub, err := s.repo.GetByUserID(ctx, userID)
@@ -294,7 +117,7 @@ func (s *SubscriptionService) GetSubscriptionByUserID(ctx context.Context, userI
 }
 
 func (s *SubscriptionService) ensureSubscriptionsAvailable() error {
-	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.PremiumSubscriptions {
+	if s.cfg == nil || s.cfg.Stripe.SecretKey == "" || !s.cfg.FeatureFlags.LegacyBillingServicing {
 		return ErrSubscriptionsUnavailable
 	}
 	return nil
@@ -1048,79 +871,6 @@ func (s *SubscriptionService) getTierFromPriceID(priceID string) string {
 	return "free"
 }
 
-// ChangeSubscriptionPlan changes a user's subscription plan with proration
-func (s *SubscriptionService) ChangeSubscriptionPlan(ctx context.Context, user *models.User, newPriceID string) error {
-	if err := s.ensureSubscriptionsAvailable(); err != nil {
-		return err
-	}
-	// Validate new price ID
-	if newPriceID != s.cfg.Stripe.ProMonthlyPriceID && newPriceID != s.cfg.Stripe.ProYearlyPriceID {
-		return ErrInvalidPriceID
-	}
-
-	// Get existing subscription
-	sub, err := s.repo.GetByUserID(ctx, user.ID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrSubscriptionNotFound
-		}
-		return fmt.Errorf("failed to get subscription: %w", err)
-	}
-
-	if sub.StripeSubscriptionID == nil || *sub.StripeSubscriptionID == "" {
-		return errors.New("no active stripe subscription found")
-	}
-
-	// Get the subscription from Stripe
-	stripeSubscription, err := subscription.Get(*sub.StripeSubscriptionID, nil)
-	if err != nil {
-		return fmt.Errorf("failed to get stripe subscription: %w", err)
-	}
-
-	// Validate subscription has items
-	if len(stripeSubscription.Items.Data) == 0 {
-		return errors.New("subscription has no items")
-	}
-
-	// Validate first item has a price
-	if stripeSubscription.Items.Data[0].Price == nil {
-		return errors.New("subscription item has no price")
-	}
-
-	// Check if already on this plan
-	if stripeSubscription.Items.Data[0].Price.ID == newPriceID {
-		return errors.New("already subscribed to this plan")
-	}
-
-	// Update subscription with proration
-	subscriptionItemID := stripeSubscription.Items.Data[0].ID
-	params := &stripe.SubscriptionParams{
-		Items: []*stripe.SubscriptionItemsParams{
-			{
-				ID:    stripe.String(subscriptionItemID),
-				Price: stripe.String(newPriceID),
-			},
-		},
-		ProrationBehavior: stripe.String("always_invoice"),
-	}
-
-	_, err = subscription.Update(*sub.StripeSubscriptionID, params)
-	if err != nil {
-		return fmt.Errorf("failed to update subscription: %w", err)
-	}
-
-	// Log audit event
-	if s.auditLogSvc != nil {
-		_ = s.auditLogSvc.LogSubscriptionEvent(ctx, user.ID, "subscription_plan_changed", map[string]interface{}{
-			"old_price_id": stripeSubscription.Items.Data[0].Price.ID,
-			"new_price_id": newPriceID,
-			"proration":    "always_invoice",
-		})
-	}
-
-	return nil
-}
-
 // CancelSubscription cancels a user's subscription
 // If immediate is true, cancels immediately. Otherwise, cancels at period end.
 func (s *SubscriptionService) CancelSubscription(ctx context.Context, user *models.User, immediate bool) error {
@@ -1224,113 +974,6 @@ func (s *SubscriptionService) GetInvoices(ctx context.Context, user *models.User
 	}
 
 	return invoices, nil
-}
-
-// ReactivateSubscription reactivates a subscription that was set to cancel at period end
-func (s *SubscriptionService) ReactivateSubscription(ctx context.Context, user *models.User) error {
-	if err := s.ensureSubscriptionsAvailable(); err != nil {
-		return err
-	}
-	// Get existing subscription
-	sub, err := s.repo.GetByUserID(ctx, user.ID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrSubscriptionNotFound
-		}
-		return fmt.Errorf("failed to get subscription: %w", err)
-	}
-
-	if sub.StripeSubscriptionID == nil || *sub.StripeSubscriptionID == "" {
-		return errors.New("no active stripe subscription found")
-	}
-
-	if !sub.CancelAtPeriodEnd {
-		return errors.New("subscription is not scheduled for cancellation")
-	}
-
-	// Reactivate the subscription in Stripe
-	params := &stripe.SubscriptionParams{
-		CancelAtPeriodEnd: stripe.Bool(false),
-	}
-
-	reactivatedSub, err := subscription.Update(*sub.StripeSubscriptionID, params)
-	if err != nil {
-		return fmt.Errorf("failed to reactivate subscription: %w", err)
-	}
-
-	// Update local subscription record
-	sub.CancelAtPeriodEnd = false
-	sub.Status = string(reactivatedSub.Status)
-
-	if err := s.repo.Update(ctx, sub); err != nil {
-		utils.Error("Failed to update subscription after reactivation", err, map[string]interface{}{
-			"subscription_id": sub.ID,
-			"user_id":         user.ID,
-		})
-		return fmt.Errorf("subscription reactivated in Stripe but failed to update local record: %w", err)
-	}
-
-	// Log audit event
-	if s.auditLogSvc != nil {
-		_ = s.auditLogSvc.LogSubscriptionEvent(ctx, user.ID, "subscription_reactivated", map[string]interface{}{
-			"subscription_id": *sub.StripeSubscriptionID,
-		})
-	}
-
-	return nil
-}
-
-// HasActiveSubscription checks if user has an active subscription (including grace period)
-func (s *SubscriptionService) HasActiveSubscription(ctx context.Context, userID uuid.UUID) bool {
-	sub, err := s.repo.GetByUserID(ctx, userID)
-	if err != nil {
-		return false
-	}
-
-	// Active or trialing status
-	if sub.Status == "active" || sub.Status == "trialing" {
-		return true
-	}
-
-	// In grace period for past_due or unpaid subscriptions
-	if (sub.Status == "past_due" || sub.Status == "unpaid") && s.isInGracePeriod(sub) {
-		return true
-	}
-
-	return false
-}
-
-// IsProUser checks if user has an active Pro subscription (including grace period)
-func (s *SubscriptionService) IsProUser(ctx context.Context, userID uuid.UUID) bool {
-	sub, err := s.repo.GetByUserID(ctx, userID)
-	if err != nil {
-		return false
-	}
-
-	// Must be Pro tier
-	if sub.Tier != "pro" {
-		return false
-	}
-
-	// Active or trialing status
-	if sub.Status == "active" || sub.Status == "trialing" {
-		return true
-	}
-
-	// In grace period for past_due or unpaid subscriptions
-	if (sub.Status == "past_due" || sub.Status == "unpaid") && s.isInGracePeriod(sub) {
-		return true
-	}
-
-	return false
-}
-
-// isInGracePeriod checks if a subscription is currently in grace period
-func (s *SubscriptionService) isInGracePeriod(sub *models.Subscription) bool {
-	if sub.GracePeriodEnd == nil {
-		return false
-	}
-	return time.Now().Before(*sub.GracePeriodEnd)
 }
 
 // handlePaymentIntentSucceeded processes payment_intent.succeeded events

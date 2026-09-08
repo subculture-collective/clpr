@@ -10,11 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	goredis "github.com/redis/go-redis/v9"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/gin-gonic/gin"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 var (
@@ -59,64 +58,18 @@ func isIPWhitelisted(ip string) bool {
 	return rateLimitWhitelist[ip]
 }
 
-// getUserRateLimitMultiplier determines the rate limit multiplier based on user tier
-// Returns: (multiplier, isAdmin)
-// - Admin: unlimited (returns 0, true)
-// - Premium (pro tier): 5x multiplier
-// - Basic (free tier): 1x multiplier
-// - Unauthenticated: returns 1x multiplier; IP-based rate limiting is applied by the parent middleware when user_id is not present
-func getUserRateLimitMultiplier(c *gin.Context, subscriptionService SubscriptionChecker) (float64, bool) {
-	// Check if user is authenticated
-	userID, exists := c.Get("user_id")
-	if !exists {
-		return 1.0, false
-	}
-
-	// Check if user is admin (bypass rate limits)
-	if role, exists := c.Get("user_role"); exists {
-		if roleStr, ok := role.(string); ok && roleStr == models.RoleAdmin {
-			return 0, true // Admin gets unlimited
+// All members share the same abuse limits, independent of historical billing.
+func getUserRateLimitMultiplier(c *gin.Context) (float64, bool) {
+	if _, authenticated := c.Get("user_id"); authenticated {
+		if c.GetString("user_role") == models.RoleAdmin {
+			return 0, true
 		}
 	}
-
-	// Check subscription tier for premium users
-	// First check if already set in context (from EnrichWithSubscriptionMiddleware)
-	if tier, exists := c.Get("subscription_tier"); exists {
-		if tierStr, ok := tier.(string); ok && tierStr == "pro" {
-			return 5.0, false // Premium gets 5x
-		}
-	} else if subscriptionService != nil {
-		// On-demand check if not in context (only when rate limiting is enforced)
-		var uid uuid.UUID
-		switch v := userID.(type) {
-		case uuid.UUID:
-			uid = v
-		case string:
-			parsed, err := uuid.Parse(v)
-			if err == nil {
-				uid = parsed
-			}
-		}
-
-		if uid != uuid.Nil && subscriptionService.IsProUser(c.Request.Context(), uid) {
-			// Cache the result in context for subsequent checks
-			c.Set("subscription_tier", "pro")
-			return 5.0, false // Premium gets 5x
-		}
-	}
-
-	// Default: basic authenticated user (1x multiplier)
-	return 1.0, false
+	return 1, false
 }
 
 // RateLimitMiddleware creates rate limiting middleware using sliding window algorithm
-// For subscription-aware rate limiting, use RateLimitMiddlewareWithSubscription
 func RateLimitMiddleware(redis *redispkg.Client, requests int, window time.Duration) gin.HandlerFunc {
-	return RateLimitMiddlewareWithSubscription(redis, requests, window, nil)
-}
-
-// RateLimitMiddlewareWithSubscription creates rate limiting middleware with subscription-aware multipliers
-func RateLimitMiddlewareWithSubscription(redis *redispkg.Client, requests int, window time.Duration, subscriptionService SubscriptionChecker) gin.HandlerFunc {
 	// Initialize fallback limiter on first call
 	if ipFallbackLimiter == nil {
 		ipFallbackLimiter = NewInMemoryRateLimiter(requests, window)
@@ -133,14 +86,14 @@ func RateLimitMiddlewareWithSubscription(redis *redispkg.Client, requests int, w
 		}
 
 		// Check if user is admin (bypass rate limits)
-		multiplier, isAdmin := getUserRateLimitMultiplier(c, subscriptionService)
+		multiplier, isAdmin := getUserRateLimitMultiplier(c)
 		if isAdmin {
 			c.Header("X-RateLimit-Bypass", "admin")
 			c.Next()
 			return
 		}
 
-		// Apply multiplier to rate limit for premium users
+		// Apply the shared member rate limit
 		adjustedLimit := int(float64(requests) * multiplier)
 		if adjustedLimit == 0 {
 			adjustedLimit = requests
@@ -276,13 +229,7 @@ func RateLimitMiddlewareWithSubscription(redis *redispkg.Client, requests int, w
 }
 
 // RateLimitByUserMiddleware creates rate limiting middleware based on authenticated user
-// For subscription-aware rate limiting, use RateLimitByUserMiddlewareWithSubscription
 func RateLimitByUserMiddleware(redis *redispkg.Client, requests int, window time.Duration) gin.HandlerFunc {
-	return RateLimitByUserMiddlewareWithSubscription(redis, requests, window, nil)
-}
-
-// RateLimitByUserMiddlewareWithSubscription creates rate limiting middleware with subscription-aware multipliers
-func RateLimitByUserMiddlewareWithSubscription(redis *redispkg.Client, requests int, window time.Duration, subscriptionService SubscriptionChecker) gin.HandlerFunc {
 	// Initialize fallback limiter on first call
 	if userFallbackLimiter == nil {
 		userFallbackLimiter = NewInMemoryRateLimiter(requests, window)
@@ -292,19 +239,19 @@ func RateLimitByUserMiddlewareWithSubscription(redis *redispkg.Client, requests 
 		userID, exists := c.Get("user_id")
 		if !exists {
 			// Fall back to IP-based rate limiting
-			RateLimitMiddlewareWithSubscription(redis, requests, window, subscriptionService)(c)
+			RateLimitMiddleware(redis, requests, window)(c)
 			return
 		}
 
 		// Check if user is admin (bypass rate limits)
-		multiplier, isAdmin := getUserRateLimitMultiplier(c, subscriptionService)
+		multiplier, isAdmin := getUserRateLimitMultiplier(c)
 		if isAdmin {
 			c.Header("X-RateLimit-Bypass", "admin")
 			c.Next()
 			return
 		}
 
-		// Apply multiplier to rate limit for premium users
+		// Apply the shared member rate limit
 		adjustedLimit := int(float64(requests) * multiplier)
 		if adjustedLimit == 0 {
 			adjustedLimit = requests

@@ -29,11 +29,9 @@ const REQUIREMENTS = {
     status: 'passed', jwt_exposure_reviewed: true, jwt_rotated_or_not_required: true,
     secret_scan_passed: true, candidate_dispositions_reviewed: true,
   },
-  'stripe-test-mode.json': {
-    status: 'passed', mode: 'test', checkout_passed: true, signed_webhooks_passed: true,
-    duplicate_and_out_of_order_webhooks_passed: true, dunning_recovery_passed: true,
-    cancellation_passed: true, reconciliation_passed: true,
-    entitlement_activation_and_revocation_passed: true,
+  'billing-retirement.json': {
+    status: 'passed', free_access_verified: true, new_paid_enrollment_absent: true,
+    inventory_verified: true,
   },
   'load-and-soak.json': {
     status: 'passed', baseline_passed: true, stress_passed: true, soak_passed: true,
@@ -148,6 +146,27 @@ function verifyReleaseEvidence({ evidenceDir, manifestPath, now = Date.now(), ex
 
     for (const key of IDENTITY_FIELDS) {
       if (evidence[key] !== manifest[key]) failures.push(`${filename}: ${key} must match the candidate manifest`);
+    }
+    if (filename === 'billing-retirement.json') {
+      const counts = ['database_obligations', 'provider_obligations', 'pending_billing_work'];
+      for (const key of counts) {
+        if (!Number.isSafeInteger(evidence.inventory?.[key]) || evidence.inventory[key] < 0) {
+          failures.push(filename + ': inventory.' + key + ' must be a verified nonnegative count');
+        }
+      }
+      if (evidence.inventory?.provider_inventory_complete !== true) {
+        failures.push(filename + ': provider inventory must be complete; unavailable credentials are not zero obligations');
+      }
+      if (evidence.obligation_status === 'zero') {
+        if (counts.some(key => evidence.inventory?.[key] !== 0)) failures.push(filename + ': zero obligations requires every inventory count to be zero');
+      } else if (evidence.obligation_status === 'legacy_servicing') {
+        for (const key of ['signed_webhooks_passed', 'duplicate_and_out_of_order_webhooks_passed',
+          'cancellation_passed', 'invoices_passed', 'reconciliation_passed']) {
+          if (evidence.legacy_servicing?.[key] !== true) failures.push(filename + ': legacy_servicing.' + key + ' must pass');
+        }
+      } else {
+        failures.push(filename + ': obligation_status must be zero or legacy_servicing');
+      }
     }
     for (const [key, value] of Object.entries(expected)) {
       if (evidence[key] !== value) failures.push(`${filename}: ${key} must equal ${JSON.stringify(value)}`);

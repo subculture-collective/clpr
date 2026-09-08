@@ -86,17 +86,11 @@ func (c *Config) Validate() error {
 }
 
 func (c *Config) validateEnabledFeatures(releaseProfile bool) error {
-	if c.FeatureFlags.PremiumSubscriptions {
-		if strings.TrimSpace(c.Stripe.SecretKey) == "" || len(c.Stripe.WebhookSecrets) == 0 ||
-			strings.TrimSpace(c.Stripe.ProMonthlyPriceID) == "" || strings.TrimSpace(c.Stripe.ProYearlyPriceID) == "" {
-			return fmt.Errorf("premium subscriptions require Stripe key, webhook secret, and both price IDs")
-		}
-		if err := validateURL("STRIPE_SUCCESS_URL", c.Stripe.SuccessURL, releaseProfile); err != nil {
-			return err
-		}
-		if err := validateURL("STRIPE_CANCEL_URL", c.Stripe.CancelURL, releaseProfile); err != nil {
-			return err
-		}
+	if c.Twitch.TestFixtureURL != "" && (releaseProfile || !c.AllowsTestLogin()) {
+		return fmt.Errorf("Twitch test fixture is restricted to development fixtures")
+	}
+	if c.FeatureFlags.LegacyBillingServicing && (strings.TrimSpace(c.Stripe.SecretKey) == "" || len(c.Stripe.WebhookSecrets) == 0) {
+		return fmt.Errorf("legacy billing servicing requires Stripe key and webhook secret")
 	}
 	if c.Email.Enabled && (strings.TrimSpace(c.Email.SendGridAPIKey) == "" || strings.TrimSpace(c.Email.FromEmail) == "" ||
 		(releaseProfile && strings.TrimSpace(c.Email.SendGridWebhookPublicKey) == "")) {
@@ -147,4 +141,9 @@ func validateOrigins(name, raw string, requireHTTPS bool) error {
 func validMFAKey(raw string) bool {
 	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(raw))
 	return err == nil && len(decoded) >= 32
+}
+
+// AllowsTestLogin restricts deterministic authentication to disposable development profiles.
+func (c *Config) AllowsTestLogin() bool {
+	return c.Server.GinMode != "release" && (c.Server.Environment == "development" || c.Server.Environment == "test")
 }

@@ -138,11 +138,36 @@ test('rejects invalid, future, and pre-build evidence timestamps', () => {
     ['2026-08-09T09:59:59Z', /must postdate candidate manifest built_at/],
   ]) {
     withFixture((fixture) => {
-      const filename = 'stripe-test-mode.json';
+      const filename = 'billing-retirement.json';
       fs.writeFileSync(path.join(fixture.evidenceDir, filename), JSON.stringify(validEvidence(filename, { executed_at: executedAt })));
       assert.match(verify(fixture).join('\n'), message);
     });
   }
+});
+
+test('billing retirement rejects unknown provider state and unserviced obligations', () => {
+  for (const overrides of [
+    { inventory: { database_obligations: 0, provider_obligations: null, pending_billing_work: 0, provider_inventory_complete: false } },
+    { inventory: { database_obligations: 0, provider_obligations: 1, pending_billing_work: 0, provider_inventory_complete: true } },
+    { obligation_status: 'legacy_servicing', legacy_servicing: {} },
+    { obligation_status: 'unverified' },
+  ]) {
+    withFixture(fixture => {
+      const filename = 'billing-retirement.json';
+      fs.writeFileSync(path.join(fixture.evidenceDir, filename), JSON.stringify(validEvidence(filename, overrides)));
+      assert.ok(verify(fixture).some(failure => failure.startsWith(filename)));
+    });
+  }
+  withFixture(fixture => {
+    const filename = 'billing-retirement.json';
+    fs.writeFileSync(path.join(fixture.evidenceDir, filename), JSON.stringify(validEvidence(filename, {
+      obligation_status: 'legacy_servicing',
+      inventory: { database_obligations: 1, provider_obligations: 1, pending_billing_work: 0, provider_inventory_complete: true },
+      legacy_servicing: { signed_webhooks_passed: true, duplicate_and_out_of_order_webhooks_passed: true,
+        cancellation_passed: true, invoices_passed: true, reconciliation_passed: true },
+    })));
+    assert.deepEqual(verify(fixture), []);
+  });
 });
 
 test('rejects invalid or future candidate build timestamps', () => {

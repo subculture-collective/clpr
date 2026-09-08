@@ -14,7 +14,6 @@ export interface AdminRoutePages {
     webhookDlq: Page;
     sync: Page;
     analytics: Page;
-    revenue: Page;
     campaigns: Page;
     submissions: Page;
     moderation: Page;
@@ -55,7 +54,6 @@ export function adminRoutes(pages: AdminRoutePages) {
             <Route path='/admin/webhooks/dlq' element={protectedPage(pages.webhookDlq)} />
             <Route path='/admin/sync' element={protectedPage(pages.sync)} />
             <Route path='/admin/analytics' element={protectedPage(pages.analytics)} />
-            <Route path='/admin/revenue' element={protectedPage(pages.revenue)} />
             <Route path='/admin/campaigns' element={protectedPage(pages.campaigns)} />
             <Route path='/admin/submissions' element={protectedPage(pages.submissions)} />
             <Route path='/admin/moderation' element={protectedPage(pages.moderation)} />

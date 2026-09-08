@@ -127,8 +127,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			analytics.GET("/alerts", h.Engagement.CheckAlerts)
 		}
 
-		// Revenue metrics (admin only)
-		admin.GET("/revenue", h.Revenue.GetRevenueMetrics)
 
 		// Contact message management (admin only)
 		adminContact := admin.Group("/contact")

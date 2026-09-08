@@ -1412,37 +1412,9 @@ type WebhookDeadLetterQueue struct {
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 }
 
-// UserWithSubscription represents a user with their subscription information
-type UserWithSubscription struct {
-	User
-	Subscription *Subscription `json:"subscription,omitempty"`
-}
-
-// CreateCheckoutSessionRequest represents a request to create a Stripe checkout session
-type CreateCheckoutSessionRequest struct {
-	PriceID    string  `json:"price_id" binding:"required,max=255"`
-	CouponCode *string `json:"coupon_code,omitempty" binding:"omitempty,max=100"`
-}
-
-// ChangeSubscriptionPlanRequest represents a request to change subscription plan
-type ChangeSubscriptionPlanRequest struct {
-	PriceID string `json:"price_id" binding:"required,max=255"`
-}
-
 // CancelSubscriptionRequest represents a request to cancel a subscription
 type CancelSubscriptionRequest struct {
 	Immediate *bool `json:"immediate" binding:"required"` // If true, cancel immediately. Otherwise, cancel at period end.
-}
-
-// CreateCheckoutSessionResponse represents the response with checkout session URL
-type CreateCheckoutSessionResponse struct {
-	SessionID  string `json:"session_id"`
-	SessionURL string `json:"session_url"`
-}
-
-// CreatePortalSessionResponse represents the response with portal session URL
-type CreatePortalSessionResponse struct {
-	PortalURL string `json:"portal_url"`
 }
 
 // PaymentFailure represents a failed payment attempt for a subscription
@@ -1551,57 +1523,6 @@ type RegisterDeviceTokenRequest struct {
 // UnregisterDeviceTokenRequest represents the request to unregister a device token
 type UnregisterDeviceTokenRequest struct {
 	DeviceToken string `json:"device_token" binding:"required,max=4096"`
-}
-
-// RevenueMetrics represents subscription revenue metrics for admin dashboard
-type RevenueMetrics struct {
-	MRR                  float64                  `json:"mrr"`                    // Monthly Recurring Revenue in cents
-	Churn                float64                  `json:"churn"`                  // Churn rate as percentage
-	ARPU                 float64                  `json:"arpu"`                   // Average Revenue Per User in cents
-	ActiveSubscribers    int                      `json:"active_subscribers"`     // Total active subscribers
-	TotalRevenue         float64                  `json:"total_revenue"`          // Total revenue to date in cents
-	PlanDistribution     []PlanDistributionMetric `json:"plan_distribution"`      // Distribution by plan
-	CohortRetention      []CohortRetentionMetric  `json:"cohort_retention"`       // Cohort retention data
-	ChurnedSubscribers   int                      `json:"churned_subscribers"`    // Subscribers churned this month
-	NewSubscribers       int                      `json:"new_subscribers"`        // New subscribers this month
-	TrialConversionRate  float64                  `json:"trial_conversion_rate"`  // Trial to paid conversion rate
-	GracePeriodRecovery  float64                  `json:"grace_period_recovery"`  // Grace period recovery rate
-	AverageLifetimeValue float64                  `json:"average_lifetime_value"` // Average customer LTV in cents
-	RevenueByMonth       []RevenueByMonthMetric   `json:"revenue_by_month"`       // Revenue trend by month
-	SubscriberGrowth     []SubscriberGrowthMetric `json:"subscriber_growth"`      // Subscriber growth trend
-	UpdatedAt            time.Time                `json:"updated_at"`
-}
-
-// PlanDistributionMetric represents distribution of subscribers by plan
-type PlanDistributionMetric struct {
-	PlanID       string  `json:"plan_id"`
-	PlanName     string  `json:"plan_name"`
-	Subscribers  int     `json:"subscribers"`
-	Percentage   float64 `json:"percentage"`
-	MonthlyValue float64 `json:"monthly_value"` // in cents
-}
-
-// CohortRetentionMetric represents retention data for a specific cohort
-type CohortRetentionMetric struct {
-	CohortMonth    string    `json:"cohort_month"`    // YYYY-MM format
-	InitialSize    int       `json:"initial_size"`    // Number of subscribers in cohort
-	RetentionRates []float64 `json:"retention_rates"` // Retention % for each month after signup
-}
-
-// RevenueByMonthMetric represents revenue data for a specific month
-type RevenueByMonthMetric struct {
-	Month   string  `json:"month"`   // YYYY-MM format
-	Revenue float64 `json:"revenue"` // Revenue in cents
-	MRR     float64 `json:"mrr"`     // MRR at end of month in cents
-}
-
-// SubscriberGrowthMetric represents subscriber growth data for a specific month
-type SubscriberGrowthMetric struct {
-	Month     string `json:"month"`      // YYYY-MM format
-	Total     int    `json:"total"`      // Total subscribers at end of month
-	New       int    `json:"new"`        // New subscribers that month
-	Churned   int    `json:"churned"`    // Churned subscribers that month
-	NetChange int    `json:"net_change"` // Net subscriber change
 }
 
 // ExportRequest represents a creator's data export request

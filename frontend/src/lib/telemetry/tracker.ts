@@ -17,8 +17,6 @@ export interface UserProperties {
   user_id: string;
   username?: string;
   email?: string;
-  is_premium?: boolean;
-  premium_tier?: string;
   signup_date?: string;
   is_verified?: boolean;
   [key: string]: string | number | boolean | undefined;
@@ -148,12 +146,8 @@ function getCommonProperties(): BaseEventProperties {
   }
   
   if (config.userProperties) {
-    if (config.userProperties.is_premium !== undefined) {
-      properties.is_premium = config.userProperties.is_premium;
-    }
-    if (config.userProperties.premium_tier) {
-      properties.premium_tier = config.userProperties.premium_tier;
-    }
+
+
     if (config.userProperties.signup_date) {
       properties.signup_date = config.userProperties.signup_date;
     }

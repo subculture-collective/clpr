@@ -80,9 +80,10 @@ type JWTConfig struct {
 
 // TwitchConfig holds Twitch API configuration
 type TwitchConfig struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURI  string
+	TestFixtureURL string
+	ClientID       string
+	ClientSecret   string
+	RedirectURI    string
 }
 
 // ClipConfig holds clip upload/storage configuration
@@ -129,8 +130,6 @@ type StripeConfig struct {
 	ProYearlyPriceID     string
 	ProMonthlyPriceCents int // Monthly price in cents (e.g., 999 for $9.99)
 	ProYearlyPriceCents  int // Full yearly price in cents (e.g., 9999 for $99.99/year) - service layer converts to monthly equivalent
-	SuccessURL           string
-	CancelURL            string
 	TaxEnabled           bool // Enable automatic tax calculation via Stripe Tax
 	InvoicePDFEnabled    bool // Enable sending invoice PDFs via email
 }
@@ -167,17 +166,17 @@ type EmbeddingConfig struct {
 
 // FeatureFlagsConfig holds feature flag configuration
 type FeatureFlagsConfig struct {
-	RecentEngagement     bool
-	SemanticSearch       bool
-	PremiumSubscriptions bool
-	EmailNotifications   bool
-	PushNotifications    bool
-	Analytics            bool
-	Moderation           bool
-	DiscoveryLists       bool
-	StreamClipCreation   bool
-	LiveFeed             bool
-	WatchParties         bool
+	RecentEngagement       bool
+	SemanticSearch         bool
+	LegacyBillingServicing bool
+	EmailNotifications     bool
+	PushNotifications      bool
+	Analytics              bool
+	Moderation             bool
+	DiscoveryLists         bool
+	StreamClipCreation     bool
+	LiveFeed               bool
+	WatchParties           bool
 }
 
 // KarmaConfig holds karma system configuration
@@ -466,9 +465,10 @@ func Load() (*Config, error) {
 			PublicKey:  getEnv("JWT_PUBLIC_KEY", ""),
 		},
 		Twitch: TwitchConfig{
-			ClientID:     getEnv("TWITCH_CLIENT_ID", ""),
-			ClientSecret: getEnv("TWITCH_CLIENT_SECRET", ""),
-			RedirectURI:  getEnv("TWITCH_REDIRECT_URI", "http://localhost:8080/api/v1/auth/twitch/callback"),
+			TestFixtureURL: getEnv("TWITCH_TEST_FIXTURE_URL", ""),
+			ClientID:       getEnv("TWITCH_CLIENT_ID", ""),
+			ClientSecret:   getEnv("TWITCH_CLIENT_SECRET", ""),
+			RedirectURI:    getEnv("TWITCH_REDIRECT_URI", "http://localhost:8080/api/v1/auth/twitch/callback"),
 		},
 		Clip: ClipConfig{
 			MaxDurationSeconds:         getEnvInt("CLIP_MAX_DURATION_SECONDS", 60),
@@ -505,8 +505,6 @@ func Load() (*Config, error) {
 			ProYearlyPriceID:     getEnv("STRIPE_PRO_YEARLY_PRICE_ID", ""),
 			ProMonthlyPriceCents: getEnvInt("STRIPE_PRO_MONTHLY_PRICE_CENTS", 999), // Default: $9.99/month
 			ProYearlyPriceCents:  getEnvInt("STRIPE_PRO_YEARLY_PRICE_CENTS", 9999), // Default: $99.99/year (full yearly price)
-			SuccessURL:           getEnv("STRIPE_SUCCESS_URL", "http://localhost:5173/subscription/success"),
-			CancelURL:            getEnv("STRIPE_CANCEL_URL", "http://localhost:5173/subscription/cancel"),
 			TaxEnabled:           getEnv("STRIPE_TAX_ENABLED", "false") == "true",
 			InvoicePDFEnabled:    getEnv("STRIPE_INVOICE_PDF_ENABLED", "false") == "true",
 		},
@@ -535,17 +533,17 @@ func Load() (*Config, error) {
 			Enabled:                  getEnv("EMBEDDING_ENABLED", "false") == "true",
 		},
 		FeatureFlags: FeatureFlagsConfig{
-			RecentEngagement:     getEnvBool("FEATURE_RECENT_ENGAGEMENT", false),
-			SemanticSearch:       getEnv("FEATURE_SEMANTIC_SEARCH", "false") == "true",
-			PremiumSubscriptions: getEnv("FEATURE_PREMIUM_SUBSCRIPTIONS", "false") == "true",
-			EmailNotifications:   getEnv("FEATURE_EMAIL_NOTIFICATIONS", "false") == "true",
-			PushNotifications:    getEnv("FEATURE_PUSH_NOTIFICATIONS", "false") == "true",
-			Analytics:            getEnv("FEATURE_ANALYTICS", "true") == "true",
-			Moderation:           getEnv("FEATURE_MODERATION", "true") == "true",
-			DiscoveryLists:       getEnv("FEATURE_DISCOVERY_LISTS", "false") == "true",
-			StreamClipCreation:   getEnvBool("FEATURE_STREAM_CLIP_CREATION", false),
-			LiveFeed:             getEnvBool("FEATURE_LIVE_FEED", false),
-			WatchParties:         getEnvBool("FEATURE_WATCH_PARTIES", false),
+			RecentEngagement:       getEnvBool("FEATURE_RECENT_ENGAGEMENT", false),
+			SemanticSearch:         getEnv("FEATURE_SEMANTIC_SEARCH", "false") == "true",
+			LegacyBillingServicing: getEnv("LEGACY_BILLING_SERVICING", "false") == "true",
+			EmailNotifications:     getEnv("FEATURE_EMAIL_NOTIFICATIONS", "false") == "true",
+			PushNotifications:      getEnv("FEATURE_PUSH_NOTIFICATIONS", "false") == "true",
+			Analytics:              getEnv("FEATURE_ANALYTICS", "true") == "true",
+			Moderation:             getEnv("FEATURE_MODERATION", "true") == "true",
+			DiscoveryLists:         getEnv("FEATURE_DISCOVERY_LISTS", "false") == "true",
+			StreamClipCreation:     getEnvBool("FEATURE_STREAM_CLIP_CREATION", false),
+			LiveFeed:               getEnvBool("FEATURE_LIVE_FEED", false),
+			WatchParties:           getEnvBool("FEATURE_WATCH_PARTIES", false),
 		},
 		Karma: KarmaConfig{
 			InitialKarmaPoints:        getEnvInt("KARMA_INITIAL_POINTS", 100),

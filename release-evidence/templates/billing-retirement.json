@@ -1,0 +1,27 @@
+{
+  "status": "not_executed",
+  "candidate_sha": "",
+  "backend_digest": "",
+  "frontend_digest": "",
+  "crawler_digest": "",
+  "executed_at": "",
+  "evidence_url": "",
+  "owner": "",
+  "free_access_verified": false,
+  "new_paid_enrollment_absent": false,
+  "inventory_verified": false,
+  "obligation_status": "unverified",
+  "inventory": {
+    "database_obligations": null,
+    "provider_obligations": null,
+    "pending_billing_work": null,
+    "provider_inventory_complete": false
+  },
+  "legacy_servicing": {
+    "signed_webhooks_passed": false,
+    "duplicate_and_out_of_order_webhooks_passed": false,
+    "cancellation_passed": false,
+    "invoices_passed": false,
+    "reconciliation_passed": false
+  }
+}

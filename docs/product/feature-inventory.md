@@ -33,7 +33,7 @@ last_reviewed: 2026-01-29
   - [4. Social Features](#4-social-features)
   - [5. Search & Discovery](#5-search--discovery)
   - [6. Content Moderation](#6-content-moderation)
-  - [7. Premium & Subscriptions](#7-premium--subscriptions)
+  - [7. Free accounts and legacy billing](#7-free-accounts-and-legacy-billing)
   - [8. Analytics & Metrics](#8-analytics--metrics)
   - [9. Live Streams & Watch Parties](#9-live-streams--watch-parties)
   - [10. Community & Forums](#10-community--forums)
@@ -582,19 +582,24 @@ counts that included planned or missing artifacts.
 
 ---
 
-### 7. Premium & Subscriptions
+### 7. Free accounts and legacy billing
 
-#### 7.1 Stripe Integration
+Accounts are free. Paid enrollment, plan changes, paid entitlements, and
+premium-specific rate multipliers are retired. Optional external support links
+remain. Ordinary abuse controls apply regardless of historical billing status.
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/subscriptions/*`, webhook handling
-- **Features**: Checkout, portal, webhooks, dunning, revenue tracking, trials, refunds
-- **Gaps**: None identified
+Historical billing tables, migrations, receipts, and audit records are retained.
+The remaining billing API serves existing records, cancellation, invoices, and
+signed webhook reconciliation. Outbound webhook subscriptions are unrelated and
+remain supported. Legacy cancellation/invoice access requires configured Stripe
+credentials and `LEGACY_BILLING_SERVICING=true`; signed webhook reconciliation
+requires configured verification secrets independently of outbound servicing.
 
-#### 7.2 Entitlements System
-
-- **Status**: ✅ complete | **Middleware**: Entitlement checks
-- **Features**: Feature gating, grace periods, trials, premium badges
-- **Gaps**: Usage tracking for metered features
+Provider obligations must be established by a complete read-only inventory.
+Empty application tables alone do not establish that obligations are zero.
+Release evidence requires either verified zero obligations or verified legacy
+servicing. No automatic cancellation, refund, or customer outreach is part of
+candidate qualification.
 
 ---
 

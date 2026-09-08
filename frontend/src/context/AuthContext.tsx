@@ -61,8 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProperties: UserProperties = {
             user_id: currentUser.id,
             username: currentUser.username,
-            is_premium: currentUser.is_premium || false,
-            premium_tier: currentUser.premium_tier,
             signup_date: currentUser.created_at,
             is_verified: currentUser.is_verified || false,
         };

@@ -63,7 +63,6 @@ describe('Analytics Tracker', () => {
       identifyUser('user123', {
         user_id: 'user123',
         username: 'testuser',
-        is_premium: true,
       });
 
       expect(posthogAnalytics.identifyPostHogUser).toHaveBeenCalledWith(
@@ -71,7 +70,6 @@ describe('Analytics Tracker', () => {
         expect.objectContaining({
           user_id: 'user123',
           username: 'testuser',
-          is_premium: true,
         })
       );
     });
@@ -153,8 +151,6 @@ describe('Analytics Tracker', () => {
       
       identifyUser('user123', {
         user_id: 'user123',
-        is_premium: true,
-        premium_tier: 'pro',
       });
 
       trackEvent(AuthEvents.LOGIN_COMPLETED);
@@ -164,8 +160,6 @@ describe('Analytics Tracker', () => {
         expect.objectContaining({
           user_id: 'user123',
           is_authenticated: true,
-          is_premium: true,
-          premium_tier: 'pro',
         })
       );
     });
