@@ -12,6 +12,7 @@ jobs:
       CANDIDATE_MANIFEST_URL: ${{ secrets.RELEASE_CANDIDATE_MANIFEST_URL }}
       EVIDENCE_BASE_URL: ${{ secrets.RELEASE_EVIDENCE_BASE_URL }}
       EVIDENCE_TOKEN: ${{ secrets.RELEASE_EVIDENCE_TOKEN }}
+      EVIDENCE_CA_CERT: ${{ secrets.RELEASE_EVIDENCE_CA_CERT }}
     steps:
       - uses: https://github.com/actions/checkout@v4
         with:
@@ -33,12 +34,16 @@ jobs:
           PY
           test -n "$EVIDENCE_TOKEN"
           mkdir -p .tmp/protected-evidence/operator
-          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+          if [[ -n "$EVIDENCE_CA_CERT" ]]; then
+            printf '%s\n' "$EVIDENCE_CA_CERT" > .tmp/protected-evidence/ca.pem
+            export CURL_CA_BUNDLE="$PWD/.tmp/protected-evidence/ca.pem"
+          fi
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 --noproxy '*' --connect-timeout 15 --max-time 60 \
             -H "Authorization: Bearer $EVIDENCE_TOKEN" \
             "$CANDIDATE_MANIFEST_URL" \
             -o .tmp/protected-evidence/candidate-manifest.json
           for file in hosted-ci security-operations billing-retirement load-and-soak restore rollback; do
-            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 --noproxy '*' --connect-timeout 15 --max-time 60 \
               -H "Authorization: Bearer $EVIDENCE_TOKEN" \
               "${EVIDENCE_BASE_URL%/}/$file.json" \
               -o ".tmp/protected-evidence/operator/$file.json"

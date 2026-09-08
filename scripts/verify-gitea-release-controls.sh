@@ -46,12 +46,12 @@ for key, expected in requirements.items():
 if int(protection.get("required_approvals") or 0) < 1:
     failures.append("main protection must require at least one approval")
 required_contexts = {
-    "Complete local-equivalent source gate",
-    "Secret history gate",
-    "Documentation and OpenAPI gate",
-    "Browser gate (Chromium, Firefox, WebKit)",
-    "Image scan and SBOM gate",
-    "Operator and recovery source contracts",
+    "Source convergence / Complete local-equivalent source gate (pull_request)",
+    "Authoritative release gates / Secret history gate (pull_request)",
+    "Authoritative release gates / Documentation and OpenAPI gate (pull_request)",
+    "Authoritative release gates / Browser gate (Chromium, Firefox, WebKit) (pull_request)",
+    "Authoritative release gates / Image scan and SBOM gate (pull_request)",
+    "Operator release preflight / Operator and recovery source contracts (pull_request)",
 }
 configured_contexts = set(protection.get("status_check_contexts") or [])
 for context in sorted(required_contexts - configured_contexts):

@@ -1,10 +1,9 @@
 # Release evidence
 
 This directory intentionally contains no passing evidence in source control.
-The release operator supplies six JSON files as the protected
-`release-evidence` workflow artifact. The immutable candidate build separately
-supplies `candidate-manifest.json` as the protected
-`release-candidate-manifest` artifact.
+The release operator supplies six JSON files through a protected HTTPS store.
+The immutable candidate build supplies `candidate-manifest.json`; copy that
+generated manifest unchanged into the same protected store.
 
 ## Candidate manifest contract
 
@@ -57,9 +56,24 @@ must never contain API keys, tokens, customer data, or webhook secrets.
 ## Verification
 
 The release-readiness workflow must be dispatched from the exact candidate
-commit. It downloads `release-candidate-manifest` from the candidate build run
-and `release-evidence` from the protected operator run. The verifier rejects a
-manifest whose SHA differs from the checked-out workflow commit.
+commit. Configure the repository Actions secrets `RELEASE_CANDIDATE_MANIFEST_URL`
+(the complete manifest URL), `RELEASE_EVIDENCE_BASE_URL` (the directory containing
+the six JSON files), and `RELEASE_EVIDENCE_TOKEN` (a read-only bearer credential).
+Use a separate immutable directory for each candidate SHA. The verifier rejects
+a manifest whose SHA differs from the checked-out workflow commit.
+
+For a private certificate authority, configure `RELEASE_EVIDENCE_CA_CERT` with
+the PEM CA certificate. This optional public certificate scopes curl trust to
+the evidence download step; never disable TLS verification. The store must be
+reachable from the hosted runner, reject unauthenticated requests, and expose
+only the reviewed evidence objects. Keep its private key and bearer token out
+of source control and reports. Record certificate expiry and renew before it
+expires. A development-host store is available only while that host is online.
+
+The full source convergence workflow runs on pull requests as well as manual
+dispatch. Main branch protection must require the complete Gitea status names
+checked by `scripts/verify-gitea-release-controls.sh`; a manually dispatched
+run does not supply a pull-request status check.
 
 For an equivalent local check:
 
