@@ -31,7 +31,6 @@ Welcome to the Clipper mobile analytics documentation. This guide helps you navi
 👥 Audience: Dashboard creators, data analysts
 
 ### For Status Overview
-**Implementation Summary**: [dashboard-implementation-summary.md](./dashboard-implementation-summary.md)  
 📊 Current status, delivered documentation, next steps  
 👥 Audience: Stakeholders, project managers
 
@@ -109,7 +108,7 @@ We have 5 core dashboards:
 **PostHog Dashboards**: 🟡 Ready for implementation  
 **Event Tracking**: 🟡 Partially implemented (screen views ✅, manual events pending)
 
-See [dashboard-implementation-summary.md](./dashboard-implementation-summary.md) for detailed status.
+See [Maintained documentation](../index.md) for detailed status.
 
 ## 🔍 What's Tracked
 

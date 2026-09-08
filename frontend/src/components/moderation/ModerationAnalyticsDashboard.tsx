@@ -144,43 +144,18 @@ export function ModerationAnalyticsDashboard() {
                 />
 
                 {/* Top Moderators */}
-                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-bold text-gray-900">
-                        Top Moderators
-                    </h3>
-                    <BarChartComponent
-                        data={moderatorData}
-                        xAxisKey="name"
-                        yAxisKey="value"
-                        barColor="#3b82f6"
-                    />
-                </div>
+                <BarChartComponent data={moderatorData} title="Top Moderators" color="#3b82f6" />
 
                 {/* Content Type Breakdown */}
-                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-bold text-gray-900">
-                        Content Type Breakdown
-                    </h3>
-                    <BarChartComponent
-                        data={contentTypeData}
-                        xAxisKey="name"
-                        yAxisKey="value"
-                        barColor="#10b981"
-                    />
-                </div>
+                <BarChartComponent data={contentTypeData} title="Content Type Breakdown" color="#10b981" />
 
                 {/* Actions Over Time */}
-                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-bold text-gray-900">
-                        Actions Over Time
-                    </h3>
-                    <LineChartComponent
-                        data={analytics.actions_over_time}
-                        xAxisKey="date"
-                        yAxisKey="count"
-                        lineColor="#8b5cf6"
-                    />
-                </div>
+                <LineChartComponent
+                    data={analytics.actions_over_time.map(point => ({ date: point.date, value: point.count }))}
+                    title="Actions Over Time"
+                    valueLabel="Actions"
+                    color="#8b5cf6"
+                />
 
                 {/* Ban Reasons Distribution */}
                 {banReasonsData.length > 0 && (

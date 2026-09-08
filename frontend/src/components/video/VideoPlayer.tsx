@@ -4,29 +4,7 @@ import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { MutedIcon } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-// Twitch Embed types
-declare global {
-    interface Window {
-        Twitch?: {
-            Embed: new (
-                elementId: string,
-                options: Record<string, unknown>,
-            ) => TwitchEmbed;
-        };
-    }
-}
-
-interface TwitchEmbed {
-    addEventListener: (event: string, callback: () => void) => void;
-    getPlayer: () => TwitchPlayer;
-}
-
-interface TwitchPlayer {
-    pause: () => void;
-    play: () => void;
-    getMuted: () => boolean;
-    setMuted: (muted: boolean) => void;
-}
+import type { TwitchEmbedInstance as TwitchEmbed } from '@/types/twitchEmbed';
 
 // Twitch Embed event constants
 const TWITCH_EVENTS = {

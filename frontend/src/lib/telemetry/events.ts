@@ -196,6 +196,14 @@ export const SettingsEvents = {
  * Error Events
  */
 export const ErrorEvents = {
+  SEARCH_CIRCUIT_BREAKER_OPENED: 'search_circuit_breaker_opened',
+  SEARCH_CIRCUIT_BREAKER_CLOSED: 'search_circuit_breaker_closed',
+  SEARCH_ERROR: 'search_error',
+  SEARCH_RETRY_BLOCKED_BY_CIRCUIT_BREAKER: 'search_retry_blocked_by_circuit_breaker',
+  SEARCH_RETRY: 'search_retry',
+  SEARCH_RETRY_CANCELLED: 'search_retry_cancelled',
+  SEARCH_ERROR_DISMISSED: 'search_error_dismissed',
+
   // Application Errors
   ERROR_OCCURRED: 'error_occurred',
   API_ERROR: 'api_error',
@@ -251,7 +259,7 @@ export interface BaseEventProperties {
   referrer?: string;
 
   // Additional metadata
-  [key: string]: string | number | boolean | undefined;
+  [key: string]: string | number | boolean | string[] | undefined;
 }
 
 /**

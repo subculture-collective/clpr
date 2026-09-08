@@ -89,10 +89,7 @@ export function ChatView({ channelId, channelName }: ChatViewProps) {
   const handleNotificationToggle = async () => {
     if (permission === 'granted') {
       // Can't revoke permission programmatically, just inform user
-      showToast({
-        message: 'Please manage notification permissions in your browser settings',
-        type: 'info',
-      });
+      showToast('Please manage notification permissions in your browser settings', 'info');
     } else {
       await requestPermission();
     }

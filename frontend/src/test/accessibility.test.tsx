@@ -1,172 +1,72 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import { axe } from 'jest-axe';
+import { Input } from '../components/ui/Input';
+import { TextArea } from '../components/ui/TextArea';
+import { Checkbox } from '../components/ui/Checkbox';
+import { Toggle } from '../components/ui/Toggle';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
-import { SkipLink } from '../components/ui/SkipLink';
-import { Input } from '../components/ui/Input';
 
-// Extend expect matchers
-expect.extend(toHaveNoViolations);
-
-describe('Accessibility Tests', () => {
-  describe('Button Component', () => {
-    it('should not have accessibility violations', async () => {
-      const { container } = render(
-        <Button>Click me</Button>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
+// Focus trapping, Escape, focus restoration, and skip links have dedicated
+// component tests. Layout, contrast, and touch targets belong in Playwright.
+describe('accessible controls', () => {
+    it.each([Input, TextArea])('%s associates labels and validation feedback', async Control => {
+        const { container, rerender } = render(<Control label='Message' helperText='Tell us more' />);
+        const field = screen.getByRole('textbox', { name: 'Message' });
+        expect(field).toHaveAccessibleDescription('Tell us more');
+        await userEvent.type(field, 'Hello');
+        expect(field).toHaveValue('Hello');
+        rerender(<Control label='Message' error='Message is too short' />);
+        expect(field).toHaveAttribute('aria-invalid', 'true');
+        expect(field).toHaveAccessibleDescription('Message is too short');
+        expect((await axe(container)).violations).toEqual([]);
     });
 
-    it('should have proper ARIA attributes when disabled', async () => {
-      const { container } = render(
-        <Button disabled>Disabled Button</Button>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
+    it.each([
+        { Control: Checkbox, role: 'checkbox' },
+        { Control: Toggle, role: 'switch' },
+    ])('$role exposes state and supports keyboard changes', async ({ Control, role }) => {
+        const change = vi.fn();
+        const user = userEvent.setup();
+        const { container, rerender } = render(<Control label='Notifications' checked={false} onChange={change} />);
+        const control = screen.getByRole(role, { name: 'Notifications' });
+        expect(control).not.toBeChecked();
+        await user.tab();
+        expect(control).toHaveFocus();
+        await user.keyboard(' ');
+        expect(change).toHaveBeenCalledOnce();
+        rerender(<Control label='Notifications' checked onChange={change} />);
+        expect(control).toBeChecked();
+        expect((await axe(container)).violations).toEqual([]);
     });
 
-    it('should have proper ARIA attributes when loading', async () => {
-      const { container } = render(
-        <Button loading>Loading</Button>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-
-  describe('Modal Component', () => {
-    it('should not have accessibility violations when open', async () => {
-      const { container } = render(
-        <Modal open={true} onClose={() => {}} title="Test Modal">
-          <p>Modal content</p>
-        </Modal>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it('should have proper dialog role and aria-modal', async () => {
-      const { container } = render(
-        <Modal open={true} onClose={() => {}} title="Test Modal">
-          <p>Modal content</p>
-        </Modal>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-
-  describe('SkipLink Component', () => {
-    it('should not have accessibility violations', async () => {
-      const { container } = render(
-        <div>
-          <SkipLink targetId="main" label="Skip to main content" />
-          <main id="main" tabIndex={-1}>Main content</main>
-        </div>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-
-  describe('Input Component', () => {
-    it('should not have accessibility violations', async () => {
-      const { container } = render(
-        <Input 
-          label="Username" 
-          placeholder="Enter username"
-          aria-label="Username input"
-        />
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
+    it('keeps form navigation in order and skips disabled controls', async () => {
+        const user = userEvent.setup();
+        const { container } = render(
+            <form aria-label='Contact'>
+                <Input label='Name' />
+                <Button disabled>Unavailable</Button>
+                <TextArea label='Message' />
+                <Button type='submit'>Send</Button>
+            </form>,
+        );
+        await user.tab();
+        expect(screen.getByRole('textbox', { name: 'Name' })).toHaveFocus();
+        await user.tab();
+        expect(screen.getByRole('textbox', { name: 'Message' })).toHaveFocus();
+        await user.tab();
+        expect(screen.getByRole('button', { name: 'Send' })).toHaveFocus();
+        await user.tab({ shift: true });
+        expect(screen.getByRole('textbox', { name: 'Message' })).toHaveFocus();
+        expect((await axe(container)).violations).toEqual([]);
     });
 
-    it('should properly associate error messages', async () => {
-      const { container } = render(
-        <Input 
-          label="Email" 
-          error="Invalid email address"
-          aria-label="Email input"
-        />
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
+    it('exposes a named modal dialog without axe violations', async () => {
+        render(<Modal open title='Confirm action' onClose={() => {}}><Button>Confirm</Button></Modal>);
+        const dialog = screen.getByRole('dialog', { name: 'Confirm action' });
+        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        expect((await axe(dialog)).violations).toEqual([]);
     });
-
-    it('should have proper ARIA attributes when disabled', async () => {
-      const { container } = render(
-        <Input 
-          label="Disabled Input" 
-          disabled
-          aria-label="Disabled input"
-        />
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-
-  describe('Navigation Links', () => {
-    it('should have proper link accessibility', async () => {
-      const { container } = render(
-        <BrowserRouter>
-          <nav aria-label="Main navigation">
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
-          </nav>
-        </BrowserRouter>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-
-  describe('Form Elements', () => {
-    it('should have proper form accessibility', async () => {
-      const { container } = render(
-        <form aria-label="Search form">
-          <Input 
-            label="Search" 
-            type="search"
-            placeholder="Search..."
-            aria-label="Search input"
-          />
-          <Button type="submit">Search</Button>
-        </form>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-
-  describe('Focus Management', () => {
-    it('should maintain proper focus order', async () => {
-      const { container } = render(
-        <div>
-          <Button>First</Button>
-          <Button>Second</Button>
-          <Button>Third</Button>
-        </div>
-      );
-      
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
 });

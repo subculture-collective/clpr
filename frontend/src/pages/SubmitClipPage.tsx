@@ -779,7 +779,7 @@ export function SubmitClipPage() {
         setRateLimitError(null);
 
         // Read stored rate limit metadata before clearing
-        let metadata: Record<string, unknown> = {};
+        let metadata: { limit?: number; window?: number } = {};
         try {
             const storedRateLimit = localStorage.getItem(
                 'submission_rate_limit',

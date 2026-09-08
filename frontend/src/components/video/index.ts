@@ -1,12 +1,3 @@
 export { VideoPlayer } from './VideoPlayer';
-export type { VideoPlayerProps } from './VideoPlayer';
+
 export { TheatreMode } from './TheatreMode';
-export type { TheatreModeProps } from './TheatreMode';
-export { HlsPlayer } from './HlsPlayer';
-export type { HlsPlayerProps } from './HlsPlayer';
-export { QualitySelector } from './QualitySelector';
-export type { QualitySelectorProps } from './QualitySelector';
-export { BitrateIndicator } from './BitrateIndicator';
-export type { BitrateIndicatorProps } from './BitrateIndicator';
-export { PlaybackControls } from './PlaybackControls';
-export type { PlaybackControlsProps } from './PlaybackControls';

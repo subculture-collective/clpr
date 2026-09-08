@@ -86,3 +86,8 @@ test-reports/
 .claude/
 runs/
 quality-review.md
+
+# Local API binaries and browser/CI output
+/backend/api
+/frontend/test-results.json
+playwright-candidate-report/

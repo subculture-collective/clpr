@@ -29,9 +29,9 @@ export function MessageComposer({
   const [mentionSuggestions, setMentionSuggestions] = useState<UserSuggestion[]>([]);
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isTypingSentRef = useRef(false);
-  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const autocompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Handle input change and detect mentions
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -144,7 +144,7 @@ export function MessageComposer({
   };
 
   // Insert mention into input
-  const insertMention = (suggestion: MentionSuggestion) => {
+  const insertMention = (suggestion: UserSuggestion) => {
     const cursorPosition = inputRef.current?.selectionStart || 0;
     const textBeforeCursor = inputValue.slice(0, cursorPosition);
     const textAfterCursor = inputValue.slice(cursorPosition);

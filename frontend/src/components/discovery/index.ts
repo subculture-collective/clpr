@@ -1,1 +1,1 @@
-export { DiscoveryListCard } from './DiscoveryListCard';
+

@@ -95,7 +95,7 @@ console.log(result);
 
 ### 3. React Hook Example
 
-See the [clip submission implementation guide](../CLIP_SUBMISSION_IMPLEMENTATION_SUMMARY.md#frontend-already-complete) for the frontend flow.
+See the [Maintained documentation](../index.md) for the frontend flow.
 
 ## Running the Examples
 
@@ -256,7 +256,6 @@ npm install --save-dev @types/node axios
 
 ## Additional Resources
 
-- [Clip submission implementation guide](../CLIP_SUBMISSION_IMPLEMENTATION_SUMMARY.md) - Supported submission behavior and tests
 - Quick Reference - Quick reference card
 - OpenAPI Specification - Formal API specification
 - API Reference - Full API documentation
@@ -275,6 +274,6 @@ When adding new examples:
 
 If you encounter issues with these examples:
 
-1. Check the [testing troubleshooting guide](../testing/TESTING.md#troubleshooting)
+1. Check the [testing troubleshooting guide](../testing/TESTING.md)
 2. Review the FAQ
 3. Open an issue on GitHub with the `api` and `documentation` labels

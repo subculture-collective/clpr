@@ -278,7 +278,7 @@ export function PlaylistTheatreMode({
         paused: boolean;
     } | null>(null);
     const countdownPaused =
-        countdownControl?.clipId === currentClip?.id
+        countdownControl && countdownControl.clipId === currentClip?.id
             ? countdownControl.paused
             : false;
     const setCountdownPaused = useCallback(

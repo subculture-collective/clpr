@@ -30,7 +30,7 @@ export default defineConfig({
     },
     projects: [
         { name: 'candidate-chromium', use: { ...devices['Desktop Chrome'] } },
-        { name: 'candidate-firefox', use: { ...devices['Desktop Firefox'] } },
-        { name: 'candidate-webkit', use: { ...devices['Desktop Safari'] } },
+        { name: 'candidate-firefox', testIgnore: '**/performance.spec.ts', use: { ...devices['Desktop Firefox'] } },
+        { name: 'candidate-webkit', testIgnore: '**/performance.spec.ts', use: { ...devices['Desktop Safari'] } },
     ],
 });

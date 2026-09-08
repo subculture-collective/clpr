@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Container, SEO } from '@/components';
 import {
@@ -34,10 +34,8 @@ export function ForumIndex() {
   // Fetch threads
   const { data, isLoading, error } = useQuery({
     queryKey: ['forum-threads', sort, filters, searchQuery],
+    enabled: !searchQuery,
     queryFn: async () => {
-      if (searchQuery) {
-        return forumApi.search({ q: searchQuery, page: 1, limit: 20 });
-      }
       return forumApi.listThreads({
         sort,
         game_id: filters.game_id,
@@ -78,6 +76,8 @@ export function ForumIndex() {
       return 0;
     });
   }, [data?.threads]);
+
+  if (searchQuery) return <Navigate to={'/forum/search?q=' + encodeURIComponent(searchQuery)} replace />;
 
   return (
     <>

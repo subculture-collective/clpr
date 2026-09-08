@@ -142,7 +142,7 @@ export function trackPageView(path: string, title?: string): void {
  */
 export function trackEvent(
     eventName: string,
-    eventParams?: Record<string, string | number | boolean>
+    eventParams?: Record<string, string | number | boolean | string[] | undefined>
 ): void {
     if (!gaInitialized || !analyticsConfig.measurementId) return;
 

@@ -38,7 +38,7 @@ export function HomePage() {
         8,
     );
     const featuredPlaylists = (featuredPlaylistsResponse?.data ?? []).filter(
-        playlist => playlist.clip_count > 0,
+        playlist => (playlist.clip_count ?? 0) > 0,
     );
 
     useEffect(() => {

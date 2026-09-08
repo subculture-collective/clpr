@@ -436,15 +436,6 @@ function App() {
                                             path='/discover/scraped'
                                             element={<Navigate to='/' replace />}
                                         />
-                                        {/* Live Feed - Hidden until after launch */}
-                                        {/* <Route
-                                            path='/discover/live'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <LiveFeedPage />
-                                                </ProtectedRoute>
-                                            }
-                                        /> */}
                                         <Route
                                             path='/clip/:id'
                                             element={<ClipDetailPage />}
@@ -630,36 +621,6 @@ function App() {
                                             channelSettings: ChannelSettingsPage,
                                             creatorDashboard: CreatorDashboardPage,
                                         })}
-
-                                        {/* Watch Party Routes - Hidden until after launch */}
-                                        {/* <Route
-                                            path='/watch-parties/browse'
-                                            element={<WatchPartyBrowsePage />}
-                                        />
-                                        <Route
-                                            path='/watch-parties/create'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <WatchPartyCreatePage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/watch-parties/:id'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <WatchPartyPage />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-                                        <Route
-                                            path='/watch-parties/:id/settings'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <WatchPartySettingsPage />
-                                                </ProtectedRoute>
-                                            }
-                                        /> */}
 
                                         {adminRoutes({
                                                 dashboard: AdminDashboard,

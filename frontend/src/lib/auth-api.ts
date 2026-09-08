@@ -36,7 +36,7 @@ export interface TestLoginParams {
  * Initiates Twitch OAuth flow with PKCE
  * Generates code verifier/challenge and stores verifier securely
  */
-export async function initiateOAuth() {
+export async function initiateOAuth(redirect: (url: string) => void = url => { window.location.href = url; }) {
   const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
   // Generate PKCE parameters
@@ -53,18 +53,8 @@ export async function initiateOAuth() {
     state,
   });
 
-  // In E2E environments, trigger the OAuth endpoint without performing a full navigation
-  if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__E2E_MOCK_OAUTH__) {
-    try {
-      await fetch(`${apiUrl}/auth/twitch?${params.toString()}`, { credentials: 'include', mode: 'no-cors' });
-    } catch (err) {
-      console.warn('[initiateOAuth] Mock OAuth fetch failed:', err);
-    }
-    return;
-  }
-
   // Redirect to backend OAuth endpoint with PKCE params
-  window.location.href = `${apiUrl}/auth/twitch?${params.toString()}`;
+  redirect(`${apiUrl}/auth/twitch?${params.toString()}`);
 }
 
 /**

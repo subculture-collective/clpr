@@ -39,7 +39,7 @@ const ENV_TRUE = 'true';
 
 let config: AnalyticsConfig = {
   enabled: false,
-  debug: import.meta.env.VITE_ENABLE_DEBUG === ENV_TRUE || import.meta.env.DEV,
+  debug: import.meta.env.VITE_ENABLE_DEBUG === ENV_TRUE || (import.meta.env.DEV && import.meta.env.MODE !== 'test'),
 };
 
 /**
@@ -293,7 +293,7 @@ export function trackPerformance(
   metricUnit: string = 'ms'
 ): void {
   // Determine the appropriate performance event based on metric name
-  let eventName = 'page_load_time'; // default
+  let eventName: EventName = 'page_load_time'; // default
   
   if (metricName.includes('api') || metricName.includes('response')) {
     eventName = 'api_response_time';

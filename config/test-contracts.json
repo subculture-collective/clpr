@@ -1,0 +1,61 @@
+{
+  "Session security and account identity": [
+    "frontend/src/context/AuthContext.test.tsx",
+    "frontend/src/lib/auth-api.test.ts",
+    "backend/internal/handlers/twitch_oauth_security_test.go",
+    "backend/internal/services/account_merge_service_test.go",
+    "backend/pkg/jwt/jwt_test.go",
+    "frontend/src/lib/secure-storage.encrypted.test.ts",
+    "frontend/src/lib/pkce.test.ts"
+  ],
+  "Authorization, CSRF, and mutation boundaries": [
+    "backend/internal/middleware/auth_middleware_test.go",
+    "backend/internal/middleware/authorization_test.go",
+    "backend/internal/middleware/csrf_middleware_test.go",
+    "backend/internal/middleware/mutation_boundary_test.go",
+    "frontend/src/routes/v1/routes.test.tsx",
+    "frontend/src/components/guards/RouteGuards.test.tsx"
+  ],
+  "Consent and personal data": [
+    "frontend/src/context/ConsentContext.test.tsx",
+    "frontend/e2e/mocked/consent.spec.ts",
+    "backend/internal/handlers/user_scope_hardening_test.go"
+  ],
+  "Feed, search, and pagination": [
+    "frontend/src/components/clip/ClipFeed.windowing.test.tsx",
+    "frontend/src/pages/SearchPage.test.tsx",
+    "backend/internal/repository/cursor_pagination_test.go",
+    "backend/internal/query/parser_test.go",
+    "backend/internal/handlers/search_handler_contract_test.go"
+  ],
+  "Playback and queue state": [
+    "frontend/src/components/clip/TwitchEmbed.test.tsx",
+    "frontend/src/pages/PlaylistTheatrePage.test.tsx",
+    "frontend/src/hooks/useQueue.test.ts",
+    "backend/internal/services/queue_service_test.go",
+    "frontend/src/components/video/VideoPlayer.test.tsx",
+    "frontend/src/hooks/usePlaylist.test.tsx"
+  ],
+  "Submission validation and moderation": [
+    "frontend/src/pages/SubmitClipPage.test.tsx",
+    "backend/internal/services/submission_service_approval_guard_test.go",
+    "backend/internal/services/upload_validator_test.go",
+    "backend/internal/handlers/moderation_admin_contract_test.go"
+  ],
+  "Payments and webhook idempotency": [
+    "backend/internal/handlers/subscription_webhook_handler_test.go",
+    "backend/internal/services/subscription_service_test.go",
+    "backend/tests/integration/premium/subscription_lifecycle_contract_test.go",
+    "backend/internal/repository/webhook_repository_integration_contract_test.go"
+  ],
+  "Accessible interaction": [
+    "frontend/src/components/ui/Button.test.tsx",
+    "frontend/src/components/ui/Modal.test.tsx",
+    "frontend/src/components/ui/SkipLink.test.tsx",
+    "frontend/src/test/accessibility.test.tsx",
+    "frontend/e2e/mocked/accessibility.spec.ts"
+  ],
+  "Real API and public account boundaries": [
+    "frontend/e2e/real-backend/launch-smoke.spec.ts"
+  ]
+}

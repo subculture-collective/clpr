@@ -343,7 +343,7 @@ export function AdminWebhookDLQPage() {
                                                 </Button>
                                                 <Button
                                                     size='sm'
-                                                    variant='error'
+                                                    variant='danger'
                                                     onClick={() =>
                                                         openActionModal(
                                                             item,
@@ -445,7 +445,7 @@ export function AdminWebhookDLQPage() {
                         </Button>
                         <Button
                             variant={
-                                actionType === 'replay' ? 'primary' : 'error'
+                                actionType === 'replay' ? 'primary' : 'danger'
                             }
                             onClick={handleAction}
                             disabled={isProcessing}

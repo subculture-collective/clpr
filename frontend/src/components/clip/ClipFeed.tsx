@@ -330,7 +330,7 @@ export function ClipFeed({
 
     return (
         <div className="w-full">
-            {/* Hide FeedHeader in discover mode - DiscoveryPage has its own header/tabs */}
+            {/* Hide FeedHeader when the parent supplies discovery navigation */}
             {!discoverMode && (
                 <FeedHeader
                     title={resolvedTitle || title}

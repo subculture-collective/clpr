@@ -12,7 +12,7 @@
 > buildable `mobile/` workspace in this tree. Stream clip extraction, CDN
 > mirroring, live feed, and watch parties remain disabled while their production
 > acceptance gates are completed. See the
-> [production-readiness remediation plan](docs/superpowers/plans/2026-07-12-production-readiness-remediation.md).
+> [launch feature contract](docs/LAUNCH_FEATURE_INVENTORY.md).
 
 ## What it demonstrates
 

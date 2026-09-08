@@ -135,9 +135,9 @@ export function TwitchModerationActions({
     } | null>(null);
 
     const resolvedIsBroadcaster =
-        isBroadcaster || Boolean(user?.is_broadcaster);
+        isBroadcaster;
     const resolvedIsTwitchModerator =
-        isTwitchModerator || Boolean(user?.is_twitch_moderator);
+        isTwitchModerator;
 
     // Ban form state
     const [reason, setReason] = useState('');

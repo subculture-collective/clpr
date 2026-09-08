@@ -27,8 +27,8 @@ export function useChatWebSocket({
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
-    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const reconnectAttemptsRef = useRef(0);
     const maxReconnectAttempts = 10;
     const connectRef = useRef<(() => void) | null>(null);

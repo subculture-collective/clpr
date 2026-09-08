@@ -29,7 +29,7 @@ export function useStreamerClipRoomWebSocket({
     const [error, setError] = useState<string | null>(null);
     const [lastEvent, setLastEvent] = useState<StreamerClipRoomEvent | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
-    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const reconnectAttemptsRef = useRef(0);
     const maxReconnectAttempts = 10;
     const connectRef = useRef<(() => void) | null>(null);

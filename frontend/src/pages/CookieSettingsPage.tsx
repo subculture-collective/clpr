@@ -22,7 +22,7 @@ import { effectiveConsentValue } from '../lib/consent-display';
 export function CookieSettingsPage() {
   const { consent, updateConsent, doNotTrack, acceptAll, rejectAll } = useConsent();
   const [success, setSuccess] = useState(false);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     return () => {

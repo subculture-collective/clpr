@@ -19,28 +19,7 @@ import { fetchStreamStatus } from '../../lib/stream-api';
 import { StreamOfflineScreen } from './StreamOfflineScreen';
 import { LiveIndicator } from './LiveIndicator';
 
-// Declare Twitch type for the embed SDK
-declare global {
-  interface Window {
-    Twitch?: {
-      Embed: new (elementId: string, options: TwitchEmbedOptions) => TwitchEmbed;
-    };
-  }
-}
-
-export interface TwitchEmbedOptions {
-  width: string | number;
-  height: string | number;
-  channel: string;
-  layout: 'video' | 'video-with-chat';
-  autoplay: boolean;
-  muted: boolean;
-  parent: string[];
-}
-
-export interface TwitchEmbed {
-  destroy: () => void;
-}
+import type { TwitchEmbedInstance as TwitchEmbed } from '@/types/twitchEmbed';
 
 export interface TwitchPlayerProps {
   channel: string;
@@ -107,9 +86,11 @@ export function TwitchPlayer({ channel, showChat = false }: TwitchPlayerProps) {
       return;
     }
 
-    // Destroy existing embed if it exists
+    const container = embedRef.current;
+    // Clear the previous iframe even when the SDK has no destroy method.
     if (embedInstanceRef.current) {
-      embedInstanceRef.current.destroy();
+      embedInstanceRef.current.destroy?.();
+      container.replaceChildren();
       embedInstanceRef.current = null;
     }
 
@@ -134,7 +115,8 @@ export function TwitchPlayer({ channel, showChat = false }: TwitchPlayerProps) {
 
     return () => {
       if (embedInstanceRef.current) {
-        embedInstanceRef.current.destroy();
+        embedInstanceRef.current.destroy?.();
+        container.replaceChildren();
         embedInstanceRef.current = null;
       }
     };

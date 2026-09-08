@@ -79,7 +79,7 @@ export function FeedSidebar() {
     // Data hooks
     const { data: featuredResponse } = useFeaturedPlaylists(1, 5);
     const featuredPlaylists = (featuredResponse?.data ?? []).filter(
-        (playlist) => playlist.clip_count > 0,
+        (playlist) => (playlist.clip_count ?? 0) > 0,
     );
 
     const { data: tagsResponse } = useTags({

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import criticalCoverage from './config/critical-coverage.json';
 
 export default defineConfig({
   plugins: [react()],
@@ -20,7 +21,9 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'e2e'],
     css: false,
-    // Improve test performance
+    forbidOnly: true,
+    // Bound memory use consistently on developer machines and CI runners.
+    maxWorkers: 4,
     pool: 'forks',
     // Coverage configuration
     coverage: {
@@ -34,12 +37,9 @@ export default defineConfig({
         '**/*.config.*',
         '**/types/',
       ],
-      thresholds: {
-        statements: 53,
-        branches: 50,
-        functions: 48,
-        lines: 54,
-      },
+      // Report the whole application; gate critical modules independently so
+      // unrelated UI coverage cannot conceal a security or state regression.
+      thresholds: criticalCoverage,
     },
   },
 });

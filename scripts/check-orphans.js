@@ -8,7 +8,6 @@ const known = new Set(files);
 const reachable = new Set();
 const queue = ['docs/index.md'];
 const intentionallyStandalone = [
-  /^docs\/superpowers\/plans\//,
   /^docs\/archive\//,
   /^docs\/examples\//,
 ];

@@ -424,7 +424,7 @@ curl -X POST http://localhost:8080/api/v1/admin/cdn/purge-all \
 ## Related Documentation
 
 - [Testing Guide](../testing/TESTING.md)
-- [Search Failover Tests](../testing/TESTING.md#search-failover-tests)
+- [Search Failover Tests](../testing/TESTING.md)
 
 ## Related Issues
 

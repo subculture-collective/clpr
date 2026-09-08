@@ -23,7 +23,10 @@
     "test:e2e:mocked": "playwright test --project=mocked-chromium",
     "test:e2e:real": "playwright test --project=real-chromium --project=real-firefox --project=real-webkit",
     "test:e2e:candidate": "playwright test --config=playwright.candidate.config.ts",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "code:unused": "node scripts/check-unused-source.mjs",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run code:unused && npm run test:inventory && npm run test:coverage"
   },
   "dependencies": {
     "@dr.pogodin/react-helmet": "^3.0.4",
@@ -83,7 +86,6 @@
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3",
-    "vitest": "^4.0.7",
-    "vitest-axe": "^0.1.0"
+    "vitest": "^4.0.7"
   }
 }

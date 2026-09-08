@@ -604,7 +604,8 @@ export async function unbanUserOnTwitch(
 // ==================== BAN REASON TEMPLATES ====================
 
 // Import types from banTemplate.ts to avoid duplication
-export type { BanReasonTemplate, CreateBanReasonTemplateRequest, UpdateBanReasonTemplateRequest, BanReasonTemplatesResponse } from '../../types/banTemplate';
+import type { BanReasonTemplate, CreateBanReasonTemplateRequest, UpdateBanReasonTemplateRequest, BanReasonTemplatesResponse } from '../types/banTemplate';
+export type { BanReasonTemplate, CreateBanReasonTemplateRequest, UpdateBanReasonTemplateRequest, BanReasonTemplatesResponse } from '../types/banTemplate';
 
 /**
  * Get all ban reason templates

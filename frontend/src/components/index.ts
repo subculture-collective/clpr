@@ -15,7 +15,6 @@ export * from './report';
 
 // Re-export SEO component
 export { SEO } from './SEO';
-export type { SEOProps } from './SEO';
 
 // Re-export video components
 export * from './video';
@@ -40,4 +39,3 @@ export * from './stream';
 export * from './watch-party';
 
 // Re-export shared components (no barrel)
-export { OfflineIndicator } from './OfflineIndicator';

@@ -76,11 +76,11 @@ function loadPostHogScript(): Promise<PostHogQueue> {
         ];
 
         for (const method of methods) {
-            (posthog as Record<string, (...args: unknown[]) => void>)[method] = function (
+            Object.assign(posthog, { [method]: function (
                 ...args: unknown[]
             ) {
-                (posthog as Array<unknown[]>).push([method, ...args]);
-            };
+                posthog.push([method, ...args]);
+            } });
         }
 
         // Load the script

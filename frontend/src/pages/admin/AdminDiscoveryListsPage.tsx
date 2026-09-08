@@ -13,7 +13,7 @@ const DELETE_CONFIRMATION_TIMEOUT = 5000;
 
 export function AdminDiscoveryListsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const deleteConfirmTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const deleteConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 

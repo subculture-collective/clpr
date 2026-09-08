@@ -3,7 +3,7 @@ import { tagApi } from "../lib/tag-api";
 
 // List tags
 export const useTags = (params?: {
-  sort?: "popularity" | "alphabetical" | "recent";
+  sort?: "popularity" | "alphabetical" | "recent" | "trending" | "curated";
   limit?: number;
   page?: number;
 }) => {

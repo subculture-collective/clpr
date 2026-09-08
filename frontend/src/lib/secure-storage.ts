@@ -44,7 +44,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
   if (storedKey) {
     try {
       const keyData = JSON.parse(storedKey);
-      return crypto.subtle.importKey(
+      return await crypto.subtle.importKey(
         'jwk',
         keyData,
         { name: 'AES-GCM', length: 256 },
@@ -96,7 +96,7 @@ async function decryptData(iv: Uint8Array, ciphertext: ArrayBuffer): Promise<str
   const decoder = new TextDecoder();
 
   const plaintext = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: new Uint8Array(iv) },
     key,
     ciphertext
   );
@@ -125,144 +125,80 @@ function clearSecurePrefixedKeys(storage: Storage): void {
   keysToRemove.forEach(key => storage.removeItem(key));
 }
 
-/**
- * Store encrypted data
- */
+// Resolve writes after commit, not merely after the individual request succeeds.
+// An aborted transaction must follow the same fallback path as an open failure.
+async function storeRequest<T>(
+  mode: IDBTransactionMode,
+  operation: (store: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    try {
+      const transaction = db.transaction(STORE_NAME, mode);
+      const request = operation(transaction.objectStore(STORE_NAME));
+      transaction.oncomplete = () => {
+        db.close();
+        resolve(request.result);
+      };
+      transaction.onabort = () => {
+        db.close();
+        reject(transaction.error ?? new Error('Secure storage transaction aborted'));
+      };
+    } catch (error) {
+      db.close();
+      reject(error);
+    }
+  });
+}
+
 export async function setSecureItem(key: string, value: string): Promise<void> {
   if (!isSecureStorageAvailable()) {
-    // Fallback to sessionStorage only (not localStorage) to limit exposure
-    sessionStorage.setItem(`secure_${key}`, value);
+    sessionStorage.setItem('secure_' + key, value);
     return;
   }
-
   try {
     const { iv, ciphertext } = await encryptData(value);
-    const db = await openDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-
-      // Store IV and ciphertext
-      const data = {
-        iv: Array.from(iv), // Convert to array for storage
-        ciphertext: Array.from(new Uint8Array(ciphertext)),
-      };
-
-      const request = store.put(data, key);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-
-      transaction.oncomplete = () => db.close();
-    });
+    await storeRequest('readwrite', store => store.put({
+      iv: Array.from(iv),
+      ciphertext: Array.from(new Uint8Array(ciphertext)),
+    }, key));
+    sessionStorage.removeItem('secure_' + key);
   } catch (error) {
     console.error('Error storing secure item:', error);
-    // Fallback to sessionStorage only
-    sessionStorage.setItem(`secure_${key}`, value);
+    sessionStorage.setItem('secure_' + key, value);
   }
 }
 
-/**
- * Retrieve and decrypt data
- */
 export async function getSecureItem(key: string): Promise<string | null> {
-  if (!isSecureStorageAvailable()) {
-    return sessionStorage.getItem(`secure_${key}`);
-  }
-
+  const fallback = () => sessionStorage.getItem('secure_' + key);
+  if (fallback() !== null || !isSecureStorageAvailable()) return fallback();
   try {
-    const db = await openDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(key);
-
-      request.onsuccess = async () => {
-        const data = request.result;
-        if (!data) {
-          // Check sessionStorage fallback
-          resolve(sessionStorage.getItem(`secure_${key}`));
-          return;
-        }
-
-        try {
-          const iv = new Uint8Array(data.iv);
-          const ciphertext = new Uint8Array(data.ciphertext).buffer;
-          const plaintext = await decryptData(iv, ciphertext);
-          resolve(plaintext);
-        } catch (error) {
-          console.error('Error decrypting data:', error);
-          resolve(sessionStorage.getItem(`secure_${key}`));
-        }
-      };
-
-      request.onerror = () => reject(request.error);
-
-      transaction.oncomplete = () => db.close();
-    });
+    const data = await storeRequest('readonly', store => store.get(key));
+    if (!data) return fallback();
+    return await decryptData(new Uint8Array(data.iv), new Uint8Array(data.ciphertext).buffer);
   } catch (error) {
     console.error('Error retrieving secure item:', error);
-    return sessionStorage.getItem(`secure_${key}`);
+    return fallback();
   }
 }
 
-/**
- * Remove encrypted data
- */
 export async function removeSecureItem(key: string): Promise<void> {
-  // Always clean up both storages
-  localStorage.removeItem(`secure_${key}`);
-  sessionStorage.removeItem(`secure_${key}`);
-
-  if (!isSecureStorageAvailable()) {
-    return;
-  }
-
+  localStorage.removeItem('secure_' + key);
+  sessionStorage.removeItem('secure_' + key);
+  if (!isSecureStorageAvailable()) return;
   try {
-    const db = await openDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(key);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-
-      transaction.oncomplete = () => db.close();
-    });
+    await storeRequest('readwrite', store => store.delete(key));
   } catch (error) {
     console.error('Error removing secure item:', error);
   }
 }
 
-/**
- * Clear all secure storage
- */
 export async function clearSecureStorage(): Promise<void> {
-  // Always clear both storages regardless of IndexedDB availability
   clearSecurePrefixedKeys(sessionStorage);
   clearSecurePrefixedKeys(localStorage);
-
-  if (!isSecureStorageAvailable()) {
-    return;
-  }
-
+  if (!isSecureStorageAvailable()) return;
   try {
-    const db = await openDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.clear();
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-
-      transaction.oncomplete = () => db.close();
-    });
+    await storeRequest('readwrite', store => store.clear());
   } catch (error) {
     console.error('Error clearing secure storage:', error);
   }

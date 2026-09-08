@@ -12,6 +12,10 @@ while IFS=$'\t' read -r path limit owner reason expiry; do
         echo "Incomplete skip inventory entry for '$path'" >&2
         exit 1
     fi
+    if [[ "$expiry" != "prerequisite" && ! "$expiry" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        echo "Invalid expiry or prerequisite classification for $path" >&2
+        exit 1
+    fi
     limits["$path"]=$limit
     owners["$path"]=$owner
     expiries["$path"]=$expiry
@@ -44,7 +48,7 @@ for path in "${!actual[@]}"; do
 done
 
 for path in "${!limits[@]}"; do
-    if [[ "${expiries[$path]}" < "$today" ]]; then
+    if [[ "${expiries[$path]}" != "prerequisite" && "${expiries[$path]}" < "$today" ]]; then
         echo "Expired skip exception: $path (${owners[$path]}, ${expiries[$path]})" >&2
         failed=1
     fi

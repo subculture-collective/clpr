@@ -13,7 +13,7 @@ import type { ClipFeedResponse } from "../types/clip";
 export const tagApi = {
   // List all tags
   listTags: async (params?: {
-    sort?: "popularity" | "alphabetical" | "recent";
+    sort?: "popularity" | "alphabetical" | "recent" | "trending" | "curated";
     limit?: number;
     page?: number;
   }) => {

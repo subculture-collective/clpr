@@ -102,14 +102,17 @@ jobs:
       - run: npm ci
       - name: Reject high or critical production dependency advisories
         run: npm audit --omit=dev --audit-level=high
+      - run: npm run typecheck
       - run: npm run lint
       - name: Verify React and edge route parity
         run: npm run routes:check
       - name: Verify module and UI boundaries
         run: npm run boundaries:check
+      - name: Reject unreachable application source
+        run: npm run code:unused
       - name: Unit tests
         run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=test-results.json
-      - name: Verify test pyramid and skip budget
+      - name: Verify critical test ownership and discovery
         run: npm run test:inventory
       - run: npm run build
       - name: Verify edge and public metadata contracts

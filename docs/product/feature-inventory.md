@@ -618,16 +618,11 @@ counts that included planned or missing artifacts.
 - **Features**: Feed tracking, view tracking, behavior analytics, batch processing
 - **Gaps**: Event schema docs, debugging tools
 
-#### 8.4 Abuse Detection Analytics
+#### 8.4 Abuse protection
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/admin/abuse/metrics`
-- **Handlers**: `abuse_analytics_handler.go`
-- **Services**: `anomaly_scorer.go`, `abuse_auto_flagger.go`, `abuse_feature_extractor.go`
-- **Features**: Real-time abuse metrics, anomaly detection, auto-flagging stats, submission pattern analysis
-- **Tests**: ✅ Comprehensive unit tests for abuse detection services
-- **Typing**: ✅ Full Go type safety
-- **Docs**: Internal implementation docs
-- **Gaps**: Public-facing documentation, grafana dashboards
+Request rate limiting and submission abuse checks are maintained. The unused
+anomaly-scoring analytics implementation has been removed. See
+[abuse detection](../backend/ABUSE_DETECTION.md) for the active contract.
 
 ---
 
@@ -931,7 +926,6 @@ This inventory should be updated:
 
 ## Related Documentation
 
-- [Product Roadmap](roadmap.md)
 - Contributing Guide
 - [Testing Strategy](../testing/TESTING.md)
 - Architecture Documentation

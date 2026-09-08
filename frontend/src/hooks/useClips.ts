@@ -86,7 +86,7 @@ export const useClipVote = () => {
 
             return {
                 ...oldData,
-                pages: oldData.pages.map((page: ClipFeedResponse) => ({
+                pages: oldData.pages.map(page => ({
                     ...page,
                     clips: page.clips.map((clip: Clip) =>
                         clip.id === clipId ? updater(clip) : clip,
@@ -248,7 +248,7 @@ export const useClipFavorite = () => {
 
                     return {
                         ...oldData,
-                        pages: oldData.pages.map((page: ClipFeedResponse) => ({
+                        pages: oldData.pages.map(page => ({
                             ...page,
                             clips: page.clips.map((clip: Clip) => {
                                 if (clip.id === payload.clip_id) {
@@ -277,7 +277,7 @@ export const useClipFavorite = () => {
 
                     return {
                         ...oldData,
-                        pages: oldData.pages.map((page: ClipFeedResponse) => ({
+                        pages: oldData.pages.map(page => ({
                             ...page,
                             clips: page.clips.filter(
                                 (clip: Clip) => clip.id !== payload.clip_id,

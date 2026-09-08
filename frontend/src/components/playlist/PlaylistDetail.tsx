@@ -46,13 +46,14 @@ export function PlaylistDetail() {
         isFetchingNextPage,
     } = playlistQuery;
     const data = useMemo(() => {
-        const first = playlistQuery.data?.pages[0];
-        if (!first) return undefined;
+        const pages = playlistQuery.data?.pages;
+        const first = pages?.[0];
+        if (!first || !pages) return undefined;
         return {
             ...first,
             data: {
                 ...first.data,
-                clips: playlistQuery.data.pages.flatMap(
+                clips: pages.flatMap(
                     page => page.data.clips ?? [],
                 ),
             },
@@ -92,7 +93,7 @@ export function PlaylistDetail() {
             ? selectedItemId
             : (playlistItems[0]?.id ?? null);
     const visibility =
-        visibilityOverride?.playlistId === id
+        visibilityOverride && visibilityOverride.playlistId === id
             ? visibilityOverride.value
             : (data?.data?.visibility ?? 'private');
 

@@ -1,1 +1,1 @@
-export { LiveBadge, LiveIndicatorDot } from './LiveBadge';
+export { LiveBadge } from './LiveBadge';

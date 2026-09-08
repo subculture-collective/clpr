@@ -420,7 +420,7 @@ export function StreamerClipRoomPage() {
         );
     }
 
-    if (isError || !data) {
+    if (isError || !data || !room) {
         return (
             <>
                 <SEO title={`${channel} Clip Room`} />

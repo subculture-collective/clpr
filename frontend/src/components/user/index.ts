@@ -1,2 +1,2 @@
-export { UserRoleBadge, type UserRoleBadgeProps } from './UserRoleBadge';
-export { VerifiedBadge, type VerifiedBadgeProps } from './VerifiedBadge';
+export { UserRoleBadge } from './UserRoleBadge';
+export { VerifiedBadge } from './VerifiedBadge';

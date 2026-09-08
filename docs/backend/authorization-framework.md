@@ -555,7 +555,6 @@ Planned improvements:
 - RBAC Test Suite README
 - [Testing Guide](../testing/TESTING.md)
 - Integration Test README
-- [Feature Test Coverage](../product/feature-test-coverage.md)
 - Threat Model: `docs/product/threat-model.md`
 
 ## Support

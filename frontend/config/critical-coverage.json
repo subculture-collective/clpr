@@ -1,0 +1,80 @@
+{
+  "src/components/guards/AdminRoute.tsx": {
+    "statements": 100,
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  },
+  "src/components/guards/GuestRoute.tsx": {
+    "statements": 100,
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  },
+  "src/components/guards/ProtectedRoute.tsx": {
+    "statements": 100,
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  },
+  "src/lib/pkce.ts": {
+    "statements": 100,
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  },
+  "src/lib/auth-api.ts": {
+    "statements": 95,
+    "lines": 95,
+    "branches": 90,
+    "functions": 80
+  },
+  "src/lib/secure-storage.ts": {
+    "statements": 95,
+    "lines": 95,
+    "branches": 90,
+    "functions": 95
+  },
+  "src/lib/url-validation.ts": {
+    "statements": 95,
+    "lines": 95,
+    "branches": 95,
+    "functions": 100
+  },
+  "src/context/AuthContext.tsx": {
+    "statements": 60,
+    "lines": 60,
+    "branches": 55,
+    "functions": 70
+  },
+  "src/context/ConsentContext.tsx": {
+    "statements": 85,
+    "lines": 85,
+    "branches": 64,
+    "functions": 94
+  },
+  "src/lib/api.ts": {
+    "statements": 64,
+    "lines": 64,
+    "branches": 59,
+    "functions": 58
+  },
+  "src/hooks/useQueue.ts": {
+    "statements": 80,
+    "lines": 80,
+    "branches": 80,
+    "functions": 70
+  },
+  "src/hooks/usePlaylist.ts": {
+    "statements": 100,
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  },
+  "src/hooks/useSearchErrorState.ts": {
+    "statements": 88,
+    "lines": 88,
+    "branches": 77,
+    "functions": 94
+  }
+}

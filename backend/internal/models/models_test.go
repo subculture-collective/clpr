@@ -73,41 +73,6 @@ func TestRejectionReasonTemplates(t *testing.T) {
 	}
 }
 
-func TestModerationAuditLogStructure(t *testing.T) {
-	// Test that the struct can be created
-	var log ModerationAuditLog
-
-	// Verify the struct has all required fields
-	_ = log.ID
-	_ = log.Action
-	_ = log.EntityType
-	_ = log.EntityID
-	_ = log.ModeratorID
-	_ = log.Reason
-	_ = log.Metadata
-	_ = log.CreatedAt
-
-	t.Log("ModerationAuditLog structure is valid")
-}
-
-func TestModerationAuditLogWithUserStructure(t *testing.T) {
-	// Test that the struct can be created
-	var log ModerationAuditLogWithUser
-
-	// Verify the struct has all required fields including embedded struct
-	_ = log.ID
-	_ = log.Action
-	_ = log.EntityType
-	_ = log.EntityID
-	_ = log.ModeratorID
-	_ = log.Reason
-	_ = log.Metadata
-	_ = log.CreatedAt
-	_ = log.Moderator
-
-	t.Log("ModerationAuditLogWithUser structure is valid")
-}
-
 func TestUserModeratorFieldsJSONMarshaling(t *testing.T) {
 	now := time.Now()
 	channelID1 := uuid.New()

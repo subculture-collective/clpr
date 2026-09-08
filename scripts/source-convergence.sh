@@ -182,9 +182,11 @@ phase_frontend() {
     (
         cd frontend
         npm audit --omit=dev --audit-level=high
+        npm run typecheck
         npm run lint
+        npm run code:unused
         npm run test:inventory
-        run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-1.json"
+        run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-1.json" --coverage
         run_vitest_with_diagnostics "$artifact_dir/frontend/vitest-run-2.json"
         node ../scripts/compare-vitest-runs.mjs \
             "$artifact_dir/frontend/vitest-run-1.json" \
@@ -197,9 +199,10 @@ phase_frontend() {
 
 run_vitest_with_diagnostics() {
     local report="$1"
+    shift
     local status
     set +e
-    npm run test -- run --reporter=json --outputFile="$report"
+    npm run test -- run "$@" --reporter=json --outputFile="$report"
     status=$?
     set -e
     if (( status == 0 )); then

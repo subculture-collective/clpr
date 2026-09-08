@@ -1,4 +1,3 @@
-export { BadgeDisplay, BadgeGrid, BadgeList } from './BadgeDisplay';
-export { KarmaBreakdownChart, KarmaStats } from './KarmaBreakdown';
-export { ReputationDisplay, RankBadge } from './ReputationDisplay';
-export { LeaderboardTable, LeaderboardSummary } from './LeaderboardTable';
+export { BadgeGrid } from './BadgeDisplay';
+export { KarmaBreakdownChart } from './KarmaBreakdown';
+export { ReputationDisplay } from './ReputationDisplay';

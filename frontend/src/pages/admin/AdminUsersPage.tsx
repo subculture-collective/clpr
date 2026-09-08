@@ -207,7 +207,7 @@ function UserActionModal({ user, actionType, onClose, onConfirm }: UserActionMod
             ) : (
               <div>
                 <label htmlFor="admin-user-action-reason" className="block text-sm font-medium mb-2">
-                  {actionType === 'ban' || actionType === 'suspend_comments' ? 'Reason (Required)' : 'Action Reason'}
+                  {actionType === 'ban' ? 'Reason (Required)' : 'Action Reason'}
                 </label>
                 <textarea
                   id="admin-user-action-reason"
@@ -577,7 +577,7 @@ export function AdminUsersPage() {
             </div>
           )}
 
-          {data?.users?.length > 0 && (
+          {data && data.users.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
