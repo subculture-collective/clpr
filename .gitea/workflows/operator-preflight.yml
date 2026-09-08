@@ -34,7 +34,6 @@ jobs:
         run: bash scripts/test-operator-preflight.sh
       - name: Inspect versioned load profiles
         run: >-
-          docker run --rm
-          -v "$PWD/backend/tests/load/release.js:/release.js:ro"
+          docker run --rm -i
           grafana/k6:0.57.0@sha256:70af91f86cd8e142e0544a4edaf79835a80033f71974b92edd5ac36fd4442a7b
-          inspect /release.js
+          inspect - < backend/tests/load/release.js
