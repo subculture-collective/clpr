@@ -61,6 +61,14 @@ test.describe('real-backend launch smoke', () => {
         ).toHaveCount(0);
     });
 
+    test('Discover navigation opens collections instead of returning to the feed', async ({ page }) => {
+        await page.goto('/');
+        await page.getByRole('navigation', { name: 'Main navigation' })
+            .getByRole('link', { name: 'Discover', exact: true }).click();
+        await expect(page).toHaveURL(/\/discover\/lists$/);
+        await expect(page.getByRole('heading', { name: 'Discovery Lists', exact: true })).toBeVisible();
+    });
+
     test('public empty search returns stable arrays and renders without a page error', async ({
         page,
     }) => {

@@ -7,7 +7,7 @@
 
 **Live product:** [clpr.tv](https://clpr.tv) · **API contract:** [OpenAPI](docs/openapi/openapi.yaml) · **License:** [MIT](LICENSE)
 
-> **Pre-release scope:** The current repository ships a responsive web client and
+> **1.0 scope:** CLPR ships a responsive web client and
 > Go API. Native mobile clients are design/planning work only; there is no
 > buildable `mobile/` workspace in this tree. Stream clip extraction, CDN
 > mirroring, live feed, and watch parties remain disabled while their production

@@ -419,7 +419,7 @@ function App() {
                                         />
                                         <Route
                                             path='/discover'
-                                            element={<Navigate to='/' replace />}
+                                            element={<Navigate to='/discover/lists' replace />}
                                         />
                                         <Route
                                             path='/discover/lists'
