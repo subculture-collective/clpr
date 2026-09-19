@@ -136,6 +136,7 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		if s.thumbnail != nil && s.thumbnail.Operational() {
 			s.processVisionClips(ctx)
 		}
+		s.processPendingTopicClassifications(ctx)
 		return
 	}
 
@@ -201,6 +202,20 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 	}
 	if s.thumbnail != nil && s.thumbnail.Operational() {
 		s.processVisionClips(ctx)
+	}
+	s.processPendingTopicClassifications(ctx)
+}
+
+func (s *AutoTagScheduler) processPendingTopicClassifications(ctx context.Context) {
+	if s.topics == nil {
+		return
+	}
+	processed, err := s.topics.Backfill(ctx, 10)
+	if err != nil {
+		utils.Warn("Pending clip topic classification failed", map[string]interface{}{
+			"scheduler": autoTagSchedulerName,
+			"processed": processed,
+		})
 	}
 }
 
@@ -281,6 +296,16 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 					"clip_id": clip.ID.String(),
 				})
 			}
+			// A provider-wide payment, configuration, rate-limit, or outage
+			// pause must not be expanded into one failed attempt per queued clip.
+			// Preserve the remaining queue and let structural tagging and other
+			// independent scheduler stages continue on their normal cadence.
+			if !s.thumbnail.Operational() {
+				utils.Warn("Thumbnail enrichment deferred because the provider is paused", map[string]interface{}{
+					"scheduler": autoTagSchedulerName,
+				})
+				break
+			}
 			continue
 		}
 
@@ -305,6 +330,14 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 			})
 			if failureErr := s.clipRepo.RecordVisionFailure(ctx, clip.ID, recordErr); failureErr != nil {
 				utils.Error("Failed to record thumbnail persistence failure", failureErr, map[string]interface{}{
+					"clip_id": clip.ID.String(),
+				})
+			}
+			continue
+		}
+		if s.topics != nil {
+			if classifyErr := s.topics.ClassifyClip(ctx, clip.ID); classifyErr != nil {
+				utils.Warn("Clip topic reclassification after thumbnail enrichment failed", map[string]interface{}{
 					"clip_id": clip.ID.String(),
 				})
 			}
