@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,12 +37,28 @@ func NewTagPromotionService(pool *pgxpool.Pool) *TagPromotionService {
 // inserts any new candidates into the tag_promotion_queue that aren't
 // already pending. Returns the slugs of newly queued candidates.
 func (s *TagPromotionService) CheckPromotionCandidates(ctx context.Context) ([]string, error) {
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("acquiring promotion connection: %w", err)
+	}
+	defer conn.Release()
+	var locked bool
+	if err := conn.QueryRow(ctx, `SELECT pg_try_advisory_lock(hashtext('clpr:tag_promotion'))`).Scan(&locked); err != nil {
+		return nil, fmt.Errorf("acquiring promotion advisory lock: %w", err)
+	}
+	if !locked {
+		return nil, repository.ErrSchedulerLockUnavailable
+	}
+	defer func() {
+		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:tag_promotion'))`)
+	}()
 	candidates, err := s.queryCandidates(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("querying promotion candidates: %w", err)
 	}
 
 	var queued []string
+	var candidateErrors []error
 	for _, c := range candidates {
 		if c.Slug == "" {
 			continue
@@ -49,11 +66,15 @@ func (s *TagPromotionService) CheckPromotionCandidates(ctx context.Context) ([]s
 		inserted, err := s.insertIfNotPending(ctx, c)
 		if err != nil {
 			log.Printf("checkPromotionCandidates: failed to queue %q: %v", c.Slug, err)
+			candidateErrors = append(candidateErrors, fmt.Errorf("queueing %q: %w", c.Slug, err))
 			continue
 		}
 		if inserted {
 			queued = append(queued, c.Slug)
 		}
+	}
+	if len(candidateErrors) > 0 {
+		return queued, errors.Join(candidateErrors...)
 	}
 	return queued, nil
 }
@@ -87,14 +108,24 @@ func (s *TagPromotionService) insertIfNotPending(ctx context.Context, c models.T
 	query := `
 		INSERT INTO tag_promotion_queue (id, tag_slug, usage_count, unique_users, status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, 'pending', $5, $5)
-		ON CONFLICT (tag_slug) WHERE status = 'pending' DO NOTHING
+		ON CONFLICT (tag_slug) WHERE status = 'pending' DO UPDATE SET
+			usage_count = EXCLUDED.usage_count,
+			unique_users = EXCLUDED.unique_users,
+			updated_at = EXCLUDED.updated_at
 	`
 
-	tag, err := s.pool.Exec(ctx, query, id, c.Slug, c.ClipCount, c.UniqueUsers, now)
-	if err != nil {
+	query += ` RETURNING (xmax = 0)`
+	var inserted bool
+	if err := s.pool.QueryRow(ctx, query, id, c.Slug, c.ClipCount, c.UniqueUsers, now).Scan(&inserted); err != nil {
 		return false, err
 	}
-	return tag.RowsAffected() > 0, nil
+	return inserted, nil
+}
+
+func (s *TagPromotionService) PendingPromotionCount(ctx context.Context) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM tag_promotion_queue WHERE status = 'pending'`).Scan(&count)
+	return count, err
 }
 
 // ApprovePromotion moves a tag from community/ to the content/ parent and

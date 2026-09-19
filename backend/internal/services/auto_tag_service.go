@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 // AutoTagService handles automatic tag generation for clips
@@ -30,6 +30,11 @@ type TagPattern struct {
 	TagName string
 	TagSlug string
 	Color   *string
+}
+
+type canonicalTagCandidate struct {
+	name, slug, parent string
+	color              *string
 }
 
 var (
@@ -130,136 +135,91 @@ var (
 
 // GenerateTagsForClip automatically generates tags for a clip
 func (s *AutoTagService) GenerateTagsForClip(ctx context.Context, clip *models.Clip) ([]string, error) {
-	var tagSlugs []string
-	seenTags := make(map[string]bool)
+	candidates := canonicalTagCandidates(clip)
+	seen := map[string]bool{}
+	result := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.slug == "" || seen[candidate.slug] {
+			continue
+		}
+		seen[candidate.slug] = true
+		blacklisted, err := s.tagRepo.IsBlacklisted(ctx, candidate.slug)
+		if err != nil {
+			return nil, fmt.Errorf("checking blacklist for %q: %w", candidate.slug, err)
+		}
+		if blacklisted {
+			continue
+		}
+		if _, err := s.tagRepo.GetOrCreateTag(ctx, canonicalTagName(candidate.parent), candidate.parent, nil); err != nil {
+			return nil, fmt.Errorf("ensuring tag parent %q: %w", candidate.parent, err)
+		}
+		parent := candidate.parent
+		if _, err := s.tagRepo.GetOrCreateTagWithParent(ctx, candidate.name, candidate.slug, &parent, candidate.color); err != nil {
+			return nil, fmt.Errorf("ensuring canonical tag %q: %w", candidate.slug, err)
+		}
+		result = append(result, candidate.slug)
+	}
+	return result, nil
+}
 
-	// Pattern-based tagging from title
-	title := clip.Title
+func canonicalTagCandidates(clip *models.Clip) []canonicalTagCandidate {
+	candidates := make([]canonicalTagCandidate, 0, 12)
 	for _, pattern := range tagPatterns {
-		if pattern.Pattern.MatchString(title) {
-			if !seenTags[pattern.TagSlug] {
-				// Check blacklist before creating tag
-				blacklisted, err := s.tagRepo.IsBlacklisted(ctx, pattern.TagSlug)
-				if err != nil {
-					log.Printf("Warning: failed to check blacklist for tag %q: %v", pattern.TagSlug, err)
-				}
-				if blacklisted {
-					continue
-				}
-
-				tagSlugs = append(tagSlugs, pattern.TagSlug)
-				seenTags[pattern.TagSlug] = true
-
-				// Ensure tag exists in database
-				_, err = s.tagRepo.GetOrCreateTag(ctx, pattern.TagName, pattern.TagSlug, pattern.Color)
-				if err != nil {
-					// Log error but continue with other tags
-					continue
-				}
-			}
+		if pattern.Pattern.MatchString(clip.Title) {
+			candidates = append(candidates, canonicalTagCandidate{"Content: " + pattern.TagName, "content/" + pattern.TagSlug, "content", pattern.Color})
 		}
 	}
-
-	// Add game name as tag
-	if clip.GameName != nil && *clip.GameName != "" {
+	if clip.GameID != nil {
+		for _, slug := range GameToGenres[*clip.GameID] {
+			candidates = append(candidates, canonicalTagCandidate{"Game: " + canonicalTagName(slug), slug, "game", stringPtr("#4169E1")})
+		}
+	}
+	if clip.GameName != nil && *clip.GameName != "" && (clip.GameID == nil || len(GameToGenres[*clip.GameID]) == 0) {
 		gameSlug := slugify(*clip.GameName)
-		if !seenTags[gameSlug] && len(gameSlug) > 0 {
-			// Check blacklist before creating tag
-			blacklisted, err := s.tagRepo.IsBlacklisted(ctx, gameSlug)
-			if err != nil {
-				log.Printf("Warning: failed to check blacklist for tag %q: %v", gameSlug, err)
+		if len(gameSlug) > 45 {
+			gameSlug = strings.TrimRight(gameSlug[:45], "-")
+		}
+		if gameSlug != "" {
+			gameTagName := "Game: " + *clip.GameName
+			if len([]rune(gameTagName)) > 50 {
+				gameTagName = "Game:" + gameSlug
 			}
-			if !blacklisted {
-				tagSlugs = append(tagSlugs, gameSlug)
-				seenTags[gameSlug] = true
-
-				// Create game tag
-				color := stringPtr("#4169E1")
-				_, err := s.tagRepo.GetOrCreateTag(ctx, *clip.GameName, gameSlug, color)
-				if err != nil {
-					// Log error but continue
-					log.Printf("failed to create game tag %s: %v", gameSlug, err)
-				}
-			}
+			candidates = append(candidates, canonicalTagCandidate{gameTagName, "game/" + gameSlug, "game", stringPtr("#4169E1")})
 		}
 	}
-
-	// Add broadcaster name as tag
-	if clip.BroadcasterName != "" {
-		broadcasterSlug := slugify(clip.BroadcasterName)
-		if !seenTags[broadcasterSlug] && len(broadcasterSlug) > 0 {
-			// Check blacklist before creating tag
-			blacklisted, err := s.tagRepo.IsBlacklisted(ctx, broadcasterSlug)
-			if err != nil {
-				log.Printf("Warning: failed to check blacklist for tag %q: %v", broadcasterSlug, err)
-			}
-			if !blacklisted {
-				tagSlugs = append(tagSlugs, broadcasterSlug)
-				seenTags[broadcasterSlug] = true
-
-				// Create broadcaster tag
-				color := stringPtr("#9146FF")
-				_, err := s.tagRepo.GetOrCreateTag(ctx, clip.BroadcasterName, broadcasterSlug, color)
-				if err != nil {
-					// Log error but continue
-					log.Printf("failed to create broadcaster tag %s: %v", broadcasterSlug, err)
-				}
-			}
-		}
-	}
-
-	// Duration-based tagging
+	duration := 0.0
 	if clip.Duration != nil {
-		if *clip.Duration < 15 {
-			if !seenTags["short"] {
-				blacklisted, err := s.tagRepo.IsBlacklisted(ctx, "short")
-				if err != nil {
-					log.Printf("Warning: failed to check blacklist for tag %q: %v", "short", err)
-				}
-				if !blacklisted {
-					tagSlugs = append(tagSlugs, "short")
-					seenTags["short"] = true
-					color := stringPtr("#20B2AA")
-					_, _ = s.tagRepo.GetOrCreateTag(ctx, "Short", "short", color)
-				}
-			}
-		} else if *clip.Duration > 120 {
-			if !seenTags["long"] {
-				blacklisted, err := s.tagRepo.IsBlacklisted(ctx, "long")
-				if err != nil {
-					log.Printf("Warning: failed to check blacklist for tag %q: %v", "long", err)
-				}
-				if !blacklisted {
-					tagSlugs = append(tagSlugs, "long")
-					seenTags["long"] = true
-					color := stringPtr("#8B4513")
-					_, _ = s.tagRepo.GetOrCreateTag(ctx, "Long", "long", color)
-				}
-			}
-		}
+		duration = *clip.Duration
 	}
-
-	// Language tagging
+	candidates = append(candidates, canonicalTagCandidate{canonicalTagName(durationTag(duration)), durationTag(duration), "duration", nil})
 	if clip.Language != nil && *clip.Language != "" {
-		langTag := getLanguageTag(*clip.Language)
-		if langTag != "" && !seenTags[langTag] {
-			// Check blacklist before creating tag
-			blacklisted, err := s.tagRepo.IsBlacklisted(ctx, langTag)
-			if err != nil {
-				log.Printf("Warning: failed to check blacklist for tag %q: %v", langTag, err)
-			}
-			if !blacklisted {
-				tagSlugs = append(tagSlugs, langTag)
-				seenTags[langTag] = true
-
-				langName := getLanguageName(*clip.Language)
-				color := stringPtr("#708090")
-				_, _ = s.tagRepo.GetOrCreateTag(ctx, langName, langTag, color)
-			}
-		}
+		slug := "lang/" + normalizeLanguage(*clip.Language)
+		candidates = append(candidates, canonicalTagCandidate{"Language: " + canonicalTagName(slug), slug, "lang", nil})
 	}
+	return candidates
+}
 
-	return tagSlugs, nil
+// CanonicalTagSlugsForClip previews deterministic structural tags without
+// touching the database. The backfill dry-run uses it to report real work.
+func CanonicalTagSlugsForClip(clip *models.Clip) []string {
+	seen := map[string]bool{}
+	result := make([]string, 0, 12)
+	for _, candidate := range canonicalTagCandidates(clip) {
+		if candidate.slug == "" || seen[candidate.slug] {
+			continue
+		}
+		seen[candidate.slug] = true
+		result = append(result, candidate.slug)
+	}
+	return result
+}
+
+func canonicalTagName(slug string) string {
+	name := slug
+	if idx := strings.IndexByte(name, '/'); idx >= 0 {
+		name = name[idx+1:]
+	}
+	return strings.Title(strings.ReplaceAll(name, "-", " "))
 }
 
 // ApplyAutoTags generates and applies tags to a clip
@@ -274,17 +234,66 @@ func (s *AutoTagService) ApplyAutoTags(ctx context.Context, clip *models.Clip) e
 	for _, slug := range tagSlugs {
 		tag, err := s.tagRepo.GetBySlug(ctx, slug)
 		if err != nil {
-			continue // Skip if tag doesn't exist
+			return fmt.Errorf("loading generated tag %q: %w", slug, err)
 		}
 
 		// Add tag to clip
 		err = s.tagRepo.AddTagToClip(ctx, clip.ID, tag.ID)
 		if err != nil {
-			// Log error but continue with other tags
-			continue
+			return fmt.Errorf("attaching generated tag %q: %w", slug, err)
 		}
 	}
 
+	return nil
+}
+
+func (s *AutoTagService) TagClip(ctx context.Context, clip *models.Clip) ([]string, error) {
+	slugs, err := s.GenerateTagsForClip(ctx, clip)
+	if err != nil {
+		return nil, err
+	}
+	for _, slug := range slugs {
+		tag, err := s.tagRepo.GetBySlug(ctx, slug)
+		if err != nil {
+			return nil, fmt.Errorf("loading generated tag %q: %w", slug, err)
+		}
+		if err := s.tagRepo.AddTagToClip(ctx, clip.ID, tag.ID); err != nil {
+			return nil, fmt.Errorf("attaching generated tag %q: %w", slug, err)
+		}
+	}
+	return slugs, nil
+}
+
+// AttachContentTags canonicalizes vision/classification labels under content/.
+func (s *AutoTagService) AttachContentTags(ctx context.Context, clipID uuid.UUID, labels []string) error {
+	if _, err := s.tagRepo.GetOrCreateTag(ctx, "Content", "content", nil); err != nil {
+		return fmt.Errorf("ensuring content root: %w", err)
+	}
+	for _, label := range labels {
+		slug := utils.Slugify(strings.TrimPrefix(label, "content/"))
+		if slug == "" {
+			continue
+		}
+		if len(slug) > 41 {
+			slug = strings.TrimRight(slug[:41], "-")
+		}
+		fullSlug := "content/" + slug
+		blacklisted, err := s.tagRepo.IsBlacklisted(ctx, fullSlug)
+		if err != nil {
+			return fmt.Errorf("checking content tag blacklist: %w", err)
+		}
+		if blacklisted {
+			continue
+		}
+		parent := "content"
+		tag, err := s.tagRepo.GetOrCreateTagWithParent(ctx, "Content: "+slug, fullSlug, &parent, nil)
+		if err != nil {
+			return fmt.Errorf("ensuring content tag %q: %w", fullSlug, err)
+		}
+		if err := s.tagRepo.AddTagToClip(ctx, clipID, tag.ID); err != nil {
+			return fmt.Errorf("attaching content tag %q: %w", fullSlug, err)
+		}
+	}
 	return nil
 }
 

@@ -69,3 +69,42 @@ groups:
         annotations:
           summary: "Stripe/outbound webhook dead-letter queue is not empty"
           runbook_url: "docs/operations/runbooks/webhook-dlq-replay-runbook.md"
+
+  - name: clpr-background-automation
+    interval: 30s
+    rules:
+      - alert: ClprTrendingScoreStale
+        expr: (time() - job_last_success_timestamp_seconds{job_name="trending_score_refresh"} > 7200) or absent(job_last_success_timestamp_seconds{job_name="trending_score_refresh"})
+        for: 10m
+        labels: {severity: page}
+        annotations:
+          summary: "clpr trending scores have not refreshed successfully for two hours"
+          runbook_url: "docs/operations/runbooks/background-jobs.md#job-not-running-stale"
+      - alert: ClprScoringRefreshRepeatedFailures
+        expr: increase(job_execution_total{job_name=~"trending_score_refresh|hot_score_refresh",status="failed"}[15m]) >= 2
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "clpr scoring automation is repeatedly failing"
+          runbook_url: "docs/operations/runbooks/background-jobs.md#job-failures"
+      - alert: ClprStructuralTagBacklogGrowing
+        expr: job_queue_size{job_name="auto_tag_processing"} > 100 and deriv(job_queue_size{job_name="auto_tag_processing"}[30m]) > 0
+        for: 30m
+        labels: {severity: warning}
+        annotations:
+          summary: "clpr structural tag backlog exceeds 100 clips"
+          runbook_url: "docs/operations/runbooks/background-jobs.md#job-not-running-stale"
+      - alert: ClprTagPromotionDetectionStale
+        expr: (time() - job_last_success_timestamp_seconds{job_name="tag_promotion_detection"} > 3600) or absent(job_last_success_timestamp_seconds{job_name="tag_promotion_detection"})
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "clpr tag promotion detection has not succeeded for one hour"
+          runbook_url: "docs/operations/runbooks/background-jobs.md#job-not-running-stale"
+      - alert: ClprHandlerBackgroundJobsDropped
+        expr: increase(handler_background_jobs_dropped_total[15m]) > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "clpr handler background work was dropped because its queue was full"
+          runbook_url: "docs/operations/runbooks/background-jobs.md#job-failures"

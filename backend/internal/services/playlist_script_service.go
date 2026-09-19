@@ -60,6 +60,13 @@ type PlaylistScriptService struct {
 	generationWriter playlistGenerationWriter
 }
 
+// TryGenerationLock prevents multiple API replicas from evaluating the same
+// due playlist scripts. The returned release function must be called only
+// when locked is true.
+func (s *PlaylistScriptService) TryGenerationLock(ctx context.Context) (release func(), locked bool, err error) {
+	return s.clipRepo.TrySchedulerLock(ctx, "playlist_generation")
+}
+
 // NewPlaylistScriptService creates a new PlaylistScriptService
 func NewPlaylistScriptService(scriptRepo *repository.PlaylistScriptRepository, playlistRepo *repository.PlaylistRepository, clipRepo *repository.ClipRepository, curationRepo *repository.PlaylistCurationRepository, clipSyncService *ClipSyncService) *PlaylistScriptService {
 	return &PlaylistScriptService{

@@ -9,6 +9,7 @@ The backend starts several recurring jobs when the API boots. For freshness, the
 - checks every 5 minutes for due playlist scripts
 - generates new playlists for scripts on a schedule
 - cleans up old generated playlists after their retention window
+- uses a per-script PostgreSQL advisory lock to prevent duplicate generation across API replicas
 
 Relevant backend pieces:
 
@@ -71,6 +72,10 @@ For most environments:
 4. optionally run `make site-freshness-generate`
 
 After that, the scheduler keeps the public playlist shelf refreshed automatically.
+
+Suppressed tags never include or exclude clips from generated playlists. If a
+script includes only a suppressed tag, the run is acknowledged as empty and
+the previous generated playlist remains available until normal retention.
 
 ## Notes
 

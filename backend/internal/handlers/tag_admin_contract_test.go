@@ -50,3 +50,16 @@ func TestAddBlacklistedTagRejectsMalformedIdentityAndPattern(t *testing.T) {
 		}
 	}
 }
+
+func TestBlacklistGlobValidation(t *testing.T) {
+	for _, pattern := range []string{"spam*", "game/?ps", `literal%_\\value`} {
+		if !tagBlacklistGlobPattern.MatchString(pattern) {
+			t.Fatalf("expected valid blacklist glob %q", pattern)
+		}
+	}
+	for _, pattern := range []string{"bad pattern", "bad[range]", ""} {
+		if tagBlacklistGlobPattern.MatchString(pattern) {
+			t.Fatalf("expected invalid blacklist glob %q", pattern)
+		}
+	}
+}

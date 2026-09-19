@@ -27,6 +27,10 @@ type PlaylistScriptServiceInterface interface {
 	DeleteStaleGeneratedPlaylists(ctx context.Context) (int64, error)
 }
 
+type playlistGenerationLocker interface {
+	TryGenerationLock(context.Context) (release func(), locked bool, err error)
+}
+
 // PlaylistScriptScheduler manages periodic automated playlist generation.
 type PlaylistScriptScheduler struct {
 	service  PlaylistScriptServiceInterface
@@ -37,6 +41,9 @@ type PlaylistScriptScheduler struct {
 
 // NewPlaylistScriptScheduler creates a new scheduler that checks every intervalMinutes for due scripts.
 func NewPlaylistScriptScheduler(service PlaylistScriptServiceInterface, intervalMinutes int) *PlaylistScriptScheduler {
+	if intervalMinutes <= 0 {
+		intervalMinutes = 5
+	}
 	return &PlaylistScriptScheduler{
 		service:  service,
 		interval: time.Duration(intervalMinutes) * time.Minute,
@@ -87,6 +94,19 @@ func (s *PlaylistScriptScheduler) Stop() {
 // runDueScripts fetches and executes all scripts that are due for their scheduled run.
 func (s *PlaylistScriptScheduler) runDueScripts(ctx context.Context) {
 	startTime := time.Now()
+	if locker, ok := s.service.(playlistGenerationLocker); ok {
+		release, locked, err := locker.TryGenerationLock(ctx)
+		if err != nil {
+			metrics.JobExecutionTotal.WithLabelValues(playlistScriptJobGenerate, "failed").Inc()
+			utils.Error("Failed to acquire playlist generation lock", err, map[string]interface{}{"scheduler": playlistScriptSchedulerName})
+			return
+		}
+		if !locked {
+			metrics.JobExecutionTotal.WithLabelValues(playlistScriptJobGenerate, "skipped").Inc()
+			return
+		}
+		defer release()
+	}
 
 	scripts, err := s.service.ListDueForExecution(ctx)
 	if err != nil {

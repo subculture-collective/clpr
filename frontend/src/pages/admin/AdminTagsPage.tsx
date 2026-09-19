@@ -142,7 +142,7 @@ export function AdminTagsPage() {
         <CardBody>
           <form onSubmit={handleAdd} className='flex flex-col sm:flex-row gap-3'>
             <Input
-              placeholder='Pattern (e.g. spam*)'
+              placeholder='Glob pattern (e.g. spam* or bot?)'
               value={pattern}
               onChange={e => setPattern(e.target.value)}
               fullWidth
@@ -170,7 +170,7 @@ export function AdminTagsPage() {
       {/* Blacklist Table */}
       <Card>
         <CardHeader>
-          <h2 className='text-xl font-semibold text-text-primary'>Blacklisted Patterns</h2>
+          <h2 className='text-xl font-semibold text-text-primary'>Blacklisted Glob Patterns</h2>
         </CardHeader>
         <CardBody>
           {!blacklist || blacklist.length === 0 ? (

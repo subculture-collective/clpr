@@ -9,11 +9,13 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
 )
 
 const autoTagSchedulerName = "auto_tag"
+const autoTagJobName = "auto_tag_processing"
 
 // AutoTagScheduler periodically finds untagged clips and applies
 // structural + AI-derived tags to them.  It runs on a short ticker
@@ -100,9 +102,24 @@ func (s *AutoTagScheduler) Stop() {
 // processClips fetches a batch of untagged clips and applies tags to them.
 func (s *AutoTagScheduler) processClips(ctx context.Context) {
 	startTime := time.Now()
+	defer func() {
+		metrics.JobExecutionDuration.WithLabelValues(autoTagJobName).Observe(time.Since(startTime).Seconds())
+	}()
+	release, locked, lockErr := s.clipRepo.TrySchedulerLock(ctx, autoTagSchedulerName)
+	if lockErr != nil {
+		metrics.JobExecutionTotal.WithLabelValues(autoTagJobName, "failed").Inc()
+		utils.Error("Failed to acquire auto-tag scheduler lock", lockErr, map[string]interface{}{"scheduler": autoTagSchedulerName})
+		return
+	}
+	if !locked {
+		metrics.JobExecutionTotal.WithLabelValues(autoTagJobName, "skipped").Inc()
+		return
+	}
+	defer release()
 
 	untagged, err := s.clipRepo.GetUntaggedClips(ctx, 100)
 	if err != nil {
+		metrics.JobExecutionTotal.WithLabelValues(autoTagJobName, "failed").Inc()
 		utils.Error("Failed to fetch untagged clips", err, map[string]interface{}{
 			"scheduler": autoTagSchedulerName,
 		})
@@ -110,6 +127,9 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 	}
 
 	if len(untagged) == 0 {
+		metrics.JobExecutionTotal.WithLabelValues(autoTagJobName, "success").Inc()
+		metrics.JobLastSuccessTimestamp.WithLabelValues(autoTagJobName).Set(float64(time.Now().Unix()))
+		metrics.JobQueueSize.WithLabelValues(autoTagJobName).Set(0)
 		if s.transcription != nil {
 			s.processTranscriptionClips(ctx)
 		}
@@ -125,27 +145,29 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 	})
 
 	tagged := 0
+	failed := 0
 	for i := range untagged {
 		clip := &untagged[i]
 
-		// Apply structural tags (duration, language, game, broadcaster,
-		// pattern-matching from title).  Tagging is best-effort — individual
+		// Apply canonical structural/content tags. Tagging is best-effort — individual
 		// failures are logged but do not stop the batch.
 		if err := s.autoTag.ApplyAutoTags(ctx, clip); err != nil {
+			failed++
 			utils.Error("Failed to apply auto-tags", err, map[string]interface{}{
 				"scheduler": autoTagSchedulerName,
 				"clip_id":   clip.ID.String(),
 			})
 			continue
 		}
-		tagged++
-
 		if err := s.clipRepo.MarkAutoTagged(ctx, clip.ID); err != nil {
+			failed++
 			utils.Error("Failed to record auto-tag completion", err, map[string]interface{}{
 				"scheduler": autoTagSchedulerName,
 				"clip_id":   clip.ID.String(),
 			})
+			continue
 		}
+		tagged++
 		if s.topics != nil {
 			if err := s.topics.ClassifyClip(ctx, clip.ID); err != nil {
 				utils.Warn("Clip topic classification failed", map[string]interface{}{"clip_id": clip.ID.String()})
@@ -154,9 +176,22 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 	}
 
 	duration := time.Since(startTime)
+	status := "success"
+	if failed > 0 {
+		status = "partial"
+	} else {
+		metrics.JobLastSuccessTimestamp.WithLabelValues(autoTagJobName).Set(float64(time.Now().Unix()))
+	}
+	metrics.JobExecutionTotal.WithLabelValues(autoTagJobName, status).Inc()
+	metrics.JobItemsProcessed.WithLabelValues(autoTagJobName, "success").Add(float64(tagged))
+	metrics.JobItemsProcessed.WithLabelValues(autoTagJobName, "failed").Add(float64(failed))
+	if pending, countErr := s.clipRepo.CountPendingStructuralTags(ctx); countErr == nil {
+		metrics.JobQueueSize.WithLabelValues(autoTagJobName).Set(float64(pending))
+	}
 	utils.Info("Auto-tag batch completed", map[string]interface{}{
 		"scheduler": autoTagSchedulerName,
 		"tagged":    tagged,
+		"failed":    failed,
 		"total":     len(untagged),
 		"duration":  duration.String(),
 	})
@@ -249,7 +284,11 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 			continue
 		}
 
-		s.ensureAndAttachContentTags(ctx, clip.ID, result.Tags)
+		if tagErr := s.ensureAndAttachContentTags(ctx, clip.ID, result.Tags); tagErr != nil {
+			utils.Error("Failed to attach thumbnail content tags", tagErr, map[string]interface{}{"clip_id": clip.ID.String()})
+			_ = s.clipRepo.RecordVisionFailure(ctx, clip.ID, tagErr)
+			continue
+		}
 		enrichment := &models.ClipEnrichment{
 			ClipID:         clip.ID,
 			SourceTitle:    clip.Title,
@@ -275,26 +314,9 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 
 // ensureAndAttachContentTags ensures that content/ prefixed tags exist in
 // the tags table and then attaches them to the clip via clip_tags.
-func (s *AutoTagScheduler) ensureAndAttachContentTags(ctx context.Context, clipID uuid.UUID, tagSlugs []string) {
-	if s.tagRepo == nil {
-		return
+func (s *AutoTagScheduler) ensureAndAttachContentTags(ctx context.Context, clipID uuid.UUID, tagSlugs []string) error {
+	if s.autoTag == nil {
+		return nil
 	}
-
-	// Ensure the content parent tag exists.
-	_, _ = s.tagRepo.GetOrCreateTag(ctx, "Content", "content", nil)
-
-	for _, slug := range tagSlugs {
-		fullSlug := "content/" + slug
-
-		// Ensure the tag row exists in the tags table.
-		_, _ = s.tagRepo.GetOrCreateTag(ctx, slug, fullSlug, nil)
-
-		// Attach the tag to the clip (idempotent).
-		if addErr := s.clipRepo.AddTagBySlug(ctx, clipID, fullSlug); addErr != nil {
-			utils.Warn("Failed to add content tag", map[string]interface{}{
-				"clip_id": clipID.String(),
-				"tag":     fullSlug,
-			})
-		}
-	}
+	return s.autoTag.AttachContentTags(ctx, clipID, tagSlugs)
 }

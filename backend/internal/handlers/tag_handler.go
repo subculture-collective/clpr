@@ -16,6 +16,7 @@ import (
 )
 
 var adminTagSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+var tagBlacklistGlobPattern = regexp.MustCompile(`^[a-z0-9/_.%?*\\-]+$`)
 
 // TagTreeNode represents a tag in a hierarchical tree response.
 type TagTreeNode struct {
@@ -183,7 +184,7 @@ func (h *TagHandler) GetTag(c *gin.Context) {
 	}
 
 	// Get clip count for this tag
-	clipCount, err := h.tagRepo.CountClipsByTag(c.Request.Context(), slug)
+	clipCount, err := h.tagRepo.CountClipsByTag(c.Request.Context(), tag.Slug)
 	if err != nil {
 		clipCount = 0
 	}
@@ -224,7 +225,7 @@ func (h *TagHandler) GetClipsByTag(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	// Get clip IDs with this tag
-	clipIDs, err := h.tagRepo.GetClipsByTag(c.Request.Context(), slug, limit, offset)
+	clipIDs, err := h.tagRepo.GetClipsByTag(c.Request.Context(), tag.Slug, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch clips",
@@ -243,7 +244,7 @@ func (h *TagHandler) GetClipsByTag(c *gin.Context) {
 	}
 
 	// Get total count
-	total, err := h.tagRepo.CountClipsByTag(c.Request.Context(), slug)
+	total, err := h.tagRepo.CountClipsByTag(c.Request.Context(), tag.Slug)
 	if err != nil {
 		total = 0
 	}
@@ -756,8 +757,8 @@ func (h *TagHandler) AddBlacklistedTag(c *gin.Context) {
 		return
 	}
 	pattern := strings.ToLower(strings.TrimSpace(req.Pattern))
-	if !adminTagSlugPattern.MatchString(pattern) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Pattern must be a canonical tag slug"})
+	if !tagBlacklistGlobPattern.MatchString(pattern) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Pattern must be a safe tag glob using * and ? wildcards"})
 		return
 	}
 	createdBy := &createdByID

@@ -175,6 +175,16 @@ type KarmaConfig struct {
 // JobsConfig holds background job interval configuration
 type JobsConfig struct {
 	HotClipsRefreshIntervalMinutes int
+	AutoTagIntervalSeconds         int
+	TagPromotionIntervalMinutes    int
+	TrendingScoreIntervalMinutes   int
+	TrendingScoreBatchSize         int
+	AutoTagStartDelaySeconds       int
+	TagPromotionStartDelaySeconds  int
+	HotScoreStartDelaySeconds      int
+	PlaylistStartDelaySeconds      int
+	TrendingStartDelaySeconds      int
+	EmbeddingStartDelaySeconds     int
 }
 
 // RateLimitConfig holds rate limiting configuration
@@ -525,6 +535,16 @@ func Load() (*Config, error) {
 		},
 		Jobs: JobsConfig{
 			HotClipsRefreshIntervalMinutes: getEnvInt("HOT_CLIPS_REFRESH_INTERVAL_MINUTES", 5),
+			AutoTagIntervalSeconds:         getEnvInt("AUTO_TAG_INTERVAL_SECONDS", 30),
+			TagPromotionIntervalMinutes:    getEnvInt("TAG_PROMOTION_INTERVAL_MINUTES", 15),
+			TrendingScoreIntervalMinutes:   getEnvInt("TRENDING_SCORE_INTERVAL_MINUTES", 60),
+			TrendingScoreBatchSize:         getEnvInt("TRENDING_SCORE_BATCH_SIZE", 1000),
+			AutoTagStartDelaySeconds:       getEnvInt("AUTO_TAG_START_DELAY_SECONDS", 15),
+			TagPromotionStartDelaySeconds:  getEnvInt("TAG_PROMOTION_START_DELAY_SECONDS", 90),
+			HotScoreStartDelaySeconds:      getEnvInt("HOT_SCORE_START_DELAY_SECONDS", 120),
+			PlaylistStartDelaySeconds:      getEnvInt("PLAYLIST_START_DELAY_SECONDS", 240),
+			TrendingStartDelaySeconds:      getEnvInt("TRENDING_START_DELAY_SECONDS", 420),
+			EmbeddingStartDelaySeconds:     getEnvInt("EMBEDDING_START_DELAY_SECONDS", 720),
 		},
 		RateLimit: RateLimitConfig{
 			// Unauthenticated: 100 requests per 15 minutes per IP

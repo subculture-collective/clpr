@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,15 +27,41 @@ const (
 
 // ClipRepository handles database operations for clips
 type ClipRepository struct {
-	pool   clipDB
-	helper *RepositoryHelper
+	pool    clipDB
+	rawPool *pgxpool.Pool
+	helper  *RepositoryHelper
 }
+
+var ErrSchedulerLockUnavailable = errors.New("scheduler advisory lock unavailable")
 
 type clipDB interface {
 	Begin(context.Context) (pgx.Tx, error)
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+func (r *ClipRepository) TrySchedulerLock(ctx context.Context, name string) (func(), bool, error) {
+	if r.rawPool == nil {
+		return func() {}, true, nil
+	}
+	conn, err := r.rawPool.Acquire(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	var locked bool
+	if err := conn.QueryRow(ctx, `SELECT pg_try_advisory_lock(hashtext($1))`, "clpr:"+name).Scan(&locked); err != nil {
+		conn.Release()
+		return nil, false, err
+	}
+	if !locked {
+		conn.Release()
+		return func() {}, false, nil
+	}
+	return func() {
+		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext($1))`, "clpr:"+name)
+		conn.Release()
+	}, true, nil
 }
 
 const clipSelectColumns = `
@@ -74,8 +101,9 @@ func scanClip(scanner interface{ Scan(...any) error }, clip *models.Clip, includ
 // NewClipRepository creates a new ClipRepository
 func NewClipRepository(pool *pgxpool.Pool) *ClipRepository {
 	return &ClipRepository{
-		pool:   pool,
-		helper: NewRepositoryHelper(pool),
+		pool:    pool,
+		rawPool: pool,
+		helper:  NewRepositoryHelper(pool),
 	}
 }
 
@@ -667,6 +695,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 				SELECT 1 FROM clip_tags ct
 				JOIN tags t ON ct.tag_id = t.id
 				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+				  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 			)`, utils.SQLPlaceholder(argIndex)))
 			args = append(args, filters.Tags)
 			argIndex++
@@ -676,6 +705,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 				SELECT COUNT(DISTINCT t.slug) FROM clip_tags ct
 				JOIN tags t ON ct.tag_id = t.id
 				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+				  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 			) = %s`, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1)))
 			args = append(args, filters.Tags, len(filters.Tags))
 			argIndex += 2
@@ -685,6 +715,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 			SELECT 1 FROM clip_tags ct
 			JOIN tags t ON ct.tag_id = t.id
 			WHERE ct.clip_id = c.id AND t.slug = %s
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		)`, utils.SQLPlaceholder(argIndex)))
 		args = append(args, *filters.Tag)
 		argIndex++
@@ -696,6 +727,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 			SELECT 1 FROM clip_tags ct
 			JOIN tags t ON ct.tag_id = t.id
 			WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		)`, utils.SQLPlaceholder(argIndex)))
 		args = append(args, filters.ExcludeTags)
 		argIndex++
@@ -944,6 +976,7 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 				SELECT 1 FROM clip_tags ct
 				JOIN tags t ON ct.tag_id = t.id
 				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+				  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 			)`, utils.SQLPlaceholder(argIndex)))
 			args = append(args, filters.Tags)
 			argIndex++
@@ -952,6 +985,7 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 				SELECT COUNT(DISTINCT t.slug) FROM clip_tags ct
 				JOIN tags t ON ct.tag_id = t.id
 				WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+				  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 			) = %s`, utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1)))
 			args = append(args, filters.Tags, len(filters.Tags))
 			argIndex += 2
@@ -961,6 +995,7 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 			SELECT 1 FROM clip_tags ct
 			JOIN tags t ON ct.tag_id = t.id
 			WHERE ct.clip_id = c.id AND t.slug = %s
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		)`, utils.SQLPlaceholder(argIndex)))
 		args = append(args, *filters.Tag)
 		argIndex++
@@ -972,6 +1007,7 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 			SELECT 1 FROM clip_tags ct
 			JOIN tags t ON ct.tag_id = t.id
 			WHERE ct.clip_id = c.id AND t.slug = ANY(%s)
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		)`, utils.SQLPlaceholder(argIndex)))
 		args = append(args, filters.ExcludeTags)
 		argIndex++
@@ -1263,6 +1299,28 @@ func (r *ClipRepository) RemoveClip(ctx context.Context, clipID uuid.UUID, reaso
 // RefreshHotScores refreshes the materialized view for hot clips
 // This should be called periodically to update hot scores for discovery lists
 func (r *ClipRepository) RefreshHotScores(ctx context.Context) error {
+	if r.rawPool != nil {
+		conn, err := r.rawPool.Acquire(ctx)
+		if err != nil {
+			return fmt.Errorf("acquiring hot score connection: %w", err)
+		}
+		defer conn.Release()
+		var locked bool
+		if err := conn.QueryRow(ctx, `SELECT pg_try_advisory_lock(hashtext('clpr:hot_score'))`).Scan(&locked); err != nil {
+			return fmt.Errorf("acquiring hot score advisory lock: %w", err)
+		}
+		if !locked {
+			return ErrSchedulerLockUnavailable
+		}
+		defer func() {
+			_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:hot_score'))`)
+		}()
+		_, err = conn.Exec(ctx, fmt.Sprintf("REFRESH MATERIALIZED VIEW CONCURRENTLY %s", HotClipsMaterializedView))
+		if err != nil {
+			return fmt.Errorf("failed to refresh hot scores: %w", err)
+		}
+		return nil
+	}
 	// Note: HotClipsMaterializedView is a compile-time constant, not user input,
 	// so this is safe from SQL injection. PostgreSQL does not support parameterized
 	// table/view names in DDL statements like REFRESH MATERIALIZED VIEW.
@@ -1517,6 +1575,12 @@ func (r *ClipRepository) AddTagBySlug(ctx context.Context, clipID uuid.UUID, tag
 // Results are ordered by created_at DESC and limited to the given count.
 func (r *ClipRepository) GetUntaggedClips(ctx context.Context, limit int) ([]models.Clip, error) {
 	return r.getClipsForProcessing(ctx, `structural_tagged_at IS NULL`, limit)
+}
+
+func (r *ClipRepository) CountPendingStructuralTags(ctx context.Context) (int, error) {
+	var count int
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM clips WHERE structural_tagged_at IS NULL AND is_removed = false`).Scan(&count)
+	return count, err
 }
 
 // GetClipsNeedingVision returns automated Twitch clips whose public thumbnail
@@ -1876,7 +1940,70 @@ AND c.submitted_by_user_id NOT IN (SELECT blocked_user_id FROM blocked_users)
 // UpdateTrendingScores updates trending_score, hot_score, popularity_index, and engagement_count for all clips
 // This should be called periodically (e.g., hourly) by a scheduler job
 func (r *ClipRepository) UpdateTrendingScores(ctx context.Context) (int64, error) {
-	query := `
+	return r.UpdateTrendingScoresBatched(ctx, 1000)
+}
+
+func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchSize int) (int64, error) {
+	// Repository unit tests inject the narrow clipDB interface. Keep the
+	// original single-statement path available there; production repositories
+	// always have rawPool and use the bounded implementation below.
+	if r.rawPool == nil {
+		result, err := r.pool.Exec(ctx, trendingScoreUpdateQuery)
+		if err != nil {
+			return 0, fmt.Errorf("failed to update trending scores: %w", err)
+		}
+		return result.RowsAffected(), nil
+	}
+	if batchSize <= 0 {
+		batchSize = 1000
+	}
+	conn, err := r.rawPool.Acquire(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("acquiring trending score connection: %w", err)
+	}
+	defer conn.Release()
+	var locked bool
+	if err := conn.QueryRow(ctx, `SELECT pg_try_advisory_lock(hashtext('clpr:trending_score'))`).Scan(&locked); err != nil {
+		return 0, fmt.Errorf("acquiring trending score advisory lock: %w", err)
+	}
+	if !locked {
+		return 0, ErrSchedulerLockUnavailable
+	}
+	defer func() {
+		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:trending_score'))`)
+	}()
+	if _, err := conn.Exec(ctx, `TRUNCATE clip_score_refresh_stage`); err != nil {
+		return 0, fmt.Errorf("clearing trending score stage: %w", err)
+	}
+	if _, err := conn.Exec(ctx, trendingScoreStageQuery); err != nil {
+		return 0, fmt.Errorf("calculating trending score snapshot: %w", err)
+	}
+
+	var total int64
+	for {
+		tx, beginErr := conn.Begin(ctx)
+		if beginErr != nil {
+			return total, fmt.Errorf("beginning trending score batch: %w", beginErr)
+		}
+		result, execErr := tx.Exec(ctx, trendingScoreBatchQuery, batchSize)
+		if execErr != nil {
+			_ = tx.Rollback(ctx)
+			return total, fmt.Errorf("applying trending score batch: %w", execErr)
+		}
+		rows := result.RowsAffected()
+		if commitErr := tx.Commit(ctx); commitErr != nil {
+			return total, fmt.Errorf("committing trending score batch: %w", commitErr)
+		}
+		total += rows
+		if rows == 0 {
+			return total, nil
+		}
+	}
+}
+
+const trendingScoreStageQuery = `
+INSERT INTO clip_score_refresh_stage
+    (clip_id, trending_score, hot_score, popularity_index, engagement_count, calculated_at)
 WITH signals AS (
 	SELECT
 		id,
@@ -1914,23 +2041,47 @@ WITH signals AS (
 		engagement
 	FROM ranked
 )
-UPDATE clips AS c
-SET
-	engagement_count = scores.engagement,
-	trending_score = scores.feed_rank,
-	hot_score = scores.feed_rank,
-	popularity_index = scores.engagement
-FROM scores
-WHERE c.id = scores.id
+SELECT id, feed_rank, feed_rank, engagement, engagement, NOW() FROM scores
 `
 
-	result, err := r.pool.Exec(ctx, query)
-	if err != nil {
-		return 0, fmt.Errorf("failed to update trending scores: %w", err)
-	}
+const trendingScoreBatchQuery = `
+WITH selected AS (
+    SELECT clip_id FROM clip_score_refresh_stage ORDER BY clip_id LIMIT $1
+), batch AS (
+    DELETE FROM clip_score_refresh_stage stage USING selected
+    WHERE stage.clip_id = selected.clip_id
+    RETURNING stage.clip_id, stage.trending_score, stage.hot_score,
+              stage.popularity_index, stage.engagement_count
+)
+UPDATE clips c SET
+    trending_score = batch.trending_score,
+    hot_score = batch.hot_score,
+    popularity_index = batch.popularity_index,
+    engagement_count = batch.engagement_count
+FROM batch WHERE c.id = batch.clip_id`
 
-	return result.RowsAffected(), nil
-}
+const trendingScoreUpdateQuery = `
+WITH signals AS (
+	SELECT id,
+		LN(1 + GREATEST(view_count, 0)) AS view_signal,
+		LN(1 + GREATEST(CASE WHEN previous_view_count IS NULL THEN
+			view_count::DOUBLE PRECISION / GREATEST(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0, 1.0)
+			ELSE view_velocity END, 0)) AS velocity_signal,
+		1.0 / (1.0 + GREATEST(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0, 0) / 24.0) AS freshness_signal,
+		CASE WHEN submitted_by_user_id IS NOT NULL THEN 0.35 ELSE 0.0 END AS community_boost,
+		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement
+	FROM clips WHERE is_removed=false AND is_hidden=false
+), ranked AS (
+	SELECT id, PERCENT_RANK() OVER (ORDER BY view_signal) AS view_percentile,
+		PERCENT_RANK() OVER (ORDER BY velocity_signal) AS velocity_percentile,
+		freshness_signal, community_boost, engagement FROM signals
+), scores AS (
+	SELECT id, (view_percentile*0.30)+(velocity_percentile*0.35)+
+		(freshness_signal*0.15)+community_boost AS feed_rank, engagement FROM ranked
+)
+UPDATE clips c SET engagement_count=scores.engagement, trending_score=scores.feed_rank,
+hot_score=scores.feed_rank, popularity_index=scores.engagement
+FROM scores WHERE c.id=scores.id`
 
 // UpdateTrendingScoresForTimeWindow preserves the legacy interface. Mixed-feed
 // percentiles require the complete candidate population, so every refresh ranks

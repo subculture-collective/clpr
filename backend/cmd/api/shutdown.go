@@ -16,6 +16,8 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
 	// Shutdown WebSocket server first to close all connections
 	svcs.WSServer.Shutdown()
@@ -43,6 +45,15 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 		schedulers.LiveStatus.Stop()
 	}
 	schedulers.PlaylistScript.Stop()
+	if schedulers.AutoTag != nil {
+		schedulers.AutoTag.Stop()
+	}
+	if schedulers.TagPromotion != nil {
+		schedulers.TagPromotion.Stop()
+	}
+	if !schedulers.CancelAndWait(ctx) {
+		log.Println("Scheduler shutdown deadline reached")
+	}
 
 	// Close embedding service if running
 	if svcs.Embedding != nil {
@@ -50,9 +61,6 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 	}
 
 	// Allow in-flight requests to drain while remaining bounded for orchestrators.
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown: %v", err)
 	}

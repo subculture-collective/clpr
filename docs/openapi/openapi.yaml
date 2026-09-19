@@ -7450,7 +7450,7 @@ paths:
     post:
       tags: [Admin, Tags]
       summary: Blacklist a tag slug
-      description: Adds one canonical tag slug to the blacklist. Administrator MFA and CSRF protection are required.
+      description: Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminTagsBlacklist
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BlacklistedTagRequest'}}}}
@@ -12597,7 +12597,12 @@ components:
       required: [pattern]
       additionalProperties: false
       properties:
-        pattern: {type: string, minLength: 2, maxLength: 50, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'}
+        pattern:
+          type: string
+          minLength: 2
+          maxLength: 50
+          pattern: '^[a-z0-9/_.%?*\\-]+$'
+          description: Case-insensitive safe glob; `*` matches zero or more characters and `?` matches one character. Percent, underscore, and backslash are matched literally.
         reason: {type: string, maxLength: 500}
 
     BlacklistedTag:

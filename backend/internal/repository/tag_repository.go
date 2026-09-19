@@ -87,9 +87,12 @@ func (r *TagRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Tag,
 // GetBySlug retrieves a tag by its slug
 func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag, error) {
 	query := `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE slug = $1 AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
+		FROM tags t
+		WHERE (t.slug = $1 OR t.id = (SELECT canonical_tag_id FROM tag_aliases WHERE alias_slug = $1))
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+		ORDER BY CASE WHEN t.slug = $1 THEN 0 ELSE 1 END
+		LIMIT 1
 	`
 
 	var tag models.Tag
@@ -120,20 +123,20 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		JOIN clips c ON c.id = ct.clip_id
 		WHERE ct.created_at >= NOW() - INTERVAL '7 days'
 		  AND c.is_removed = FALSE AND c.is_hidden = FALSE
-		  AND t.slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		  AND NOT is_tag_blacklisted(t.slug)
 		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		GROUP BY t.id ORDER BY usage_count DESC, t.name ASC LIMIT $1 OFFSET $2`
 	case "curated":
 		query = `SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags WHERE parent_slug = 'content'
-		AND slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		AND NOT is_tag_blacklisted(slug)
 		AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY usage_count DESC, name ASC LIMIT $1 OFFSET $2`
 	case "alphabetical":
 		query = `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
+		WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY name ASC
 		LIMIT $1 OFFSET $2
 		`
@@ -141,7 +144,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
+		WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 		`
@@ -151,7 +154,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		query = `
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
-		WHERE slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
+		WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY usage_count DESC
 		LIMIT $1 OFFSET $2
 		`
@@ -186,7 +189,7 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 // Count returns the total number of tags
 func (r *TagRepository) Count(ctx context.Context) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM tags WHERE NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)`
+	query := `SELECT COUNT(*) FROM tags WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)`
 	err := r.pool.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count tags: %w", err)
@@ -200,7 +203,7 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE (name ILIKE $1 OR slug ILIKE $1)
-		AND slug NOT IN (SELECT LOWER(pattern) FROM blacklisted_tags)
+		AND NOT is_tag_blacklisted(slug)
 		AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY usage_count DESC
 		LIMIT $2
@@ -361,6 +364,7 @@ func (r *TagRepository) GetClipTags(ctx context.Context, clipID uuid.UUID) ([]*m
 		FROM tags t
 		INNER JOIN clip_tags ct ON t.id = ct.tag_id
 		WHERE ct.clip_id = $1
+		  AND NOT is_tag_blacklisted(t.slug)
 		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		ORDER BY t.name ASC
 	`
@@ -398,6 +402,8 @@ func (r *TagRepository) GetClipsByTag(ctx context.Context, tagSlug string, limit
 		FROM clip_tags ct
 		INNER JOIN tags t ON ct.tag_id = t.id
 		WHERE t.slug = $1
+		  AND NOT is_tag_blacklisted(t.slug)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=t.id)
 		ORDER BY ct.created_at DESC
 		LIMIT $2 OFFSET $3
 	`
@@ -431,6 +437,8 @@ func (r *TagRepository) CountClipsByTag(ctx context.Context, tagSlug string) (in
 		FROM clip_tags ct
 		INNER JOIN tags t ON ct.tag_id = t.id
 		WHERE t.slug = $1
+		  AND NOT is_tag_blacklisted(t.slug)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=t.id)
 	`
 
 	var count int
@@ -444,6 +452,10 @@ func (r *TagRepository) CountClipsByTag(ctx context.Context, tagSlug string) (in
 
 // GetOrCreateTag gets a tag by slug or creates it if it doesn't exist
 func (r *TagRepository) GetOrCreateTag(ctx context.Context, name, slug string, color *string) (*models.Tag, error) {
+	return r.GetOrCreateTagWithParent(ctx, name, slug, nil, color)
+}
+
+func (r *TagRepository) GetOrCreateTagWithParent(ctx context.Context, name, slug string, parentSlug, color *string) (*models.Tag, error) {
 	// Try to get existing tag
 	tag, err := r.GetBySlug(ctx, slug)
 	if err == nil {
@@ -456,6 +468,7 @@ func (r *TagRepository) GetOrCreateTag(ctx context.Context, name, slug string, c
 		Name:       name,
 		Slug:       slug,
 		Color:      color,
+		ParentSlug: parentSlug,
 		UsageCount: 0,
 		CreatedAt:  time.Now(),
 	}
@@ -492,7 +505,7 @@ func (r *TagRepository) GetClipTagCount(ctx context.Context, clipID uuid.UUID) (
 
 // IsBlacklisted checks if a tag slug matches any blacklisted pattern
 func (r *TagRepository) IsBlacklisted(ctx context.Context, slug string) (bool, error) {
-	query := `SELECT EXISTS(SELECT 1 FROM blacklisted_tags WHERE LOWER(pattern) = LOWER($1))`
+	query := `SELECT is_tag_blacklisted($1)`
 	var exists bool
 	err := r.pool.QueryRow(ctx, query, slug).Scan(&exists)
 	return exists, err
@@ -537,6 +550,8 @@ func (r *TagRepository) GetChildren(ctx context.Context, parentSlug string) ([]*
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE parent_slug = $1
+		  AND NOT is_tag_blacklisted(slug)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=tags.id)
 		ORDER BY usage_count DESC
 	`
 
@@ -573,10 +588,14 @@ func (r *TagRepository) GetTagTree(ctx context.Context, rootSlug string) ([]*mod
 			SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, 0 AS depth
 			FROM tags
 			WHERE slug = $1
+			  AND NOT is_tag_blacklisted(slug)
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=tags.id)
 			UNION ALL
 			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at, tt.depth + 1
 			FROM tags t
 			INNER JOIN tag_tree tt ON t.parent_slug = tt.slug
+			WHERE NOT is_tag_blacklisted(t.slug)
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=t.id)
 		)
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tag_tree
@@ -615,6 +634,8 @@ func (r *TagRepository) GetRootTags(ctx context.Context) ([]*models.Tag, error) 
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
 		FROM tags
 		WHERE parent_slug IS NULL
+		  AND NOT is_tag_blacklisted(slug)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=tags.id)
 		ORDER BY usage_count DESC
 	`
 

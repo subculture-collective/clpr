@@ -82,6 +82,10 @@ type gameCatalogWriter interface {
 	Create(context.Context, *models.GameEntity) error
 }
 
+type structuralClipTagger interface {
+	TagClip(context.Context, *models.Clip) ([]string, error)
+}
+
 // ClipSyncService handles fetching and syncing clips from Twitch
 type ClipSyncService struct {
 	twitchClient twitchClipClient
@@ -91,13 +95,13 @@ type ClipSyncService struct {
 	stateStore   TrendingStateStore
 	maxPages     int
 	defaultLang  string
-	autoTagger   *AutoTaggerService
+	autoTagger   structuralClipTagger
 	publisher    *TwitchClipPublisher
 	gameRepo     gameCatalogWriter
 }
 
 // NewClipSyncService creates a new ClipSyncService
-func NewClipSyncService(twitchClient twitchClipClient, clipRepo *repository.ClipRepository, tagRepo *repository.TagRepository, userRepo *repository.UserRepository, redisClient *redispkg.Client, autoTagger *AutoTaggerService) *ClipSyncService {
+func NewClipSyncService(twitchClient twitchClipClient, clipRepo *repository.ClipRepository, tagRepo *repository.TagRepository, userRepo *repository.UserRepository, redisClient *redispkg.Client, autoTagger structuralClipTagger) *ClipSyncService {
 	var stateStore TrendingStateStore
 	if redisClient != nil {
 		stateStore = NewRedisTrendingStateStore(redisClient)
@@ -825,7 +829,7 @@ func (s *ClipSyncService) FetchClipByURL(ctx context.Context, clipURLOrID string
 	}
 
 	if result.Disposition == PublishCreated {
-		s.maybeAutoTag(result.Clip)
+		s.maybeAutoTag(ctx, result.Clip)
 
 		if s.tagRepo != nil && twitchClip.BroadcasterID != "" {
 			if tags := s.fetchChannelTags(ctx, []string{twitchClip.BroadcasterID}); len(tags) > 0 {
@@ -863,27 +867,25 @@ func (s *ClipSyncService) processClip(ctx context.Context, twitchClip *twitch.Cl
 		}
 	}
 
-	// Trigger structural auto-tagging in a non-blocking goroutine
-	s.maybeAutoTag(result.Clip)
+	// Tag on the scheduler-owned context so shutdown can cancel in-flight work.
+	s.maybeAutoTag(ctx, result.Clip)
 
 	stats.ClipsCreated++
 	return nil
 }
 
-// maybeAutoTag fires structural auto-tagging in a non-blocking goroutine
-// when the autoTagger is configured. Tagging is best-effort; failures are logged.
-func (s *ClipSyncService) maybeAutoTag(clip *models.Clip) {
+// maybeAutoTag applies structural tags when the autoTagger is configured.
+// Tagging is best-effort; failures are logged and remain retryable.
+func (s *ClipSyncService) maybeAutoTag(ctx context.Context, clip *models.Clip) {
 	if s.autoTagger == nil {
 		return
 	}
-	go func() {
-		if _, err := s.autoTagger.TagClip(context.Background(), clip); err != nil {
-			utils.Warn("Auto-tagger failed for clip", map[string]interface{}{
-				"clip_id": clip.ID.String(),
-				"error":   err.Error(),
-			})
-		}
-	}()
+	if _, err := s.autoTagger.TagClip(ctx, clip); err != nil {
+		utils.Warn("Auto-tagger failed for clip", map[string]interface{}{
+			"clip_id": clip.ID.String(),
+			"error":   err.Error(),
+		})
+	}
 }
 
 // processClipAsPosted imports a Twitch clip and marks it as "posted" by the given submitter.
@@ -942,7 +944,7 @@ func (s *ClipSyncService) processClipAsPosted(ctx context.Context, twitchClip *t
 	}
 
 	// Trigger structural auto-tagging in a non-blocking goroutine
-	s.maybeAutoTag(clip)
+	s.maybeAutoTag(ctx, clip)
 
 	stats.ClipsCreated++
 	return nil
@@ -1064,40 +1066,16 @@ func (s *ClipSyncService) fetchChannelTags(ctx context.Context, broadcasterIDs [
 }
 
 func (s *ClipSyncService) applyStreamerTags(ctx context.Context, clip *models.Clip, tags []string) error {
-	if s.tagRepo == nil || len(tags) == 0 || clip == nil {
+	if len(tags) == 0 || clip == nil {
 		return nil
 	}
-
-	seen := make(map[string]bool, len(tags))
-	var lastErr error
-
-	for _, raw := range tags {
-		name := strings.TrimSpace(raw)
-		if name == "" {
-			continue
-		}
-		slug := utils.Slugify(name)
-		if slug == "" || seen[slug] {
-			continue
-		}
-		seen[slug] = true
-
-		tag, err := s.tagRepo.GetOrCreateTag(ctx, name, slug, nil)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		if err := s.tagRepo.AddTagToClip(ctx, clip.ID, tag.ID); err != nil {
-			lastErr = err
-		}
+	canonical, ok := s.autoTagger.(interface {
+		AttachContentTags(context.Context, uuid.UUID, []string) error
+	})
+	if !ok {
+		return nil
 	}
-
-	if lastErr != nil {
-		return fmt.Errorf("failed to apply streamer tags: %w", lastErr)
-	}
-
-	return nil
+	return canonical.AttachContentTags(ctx, clip.ID, tags)
 }
 
 func normalizeLanguageFilter(lang string) string {

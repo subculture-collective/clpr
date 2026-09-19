@@ -461,17 +461,17 @@ func TestMaybeAutoTagNilSafe(t *testing.T) {
 	svc := &ClipSyncService{autoTagger: nil}
 	clip := &models.Clip{ID: uuid.New()}
 	// Should not panic
-	svc.maybeAutoTag(clip)
+	svc.maybeAutoTag(context.Background(), clip)
 }
 
-func TestMaybeAutoTagLaunchesGoroutine(t *testing.T) {
+func TestMaybeAutoTagNilReturnsImmediately(t *testing.T) {
 	// Create a minimal ClipSyncService and verify maybeAutoTag does not block
 	// when autoTagger is nil (the common case in tests)
 	svc := &ClipSyncService{autoTagger: nil}
 	clip := &models.Clip{ID: uuid.New()}
 	done := make(chan struct{})
 	go func() {
-		svc.maybeAutoTag(clip)
+		svc.maybeAutoTag(context.Background(), clip)
 		close(done)
 	}()
 	select {

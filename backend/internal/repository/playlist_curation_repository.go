@@ -43,14 +43,33 @@ func baseClipFilter(script *models.PlaylistScript) (string, []interface{}) {
 		clause += fmt.Sprintf(` AND EXISTS (
 			SELECT 1 FROM clip_tags ct JOIN tags t ON t.id = ct.tag_id
 			WHERE ct.clip_id = c.id AND t.slug = $%d
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		)`, idx)
 		args = append(args, *script.Tag)
+		idx++
+	}
+	if len(script.Tags) > 0 {
+		if script.TagsLogic == "or" {
+			clause += fmt.Sprintf(` AND EXISTS (
+				SELECT 1 FROM clip_tags ct JOIN tags t ON t.id = ct.tag_id
+				WHERE ct.clip_id = c.id AND t.slug = ANY($%d)
+				  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+			)`, idx)
+		} else {
+			clause += fmt.Sprintf(` AND (
+				SELECT COUNT(DISTINCT t.slug) FROM clip_tags ct JOIN tags t ON t.id = ct.tag_id
+				WHERE ct.clip_id = c.id AND t.slug = ANY($%d)
+				  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+			) = cardinality($%d::text[])`, idx, idx)
+		}
+		args = append(args, script.Tags)
 		idx++
 	}
 	if len(script.ExcludeTags) > 0 {
 		clause += fmt.Sprintf(` AND NOT EXISTS (
 			SELECT 1 FROM clip_tags ct JOIN tags t ON t.id = ct.tag_id
 			WHERE ct.clip_id = c.id AND t.slug = ANY($%d)
+			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
 		)`, idx)
 		args = append(args, script.ExcludeTags)
 		idx++

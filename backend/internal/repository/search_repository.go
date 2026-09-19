@@ -343,7 +343,7 @@ func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req 
 
 // searchTags searches for tags
 func (r *SearchRepository) searchTags(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Tag, int, error) {
-	whereClause := "1=1"
+	whereClause := "NOT is_tag_blacklisted(t.slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)"
 	args := []interface{}{}
 	argPos := 1
 
@@ -457,6 +457,8 @@ func (r *SearchRepository) GetSuggestions(ctx context.Context, query string, lim
 		SELECT name
 		FROM tags
 		WHERE name ILIKE $1
+		  AND NOT is_tag_blacklisted(slug)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
 		ORDER BY usage_count DESC
 		LIMIT $2
 	`

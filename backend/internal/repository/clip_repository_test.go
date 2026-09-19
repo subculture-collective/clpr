@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -256,6 +257,54 @@ func TestClipRepository_MixedTrendingRankUsesVelocityAndUserBoost(t *testing.T) 
 		if second[i].ID != order[i] {
 			t.Fatalf("rank changed inside exploration window at %d: got %s want %s", i, second[i].ID, order[i])
 		}
+	}
+}
+
+func TestClipRepository_TrendingRefreshBatchesRecoversAndExcludesConcurrentRun(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+	ctx := context.Background()
+
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO clips (id,twitch_clip_id,twitch_clip_url,embed_url,title,creator_name,broadcaster_name,view_count,created_at)
+		SELECT gen_random_uuid(), 'batch-'||g, 'https://clips.twitch.tv/'||g,
+		       'https://clips.twitch.tv/embed?clip='||g, 'Batch clip '||g,
+		       'creator', 'broadcaster', g, NOW() - (g||' seconds')::interval
+		FROM generate_series(1,1001) g`); err != nil {
+		t.Fatalf("seed clips: %v", err)
+	}
+	var staleID uuid.UUID
+	if err := pool.QueryRow(ctx, `SELECT id FROM clips LIMIT 1`).Scan(&staleID); err != nil {
+		t.Fatalf("load stale clip: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO clip_score_refresh_stage
+		(clip_id,trending_score,hot_score,popularity_index,engagement_count)
+		VALUES ($1,99,99,99,99)`, staleID); err != nil {
+		t.Fatalf("seed stale stage: %v", err)
+	}
+
+	repo := NewClipRepository(pool)
+	updated, err := repo.UpdateTrendingScoresBatched(ctx, 1000)
+	if err != nil || updated != 1001 {
+		t.Fatalf("batched refresh updated=%d err=%v", updated, err)
+	}
+	var staged int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM clip_score_refresh_stage`).Scan(&staged); err != nil || staged != 0 {
+		t.Fatalf("stage not drained: count=%d err=%v", staged, err)
+	}
+
+	lockConn, err := pool.Acquire(ctx)
+	if err != nil {
+		t.Fatalf("acquire lock connection: %v", err)
+	}
+	defer lockConn.Release()
+	if _, err := lockConn.Exec(ctx, `SELECT pg_advisory_lock(hashtext('clpr:trending_score'))`); err != nil {
+		t.Fatalf("hold advisory lock: %v", err)
+	}
+	defer lockConn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:trending_score'))`)
+	if _, err := repo.UpdateTrendingScoresBatched(ctx, 1000); !errors.Is(err, ErrSchedulerLockUnavailable) {
+		t.Fatalf("concurrent refresh error=%v, want lock unavailable", err)
 	}
 }
 

@@ -22,6 +22,13 @@ func (w *PlaylistGenerationWriter) Persist(ctx context.Context, script *models.P
 		return fmt.Errorf("begin playlist generation transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	var locked bool
+	if err = tx.QueryRow(ctx, `SELECT pg_try_advisory_xact_lock(hashtextextended($1::text, 0))`, script.ID).Scan(&locked); err != nil {
+		return fmt.Errorf("acquire playlist generation advisory lock: %w", err)
+	}
+	if !locked {
+		return ErrSchedulerLockUnavailable
+	}
 	var previousPlaylistID *uuid.UUID
 	if err = tx.QueryRow(ctx, `SELECT last_generated_playlist_id FROM playlist_scripts WHERE id = $1 AND is_active = true FOR UPDATE`, script.ID).Scan(&previousPlaylistID); err != nil {
 		return fmt.Errorf("lock active playlist script: %w", err)

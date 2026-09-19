@@ -4,9 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 func TestAutoTagService_PatternMatching(t *testing.T) {
@@ -134,6 +135,30 @@ func TestAutoTagService_DurationLogic(t *testing.T) {
 	}
 }
 
+func TestCanonicalTagSlugsForClipUsesOnlyHierarchicalTaxonomy(t *testing.T) {
+	gameName := "A New Game"
+	language := "en"
+	duration := 60.0
+	clip := &models.Clip{
+		Title:           "Funny clutch",
+		GameName:        &gameName,
+		Language:        &language,
+		Duration:        &duration,
+		BroadcasterName: "flat-broadcaster-tag-must-not-appear",
+	}
+	tags := services.CanonicalTagSlugsForClip(clip)
+	want := map[string]bool{"content/funny": true, "content/clutch": true, "game/a-new-game": true, "duration/medium": true, "lang/en": true}
+	for _, tag := range tags {
+		if !strings.Contains(tag, "/") {
+			t.Fatalf("flat automated tag produced: %q", tag)
+		}
+		delete(want, tag)
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing canonical tags: %v (got %v)", want, tags)
+	}
+}
+
 func TestAutoTagService_SlugGeneration(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -238,4 +263,3 @@ func toLower(s string) string {
 func contains(text, substr string) bool {
 	return strings.Contains(text, substr)
 }
-

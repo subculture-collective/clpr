@@ -2,9 +2,11 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
@@ -21,14 +23,29 @@ type TrendingScoreRepositoryInterface interface {
 
 // TrendingScoreScheduler manages periodic trending score computation/updates
 type TrendingScoreScheduler struct {
-	clipRepo TrendingScoreRepositoryInterface
-	interval time.Duration
-	stopChan chan struct{}
-	stopOnce sync.Once
+	clipRepo  TrendingScoreRepositoryInterface
+	interval  time.Duration
+	batchSize int
+	stopChan  chan struct{}
+	stopOnce  sync.Once
+}
+
+type batchedTrendingScoreRepository interface {
+	UpdateTrendingScoresBatched(context.Context, int) (int64, error)
+}
+
+func (s *TrendingScoreScheduler) SetBatchSize(size int) *TrendingScoreScheduler {
+	if size > 0 {
+		s.batchSize = size
+	}
+	return s
 }
 
 // NewTrendingScoreScheduler creates a new trending score scheduler
 func NewTrendingScoreScheduler(clipRepo TrendingScoreRepositoryInterface, intervalMinutes int) *TrendingScoreScheduler {
+	if intervalMinutes <= 0 {
+		intervalMinutes = 60
+	}
 	return &TrendingScoreScheduler{
 		clipRepo: clipRepo,
 		interval: time.Duration(intervalMinutes) * time.Minute,
@@ -82,13 +99,23 @@ func (s *TrendingScoreScheduler) refreshTrendingScores(ctx context.Context) {
 	})
 	startTime := time.Now()
 
-	rowsUpdated, err := s.clipRepo.UpdateTrendingScores(ctx)
+	var rowsUpdated int64
+	var err error
+	if batched, ok := s.clipRepo.(batchedTrendingScoreRepository); ok {
+		rowsUpdated, err = batched.UpdateTrendingScoresBatched(ctx, s.batchSize)
+	} else {
+		rowsUpdated, err = s.clipRepo.UpdateTrendingScores(ctx)
+	}
 	duration := time.Since(startTime)
 
 	// Record metrics
 	metrics.JobExecutionDuration.WithLabelValues(trendingScoreJobName).Observe(duration.Seconds())
 
 	if err != nil {
+		if errors.Is(err, repository.ErrSchedulerLockUnavailable) {
+			metrics.JobExecutionTotal.WithLabelValues(trendingScoreJobName, "skipped").Inc()
+			return
+		}
 		utils.Error("Trending score refresh failed", err, map[string]interface{}{
 			"scheduler": trendingScoreSchedulerName,
 			"job":       trendingScoreJobName,

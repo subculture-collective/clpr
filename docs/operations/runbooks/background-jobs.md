@@ -5,8 +5,8 @@ tags: ["operations"]
 area: "operations"
 status: "stable"
 owner: "team-core"
-version: "1.0"
-last_reviewed: 2026-01-29
+version: "1.1"
+last_reviewed: 2026-09-19
 ---
 
 # Background Jobs Runbook
@@ -15,14 +15,33 @@ This runbook provides troubleshooting guidance for background job monitoring and
 
 ## Overview
 
-Clipper uses several background jobs (schedulers) to perform periodic maintenance tasks:
+The API starts this scheduler inventory:
 
-- **hot_score_refresh**: Updates hot scores for trending clips (every 5 minutes)
-- **trending_score_refresh**: Recalculates trending scores (every 60 minutes)
-- **clip_sync**: Syncs clips from Twitch API (every 15 minutes)
-- **reputation_tasks**: Awards badges and updates user stats (every 6 hours)
-- **webhook_retry**: Retries failed webhook deliveries (every 1 minute)
-- **embedding_generation**: Generates embeddings for new clips (configurable interval)
+| Job | Recurrence | Initial delay |
+| --- | --- | --- |
+| engagement refresh | service-defined | immediate |
+| clip sync | 15 minutes | immediate |
+| reputation | 6 hours | immediate |
+| `hot_score_refresh` | 5 minutes by default | 2 minutes |
+| `trending_score_refresh` | 60 minutes by default | 7 minutes |
+| outbound webhook delivery | 30 seconds | immediate |
+| embedding generation | configurable | 12 minutes |
+| export processing | 2 minutes | immediate |
+| email metrics/alerts/cleanup | 24 hours / 30 minutes / 7 days | immediate |
+| live status | 30 seconds when Twitch is configured | immediate |
+| `playlist_script_generate` | checks every 5 minutes | 4 minutes |
+| `auto_tag_processing` | 30 seconds by default | 15 seconds |
+| `tag_promotion_detection` | 15 minutes by default | 90 seconds |
+
+Global jobs use PostgreSQL advisory locks so only one API replica performs a
+refresh. Startup delays intentionally stagger hot score, playlist, trending,
+embedding, tagging, and promotion work. A `skipped` execution means another
+replica owns the lock; it is not a failure.
+
+The configurable values are `AUTO_TAG_INTERVAL_SECONDS`,
+`TAG_PROMOTION_INTERVAL_MINUTES`, `TRENDING_SCORE_INTERVAL_MINUTES`,
+`TRENDING_SCORE_BATCH_SIZE`, and the corresponding `*_START_DELAY_SECONDS`
+values documented in `backend/.env.example`.
 
 ## Metrics
 
@@ -33,6 +52,46 @@ All background jobs expose the following Prometheus metrics:
 - `job_last_success_timestamp_seconds{job_name}`: Unix timestamp of last successful run
 - `job_items_processed_total{job_name, status}`: Items processed (status: success, failed, skipped)
 - `job_queue_size{job_name}`: Current queue size (for jobs with queues)
+
+Trending-score refresh calculates one global snapshot and applies it in
+bounded batches. If a batch fails, the job is failed and the next locked run
+rebuilds staging from scratch. Do not manually truncate staging while a refresh
+is active.
+
+## Taxonomy Backfill
+
+Capture the pre-migration baseline before changing production:
+
+```sql
+SELECT COUNT(*) AS tags FROM tags;
+SELECT COUNT(*) AS associations FROM clip_tags;
+SELECT id, last_generated_playlist_id FROM playlist_scripts WHERE is_active;
+```
+
+Preview and run the resumable UUID-cursor backfill from an API image containing
+the command:
+
+```bash
+backfill-canonical-tags --dry-run --batch-size=500
+backfill-canonical-tags --batch-size=500 --after=<last-uuid-from-output>
+```
+
+The command reports examined, migrated, ambiguous, skipped, and failed counts.
+Review ambiguous flat community tags before the live run. A failed clip is not
+marked structurally tagged and remains retryable. Keep the additive canonical
+tags, aliases, and score staging table during verification; if rollback is
+needed, roll back the application before considering the migration down step.
+
+## Release Acceptance
+
+1. Deploy scoring batching, locks, staggering, shutdown handling, and metrics.
+2. Require three consecutive successful hourly trending refreshes, then observe
+   24 hours with no scoring statement or lock timeouts.
+3. Enable canonical tagging and run the backfill dry-run, review, then live run.
+4. Enable promotion detection and suppression-aware playlist behavior.
+5. Confirm new clips have only canonical automated tags, candidates arrive
+   within 15 minutes, `spam*` blocks matching slugs, and suppressed tags do not
+   influence generated playlists.
 
 ## Alert Responses
 

@@ -2,9 +2,11 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
@@ -29,6 +31,9 @@ type HotScoreScheduler struct {
 
 // NewHotScoreScheduler creates a new hot score scheduler
 func NewHotScoreScheduler(clipRepo ClipRepositoryInterface, intervalMinutes int) *HotScoreScheduler {
+	if intervalMinutes <= 0 {
+		intervalMinutes = 5
+	}
 	return &HotScoreScheduler{
 		clipRepo: clipRepo,
 		interval: time.Duration(intervalMinutes) * time.Minute,
@@ -89,6 +94,10 @@ func (s *HotScoreScheduler) refreshHotScores(ctx context.Context) {
 	metrics.JobExecutionDuration.WithLabelValues(hotScoreJobName).Observe(duration.Seconds())
 
 	if err != nil {
+		if errors.Is(err, repository.ErrSchedulerLockUnavailable) {
+			metrics.JobExecutionTotal.WithLabelValues(hotScoreJobName, "skipped").Inc()
+			return
+		}
 		utils.Error("Hot score refresh failed", err, map[string]interface{}{
 			"scheduler": hotScoreSchedulerName,
 			"job":       hotScoreJobName,
