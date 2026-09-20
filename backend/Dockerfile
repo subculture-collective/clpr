@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflag
 
 # Final stage includes the local faster-whisper runtime and ffmpeg. Video is
 # streamed from Twitch; only a short-lived normalized WAV is written.
-FROM python:3.12-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2
+FROM python:3.12-slim-bookworm@sha256:392307d22300de8b5986851a12d9176dfc0fc073e65bf6523ebd7dcbeb23564e
 
 ARG OCI_REVISION=unknown
 ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
