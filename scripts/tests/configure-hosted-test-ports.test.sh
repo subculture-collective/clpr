@@ -20,6 +20,39 @@ source scripts/configure-hosted-test-ports.sh 3573
 [[ "$TEST_OPENSEARCH_PORT" == 43573 ]] || fail "OpenSearch port is not run-scoped"
 [[ "$TEST_OPENSEARCH_METRICS_PORT" == 53573 ]] || fail "OpenSearch metrics port is not run-scoped"
 
+python3 - <<'PY' &
+import socket
+import time
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(("127.0.0.1", 23573))
+    listener.listen()
+    time.sleep(30)
+PY
+listener_pid=$!
+trap 'kill "$listener_pid" 2>/dev/null || true; wait "$listener_pid" 2>/dev/null || true' EXIT
+
+for _ in {1..50}; do
+  if ! port_is_available 23573 2>/dev/null; then
+    break
+  fi
+  sleep 0.02
+done
+! port_is_available 23573 2>/dev/null || fail "failed to reserve the collision-test port"
+
+collision_database_port="$({
+  # shellcheck disable=SC1091 # Exercise a second run in an isolated subshell.
+  source scripts/configure-hosted-test-ports.sh 3573
+  printf '%s' "$TEST_DATABASE_PORT"
+})"
+[[ "$collision_database_port" == 23574 ]] \
+  || fail "database port selection did not skip an occupied host port"
+
+kill "$listener_pid"
+wait "$listener_pid" 2>/dev/null || true
+trap - EXIT
+
 rendered="$(docker compose -f docker-compose.test.yml config)"
 for expected in \
   'name: clpr-test-3573' \
@@ -50,7 +83,9 @@ grep -A4 '^  image-security:' .gitea/workflows/release-gates.yml \
   || fail "release image security must wait for the browser gate"
 grep -Fq 'workflow_dispatch:' .gitea/workflows/source-convergence.yml \
   || fail "source convergence must remain manually dispatchable"
-! grep -Eq '^  (push|pull_request):' .gitea/workflows/source-convergence.yml \
-  || fail "source convergence must not duplicate automatic release gates"
+grep -Fq '  pull_request:' .gitea/workflows/source-convergence.yml \
+  || fail "source convergence must remain a required pull-request gate"
+! grep -Eq '^  push:' .gitea/workflows/source-convergence.yml \
+  || fail "source convergence must not duplicate post-merge release work"
 
 echo "hosted test port contract passed"
