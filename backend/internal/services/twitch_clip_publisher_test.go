@@ -221,6 +221,37 @@ func TestVisionFailureRemainsRetryable(t *testing.T) {
 	if processed || attempts != 1 || failure == "" {
 		t.Fatalf("failure state = processed %t attempts %d error %q", processed, attempts, failure)
 	}
+	for attempt := 2; attempt <= 4; attempt++ {
+		if err := clipRepo.RecordVisionFailure(ctx, published.Clip.ID, context.DeadlineExceeded); err != nil {
+			t.Fatal(err)
+		}
+	}
+	err = pool.QueryRow(ctx, `SELECT vision_processed_at IS NOT NULL, vision_attempt_count, vision_error FROM clips WHERE id=$1`, published.Clip.ID).Scan(&processed, &attempts, &failure)
+	if err != nil || processed || attempts != 3 || failure != "retry_exhausted: context deadline exceeded" {
+		t.Fatalf("exhausted state = processed %t attempts %d error %q query error %v", processed, attempts, failure, err)
+	}
+	// Even after the retry delay, exhausted clips must not re-enter the queue.
+	_, err = pool.Exec(ctx, `UPDATE clips SET vision_attempted_at=NOW()-INTERVAL '1 hour' WHERE id=$1`, published.Clip.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queued, err := clipRepo.GetClipsNeedingVision(ctx, 10, time.Now().Add(-time.Hour))
+	if err != nil || len(queued) != 0 {
+		t.Fatalf("exhausted queue = %v, error %v", queued, err)
+	}
+	fresh, err := publisher.Publish(ctx, &twitch.Clip{
+		ID: "fresh-vision", URL: "https://clips.twitch.tv/fresh-vision",
+		EmbedURL: "https://clips.twitch.tv/embed?clip=fresh-vision", Title: "fresh clip",
+		CreatorName: "creator", BroadcasterName: "broadcaster", CreatedAt: time.Now(),
+		ThumbnailURL: thumbnailURL,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queued, err = clipRepo.GetClipsNeedingVision(ctx, 10, time.Now().Add(-time.Hour))
+	if err != nil || len(queued) != 1 || queued[0].ID != fresh.Clip.ID {
+		t.Fatalf("fresh clip must proceed after exhausted clip: %v, error %v", queued, err)
+	}
 }
 
 func TestClipTranscriptCanBeStoredAndRetrieved(t *testing.T) {
