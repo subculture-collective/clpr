@@ -3,7 +3,9 @@
 -- this migration makes the same vocabulary discoverable through the tag API.
 
 INSERT INTO tags (id, name, slug, parent_slug, description, usage_count, created_at)
-SELECT gen_random_uuid(), seed.name, 'content/' || seed.slug, 'content', seed.description, 0, NOW()
+-- Names are globally unique, including legacy/community tags outside content/.
+-- Match AttachContentTags' namespace so e.g. an existing Podcast tag is retained.
+SELECT gen_random_uuid(), 'Content: ' || seed.slug, 'content/' || seed.slug, 'content', seed.description, 0, NOW()
 FROM (VALUES
     ('Gameplay', 'gameplay', 'Video game play is visibly on screen.'),
     ('Facecam', 'facecam', 'Streamer camera is the primary visible subject.'),
