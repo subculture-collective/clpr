@@ -23,20 +23,6 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
-// contentTagSlugs is the set of valid content tag slugs the vision model can choose from.
-var contentTagSlugs = []string{
-	"clutch",
-	"funny",
-	"fail",
-	"educational",
-	"highlights",
-	"reaction",
-	"speedrun",
-	"music",
-	"creative",
-	"irl",
-}
-
 // ErrVisionAPIUnavailable is returned when the vision API is not configured.
 var ErrVisionAPIUnavailable = fmt.Errorf("vision API is disabled or not configured")
 
@@ -283,12 +269,11 @@ func (ts *ThumbnailService) ClassifyThumbnails(ctx context.Context, imagePaths [
 	}
 
 	// Construct the system + user message with embedded images.
-	tagsList := strings.Join(contentTagSlugs, `", "`)
 	systemPrompt := `You are a content classifier for Twitch clips. Your task is to analyze video frames and select the most appropriate content tags. Only return tags you are confident about. Return exactly a JSON object: {"tags": ["tag1", "tag2"]}`
 
 	userPrompt := fmt.Sprintf(
-		`These are %d frames from a Twitch clip in the game/category "%s". Select 1-3 content tags that best describe what is happening. Choose only from: ["%s"]. Respond with JSON only.`,
-		len(images), gameName, tagsList,
+		"These are %d frames from a Twitch clip in the game/category %q. Select 0-5 precise tags from the catalog below. Prefer the most specific tag and do not add a broad synonym for the same evidence. A title or category name does not prove an outcome. If the frames do not support a catalog tag, return an empty tags array.\n\n%s\n\nRespond with JSON only.",
+		len(images), gameName, contentTagPromptCatalog(),
 	)
 
 	// Build the OpenAI-compatible multi-image message.
@@ -405,8 +390,7 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 		return nil, fmt.Errorf("marshalling clip metadata: %w", err)
 	}
 
-	tagsList := strings.Join(contentTagSlugs, `", "`)
-	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. Return exactly one JSON object matching this schema: {"suggested_title":"string","confidence":0.0,"basis":"source_title|transcript|visible|metadata|insufficient","evidence":["short string"],"tags":["allowed-slug"]}. confidence must be a JSON number from 0 to 1; evidence and tags must be JSON arrays of strings. Use empty arrays when there is no evidence or no supported tag.`
+	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. confidence and basis describe the suggested title only. Evaluate tags independently: an insufficient title does not require empty tags when the thumbnail directly supports a visible tag. For tags, source-title wording alone is never sufficient evidence. Prefer the most specific supported tag and do not add broad synonyms for the same evidence. Return exactly one JSON object matching this schema: {"suggested_title":"string","confidence":0.0,"basis":"source_title|transcript|visible|metadata|insufficient","evidence":["short string"],"tags":["allowed-slug"]}. confidence must be a JSON number from 0 to 1; evidence and tags must be JSON arrays of strings. Evidence must briefly support every returned tag. Use empty tags only when no catalog tag is supported.`
 	transcriptContext := "No authorized transcript is available."
 	if transcript != "" {
 		runes := []rune(transcript)
@@ -416,8 +400,8 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 		transcriptContext = "Authorized Whisper transcript: " + string(runes)
 	}
 	userPrompt := fmt.Sprintf(
-		`Twitch metadata: %s. %s Suggest an accurate concise title and 0-3 tags chosen only from ["%s"]. If evidence is insufficient, preserve the source title, set confidence to 0, use basis "insufficient", and return empty evidence and tags arrays.`,
-		string(metadataJSON), transcriptContext, tagsList,
+		"Twitch metadata: %s. %s Suggest an accurate concise title and 0-5 tags chosen only from the evidence-aware catalog below. If title evidence is insufficient, preserve the source title, set confidence to 0, and use basis \"insufficient\". Independently return any directly supported tags with short evidence; return empty tags only when none are supported.\n\n%s",
+		string(metadataJSON), transcriptContext, contentTagPromptCatalog(),
 	)
 
 	reqBody := map[string]interface{}{
@@ -606,6 +590,7 @@ func gameName(clip *models.Clip) string {
 }
 
 func filterContentTags(input []string) []string {
+	const maxContentTags = 5
 	validSet := make(map[string]bool, len(contentTagSlugs))
 	for _, slug := range contentTagSlugs {
 		validSet[slug] = true
@@ -617,6 +602,9 @@ func filterContentTags(input []string) []string {
 		if tag != "" && validSet[tag] && !seen[tag] {
 			seen[tag] = true
 			result = append(result, tag)
+			if len(result) == maxContentTags {
+				break
+			}
 		}
 	}
 	return result

@@ -2,12 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +25,39 @@ func newTestThumbnailService(ffmpegPath, outputDir, apiKey, apiURL, model string
 }
 
 const testThumbnailDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+
+func TestContentTagCatalogIsLargeUniqueAndPrompted(t *testing.T) {
+	assert.GreaterOrEqual(t, len(contentTagCatalog), 100, "the expanded catalog should cover substantially more than the legacy ten tags")
+	assert.Len(t, contentTagSlugs, len(contentTagCatalog))
+
+	validSlug := regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+	seen := make(map[string]bool, len(contentTagCatalog))
+	prompt := contentTagPromptCatalog()
+	for _, tag := range contentTagCatalog {
+		assert.True(t, validSlug.MatchString(tag.Slug), "invalid content tag slug %q", tag.Slug)
+		assert.False(t, seen[tag.Slug], "duplicate content tag slug %q", tag.Slug)
+		seen[tag.Slug] = true
+		assert.NotEmpty(t, tag.Name)
+		assert.NotEmpty(t, tag.Description)
+		assert.Contains(t, []contentTagEvidence{visibleTag, contextualTag, strongTag}, tag.Evidence)
+		assert.Equal(t, 1, strings.Count(prompt, "- "+tag.Slug+":"), "catalog tag should appear exactly once in the model prompt")
+	}
+
+	assert.True(t, seen["gameplay"])
+	assert.True(t, seen["conversation"])
+	assert.True(t, seen["music-performance"])
+	assert.True(t, seen["boss-fight"])
+	assert.True(t, seen["close-call"])
+	assert.True(t, seen["cosplay"])
+}
+
+func TestFilterContentTagsBoundsExpandedModelOutput(t *testing.T) {
+	tags := filterContentTags([]string{
+		"gameplay", "conversation", "music-performance", "boss-fight", "close-call",
+		"cosplay", "unknown", "gameplay",
+	})
+	assert.Equal(t, []string{"gameplay", "conversation", "music-performance", "boss-fight", "close-call"}, tags)
+}
 
 func TestNewThumbnailService(t *testing.T) {
 	svc := NewThumbnailService(
@@ -219,7 +254,8 @@ func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
 		assert.Contains(t, requestText, `\"evidence\":[\"short string\"]`)
 		assert.Contains(t, requestText, "confidence must be a JSON number")
 		assert.Contains(t, requestText, `use basis \"insufficient\"`)
-		assert.Contains(t, requestText, "empty evidence and tags arrays")
+		assert.Contains(t, requestText, "Evaluate tags independently")
+		assert.Contains(t, requestText, "return empty tags only when none are supported")
 
 		resp := map[string]interface{}{
 			"choices": []map[string]interface{}{
@@ -530,9 +566,9 @@ func TestClassifyThumbnails_WithMockAPI_OpenRouterHeaders(t *testing.T) {
 	assert.Equal(t, []string{"irl"}, tags)
 }
 
-// TestClassifyThumbnails_WithRealAPI performs a live API call to the configured
-// vision model. It is skipped unless VISION_API_KEY and VISION_API_URL
-// environment variables are set.
+// TestClassifyThumbnails_WithRealAPI performs a live API call through the same
+// OpenAI-compatible request and parser used by the worker. It is skipped unless
+// VISION_API_KEY and VISION_API_URL are set explicitly.
 func TestClassifyThumbnails_WithRealAPI(t *testing.T) {
 	apiKey := os.Getenv("VISION_API_KEY")
 	apiURL := os.Getenv("VISION_API_URL")
@@ -540,29 +576,26 @@ func TestClassifyThumbnails_WithRealAPI(t *testing.T) {
 		t.Skip("Skipping real vision API test: set VISION_API_KEY and VISION_API_URL to run")
 	}
 
-	model := os.Getenv("VISION_API_MODEL")
+	model := os.Getenv("VISION_MODEL")
 	if model == "" {
 		model = "gpt-4o-mini"
 	}
 
 	tmpDir := t.TempDir()
 
-	// Create a small solid-color test image that the API can process.
-	imgPath := filepath.Join(tmpDir, "test_frame.jpg")
-	require.NoError(t, os.WriteFile(imgPath, []byte("placeholder"), 0644))
+	// Create a valid one-pixel PNG. The model may reasonably abstain on it, but
+	// the request, image input, structured response, and parser must all work.
+	imgPath := filepath.Join(tmpDir, "test_frame.png")
+	imageBytes, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(testThumbnailDataURL, "data:image/png;base64,"))
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(imgPath, imageBytes, 0644))
 
 	svc := newTestThumbnailService("ffmpeg", tmpDir, apiKey, apiURL, model, true)
 	require.True(t, svc.Operational())
 
 	ctx := context.Background()
-	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Test Game")
-
-	// The real API call may fail for various reasons (invalid image, network, etc.).
-	// We just verify the code path runs without panicking and returns reasonable results.
-	if err != nil {
-		t.Logf("Real API call returned error (acceptable): %v", err)
-		return
-	}
+	tags, err := svc.ClassifyThumbnails(ctx, []string{imgPath}, "Unknown Game")
+	require.NoError(t, err)
 
 	t.Logf("Real API returned tags: %v", tags)
 
