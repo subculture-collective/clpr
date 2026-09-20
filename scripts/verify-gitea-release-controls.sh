@@ -43,8 +43,10 @@ requirements = {
 for key, expected in requirements.items():
     if protection.get(key) != expected:
         failures.append(f"main protection {key} must equal {expected!r}")
-if int(protection.get("required_approvals") or 0) < 1:
-    failures.append("main protection must require at least one approval")
+# CLPR has a solo maintainer: mandatory independent approval would block
+# every change. Required CI contexts and the other branch controls still apply.
+if int(protection.get("required_approvals") or 0) != 0:
+    failures.append("main protection must use zero required approvals for the solo-maintainer workflow")
 required_contexts = {
     "Source convergence / Complete local-equivalent source gate (pull_request)",
     "Authoritative release gates / Secret history gate (pull_request)",
