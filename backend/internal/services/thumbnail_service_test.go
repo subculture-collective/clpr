@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
@@ -20,6 +21,8 @@ import (
 func newTestThumbnailService(ffmpegPath, outputDir, apiKey, apiURL, model string, enabled bool) *ThumbnailService {
 	return NewThumbnailService(ffmpegPath, outputDir, "openai", apiKey, apiURL, model, "", "", enabled, 30)
 }
+
+const testThumbnailDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 
 func TestNewThumbnailService(t *testing.T) {
 	svc := NewThumbnailService(
@@ -136,8 +139,65 @@ func TestClassifyThumbnails_WithMockAPI(t *testing.T) {
 	assert.Equal(t, []string{"clutch", "highlights"}, tags)
 }
 
+func TestAnalyzeClipThumbnail_PausesProviderAfterPaymentFailure(t *testing.T) {
+	thumbnailURL := testThumbnailDataURL
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		http.Error(w, `{"error":"insufficient credits"}`, http.StatusPaymentRequired)
+	}))
+	defer server.Close()
+
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "vision-model", true)
+	clip := &models.Clip{Title: "clip", ThumbnailURL: &thumbnailURL}
+
+	_, err := svc.AnalyzeClipThumbnail(context.Background(), clip)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "status 402")
+	assert.False(t, svc.Operational())
+
+	_, err = svc.AnalyzeClipThumbnail(context.Background(), clip)
+	require.ErrorIs(t, err, ErrVisionProviderPaused)
+	assert.Equal(t, 1, requests, "a paused provider must not receive another queued request")
+}
+
+func TestAnalyzeClipThumbnail_DefersProviderAfterTransientOutage(t *testing.T) {
+	thumbnailURL := testThumbnailDataURL
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Retry-After", "60")
+		http.Error(w, `{"error":"temporarily unavailable"}`, http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "vision-model", true)
+	clip := &models.Clip{Title: "clip", ThumbnailURL: &thumbnailURL}
+
+	_, err := svc.AnalyzeClipThumbnail(context.Background(), clip)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "status 503")
+	assert.False(t, svc.Operational())
+
+	_, err = svc.AnalyzeClipThumbnail(context.Background(), clip)
+	require.ErrorIs(t, err, ErrVisionProviderPaused)
+	assert.Equal(t, 1, requests, "a transient outage must defer the remaining queue")
+
+	svc.pauseMu.Lock()
+	svc.pause.until = time.Now().Add(-time.Second)
+	svc.pauseMu.Unlock()
+	assert.True(t, svc.Operational(), "an expired transient pause must reopen automatically")
+}
+
+func TestThumbnailDataURLRejectsNonTwitchRemoteHost(t *testing.T) {
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", "https://vision.invalid", "vision-model", true)
+	_, err := svc.fetchThumbnailDataURL(context.Background(), "https://example.com/image.jpg")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "allowed Twitch CDN")
+}
+
 func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
-	thumbnailURL := "https://static-cdn.jtvnw.net/twitch-vap-video-assets/example/landscape/thumb/example-640x360.jpg"
+	thumbnailURL := testThumbnailDataURL
 	gameName := "VALORANT"
 	language := "en"
 	duration := 31.2
@@ -149,12 +209,17 @@ func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
 		require.NoError(t, err)
 		requestText := string(encoded)
 
-		assert.Contains(t, requestText, thumbnailURL)
+		assert.Contains(t, requestText, "data:image/png;base64,")
 		assert.Contains(t, requestText, "ranked demon gets humbled")
 		assert.Contains(t, requestText, "StreamerOne")
 		assert.Contains(t, requestText, "ClipperTwo")
 		assert.Contains(t, requestText, gameName)
 		assert.Contains(t, requestText, language)
+		assert.Contains(t, requestText, `\"confidence\":0.0`)
+		assert.Contains(t, requestText, `\"evidence\":[\"short string\"]`)
+		assert.Contains(t, requestText, "confidence must be a JSON number")
+		assert.Contains(t, requestText, `use basis \"insufficient\"`)
+		assert.Contains(t, requestText, "empty evidence and tags arrays")
 
 		resp := map[string]interface{}{
 			"choices": []map[string]interface{}{
@@ -192,7 +257,7 @@ func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
 }
 
 func TestAnalyzeClipThumbnail_RejectsUnsupportedEvidenceBasis(t *testing.T) {
-	thumbnailURL := "https://static-cdn.jtvnw.net/example.jpg"
+	thumbnailURL := testThumbnailDataURL
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := map[string]interface{}{
 			"choices": []map[string]interface{}{
@@ -219,7 +284,7 @@ func TestAnalyzeClipThumbnail_RejectsUnsupportedEvidenceBasis(t *testing.T) {
 }
 
 func TestAnalyzeClipWithTranscriptUsesSpokenWordsAsTitleEvidence(t *testing.T) {
-	thumbnailURL := "https://static-cdn.jtvnw.net/example.jpg"
+	thumbnailURL := testThumbnailDataURL
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))

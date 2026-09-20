@@ -1721,7 +1721,8 @@ func (r *ClipRepository) RecordThumbnailEnrichment(ctx context.Context, enrichme
 	_, err = tx.Exec(ctx, `
 		UPDATE clips
 		SET vision_processed_at = NOW(), vision_attempted_at = NOW(),
-			vision_attempt_count = vision_attempt_count + 1, vision_error = NULL
+			vision_attempt_count = vision_attempt_count + 1, vision_error = NULL,
+			topics_classified_at = NULL
 		WHERE id = $1
 	`, enrichment.ClipID)
 	if err != nil {
@@ -1733,8 +1734,9 @@ func (r *ClipRepository) RecordThumbnailEnrichment(ctx context.Context, enrichme
 	return nil
 }
 
-// RecordVisionFailure records a retryable provider failure without marking the
-// clip complete.
+// RecordVisionFailure records a provider or persistence failure without
+// marking the clip complete. Provider-level pause policy is owned by the
+// thumbnail service and scheduler rather than encoded into each queued clip.
 func (r *ClipRepository) RecordVisionFailure(ctx context.Context, clipID uuid.UUID, visionErr error) error {
 	message := "unknown vision error"
 	if visionErr != nil {
@@ -1781,7 +1783,8 @@ func (r *ClipRepository) RecordClipTranscript(ctx context.Context, transcript *m
 		SET transcription_processed_at = NOW(), transcription_attempted_at = NOW(),
 			transcription_attempt_count = transcription_attempt_count + 1,
 			transcription_error = NULL,
-			vision_processed_at = NULL
+			vision_processed_at = NULL,
+			topics_classified_at = NULL
 		WHERE id = $1
 	`, transcript.ClipID)
 	if err != nil {

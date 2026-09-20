@@ -148,6 +148,9 @@ func TestThumbnailEnrichmentTitleSurvivesProviderRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Publish() error = %v", err)
 	}
+	if _, err = pool.Exec(ctx, `UPDATE clips SET topics_classified_at = NOW() WHERE id = $1`, published.Clip.ID); err != nil {
+		t.Fatalf("seed prior topic classification: %v", err)
+	}
 
 	err = clipRepo.RecordThumbnailEnrichment(ctx, &models.ClipEnrichment{
 		ClipID: published.Clip.ID, SourceTitle: "lol",
@@ -170,14 +173,16 @@ func TestThumbnailEnrichmentTitleSurvivesProviderRefresh(t *testing.T) {
 
 	var titleSource string
 	var visionProcessed bool
+	var topicsStale bool
 	err = pool.QueryRow(ctx, `
-		SELECT title_source, vision_processed_at IS NOT NULL FROM clips WHERE id = $1
-	`, published.Clip.ID).Scan(&titleSource, &visionProcessed)
+		SELECT title_source, vision_processed_at IS NOT NULL, topics_classified_at IS NULL
+		FROM clips WHERE id = $1
+	`, published.Clip.ID).Scan(&titleSource, &visionProcessed, &topicsStale)
 	if err != nil {
 		t.Fatalf("query enrichment state: %v", err)
 	}
-	if titleSource != "ai" || !visionProcessed {
-		t.Fatalf("state = source %q processed %t, want ai/true", titleSource, visionProcessed)
+	if titleSource != "ai" || !visionProcessed || !topicsStale {
+		t.Fatalf("state = source %q processed %t topics_stale %t, want ai/true/true", titleSource, visionProcessed, topicsStale)
 	}
 }
 
@@ -236,6 +241,9 @@ func TestClipTranscriptCanBeStoredAndRetrieved(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Publish() error = %v", err)
 	}
+	if _, err = pool.Exec(ctx, `UPDATE clips SET topics_classified_at = NOW() WHERE id = $1`, published.Clip.ID); err != nil {
+		t.Fatalf("seed prior topic classification: %v", err)
+	}
 	segments := json.RawMessage(`[{
 		"start":0,"end":1.2,"text":"what a save","avg_logprob":-0.1
 	}]`)
@@ -253,6 +261,13 @@ func TestClipTranscriptCanBeStoredAndRetrieved(t *testing.T) {
 	}
 	if transcript == nil || transcript.FullText != "what a save" || transcript.Language != "en" {
 		t.Fatalf("retrieved transcript = %#v", transcript)
+	}
+	var topicsStale bool
+	if err = pool.QueryRow(ctx, `SELECT topics_classified_at IS NULL FROM clips WHERE id = $1`, published.Clip.ID).Scan(&topicsStale); err != nil {
+		t.Fatalf("query topic classification state: %v", err)
+	}
+	if !topicsStale {
+		t.Fatal("stored transcript must invalidate the prior topic classification")
 	}
 }
 
