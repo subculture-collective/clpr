@@ -1586,14 +1586,15 @@ func (r *ClipRepository) CountPendingStructuralTags(ctx context.Context) (int, e
 // GetClipsNeedingVision returns automated Twitch clips whose public thumbnail
 // has not yet been analyzed. Failed calls are delayed to avoid hammering the
 // provider, but remain retryable.
-func (r *ClipRepository) GetClipsNeedingVision(ctx context.Context, limit int) ([]models.Clip, error) {
+func (r *ClipRepository) GetClipsNeedingVision(ctx context.Context, limit int, createdAfter time.Time) ([]models.Clip, error) {
 	return r.getClipsForProcessing(ctx, `
 		vision_processed_at IS NULL
 		AND submitted_by_user_id IS NULL
 		AND thumbnail_url IS NOT NULL
 		AND thumbnail_url <> ''
+		AND created_at >= $2
 		AND (vision_attempted_at IS NULL OR vision_attempted_at < NOW() - INTERVAL '15 minutes')
-	`, limit)
+	`, limit, createdAfter)
 }
 
 // GetClipsNeedingTranscription returns only clips whose broadcaster has an
@@ -1612,7 +1613,7 @@ func (r *ClipRepository) GetClipsNeedingTranscription(ctx context.Context, limit
 	`, limit)
 }
 
-func (r *ClipRepository) getClipsForProcessing(ctx context.Context, condition string, limit int) ([]models.Clip, error) {
+func (r *ClipRepository) getClipsForProcessing(ctx context.Context, condition string, limit int, conditionArgs ...interface{}) ([]models.Clip, error) {
 	query := `
 		SELECT
 			id, twitch_clip_id, twitch_clip_url, embed_url, title,
@@ -1628,7 +1629,8 @@ func (r *ClipRepository) getClipsForProcessing(ctx context.Context, condition st
 		LIMIT $1
 	`
 
-	rows, err := r.pool.Query(ctx, query, limit)
+	queryArgs := append([]interface{}{limit}, conditionArgs...)
+	rows, err := r.pool.Query(ctx, query, queryArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get untagged clips: %w", err)
 	}

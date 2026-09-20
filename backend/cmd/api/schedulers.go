@@ -127,6 +127,7 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 			repos.Clip,
 			repos.Tag,
 			cfg.Jobs.AutoTagIntervalSeconds,
+			scheduler.WithVisionQueue(cfg.Vision.BatchSize, cfg.Vision.CreatedAfter),
 		)
 		sg.launch(ctx, time.Duration(cfg.Jobs.AutoTagStartDelaySeconds)*time.Second, sg.AutoTag.Start)
 	}

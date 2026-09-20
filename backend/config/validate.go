@@ -96,6 +96,20 @@ func (c *Config) validateEnabledFeatures(releaseProfile bool) error {
 	if c.Embedding.Enabled && (strings.TrimSpace(c.Embedding.OpenAIAPIKey) == "" || strings.TrimSpace(c.Embedding.APIBaseURL) == "") {
 		return fmt.Errorf("embeddings require an API key and EMBEDDING_API_BASE_URL")
 	}
+	if c.Vision.Enabled {
+		if strings.TrimSpace(c.Vision.APIKey) == "" || strings.TrimSpace(c.Vision.Model) == "" {
+			return fmt.Errorf("vision enrichment requires VISION_API_KEY and VISION_MODEL")
+		}
+		if err := validateURL("VISION_API_URL", c.Vision.ResolveAPIURL(), false); err != nil {
+			return err
+		}
+		if c.Vision.BatchSize < 1 || c.Vision.BatchSize > 10 {
+			return fmt.Errorf("VISION_BATCH_SIZE must be between 1 and 10")
+		}
+		if c.Vision.CreatedAfter.IsZero() {
+			return fmt.Errorf("VISION_CREATED_AFTER is required when vision enrichment is enabled")
+		}
+	}
 	if releaseProfile && (c.FeatureFlags.StreamClipCreation || c.FeatureFlags.LiveFeed || c.FeatureFlags.WatchParties) {
 		return fmt.Errorf("incomplete stream clip, live feed, and watch party features must remain disabled in release profiles")
 	}
