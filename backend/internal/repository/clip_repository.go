@@ -1585,10 +1585,12 @@ func (r *ClipRepository) CountPendingStructuralTags(ctx context.Context) (int, e
 
 // GetClipsNeedingVision returns automated Twitch clips whose public thumbnail
 // has not yet been analyzed. Failed calls are delayed to avoid hammering the
-// provider, but remain retryable.
+// provider. Three clip-specific failures exhaust automatic retries; their error
+// and attempt count remain available for review without marking success.
 func (r *ClipRepository) GetClipsNeedingVision(ctx context.Context, limit int, createdAfter time.Time) ([]models.Clip, error) {
 	return r.getClipsForProcessing(ctx, `
 		vision_processed_at IS NULL
+		AND vision_attempt_count < 3
 		AND submitted_by_user_id IS NULL
 		AND thumbnail_url IS NOT NULL
 		AND thumbnail_url <> ''
@@ -1736,7 +1738,7 @@ func (r *ClipRepository) RecordThumbnailEnrichment(ctx context.Context, enrichme
 	return nil
 }
 
-// RecordVisionFailure records a provider or persistence failure without
+// RecordVisionFailure records a clip-specific or persistence failure without
 // marking the clip complete. Provider-level pause policy is owned by the
 // thumbnail service and scheduler rather than encoded into each queued clip.
 func (r *ClipRepository) RecordVisionFailure(ctx context.Context, clipID uuid.UUID, visionErr error) error {
@@ -1747,8 +1749,10 @@ func (r *ClipRepository) RecordVisionFailure(ctx context.Context, clipID uuid.UU
 	_, err := r.pool.Exec(ctx, `
 		UPDATE clips
 		SET vision_attempted_at = NOW(), vision_attempt_count = vision_attempt_count + 1,
-			vision_error = LEFT($2, 1000)
-		WHERE id = $1
+			vision_error = CASE WHEN vision_attempt_count + 1 >= 3
+				THEN 'retry_exhausted: ' || LEFT($2, 983)
+				ELSE LEFT($2, 1000) END
+		WHERE id = $1 AND vision_processed_at IS NULL AND vision_attempt_count < 3
 	`, clipID, message)
 	if err != nil {
 		return fmt.Errorf("recording vision failure: %w", err)
