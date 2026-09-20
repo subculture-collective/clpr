@@ -215,6 +215,11 @@ func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
 		assert.Contains(t, requestText, "ClipperTwo")
 		assert.Contains(t, requestText, gameName)
 		assert.Contains(t, requestText, language)
+		assert.Contains(t, requestText, `\"confidence\":0.0`)
+		assert.Contains(t, requestText, `\"evidence\":[\"short string\"]`)
+		assert.Contains(t, requestText, "confidence must be a JSON number")
+		assert.Contains(t, requestText, `use basis \"insufficient\"`)
+		assert.Contains(t, requestText, "empty evidence and tags arrays")
 
 		resp := map[string]interface{}{
 			"choices": []map[string]interface{}{

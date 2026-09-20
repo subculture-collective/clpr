@@ -406,7 +406,7 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 	}
 
 	tagsList := strings.Join(contentTagSlugs, `", "`)
-	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. Return exactly one JSON object with suggested_title, confidence (0 to 1), basis (source_title, transcript, visible, metadata, or insufficient), evidence (short strings), and tags.`
+	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. Return exactly one JSON object matching this schema: {"suggested_title":"string","confidence":0.0,"basis":"source_title|transcript|visible|metadata|insufficient","evidence":["short string"],"tags":["allowed-slug"]}. confidence must be a JSON number from 0 to 1; evidence and tags must be JSON arrays of strings. Use empty arrays when there is no evidence or no supported tag.`
 	transcriptContext := "No authorized transcript is available."
 	if transcript != "" {
 		runes := []rune(transcript)
@@ -416,7 +416,7 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 		transcriptContext = "Authorized Whisper transcript: " + string(runes)
 	}
 	userPrompt := fmt.Sprintf(
-		`Twitch metadata: %s. %s Suggest an accurate concise title and 0-3 tags chosen only from ["%s"]. If evidence is insufficient, preserve the source title and use basis "insufficient".`,
+		`Twitch metadata: %s. %s Suggest an accurate concise title and 0-3 tags chosen only from ["%s"]. If evidence is insufficient, preserve the source title, set confidence to 0, use basis "insufficient", and return empty evidence and tags arrays.`,
 		string(metadataJSON), transcriptContext, tagsList,
 	)
 
