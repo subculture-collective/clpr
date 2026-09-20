@@ -30,6 +30,9 @@ func TestNewAutoTagScheduler(t *testing.T) {
 	if scheduler.stopChan == nil {
 		t.Error("stopChan not initialized")
 	}
+	if scheduler.visionBatchSize != 1 {
+		t.Errorf("visionBatchSize = %d, want safe default 1", scheduler.visionBatchSize)
+	}
 
 	// Verify stopChan is open initially.
 	select {
@@ -37,6 +40,21 @@ func TestNewAutoTagScheduler(t *testing.T) {
 		t.Error("stopChan should be open initially")
 	default:
 		// Expected.
+	}
+}
+
+func TestNewAutoTagSchedulerVisionQueueOption(t *testing.T) {
+	cutoff := time.Date(2026, time.September, 20, 16, 0, 0, 0, time.UTC)
+	scheduler := NewAutoTagScheduler(
+		nil, nil, nil, nil, &repository.ClipRepository{}, nil, 30,
+		WithVisionQueue(3, cutoff),
+	)
+
+	if scheduler.visionBatchSize != 3 {
+		t.Errorf("visionBatchSize = %d, want 3", scheduler.visionBatchSize)
+	}
+	if !scheduler.visionCreatedAfter.Equal(cutoff) {
+		t.Errorf("visionCreatedAfter = %v, want %v", scheduler.visionCreatedAfter, cutoff)
 	}
 }
 

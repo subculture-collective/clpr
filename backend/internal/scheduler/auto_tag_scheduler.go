@@ -31,6 +31,25 @@ type AutoTagScheduler struct {
 	interval time.Duration
 	stopChan chan struct{}
 	stopOnce sync.Once
+
+	visionBatchSize    int
+	visionCreatedAfter time.Time
+}
+
+// AutoTagSchedulerOption applies bounded configuration to optional enrichment
+// stages without expanding the required constructor surface for disabled stages.
+type AutoTagSchedulerOption func(*AutoTagScheduler)
+
+// WithVisionQueue bounds each scheduler run and excludes clips older than the
+// activation cutoff. The excluded queue remains untouched for an explicit,
+// separately authorized backfill.
+func WithVisionQueue(batchSize int, createdAfter time.Time) AutoTagSchedulerOption {
+	return func(s *AutoTagScheduler) {
+		if batchSize > 0 {
+			s.visionBatchSize = batchSize
+		}
+		s.visionCreatedAfter = createdAfter
+	}
 }
 
 // NewAutoTagScheduler creates a new AutoTagScheduler.
@@ -44,20 +63,26 @@ func NewAutoTagScheduler(
 	clipRepo *repository.ClipRepository,
 	tagRepo *repository.TagRepository,
 	intervalSeconds int,
+	options ...AutoTagSchedulerOption,
 ) *AutoTagScheduler {
 	if intervalSeconds <= 0 {
 		intervalSeconds = 30
 	}
-	return &AutoTagScheduler{
-		autoTag:       autoTag,
-		thumbnail:     thumbnail,
-		transcription: transcription,
-		topics:        topics,
-		clipRepo:      clipRepo,
-		tagRepo:       tagRepo,
-		interval:      time.Duration(intervalSeconds) * time.Second,
-		stopChan:      make(chan struct{}),
+	scheduler := &AutoTagScheduler{
+		autoTag:         autoTag,
+		thumbnail:       thumbnail,
+		transcription:   transcription,
+		topics:          topics,
+		clipRepo:        clipRepo,
+		tagRepo:         tagRepo,
+		interval:        time.Duration(intervalSeconds) * time.Second,
+		stopChan:        make(chan struct{}),
+		visionBatchSize: 1,
 	}
+	for _, option := range options {
+		option(scheduler)
+	}
+	return scheduler
 }
 
 // Start begins the periodic auto-tagging loop.  It runs immediately on
@@ -265,7 +290,7 @@ func (s *AutoTagScheduler) processTranscriptionClips(ctx context.Context) {
 // processVisionClips analyzes Twitch's public thumbnail URL directly. It does
 // not download clip video or require broadcaster/editor permissions.
 func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
-	clips, err := s.clipRepo.GetClipsNeedingVision(ctx, 10)
+	clips, err := s.clipRepo.GetClipsNeedingVision(ctx, s.visionBatchSize, s.visionCreatedAfter)
 	if err != nil {
 		utils.Error("Failed to fetch clips needing thumbnail enrichment", err, map[string]interface{}{
 			"scheduler": autoTagSchedulerName,

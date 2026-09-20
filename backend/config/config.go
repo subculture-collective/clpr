@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -348,16 +349,18 @@ type NSFWConfig struct {
 
 // VisionConfig holds vision AI (content classification) configuration
 type VisionConfig struct {
-	Enabled        bool   // Enable vision AI tagging (default: false)
-	Provider       string // API provider: "openai", "openrouter", "anthropic" (default: "openai")
-	APIKey         string // API key for vision API
-	APIURL         string // API URL for vision API (auto-inferred if empty for known providers)
-	Model          string // Model name (e.g., gpt-4o-mini, openai/gpt-4o-mini, claude-3.5-haiku)
-	FFmpegPath     string // Path to ffmpeg binary
-	OutputDir      string // Directory for extracted thumbnails
-	SiteURL        string // Site URL for OpenRouter HTTP-Referer header
-	SiteName       string // Site name for OpenRouter X-Title header
-	TimeoutSeconds int    // Request timeout in seconds (default: 30)
+	Enabled        bool      // Enable vision AI tagging (default: false)
+	Provider       string    // API provider: "openai", "openrouter", "anthropic" (default: "openai")
+	APIKey         string    // API key for vision API
+	APIURL         string    // API URL for vision API (auto-inferred if empty for known providers)
+	Model          string    // Model name (e.g., gpt-4o-mini, openai/gpt-4o-mini, claude-3.5-haiku)
+	FFmpegPath     string    // Path to ffmpeg binary
+	OutputDir      string    // Directory for extracted thumbnails
+	SiteURL        string    // Site URL for OpenRouter HTTP-Referer header
+	SiteName       string    // Site name for OpenRouter X-Title header
+	TimeoutSeconds int       // Request timeout in seconds (default: 30)
+	BatchSize      int       // Maximum sequential requests per scheduler run (default: 1)
+	CreatedAfter   time.Time // Process only clips created at or after this rollout cutoff
 }
 
 // Defaults for known providers when api_url is not explicitly set.
@@ -429,6 +432,14 @@ func Load() (*Config, error) {
 	redisDB, err := strconv.Atoi(getEnv("REDIS_DB", "0"))
 	if err != nil {
 		redisDB = 0
+	}
+
+	var visionCreatedAfter time.Time
+	if raw := strings.TrimSpace(getEnv("VISION_CREATED_AFTER", "")); raw != "" {
+		visionCreatedAfter, err = time.Parse(time.RFC3339, raw)
+		if err != nil {
+			return nil, fmt.Errorf("VISION_CREATED_AFTER must be RFC3339: %w", err)
+		}
 	}
 
 	config := &Config{
@@ -676,6 +687,8 @@ func Load() (*Config, error) {
 			SiteURL:        getEnv("VISION_SITE_URL", "https://clpr.tv"),
 			SiteName:       getEnv("VISION_SITE_NAME", "CLPR"),
 			TimeoutSeconds: getEnvInt("VISION_TIMEOUT_SECONDS", 30),
+			BatchSize:      getEnvInt("VISION_BATCH_SIZE", 1),
+			CreatedAfter:   visionCreatedAfter,
 		},
 		Whisper: WhisperConfig{
 			Enabled:    getEnvBool("WHISPER_ENABLED", false),

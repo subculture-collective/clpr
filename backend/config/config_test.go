@@ -2,8 +2,63 @@ package config
 
 import (
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 )
+
+func TestLoadVisionDefaultsDisabledAndBounded(t *testing.T) {
+	t.Setenv("VISION_ENABLED", "false")
+	t.Setenv("VISION_BATCH_SIZE", "")
+	t.Setenv("VISION_CREATED_AFTER", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Vision.Enabled {
+		t.Fatal("vision enrichment should default to disabled")
+	}
+	if cfg.Vision.BatchSize != 1 {
+		t.Fatalf("Vision.BatchSize = %d, want 1", cfg.Vision.BatchSize)
+	}
+	if !cfg.Vision.CreatedAfter.IsZero() {
+		t.Fatalf("Vision.CreatedAfter = %v, want zero time", cfg.Vision.CreatedAfter)
+	}
+}
+
+func TestLoadVisionRequiresCutoffWhenEnabled(t *testing.T) {
+	t.Setenv("VISION_ENABLED", "true")
+	t.Setenv("VISION_API_KEY", "local-gateway")
+	t.Setenv("VISION_API_URL", "http://switchyard.internal/v1/chat/completions")
+	t.Setenv("VISION_MODEL", "ollama/qwen3.5:latest")
+	t.Setenv("VISION_BATCH_SIZE", "1")
+	t.Setenv("VISION_CREATED_AFTER", "")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "VISION_CREATED_AFTER") {
+		t.Fatalf("Load() error = %v, want missing cutoff error", err)
+	}
+}
+
+func TestLoadVisionAcceptsBoundedLocalGateway(t *testing.T) {
+	const cutoff = "2026-09-20T16:00:00Z"
+	t.Setenv("VISION_ENABLED", "true")
+	t.Setenv("VISION_API_KEY", "local-gateway")
+	t.Setenv("VISION_API_URL", "http://switchyard.internal/v1/chat/completions")
+	t.Setenv("VISION_MODEL", "ollama/qwen3.5:latest")
+	t.Setenv("VISION_BATCH_SIZE", "1")
+	t.Setenv("VISION_CREATED_AFTER", cutoff)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	want, _ := time.Parse(time.RFC3339, cutoff)
+	if cfg.Vision.BatchSize != 1 || !cfg.Vision.CreatedAfter.Equal(want) {
+		t.Fatalf("vision queue config = %d/%v, want 1/%v", cfg.Vision.BatchSize, cfg.Vision.CreatedAfter, want)
+	}
+}
 
 func TestClipSubmissionDoesNotRequireUppiesByDefault(t *testing.T) {
 	t.Setenv("KARMA_REQUIRE_FOR_SUBMISSION", "")
