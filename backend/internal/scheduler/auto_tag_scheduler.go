@@ -316,11 +316,6 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 			utils.Warn("Twitch thumbnail enrichment failed", map[string]interface{}{
 				"clip_id": clip.ID.String(),
 			})
-			if recordErr := s.clipRepo.RecordVisionFailure(ctx, clip.ID, analyzeErr); recordErr != nil {
-				utils.Error("Failed to record thumbnail enrichment failure", recordErr, map[string]interface{}{
-					"clip_id": clip.ID.String(),
-				})
-			}
 			// A provider-wide payment, configuration, rate-limit, or outage
 			// pause must not be expanded into one failed attempt per queued clip.
 			// Preserve the remaining queue and let structural tagging and other
@@ -330,6 +325,12 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 					"scheduler": autoTagSchedulerName,
 				})
 				break
+			}
+			// Only clip-specific failures consume its three-attempt budget.
+			if recordErr := s.clipRepo.RecordVisionFailure(ctx, clip.ID, analyzeErr); recordErr != nil {
+				utils.Error("Failed to record thumbnail enrichment failure", recordErr, map[string]interface{}{
+					"clip_id": clip.ID.String(),
+				})
 			}
 			continue
 		}
