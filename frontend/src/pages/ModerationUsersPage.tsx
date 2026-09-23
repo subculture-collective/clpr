@@ -159,7 +159,7 @@ export function ModerationUsersPage() {
                                                             user.username}
                                                     </h3>
                                                     {user.is_banned_on_twitch && (
-                                                        <span className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-full'>
+                                                        <span className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'>
                                                             <Ban className='h-3 w-3' />
                                                             Banned on Twitch
                                                         </span>

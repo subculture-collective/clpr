@@ -177,7 +177,7 @@ export function ChannelSettingsPage() {
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center text-background font-heading font-bold uppercase tracking-[0.06em]">
                       {member.username?.[0]?.toUpperCase() || '?'}
                     </div>
                   )}

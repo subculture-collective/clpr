@@ -159,7 +159,7 @@ export function QueueWidget() {
         return (
             <button
                 onClick={handleExpand}
-                className='fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer'
+                className='fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary-400 hover:bg-primary-300 text-background rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer'
                 aria-label='Open queue'
             >
                 <ListMusic className='h-5 w-5' />
@@ -535,7 +535,7 @@ export function QueueWidget() {
                 {queueItems.length > 0 && !currentClip && (
                     <button
                         onClick={() => handlePlayClip(queueItems[0])}
-                        className='flex items-center gap-1 px-2 py-1 text-xs bg-primary-600 hover:bg-primary-700 text-white rounded transition-colors cursor-pointer'
+                        className='flex items-center gap-1 px-2 py-1 text-xs bg-primary-400 hover:bg-primary-300 text-background transition-colors cursor-pointer'
                     >
                         <Play className='h-3 w-3 fill-current' />
                         Play All

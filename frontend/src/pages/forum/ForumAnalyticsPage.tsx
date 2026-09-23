@@ -232,7 +232,7 @@ export function ForumAnalyticsPage() {
                       <Link
                         key={topic}
                         to={`/forum?tags=${encodeURIComponent(topic)}`}
-                        className="px-3 py-1.5 bg-surface hover:bg-surface-hover border border-subtle rounded-full text-sm text-foreground hover:text-white transition-colors"
+                        className="px-3 py-1.5 bg-surface hover:bg-surface-hover border border-subtle text-sm text-foreground hover:text-white transition-colors"
                       >
                         #{topic}
                       </Link>

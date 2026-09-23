@@ -181,7 +181,7 @@ export function ThreadDetail() {
             {/* Status badges */}
             <div className="flex items-center gap-2 mb-3">
               {thread.pinned && (
-                <span className="px-2 py-0.5 bg-primary-600 text-white text-xs font-semibold rounded">
+                <span className="px-2 py-0.5 bg-primary-400 text-background text-xs font-heading font-bold uppercase tracking-[0.06em] ">
                   Pinned
                 </span>
               )}
@@ -257,7 +257,7 @@ export function ThreadDetail() {
             <div className="mb-6">
               <button
                 onClick={() => handleReply(null)}
-                className="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-primary-400 hover:bg-primary-300 text-background font-heading font-bold uppercase tracking-[0.06em] transition-colors"
               >
                 Reply to Thread
               </button>

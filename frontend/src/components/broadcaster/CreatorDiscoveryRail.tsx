@@ -74,7 +74,7 @@ export function CreatorDiscoveryRail({
                                 </div>
                             )}
                             <div className='absolute inset-0 bg-black/45' />
-                            <span className='absolute left-3 top-3 rounded-full bg-black/65 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm'>
+                            <span className='absolute left-3 top-3 bg-black/65 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm'>
                                 {String(index + 1).padStart(2, '0')}
                             </span>
                             <ArrowUpRight className='absolute right-3 top-3 h-4 w-4 text-white opacity-0 transition-opacity group-hover:opacity-100' />

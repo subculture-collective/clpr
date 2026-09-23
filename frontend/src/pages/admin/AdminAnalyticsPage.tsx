@@ -269,7 +269,7 @@ const AdminAnalyticsPage: React.FC = () => {
                                 {content.trending_tags.map((tag) => (
                                     <span
                                         key={tag.tag_id}
-                                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
+                                        className="inline-flex items-center px-3 py-1 text-sm font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
                                     >
                                         {tag.tag_name}
                                         <span className="ml-2 text-xs text-purple-600 dark:text-purple-400">

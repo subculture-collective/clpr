@@ -143,7 +143,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                 {canManageCollaborators && (
                     <button
                         onClick={() => setShowAddForm(!showAddForm)}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-primary-400 hover:bg-primary-300 text-background rounded-lg transition-colors flex items-center gap-2"
                     >
                         <UserPlus className="h-4 w-4" />
                         Add
@@ -197,7 +197,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                             <button
                                 onClick={addCollaborator}
                                 disabled={submitting}
-                                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-surface-raised disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                                className="flex-1 px-4 py-2 bg-primary-400 hover:bg-primary-300 disabled:bg-surface-raised disabled:cursor-not-allowed text-background rounded-lg transition-colors"
                             >
                                 {submitting ? 'Adding...' : 'Add Collaborator'}
                             </button>

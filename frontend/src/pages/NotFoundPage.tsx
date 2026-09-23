@@ -8,7 +8,7 @@ export function NotFoundPage() {
   return (
     <Container className="py-16">
       <div className="text-center">
-        <h1 className="text-6xl font-bold text-error-500 mb-4">{t('error.notFoundCode')}</h1>
+        <h1 className="display text-8xl text-tally mb-4">{t('error.notFoundCode')}</h1>
         <h2 className="text-2xl font-semibold mb-2">{t('error.notFound')}</h2>
         <p className="text-muted-foreground mb-8">
           {t('error.notFoundDescription')}

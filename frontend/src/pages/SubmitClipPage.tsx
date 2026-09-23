@@ -1095,7 +1095,7 @@ export function SubmitClipPage() {
                                                         {uploadFile.type ? ` • ${uploadFile.type}` : ''}
                                                     </p>
                                                 </div>
-                                                <span className='rounded-full border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-medium text-link'>
+                                                <span className=' border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-medium text-link'>
                                                     Ready to upload
                                                 </span>
                                             </div>
@@ -1278,7 +1278,7 @@ export function SubmitClipPage() {
                                             </p>
                                         </div>
                                         <span
-                                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                            className={`px-3 py-1 text-xs font-medium ${
                                                 (
                                                     submission.status ===
                                                     'approved'

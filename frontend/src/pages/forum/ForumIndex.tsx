@@ -101,7 +101,7 @@ export function ForumIndex() {
             {user && (
               <Link
                 to="/forum/new"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-400 hover:bg-primary-300 text-background font-heading font-bold uppercase tracking-[0.06em] transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 <span>Start Discussion</span>
@@ -120,7 +120,7 @@ export function ForumIndex() {
               onClick={() => setFilters({ ...filters, tags: [] })}
               aria-pressed={!filters.tags || filters.tags.length === 0}
               className={cn(
-                'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                'min-h-[44px] px-3 py-1.5 text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                 (!filters.tags || filters.tags.length === 0)
                   ? 'bg-brand text-background border-transparent'
                   : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
@@ -140,7 +140,7 @@ export function ForumIndex() {
                   })}
                   aria-pressed={isActive}
                   className={cn(
-                    'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                    'min-h-[44px] px-3 py-1.5 text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                     isActive
                       ? 'text-white border-transparent'
                       : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
@@ -178,7 +178,7 @@ export function ForumIndex() {
               </p>
               <Link
                 to="/login"
-                className="inline-block px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                className="inline-block px-6 py-2 bg-primary-400 hover:bg-primary-300 text-background font-heading font-bold uppercase tracking-[0.06em] transition-colors"
               >
                 Sign in to post
               </Link>

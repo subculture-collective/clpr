@@ -83,6 +83,18 @@ Primary buttons use `primary-400` (`#A07CFF`) with ink text. Ink on `#8C5CFF` me
 
 The Tailwind `gray`, `neutral`, `zinc`, `slate` and `stone` scales are remapped to the violet-ink ramp, so older ad-hoc classes stay on palette until each surface is rebuilt. `success`, `warning`, `error` and `info` scales are retuned around the signal colours above.
 
+The other Tailwind colour families point at those scales by meaning, so legacy classes cannot introduce an off-palette hue:
+
+| Legacy families                                   | Resolves to            |
+| ------------------------------------------------- | ---------------------- |
+| `blue`, `purple`, `violet`, `indigo`, `fuchsia`, `pink` | `primary` (violet)     |
+| `red`, `rose`                                     | `error`                |
+| `green`, `emerald`, `lime`                        | `success` (seen)       |
+| `yellow`, `amber`, `orange`                       | `warning` (context)    |
+| `sky`, `cyan`, `teal`                             | `info` (category)      |
+
+New code should use the semantic names (`primary-*`, `tally`, `seen`, `context`, `category`, `error-*`) rather than the legacy families. There are no gradients: media captions use solid `bg-black/70`–`/80` bars.
+
 ### Thread colours
 
 | Depth | Token             | Hex       |

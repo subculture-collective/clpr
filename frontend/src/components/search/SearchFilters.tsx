@@ -108,7 +108,7 @@ export function SearchFilters({ facets, filters, onFiltersChange }: SearchFilter
                                     <button
                                         key={lang.key}
                                         onClick={() => handleLanguageToggle(lang.key)}
-                                        className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                                        className={`px-3 py-1.5 text-sm border transition-colors ${
                                             filters.language === lang.key
                                                 ? 'bg-primary text-primary-foreground border-primary'
                                                 : 'border-border hover:border-primary'

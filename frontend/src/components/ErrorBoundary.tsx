@@ -96,7 +96,7 @@ class ErrorBoundary extends Component<Props, State> {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={this.resetError}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                      className="px-6 py-2 bg-primary-400 text-background rounded-lg hover:bg-primary-300 transition-colors cursor-pointer"
                     >
                       {t('common.reloadPage')}
                     </button>

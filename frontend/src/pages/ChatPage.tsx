@@ -134,7 +134,7 @@ export function ChatPage() {
       {/* Mobile sidebar toggle button */}
       <button
         onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        className="md:hidden fixed bottom-4 right-4 z-50 bg-primary-600 text-white p-3 rounded-full shadow-lg"
+        className="md:hidden fixed bottom-4 right-4 z-50 bg-primary-400 text-background p-3 rounded-full shadow-lg"
         aria-label="Toggle channel list"
       >
         <svg

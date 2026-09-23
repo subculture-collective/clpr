@@ -185,7 +185,7 @@ const AdminCampaignsPage: React.FC = () => {
               </div>
               <button
                 onClick={handleCreate}
-                className="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90"
+                className="bg-primary text-background px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90"
               >
                 Create Campaign
               </button>
@@ -265,7 +265,7 @@ const AdminCampaignsPage: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span
-                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getCampaignStatusColor(
+                                className={`px-2 inline-flex text-xs leading-5 font-semibold ${getCampaignStatusColor(
                                   status
                                 )}`}
                               >
@@ -797,7 +797,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
                       onClick={() => handleBannerSizeSelect(size.width, size.height)}
                       className={`px-2 py-1 text-xs rounded ${
                         formData.width === size.width && formData.height === size.height
-                          ? 'bg-primary text-white'
+                          ? 'bg-primary text-background'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                       }`}
                     >
@@ -927,7 +927,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-background bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
               >
                 {isLoading ? 'Saving...' : campaign ? 'Update Campaign' : 'Create Campaign'}
               </button>

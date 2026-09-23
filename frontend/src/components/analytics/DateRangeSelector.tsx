@@ -36,7 +36,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             ${index === options.length - 1 ? 'rounded-r-lg' : ''}
             ${
               value === option.value
-                ? 'bg-purple-600 text-white'
+                ? 'bg-primary-400 text-background'
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }
             border border-gray-200 dark:border-gray-600
