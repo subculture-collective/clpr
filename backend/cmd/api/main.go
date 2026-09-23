@@ -75,7 +75,7 @@ func main() {
 	h := initHandlers(svcs, repos, infra)
 
 	// Initialize router
-	r := gin.New()
+	r := newRouter()
 
 	// Apply global middleware (includes template loading and rate limit whitelist)
 	applyGlobalMiddleware(r, cfg, infra, svcs, logger)

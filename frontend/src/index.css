@@ -155,7 +155,6 @@
     --animate-slide-in-up: slide-in-up 0.3s ease-out;
     --animate-slide-in-down: slide-in-down 0.3s ease-out;
     --animate-shimmer: shimmer 2s infinite;
-    --animate-vote-pulse: vote-pulse 200ms ease-out;
     @keyframes fade-in {
         0% { opacity: 0; }
         100% { opacity: 1; }
@@ -184,6 +183,41 @@
         0% { transform: translateX(-100%); }
         100% { transform: translateX(100%); }
     }
+}
+
+/* Tally: mono label for sections, metadata, and burned-in timecodes. */
+@utility kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(var(--clpr-text-tertiary));
+}
+
+/* Tally: condensed uppercase display type for titles and rank numerals. */
+@utility display {
+    font-family: "Barlow Condensed", Barlow, system-ui, sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 0.95;
+}
+
+/* Tally: timecode burned into media corners. */
+@utility burn-in {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #fff;
+    background: rgb(0 0 0 / 0.72);
+    padding: 0.125rem 0.375rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Tally light: a violet rule across the top of the active or on-air item. */
+@utility tally-bar {
+    box-shadow: inset 0 3px 0 rgb(var(--clpr-brand));
 }
 
 /* Base layer - custom CSS resets and base styles */
@@ -337,54 +371,7 @@
         max-width: 1440px;
     }
 
-    /* Focus visible utility */
-    .focus-visible {
-        @apply outline-none;
-        box-shadow: 0 0 0 2px rgb(var(--clpr-focus-ring));
-    }
 
-    /* Smooth transitions */
-    .transition-theme {
-        transition-property:
-            background-color, border-color, color, fill, stroke;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 200ms;
-    }
-
-    /* Tally: mono label for sections, metadata, and burned-in timecodes. */
-    .kicker {
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 0.6875rem;
-        font-weight: 500;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: rgb(var(--clpr-text-tertiary));
-    }
-
-    /* Tally: condensed uppercase display type for titles and rank numerals. */
-    .display {
-        font-family: "Barlow Condensed", Barlow, system-ui, sans-serif;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.01em;
-        line-height: 0.95;
-    }
-
-    /* Tally: timecode burned into media corners. */
-    .burn-in {
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 0.6875rem;
-        font-weight: 500;
-        color: #fff;
-        background: rgb(0 0 0 / 0.72);
-        padding: 0.125rem 0.375rem;
-        font-variant-numeric: tabular-nums;
-    }
-
-    /* Tally light: a violet rule across the top of the active or on-air item. */
-    .tally-bar {
-        box-shadow: inset 0 3px 0 rgb(var(--clpr-brand));
-    }
 
     /* Comment body markdown rendering */
     .comment-body {
@@ -550,21 +537,12 @@
     }
 
     /* Safe area padding for mobile devices (notches, etc.) */
-    .safe-area-top {
-        padding-top: env(safe-area-inset-top);
-    }
 
     .safe-area-bottom {
         padding-bottom: env(safe-area-inset-bottom);
     }
 
-    .safe-area-left {
-        padding-left: env(safe-area-inset-left);
-    }
 
-    .safe-area-right {
-        padding-right: env(safe-area-inset-right);
-    }
 
     .safe-area-inset {
         padding-top: env(safe-area-inset-top);
@@ -607,18 +585,6 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Screen reader only - hides content visually but keeps it accessible */
-    .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-    }
 
     /* Reverses sr-only for focus states */
     .focus\:not-sr-only:focus,
@@ -646,17 +612,6 @@
     & b {
         @apply font-semibold text-context bg-context/10 px-0.5;
     }
-}
-
-/* Vote pulse micro-interaction */
-@keyframes vote-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-.vote-active {
-    animation: vote-pulse 200ms ease-out;
 }
 
 .admin-content > div {

@@ -413,7 +413,7 @@ describe('SubmitClipPage', () => {
 
             await user.type(tagInput, 'clutch{Enter}');
 
-            expect(screen.getByText('clutch')).toBeInTheDocument();
+            expect(screen.getByText('#clutch')).toBeInTheDocument();
             expect(tagInput).toHaveValue('');
         });
 
@@ -426,7 +426,7 @@ describe('SubmitClipPage', () => {
             );
             await user.type(tagInput, 'epic{Enter}');
 
-            expect(await screen.findByText('epic')).toBeInTheDocument();
+            expect(await screen.findByText('#epic')).toBeInTheDocument();
         });
 
         it('prevents adding duplicate tags', async () => {
@@ -444,7 +444,7 @@ describe('SubmitClipPage', () => {
             await user.type(tagInput, 'clutch{Enter}');
 
             // Should only have one instance
-            const tags = screen.getAllByText('clutch');
+            const tags = screen.getAllByText('#clutch');
             expect(tags).toHaveLength(1);
         });
 
@@ -457,12 +457,12 @@ describe('SubmitClipPage', () => {
             );
             await user.type(tagInput, 'clutch{Enter}');
 
-            expect(screen.getByText('clutch')).toBeInTheDocument();
+            expect(screen.getByText('#clutch')).toBeInTheDocument();
 
             const removeButton = screen.getByLabelText('Remove clutch tag');
             await user.click(removeButton);
 
-            expect(screen.queryByText('clutch')).not.toBeInTheDocument();
+            expect(screen.queryByText('#clutch')).not.toBeInTheDocument();
         });
 
         it('trims whitespace from tags', async () => {
@@ -474,7 +474,7 @@ describe('SubmitClipPage', () => {
             );
             await user.type(tagInput, '  clutch  {Enter}');
 
-            expect(screen.getByText('clutch')).toBeInTheDocument();
+            expect(screen.getByText('#clutch')).toBeInTheDocument();
         });
     });
 
@@ -613,7 +613,7 @@ describe('SubmitClipPage', () => {
                 'Search or add tags...'
             );
             await user.type(tagInput, 'clutch{Enter}');
-            expect(await screen.findByText('clutch')).toBeInTheDocument();
+            expect(await screen.findByText('#clutch')).toBeInTheDocument();
 
             const nsfwCheckbox = screen.getByLabelText(/Mark as NSFW/);
             await user.click(nsfwCheckbox);

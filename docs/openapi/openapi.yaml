@@ -1722,12 +1722,27 @@ paths:
     get:
       tags: [Tags]
       summary: List tags
-      description: Returns list of all tags
+      description: >-
+        Lists visible tags. `lane` limits the list to tags from one origin
+        (see the `TagLane` schema). The `curated` sort is kept for older
+        clients and is equivalent to `lane=detected&sort=popularity`.
       operationId: listTags
       security: []
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [popularity, trending, alphabetical, recent, curated]
+            default: popularity
+        - name: lane
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TagLane'
       responses:
         '200':
           description: List of tags
@@ -1735,13 +1750,20 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [tags, total, page, limit, has_more]
                 properties:
                   tags:
                     type: array
                     items:
                       $ref: '#/components/schemas/Tag'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  has_more:
+                    type: boolean
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -1839,7 +1861,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tag'
+                type: object
+                required: [tag, clip_count]
+                properties:
+                  tag:
+                    $ref: '#/components/schemas/Tag'
+                  clip_count:
+                    type: integer
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -11822,7 +11850,9 @@ components:
       required: true
       schema:
         type: string
-      description: Tag slug
+      description: >-
+        Tag slug. Namespaced slugs travel as one percent-encoded path segment,
+        for example `content%2Ffunny` for `content/funny`.
 
     TwitchChannel:
       name: channel
@@ -13356,6 +13386,31 @@ components:
         created_at:
           type: string
           format: date-time
+        lane:
+          $ref: '#/components/schemas/TagLane'
+        display_name:
+          type: string
+          description: Human-readable name with stored namespace prefixes removed.
+        evidence:
+          $ref: '#/components/schemas/TagEvidence'
+
+    TagLane:
+      type: string
+      description: >-
+        Which process produced the tag. `category`: the clip's Twitch category
+        (game/*). `detected`: a catalog content tag chosen by the vision tagger
+        or title rules. `streamer`: the broadcaster's own Twitch channel tags.
+        `community`: unnamespaced or community/ tags, including tags clpr users add and older tags created before namespaces. `duration` and `language`: structural
+        metadata. `root`: a namespace root.
+      enum: [category, detected, streamer, community, duration, language, root]
+
+    TagEvidence:
+      type: string
+      description: >-
+        Present only on `detected` tags. The evidence the tag definition
+        requires before the vision tagger may assign it; not a verdict about a
+        particular clip.
+      enum: [visible, contextual, strong]
 
     TagTreeNode:
       type: object
@@ -13385,6 +13440,13 @@ components:
         created_at:
           type: string
           format: date-time
+        lane:
+          $ref: '#/components/schemas/TagLane'
+        display_name:
+          type: string
+          description: Human-readable name with stored namespace prefixes removed.
+        evidence:
+          $ref: '#/components/schemas/TagEvidence'
         children:
           type: array
           items:

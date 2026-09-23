@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tagApi } from "../lib/tag-api";
+import type { TagLane } from "../types/tag";
 
 // List tags
 export const useTags = (params?: {
   sort?: "popularity" | "alphabetical" | "recent" | "trending" | "curated";
+  lane?: TagLane;
   limit?: number;
   page?: number;
 }) => {
@@ -27,6 +29,8 @@ export const useTag = (slug: string) => {
   return useQuery({
     queryKey: ["tags", slug],
     queryFn: () => tagApi.getTag(slug),
+    enabled: slug.length > 0,
+    retry: false,
   });
 };
 

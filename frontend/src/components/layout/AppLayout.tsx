@@ -49,7 +49,7 @@ export function AppLayout() {
     }, [location.key, navigationType]);
 
     return (
-        <div className='min-h-screen flex flex-col bg-background text-foreground transition-theme'>
+        <div className='min-h-screen flex flex-col bg-background text-foreground'>
             <SkipLink targetId='main-content' label='Skip to main content' />
             <Header />
             {isDiscovery && <CategoriesNav />}

@@ -11,6 +11,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/tagtaxonomy"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -28,11 +29,18 @@ type TagTreeNode struct {
 	Color       *string        `json:"color,omitempty"`
 	UsageCount  int            `json:"usage_count"`
 	CreatedAt   time.Time      `json:"created_at"`
+	Lane        string         `json:"lane"`
+	DisplayName string         `json:"display_name"`
+	Evidence    string         `json:"evidence,omitempty"`
 	Children    []*TagTreeNode `json:"children,omitempty"`
 }
 
 func tagToTreeNode(tag *models.Tag) *TagTreeNode {
+	labels := tagtaxonomy.Classify(tag.Slug, tag.Name)
 	return &TagTreeNode{
+		Lane:        string(labels.Lane),
+		DisplayName: labels.DisplayName,
+		Evidence:    string(labels.Evidence),
 		ID:          tag.ID,
 		Name:        tag.Name,
 		Slug:        tag.Slug,
@@ -129,6 +137,7 @@ func NewTagHandler(
 func (h *TagHandler) ListTags(c *gin.Context) {
 	// Parse query parameters
 	sort := c.DefaultQuery("sort", "popularity")
+	lane := c.Query("lane")
 	limitStr := c.DefaultQuery("limit", "50")
 	pageStr := c.DefaultQuery("page", "1")
 
@@ -145,7 +154,7 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	// Get tags from repository
-	tags, err := h.tagRepo.List(c.Request.Context(), sort, limit, offset)
+	tags, err := h.tagRepo.List(c.Request.Context(), sort, lane, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch tags",
@@ -154,7 +163,7 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 	}
 
 	// Get total count
-	total, err := h.tagRepo.Count(c.Request.Context())
+	total, err := h.tagRepo.Count(c.Request.Context(), lane)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to count tags",

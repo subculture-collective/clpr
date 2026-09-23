@@ -22,6 +22,7 @@ const sortIcons: Record<SortOption, React.ReactNode> = {
 
 interface FeedHeaderProps {
     title: string;
+    headingLevel?: 'h1' | 'h2';
     description?: string;
     showSearch?: boolean;
     // Filter props (optional - if provided, shows inline filter controls)
@@ -53,6 +54,7 @@ const timeframeOptions: { value: TimeFrame; label: string }[] = [
 
 export function FeedHeader({
     title,
+    headingLevel = 'h1',
     description,
     showSearch = false,
     sort,
@@ -62,6 +64,7 @@ export function FeedHeader({
     autoplayPreference,
     onAutoplayPreferenceChange,
 }: FeedHeaderProps) {
+    const Heading = headingLevel;
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
@@ -100,9 +103,9 @@ export function FeedHeader({
             {/* Main header row */}
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex-1 min-w-0'>
-                    <h1 className='text-2xl sm:text-3xl font-bold truncate'>
+                    <Heading className='text-2xl sm:text-3xl font-bold truncate'>
                         {title}
-                    </h1>
+                    </Heading>
                     {description && (
                         <p className='text-muted-foreground text-sm mt-1'>
                             {description}

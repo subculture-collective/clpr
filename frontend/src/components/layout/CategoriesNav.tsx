@@ -8,6 +8,7 @@ import {
     type PopularBroadcaster,
 } from '../../lib/broadcaster-api';
 import { CategoryIcon } from '../ui/CategoryIcon';
+import { TagChip } from '../tag/TagChip';
 import type { Category } from '../../types/category';
 import type { Tag } from '../../types/tag';
 
@@ -28,7 +29,7 @@ export function CategoriesNav() {
             try {
                 const [featuredRes, tagsRes, creatorsRes] = await Promise.all([
                     categoryApi.listCategories({ type: 'topic', featured: true }),
-                    tagApi.listTags({ sort: 'popularity', limit: 20 }),
+                    tagApi.listTags({ lane: 'detected', sort: 'popularity', limit: 20 }),
                     fetchPopularBroadcasters(20),
                 ]);
 
@@ -184,25 +185,9 @@ export function CategoriesNav() {
 
                             {activeTab === 'tags' &&
                                 tags.map(tag => (
-                                    <Link
-                                        key={tag.id}
-                                        to={`/tags/${encodeURIComponent(tag.slug)}`}
-                                        className='flex items-center gap-1.5 px-3 py-1.5 border border-transparent hover:border-line-strong whitespace-nowrap text-sm text-foreground transition-colors'
-                                    >
-                                        <span
-                                            className='w-2 h-2 rounded-full shrink-0'
-                                            style={{
-                                                backgroundColor:
-                                                    tag.color || '#6366f1',
-                                            }}
-                                        />
-                                        <span>#{tag.name}</span>
-                                        {tag.usage_count > 0 && (
-                                            <span className='font-mono text-[11px] text-muted-foreground'>
-                                                {tag.usage_count}
-                                            </span>
-                                        )}
-                                    </Link>
+                                    <span key={tag.id} className='shrink-0'>
+                                        <TagChip tag={tag} showCount />
+                                    </span>
                                 ))}
 
                         </div>
