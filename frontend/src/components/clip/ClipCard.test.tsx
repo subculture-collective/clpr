@@ -247,7 +247,7 @@ describe('ClipCard', () => {
         expect(progressBar).toHaveAttribute('aria-valuenow', '100');
         expect(progressBar).toHaveAttribute('aria-label', '100% watched');
         // Visual indicator should be clamped to 100%
-        const progressFill = progressBar.querySelector('.bg-primary-600');
+        const progressFill = progressBar.firstElementChild;
         expect(progressFill).toHaveStyle({ width: '100%' });
     });
 
@@ -270,7 +270,7 @@ describe('ClipCard', () => {
         expect(progressBar).toHaveAttribute('aria-valuenow', '0');
         expect(progressBar).toHaveAttribute('aria-label', '0% watched');
         // Visual indicator should be clamped to 0%
-        const progressFill = progressBar.querySelector('.bg-primary-600');
+        const progressFill = progressBar.firstElementChild;
         expect(progressFill).toHaveStyle({ width: '0%' });
     });
 });

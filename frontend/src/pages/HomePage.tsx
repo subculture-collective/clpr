@@ -76,7 +76,7 @@ export function HomePage() {
                 </Link>
             </div>
             <div className='relative'>
-                <div className='absolute inset-y-0 right-0 w-10 bg-linear-to-l from-background to-transparent pointer-events-none z-10' />
+                <div className='absolute inset-y-0 right-0 w-px bg-line-strong pointer-events-none z-10' />
                 <div ref={carouselRef} className='flex gap-4 md:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 px-4 md:px-0 scrollbar-hide scrolling-touch touch-pan-x overscroll-x-contain' aria-label='Curated collections carousel'>
                     {featuredPlaylists.map(playlist => (
                         <div key={playlist.id} className='snap-start shrink-0 w-[82vw] max-w-90 lg:w-100'>

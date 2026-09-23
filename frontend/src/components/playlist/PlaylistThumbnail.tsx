@@ -15,11 +15,11 @@ export function PlaylistThumbnail({
         .slice(0, 4)
         .filter(c => c.thumbnail_url);
 
-    // If no clips with thumbnails, show gradient with music note
+    // If no clips with thumbnails, show a flat placeholder with music note
     if (thumbnailClips.length === 0) {
         return (
             <div
-                className={`bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center ${className}`}
+                className={`bg-surface-raised flex items-center justify-center ${className}`}
             >
                 <div className='text-text-tertiary'><ListMusic size={48} strokeWidth={1.5} /></div>
             </div>

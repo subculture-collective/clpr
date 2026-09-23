@@ -248,7 +248,7 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                                         className="w-10 h-10 rounded-full"
                                     />
                                 ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                                    <div className="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center text-background font-heading font-bold uppercase">
                                         {collab.user?.display_name?.charAt(0) || '?'}
                                     </div>
                                 )}

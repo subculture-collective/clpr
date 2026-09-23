@@ -28,6 +28,8 @@ interface ClipCardProps {
     autoplay?: boolean;
     onActivate?: (clipId: string) => void;
     onVisibilityChange?: (clipId: string, visible: boolean) => void;
+    /** Position in a ranked feed. #1 gets the tally light. */
+    rank?: number;
 }
 
 export function ClipCard({
@@ -36,6 +38,7 @@ export function ClipCard({
     autoplay = false,
     onActivate,
     onVisibilityChange,
+    rank,
 }: ClipCardProps) {
     const isAuthenticated = useIsAuthenticated();
     const voteMutation = useClipVote();
@@ -77,17 +80,28 @@ export function ClipCard({
     return (
         <div
             ref={visibilityRef}
-            className='bg-card border-y md:border border-border md:rounded-xl md:hover:shadow-lg transition-shadow lazy-render scroll-mt-28 snap-start'
+            className={cn(
+                'bg-card border-y md:border border-border md:hover:border-line-strong transition-colors lazy-render scroll-mt-28 snap-start',
+                (active || rank === 1) && 'tally-bar',
+            )}
             data-testid='clip-card'
         >
             <div className='flex flex-col md:flex-row gap-3 md:gap-6 py-4 md:p-6'>
                 {/* Vote sidebar - horizontal on mobile, vertical on larger screens */}
-                {isDesktop && <div className='flex flex-col items-center justify-start w-10 gap-2 order-1 shrink-0'>
+                {isDesktop && <div className='flex flex-col items-center justify-start w-12 gap-1 order-1 shrink-0'>
+                    {rank !== undefined && (
+                        <span
+                            className={cn('display mb-2 text-5xl tabular-nums', rank === 1 ? 'text-tally' : 'text-text-tertiary')}
+                            aria-label={`Rank ${rank}`}
+                        >
+                            {String(rank).padStart(2, '0')}
+                        </span>
+                    )}
                     <button
                         onClick={() => handleVote(1)}
                         disabled={!isAuthenticated || isVoting}
                         className={cn(
-                            'w-11 h-11 xs:w-10 xs:h-10 rounded hover:bg-surface-hover flex items-center justify-center transition-colors touch-target',
+                            'w-11 h-11 xs:w-10 xs:h-10 hover:bg-surface-hover flex items-center justify-center transition-colors touch-target',
                             clip.user_vote === 1 &&
                                 'text-upvote',
                             !isAuthenticated || isVoting ?
@@ -109,7 +123,7 @@ export function ClipCard({
 
                     <span
                         className={cn(
-                            'text-xs font-bold min-w-8 text-center',
+                            'text-xs font-bold font-mono tabular-nums min-w-8 text-center',
                             voteColor,
                         )}
                     >
@@ -120,7 +134,7 @@ export function ClipCard({
                         onClick={() => handleVote(-1)}
                         disabled={!isAuthenticated || isVoting}
                         className={cn(
-                            'w-11 h-11 xs:w-10 xs:h-10 rounded hover:bg-surface-hover flex items-center justify-center transition-colors touch-target',
+                            'w-11 h-11 xs:w-10 xs:h-10 hover:bg-surface-hover flex items-center justify-center transition-colors touch-target',
                             clip.user_vote === -1 &&
                                 'text-downvote',
                             !isAuthenticated || isVoting ?
@@ -146,15 +160,20 @@ export function ClipCard({
                     {/* Title */}
                     <Link
                         to={`/clip/${clip.id}`}
-                        className='hover:text-primary-400 block mb-2 px-4 md:px-0 transition-colors touch-target cursor-pointer'
+                        className='text-foreground hover:text-link block mb-1.5 px-4 md:px-0 transition-colors touch-target cursor-pointer'
                     >
-                        <h2 className='line-clamp-2 text-lg md:text-xl font-semibold leading-snug'>
+                        <h2 className='line-clamp-2 text-2xl md:text-[1.75rem]'>
                             {clip.title}
                         </h2>
                     </Link>
                     {/* Metadata */}
-                    <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 md:gap-2 mb-3 px-4 md:px-0 text-xs leading-tight'>
-                        <span className='flex items-center gap-1 font-medium'>
+                    <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 md:gap-2 mb-3 px-4 md:px-0 font-mono text-[11px] uppercase tracking-[0.04em] leading-tight'>
+                        {!isDesktop && rank !== undefined && (
+                            <span className={cn('font-semibold', rank === 1 ? 'text-link' : 'text-text-secondary')}>
+                                #{String(rank).padStart(2, '0')}
+                            </span>
+                        )}
+                        <span className='flex items-center gap-1 font-medium text-foreground'>
                             <Link
                                 to={`/broadcaster/${
                                     clip.broadcaster_id || clip.broadcaster_name
@@ -167,7 +186,7 @@ export function ClipCard({
 
                         {clip.game_name && (
                             <>
-                                <span className='hidden xs:inline'>•</span>
+                                <span className='hidden xs:inline text-text-disabled'>·</span>
                                 <span className='flex items-center gap-1'>
                                     <Link
                                         to={`/twitch-category/${clip.twitch_category_id || clip.game_id}`}
@@ -183,7 +202,7 @@ export function ClipCard({
                             (clip.creator_id &&
                                 clip.creator_id.trim() !== '' &&
                                 clip.creator_name)) && (
-                            <span className='hidden xs:inline'>•</span>
+                            <span className='hidden xs:inline text-text-disabled'>·</span>
                         )}
 
                         {clip.submitted_by ?
@@ -214,7 +233,7 @@ export function ClipCard({
                             </span>
                         :   null}
 
-                        <span className='hidden xs:inline'>•</span>
+                        <span className='hidden xs:inline text-text-disabled'>·</span>
 
                         <span
                             className='truncate align-middle'
@@ -236,7 +255,7 @@ export function ClipCard({
 
                         {/* Duration badge */}
                         {clip.duration && (
-                            <div className='bottom-2 right-2 absolute px-2 py-1 text-xs font-medium text-white bg-black bg-opacity-75 rounded'>
+                            <div className='burn-in bottom-2 right-2 absolute'>
                                 {formatDuration(clip.duration)}
                             </div>
                         )}
@@ -285,14 +304,14 @@ export function ClipCard({
                                     )}% watched`}
                                 >
                                     <div
-                                        className='h-full bg-primary-600'
+                                        className='h-full bg-tally'
                                         style={{
                                             width: `${Math.min(100, Math.max(0, clip.watch_progress.progress_percent))}%`,
                                         }}
                                     />
                                 </div>
                                 {clip.watch_progress.completed && (
-                                    <div className='bottom-2 left-2 absolute px-2 py-1 text-xs font-medium text-white bg-success-600 bg-opacity-90 rounded flex items-center gap-1'>
+                                    <div className='bottom-2 left-2 absolute px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase text-background bg-seen flex items-center gap-1'>
                                         <Check className='w-3 h-3' />
                                         Watched
                                     </div>
@@ -307,21 +326,21 @@ export function ClipCard({
                     </div>
 
                     {/* Action bar */}
-                    <div className='flex items-center gap-1 px-2 md:px-0 text-xs'>
+                    <div className='flex items-center gap-1 px-2 md:px-0 font-mono text-[11px] uppercase tracking-[0.04em]'>
                         {!isDesktop && <div className='flex items-center min-h-11'>
                             <button
                                 onClick={() => handleVote(1)}
                                 disabled={!isAuthenticated || isVoting}
-                                className={cn('grid size-11 place-items-center rounded-full', clip.user_vote === 1 ? 'text-upvote' : 'text-muted-foreground')}
+                                className={cn('grid size-11 place-items-center', clip.user_vote === 1 ? 'text-upvote' : 'text-muted-foreground')}
                                 aria-label={isAuthenticated ? 'Upvote' : 'Log in to upvote'}
                             >
                                 <ArrowBigUp size={21} fill={clip.user_vote === 1 ? 'currentColor' : 'none'} />
                             </button>
-                            <span className={cn('min-w-7 text-center text-xs font-bold', voteColor)}>{formatCompactNumber(clip.vote_score)}</span>
+                            <span className={cn('min-w-7 text-center text-xs font-bold font-mono tabular-nums', voteColor)}>{formatCompactNumber(clip.vote_score)}</span>
                             <button
                                 onClick={() => handleVote(-1)}
                                 disabled={!isAuthenticated || isVoting}
-                                className={cn('grid size-11 place-items-center rounded-full', clip.user_vote === -1 ? 'text-downvote' : 'text-muted-foreground')}
+                                className={cn('grid size-11 place-items-center', clip.user_vote === -1 ? 'text-downvote' : 'text-muted-foreground')}
                                 aria-label={isAuthenticated ? 'Downvote' : 'Log in to downvote'}
                             >
                                 <ArrowBigDown size={21} fill={clip.user_vote === -1 ? 'currentColor' : 'none'} />
@@ -382,10 +401,10 @@ export function ClipCard({
                         </span>
 
                         <details className='relative md:hidden'>
-                            <summary className='grid size-11 list-none place-items-center rounded-full text-muted-foreground hover:bg-surface-hover cursor-pointer' aria-label='More clip actions'>
+                            <summary className='grid size-11 list-none place-items-center text-muted-foreground hover:bg-surface-hover cursor-pointer' aria-label='More clip actions'>
                                 <MoreHorizontal size={21} aria-hidden='true' />
                             </summary>
-                            <div className='absolute bottom-12 right-0 z-30 flex min-w-44 flex-col gap-1 rounded-xl border border-border bg-background p-2 shadow-xl'>
+                            <div className='absolute bottom-12 right-0 z-30 flex min-w-44 flex-col gap-1 border border-line-strong bg-popover p-2 tally-bar'>
                                 <AddToPlaylistButton clipId={clip.id} />
                                 <AddToQueueButton clipId={clip.id} />
                                 <Link to={`/clip/${clip.id}`} className='flex min-h-11 items-center px-2 text-sm text-muted-foreground'>View clip details</Link>

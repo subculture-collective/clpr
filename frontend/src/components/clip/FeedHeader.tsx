@@ -103,7 +103,7 @@ export function FeedHeader({
             {/* Main header row */}
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex-1 min-w-0'>
-                    <Heading className='text-2xl sm:text-3xl font-bold truncate'>
+                    <Heading className='text-3xl sm:text-4xl truncate'>
                         {title}
                     </Heading>
                     {description && (
@@ -118,7 +118,7 @@ export function FeedHeader({
                         <button
                             type='button'
                             onClick={() => onAutoplayPreferenceChange(autoplayPreference === 'manual' ? 'muted' : 'manual')}
-                            className='inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-foreground hover:bg-muted'
+                            className='inline-flex min-h-11 shrink-0 items-center justify-center gap-2 border border-line-strong px-3 font-heading text-[14px] font-bold uppercase tracking-[0.04em] text-foreground hover:bg-muted aria-pressed:border-primary-400 aria-pressed:text-link'
                             aria-pressed={autoplayPreference === 'muted'}
                             title='Choose whether visible clips play automatically'
                         >
@@ -139,10 +139,10 @@ export function FeedHeader({
                                     onSortChange(e.target.value as SortOption)
                                 }
                                 className={cn(
-                                    'w-full min-h-11 sm:w-auto pl-8 pr-3 py-2 rounded-lg border text-sm transition-colors',
-                                    'bg-background text-foreground',
-                                    'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-                                    'border-border hover:border-primary-300',
+                                    'w-full min-h-11 sm:w-auto pl-8 pr-3 py-2 border text-sm transition-colors',
+                                    'bg-surface text-foreground',
+                                    'focus:outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400',
+                                    'border-line-strong hover:border-text-tertiary',
                                 )}
                                 aria-label='Sort clips by'
                             >
@@ -178,7 +178,7 @@ export function FeedHeader({
 
             {/* Timeframe row (only when top/trending selected) */}
             {showTimeframe && (
-                <div className='flex flex-wrap gap-1.5 mt-3'>
+                <div className='mt-3 inline-flex flex-wrap border border-line-strong' role='group' aria-label='Timeframe'>
                     {timeframeOptions.map(option => (
                         <Button
                             key={option.value}
@@ -186,11 +186,9 @@ export function FeedHeader({
                                 timeframe === option.value ? 'primary' : 'ghost'
                             }
                             size='sm'
+                            aria-pressed={timeframe === option.value}
                             onClick={() => onTimeframeChange(option.value)}
-                            className={cn(
-                                'text-xs px-2.5 py-1',
-                                timeframe === option.value && 'font-semibold',
-                            )}
+                            className='px-3 py-1'
                         >
                             {sort === 'trending' && option.value === 'all' ? 'Since tracking began' : option.label}
                         </Button>

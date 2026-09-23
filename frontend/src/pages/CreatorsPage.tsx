@@ -38,7 +38,7 @@ export function CreatorsPage() {
             />
             <div className='page-container mx-auto px-4 py-8 sm:py-12'>
                 <header className='relative mb-12 overflow-hidden border-y border-border py-10 sm:py-14'>
-                    <div className='absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_center,rgb(var(--clpr-brand)/0.13),transparent_65%)]' />
+                    <div className='absolute right-0 top-0 h-full w-px bg-line-strong' />
                     <div className='relative max-w-4xl'>
                         <p className='mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-link'>
                             Creator index / live culture

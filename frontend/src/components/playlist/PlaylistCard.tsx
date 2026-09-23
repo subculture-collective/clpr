@@ -191,7 +191,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
 											loading="lazy"
 										/>
 									) : (
-										<div className="w-full h-full bg-linear-to-br from-accent to-accent/50" />
+										<div className="w-full h-full bg-surface-raised" />
 									)}
 								</div>
 							))}

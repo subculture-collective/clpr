@@ -149,7 +149,7 @@ export function CategoryPage() {
                                             <Gamepad2 size={16} strokeWidth={1.75} />
                                         </div>
                                     )}
-                                    <div className='absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-2'>
+                                    <div className='absolute bottom-0 left-0 right-0 bg-black/75 p-2'>
                                         <h3 className='text-sm font-semibold text-white truncate'>
                                             {game.name}
                                         </h3>
