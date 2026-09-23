@@ -423,7 +423,7 @@ export function TheatreMode({
                             </button>
                             <button
                                 onClick={handleResume}
-                                className='flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded transition-colors'
+                                className='flex-1 px-4 py-2 bg-primary-400 hover:bg-primary-300 text-background rounded transition-colors'
                             >
                                 Resume
                             </button>
@@ -501,7 +501,7 @@ export function TheatreMode({
                                 className={cn(
                                     'px-4 py-2 rounded transition-colors font-medium text-sm',
                                     isTheatreMode ?
-                                        'bg-primary-500 hover:bg-primary-600 text-white'
+                                        'bg-primary-400 hover:bg-primary-300 text-background'
                                     :   'bg-black/60 hover:bg-black/80 text-white',
                                 )}
                                 aria-label={

@@ -104,13 +104,13 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
-      <div aria-hidden="true" className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in motion-reduce:animate-none" />
+      <div aria-hidden="true" className="absolute inset-0 bg-background/80 animate-fade-in motion-reduce:animate-none" />
 
       {/* Modal content */}
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full bg-card rounded-xl shadow-2xl animate-slide-in-down motion-reduce:animate-none',
+          'relative w-full bg-card border border-line-strong tally-bar animate-fade-in motion-reduce:animate-none',
           'flex flex-col max-h-[90vh] overscroll-contain',
           sizeClasses[size],
           className
@@ -125,14 +125,14 @@ export const Modal: React.FC<ModalProps> = ({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             {title && (
-              <h2 id={titleId} className="text-xl font-semibold text-foreground">
+              <h2 id={titleId} className="text-2xl text-foreground">
                 {title}
               </h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg hover:bg-muted transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                className="ml-auto min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-muted transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                 aria-label="Close modal"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

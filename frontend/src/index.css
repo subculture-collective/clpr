@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss' source('./');
 @source not './**/*.test.*';
 @source not './test';
@@ -15,7 +15,7 @@
     --color-brand: rgb(var(--clpr-brand));
     --color-primary: rgb(var(--clpr-brand));
     --color-primary-foreground: #ffffff;
-    --color-destructive: #f87171;
+    --color-destructive: #FF6B78;
     --color-background-secondary: rgb(var(--clpr-surface-raised));
     --color-brand-hover: rgb(var(--clpr-brand-hover));
     --color-upvote: rgb(var(--clpr-upvote));
@@ -27,17 +27,17 @@
     --color-thread-2: rgb(var(--clpr-thread-2));
     --color-thread-3: rgb(var(--clpr-thread-3));
     --color-thread-4: rgb(var(--clpr-thread-4));
-    --color-primary-50: #f5f3ff;
-    --color-primary-100: #ede9fe;
-    --color-primary-200: #ddd6fe;
-    --color-primary-300: #c4b5fd;
-    --color-primary-400: #a78bfa;
-    --color-primary-500: #7C3AED;
-    --color-primary-600: #6D28D9;
-    --color-primary-700: #5B21B6;
-    --color-primary-800: #4C1D95;
-    --color-primary-900: #3B1578;
-    --color-primary-950: #2E1065;
+    --color-primary-50: #f3efff;
+    --color-primary-100: #e6dcff;
+    --color-primary-200: #cfbcff;
+    --color-primary-300: #b79bff;
+    --color-primary-400: #a07cff;
+    --color-primary-500: #8C5CFF;
+    --color-primary-600: #7843f0;
+    --color-primary-700: #6331d1;
+    --color-primary-800: #4f27a6;
+    --color-primary-900: #3a1d7a;
+    --color-primary-950: #231148;
     --color-secondary-50: #fff0fb;
     --color-secondary-100: #ffe0f7;
     --color-secondary-200: #ffc2ef;
@@ -49,50 +49,50 @@
     --color-secondary-800: #8f0067;
     --color-secondary-900: #6f0052;
     --color-secondary-950: #3f002e;
-    --color-success-50: #f0fdf4;
-    --color-success-100: #dcfce7;
-    --color-success-200: #bbf7d0;
-    --color-success-300: #86efac;
-    --color-success-400: #4ade80;
-    --color-success-500: #22c55e;
-    --color-success-600: #16a34a;
-    --color-success-700: #15803d;
-    --color-success-800: #166534;
-    --color-success-900: #14532d;
-    --color-success-950: #052e16;
+    --color-success-50: #ecfdf5;
+    --color-success-100: #d1fae5;
+    --color-success-200: #a7f3d0;
+    --color-success-300: #6ee7b7;
+    --color-success-400: #3DDC97;
+    --color-success-500: #22c07e;
+    --color-success-600: #16a066;
+    --color-success-700: #127f52;
+    --color-success-800: #0f5f3e;
+    --color-success-900: #0b442d;
+    --color-success-950: #062a1c;
     --color-warning-50: #fffbeb;
-    --color-warning-100: #fef3c7;
-    --color-warning-200: #fde68a;
-    --color-warning-300: #fcd34d;
-    --color-warning-400: #fbbf24;
-    --color-warning-500: #f59e0b;
-    --color-warning-600: #d97706;
-    --color-warning-700: #b45309;
-    --color-warning-800: #92400e;
-    --color-warning-900: #78350f;
-    --color-warning-950: #451a03;
-    --color-error-50: #fef2f2;
-    --color-error-100: #fee2e2;
-    --color-error-200: #fecaca;
-    --color-error-300: #fca5a5;
-    --color-error-400: #f87171;
-    --color-error-500: #ef4444;
-    --color-error-600: #dc2626;
-    --color-error-700: #b91c1c;
-    --color-error-800: #991b1b;
-    --color-error-900: #7f1d1d;
-    --color-error-950: #450a0a;
-    --color-info-50: #eef2ff;
-    --color-info-100: #e0e7ff;
-    --color-info-200: #c7d2fe;
-    --color-info-300: #a5b4fc;
-    --color-info-400: #818cf8;
-    --color-info-500: #6366f1;
-    --color-info-600: #4f46e5;
-    --color-info-700: #4338ca;
-    --color-info-800: #3730a3;
-    --color-info-900: #312e81;
-    --color-info-950: #1e1b4b;
+    --color-warning-100: #fff3c9;
+    --color-warning-200: #ffe69a;
+    --color-warning-300: #ffd46a;
+    --color-warning-400: #FFC24A;
+    --color-warning-500: #f0a42a;
+    --color-warning-600: #c9801a;
+    --color-warning-700: #9c5f14;
+    --color-warning-800: #734511;
+    --color-warning-900: #4f300d;
+    --color-warning-950: #2e1b06;
+    --color-error-50: #fff1f2;
+    --color-error-100: #ffe0e3;
+    --color-error-200: #ffc2c8;
+    --color-error-300: #ff97a1;
+    --color-error-400: #FF6B78;
+    --color-error-500: #f24758;
+    --color-error-600: #d02a3d;
+    --color-error-700: #a81f31;
+    --color-error-800: #7f1a28;
+    --color-error-900: #58141e;
+    --color-error-950: #33080f;
+    --color-info-50: #f0f9ff;
+    --color-info-100: #e0f2fe;
+    --color-info-200: #c7e9ff;
+    --color-info-300: #9FD8FF;
+    --color-info-400: #7cc4f5;
+    --color-info-500: #4fa8e6;
+    --color-info-600: #2f89c9;
+    --color-info-700: #236aa1;
+    --color-info-800: #1c4f78;
+    --color-info-900: #153853;
+    --color-info-950: #0b2133;
     --color-background: rgb(var(--clpr-background));
     --color-border: rgb(var(--clpr-border));
     --color-border-subtle: rgb(var(--clpr-border-subtle));
@@ -117,10 +117,30 @@
     --color-subtle: rgb(var(--clpr-border-subtle));
     --color-brand-tint: rgb(var(--clpr-brand) / 0.08);
     --color-brand-tint-hover: rgb(var(--clpr-brand) / 0.12);
-    --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-heading: "Space Grotesk", system-ui, -apple-system, sans-serif;
-    --font-accent: Syne, "Space Grotesk", system-ui, sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --font-sans: Barlow, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-heading: "Barlow Condensed", Barlow, system-ui, sans-serif;
+    --font-accent: "Barlow Condensed", Barlow, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    /* Tally geometry: near-square corners. Pills and avatars keep rounded-full. */
+    --radius-xs: 0px;
+    --radius-sm: 1px;
+    --radius-md: 2px;
+    --radius-lg: 2px;
+    --radius-xl: 3px;
+    --radius-2xl: 4px;
+    --radius-3xl: 4px;
+    /* Ad-hoc neutral scales resolve to the violet-ink ramp so legacy classes stay on palette. */
+    --color-gray-50: #f4f3fa; --color-gray-100: #e9e7f3; --color-gray-200: #d3d0e0; --color-gray-300: #b4afc4; --color-gray-400: #8f8a9c; --color-gray-500: #6c6780; --color-gray-600: #4d485d; --color-gray-700: #353042; --color-gray-800: #221e2c; --color-gray-900: #17141f; --color-gray-950: #0e0c13;
+    --color-neutral-50: #f4f3fa; --color-neutral-100: #e9e7f3; --color-neutral-200: #d3d0e0; --color-neutral-300: #b4afc4; --color-neutral-400: #8f8a9c; --color-neutral-500: #6c6780; --color-neutral-600: #4d485d; --color-neutral-700: #353042; --color-neutral-800: #221e2c; --color-neutral-900: #17141f; --color-neutral-950: #0e0c13;
+    --color-zinc-50: #f4f3fa; --color-zinc-100: #e9e7f3; --color-zinc-200: #d3d0e0; --color-zinc-300: #b4afc4; --color-zinc-400: #8f8a9c; --color-zinc-500: #6c6780; --color-zinc-600: #4d485d; --color-zinc-700: #353042; --color-zinc-800: #221e2c; --color-zinc-900: #17141f; --color-zinc-950: #0e0c13;
+    --color-slate-50: #f4f3fa; --color-slate-100: #e9e7f3; --color-slate-200: #d3d0e0; --color-slate-300: #b4afc4; --color-slate-400: #8f8a9c; --color-slate-500: #6c6780; --color-slate-600: #4d485d; --color-slate-700: #353042; --color-slate-800: #221e2c; --color-slate-900: #17141f; --color-slate-950: #0e0c13;
+    --color-stone-50: #f4f3fa; --color-stone-100: #e9e7f3; --color-stone-200: #d3d0e0; --color-stone-300: #b4afc4; --color-stone-400: #8f8a9c; --color-stone-500: #6c6780; --color-stone-600: #4d485d; --color-stone-700: #353042; --color-stone-800: #221e2c; --color-stone-900: #17141f; --color-stone-950: #0e0c13;
+    /* Tally signal colours and tag lanes */
+    --color-tally: rgb(var(--clpr-brand));
+    --color-seen: rgb(var(--clpr-seen));
+    --color-context: rgb(var(--clpr-context));
+    --color-category: rgb(var(--clpr-category));
+    --color-line-strong: rgb(var(--clpr-border-strong));
     --z-index-dropdown: 1000;
     --z-index-sticky: 1020;
     --z-index-fixed: 1030;
@@ -169,59 +189,65 @@
 /* Base layer - custom CSS resets and base styles */
 @layer base {
     :root {
-        /* === Swiss Dark Design System Tokens === */
+        /* === Tally · Ultraviolet tokens (see docs/design-system.md) === */
 
-        /* Background & Surface */
-        --clpr-background: 15 15 20;
-        --clpr-surface: 26 26 36;
-        --clpr-surface-raised: 34 34 51;
-        --clpr-surface-hover: 42 42 60;
+        /* Background & surface: violet-tinted ink */
+        --clpr-background: 14 12 19;
+        --clpr-surface: 23 20 31;
+        --clpr-surface-raised: 30 26 40;
+        --clpr-surface-hover: 38 33 51;
 
-        /* Borders */
-        --clpr-border: 42 42 58;
-        --clpr-border-subtle: 34 34 48;
+        /* Rules */
+        --clpr-border: 39 34 47;
+        --clpr-border-subtle: 29 25 37;
+        --clpr-border-strong: 59 53 72;
 
-        /* Text hierarchy */
-        --clpr-text-primary: 232 232 237;
-        --clpr-text-secondary: 152 152 168;
-        --clpr-text-tertiary: 144 144 160;
-        --clpr-text-disabled: 68 68 82;
+        /* Text: Ice-white on ink */
+        --clpr-text-primary: 238 237 247;
+        --clpr-text-secondary: 172 167 187;
+        --clpr-text-tertiary: 143 138 156;
+        --clpr-text-disabled: 83 77 96;
 
-        /* Brand */
-        --clpr-brand: 124 58 237;
-        --clpr-brand-hover: 109 40 217;
-        --clpr-link: 167 139 250;
-        --clpr-link-hover: 196 181 253;
+        /* Tally violet: brand, rank numerals, live light, primary actions */
+        --clpr-brand: 140 92 255;
+        --clpr-brand-hover: 120 67 240;
+        --clpr-link: 183 155 255;
+        --clpr-link-hover: 214 200 255;
+
+        /* Evidence and lane signals */
+        --clpr-seen: 61 220 151;
+        --clpr-context: 255 194 74;
+        --clpr-category: 159 216 255;
 
         /* Interaction */
-        --clpr-upvote: 249 115 22;
-        --clpr-downvote: 99 102 241;
-        --clpr-cta: 129 140 248;
-        --clpr-cta-hover: 99 102 241;
+        --clpr-upvote: 140 92 255;
+        --clpr-downvote: 159 216 255;
+        --clpr-cta: 183 155 255;
+        --clpr-cta-hover: 140 92 255;
 
         /* Focus */
-        --clpr-focus-ring: 167 139 250;
+        --clpr-focus-ring: 183 155 255;
 
-        /* Thread depth colors (violet-pink warm family) */
-        --clpr-thread-0: 124 58 237;
-        --clpr-thread-1: 168 85 247;
-        --clpr-thread-2: 192 132 252;
-        --clpr-thread-3: 232 121 168;
-        --clpr-thread-4: 240 171 171;
+        /* Thread depth colours */
+        --clpr-thread-0: 140 92 255;
+        --clpr-thread-1: 159 216 255;
+        --clpr-thread-2: 61 220 151;
+        --clpr-thread-3: 255 194 74;
+        --clpr-thread-4: 143 138 156;
 
         /* Nav height for sticky calculations */
-        --nav-height: 64px;
+        --nav-height: 56px;
 
         /* === Backward-compatible aliases (old token names → new values) === */
-        --clpr-foreground: 232 232 237;
-        --clpr-card: 26 26 36;
-        --clpr-card-foreground: 232 232 237;
-        --clpr-popover: 34 34 51;
-        --clpr-popover-foreground: 232 232 237;
-        --clpr-muted: 34 34 51;
-        --clpr-muted-foreground: 152 152 168;
-        --clpr-input: 42 42 58;
-        --clpr-ring: 167 139 250;
+        --clpr-foreground: 238 237 247;
+        --clpr-card: 23 20 31;
+        --clpr-card-foreground: 238 237 247;
+        --clpr-popover: 30 26 40;
+        --clpr-popover-foreground: 238 237 247;
+        --clpr-muted: 30 26 40;
+        --clpr-muted-foreground: 172 167 187;
+        --clpr-input: 59 53 72;
+        --clpr-ring: 183 155 255;
 
         /* Font settings */
         font-synthesis: none;
@@ -246,8 +272,10 @@
     h4,
     h5,
     h6 {
-        @apply font-semibold tracking-tight;
-        font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+        @apply font-bold uppercase;
+        font-family: "Barlow Condensed", Barlow, system-ui, sans-serif;
+        letter-spacing: 0.01em;
+        line-height: 1.02;
         /* Prevent text overflow */
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -323,9 +351,44 @@
         transition-duration: 200ms;
     }
 
+    /* Tally: mono label for sections, metadata, and burned-in timecodes. */
+    .kicker {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgb(var(--clpr-text-tertiary));
+    }
+
+    /* Tally: condensed uppercase display type for titles and rank numerals. */
+    .display {
+        font-family: "Barlow Condensed", Barlow, system-ui, sans-serif;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.01em;
+        line-height: 0.95;
+    }
+
+    /* Tally: timecode burned into media corners. */
+    .burn-in {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        color: #fff;
+        background: rgb(0 0 0 / 0.72);
+        padding: 0.125rem 0.375rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Tally light: a violet rule across the top of the active or on-air item. */
+    .tally-bar {
+        box-shadow: inset 0 3px 0 rgb(var(--clpr-brand));
+    }
+
     /* Comment body markdown rendering */
     .comment-body {
-        font-family: 'Inter', system-ui, sans-serif;
+        font-family: Barlow, system-ui, sans-serif;
         font-size: 0.875rem;
         line-height: 1.6;
         color: rgb(var(--clpr-text-primary));
@@ -343,11 +406,11 @@
     }
 
     .comment-body code {
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
         font-size: 0.8125rem;
         background: rgb(var(--clpr-surface-raised));
         padding: 0.125rem 0.375rem;
-        border-radius: 4px;
+        border-radius: 2px;
     }
 
     .comment-body pre code {
@@ -375,7 +438,7 @@
 
     /* Forum body markdown rendering — larger line-height than comment-body */
     .forum-body {
-        font-family: 'Inter', system-ui, sans-serif;
+        font-family: Barlow, system-ui, sans-serif;
         font-size: 0.9375rem; /* 15px */
         line-height: 1.75;
         color: rgb(var(--clpr-text-primary));
@@ -395,18 +458,18 @@
     }
 
     .forum-body code {
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
         font-size: 0.8125rem;
         background: rgb(var(--clpr-surface-raised));
         padding: 0.125rem 0.5rem;
-        border-radius: 4px;
+        border-radius: 2px;
     }
 
     .forum-body pre code {
         display: block;
         padding: 1rem;
         overflow-x: auto;
-        border-radius: 8px;
+        border-radius: 2px;
     }
 
     .forum-body a {
@@ -455,7 +518,7 @@
 
     .forum-body img {
         max-width: 100%;
-        border-radius: 8px;
+        border-radius: 2px;
     }
 
     .forum-body table {
@@ -522,7 +585,7 @@
 
     .scrollbar-thin::-webkit-scrollbar-thumb {
         background-color: rgb(var(--clpr-surface-hover));
-        border-radius: 9999px;
+        border-radius: 0;
     }
 
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -581,7 +644,7 @@
 .search-highlight {
     /* Style for PostgreSQL ts_headline highlighted text */
     & b {
-        @apply font-semibold text-yellow-400 bg-yellow-900/30 px-0.5 rounded;
+        @apply font-semibold text-context bg-context/10 px-0.5;
     }
 }
 
@@ -604,8 +667,9 @@
 
 .admin-content h1 {
     color: rgb(var(--clpr-text-primary)) !important;
-    font-family: 'Syne', 'Space Grotesk', system-ui, sans-serif;
-    letter-spacing: -0.03em;
+    font-family: "Barlow Condensed", Barlow, system-ui, sans-serif;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
 }
 
 .admin-content h2,

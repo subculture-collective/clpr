@@ -69,7 +69,7 @@ describe('ScrollToTop', () => {
     });
   });
 
-  it('should have theme-aware styling classes', async () => {
+  it('should use the tally violet fill with ink text', async () => {
     window.scrollY = 600;
     
     render(<ScrollToTop threshold={500} />);
@@ -77,10 +77,9 @@ describe('ScrollToTop', () => {
     
     await waitFor(() => {
       const button = screen.getByRole('button', { name: /scroll to top/i });
-      expect(button.className).toContain('bg-primary-500');
-      expect(button.className).toContain('dark:bg-primary-600');
-      expect(button.className).toContain('hover:bg-primary-600');
-      expect(button.className).toContain('dark:hover:bg-primary-500');
+      expect(button.className).toContain('bg-primary-400');
+      expect(button.className).toContain('hover:bg-primary-300');
+      expect(button.className).toContain('text-background');
     });
   });
 

@@ -104,7 +104,7 @@ export function FavoritesPage() {
                 flex-1 min-w-[120px] px-4 py-3 rounded-lg text-sm font-medium transition-colors
                 ${
                   sort === 'newest'
-                    ? 'bg-primary-500 text-white'
+                    ? 'bg-primary-400 text-background'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }
               `}
@@ -120,7 +120,7 @@ export function FavoritesPage() {
                 flex-1 min-w-[120px] px-4 py-3 rounded-lg text-sm font-medium transition-colors
                 ${
                   sort === 'top'
-                    ? 'bg-primary-500 text-white'
+                    ? 'bg-primary-400 text-background'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }
               `}
@@ -136,7 +136,7 @@ export function FavoritesPage() {
                 flex-1 min-w-[120px] px-4 py-3 rounded-lg text-sm font-medium transition-colors
                 ${
                   sort === 'discussed'
-                    ? 'bg-primary-500 text-white'
+                    ? 'bg-primary-400 text-background'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }
               `}

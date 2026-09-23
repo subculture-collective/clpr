@@ -9,8 +9,8 @@ describe('UserRoleBadge', () => {
       const badge = screen.getByText('Admin');
       
       // Admin should use error variant (red)
-      expect(badge.className).toContain('bg-error-100');
-      expect(badge.className).toContain('text-error-800');
+      expect(badge.className).toContain('border-error-800');
+      expect(badge.className).toContain('text-error-400');
     });
 
     it('renders moderator badge with warning variant (yellow)', () => {
@@ -18,8 +18,8 @@ describe('UserRoleBadge', () => {
       const badge = screen.getByText('Moderator');
       
       // Moderator should use warning variant (yellow)
-      expect(badge.className).toContain('bg-warning-100');
-      expect(badge.className).toContain('text-warning-800');
+      expect(badge.className).toContain('border-warning-800');
+      expect(badge.className).toContain('text-warning-400');
     });
 
     it('renders creator badge with primary variant (blue)', () => {
@@ -27,26 +27,26 @@ describe('UserRoleBadge', () => {
       const badge = screen.getByText('Creator');
       
       // Creator should use primary variant (blue)
-      expect(badge.className).toContain('bg-primary-100');
-      expect(badge.className).toContain('text-primary-800');
+      expect(badge.className).toContain('border-primary-700');
+      expect(badge.className).toContain('text-primary-300');
     });
 
-    it('renders user badge with default variant (gray)', () => {
+    it('renders user badge with default variant (neutral)', () => {
       render(<UserRoleBadge role="user" size="sm" />);
       const badge = screen.getByText('User');
       
-      // User should use default variant (gray)
-      expect(badge.className).toContain('bg-neutral-100');
-      expect(badge.className).toContain('text-neutral-800');
+      // User should use default variant (neutral)
+      expect(badge.className).toContain('border-line-strong');
+      expect(badge.className).toContain('text-text-secondary');
     });
 
-    it('renders member badge with default variant (gray)', () => {
+    it('renders member badge with default variant (neutral)', () => {
       render(<UserRoleBadge role="member" size="sm" />);
       const badge = screen.getByText('Member');
       
-      // Member should use default variant (gray)
-      expect(badge.className).toContain('bg-neutral-100');
-      expect(badge.className).toContain('text-neutral-800');
+      // Member should use default variant (neutral)
+      expect(badge.className).toContain('border-line-strong');
+      expect(badge.className).toContain('text-text-secondary');
     });
   });
 

@@ -59,7 +59,7 @@ export function UserMenu() {
             <button
                 ref={buttonRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className='flex min-h-11 items-center gap-2 px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900'
+                className='flex min-h-11 items-center gap-2 px-2 py-1 hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                 aria-expanded={isOpen}
                 aria-haspopup='true'
                 aria-label='User menu'
@@ -71,7 +71,7 @@ export function UserMenu() {
                         alt={user.username}
                         className='w-8 h-8 rounded-full'
                     />
-                :   <div className='w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold'>
+                :   <div className='w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center text-background font-heading font-bold uppercase'>
                         {user.username.charAt(0).toUpperCase()}
                     </div>
                 }
@@ -89,7 +89,7 @@ export function UserMenu() {
             {isOpen && (
                 <div
                     ref={menuRef}
-                    className='absolute right-0 mt-2 w-56 bg-background border border-border rounded-md shadow-lg overflow-hidden z-50'
+                    className='absolute right-0 mt-2 w-56 bg-popover border border-line-strong tally-bar overflow-hidden z-50'
                     role='menu'
                     aria-orientation='vertical'
                 >
@@ -198,7 +198,7 @@ export function UserMenu() {
 
                         <button
                             onClick={handleLogout}
-                            className='flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-error-600 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                            className='flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-error-400 cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                             role='menuitem'
                             tabIndex={-1}
                         >

@@ -44,12 +44,12 @@ export default function SupportPage() {
                             href='https://patreon.com/subcult'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='group flex items-center justify-between rounded-2xl border border-brand/40 bg-brand p-6 text-white shadow-[0_20px_60px_-28px_rgba(145,70,255,0.85)] transition-transform hover:-translate-y-1'
+                            className='group flex items-center justify-between border border-brand/40 bg-primary-400 p-6 text-background transition-colors hover:bg-primary-300'
                         >
                             <span>
-                                <span className='mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.17em] text-white'><Heart className='h-4 w-4 fill-current' /> Keep it moving</span>
+                                <span className='mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.17em] text-background'><Heart className='h-4 w-4 fill-current' /> Keep it moving</span>
                                 <span className='block text-xl font-bold'>Support Subcult on Patreon</span>
-                                <span className='mt-1 block text-sm text-white'>Optional support. No features attached.</span>
+                                <span className='mt-1 block text-sm text-background'>Optional support. No features attached.</span>
                             </span>
                             <ArrowUpRight className='h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1' />
                         </a>

@@ -122,7 +122,7 @@ export function ForumIndex() {
               className={cn(
                 'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                 (!filters.tags || filters.tags.length === 0)
-                  ? 'bg-brand text-white border-transparent'
+                  ? 'bg-brand text-background border-transparent'
                   : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',
               )}
             >
