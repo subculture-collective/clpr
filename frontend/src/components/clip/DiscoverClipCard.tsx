@@ -42,7 +42,7 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
 
     return (
         <div
-            className='bg-card border-border rounded-xl hover:shadow-lg transition-shadow border'
+            className='bg-card border-border hover:border-line-strong transition-colors border'
             data-testid='discover-clip-card'
         >
             <div className='p-3 xs:p-4'>
@@ -56,7 +56,7 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
 
                     {/* Duration badge */}
                     {clip.duration && (
-                        <div className='bottom-2 right-2 absolute px-2 py-1 text-xs font-medium text-white bg-black bg-opacity-75 rounded'>
+                        <div className='burn-in bottom-2 right-2 absolute'>
                             {formatDuration(clip.duration)}
                         </div>
                     )}
@@ -70,12 +70,12 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
                 </div>
 
                 {/* Title */}
-                <h3 className='line-clamp-2 text-base xs:text-lg font-semibold leading-snug mb-2'>
+                <h3 className='line-clamp-2 font-heading text-xl xs:text-2xl font-bold uppercase leading-none mb-2'>
                     {clip.title}
                 </h3>
 
                 {/* Metadata */}
-                <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 xs:gap-2 mb-3 text-xs xs:text-sm leading-tight'>
+                <div className='text-muted-foreground flex flex-wrap items-center gap-1.5 xs:gap-2 mb-3 font-mono text-[11px] uppercase tracking-[0.04em] leading-tight'>
                     <span className='flex items-center gap-1 font-medium'>
                         <Link
                             to={`/broadcaster/${clip.broadcaster_id || clip.broadcaster_name}`}
@@ -87,7 +87,7 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
 
                     {clip.game_name && (
                         <>
-                            <span className='hidden xs:inline'>•</span>
+                            <span className='hidden xs:inline text-text-disabled'>·</span>
                             <span className='flex items-center gap-1'>
                                 <Link
                                     to={`/twitch-category/${clip.twitch_category_id || clip.game_id}`}
@@ -99,7 +99,7 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
                         </>
                     )}
 
-                    <span className='hidden xs:inline'>•</span>
+                    <span className='hidden xs:inline text-text-disabled'>·</span>
                     <span
                         className='truncate align-middle'
                         title={timestamp.title}

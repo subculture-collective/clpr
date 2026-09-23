@@ -35,6 +35,9 @@ const normalizeSortOption = (sort: SortOption): SortOption => {
     return sort === 'hot' ? 'trending' : sort;
 };
 
+// Sorts whose order is a ranking; "new" is chronological and unranked.
+const RANKED_SORTS = new Set<SortOption>(['trending', 'popular', 'top', 'rising', 'discussed']);
+
 // React's shallow comparison respects every clip field as the card evolves.
 const MemoizedClipCard = memo(ClipCard);
 const MemoizedDiscoverClipCard = memo(DiscoverClipCard);
@@ -374,6 +377,7 @@ export function ClipFeed({
                                 {discoverMode ? <MemoizedDiscoverClipCard clip={clip} /> : (
                                     <MemoizedClipCard
                                         clip={clip}
+                                        rank={RANKED_SORTS.has(sort) ? clipIndex + 1 : undefined}
                                         active={activeClipId === clip.id}
                                         autoplay={autoplayPreference === 'muted'}
                                         onActivate={handleActivate}

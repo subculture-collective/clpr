@@ -382,7 +382,7 @@ export function TheatreMode({
             <div
                 className={cn(
                     'absolute top-0 left-0 right-0 p-4',
-                    'bg-gradient-to-b from-black/80 to-transparent',
+                    'bg-black/70',
                     'transition-opacity duration-300 pointer-events-none',
                     showControls ? 'opacity-100' : 'opacity-0',
                 )}
@@ -436,7 +436,7 @@ export function TheatreMode({
             <div
                 className={cn(
                     'absolute bottom-0 left-0 right-0 p-4',
-                    'bg-gradient-to-t from-black/80 to-transparent',
+                    'bg-black/75',
                     'transition-opacity duration-300',
                     showControls ?
                         'opacity-100 pointer-events-auto'

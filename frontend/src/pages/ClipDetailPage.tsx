@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
 import { ShareButton } from '@/components/clip/ShareButton';
+import { TagList } from '@/components/tag/TagList';
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { topicApi } from '@/lib/topic-api';
@@ -77,11 +78,11 @@ export function ClipDetailPage() {
             <>
                 <SEO title='Banned' noindex />
                 <Container className='py-8'>
-                    <div className='rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-6 my-8'>
-                        <h2 className='text-lg font-bold text-red-800 dark:text-red-400 mb-2'>
+                    <div className='border border-error-800 border-l-[3px] border-l-error-400 bg-surface p-6 my-8'>
+                        <h2 className='text-2xl text-error-300 mb-2'>
                             You are banned
                         </h2>
-                        <p className='text-red-700 dark:text-red-300'>
+                        <p className='text-text-secondary'>
                             You are banned and cannot interact with clips
                             {banReason ? `: ${banReason}` : ''}.
                         </p>
@@ -140,7 +141,7 @@ export function ClipDetailPage() {
                 <SEO title='Error Loading Clip' noindex />
                 <Container className='py-8'>
                     <div className='text-center py-12'>
-                        <h2 className='text-2xl font-bold text-error-600 mb-4'>
+                        <h2 className='text-3xl text-error-300 mb-4'>
                             Error Loading Clip
                         </h2>
                         <p className='text-muted-foreground'>{error.message}</p>
@@ -156,7 +157,7 @@ export function ClipDetailPage() {
                 <SEO title='Clip Not Found' noindex />
                 <Container className='py-8'>
                     <div className='text-center py-12'>
-                        <h2 className='text-2xl font-bold mb-4'>
+                        <h2 className='text-3xl mb-4'>
                             Clip Not Found
                         </h2>
                         <p className='text-muted-foreground'>
@@ -253,12 +254,12 @@ export function ClipDetailPage() {
 
                 {/* Header — compact, matching PlaylistDetail style */}
                 <div className='mb-6'>
-                    <h1 className='text-xl font-semibold text-foreground mb-1 leading-tight'>
+                    <h1 className='text-3xl lg:text-4xl text-foreground mb-2'>
                         {clip.title}
                     </h1>
 
                     {/* Metadata row */}
-                    <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mb-3'>
+                    <div className='flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground mb-4'>
                         <Link
                             to={`/broadcaster/${clip.broadcaster_id || clip.broadcaster_name}`}
                             className='font-medium text-foreground/90 hover:text-foreground transition-colors'
@@ -267,7 +268,7 @@ export function ClipDetailPage() {
                         </Link>
                         {clip.game_name && (
                             <>
-                                <span>•</span>
+                                <span className='text-text-disabled'>·</span>
                                 <Link
                                     to={`/twitch-category/${clip.twitch_category_id || clip.game_id}`}
                                     className='hover:text-foreground transition-colors'
@@ -278,7 +279,7 @@ export function ClipDetailPage() {
                         )}
                         {clip.submitted_by && (
                             <>
-                                <span>•</span>
+                                <span className='text-text-disabled'>·</span>
                                 <span>
                                     by{' '}
                                     <Link
@@ -290,9 +291,9 @@ export function ClipDetailPage() {
                                 </span>
                             </>
                         )}
-                        <span>•</span>
+                        <span className='text-text-disabled'>·</span>
                         <span>{clip.view_count.toLocaleString()} views</span>
-                        <span>•</span>
+                        <span className='text-text-disabled'>·</span>
                         <span>
                             {new Date(clip.created_at).toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -302,29 +303,37 @@ export function ClipDetailPage() {
                         </span>
                     </div>
 
+                    <div className='mb-4 grid gap-2 sm:grid-cols-[6rem_1fr] sm:items-start'>
+                        <p className='kicker pt-1.5'>Tags</p>
+                        <TagList clipId={clip.id} maxVisible={16} />
+                    </div>
+
                     {clipTopics && clipTopics.topics.length > 0 && (
-                        <div className='mb-3 flex flex-wrap gap-2' aria-label='Clip topics'>
+                        <div className='mb-4 flex flex-wrap items-center gap-1.5 sm:grid sm:grid-cols-[6rem_1fr]' aria-label='Clip topics'>
+                            <p className='kicker'>Topics</p>
+                            <div className='flex flex-wrap gap-1.5'>
                             {clipTopics.topics.map(topic => (
                                 <Link
                                     key={topic.topic_id}
                                     to={`/topics/${topic.topic_slug}`}
-                                    className='rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent/80'
+                                    className='inline-flex min-h-8 items-center border border-line-strong px-2 font-heading text-[13px] font-bold uppercase tracking-[0.04em] text-foreground transition-colors hover:border-text-tertiary'
                                 >
                                     {topic.topic_name}
                                 </Link>
                             ))}
+                            </div>
                         </div>
                     )}
 
                     {/* Actions row — matching PlaylistDetail stats row */}
-                    <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
+                    <div className='flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 font-mono text-xs text-muted-foreground'>
                         <button
                             aria-label={`Upvote: ${clip.vote_score} votes`}
                             aria-pressed={clip.user_vote === 1}
                             onClick={() => handleVote(1)}
                             disabled={!isAuthenticated || isVoting || isBanned}
                             className={cn(
-                                'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 py-2 transition-colors cursor-pointer',
+                                'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 py-2 transition-colors cursor-pointer',
                                 clip.user_vote === 1
                                     ? 'text-upvote bg-upvote/10'
                                     : 'hover:bg-accent hover:text-foreground',
@@ -348,7 +357,7 @@ export function ClipDetailPage() {
                                 discussion?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
                             }}
                             aria-label={`Read discussion: ${clip.comment_count} comments`}
-                            className='inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 py-2 transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
+                            className='inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 py-2 transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
                         >
                             <svg className='h-5 w-5' fill='none' stroke='currentColor' strokeWidth={2} viewBox='0 0 24 24'>
                                 <path strokeLinecap='round' strokeLinejoin='round' d='M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z' />
@@ -364,7 +373,7 @@ export function ClipDetailPage() {
                             onClick={() => handleFavorite()}
                             disabled={!isAuthenticated || isBanned}
                             className={cn(
-                                'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-3 py-2 transition-colors cursor-pointer',
+                                'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 py-2 transition-colors cursor-pointer',
                                 clip.is_favorited
                                     ? 'text-red-500'
                                     : 'hover:bg-accent hover:text-foreground',
@@ -392,7 +401,7 @@ export function ClipDetailPage() {
                 </div>
 
                 </div>
-                <section id='comments' aria-label='Discussion' tabIndex={-1} className='min-w-0 scroll-mt-24 rounded-lg border border-border bg-surface-raised p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:self-start xl:overflow-hidden'>
+                <section id='comments' aria-label='Discussion' tabIndex={-1} className='min-w-0 scroll-mt-24 border border-border bg-surface p-4 tally-bar xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:self-start xl:overflow-hidden'>
                     <CommentSection
                         clipId={clip.id}
                         variant='compact'

@@ -31,7 +31,7 @@ function formatRelativeTime(dateString?: string | null): string {
 
 export function StreamOfflineScreen({ channel, streamInfo }: StreamOfflineScreenProps) {
   return (
-    <div className="w-full aspect-video bg-gradient-to-br from-background via-surface-raised to-background flex flex-col items-center justify-center text-center p-8">
+    <div className="w-full aspect-video bg-surface border border-border flex flex-col items-center justify-center text-center p-8">
       <div className="max-w-2xl">
         {/* Offline Icon */}
         <div className="text-6xl mb-6 opacity-50">📺</div>

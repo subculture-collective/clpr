@@ -483,40 +483,44 @@ Same color states, smaller touch targets (28x28), no background on hover.
 - Sort options: Best (default), New, Top, Old, Controversial
 - Divider below: `border-bottom: 1px solid var(--clpr-border)`
 
-### 6.6 ClipCard (with comment preview)
+### 6.6 ClipCard and tag chips
 
-Standard card used in feeds and search results:
+Feed card (`frontend/src/components/clip/ClipCard.tsx`):
 
 ```
-┌────────────────────────────────────┐
-│ [Thumbnail ─────────── 16:9 ────] │
-│  0:32                         ▶   │  ← duration overlay, play icon
-├────────────────────────────────────┤
-│ Clip Title That Might Wrap to      │
-│ Two Lines Maximum                  │
-│                                    │
-│ @broadcaster · Game Name           │  ← text-secondary
-│ ▲ 142  ·  💬 47                    │  ← votes + comment count
-│                                    │
-│ "This play was absolutely..."      │  ← text-secondary, italic, line-clamp-1
-│  — @topcommenter                   │  ← text-tertiary
-└────────────────────────────────────┘
+┌─[tally rule on #1 or the playing card]───────────────────────┐
+│ 01   STRANGER JOINS THE STREET PERFORMANCE          ← display │
+│  ▲   LUNAWAVES · MUSIC · CLIPPED BY OKAYSAM · 2H    ← mono    │
+│ 42   ┌──────────────── 16:9 ───────────────┐                  │
+│  ▼   │               [▶]                    │                  │
+│      │                               0:20  │ ← burn-in       │
+│      └──────────────────────────────────────┘                  │
+│      [Singing CTX] [Music] [#goosebumps] +2  ← tag lanes      │
+│      💬 418 COMMENTS  ♥ 12  SHARE     👁 2.1K  PLAYLIST QUEUE  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-| Element             | Spec                                                                      |
-| ------------------- | ------------------------------------------------------------------------- |
-| Card background     | `color-surface`                                                           |
-| Card border         | `1px solid var(--clpr-border-subtle)`                                    |
-| Card radius         | `rounded-md` (8px)                                                        |
-| Card hover          | `background: var(--clpr-surface-hover)`, transition 150ms                |
-| Thumbnail           | `aspect-ratio: 16/9`, `object-fit: cover`, `rounded-md` top corners       |
-| Title               | `font-heading`, 15px, weight 600, `line-clamp-2`                          |
-| Metadata            | 12px, `text-secondary`                                                    |
-| Vote count          | 13px, weight 600, `text-primary`                                          |
-| Comment count       | 13px, weight 500, `text-secondary`, with 💬 icon (Lucide `MessageSquare`) |
-| Top comment preview | 12px, italic, `text-secondary`, `line-clamp-1`                            |
-| Top comment author  | 11px, `text-tertiary`                                                     |
-| Padding             | 12px (thumbnail area: 0)                                                  |
+| Element        | Spec                                                                               |
+| -------------- | ---------------------------------------------------------------------------------- |
+| Card           | `bg-card`, 1px `border-border`, square; hover raises the rule to `line-strong`     |
+| Tally rule     | `.tally-bar` on rank 1 and on the active (playing) card                            |
+| Rank           | Ranked sorts only (not "new"). `.display` 48px; #1 in tally violet, others tertiary. Mobile shows `#01` in the metadata line |
+| Title          | Uppercase Barlow Condensed, 24–28px, `line-clamp-2`                                |
+| Metadata       | IBM Plex Mono 11px uppercase, `·` separators                                       |
+| Duration       | `.burn-in` in the bottom-right media corner                                        |
+| Play control   | Square `primary-400` tile with ink icon; no blur or glow                           |
+| Tags           | `TagList`, ordered by lane; length and language are not chips                      |
+
+Tag chips (`frontend/src/components/tag/TagChip.tsx`) are 12px mono with a 1px border. Colour depends on the lane, never on per-tag colour:
+
+| Lane       | Treatment                                                             |
+| ---------- | --------------------------------------------------------------------- |
+| Detected   | Ice text, `line-strong` border, evidence mark: Seen (mint), Ctx (amber), Outcome (violet) |
+| Category   | Sky text and border                                                   |
+| Community  | `#` prefix, link violet                                               |
+| Streamer   | Dashed border, tertiary text                                          |
+
+The evidence mark describes what the tag definition requires, not a verdict about the clip.
 
 ### 6.7 Playlist Sidebar Tabs
 

@@ -69,11 +69,11 @@ export function CreatorDiscoveryRail({
                                     loading='lazy'
                                 />
                             ) : (
-                                <div className='flex h-full items-center justify-center bg-[radial-gradient(circle_at_top_left,rgb(var(--clpr-brand)/0.28),transparent_55%)] font-heading text-6xl font-bold text-link/40'>
+                                <div className='flex h-full items-center justify-center bg-surface-raised font-heading text-6xl font-bold text-link/40'>
                                     {creator.broadcaster_name.slice(0, 1).toUpperCase()}
                                 </div>
                             )}
-                            <div className='absolute inset-0 bg-linear-to-t from-black/90 via-black/15 to-transparent' />
+                            <div className='absolute inset-0 bg-black/45' />
                             <span className='absolute left-3 top-3 rounded-full bg-black/65 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm'>
                                 {String(index + 1).padStart(2, '0')}
                             </span>

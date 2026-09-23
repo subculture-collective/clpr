@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui';
 
 export function ClipCardSkeleton() {
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="bg-card border border-border p-4">
       <div className="flex gap-4">
         {/* Vote sidebar */}
         <div className="flex flex-col items-center gap-2 w-10">

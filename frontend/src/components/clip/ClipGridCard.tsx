@@ -41,23 +41,23 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 
 	return (
 		<article
-			className="group flex h-full flex-col rounded-xl border border-border bg-card p-3 transition-all motion-reduce:transition-none hover:border-primary-500/30 hover:shadow-lg focus-within:border-primary-500/50"
+			className="group flex h-full flex-col border border-border bg-card p-3 transition-colors motion-reduce:transition-none hover:border-line-strong focus-within:border-primary-400"
 			data-testid="clip-grid-card"
 		>
 			<Link
 				to={`/clip/${clip.id}`}
-				className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+				className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 				aria-label={`Watch ${clip.title}`}
 			>
 			{/* Thumbnail */}
-			<div className="relative aspect-video shrink-0 overflow-hidden rounded-lg mb-3">
+			<div className="relative aspect-video shrink-0 overflow-hidden mb-3">
 				{clip.thumbnail_url ? (
 					<img
 						src={clip.thumbnail_url}
 						alt={clip.title}
 						width={640}
 						height={360}
-						className="h-full w-full object-cover transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none group-hover:scale-105"
+						className="h-full w-full object-cover transition-opacity duration-150 motion-reduce:transition-none group-hover:opacity-90"
 						loading="lazy"
 					/>
 				) : (
@@ -72,7 +72,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 
 				{/* Duration badge */}
 				{clip.duration && (
-					<span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-medium text-white">
+					<span className="burn-in absolute bottom-2 right-2">
 						{formatDuration(clip.duration)}
 					</span>
 				)}
@@ -92,7 +92,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						<Badge
 							variant="secondary"
 							size="sm"
-							className="shrink-0 border border-violet-400/40 bg-violet-500/12 text-[11px] text-violet-100 shadow-xs"
+							className="shrink-0 border border-primary-700 bg-background/80 text-[11px] text-primary-200"
 						>
 							Featured
 						</Badge>
@@ -110,7 +110,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						aria-valuenow={Math.min(100, Math.max(0, clip.watch_progress.progress_percent))}
 					>
 						<div
-							className="h-full bg-primary-500"
+							className="h-full bg-tally"
 							style={{
 								width: `${Math.min(
 									100,
@@ -123,12 +123,12 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 			</div>
 
 			{/* Title */}
-			<h3 className="text-base font-semibold text-foreground mb-1 line-clamp-2 group-hover:text-link transition-colors leading-snug">
+			<h3 className="font-heading text-xl font-bold uppercase leading-none text-foreground mb-1.5 line-clamp-2 group-hover:text-link transition-colors">
 				{clip.title}
 			</h3>
 
 			{/* Metadata */}
-			<div className="mb-2 text-xs text-muted-foreground line-clamp-1">
+			<div className="mb-2 font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground line-clamp-1">
 				<span className="font-medium">{clip.broadcaster_name}</span>
 				{clip.game_name && (
 					<>
@@ -148,7 +148,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 			</Link>
 
 			{/* Stats — pushed to bottom, aligned with thumbnail edges */}
-			<div className="-mb-3 flex-no-wrap mt-auto flex items-center justify-between gap-1.5 text-xs text-muted-foreground">
+			<div className="-mb-3 flex-no-wrap mt-auto flex items-center justify-between gap-1.5 font-mono text-xs text-muted-foreground">
 				<div className="flex flex-no-wrap items-center gap-x-1.5 gap-y-1">
 					{/* Vote buttons */}
 					<button
