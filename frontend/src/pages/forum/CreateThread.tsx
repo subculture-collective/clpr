@@ -243,7 +243,7 @@ export function CreateThread() {
                   createThreadMutation.isPending
                 }
                 className={cn(
-                  'min-h-[44px] px-6 py-3 bg-brand hover:bg-brand-hover text-white font-medium rounded-lg',
+                  'min-h-[44px] px-6 py-3 bg-brand hover:bg-primary-300 text-background font-medium rounded-lg',
                   'transition-colors motion-reduce:transition-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
                 )}
                 aria-busy={createThreadMutation.isPending}

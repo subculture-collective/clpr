@@ -244,7 +244,7 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                             </button>
                             <button
                                 onClick={handleReport}
-                                className='px-4 py-2 rounded-md bg-primary-500 text-white hover:bg-primary-600 transition-colors cursor-pointer'
+                                className='px-4 py-2 rounded-md bg-primary-400 text-background hover:bg-primary-300 transition-colors cursor-pointer'
                             >
                                 Submit Report
                             </button>

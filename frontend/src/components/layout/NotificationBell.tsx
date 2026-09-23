@@ -84,7 +84,7 @@ export function NotificationBell() {
             {/* Bell Icon Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className='hover:bg-muted relative p-2 transition-colors rounded-lg cursor-pointer'
+                className='hover:bg-muted relative p-2 transition-colors cursor-pointer'
                 aria-label='Notifications'
             >
                 {/* Bell Icon */}
@@ -104,7 +104,7 @@ export function NotificationBell() {
 
                 {/* Badge */}
                 {unreadCount > 0 && (
-                    <span className='min-w-5 absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full'>
+                    <span className='min-w-5 absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 font-mono text-[10px] font-semibold leading-none text-background transform translate-x-1/2 -translate-y-1/2 bg-primary-400 rounded-full'>
                         {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                 )}
@@ -112,10 +112,10 @@ export function NotificationBell() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className='w-80 absolute right-0 z-50 mt-2 overflow-hidden bg-background border border-border rounded-md shadow-lg'>
+                <div className='w-80 absolute right-0 z-50 mt-2 overflow-hidden bg-popover border border-line-strong tally-bar'>
                     {/* Header */}
                     <div className='flex items-center justify-between p-4 border-b border-border'>
-                        <h3 className='text-lg font-semibold'>Notifications</h3>
+                        <h3 className='text-xl'>Notifications</h3>
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllAsRead}

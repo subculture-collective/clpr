@@ -30,7 +30,7 @@ function AdminNavigation({ onNavigate }: { onNavigate?: () => void }) {
                                     to={item.href}
                                     onClick={onNavigate}
                                     aria-current={active ? 'page' : undefined}
-                                    className={`group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${active ? 'bg-brand text-white shadow-sm' : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'}`}
+                                    className={`group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${active ? 'bg-brand text-background shadow-sm' : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'}`}
                                 >
                                     <Icon className='h-4 w-4 shrink-0' strokeWidth={1.8} />
                                     <span className='truncate font-medium'>{item.label}</span>

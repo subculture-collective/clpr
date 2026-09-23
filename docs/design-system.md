@@ -1,7 +1,8 @@
-# Clipper Design System — "Swiss Dark, Comment-Forward"
+# clpr Design System — "Tally · Ultraviolet"
 
-> **Philosophy**: The clip is the prompt. The discussion is the product.
-> Every layout decision prioritizes making comments visible, accessible, and frictionless.
+> **Idea**: clpr is a broadcast control room for Twitch moments. Clips are
+> monitors, rank is read across the room, and every tag says where it came from.
+> Discussion stays beside the clip.
 
 ---
 
@@ -22,206 +23,133 @@
 
 ## 1. Design Principles
 
-### Comment-Forward
+### Control room
 
-1. **Comments beside, not below** — On desktop, comments are always visible alongside the clip. Never require scrolling past the video to reach discussion.
-2. **Comments inside playlists** — When watching a playlist, the current clip's comments are one tab away in the sidebar. No navigation required.
-3. **Input always visible** — The comment form is sticky. Never buried at the bottom of a thread.
-4. **Discussion as discovery** — Playlist cards preview the top comment. Comment count is a first-class metric alongside votes.
+1. **The tally light means "this one"**: violet marks the item that is on air: the active nav item, the selected tab, the top rank, and the primary action. Use it once per region.
+2. **Rank is big, metadata is mono**: rank numerals and titles use condensed uppercase display type. Counts, durations, timecodes and dates use the mono face with tabular figures.
+3. **Rules, not cards**: surfaces are separated by 1px rules on a violet-tinted ink. Corners are square or nearly square. No gradients, glass or soft drop shadows.
+4. **Clpr's own purple**: the violet sits near Twitch's purple to suggest the relationship without copying it. Never use Twitch's exact brand purple or their logo.
+5. **No gaming visual language**: clpr covers every kind of Twitch moment. Avoid gamer tropes such as HUD meters, neon RGB or esports scoreboards.
 
-### Swiss Dark
+### Tags say where they came from
 
-5. **Readability over decoration** — Typography, contrast, and spacing are optimized for reading dense comment threads. No gradients, no glassmorphism, no aurora effects.
-6. **Grid discipline** — Consistent spacing scale, clear visual hierarchy, predictable layout.
-7. **Personality through restraint** — Brand violet as a single accent color. Let the conversations provide the energy.
+6. **One colour per tag origin, not per tag**: Twitch category, what clpr saw (the vision tagger), community tags, and the streamer's own Twitch channel tags each have one treatment. Duration and language are metadata, not chips.
+7. **Evidence is visible**: tags from the vision tagger show the evidence level the backend assigned (`visible`, `contextual`, or `strong`; see `backend/internal/services/content_tags.go`).
 
-### Density
+### Comment-forward
 
-8. **Two density modes** — Compact (sidebar, playlist) and Expanded (full page). Same data, different spacing.
-9. **Scannable by default** — Inline metadata (author, time, score) on one line. Thread structure visible at a glance.
+8. **Comments beside, not below**: on wide desktop, discussion is visible next to the clip. In playlists, the current clip's comments are one tab away.
+9. **Input always visible**: the comment form is sticky, never buried at the bottom of a thread.
+10. **Two density modes**: compact (sidebar, playlist) and expanded (full page). Same data, different spacing.
 
 ---
 
 ## 2. Color Tokens
 
-### Core Palette
+All colours are CSS custom properties holding space-separated RGB so Tailwind alpha modifiers work (`bg-surface/80`). Values live in `frontend/src/index.css`.
 
-All colors defined as CSS custom properties using space-separated RGB for Tailwind alpha support.
+### Surfaces and rules
 
-| Token                    | RGB        | Hex       | Usage                                                     |
-| ------------------------ | ---------- | --------- | --------------------------------------------------------- |
-| `--clpr-background`     | `15 15 20` | `#0F0F14` | Page background — warm dark, less sterile than pure black |
-| `--clpr-surface`        | `26 26 36` | `#1A1A24` | Cards, panels, comment containers                         |
-| `--clpr-surface-raised` | `34 34 51` | `#222233` | Comment input, modals, elevated panels, dropdowns         |
-| `--clpr-surface-hover`  | `42 42 60` | `#2A2A3C` | Hover state for interactive surfaces                      |
-| `--clpr-border`         | `42 42 58` | `#2A2A3A` | Borders, dividers, thread lines                           |
-| `--clpr-border-subtle`  | `34 34 48` | `#222230` | Subtle separators within cards                            |
+| Token                    | RGB          | Hex       | Usage                                  |
+| ------------------------ | ------------ | --------- | -------------------------------------- |
+| `--clpr-background`      | `14 12 19`   | `#0E0C13` | Page background (violet-tinted ink)    |
+| `--clpr-surface`         | `23 20 31`   | `#17141F` | Panels, clip cards, inputs             |
+| `--clpr-surface-raised`  | `30 26 40`   | `#1E1A28` | Menus, modals, toasts                  |
+| `--clpr-surface-hover`   | `38 33 51`   | `#262133` | Hover state for interactive surfaces   |
+| `--clpr-border`          | `39 34 47`   | `#27222F` | Default 1px rule                       |
+| `--clpr-border-subtle`   | `29 25 37`   | `#1D1925` | Separators inside a panel              |
+| `--clpr-border-strong`   | `59 53 72`   | `#3B3548` | Outlined buttons, chips, inputs        |
 
-### Text Hierarchy
+### Text
 
-| Token                    | RGB           | Hex       | Contrast on Surface | Usage                                                 |
-| ------------------------ | ------------- | --------- | ------------------- | ----------------------------------------------------- |
-| `--clpr-text-primary`   | `232 232 237` | `#E8E8ED` | ~12:1               | Comment body, headings, primary content               |
-| `--clpr-text-secondary` | `152 152 168` | `#9898A8` | ~5.5:1              | Timestamps, usernames, metadata                       |
-| `--clpr-text-tertiary`  | `144 144 160` | `#9090A0` | ~6.0:1              | Neutral vote counts, placeholders (not for body text) |
-| `--clpr-text-disabled`  | `68 68 82`    | `#444452` | ~2:1                | Disabled states only                                  |
+| Token                    | Hex       | Usage                                           |
+| ------------------------ | --------- | ----------------------------------------------- |
+| `--clpr-text-primary`    | `#EEEDF7` | Body, titles (cool "ice" white)                 |
+| `--clpr-text-secondary`  | `#ACA7BB` | Metadata, secondary labels                      |
+| `--clpr-text-tertiary`   | `#8F8A9C` | Mono labels (`.kicker`), counts                 |
+| `--clpr-text-disabled`   | `#534D60` | Disabled states and decoration only             |
 
-### Brand & Accent
+### Signal colours
 
-| Token                 | Hex         | Usage                                                      |
-| --------------------- | ----------- | ---------------------------------------------------------- |
-| `--clpr-brand`       | `#7C3AED`   | Brand violet — links, active tab indicators, user mentions |
-| `--clpr-brand-hover` | `#6D28D9`   | Hover state for brand elements                             |
-| `--clpr-brand-muted` | `#7C3AED26` | 15% opacity — subtle brand tint backgrounds                |
+| Token                  | Hex       | Meaning                                                              |
+| ---------------------- | --------- | -------------------------------------------------------------------- |
+| `--clpr-brand` (tally) | `#8C5CFF` | On air: active item, top rank, primary action, upvote                |
+| `--clpr-link`          | `#B79BFF` | Links and focus ring                                                 |
+| `--clpr-seen`          | `#3DDC97` | Tag evidence `visible` (seen in the frame); success                  |
+| `--clpr-context`       | `#FFC24A` | Tag evidence `contextual` (metadata or transcript plus frame); warning |
+| `--clpr-category`      | `#9FD8FF` | Twitch category lane; info; downvote                                 |
 
-### Interaction Colors
+Primary buttons use `primary-400` (`#A07CFF`) with ink text. Ink on `#8C5CFF` measures about 4.7:1; white on it measures about 4.1:1 and fails AA, so text on solid violet is always ink (`text-background`). Hover lightens (`primary-300`) instead of darkening.
 
-| Token                    | Hex         | Usage                                   |
-| ------------------------ | ----------- | --------------------------------------- |
-| `--clpr-upvote`         | `#F97316`   | Upvote active state — warm orange       |
-| `--clpr-upvote-hover`   | `#F9731626` | Upvote hover background (15% opacity)   |
-| `--clpr-downvote`       | `#6366F1`   | Downvote active state — indigo          |
-| `--clpr-downvote-hover` | `#6366F126` | Downvote hover background (15% opacity) |
-| `--clpr-cta`            | `#818CF8`   | Reply button, primary actions — indigo  |
-| `--clpr-cta-hover`      | `#6366F1`   | CTA hover state                         |
-| `--clpr-focus-ring`     | `#7C3AED`   | Focus outline for keyboard navigation   |
+The Tailwind `gray`, `neutral`, `zinc`, `slate` and `stone` scales are remapped to the violet-ink ramp, so older ad-hoc classes stay on palette until each surface is rebuilt. `success`, `warning`, `error` and `info` scales are retuned around the signal colours above.
 
-### Semantic Colors
+### Thread colours
 
-| Token             | Hex       | Usage                                         |
-| ----------------- | --------- | --------------------------------------------- |
-| `--clpr-success` | `#22C55E` | Success states, positive feedback             |
-| `--clpr-warning` | `#F59E0B` | Warnings, edit indicators                     |
-| `--clpr-error`   | `#EF4444` | Errors, delete confirmations, removed content |
-| `--clpr-info`    | `#6366F1` | Informational, tips (indigo — matches brand)  |
-
-### Thread Colors
-
-Nested comment threads use progressively subtle left-border colors:
-
-| Depth    | Border Color       | Hex       |
-| -------- | ------------------ | --------- |
-| 0 (root) | `--clpr-brand`    | `#7C3AED` |
-| 1        | `--clpr-thread-1` | `#A855F7` |
-| 2        | `--clpr-thread-2` | `#C084FC` |
-| 3        | `--clpr-thread-3` | `#E879A8` |
-| 4        | `--clpr-thread-4` | `#F0ABAB` |
-| 5+       | `--clpr-border`   | `#2A2A3A` |
-
-Thread colors stay in the violet-pink warm family for cohesion with the brand palette. Colored thread lines help users visually trace reply chains in deep threads.
+| Depth | Token             | Hex       |
+| ----- | ----------------- | --------- |
+| 0     | `--clpr-thread-0` | `#8C5CFF` |
+| 1     | `--clpr-thread-1` | `#9FD8FF` |
+| 2     | `--clpr-thread-2` | `#3DDC97` |
+| 3     | `--clpr-thread-3` | `#FFC24A` |
+| 4     | `--clpr-thread-4` | `#8F8A9C` |
 
 ---
 
 ## 3. Typography
 
-### Font Stack
+### Families
 
-**Headings & UI Labels**: Space Grotesk — geometric, techy, distinctive character
-**Body & Comments**: Inter — designed for screens, exceptional readability at 14px
-**Accent & Stats**: Syne — bold, artistic character for hero numbers, achievements, and empty states
-**Code Blocks**: JetBrains Mono — clear distinction between similar characters
-
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
-```
+| Role    | Family            | Tailwind        | Use                                                       |
+| ------- | ----------------- | --------------- | --------------------------------------------------------- |
+| Display | Barlow Condensed  | `font-heading`  | Headings (uppercase), rank numerals, buttons, nav, tabs   |
+| Text    | Barlow            | `font-sans`     | Body, comments, descriptions                              |
+| Data    | IBM Plex Mono     | `font-mono`     | Counts, durations, timecodes, dates, tags, `.kicker` labels |
 
 ```css
-/* frontend/src/index.css */
-@theme inline {
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-heading: "Space Grotesk", system-ui, sans-serif;
-  --font-accent: Syne, "Space Grotesk", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-}
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 ```
 
-**Accent font usage**: Leaderboard positions, achievement titles, empty state headlines, stat counters on profile pages. Use `font-accent` with weights 600-800 and tight letter spacing (-0.02em).
+`h1`–`h6` are uppercase Barlow Condensed at weight 700 by default. Uppercase is visual only; keep source text in sentence case so screen readers and tests see normal text.
 
-### Type Scale
+### Helper classes
 
-| Element                | Font          | Size             | Weight | Line Height | Letter Spacing | Color Token       |
-| ---------------------- | ------------- | ---------------- | ------ | ----------- | -------------- | ----------------- |
-| Page title (h1)        | Space Grotesk | 28px / 1.75rem   | 700    | 1.2         | -0.02em        | `text-primary`    |
-| Section heading (h2)   | Space Grotesk | 22px / 1.375rem  | 700    | 1.25        | -0.015em       | `text-primary`    |
-| Card heading (h3)      | Space Grotesk | 18px / 1.125rem  | 600    | 1.3         | -0.01em        | `text-primary`    |
-| Subsection (h4)        | Space Grotesk | 16px / 1rem      | 600    | 1.35        | -0.005em       | `text-primary`    |
-| **Comment body**       | Inter         | 14px / 0.875rem  | 400    | 1.6         | 0              | `text-primary`    |
-| **Comment author**     | Space Grotesk | 13px / 0.8125rem | 600    | 1.3         | 0              | `link` (linked)  |
-| **Comment timestamp**  | Inter         | 12px / 0.75rem   | 400    | 1.4         | 0.01em         | `text-secondary`  |
-| **Comment score**      | Inter         | 13px / 0.8125rem | 600    | 1           | 0              | context-dependent |
-| **Reply action**       | Inter         | 12px / 0.75rem   | 500    | 1.4         | 0.01em         | `cta`             |
-| **Thread "view more"** | Inter         | 12px / 0.75rem   | 500    | 1.4         | 0              | `brand`           |
-| Body text              | Inter         | 15px / 0.9375rem | 400    | 1.6         | 0              | `text-primary`    |
-| Small / caption        | Inter         | 12px / 0.75rem   | 400    | 1.4         | 0.01em         | `text-secondary`  |
-| Button label           | Inter         | 14px / 0.875rem  | 500    | 1           | 0.01em         | context-dependent |
-| Badge / tag            | Inter         | 11px / 0.6875rem | 600    | 1.2         | 0.03em         | context-dependent |
+| Class        | Purpose                                                              |
+| ------------ | -------------------------------------------------------------------- |
+| `.kicker`    | 11px mono uppercase label with 0.12em tracking (section labels, form labels) |
+| `.display`   | Condensed 800 uppercase for titles and rank numerals                 |
+| `.burn-in`   | Timecode burned into a media corner (mono on 72% black)              |
+| `.tally-bar` | 3px violet rule across the top of an active panel, menu or modal     |
 
-### Comment Body Markdown Rendering
+### Type scale
 
-```css
-.comment-body {
-    font-family: 'Inter', system-ui, sans-serif;
-    font-size: 0.875rem; /* 14px */
-    line-height: 1.6;
-    color: var(--clpr-text-primary);
-}
-
-.comment-body p + p {
-    margin-top: 0.5rem;
-}
-.comment-body blockquote {
-    border-left: 2px solid var(--clpr-border);
-    padding-left: 0.75rem;
-    color: var(--clpr-text-secondary);
-    font-style: italic;
-}
-.comment-body code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8125rem; /* 13px */
-    background: var(--clpr-surface-raised);
-    padding: 0.125rem 0.375rem;
-    border-radius: 4px;
-}
-.comment-body pre code {
-    display: block;
-    padding: 0.75rem;
-    overflow-x: auto;
-}
-.comment-body a {
-    color: var(--clpr-brand);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-```
+| Element             | Family           | Size    | Weight | Notes                          |
+| ------------------- | ---------------- | ------- | ------ | ------------------------------ |
+| Page title (h1)     | Barlow Condensed | 24–36px | 700    | Uppercase, line-height 1.02    |
+| Section (h2)        | Barlow Condensed | 20–30px | 700    | Uppercase                      |
+| Rank numeral        | Barlow Condensed | 28–88px | 800    | Violet for #1, dim otherwise   |
+| Button / nav / tab  | Barlow Condensed | 13–17px | 700    | Uppercase, 0.04–0.06em tracking |
+| Body                | Barlow           | 15px    | 400    | Line-height 1.6                |
+| Comment body        | Barlow           | 14px    | 400    | `.comment-body`                |
+| Metadata / counts   | IBM Plex Mono    | 11–12px | 400–500 | Tabular figures               |
+| Tag chip            | IBM Plex Mono    | 12px    | 500    | See tag lanes in §6            |
 
 ---
 
 ## 4. Spacing & Layout
 
-### Spacing Scale
+### Spacing scale
 
-Based on a 4px base unit for tight control over comment density.
+A 4px base unit, unchanged: `0.5` 2px, `1` 4px, `1.5` 6px, `2` 8px, `3` 12px, `4` 16px, `6` 24px, `8` 32px, `12` 48px.
 
-| Token       | Value | Common Use                               |
-| ----------- | ----- | ---------------------------------------- |
-| `space-0.5` | 2px   | Inline icon gap                          |
-| `space-1`   | 4px   | Tight inner padding                      |
-| `space-1.5` | 6px   | Compact comment gap                      |
-| `space-2`   | 8px   | Default inner padding, compact mode gaps |
-| `space-3`   | 12px  | Expanded comment gap                     |
-| `space-4`   | 16px  | Card padding, section gaps               |
-| `space-6`   | 24px  | Between sections                         |
-| `space-8`   | 32px  | Major section breaks                     |
-| `space-12`  | 48px  | Page-level spacing                       |
+### Corners
 
-### Border Radius
-
-| Token        | Value | Usage                             |
-| ------------ | ----- | --------------------------------- |
-| `rounded-sm` | 4px   | Badges, inline code               |
-| `rounded`    | 6px   | Buttons, inputs, small cards      |
-| `rounded-md` | 8px   | Cards, panels, comment containers |
-| `rounded-lg` | 12px  | Modals, large panels              |
+| Token          | Value | Usage                                  |
+| -------------- | ----- | -------------------------------------- |
+| `rounded-none` | 0     | Buttons, inputs, cards, modals, chips  |
+| `rounded-sm`   | 1px   | Legacy classes resolve here            |
+| `rounded`–`lg` | 2px   | Legacy classes resolve here            |
+| `rounded-xl`+  | 3–4px | Legacy classes resolve here            |
+| `rounded-full` | pill  | Avatars and status dots only           |
 
 ### Breakpoints
 
@@ -434,7 +362,7 @@ Used on the full ClipDetailPage comment panel.
 | Separator dot  | `·` in `text-tertiary`                                             |
 | Timestamp      | 12px, `text-secondary`, relative time ("2h ago")                   |
 | Edit indicator | "edited" in `text-tertiary`, shows tooltip with edit timestamp     |
-| Body           | `comment-body` class (see Typography section), 14px Inter          |
+| Body           | `comment-body` class (see Typography section), 14px Barlow          |
 | Actions        | 12px, `text-secondary`, hover `text-cta` for Reply                 |
 | Thread indent  | `margin-left: 12px` per depth level                                |
 | Thread line    | `border-left: 2px solid`, color from thread color table            |
@@ -720,7 +648,7 @@ All text tokens verified against their intended background:
 
 Use `Container` for page wrappers and `page-container` in the shared navigation. Both cap content at 1440px and use 16px, 24px, and 32px responsive gutters. Avoid Tailwind's built-in `container` utility where the shared page width is intended.
 
-Use `text-link` for small accent text and links. Brand violet belongs on filled controls and decorative elements. Links within paragraphs need a persistent underline. Provider-supplied tag colors use linearized sRGB luminance to choose black or white text; unsupported color strings fall back to the standard violet.
+Use `text-link` for small accent text and links. Solid violet belongs on filled controls and the tally light, and text on it is always ink (`text-background`). Links within paragraphs need a persistent underline. Provider-supplied tag colors use linearized sRGB luminance to choose black or white text; unsupported color strings fall back to the standard violet.
 
 Clip detail switches to a two-column grid at `xl` (1280px): flexible playback and a 24rem discussion panel. At smaller widths the discussion follows playback. On wide screens the discussion list scrolls independently while its composer remains visible. Full comment text and author/moderation actions remain available in that panel.
 

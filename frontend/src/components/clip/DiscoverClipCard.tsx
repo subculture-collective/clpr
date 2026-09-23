@@ -137,7 +137,7 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
                         onClick={handlePostClip}
                         className={cn(
                             'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs xs:text-sm font-medium transition-colors',
-                            'bg-primary-500 text-white hover:bg-primary-600',
+                            'bg-primary-400 text-background hover:bg-primary-300',
                             !isAuthenticated && 'opacity-70',
                         )}
                     >

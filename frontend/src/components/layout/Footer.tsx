@@ -11,7 +11,7 @@ export function Footer() {
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-8'>
                     {/* About Section */}
                     <div>
-                        <h3 className='font-semibold mb-4'>
+                        <h3 className='kicker mb-4'>
                             {t('footer.about')}
                         </h3>
                         <ul className='space-y-2'>
@@ -36,7 +36,7 @@ export function Footer() {
 
                     {/* Legal Section */}
                     <div>
-                        <h3 className='font-semibold mb-4'>
+                        <h3 className='kicker mb-4'>
                             {t('footer.legal')}
                         </h3>
                         <ul className='space-y-2'>
@@ -69,7 +69,7 @@ export function Footer() {
 
                     {/* Community Section */}
                     <div>
-                        <h3 className='font-semibold mb-4'>
+                        <h3 className='kicker mb-4'>
                             {t('footer.community')}
                         </h3>
                         <ul className='space-y-2'>
@@ -106,7 +106,7 @@ export function Footer() {
 
                     {/* Resources Section */}
                     <div>
-                        <h3 className='font-semibold mb-4'>
+                        <h3 className='kicker mb-4'>
                             {t('footer.resources')}
                         </h3>
                         <ul className='space-y-2'>

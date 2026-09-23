@@ -90,9 +90,9 @@ export function CategoriesNav() {
     return (
         <div className='border-b border-border bg-background' aria-busy={loading}>
             <nav className='flex min-h-12 items-center gap-2 overflow-x-auto px-4 md:hidden scrollbar-hide' aria-label='Discover creators, topics, and tags'>
-                <Link to='/creators' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Creators</Link>
-                <Link to='/topics' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Topics</Link>
-                <Link to='/tags' className='inline-flex min-h-9 shrink-0 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold'>Tags</Link>
+                <Link to='/creators' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Creators</Link>
+                <Link to='/topics' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Topics</Link>
+                <Link to='/tags' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Tags</Link>
             </nav>
             <div className='page-container mx-auto hidden min-h-12 px-4 md:block'>
                 <div className='relative flex min-h-12 items-center'>
@@ -104,9 +104,9 @@ export function CategoriesNav() {
                                     key={tab.key}
                                     type='button'
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap cursor-pointer ${
+                                    className={`px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] transition-colors whitespace-nowrap cursor-pointer ${
                                         activeTab === tab.key ?
-                                            'bg-brand text-white'
+                                            'bg-brand text-background'
                                         :   'text-muted-foreground hover:text-foreground hover:bg-muted'
                                     }`}
                                 >
@@ -122,7 +122,7 @@ export function CategoriesNav() {
                             <button
                                 type='button'
                                 onClick={() => scrollByAmount('left')}
-                                className='absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer'
+                                className='absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-background border border-line-strong hover:bg-surface-hover cursor-pointer'
                                 aria-label='Scroll left'
                             >
                                 <ChevronLeft size={16} strokeWidth={2} aria-hidden='true' />
@@ -133,7 +133,7 @@ export function CategoriesNav() {
                             <button
                                 type='button'
                                 onClick={() => scrollByAmount('right')}
-                                className='absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-background/90 shadow hover:bg-surface-hover cursor-pointer'
+                                className='absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-background border border-line-strong hover:bg-surface-hover cursor-pointer'
                                 aria-label='Scroll right'
                             >
                                 <ChevronRight size={16} strokeWidth={2} aria-hidden='true' />
@@ -150,7 +150,7 @@ export function CategoriesNav() {
                                 <>
                                     <Link
                                         to='/creators'
-                                        className='flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-white whitespace-nowrap'
+                                        className='flex items-center gap-1.5 bg-primary-400 px-3 py-1.5 font-heading text-[14px] font-bold uppercase tracking-[0.04em] text-background whitespace-nowrap hover:bg-primary-300 hover:text-background'
                                     >
                                         Explore creators
                                     </Link>
@@ -158,11 +158,11 @@ export function CategoriesNav() {
                                         <Link
                                             key={creator.broadcaster_id}
                                             to={`/broadcaster/${creator.broadcaster_id}`}
-                                            className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                            className='flex items-center gap-1.5 px-3 py-1.5 border border-transparent hover:border-line-strong whitespace-nowrap text-sm text-foreground transition-colors'
                                         >
-                                            <span className='w-2 h-2 rounded-full bg-primary-500 shrink-0' />
+                                            <span className='w-1.5 h-1.5 rounded-full bg-tally shrink-0' />
                                             <span>{creator.broadcaster_name}</span>
-                                            <span className='text-xs text-muted-foreground'>
+                                            <span className='font-mono text-[11px] text-muted-foreground'>
                                                 {creator.clip_count} clips
                                             </span>
                                         </Link>
@@ -175,7 +175,7 @@ export function CategoriesNav() {
                                     <Link
                                         key={topic.id}
                                         to={`/topics/${topic.slug}`}
-                                        className='flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                        className='flex items-center gap-2 px-3 py-1.5 border border-transparent hover:border-line-strong whitespace-nowrap text-sm text-foreground transition-colors'
                                     >
                                         <CategoryIcon icon={topic.icon} size='sm' />
                                         <span>{topic.name}</span>
@@ -187,7 +187,7 @@ export function CategoriesNav() {
                                     <Link
                                         key={tag.id}
                                         to={`/tags/${encodeURIComponent(tag.slug)}`}
-                                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover whitespace-nowrap text-sm transition-colors'
+                                        className='flex items-center gap-1.5 px-3 py-1.5 border border-transparent hover:border-line-strong whitespace-nowrap text-sm text-foreground transition-colors'
                                     >
                                         <span
                                             className='w-2 h-2 rounded-full shrink-0'
@@ -198,7 +198,7 @@ export function CategoriesNav() {
                                         />
                                         <span>#{tag.name}</span>
                                         {tag.usage_count > 0 && (
-                                            <span className='text-xs text-muted-foreground'>
+                                            <span className='font-mono text-[11px] text-muted-foreground'>
                                                 {tag.usage_count}
                                             </span>
                                         )}

@@ -28,16 +28,16 @@ function SidebarSection({
     children: React.ReactNode;
 }) {
     return (
-        <div className="bg-surface rounded-lg p-4">
+        <div className="border-t border-line-strong pt-3">
             <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-text-secondary uppercase tracking-wide">
+                <div className="kicker flex items-center gap-2">
                     <Icon className="h-3.5 w-3.5" />
                     {title}
                 </div>
                 {viewAllHref && (
                     <Link
                         to={viewAllHref}
-                        className="text-[11px] text-text-secondary hover:text-link transition-colors flex items-center gap-0.5 cursor-pointer"
+                        className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-secondary hover:text-link transition-colors flex items-center gap-0.5 cursor-pointer"
                     >
                         All
                         <ChevronRight className="h-3 w-3" />
@@ -65,7 +65,7 @@ function SidebarLink({
         >
             <span className="truncate">{children}</span>
             {meta && (
-                <span className="text-[11px] text-text-secondary shrink-0 ml-2">
+                <span className="font-mono text-[11px] text-text-tertiary tabular-nums shrink-0 ml-2">
                     {meta}
                 </span>
             )}
@@ -188,7 +188,7 @@ export function FeedSidebar() {
                             <Link
                                 key={topic.id}
                                 to={`/topics/${topic.slug}`}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium bg-surface-raised hover:bg-surface-hover rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium border border-line-strong hover:border-text-tertiary text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
                             >
                                 {topic.name}
                             </Link>
@@ -205,7 +205,7 @@ export function FeedSidebar() {
                             <Link
                                 key={tag.id}
                                 to={`/tags/${encodeURIComponent(tag.slug)}`}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-surface-raised hover:bg-surface-hover rounded-full text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2 py-1 font-mono text-[11px] font-medium border border-line-strong hover:border-text-tertiary text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
                             >
                                 {tag.name}
                                 <span className="text-text-tertiary">

@@ -16,7 +16,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className='fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-neutral-800 bg-neutral-950 px-2 pb-[env(safe-area-inset-bottom)] md:hidden'
+      className='fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line-strong bg-background px-2 pb-[env(safe-area-inset-bottom)] md:hidden'
       aria-label='Primary mobile navigation'
     >
       {navItems.map(item => {
@@ -29,8 +29,8 @@ export function MobileBottomNav() {
             to={destination}
             state={item.protected && !isAuthenticated ? { from: { pathname: item.to } } : undefined}
             className={cn(
-              'relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold transition-colors',
-              active ? 'text-violet-300' : 'text-neutral-300 hover:text-white',
+              'relative flex min-h-16 flex-col items-center justify-center gap-1 font-heading text-[12px] font-bold uppercase tracking-[0.06em] transition-colors',
+              active ? 'text-foreground shadow-[inset_0_3px_0_rgb(var(--clpr-brand))]' : 'text-text-secondary hover:text-foreground',
             )}
             aria-current={active ? 'page' : undefined}
           >

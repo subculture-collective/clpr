@@ -63,18 +63,18 @@ export function Header() {
     return (
         <header className='sticky top-0 z-50 bg-background border-b border-border'>
             <div className='page-container'>
-                <div className='flex items-center justify-between h-16'>
+                <div className='flex items-center justify-between h-14'>
                     {/* Logo */}
                     <Link
                         to='/'
-                        className='flex min-h-11 items-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md'
+                        className='flex min-h-11 items-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                         aria-label='clpr.tv home'
                     >
                         <img
                             src='/clpr-logo.svg'
                             alt=''
                             aria-hidden='true'
-                            className='h-9 w-auto'
+                            className='h-8 w-auto'
                         />
                     </Link>
 
@@ -85,17 +85,17 @@ export function Header() {
                         data-testid='main-nav'
                     >
                         <Button asChild variant='ghost' size='sm'>
-                            <Link to='/' aria-current={location.pathname === '/' ? 'page' : undefined} className={`relative ${location.pathname === '/' ? 'after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-brand after:rounded-full' : ''}`}>
+                            <Link to='/' aria-current={location.pathname === '/' ? 'page' : undefined} className='aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-3px_0_rgb(var(--clpr-brand))]'>
                                 <Home size={16} strokeWidth={1.75} className='mr-1.5' /> Feed
                             </Link>
                         </Button>
                         <Button asChild variant='ghost' size='sm'>
-                            <Link to='/discover' className='aria-[current=page]:bg-surface-hover aria-[current=page]:text-link' aria-current={location.pathname.startsWith('/discover') ? 'page' : undefined}>
+                            <Link to='/discover' className='aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-3px_0_rgb(var(--clpr-brand))]' aria-current={location.pathname.startsWith('/discover') ? 'page' : undefined}>
                                 <Compass size={16} strokeWidth={1.75} className='mr-1.5' /> Discover
                             </Link>
                         </Button>
                         <Button asChild variant='ghost' size='sm'>
-                            <Link className='aria-[current=page]:bg-surface-hover aria-[current=page]:text-link' to={isAuthenticated ? '/favorites' : '/login'} state={!isAuthenticated ? { from: { pathname: '/favorites' } } : undefined} aria-current={location.pathname === '/favorites' ? 'page' : undefined}>
+                            <Link className='aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-3px_0_rgb(var(--clpr-brand))]' to={isAuthenticated ? '/favorites' : '/login'} state={!isAuthenticated ? { from: { pathname: '/favorites' } } : undefined} aria-current={location.pathname === '/favorites' ? 'page' : undefined}>
                                 <Heart size={16} strokeWidth={1.75} className='mr-1.5' /> Saved
                             </Link>
                         </Button>
@@ -119,7 +119,7 @@ export function Header() {
 
                             {moreMenuOpen && (
                                 <div
-                                    className='absolute left-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg overflow-hidden z-50'
+                                    className='absolute left-0 mt-1 w-48 bg-popover border border-line-strong tally-bar overflow-hidden z-50'
                                     id='more-navigation'
                                 >
                                     <Link to='/creators' className='flex min-h-11 items-center gap-2 px-4 py-2 text-sm hover:bg-muted' onClick={() => setMoreMenuOpen(false)}>
@@ -223,7 +223,7 @@ export function Header() {
                             </Button>
 
                             <div className='border-t border-border my-2'></div>
-                            <p className='px-3 text-xs text-muted-foreground uppercase tracking-wide'>
+                            <p className='px-3 kicker'>
                                 Explore
                             </p>
 
@@ -252,7 +252,7 @@ export function Header() {
                         {isAuthenticated ?
                             <div className='flex flex-col gap-1'>
                                 <div className='border-t border-border my-2'></div>
-                                <p className='px-3 text-xs text-muted-foreground uppercase tracking-wide'>
+                                <p className='px-3 kicker'>
                                     Your Stuff
                                 </p>
 
@@ -290,7 +290,7 @@ export function Header() {
                                 </Button>
 
                                 <div className='border-t border-border my-2'></div>
-                                <p className='px-3 text-xs text-muted-foreground uppercase tracking-wide'>
+                                <p className='px-3 kicker'>
                                     Account
                                 </p>
 

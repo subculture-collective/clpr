@@ -49,7 +49,7 @@ export function EmptyStateWithAction({
   tips,
 }: EmptyStateWithActionProps) {
   return (
-    <div className="bg-card border border-border rounded-xl p-8 text-center" data-testid="empty-state">
+    <div className="bg-card border border-dashed border-line-strong p-8 text-center" data-testid="empty-state">
       {/* Icon */}
       {icon && (
         <div className="flex justify-center mb-4 text-muted-foreground">
@@ -58,7 +58,7 @@ export function EmptyStateWithAction({
       )}
 
       {/* Title */}
-      <h3 className="text-xl font-semibold text-foreground mb-2">
+      <h3 className="text-2xl text-foreground mb-2">
         {title}
       </h3>
 
@@ -108,7 +108,7 @@ export function EmptyStateWithAction({
           <ul className="text-sm text-muted-foreground space-y-2 text-left max-w-md mx-auto">
             {tips.map((tip, index) => (
               <li key={index} className="flex items-start gap-2">
-                <span className="text-link mt-0.5">•</span>
+                <span className="text-tally mt-0.5">▸</span>
                 <span>{tip}</span>
               </li>
             ))}

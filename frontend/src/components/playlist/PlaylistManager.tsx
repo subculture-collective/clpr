@@ -109,7 +109,7 @@ export function PlaylistManager() {
                         onClick={() => setActiveTab('mine')}
                         className={`flex min-h-11 items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                             activeTab === 'mine'
-                                ? 'bg-brand text-white'
+                                ? 'bg-brand text-background'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                     >
@@ -122,7 +122,7 @@ export function PlaylistManager() {
                         onClick={() => setActiveTab('bookmarked')}
                         className={`flex min-h-11 items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                             activeTab === 'bookmarked'
-                                ? 'bg-brand text-white'
+                                ? 'bg-brand text-background'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                     >

@@ -27,12 +27,10 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const variantClasses = {
-    success:
-        'bg-success-50 border-success-200 text-success-800 dark:bg-success-900/20 dark:border-success-800 dark:text-success-200',
-    warning:
-        'bg-warning-50 border-warning-200 text-warning-800 dark:bg-warning-900/20 dark:border-warning-800 dark:text-warning-200',
-    error: 'bg-error-50 border-error-200 text-error-800 dark:bg-error-900/20 dark:border-error-800 dark:text-error-200',
-    info: 'bg-info-50 border-info-200 text-info-800 dark:bg-info-900/20 dark:border-info-800 dark:text-info-200',
+    success: 'bg-surface border-success-800 text-success-300 border-l-[3px] border-l-success-400',
+    warning: 'bg-surface border-warning-800 text-warning-300 border-l-[3px] border-l-warning-400',
+    error: 'bg-surface border-error-800 text-error-300 border-l-[3px] border-l-error-400',
+    info: 'bg-surface border-info-800 text-info-300 border-l-[3px] border-l-info-400',
 };
 
 const defaultIcons = {
@@ -95,7 +93,7 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
             <div
                 ref={ref}
                 className={cn(
-                    'rounded-lg border p-4 transition-all duration-200',
+                    'rounded-none border p-4 transition-colors duration-150',
                     variantClasses[variant],
                     className
                 )}

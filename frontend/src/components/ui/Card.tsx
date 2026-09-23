@@ -32,8 +32,8 @@ export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const variantClasses = {
   default: 'bg-card border border-border',
-  elevated: 'bg-card shadow-lg',
-  outlined: 'bg-transparent border-2 border-border',
+  elevated: 'bg-surface-raised border border-border',
+  outlined: 'bg-transparent border border-line-strong',
 };
 
 /**
@@ -45,10 +45,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-xl transition-all duration-200',
+          'rounded-none transition-colors duration-150',
           variantClasses[variant],
           clickable && 'cursor-pointer',
-          hover && 'hover:shadow-xl hover:scale-[1.02]',
+          hover && 'hover:border-line-strong hover:bg-surface-raised',
           className
         )}
         {...props}

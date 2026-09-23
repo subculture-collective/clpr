@@ -110,7 +110,7 @@ export function OnboardingPage() {
                                     <img src={creator.latest_clip_thumbnail || '/og-image.svg'} alt='' className='mb-3 aspect-square w-full rounded-xl object-cover' />
                                     <span className='block truncate font-bold'>{creator.broadcaster_name}</span>
                                     <span className='mt-1 block truncate text-xs text-muted-foreground'>{creator.twitch_category_name || 'Live culture'}</span>
-                                    {selected && <Check className='absolute right-5 top-5 rounded-full bg-primary-500 p-1 text-white' size={24} />}
+                                    {selected && <Check className='absolute right-5 top-5 rounded-full bg-primary-400 p-1 text-background' size={24} />}
                                 </button>
                             );
                         })}
@@ -135,7 +135,7 @@ export function OnboardingPage() {
                         {(tagQuery.data?.tags || []).map(tag => {
                             const selected = tags.includes(tag.id);
                             return <button key={tag.id} type='button' aria-pressed={selected} disabled={mutation.isPending} onClick={() => toggle(tag.id, tags, setTags)}
-                                className={`rounded-full border px-5 py-3 font-semibold transition ${selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-border bg-card hover:border-primary-500/50'}`}>
+                                className={`rounded-full border px-5 py-3 font-semibold transition ${selected ? 'border-primary-500 bg-primary-400 text-background' : 'border-border bg-card hover:border-primary-500/50'}`}>
                                 {tag.name}{selected && <Check className='ml-2 inline' size={16} />}
                             </button>;
                         })}

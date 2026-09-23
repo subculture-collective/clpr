@@ -39,16 +39,16 @@ export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
     ref
   ) => {
     const variantClasses = {
-      text: 'h-4 rounded',
+      text: 'h-4 rounded-none',
       circular: 'rounded-full',
-      rectangular: 'rounded-lg',
+      rectangular: 'rounded-none',
     };
 
     return (
       <div
         ref={ref}
         className={cn(
-          'bg-neutral-200 dark:bg-neutral-800 relative overflow-hidden',
+          'bg-surface-raised relative overflow-hidden',
           variantClasses[variant],
           className
         )}

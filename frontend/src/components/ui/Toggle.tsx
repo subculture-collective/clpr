@@ -50,9 +50,9 @@ export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
                         />
                         <div
                             className={cn(
-                                'relative w-11 h-6 shrink-0 rounded-full transition-colors duration-200',
-                                'bg-neutral-300 dark:bg-neutral-600',
-                                'peer-checked:bg-primary-500',
+                                'relative w-11 h-6 shrink-0 rounded-none transition-colors duration-150',
+                                'bg-surface-raised border border-line-strong',
+                                'peer-checked:bg-primary-400 peer-checked:border-primary-400',
                                 'peer-focus:ring-2 peer-focus:ring-primary-500 peer-focus:ring-offset-2',
                                 'peer-disabled:cursor-not-allowed',
                                 className
@@ -60,8 +60,8 @@ export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
                         >
                             <div
                                 className={cn(
-                                    'absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform duration-200',
-                                    'bg-white shadow-md',
+                                    'absolute top-[3px] left-[3px] w-4 h-4 rounded-none transition-transform duration-150',
+                                    'bg-foreground',
                                     checked && 'translate-x-5'
                                 )}
                             />

@@ -24,13 +24,13 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantClasses = {
-  default: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100',
-  primary: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-100',
-  secondary: 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900 dark:text-secondary-100',
-  success: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-100',
-  warning: 'bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-100',
-  error: 'bg-error-100 text-error-800 dark:bg-error-900 dark:text-error-100',
-  info: 'bg-info-100 text-info-800 dark:bg-info-900 dark:text-info-100',
+  default: 'border border-line-strong text-text-secondary',
+  primary: 'border border-primary-700 text-primary-300',
+  secondary: 'border border-category/40 text-category',
+  success: 'border border-success-800 text-success-400',
+  warning: 'border border-warning-800 text-warning-400',
+  error: 'border border-error-800 text-error-400',
+  info: 'border border-info-800 text-info-400',
 };
 
 const sizeClasses = {
@@ -59,7 +59,7 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       <span
         ref={ref}
         className={cn(
-          'inline-flex items-center gap-1 rounded-full font-medium transition-colors',
+          'inline-flex items-center gap-1 rounded-none font-mono font-medium transition-colors',
           variantClasses[variant],
           sizeClasses[size],
           className
