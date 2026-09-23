@@ -107,7 +107,7 @@ export function OnboardingPage() {
                             return (
                                 <button key={creator.broadcaster_id} type='button' aria-pressed={selected} disabled={mutation.isPending} onClick={() => toggle(creator.broadcaster_id, creators, setCreators)}
                                     className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition ${selected ? 'border-primary-500 bg-primary-500/10' : 'border-border bg-card hover:border-primary-500/50'}`}>
-                                    <img src={creator.latest_clip_thumbnail || '/og-image.svg'} alt='' className='mb-3 aspect-square w-full rounded-xl object-cover' />
+                                    <img src={creator.latest_clip_thumbnail || '/icons/icon.svg'} alt='' className='mb-3 aspect-square w-full rounded-xl object-cover' />
                                     <span className='block truncate font-bold'>{creator.broadcaster_name}</span>
                                     <span className='mt-1 block truncate text-xs text-muted-foreground'>{creator.twitch_category_name || 'Live culture'}</span>
                                     {selected && <Check className='absolute right-5 top-5 rounded-full bg-primary-400 p-1 text-background' size={24} />}
