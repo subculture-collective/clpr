@@ -98,7 +98,7 @@ export function NotificationsPage() {
                 >
                   Unread
                   {data && data.unread_count > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-red-600 text-white text-xs rounded-full">
+                    <span className="ml-2 px-2 py-0.5 bg-red-600 text-white text-xs">
                       {data.unread_count}
                     </span>
                   )}

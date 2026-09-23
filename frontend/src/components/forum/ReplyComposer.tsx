@@ -99,7 +99,7 @@ export function ReplyComposer({
             type="submit"
             disabled={!content.trim() || isSubmitting}
             className={cn(
-              'min-h-[44px] px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg',
+              'min-h-[44px] px-4 py-2 bg-primary-400 hover:bg-primary-300 text-background ',
               'transition-colors motion-reduce:transition-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
             )}
             aria-busy={isSubmitting}

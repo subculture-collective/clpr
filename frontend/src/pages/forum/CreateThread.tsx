@@ -110,7 +110,7 @@ export function CreateThread() {
                     onClick={() => setTopic(topic === t.value ? '' : t.value)}
                     aria-pressed={topic === t.value}
                     className={cn(
-                      'min-h-[44px] px-3 py-1.5 rounded-full text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                      'min-h-[44px] px-3 py-1.5 text-sm font-medium border transition-colors motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
                       topic === t.value
                         ? 'text-white border-transparent'
                         : 'text-text-secondary border-border hover:border-text-tertiary hover:text-text-primary',

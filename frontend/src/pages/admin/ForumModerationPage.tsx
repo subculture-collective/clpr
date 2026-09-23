@@ -172,7 +172,7 @@ function FlaggedContentCard({ item, onLock, onPin, onDelete, onBanUser }: Flagge
             <>
               <button
                 onClick={() => setShowActionInput(showActionInput === 'lock' ? null : 'lock')}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded"
+                className="px-3 py-1 bg-primary-400 hover:bg-primary-300 text-background text-sm rounded"
               >
                 Lock Thread
               </button>
@@ -210,7 +210,7 @@ function FlaggedContentCard({ item, onLock, onPin, onDelete, onBanUser }: Flagge
             <button
               onClick={() => handleAction(showActionInput)}
               disabled={!actionReason.trim()}
-              className="mt-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded"
+              className="mt-2 px-4 py-2 bg-primary-400 hover:bg-primary-300 disabled:bg-gray-400 text-background rounded"
             >
               Confirm {getActionButtonText(showActionInput)}
             </button>
@@ -363,7 +363,7 @@ export function ForumModerationPage() {
               onClick={() => setStatus('pending')}
               className={`px-4 py-2 rounded ${
                 status === 'pending'
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-primary-400 text-background'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -373,7 +373,7 @@ export function ForumModerationPage() {
               onClick={() => setStatus('reviewed')}
               className={`px-4 py-2 rounded ${
                 status === 'reviewed'
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-primary-400 text-background'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -383,7 +383,7 @@ export function ForumModerationPage() {
               onClick={() => setStatus('resolved')}
               className={`px-4 py-2 rounded ${
                 status === 'resolved'
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-primary-400 text-background'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >

@@ -64,7 +64,7 @@ export function ChannelSidebar({
                 
                 {channel.unread_count && channel.unread_count > 0 && (
                   <span
-                    className="bg-error-500 text-white text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0"
+                    className="bg-error-500 text-white text-xs px-2 py-0.5 font-medium flex-shrink-0"
                     aria-label={`${channel.unread_count} unread messages`}
                   >
                     {channel.unread_count > 99 ? '99+' : channel.unread_count}

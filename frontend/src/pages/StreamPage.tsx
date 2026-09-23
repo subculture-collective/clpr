@@ -78,7 +78,7 @@ export function StreamPage() {
                 {streamer}
               </h1>
               {streamInfo?.is_live && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                <span className="inline-flex items-center px-3 py-1 text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                   <span className="w-2 h-2 mr-2 bg-red-500 rounded-full animate-pulse"></span>
                   LIVE
                 </span>

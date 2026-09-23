@@ -23,7 +23,7 @@ export function ThreadCard({ thread, className }: ThreadCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             {thread.pinned && (
-              <span className="px-2 py-0.5 bg-primary-600 text-white text-xs font-semibold rounded">
+              <span className="px-2 py-0.5 bg-primary-400 text-background text-xs font-heading font-bold uppercase tracking-[0.06em] ">
                 Pinned
               </span>
             )}

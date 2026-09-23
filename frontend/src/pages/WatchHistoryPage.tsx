@@ -106,7 +106,7 @@ export function WatchHistoryPage() {
           <p className="text-muted-foreground mb-6">Sign in to view your watch history</p>
           <Link
             to="/login"
-            className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="inline-block px-6 py-3 bg-primary-400 text-background rounded-lg hover:bg-primary-300 transition-colors"
           >
             Sign In
           </Link>

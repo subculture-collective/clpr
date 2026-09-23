@@ -118,7 +118,7 @@ export function ForumSearchPage() {
               <div className="flex items-end">
                 <button
                   onClick={handleFilterChange}
-                  className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded transition-colors"
+                  className="px-6 py-2 bg-primary-400 hover:bg-primary-300 text-background font-heading font-bold uppercase tracking-[0.06em] transition-colors"
                 >
                   Apply
                 </button>

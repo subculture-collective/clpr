@@ -204,7 +204,7 @@ export function ReplyItem({
                 <button
                   onClick={handleSaveEdit}
                   disabled={!editContent.trim()}
-                  className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition-colors"
+                  className="px-3 py-1.5 text-sm bg-primary-400 hover:bg-primary-300 disabled:opacity-50 disabled:cursor-not-allowed text-background transition-colors"
                 >
                   Save
                 </button>

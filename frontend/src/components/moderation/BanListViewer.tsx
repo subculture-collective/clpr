@@ -458,7 +458,7 @@ export function BanListViewer({
                 <button
                     onClick={handleExportCSV}
                     disabled={filteredAndSortedBans.length === 0}
-                    className='rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400'
+                    className='rounded bg-primary-400 px-4 py-2 text-sm font-medium text-background hover:bg-primary-300 disabled:cursor-not-allowed disabled:bg-gray-400'
                     aria-label='Export bans to CSV'
                 >
                     Export to CSV
@@ -792,7 +792,7 @@ export function BanListViewer({
                                         </td>
                                         <td className='px-6 py-4 whitespace-nowrap'>
                                             <span
-                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getBanStatusColor(
+                                                className={`inline-flex px-2 py-1 text-xs font-semibold ${getBanStatusColor(
                                                     status,
                                                 )}`}
                                             >
@@ -979,7 +979,7 @@ export function BanListViewer({
                                     Status
                                 </p>
                                 <span
-                                    className={`inline-flex mt-1 rounded-full px-2 py-1 text-xs font-semibold ${getBanStatusColor(
+                                    className={`inline-flex mt-1 px-2 py-1 text-xs font-semibold ${getBanStatusColor(
                                         getBanStatus(selectedBan),
                                     )}`}
                                 >

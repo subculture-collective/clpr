@@ -120,7 +120,7 @@ export default function LeaderboardPage() {
                     onClick={() => handleTypeChange('karma')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
                         type === 'karma'
-                            ? 'bg-purple-600 text-white'
+                            ? 'bg-primary-400 text-background'
                             : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
                     onClick={() => handleTypeChange('engagement')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
                         type === 'engagement'
-                            ? 'bg-purple-600 text-white'
+                            ? 'bg-primary-400 text-background'
                             : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >
@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
                     onClick={() => handleTypeChange('streamers')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
                         type === 'streamers'
-                            ? 'bg-purple-600 text-white'
+                            ? 'bg-primary-400 text-background'
                             : 'bg-surface text-muted-foreground hover:bg-surface-hover'
                     }`}
                 >

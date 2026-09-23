@@ -90,7 +90,7 @@ export function AddToPlaylistButton({ clipId }: AddToPlaylistButtonProps) {
                         </p>
                         <Link
                             to='/playlists'
-                            className='inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors'
+                            className='inline-flex items-center gap-2 px-4 py-2 bg-primary-400 text-background hover:bg-primary-300 transition-colors'
                             onClick={() => setIsOpen(false)}
                         >
                             Create your first playlist

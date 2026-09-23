@@ -88,7 +88,7 @@ export function TwitchEmbed({
         <span className='absolute left-1/2 top-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center bg-primary-400 text-background transition-colors group-hover:bg-primary-300'>
           <Play size={28} fill='currentColor' className='translate-x-0.5' aria-hidden='true' />
         </span>
-        <span className='absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-semibold md:hidden'>
+        <span className='absolute bottom-3 left-3 inline-flex items-center gap-1.5 bg-black/75 px-2.5 py-1 text-[11px] font-semibold md:hidden'>
           <RotateCw size={13} aria-hidden='true' /> Landscape recommended
         </span>
       </button>
@@ -116,7 +116,7 @@ export function TwitchEmbed({
         <button
           type='button'
           onClick={setUnmutedPreference}
-          className='absolute left-3 top-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-black/80 px-3 text-xs font-semibold text-white backdrop-blur'
+          className='absolute left-3 top-3 inline-flex min-h-11 items-center gap-1.5 bg-black/80 px-3 text-xs font-semibold text-white backdrop-blur'
           aria-label='Video is muted; enable sound for future videos'
         >
           <MutedIcon size='sm' /> Muted

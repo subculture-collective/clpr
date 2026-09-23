@@ -52,7 +52,7 @@ export function TwitchChatEmbed({ channel, position = 'side' }: TwitchChatEmbedP
         {isUserLoggedIn && !isCheckingAuth && !isAuthenticated && (
           <button
             onClick={handleTwitchLogin}
-            className="text-sm px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+            className="text-sm px-3 py-1 bg-primary-400 hover:bg-primary-300 text-background rounded transition-colors"
           >
             Login to Chat
           </button>
