@@ -1,3 +1,16 @@
+/** Which process produced a tag; see backend/internal/tagtaxonomy. */
+export type TagLane =
+  | "category"
+  | "detected"
+  | "streamer"
+  | "community"
+  | "duration"
+  | "language"
+  | "root";
+
+/** Evidence a detected tag's definition requires (not a per-clip verdict). */
+export type TagEvidence = "visible" | "contextual" | "strong";
+
 export interface Tag {
   id: string;
   name: string;
@@ -10,11 +23,17 @@ export interface Tag {
   suppressed_at?: string;
   suppressed_by?: string;
   suppression_reason?: string;
+  lane?: TagLane;
+  display_name?: string;
+  evidence?: TagEvidence;
+}
+
+export interface TagTreeNode extends Tag {
+  children?: TagTreeNode[];
 }
 
 export interface TagTreeResponse {
-  tags: Tag[];
-  children?: Record<string, Tag[]>; // slug -> children
+  tags: TagTreeNode[];
 }
 
 export interface TagListResponse {

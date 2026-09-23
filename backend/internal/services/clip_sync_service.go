@@ -1070,12 +1070,12 @@ func (s *ClipSyncService) applyStreamerTags(ctx context.Context, clip *models.Cl
 		return nil
 	}
 	canonical, ok := s.autoTagger.(interface {
-		AttachContentTags(context.Context, uuid.UUID, []string) error
+		AttachStreamerTags(context.Context, uuid.UUID, []string) error
 	})
 	if !ok {
 		return nil
 	}
-	return canonical.AttachContentTags(ctx, clip.ID, tags)
+	return canonical.AttachStreamerTags(ctx, clip.ID, tags)
 }
 
 func normalizeLanguageFilter(lang string) string {

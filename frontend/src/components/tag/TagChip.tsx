@@ -1,75 +1,115 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import type { Tag } from "../../types/tag";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { TAG_EVIDENCE, TAG_LANES, tagHref, tagLabel, tagLane } from '@/lib/tag-lanes';
+import type { Tag, TagLane } from '../../types/tag';
 
 interface TagChipProps {
-  tag: Tag;
-  size?: "small" | "medium";
-  removable?: boolean;
-  onRemove?: (slug: string) => void;
-  onClick?: (slug: string) => void;
+    tag: Tag;
+    size?: 'small' | 'medium';
+    removable?: boolean;
+    onRemove?: (slug: string) => void;
+    onClick?: (slug: string) => void;
+    /** Show the usage count after the label. */
+    showCount?: boolean;
 }
 
+const laneClasses: Record<TagLane, string> = {
+    detected: 'border-line-strong text-foreground hover:border-text-tertiary',
+    category: 'border-category/40 text-category hover:border-category',
+    community: 'border-primary-800 text-link hover:border-primary-400',
+    streamer: 'border-dashed border-line-strong text-text-tertiary hover:text-text-secondary',
+    duration: 'border-border text-text-secondary',
+    language: 'border-border text-text-secondary',
+    root: 'border-border text-text-secondary',
+};
+
+const evidenceClasses = {
+    visible: 'bg-seen text-background',
+    contextual: 'bg-context text-background',
+    strong: 'bg-primary-400 text-background',
+} as const;
+
 export const TagChip: React.FC<TagChipProps> = ({
-  tag,
-  size = "medium",
-  removable = false,
-  onRemove,
-  onClick,
+    tag,
+    size = 'medium',
+    removable = false,
+    onRemove,
+    onClick,
+    showCount = false,
 }) => {
-  const sizeClasses = {
-    small: "text-xs px-2 py-0.5",
-    medium: "text-sm px-3 py-1",
-  };
+    const lane = tagLane(tag);
+    const label = tagLabel(tag);
+    const evidence = lane === 'detected' ? tag.evidence : undefined;
+    const title = [
+        TAG_LANES[lane].label,
+        evidence ? `${TAG_EVIDENCE[evidence].label}: ${TAG_EVIDENCE[evidence].description}` : TAG_LANES[lane].description,
+    ].join(' · ');
+    const accessibleName =
+        evidence ? `${label}, ${TAG_EVIDENCE[evidence].label.toLowerCase()}`
+        : lane === 'community' ? `#${label}`
+        : lane === 'streamer' ? `${label}, streamer tag`
+        : lane === 'category' ? `${label}, Twitch category`
+        : label;
 
-  const baseClasses = `inline-flex items-center gap-1 rounded-full font-medium transition-all hover:underline underline-offset-2 cursor-pointer ${sizeClasses[size]}`;
+    const chipClasses = cn(
+        'inline-flex items-center gap-1.5 border font-mono font-medium leading-none transition-colors cursor-pointer',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+        size === 'small' ? 'min-h-6 px-1.5 text-[11px]' : 'min-h-8 px-2 text-xs',
+        laneClasses[lane],
+    );
 
-  // Compare true linearized sRGB luminance, rather than brightness, so
-  // mid-tone provider colors also receive readable text.
-  const hex = tag.color?.match(/^#([0-9a-f]{6})$/i)?.[1] || '6D28D9';
-  const channels = [0, 2, 4].map(offset => {
-    const channel = parseInt(hex.slice(offset, offset + 2), 16) / 255;
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
-  const style: React.CSSProperties = {
-    backgroundColor: '#' + hex,
-    color: luminance > 0.179 ? '#000000' : '#ffffff',
-  };
+    const content = (
+        <>
+            <span>{lane === 'community' ? `#${label}` : label}</span>
+            {evidence && (
+                <span className={cn('px-1 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em]', evidenceClasses[evidence])}>
+                    {TAG_EVIDENCE[evidence].short}
+                </span>
+            )}
+            {showCount && tag.usage_count > 0 && (
+                <span className='tabular-nums text-text-tertiary'>{tag.usage_count.toLocaleString()}</span>
+            )}
+        </>
+    );
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (onClick) {
-      e.preventDefault();
-      onClick(tag.slug);
-    }
-  };
+    const handleClick = (e: React.MouseEvent) => {
+        if (onClick) {
+            e.preventDefault();
+            onClick(tag.slug);
+        }
+    };
 
-  const handleRemove = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onRemove) {
-      onRemove(tag.slug);
-    }
-  };
+    const handleRemove = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onRemove?.(tag.slug);
+    };
 
-  const label = onClick ? (
-    <button type='button' onClick={handleClick} className={baseClasses} style={style}>{tag.name}</button>
-  ) : (
-    <Link to={`/tags/${encodeURIComponent(tag.slug)}`} className={baseClasses} style={style}
-      title={tag.description || `View clips tagged with ${tag.name}`}>{tag.name}</Link>
-  );
+    const chip = onClick ? (
+        <button type='button' onClick={handleClick} className={chipClasses} title={title} data-lane={lane} aria-label={accessibleName}>
+            {content}
+        </button>
+    ) : (
+        <Link to={tagHref(tag.slug)} className={chipClasses} title={title} data-lane={lane} aria-label={accessibleName}>
+            {content}
+        </Link>
+    );
 
-  if (!removable) return label;
-  return (
-    <span className='inline-flex items-center rounded-full' style={style}>
-      {label}
-      <button type='button' onClick={handleRemove}
-        className='mr-1 flex min-h-8 min-w-8 items-center justify-center rounded-full hover:bg-black/10'
-        aria-label={`Remove ${tag.name} tag`}>
-        <svg aria-hidden='true' className='h-3 w-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-        </svg>
-      </button>
-    </span>
-  );
+    if (!removable) return chip;
+    return (
+        <span className='inline-flex items-center'>
+            {chip}
+            <button
+                type='button'
+                onClick={handleRemove}
+                className='-ml-px flex min-h-8 min-w-8 items-center justify-center border border-line-strong text-text-secondary hover:bg-surface-hover hover:text-foreground'
+                aria-label={`Remove ${label} tag`}
+            >
+                <svg aria-hidden='true' className='h-3 w-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                </svg>
+            </button>
+        </span>
+    );
 };

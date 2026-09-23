@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { TagChip } from '../tag/TagChip';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedPlaylists, usePlaylists } from '@/hooks/usePlaylist';
 import { useTags } from '@/hooks/useTags';
@@ -83,8 +84,9 @@ export function FeedSidebar() {
     );
 
     const { data: tagsResponse } = useTags({
+        lane: 'detected',
         sort: 'popularity',
-        limit: 10,
+        limit: 12,
     });
     const tags = tagsResponse?.tags ?? [];
 
@@ -199,19 +201,10 @@ export function FeedSidebar() {
 
             {/* Popular Tags */}
             {tags.length > 0 && (
-                <SidebarSection title="Tags" icon={Tag} viewAllHref="/tags">
+                <SidebarSection title="What clpr sees" icon={Tag} viewAllHref="/tags">
                     <div className="flex flex-wrap gap-1.5">
                         {tags.map((tag) => (
-                            <Link
-                                key={tag.id}
-                                to={`/tags/${encodeURIComponent(tag.slug)}`}
-                                className="inline-flex items-center gap-1 px-2 py-1 font-mono text-[11px] font-medium border border-line-strong hover:border-text-tertiary text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
-                            >
-                                {tag.name}
-                                <span className="text-text-tertiary">
-                                    {tag.usage_count}
-                                </span>
-                            </Link>
+                            <TagChip key={tag.id} tag={tag} size="small" />
                         ))}
                     </div>
                 </SidebarSection>

@@ -26,6 +26,8 @@ interface ClipFeedProps {
     discoverMode?: boolean;
     insertAfter?: number;
     insertedContent?: ReactNode;
+    /** Use h2 when the page already has its own h1. */
+    headingLevel?: 'h1' | 'h2';
 }
 
 // Map legacy 'hot' to 'trending' for consistency
@@ -48,6 +50,7 @@ export function ClipFeed({
     discoverMode = false,
     insertAfter = 5,
     insertedContent,
+    headingLevel = 'h1',
 }: ClipFeedProps) {
     const [searchParams, setSearchParams] = useSearchParams();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -245,6 +248,7 @@ export function ClipFeed({
             {!discoverMode && (
                 <FeedHeader
                     title={resolvedTitle || title}
+                    headingLevel={headingLevel}
                     description={description}
                     showSearch={showSearch}
                     sort={sort}

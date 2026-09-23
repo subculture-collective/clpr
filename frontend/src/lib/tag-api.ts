@@ -1,6 +1,7 @@
 import { apiClient } from "./api";
 import type {
   Tag,
+  TagLane,
   TagListResponse,
   TagSearchResponse,
   TagDetailResponse,
@@ -14,6 +15,7 @@ export const tagApi = {
   // List all tags
   listTags: async (params?: {
     sort?: "popularity" | "alphabetical" | "recent" | "trending" | "curated";
+    lane?: TagLane;
     limit?: number;
     page?: number;
   }) => {
@@ -33,14 +35,14 @@ export const tagApi = {
 
   // Get tag details
   getTag: async (slug: string) => {
-    const response = await apiClient.get<TagDetailResponse>(`/tags/${slug}`);
+    const response = await apiClient.get<TagDetailResponse>(`/tags/${encodeURIComponent(slug)}`);
     return response.data;
   },
 
   // Get clips by tag
   getClipsByTag: async (slug: string, params?: { limit?: number; page?: number }) => {
     const response = await apiClient.get<ClipFeedResponse>(
-      `/tags/${slug}/clips`,
+      `/tags/${encodeURIComponent(slug)}/clips`,
       { params }
     );
     return response.data;
@@ -66,7 +68,7 @@ export const tagApi = {
   // Remove tag from clip
   removeTagFromClip: async (clipId: string, tagSlug: string) => {
     const response = await apiClient.delete<{ message: string }>(
-      `/clips/${clipId}/tags/${tagSlug}`
+      `/clips/${clipId}/tags/${encodeURIComponent(tagSlug)}`
     );
     return response.data;
   },

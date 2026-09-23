@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/tagtaxonomy"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -111,8 +112,40 @@ func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag
 	return &tag, nil
 }
 
-// List retrieves tags with optional sorting and pagination
-func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int) ([]*models.Tag, error) {
+// tagLanePredicate returns a SQL predicate on alias t for a tagtaxonomy lane.
+// slugs is the placeholder bound to the catalog content slugs; every branch
+// references it so the argument count never varies. An empty or unknown lane
+// matches every tag.
+func tagLanePredicate(lane, slugs string) string {
+	bound := `cardinality(` + slugs + `::text[]) >= 0`
+	var predicate string
+	switch tagtaxonomy.Lane(lane) {
+	case tagtaxonomy.LaneCategory:
+		predicate = `t.slug LIKE 'game/%'`
+	case tagtaxonomy.LaneDetected:
+		predicate = `t.slug = ANY(` + slugs + `::text[])`
+	case tagtaxonomy.LaneStreamer:
+		predicate = `(t.slug LIKE 'streamer/%' OR (t.slug LIKE 'content/%' AND NOT t.slug = ANY(` + slugs + `::text[])))`
+	case tagtaxonomy.LaneCommunity:
+		predicate = `(t.slug LIKE 'community/%' OR (strpos(t.slug, '/') = 0 AND t.slug NOT IN ('content','game','duration','lang','community','streamer')))`
+	case tagtaxonomy.LaneDuration:
+		predicate = `t.slug LIKE 'duration/%'`
+	case tagtaxonomy.LaneLanguage:
+		predicate = `t.slug LIKE 'lang/%'`
+	default:
+		return bound
+	}
+	return `(` + predicate + ` AND ` + bound + `)`
+}
+
+// List retrieves tags with optional lane filtering, sorting and pagination.
+// The "curated" sort is kept for older clients and means the detected lane.
+func (r *TagRepository) List(ctx context.Context, sort, lane string, limit, offset int) ([]*models.Tag, error) {
+	if sort == "curated" {
+		sort, lane = "popularity", string(tagtaxonomy.LaneDetected)
+	}
+	visible := `NOT is_tag_blacklisted(t.slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)`
+	laneClause := tagLanePredicate(lane, "$3")
 	var query string
 	switch sort {
 	case "trending":
@@ -123,44 +156,26 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 		JOIN clips c ON c.id = ct.clip_id
 		WHERE ct.created_at >= NOW() - INTERVAL '7 days'
 		  AND c.is_removed = FALSE AND c.is_hidden = FALSE
-		  AND NOT is_tag_blacklisted(t.slug)
-		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+		  AND ` + visible + ` AND ` + laneClause + `
 		GROUP BY t.id ORDER BY usage_count DESC, t.name ASC LIMIT $1 OFFSET $2`
-	case "curated":
-		query = `SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags WHERE parent_slug = 'content'
-		AND NOT is_tag_blacklisted(slug)
-		AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
-		ORDER BY usage_count DESC, name ASC LIMIT $1 OFFSET $2`
 	case "alphabetical":
 		query = `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
-		ORDER BY name ASC
-		LIMIT $1 OFFSET $2
-		`
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
+		FROM tags t WHERE ` + visible + ` AND ` + laneClause + `
+		ORDER BY t.name ASC LIMIT $1 OFFSET $2`
 	case "recent":
 		query = `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-		`
-	case "popularity":
-		fallthrough
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
+		FROM tags t WHERE ` + visible + ` AND ` + laneClause + `
+		ORDER BY t.created_at DESC LIMIT $1 OFFSET $2`
 	default:
 		query = `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
-		ORDER BY usage_count DESC
-		LIMIT $1 OFFSET $2
-		`
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
+		FROM tags t WHERE ` + visible + ` AND ` + laneClause + `
+		ORDER BY t.usage_count DESC, t.name ASC LIMIT $1 OFFSET $2`
 	}
 
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	rows, err := r.pool.Query(ctx, query, limit, offset, tagtaxonomy.DetectedSlugs())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tags: %w", err)
 	}
@@ -186,11 +201,14 @@ func (r *TagRepository) List(ctx context.Context, sort string, limit, offset int
 	return tags, nil
 }
 
-// Count returns the total number of tags
-func (r *TagRepository) Count(ctx context.Context) (int, error) {
+// Count returns the number of visible tags, optionally within one lane.
+func (r *TagRepository) Count(ctx context.Context, lane string) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM tags WHERE NOT is_tag_blacklisted(slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)`
-	err := r.pool.QueryRow(ctx, query).Scan(&count)
+	query := `SELECT COUNT(*) FROM tags t
+		WHERE NOT is_tag_blacklisted(t.slug)
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+		  AND ` + tagLanePredicate(lane, "$1")
+	err := r.pool.QueryRow(ctx, query, tagtaxonomy.DetectedSlugs()).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count tags: %w", err)
 	}

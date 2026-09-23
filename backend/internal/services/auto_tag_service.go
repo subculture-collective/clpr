@@ -8,6 +8,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/tagtaxonomy"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
 )
@@ -295,6 +296,52 @@ func (s *AutoTagService) AttachContentTags(ctx context.Context, clipID uuid.UUID
 		}
 	}
 	return nil
+}
+
+// AttachStreamerTags stores a broadcaster's own Twitch channel tags under
+// streamer/. They describe the channel, not the clip, so they stay out of the
+// content/ vocabulary that the vision tagger and title rules maintain.
+func (s *AutoTagService) AttachStreamerTags(ctx context.Context, clipID uuid.UUID, labels []string) error {
+	if _, err := s.tagRepo.GetOrCreateTag(ctx, "Streamer", tagtaxonomy.RootStreamer, nil); err != nil {
+		return fmt.Errorf("ensuring streamer root: %w", err)
+	}
+	parent := tagtaxonomy.RootStreamer
+	for _, label := range labels {
+		fullSlug, name, ok := streamerTagIdentity(label)
+		if !ok {
+			continue
+		}
+		blacklisted, err := s.tagRepo.IsBlacklisted(ctx, fullSlug)
+		if err != nil {
+			return fmt.Errorf("checking streamer tag blacklist: %w", err)
+		}
+		if blacklisted {
+			continue
+		}
+		tag, err := s.tagRepo.GetOrCreateTagWithParent(ctx, name, fullSlug, &parent, nil)
+		if err != nil {
+			return fmt.Errorf("ensuring streamer tag %q: %w", fullSlug, err)
+		}
+		if err := s.tagRepo.AddTagToClip(ctx, clipID, tag.ID); err != nil {
+			return fmt.Errorf("attaching streamer tag %q: %w", fullSlug, err)
+		}
+	}
+	return nil
+}
+
+// streamerTagIdentity maps a Twitch channel tag such as "CommunityOriented" to
+// its stored slug and name: streamer/community-oriented, "Streamer: Community
+// Oriented".
+func streamerTagIdentity(label string) (slug, name string, ok bool) {
+	readable := tagtaxonomy.SplitLabel(label)
+	tail := utils.Slugify(readable)
+	if len(tail) > 40 {
+		tail = strings.TrimRight(tail[:40], "-")
+	}
+	if tail == "" {
+		return "", "", false
+	}
+	return tagtaxonomy.RootStreamer + "/" + tail, "Streamer: " + readable, true
 }
 
 // slugify converts a string to a URL-friendly slug for tag creation.
