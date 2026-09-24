@@ -115,17 +115,34 @@ func (r *EngagementRepository) Publish(ctx context.Context) error {
  windows AS (SELECT period,now()-duration AS start_at,
  date_trunc('hour',now()-duration,'UTC')+interval '1 hour' AS interior_start,
  date_trunc('hour',now(),'UTC') AS interior_end FROM periods),
+ interior AS (SELECT (SELECT interior_start FROM windows WHERE period='hour') AS hour_start,
+ (SELECT interior_start FROM windows WHERE period='day') AS day_start,
+ (SELECT interior_start FROM windows WHERE period='week') AS week_start,
+ (SELECT interior_start FROM windows WHERE period='month') AS month_start,
+ (SELECT interior_start FROM windows WHERE period='year') AS year_start,
+ date_trunc('hour',now(),'UTC') AS end_at),
+ hourly AS (
+ -- One pass over complete hours: every window's interior total per clip.
+ SELECT h.clip_id,
+ sum(h.view_gain+2*h.vote_gain+3*h.comment_gain+2*h.favorite_gain) FILTER (WHERE h.bucket_start>=i.hour_start) AS hour_score,
+ sum(h.view_gain+2*h.vote_gain+3*h.comment_gain+2*h.favorite_gain) FILTER (WHERE h.bucket_start>=i.day_start) AS day_score,
+ sum(h.view_gain+2*h.vote_gain+3*h.comment_gain+2*h.favorite_gain) FILTER (WHERE h.bucket_start>=i.week_start) AS week_score,
+ sum(h.view_gain+2*h.vote_gain+3*h.comment_gain+2*h.favorite_gain) FILTER (WHERE h.bucket_start>=i.month_start) AS month_score,
+ sum(h.view_gain+2*h.vote_gain+3*h.comment_gain+2*h.favorite_gain) AS year_score
+ FROM interior i JOIN clip_engagement_hourly h ON h.bucket_start>=i.year_start AND h.bucket_start<i.end_at
+ GROUP BY h.clip_id),
  contributions AS (
- -- Complete hours use sparse aggregates. Only the two boundary fragments need
- -- observation intervals and precisely timestamped local mutations.
- SELECT w.period,h.clip_id,h.view_gain+2*h.vote_gain+3*h.comment_gain+2*h.favorite_gain AS score
- FROM windows w JOIN clip_engagement_hourly h ON h.bucket_start>=w.interior_start AND h.bucket_start<w.interior_end
+ SELECT p.period,h.clip_id,p.score FROM hourly h
+ CROSS JOIN LATERAL (VALUES ('hour',h.hour_score),('day',h.day_score),('week',h.week_score),('month',h.month_score),('year',h.year_score)) AS p(period,score)
+ WHERE p.score IS NOT NULL
  UNION ALL
+ -- Observations only matter where they overlap a window's partial first or last hour.
  SELECT w.period,o.clip_id,o.view_gain * (
  GREATEST(0,EXTRACT(EPOCH FROM (LEAST(o.observed_at,w.interior_start)-GREATEST(o.interval_start,w.start_at))))+
  GREATEST(0,EXTRACT(EPOCH FROM (LEAST(o.observed_at,now())-GREATEST(o.interval_start,w.interior_end)))))
  /NULLIF(EXTRACT(EPOCH FROM (o.observed_at-o.interval_start)),0)
  FROM windows w JOIN clip_view_observations o ON o.observed_at>w.start_at AND o.interval_start<now() AND o.view_gain>0
+ AND (o.interval_start<w.interior_start OR o.observed_at>w.interior_end)
  UNION ALL
  SELECT w.period,e.clip_id,e.score_delta FROM windows w JOIN clip_local_engagement e
  ON e.occurred_at>=w.start_at AND e.occurred_at<now()
