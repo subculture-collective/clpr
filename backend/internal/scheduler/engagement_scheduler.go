@@ -60,7 +60,8 @@ func (s *EngagementScheduler) RunOnce(ctx context.Context) error {
 	pollCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	pollErr := s.poll(pollCtx)
 	cancel()
-	publishCtx, publishCancel := context.WithTimeout(ctx, 30*time.Second)
+	// Matches the publish transaction's statement budget in EngagementRepository.Publish.
+	publishCtx, publishCancel := context.WithTimeout(ctx, 150*time.Second)
 	defer publishCancel()
 	if err := s.store.Publish(publishCtx); err != nil {
 		return err
