@@ -7,6 +7,7 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Button } from '../ui/Button';
 import { NotificationBell } from './NotificationBell';
 import { UserMenu } from './UserMenu';
+import logoUrl from '../../assets/brand/clpr-logo.svg';
 import {
     Home,
     Compass,
@@ -71,7 +72,7 @@ export function Header() {
                         aria-label='clpr.tv home'
                     >
                         <img
-                            src='/clpr-logo.svg'
+                            src={logoUrl}
                             alt=''
                             aria-hidden='true'
                             className='h-8 w-auto'

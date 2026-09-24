@@ -1,8 +1,9 @@
-// Service Worker for Clipper PWA
+// Service Worker for the clpr PWA
 // Provides offline shell caching for static assets only
 // Does NOT cache authenticated or sensitive API data
 
-const CACHE_NAME = 'clpr-v1';
+// Bump when precached files (offline page, icons) change so clients refresh them.
+const CACHE_NAME = 'clpr-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to cache for offline shell
