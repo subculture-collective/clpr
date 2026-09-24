@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isChipLane, sortByLane, tagHref, tagLabel, tagLane } from './tag-lanes';
+import { isChipLane, sortByPopularity, tagHref, tagLabel, tagLane } from './tag-lanes';
 
 describe('tag lanes', () => {
     it('prefers the API lane and display name', () => {
@@ -18,7 +18,7 @@ describe('tag lanes', () => {
         expect(tagHref('content/boss-fight')).toBe('/tags/content%2Fboss-fight');
     });
 
-    it('orders clip chips by lane and leaves length and language out', () => {
+    it('orders clip chips by popularity and leaves length and language out', () => {
         const tags = [
             { slug: 'streamer/english', lane: 'streamer' as const, usage_count: 9000 },
             { slug: 'duration/short', lane: 'duration' as const, usage_count: 5 },
@@ -26,11 +26,11 @@ describe('tag lanes', () => {
             { slug: 'game/music', lane: 'category' as const, usage_count: 50 },
             { slug: 'content/singing', lane: 'detected' as const, usage_count: 10 },
         ];
-        expect(sortByLane(tags.filter(tag => isChipLane(tagLane(tag)))).map(tag => tag.slug)).toEqual([
-            'content/singing',
-            'game/music',
-            'goosebumps',
+        expect(sortByPopularity(tags.filter(tag => isChipLane(tagLane(tag)))).map(tag => tag.slug)).toEqual([
             'streamer/english',
+            'game/music',
+            'content/singing',
+            'goosebumps',
         ]);
     });
 });

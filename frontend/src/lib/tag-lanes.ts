@@ -1,52 +1,4 @@
-import type { Tag, TagEvidence, TagLane } from '@/types/tag';
-
-/**
- * Tag lanes mirror backend/internal/tagtaxonomy: every tag is shown by the
- * process that produced it rather than by a per-tag colour.
- */
-export const TAG_LANES: Record<TagLane, { label: string; description: string; order: number }> = {
-    detected: {
-        label: 'What clpr saw',
-        description: 'Chosen from clpr’s content vocabulary by the vision tagger or title rules.',
-        order: 0,
-    },
-    category: {
-        label: 'Twitch category',
-        description: 'The category the clip was streamed under, and its genre.',
-        order: 1,
-    },
-    community: {
-        label: 'Community',
-        description: 'Added by people on clpr, plus older tags from before tags had namespaces.',
-        order: 2,
-    },
-    streamer: {
-        label: 'Streamer tags',
-        description: 'Tags the broadcaster put on their own Twitch channel. They describe the channel, not this clip.',
-        order: 3,
-    },
-    duration: { label: 'Length', description: 'Clip length bucket.', order: 4 },
-    language: { label: 'Language', description: 'Clip language.', order: 5 },
-    root: { label: 'Namespace', description: 'A tag namespace.', order: 6 },
-};
-
-export const TAG_EVIDENCE: Record<TagEvidence, { short: string; label: string; description: string }> = {
-    visible: {
-        short: 'Seen',
-        label: 'Seen',
-        description: 'Something visible in a single frame.',
-    },
-    contextual: {
-        short: 'Ctx',
-        label: 'Context',
-        description: 'Needs Twitch metadata or a transcript as well as the picture.',
-    },
-    strong: {
-        short: 'Outcome',
-        label: 'Outcome',
-        description: 'Describes a result or judgement, which needs evidence beyond a title.',
-    },
-};
+import type { Tag, TagLane } from '@/types/tag';
 
 const STORED_PREFIX = /^(?:taxonomy|content|game|language|lang|duration|community|streamer):\s*/i;
 
@@ -89,14 +41,25 @@ export function isChipLane(lane: TagLane): boolean {
     return lane === 'detected' || lane === 'category' || lane === 'community' || lane === 'streamer';
 }
 
-/** Orders tags by lane, then by usage, keeping the input order stable. */
-export function sortByLane<T extends Pick<Tag, 'slug' | 'lane' | 'usage_count'>>(tags: T[]): T[] {
-    return tags
-        .map((tag, index) => ({ tag, index }))
-        .sort((a, b) =>
-            TAG_LANES[tagLane(a.tag)].order - TAG_LANES[tagLane(b.tag)].order ||
-            (b.tag.usage_count ?? 0) - (a.tag.usage_count ?? 0) ||
-            a.index - b.index,
-        )
-        .map(({ tag }) => tag);
+/** Orders tags by usage without prioritizing their source. */
+export function sortByPopularity<T extends Pick<Tag, 'usage_count'>>(tags: T[]): T[] {
+    return [...tags].sort((a, b) => (b.usage_count ?? 0) - (a.usage_count ?? 0));
+}
+
+const TAG_ACCENTS = [
+    'text-primary-300',
+    'text-success-300',
+    'text-warning-300',
+    'text-info-300',
+    'text-secondary-300',
+    'text-error-300',
+] as const;
+
+/** A stable decorative accent, independent of the tag's source or evidence. */
+export function tagAccent(label: string): string {
+    let hash = 0;
+    for (const char of label.toLowerCase()) {
+        hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
+    }
+    return TAG_ACCENTS[hash % TAG_ACCENTS.length];
 }
