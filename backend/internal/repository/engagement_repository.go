@@ -85,6 +85,11 @@ func (r *EngagementRepository) Publish(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	// Publishing is a background batch over every tracked clip. It gets its own
+	// statement budget instead of the 15 s pool default meant for requests.
+	if _, err = tx.Exec(ctx, `SET LOCAL statement_timeout = '120s'`); err != nil {
+		return err
+	}
 	var locked bool
 	if err = tx.QueryRow(ctx, `SELECT pg_try_advisory_xact_lock(141001)`).Scan(&locked); err != nil {
 		return err
