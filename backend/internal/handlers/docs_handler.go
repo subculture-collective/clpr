@@ -6,20 +6,23 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	maxDocumentBytes    = 1 << 20
+	maxDocumentBytes    = 2 << 20 // the generated API reference is about 1.1 MB
 	maxDocSearchResults = 100
 )
 
+// DocsHandler serves the Markdown documentation tree. docs is nil when no
+// documentation source is available.
 type DocsHandler struct {
-	docsPath     string
+	docs         fs.FS
 	githubOwner  string
 	githubRepo   string
 	githubBranch string
@@ -32,9 +35,23 @@ type SearchResult struct {
 	Score   int      `json:"score"`
 }
 
+// NewDocsHandler serves documentation from docsPath. Symlinks cannot escape
+// the directory. A missing directory leaves the handler without a source.
 func NewDocsHandler(docsPath, githubOwner, githubRepo, githubBranch string) *DocsHandler {
+	var docs fs.FS
+	if root, err := os.OpenRoot(docsPath); err == nil {
+		docs = root.FS()
+	} else {
+		utils.GetLogger().Warn("Documentation directory is unavailable", map[string]interface{}{"path": docsPath, "error": err.Error()})
+	}
+	return NewDocsHandlerFS(docs, githubOwner, githubRepo, githubBranch)
+}
+
+// NewDocsHandlerFS serves documentation from docs, such as the copy embedded
+// in the binary by the docscontent package.
+func NewDocsHandlerFS(docs fs.FS, githubOwner, githubRepo, githubBranch string) *DocsHandler {
 	return &DocsHandler{
-		docsPath:     docsPath,
+		docs:         docs,
 		githubOwner:  githubOwner,
 		githubRepo:   githubRepo,
 		githubBranch: githubBranch,
@@ -49,10 +66,17 @@ func (h *DocsHandler) GetDocsList(c *gin.Context) {
 		c.JSON(http.StatusNotAcceptable, gin.H{"error": "Only application/json is available"})
 		return
 	}
-	docs, err := h.buildDocsTree(h.docsPath, "")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list documentation"})
-		return
+	docs := []*DocNode{}
+	if h.docs == nil {
+		utils.GetLogger().Warn("Documentation list requested but no documentation source is configured")
+	} else {
+		tree, err := h.buildDocsTree(".")
+		if err != nil {
+			// An unreadable tree is reported as empty so the docs page renders.
+			utils.GetLogger().Error("Failed to list documentation", err)
+		} else if tree != nil {
+			docs = tree
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -75,37 +99,47 @@ func (h *DocsHandler) GetDoc(c *gin.Context) {
 	if !strings.HasSuffix(docPath, ".md") {
 		docPath += ".md"
 	}
+	if !fs.ValidPath(docPath) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid document path"})
+		return
+	}
 
-	rootPath, err := filepath.EvalSymlinks(h.docsPath)
-	if err != nil {
+	if h.docs == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Documentation is unavailable"})
 		return
 	}
-	filePath, err := filepath.EvalSymlinks(filepath.Join(rootPath, filepath.FromSlash(docPath)))
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve document"})
+
+	// Reject symlinks anywhere on the path, matching the listing, which skips them.
+	var info fs.FileInfo
+	segments := strings.Split(docPath, "/")
+	for i := range segments {
+		var err error
+		info, err = fs.Lstat(h.docs, strings.Join(segments[:i+1], "/"))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
+			} else {
+				utils.GetLogger().Error("Failed to resolve document", err, map[string]interface{}{"path": docPath})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve document"})
+			}
+			return
 		}
-		return
+		if info.Mode()&fs.ModeSymlink != 0 {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+			return
+		}
 	}
-	relative, err := filepath.Rel(rootPath, filePath)
-	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
-		return
-	}
-	info, err := os.Stat(filePath)
-	if err != nil || !info.Mode().IsRegular() {
+	if !info.Mode().IsRegular() {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
 		return
 	}
 	if info.Size() > maxDocumentBytes {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Document exceeds 1 MiB"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Document exceeds 2 MiB"})
 		return
 	}
-	content, err := os.ReadFile(filePath)
+	content, err := fs.ReadFile(h.docs, docPath)
 	if err != nil {
+		utils.GetLogger().Error("Failed to read document", err, map[string]interface{}{"path": docPath})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read document"})
 		return
 	}
@@ -113,12 +147,7 @@ func (h *DocsHandler) GetDoc(c *gin.Context) {
 	// Generate GitHub edit URL
 	githubURL := ""
 	if h.githubOwner != "" && h.githubRepo != "" {
-		// Convert relative path to GitHub URL
-		cleanPath := strings.TrimPrefix(docPath, "/")
-		if !strings.HasSuffix(cleanPath, ".md") {
-			cleanPath += ".md"
-		}
-		githubURL = h.generateGitHubURL(cleanPath)
+		githubURL = h.generateGitHubURL(docPath)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -136,13 +165,13 @@ func (h *DocsHandler) SearchDocs(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Search query must be between 2 and 100 characters"})
 		return
 	}
-	if _, err := os.Stat(h.docsPath); err != nil {
+	if h.docs == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Documentation is unavailable"})
 		return
 	}
 
 	query = strings.ToLower(query)
-	results := h.searchDocuments(h.docsPath, "", query)
+	results := h.searchDocuments(".", query)
 	sort.Slice(results, func(i, j int) bool {
 		if results[i].Score == results[j].Score {
 			return results[i].Path < results[j].Path
@@ -160,9 +189,8 @@ func (h *DocsHandler) SearchDocs(c *gin.Context) {
 	})
 }
 
-func (h *DocsHandler) searchDocuments(basePath, relativePath, query string) []SearchResult {
-	currentPath := filepath.Join(basePath, relativePath)
-	entries, err := os.ReadDir(currentPath)
+func (h *DocsHandler) searchDocuments(dir, query string) []SearchResult {
+	entries, err := fs.ReadDir(h.docs, dir)
 	if err != nil {
 		return nil
 	}
@@ -171,25 +199,24 @@ func (h *DocsHandler) searchDocuments(basePath, relativePath, query string) []Se
 
 	for _, entry := range entries {
 		// Skip hidden files, archive, and vault
-		if strings.HasPrefix(entry.Name(), ".") || entry.Name() == "archive" || entry.Name() == "vault" || entry.Type()&os.ModeSymlink != 0 {
+		if strings.HasPrefix(entry.Name(), ".") || entry.Name() == "archive" || entry.Name() == "vault" || entry.Type()&fs.ModeSymlink != 0 {
 			continue
 		}
 
 		name := entry.Name()
-		path := filepath.Join(relativePath, name)
+		docPath := path.Join(dir, name)
 
 		if entry.IsDir() {
 			// Recursively search subdirectories
-			subResults := h.searchDocuments(basePath, path, query)
+			subResults := h.searchDocuments(docPath, query)
 			results = append(results, subResults...)
 		} else if strings.HasSuffix(name, ".md") {
 			// Search in markdown file
-			fullPath := filepath.Join(basePath, path)
 			info, err := entry.Info()
 			if err != nil || info.Size() > maxDocumentBytes {
 				continue
 			}
-			content, err := os.ReadFile(fullPath)
+			content, err := fs.ReadFile(h.docs, docPath)
 			if err != nil {
 				continue
 			}
@@ -228,7 +255,7 @@ func (h *DocsHandler) searchDocuments(basePath, relativePath, query string) []Se
 				}
 
 				results = append(results, SearchResult{
-					Path:    strings.TrimSuffix(path, ".md"),
+					Path:    strings.TrimSuffix(docPath, ".md"),
 					Name:    strings.TrimSuffix(name, ".md"),
 					Matches: matches,
 					Score:   score,
@@ -241,7 +268,7 @@ func (h *DocsHandler) searchDocuments(basePath, relativePath, query string) []Se
 }
 
 func (h *DocsHandler) generateGitHubURL(docPath string) string {
-	return fmt.Sprintf("https://github.com/%s/%s/edit/%s/docs/%s", h.githubOwner, h.githubRepo, h.githubBranch, filepath.ToSlash(docPath))
+	return fmt.Sprintf("https://github.com/%s/%s/edit/%s/docs/%s", h.githubOwner, h.githubRepo, h.githubBranch, docPath)
 }
 
 func max(a, b int) int {
@@ -265,9 +292,8 @@ type DocNode struct {
 	Children []*DocNode `json:"children,omitempty"`
 }
 
-func (h *DocsHandler) buildDocsTree(basePath, relativePath string) ([]*DocNode, error) {
-	currentPath := filepath.Join(basePath, relativePath)
-	entries, err := os.ReadDir(currentPath)
+func (h *DocsHandler) buildDocsTree(dir string) ([]*DocNode, error) {
+	entries, err := fs.ReadDir(h.docs, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +302,7 @@ func (h *DocsHandler) buildDocsTree(basePath, relativePath string) ([]*DocNode, 
 
 	for _, entry := range entries {
 		// Skip hidden files and directories
-		if strings.HasPrefix(entry.Name(), ".") || entry.Type()&os.ModeSymlink != 0 {
+		if strings.HasPrefix(entry.Name(), ".") || entry.Type()&fs.ModeSymlink != 0 {
 			continue
 		}
 
@@ -286,18 +312,18 @@ func (h *DocsHandler) buildDocsTree(basePath, relativePath string) ([]*DocNode, 
 		}
 
 		name := entry.Name()
-		path := filepath.Join(relativePath, name)
+		docPath := path.Join(dir, name)
 
 		if entry.IsDir() {
 			// Recursively build tree for subdirectories
-			children, err := h.buildDocsTree(basePath, path)
+			children, err := h.buildDocsTree(docPath)
 			if err != nil {
 				continue
 			}
 
 			nodes = append(nodes, &DocNode{
 				Name:     name,
-				Path:     path,
+				Path:     docPath,
 				Type:     "directory",
 				Children: children,
 			})
@@ -305,7 +331,7 @@ func (h *DocsHandler) buildDocsTree(basePath, relativePath string) ([]*DocNode, 
 			// Add markdown files
 			nodes = append(nodes, &DocNode{
 				Name: strings.TrimSuffix(name, ".md"),
-				Path: strings.TrimSuffix(path, ".md"),
+				Path: strings.TrimSuffix(docPath, ".md"),
 				Type: "file",
 			})
 		}

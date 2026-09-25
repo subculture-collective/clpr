@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -171,4 +172,49 @@ func TestDocsHandler_SearchDocs(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "searchable")
 	assert.NotContains(t, w.Body.String(), "other")
+}
+
+// Production returned 500 for GET /api/v1/docs because the image had no docs
+// directory at the configured DOCS_PATH (../docs relative to /app).
+func TestDocsHandler_ListMissingSourceIsEmpty(t *testing.T) {
+	handler := NewDocsHandler(filepath.Join(t.TempDir(), "missing"), "owner", "repo", "main")
+	router := gin.New()
+	router.GET("/api/v1/docs", handler.GetDocsList)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/docs", nil))
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{"docs":[]}`, w.Body.String())
+}
+
+func TestDocsHandler_ServesFileSystem(t *testing.T) {
+	docs := fstest.MapFS{
+		"index.md":          {Data: []byte("# Home\n\nWelcome to clpr.")},
+		"users/guide.md":    {Data: []byte("# Guide\n\nHow to tag clips.")},
+		"archive/old.md":    {Data: []byte("# Old")},
+		"users/diagram.png": {Data: []byte("png")},
+	}
+	handler := NewDocsHandlerFS(docs, "owner", "repo", "main")
+	router := gin.New()
+	router.GET("/api/v1/docs", handler.GetDocsList)
+	router.GET("/api/v1/docs/search", handler.SearchDocs)
+	router.GET("/api/v1/docs/content/*path", handler.GetDoc)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/docs", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{"docs":[
+		{"name":"index","path":"index","type":"file"},
+		{"name":"users","path":"users","type":"directory","children":[{"name":"guide","path":"users/guide","type":"file"}]}
+	]}`, w.Body.String())
+
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/docs/content/users/guide", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "How to tag clips.")
+	assert.Contains(t, w.Body.String(), "https://github.com/owner/repo/edit/main/docs/users/guide.md")
+
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/docs/search?q=tag+clips", nil))
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"path":"users/guide"`)
 }

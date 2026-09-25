@@ -1477,8 +1477,8 @@ func (r *PlaylistRepository) GetPlaylistOfTheDay(ctx context.Context, currentUse
 		GROUP BY p.id, p.user_id, p.title, p.description, p.cover_url, p.visibility, p.share_token,
 		         p.view_count, p.share_count, p.like_count, p.follower_count, p.bookmark_count,
 		         p.is_curated, p.is_featured, p.display_order, p.script_id, p.slug,
-		         p.created_at, p.updated_at, p.deleted_at
-		ORDER BY gp.generated_at DESC
+		         p.created_at, p.updated_at, p.deleted_at, gp.generated_at
+		ORDER BY gp.generated_at DESC NULLS LAST, p.created_at DESC
 		LIMIT 1
 	`
 

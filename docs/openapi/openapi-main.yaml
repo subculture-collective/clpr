@@ -51,12 +51,10 @@ info:
   termsOfService: https://clpr.tv/terms
 
 servers:
+  - url: https://clpr.tv
+    description: Production. Paths include their /api/v1 prefix.
   - url: http://localhost:8080
     description: Local development server
-  - url: https://api-staging.clpr.tv
-    description: Staging environment
-  - url: https://api.clpr.tv
-    description: Production API server
 
 tags:
   - name: Health

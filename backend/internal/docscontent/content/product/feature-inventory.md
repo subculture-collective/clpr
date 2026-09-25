@@ -1,0 +1,945 @@
+---
+title: "Feature Inventory"
+summary: "Maintained feature scope and verification map"
+tags: ["product"]
+area: "product"
+status: "draft"
+owner: "team-core"
+version: "1.0"
+last_reviewed: 2026-09-08
+---
+
+# Feature Inventory & Verification Map
+
+> **Last Updated**: 2026-09-08
+>
+> **Sweep**: Free-account candidate scope and UI maintenance
+>
+> **Purpose**: Complete inventory of all features in the Clipper platform, documenting status, location, tests, typing, and documentation coverage.
+>
+> **Scope**: Covers the tracked backend API, frontend web app, infrastructure, and documentation. Native mobile material is planning documentation only.
+>
+> **Current evidence**: Maintained source, real-backend browser, release-evidence, and immutable-image workflows exist. Their passing results are revision-specific. Production promotion additionally requires reconciled provider obligations, fresh staging OAuth, review, and protected operational evidence. No buildable native mobile workspace is present.
+
+---
+
+## Table of Contents
+
+- [Summary](#summary)
+- [Feature Categories](#feature-categories)
+  - [1. Authentication & Authorization](#1-authentication--authorization)
+  - [2. Clip Management](#2-clip-management)
+  - [3. User Management & Profiles](#3-user-management--profiles)
+  - [4. Social Features](#4-social-features)
+  - [5. Search & Discovery](#5-search--discovery)
+  - [6. Content Moderation](#6-content-moderation)
+  - [7. Free accounts and legacy billing](#7-free-accounts-and-legacy-billing)
+  - [8. Analytics & Metrics](#8-analytics--metrics)
+  - [9. Live Streams & Watch Parties](#9-live-streams--watch-parties)
+  - [10. Community & Forums](#10-community--forums)
+  - [11. Webhooks & Integrations](#11-webhooks--integrations)
+  - [12. Admin & Moderation Tools](#12-admin--moderation-tools)
+  - [13. Infrastructure & Operations](#13-infrastructure--operations)
+- [Next Steps](#next-steps)
+- [Issue Template](#issue-template)
+
+---
+
+## Summary
+
+This inventory is a pre-release catalog, not proof that every listed feature is
+release-ready. Status must be backed by registered routes, buildable clients,
+and executable tests. The production-readiness audit supersedes earlier raw
+counts that included planned or missing artifacts.
+
+- **Backend**: Go API with package, race, vet, PostgreSQL integration,
+  migration, and engagement coverage checks in source convergence.
+- **Frontend**: React web app with production typecheck, lint, reachability,
+  ownership, critical coverage, build budgets, and three-engine browser gates.
+- **Mobile**: No tracked buildable application. Mobile documents describe a
+  possible future client and are not current product availability.
+- **Infrastructure**: Authoritative Gitea workflows cover operator preflight,
+  release gates, complete source convergence, immutable images, and release
+  readiness. Workflow availability does not prove branch-protection enforcement
+  or a passing result for a particular revision.
+- **Documentation**: Historical feature entries below describe implementation
+  scope and may still require evidence correction. A “complete” label does not
+  establish provider acceptance, enabled release scope, or production readiness.
+  Use revision-bound release evidence for those decisions.
+
+### Status Legend
+
+- ✅ **complete**: Fully implemented, tested, typed, and documented
+- 🟡 **partial**: Implemented but missing tests, typing, or documentation
+- 🔴 **stub**: Placeholder or incomplete implementation
+- ⚠️ **broken**: Known issues or failures
+- ❓ **unknown**: Status needs verification
+
+---
+
+## Feature Categories
+
+### 1. Authentication & Authorization
+
+#### 1.1 Twitch OAuth Integration
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/auth/twitch`, `/api/v1/auth/twitch/callback`
+- **Frontend**: `AuthCallbackPage.tsx`, `LoginPage.tsx`
+- **Planned mobile design**: `app/auth/login.tsx` (workspace absent)
+- **Handlers**: `auth_handler.go`, `twitch_oauth_handler.go`
+- **Services**: `auth_service.go`
+- **Tests**: ✅ Handler tests exist
+- **Typing**: ✅ TypeScript types defined
+- **Docs**: Authentication Guide
+- **Issue**: TBD
+
+**Features**:
+- OAuth 2.0 flow with Twitch
+- PKCE support for mobile apps
+- Token refresh mechanism
+- Session management with Redis
+- JWT-based authentication
+
+**Gaps**:
+- E2E tests for OAuth flow needed
+- Rate limiting tests incomplete
+
+---
+
+#### 1.2 Multi-Factor Authentication (MFA)
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/auth/mfa/*`
+- **Frontend**: MFA settings components
+- **Handlers**: `mfa_handler.go`
+- **Services**: `mfa_service.go`, `email_mfa.go`
+- **Tests**: ✅ Comprehensive unit tests
+- **Typing**: ✅ Full TypeScript coverage
+- **Docs**: MFA Admin Guide
+- **Issue**: TBD
+
+**Features**:
+- TOTP-based 2FA
+- Email-based OTP fallback
+- Backup codes generation
+- Trusted device management
+- Required for admin actions
+
+**Gaps**:
+- Mobile MFA UI needs implementation
+
+---
+
+#### 1.3 Role-Based Access Control (RBAC)
+
+- **Status**: ✅ complete
+- **Backend**: Permission middleware
+- **Models**: `roles.go`, `models.go`
+- **Middleware**: `permission_middleware.go`, `authorization_test.go`
+- **Tests**: ✅ Extensive permission tests
+- **Typing**: ✅ Complete
+- **Docs**: RBAC Documentation, Authorization Status
+- **Issue**: TBD
+
+**Features**:
+- User roles: admin, moderator, verified_creator, creator, user
+- Granular permissions system
+- Permission checks in middleware
+- Entitlement-based feature access
+
+**Gaps**: None identified
+
+---
+
+### 2. Clip Management
+
+#### 2.1 Clip CRUD Operations
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/clips/*`
+- **Frontend**: `ClipDetailPage.tsx`, clip components
+- **Planned mobile design**: `app/clip/[id].tsx` (workspace absent)
+- **Handlers**: `clip_handler.go`
+- **Services**: `clip_service.go`
+- **Repository**: `clip_repository.go`
+- **Tests**: 🟡 partial (handler tests exist, integration tests needed)
+- **Typing**: ✅ Complete
+- **Docs**: [Clip API](../backend/clip-api.md)
+- **Issue**: TBD
+
+**Features**:
+- List clips with pagination and filtering
+- Get clip details with metadata
+- Update clip metadata (creators only)
+- Delete clips (admin only)
+- Visibility controls (public/unlisted/hidden)
+- Related clips suggestions
+- Analytics tracking
+
+**Gaps**:
+- Integration tests for clip workflows
+- Performance tests for large clip lists
+
+---
+
+#### 2.2 Clip Submission System
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/submissions/*`
+- **Frontend**: `SubmitClipPage.tsx`, `UserSubmissionsPage.tsx`
+- **Planned mobile design**: `app/submit/index.tsx` (workspace absent)
+- **Handlers**: `submission_handler.go`
+- **Services**: `submission_service.go`, `submission_abuse_detection.go`
+- **Tests**: 🟡 partial
+- **Typing**: ✅ Complete
+- **Docs**: Clip Submission API Guide
+- **Issue**: TBD
+
+**Features**:
+- User clip submission with rate limiting (10/hour)
+- Twitch clip metadata fetching
+- Submission queue management
+- Admin approval/rejection workflow
+- Bulk moderation actions
+- Abuse detection and prevention
+- Notification system for submission status
+
+**Gaps**:
+- E2E submission flow tests
+- Abuse detection tuning documentation
+
+---
+
+#### 2.3 Scraped Clips
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/scraped-clips`, clip sync service
+- **Frontend**: `ScrapedClipsPage.tsx`
+- **Scripts**: `backend/scripts/scrape_clips.go`
+- **Services**: `clip_sync_service.go`, `clip_mirror_service.go`
+- **Scheduler**: `clip_sync_scheduler.go`
+- **Tests**: ⚠️ broken (scheduler tests have known issues)
+- **Typing**: ✅ Complete
+- **Docs**: [Clip Scraper README](../README_SCRAPER.md), [Scraped Clips](scraped-clips.md)
+- **Issue**: TBD
+
+**Features**:
+- Automated clip scraping from Twitch
+- Broadcaster-targeted scraping
+- Scheduled sync jobs (every 15 minutes)
+- Clip claiming by creators
+- CDN mirroring design (disabled; provider implementations are incomplete)
+- Metadata enrichment
+- Auto-tagging
+
+**Gaps**:
+- Scheduler tests failing
+- Performance monitoring for scraping jobs
+- Error handling documentation
+
+#### 2.4 Voting System
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/clips/:id/vote`, `/api/v1/comments/:id/vote`
+- **Frontend**: Vote components throughout
+- **Services**: `clip_service.go`, `comment_service.go`
+- **Repository**: `vote_repository.go`
+- **Tests**: ✅ Unit tests exist
+- **Typing**: ✅ Complete
+- **Docs**: Documented in API guides
+- **Issue**: TBD
+
+**Features**:
+- Upvote/downvote clips and comments
+- Vote removal (neutral state)
+- Karma system integration
+- Optimistic UI updates
+- Rate limiting (20/minute)
+- Aggregate vote scores
+
+**Gaps**:
+- Vote manipulation detection
+- Analytics on voting patterns
+
+---
+
+#### 2.5 Favorites/Bookmarking
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/clips/:id/favorite`, `/api/v1/favorites`
+- **Frontend**: `FavoritesPage.tsx`, favorite buttons
+- **Planned mobile design**: `app/(tabs)/favorites.tsx` (workspace absent)
+- **Handlers**: `favorite_handler.go`
+- **Repository**: `favorite_repository.go`
+- **Tests**: ✅ Unit tests exist
+- **Typing**: ✅ Complete
+- **Docs**: User guide documentation
+- **Issue**: TBD
+
+**Features**:
+- Add/remove favorites
+- List user favorites with pagination
+- Favorite count tracking
+- Collections/organization (future)
+
+**Gaps**:
+- Collections feature stubbed
+- Favorite export in user data export
+
+---
+
+### 3. User Management & Profiles
+
+#### 3.1 User Profiles
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/users/:id`, `/api/v1/users/by-username/:username`
+- **Frontend**: `UserProfilePage.tsx`, `ProfilePage.tsx`
+- **Planned mobile design**: `app/(tabs)/profile.tsx`, `app/profile/[id].tsx`, `app/profile/edit.tsx` (workspace absent)
+- **Handlers**: `user_handler.go`, `admin_user_handler.go`
+- **Repository**: `user_repository.go`
+- **Tests**: 🟡 partial
+- **Typing**: ✅ Complete
+- **Docs**: User Guide
+- **Issue**: TBD
+
+**Features**:
+- Public user profiles
+- Profile customization
+- Social links management
+- Avatar/banner images (Twitch)
+- Bio and display name
+- Verification badge display
+- Activity streams
+- Karma display
+
+**Gaps**:
+- Profile image uploads (relies on Twitch currently)
+- Custom badges display
+
+---
+
+#### 3.2 User Settings
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/users/me/settings`
+- **Frontend**: `SettingsPage.tsx`, `NotificationPreferencesPage.tsx`, `CookieSettingsPage.tsx`
+- **Planned mobile design**: `app/settings/index.tsx` (workspace absent)
+- **Handlers**: `user_settings_handler.go`
+- **Services**: `user_settings_service.go`
+- **Tests**: ✅ Unit tests exist
+- **Typing**: ✅ Complete
+- **Docs**: User Settings
+- **Issue**: TBD
+
+**Features**:
+- Privacy settings
+- Notification preferences
+- Email preferences
+- Cookie consent management
+- Theme preferences
+- Accessibility settings
+- Language preferences (future)
+
+**Gaps**:
+- Language localization incomplete
+- Mobile settings UI parity
+
+---
+
+#### 3.3 Account Management
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/users/me/*`
+- **Handlers**: `user_settings_handler.go`, `account_type_handler.go`
+- **Services**: `user_settings_service.go`, `account_type_service.go`
+- **Tests**: ✅ Unit tests exist
+- **Typing**: ✅ Complete
+- **Docs**: [GDPR Compliance](../compliance/gdpr-compliance.md)
+- **Issue**: TBD
+
+**Features**:
+- Account deletion (soft delete with grace period)
+- Data export (GDPR compliance)
+- Account type conversion (user → creator → broadcaster)
+- Consent management
+- Session management
+- Email change (via settings)
+
+**Gaps**:
+- Hard deletion automation
+- Account recovery flows
+
+---
+
+#### 3.4 Reputation & Karma System
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/users/:id/reputation`, `/api/v1/users/:id/karma`, `/api/v1/users/:id/badges`
+- **Frontend**: Reputation displays, badges, leaderboards
+- **Handlers**: `reputation_handler.go`
+- **Services**: `reputation_service.go`
+- **Scheduler**: `reputation_scheduler.go`
+- **Tests**: ✅ Unit tests exist
+- **Typing**: ✅ Complete
+- **Docs**: Reputation System
+- **Issue**: TBD
+
+**Features**:
+- Karma calculation from user actions
+- Badge system with achievements
+- Leaderboards (karma, badges, contributions)
+- Reputation levels
+- Trust score integration
+- Scheduled reputation updates (every 6 hours)
+
+**Gaps**:
+- Badge artwork/assets
+- More achievement types
+
+---
+
+### 4. Social Features
+
+#### 4.1 Comments System
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/clips/:id/comments`, `/api/v1/comments/*`
+- **Frontend**: Comment components
+- **Handlers**: `comment_handler.go`
+- **Services**: `comment_service.go`
+- **Repository**: `comment_repository.go`
+- **Tests**: ✅ Comprehensive tests including nested comments
+- **Typing**: ✅ Complete
+- **Docs**: Comment API, [Comments Feature](../features/comments.md)
+- **Issue**: TBD
+
+**Features**:
+- Nested threaded comments (up to 10 levels)
+- Markdown support with XSS protection
+- Comment voting (upvote/downvote)
+- Comment editing and deletion
+- Soft delete (preserves thread structure)
+- Rate limiting (10 comments/minute)
+- Comment moderation
+- Comment suspension system
+
+**Gaps**: None identified
+
+---
+
+#### 4.2 Following/Followers
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/users/:id/follow`, `/api/v1/users/:id/followers`, `/api/v1/users/:id/following`
+- **Handlers**: `user_handler.go`
+- **Tests**: 🟡 partial
+- **Typing**: ✅ Complete
+- **Docs**: User guide
+- **Issue**: TBD
+
+**Features**:
+- Follow/unfollow users
+- Follow broadcasters
+- Follow streamers
+- Follow games
+- List followers
+- List following
+- Feed based on follows
+
+**Gaps**:
+- Follow suggestions/recommendations
+- Follower notifications incomplete
+
+---
+
+#### 4.3 Blocking
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/users/:id/block`, `/api/v1/users/me/blocked`
+- **Handlers**: `user_handler.go`
+- **Tests**: 🟡 partial
+- **Typing**: ✅ Complete
+- **Docs**: User guide
+- **Issue**: TBD
+
+**Features**:
+- Block/unblock users
+- List blocked users
+- Hide content from blocked users
+- Prevent interactions from blocked users
+
+**Gaps**:
+- Block impact on feeds needs verification
+
+---
+
+#### 4.4 Playlists
+
+- **Status**: ✅ complete
+- **Backend**: `/api/v1/playlists/*`
+- **Frontend**: `PlaylistsPage.tsx`, `PlaylistDetailPage.tsx`, `PublicPlaylistsPage.tsx`
+- **Handlers**: `playlist_handler.go`
+- **Services**: `playlist_service.go`
+- **Repository**: `playlist_repository.go`
+- **Tests**: 🟡 partial
+- **Typing**: ✅ Complete
+- **Docs**: [Playlists Feature](../features/feature-playlists.md), API Playlist Sharing
+- **Issue**: TBD
+
+**Features**:
+- Create/update/delete playlists
+- Add/remove clips from playlists
+- Reorder clips
+- Public/private visibility
+- Playlist sharing with shareable links
+- Playlist likes
+- Collaboration system (invite editors)
+- Playlist analytics tracking
+
+**Gaps**:
+- Collaborative editing UI
+- Playlist embeds
+
+---
+
+### 5. Search & Discovery
+
+#### 5.1 Search System
+
+- **Status**: ✅ complete (hybrid search)
+- **Backend**: `/api/v1/search`, `/api/v1/search/suggestions`, `/api/v1/search/scores`
+- **Frontend**: `SearchPage.tsx`
+- **Planned mobile design**: `app/(tabs)/search.tsx` (workspace absent)
+- **Handlers**: `search_handler.go`
+- **Services**: `opensearch_search_service.go`, `hybrid_search_service.go`, `embedding_service.go`
+- **Repository**: `search_repository.go`
+- **Tests**: ✅ Unit tests exist
+- **Typing**: ✅ Complete
+- **Docs**: Search Feature, Semantic Search
+- **Issue**: TBD
+
+**Features**:
+- Full-text search with OpenSearch
+- Semantic search with vector embeddings (OpenAI)
+- Hybrid search (BM25 + vector similarity)
+- PostgreSQL FTS fallback
+- Search suggestions/autocomplete
+- Typo tolerance and fuzzy matching
+- Advanced filtering (tags, games, broadcasters)
+- Search history (authenticated users)
+- Trending searches
+- Failed search analytics (admin)
+- Rate limiting (60/minute)
+
+**Gaps**:
+- Search result ranking tuning
+- More evaluation metrics
+
+#### 5.2 Feed System
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/feeds/*` | **Frontend**: HomePage, TopFeedPage, etc.
+- **Features**: Hot/new/top/rising/following/live feeds, custom feeds, filtering, discovery, analytics
+- **Gaps**: Personalized algorithm tuning, feed recommendations
+
+#### 5.3 Discovery Lists
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/discovery-lists/*`
+- **Features**: Curated collections, follow/bookmark, admin-managed
+- **Gaps**: User-created lists, recommendations
+
+#### 5.4 Recommendations
+
+- **Status**: 🟡 partial | **Backend**: `/api/v1/recommendations/*`
+- **Features**: Personalized recommendations, feedback system, preferences
+- **Gaps**: Algorithm tuning, cold start handling, A/B testing
+
+---
+
+### 6. Content Moderation
+
+#### 6.1 Moderation Queue  
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/admin/moderation/*` | **Frontend**: AdminModerationQueuePage
+- **Features**: Review queue, bulk actions, abuse detection, appeals, analytics
+- **Gaps**: ML classification, automated rules
+
+#### 6.2 Reporting System
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/reports`, `/api/v1/admin/reports/*`
+- **Features**: Report clips/comments/users, categorization, status tracking
+- **Gaps**: Reporter reputation, auto-actions
+
+#### 6.3 Chat Moderation
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/chat/channels/:id/ban`, etc.
+- **Handlers**: `chat_moderation.go` (auto-moderation logic)
+- **Features**: Ban, mute, timeout, message deletion, moderation log, spam detection, profanity filtering, rate limiting
+- **Gaps**: Machine learning-based classification, user appeals process
+
+#### 6.4 DMCA Management
+
+- **Status**: ✅ complete | **Backend**: DMCA service | **Frontend**: DMCAPage
+- **Features**: Takedown requests, counter-notices, content blocking
+- **Gaps**: Automated copyright detection
+
+---
+
+### 7. Free accounts and legacy billing
+
+Accounts are free. Paid enrollment, plan changes, paid entitlements, and
+premium-specific rate multipliers are retired. Optional external support links
+remain. Ordinary abuse controls apply regardless of historical billing status.
+
+Historical billing tables, migrations, receipts, and audit records are retained.
+The complete provider and database inventory found no outstanding obligations.
+The billing API, Stripe client, billing retry worker, dunning, and billing email
+runtime are removed. A read-only historical subscription adapter remains for
+personal-data exports. Outbound webhook subscriptions and SendGrid signature
+verification are unrelated and remain supported.
+
+Provider obligations must be established by a complete read-only inventory.
+Empty application tables alone do not establish that obligations are zero.
+Release evidence requires either verified zero obligations or verified legacy
+servicing. No automatic cancellation, refund, or customer outreach is part of
+candidate qualification.
+
+---
+
+### 8. Analytics & Metrics
+
+#### 8.1 Platform Analytics
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/admin/analytics/*`
+- **Features**: Platform metrics, engagement, trends, health monitoring, revenue
+- **Gaps**: Real-time dashboards, custom reports
+
+#### 8.2 Creator Analytics  
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/creators/:creatorName/analytics/*`
+- **Features**: Creator overview, top clips, audience insights, trends
+- **Gaps**: Revenue sharing, demographic insights
+
+#### 8.3 Event Tracking
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/events`
+- **Features**: Feed tracking, view tracking, behavior analytics, batch processing
+- **Gaps**: Event schema docs, debugging tools
+
+#### 8.4 Abuse protection
+
+Request rate limiting and submission abuse checks are maintained. The unused
+anomaly-scoring analytics implementation has been removed. See
+[abuse detection](../backend/ABUSE_DETECTION.md) for the active contract.
+
+---
+
+### 9. Live Streams & Watch Parties
+
+#### 9.1 Live Stream Integration
+
+- **Status**: 🟡 partial | **Backend**: `/api/v1/streams/*`, `/api/v1/broadcasters/:id/live-status`
+- **Features**: Status tracking, follow, notifications, scheduled updates
+- **Gaps**: Live-feed UI is hidden. Stream clip creation is disabled by default pending real VOD resolution and durable job-state acceptance tests.
+
+#### 9.2 Watch Parties
+
+- **Status**: 🟡 partial/disabled | **Backend**: `/api/v1/watch-parties/*` when `FEATURE_WATCH_PARTIES=true`
+- **Features**: Create parties, real-time sync, chat, reactions, analytics, discovery
+- **Gaps**: Routes and navigation are disabled for launch; browser, privacy, authorization, and WebSocket resilience gates are incomplete.
+
+---
+
+### 10. Community & Forums
+
+#### 10.1 Forum System
+
+- **Status**: 🟡 partial | **Backend**: `/api/v1/forum/*` | **Frontend**: forum pages and components
+- **Launch limitation**: Forum-scoped user bans are unavailable. The previous administrative route changed the platform-wide account ban flag while the separate forum-ban records were not enforced, so it is excluded from release routing until scoped enforcement and unban lifecycle tests exist. Platform account bans remain available through administrator-only user management.
+- **Features**: Threads, replies, voting, search, analytics, moderation
+- **Gaps**: Categories, thread subscriptions
+
+#### 10.2 Communities
+
+- **Status**: 🟡 partial/backend-only | **Backend**: `/api/v1/communities/*`
+- **Features**: Public community creation/joining, roles, banning, visible clip feeds, discussions
+- **Gaps**: No product UI, categories, discovery improvements, or private-community invitation lifecycle. Creating a private community or switching a public community private is rejected for launch; legacy private records remain member-only.
+
+---
+
+### 11. Webhooks & Integrations
+
+#### 11.1 Outbound Webhooks
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/webhooks/*` | **Frontend**: WebhookSubscriptionsPage
+- **Features**: CRUD, events, signatures, retries, DLQ, monitoring, scheduled delivery
+- **Gaps**: Playground UI, more event types
+
+#### 11.2 Twitch API Integration
+
+- **Status**: ✅ complete | **Backend**: `pkg/twitch`
+- **Features**: OAuth, metadata, profiles, streams, games, token refresh
+- **Gaps**: EventSub, Extensions
+
+---
+
+### 12. Admin & Moderation Tools
+
+#### 12.1 Admin Dashboard
+
+- **Status**: ✅ complete | **Frontend**: AdminDashboard
+- **Features**: Overview, quick actions, navigation
+- **Gaps**: Real-time updates, widgets
+
+#### 12.2 User Management
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/admin/users/*`
+- **Features**: List, ban, roles, karma, badges, comment suspension
+- **Gaps**: Bulk actions, advanced search
+
+#### 12.3 Content Management
+
+- **Status**: ✅ complete | **Backend**: Various admin handlers
+- **Features**: Clip mgmt, comment mod, tags, sync trigger
+- **Gaps**: Bulk operations, scheduling
+
+#### 12.4 Audit Logging
+
+- **Status**: ✅ complete | **Backend**: `/api/v1/admin/audit-logs/*`
+- **Features**: Comprehensive trail, search, export, retention
+- **Gaps**: Analytics, anomaly detection
+
+---
+
+### 13. Infrastructure & Operations
+
+#### 13.1 CI/CD Pipelines
+
+- **Status**: 🟡 implemented; release acceptance depends on revision-specific results and operator evidence
+- **Authoritative workflows**: `.gitea/workflows/operator-preflight.yml`, `release-gates.yml`, `source-convergence.yml`, `immutable-candidate.yml`, and `release-readiness.yml`
+- **Features**: Source build/test/browser/security checks, documentation and OpenAPI validation, migrations, bundle budgets, scanned and signed immutable images, and operational evidence verification
+- **Tests**: Complete source convergence executes the maintained local-equivalent gates; hosted artifacts identify the tested revision. Separate operational qualification records load, restore, and rollback outcomes.
+- **Gaps**: Required-check enforcement and independent review must be established separately. Provider billing reconciliation, fresh staging OAuth, protected evidence hosting, and all final acceptance contracts remain prerequisites for promotion.
+
+#### 13.2 Deployment & Infrastructure
+
+- **Status**: ✅ complete | **Scripts**: 27 deployment scripts, Docker, compose
+- **Features**: Containerization, multi-env (development, staging, production, blue-green), rollback, health checks, migrations, SSL setup
+- **Scripts**: backup.sh, blue-green-deploy.sh, check-migration-compatibility.sh, deploy.sh, health-check.sh, rollback.sh, rollback-blue-green.sh, setup-ssl.sh, test-blue-green-deployment.sh, and 18 more
+- **Docker Configs**: 6 docker-compose files for different environments
+- **Gaps**: Kubernetes production deployment docs, auto-scaling setup guides
+
+#### 13.3 Monitoring & Observability
+
+- **Status**: ✅ complete | **Backend**: Prometheus, Sentry, health endpoints, application logging
+- **Features**: Metrics, error tracking, health checks, structured logging, client-side log aggregation; authenticated Go profiling is registered only in explicit development debug mode and is absent from release routers
+- **Handlers**: `monitoring_handler.go`, `application_log_handler.go`
+- **Tests**: ✅ Application log handler tests exist
+- **Endpoints**: `/api/v1/logs` (POST - client log ingestion), `/api/v1/logs/stats` (GET - log analytics)
+- **Gaps**: Grafana dashboards, alerting config, log retention policies
+
+#### 13.4 Security
+
+- **Status**: ✅ complete | **Middleware**: Security, CSRF, abuse detection
+- **Features**: HTTPS, headers, CSRF, rate limiting, trust score, validation, MFA
+- **Gaps**: WAF, DDoS mitigation
+
+#### 13.5 Database Management
+
+- **Status**: ✅ complete | **Migrations**: 78 migration files
+- **Features**: PostgreSQL 17, migrations, pooling, seeds, backups
+- **Gaps**: Automated backup scheduling, PITR docs
+
+#### 13.6 Caching Strategy
+
+- **Status**: ✅ complete | **Backend**: Redis integration
+- **Features**: Redis 8, sessions, rate limiting, cache warming, monitoring
+- **Gaps**: Hit rate metrics, advanced strategies
+
+#### 13.7 Email System
+
+- **Status**: ✅ complete | **Backend**: SendGrid integration
+- **Features**: Transactional emails, templates, preferences, metrics, webhooks
+- **Gaps**: Template editor, A/B testing
+
+#### 13.8 Schedulers & Background Jobs
+
+- **Status**: ✅ complete | **Backend**: 10 schedulers
+- **Features**: Clip sync, reputation, scoring, webhooks, exports, emails, live status
+- **Gaps**: Monitoring dashboard, failure alerting
+
+#### 13.9-13.23 Additional Features
+
+- **Queue System**: Personal playback queue (✅ complete)
+- **Watch History**: Track/resume playback (✅ complete)
+- **Ad System**: Campaigns, targeting, tracking (✅ complete)
+- **Chat System**: WebSocket real-time chat (✅ complete)
+- **WebSocket Infrastructure**: Connection mgmt, scaling (✅ complete)
+- **Data Export**: GDPR compliance (✅ complete)
+- **Category/Game/Broadcaster Systems**: All ✅ complete
+- **Tag System**: Auto-tagging, management (✅ complete)
+- **Contact Form**: Rate-limited submission (✅ complete)
+- **SEO & Documentation**: Sitemap, docs browser (✅ complete)
+- **Configuration Management**: Feature flags (✅ complete)
+- **Notification System**: In-app, email, push (✅ complete)
+- **Filter Presets**: Save feed filters (✅ complete)
+- **Creator Verification**: Application and review (✅ complete)
+- **Theatre Mode & UI**: Responsive, accessible (✅ complete)
+
+---
+
+## Next Steps
+
+### Phase 1: Issue Creation (Immediate)
+
+For each feature category (25 categories above), create a GitHub issue using the template below.
+
+### Phase 2: Testing & Validation (Week 1-2)
+
+1. Run all existing test suites
+2. Identify and fix broken tests (especially scheduler tests)
+3. Add missing unit tests for 🟡 partial status features
+4. Create integration tests for end-to-end flows
+
+### Phase 3: Documentation Review (Week 2-3)
+
+1. Verify all API endpoints are documented
+2. Update outdated documentation
+3. Add missing user guides
+4. Review mobile parity documentation
+
+### Phase 4: Typing & Quality (Week 3-4)
+
+1. Ensure strict TypeScript compilation
+2. Review Go type safety
+3. Add missing type definitions
+4. Update API contracts
+
+---
+
+## Issue Template
+
+```markdown
+## [Feature Audit] <Feature Name> — Completeness + Tests + Typing + Docs
+
+**Feature**: <Feature Name>
+**Category**: <Category from inventory>
+**Status**: <Current Status from inventory>
+**Priority**: P1 (Critical) / P2 (Important) / P3 (Nice-to-have)
+
+### Current State
+- **Implementation**: ✅ Complete / 🟡 Partial / 🔴 Stub / ⚠️ Broken
+- **Tests**: <Coverage %, specific gaps from inventory>
+- **Typing**: ✅ Complete / 🟡 Partial / 🔴 None
+- **Documentation**: ✅ Complete / 🟡 Outdated / 🔴 Missing
+
+### Acceptance Criteria
+- [ ] Feature is fully implemented and working end-to-end
+- [ ] Unit tests cover all core functionality (target >80% coverage)
+- [ ] Integration tests exist for critical user flows
+- [ ] E2E tests cover happy path and major edge cases
+- [ ] TypeScript/Go types are complete and strict where applicable
+- [ ] API documentation matches implementation (OpenAPI specs updated)
+- [ ] User-facing documentation exists and is accurate
+- [ ] Performance meets targets (if applicable)
+- [ ] Security review completed for sensitive operations
+- [ ] Accessibility standards met (WCAG 2.1 Level AA for UI features)
+
+### How to Verify
+1. **Manual Testing**:
+   - <Step-by-step verification process>
+   - <Expected outcomes>
+
+2. **Automated Testing**:
+   ```bash
+   # Unit tests
+   <command to run tests>
+   
+   # Integration tests  
+   <command to run integration tests>
+   
+   # E2E tests
+   <command to run e2e tests>
+   ```
+
+3. **Performance**:
+   - <Load test commands if applicable>
+   - <Expected performance metrics>
+
+### Known Gaps (from Inventory)
+
+- <List specific gaps identified in feature inventory>
+
+### Related Issues
+
+- Depends on: #<issue>
+- Blocks: #<issue>
+- Related: #<issue>
+
+### Documentation Links
+
+- Implementation: <link to code>
+- API Docs: <link to API documentation>
+- User Docs: <link to user guide>
+- Design Docs: <link to technical design>
+
+### Labels
+
+`feature-audit`, `<category-label>`, `<status-label>`, `<priority-label>`
+```
+
+---
+
+## Feature Status Summary
+
+The former 97% completion summary was removed because it counted planned,
+disabled, placeholder, or unverified work as complete. A generated summary will
+replace it after route, client, documentation, and executable-test evidence can
+be joined in CI. Until then, the production-readiness gates—not a percentage in
+this document—are authoritative for launch decisions.
+
+**New Features Added Since 2024-12-24**:
+- Abuse Detection Analytics (Section 8.4)
+- Enhanced Chat Moderation with auto-moderation (Section 6.3)
+- Application Logging System (Section 13.3)
+
+---
+
+## Exclusions
+
+The following areas are explicitly excluded from this inventory as per requirements:
+
+- Third-party dependencies (npm packages, Go modules) - tracked separately
+- Generated code (protobuf, OpenAPI clients) - auto-generated
+- Build artifacts (`dist/`, `bin/`, `node_modules/`) - not source code
+
+---
+
+## Maintenance Guidelines
+
+This inventory should be updated:
+- ✅ When new features are added to the codebase
+- ✅ When features are deprecated or removed
+- ✅ Quarterly as part of technical debt review
+- ✅ Before major releases (v1.0, v2.0, etc.)
+- ✅ After completing feature audits (link back to audit issues)
+
+**Inventory Owner**: Engineering Team  
+**Review Frequency**: Quarterly  
+**Last Review**: 2026-01-14 (Feature Inventory & Verification Sweep II)  
+**Next Review**: 2026-04-14  
+**Changes in This Update**: Added 3 new features (Abuse Detection Analytics, Enhanced Chat Moderation, Application Logging), updated handler/service counts, verified all existing features
+
+---
+
+## Related Documentation
+
+- Contributing Guide
+- [Testing Strategy](../testing/TESTING.md)
+- Architecture Documentation
+- API Documentation
+
+---
+
+*This feature inventory was created as part of the Feature Inventory & Verification Sweep initiative to establish ground truth for all platform capabilities before continuing development. Last updated 2026-01-14 as part of Sweep II to reflect current codebase state with 61 handlers, 71 services, and 270+ total features.*

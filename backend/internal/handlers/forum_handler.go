@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -1379,6 +1380,7 @@ func (h *ForumHandler) GetForumAnalytics(c *gin.Context) {
 			&thread.Pinned, &thread.CreatedAt, &thread.UpdatedAt,
 		)
 		if err != nil {
+			utils.GetLogger().Warn("Skipping unreadable popular discussion row", map[string]interface{}{"error": err.Error()})
 			continue
 		}
 		thread.GameName = gameName
@@ -1474,13 +1476,14 @@ func (h *ForumHandler) GetPopularDiscussions(c *gin.Context) {
 		INNER JOIN users u ON ft.user_id = u.id
 		LEFT JOIN games g ON ft.game_id = g.id
 		WHERE ft.is_deleted = FALSE
-			AND ft.created_at >= CURRENT_DATE - ($2 || ' days')::INTERVAL
+			AND ft.created_at >= CURRENT_DATE - make_interval(days => $2::int)
 		ORDER BY (ft.reply_count * 3 + ft.view_count / 10) DESC
 		LIMIT $1
 	`
 
 	rows, err := h.db.Query(ctx, query, limit, intervalDays)
 	if err != nil {
+		utils.GetLogger().Error("Failed to query popular discussions", err, map[string]interface{}{"timeframe": timeframe})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get popular discussions"})
 		return
 	}
@@ -1497,12 +1500,14 @@ func (h *ForumHandler) GetPopularDiscussions(c *gin.Context) {
 			&thread.Pinned, &thread.CreatedAt, &thread.UpdatedAt,
 		)
 		if err != nil {
+			utils.GetLogger().Warn("Skipping unreadable popular discussion row", map[string]interface{}{"error": err.Error()})
 			continue
 		}
 		thread.GameName = gameName
 		threads = append(threads, thread)
 	}
 	if err := rows.Err(); err != nil {
+		utils.GetLogger().Error("Failed to read popular discussions", err, map[string]interface{}{"timeframe": timeframe})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get popular discussions"})
 		return
 	}
@@ -1556,13 +1561,14 @@ func (h *ForumHandler) GetMostHelpfulReplies(c *gin.Context) {
 		LEFT JOIN forum_vote_counts fvc ON fr.id = fvc.reply_id
 		WHERE fr.is_deleted = FALSE AND fr.hidden = FALSE AND fr.flagged_as_spam = FALSE
 			AND ft.is_deleted = FALSE
-			AND fr.created_at >= CURRENT_DATE - ($2 || ' days')::INTERVAL
+			AND fr.created_at >= CURRENT_DATE - make_interval(days => $2::int)
 		ORDER BY COALESCE(fvc.net_votes, 0) DESC, fr.created_at DESC
 		LIMIT $1
 	`
 
 	rows, err := h.db.Query(ctx, query, limit, intervalDays)
 	if err != nil {
+		utils.GetLogger().Error("Failed to query helpful replies", err, map[string]interface{}{"timeframe": timeframe})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get helpful replies"})
 		return
 	}
@@ -1586,11 +1592,13 @@ func (h *ForumHandler) GetMostHelpfulReplies(c *gin.Context) {
 			&reply.ThreadTitle, &reply.NetVotes, &reply.Upvotes, &reply.Downvotes,
 		)
 		if err != nil {
+			utils.GetLogger().Warn("Skipping unreadable helpful reply row", map[string]interface{}{"error": err.Error()})
 			continue
 		}
 		replies = append(replies, reply)
 	}
 	if err := rows.Err(); err != nil {
+		utils.GetLogger().Error("Failed to read helpful replies", err, map[string]interface{}{"timeframe": timeframe})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get helpful replies"})
 		return
 	}

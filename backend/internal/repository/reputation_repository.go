@@ -298,7 +298,7 @@ func (r *ReputationRepository) CalculateEngagementScore(ctx context.Context, use
 // GetKarmaLeaderboard returns top users by karma score
 func (r *ReputationRepository) GetKarmaLeaderboard(ctx context.Context, limit, offset int) ([]models.LeaderboardEntry, error) {
 	query := `
-		SELECT id, username, display_name, avatar_url, karma_points, rank
+		SELECT id, username, COALESCE(display_name, username), avatar_url, karma_points, rank
 		FROM karma_leaderboard
 		LIMIT $1 OFFSET $2
 	`
@@ -335,7 +335,7 @@ func (r *ReputationRepository) GetKarmaLeaderboard(ctx context.Context, limit, o
 // GetEngagementLeaderboard returns top users by engagement score
 func (r *ReputationRepository) GetEngagementLeaderboard(ctx context.Context, limit, offset int) ([]models.LeaderboardEntry, error) {
 	query := `
-		SELECT id, username, display_name, avatar_url, engagement_score,
+		SELECT id, username, COALESCE(display_name, username), avatar_url, engagement_score,
 		       total_comments, total_votes_cast, total_clips_submitted
 		FROM engagement_leaderboard
 		LIMIT $1 OFFSET $2
@@ -681,7 +681,7 @@ func (r *ReputationRepository) GetTrustScoreHistory(ctx context.Context, userID 
 // GetTrustScoreLeaderboard returns top users by trust score
 func (r *ReputationRepository) GetTrustScoreLeaderboard(ctx context.Context, limit, offset int) ([]models.LeaderboardEntry, error) {
 	query := `
-		SELECT id, username, display_name, avatar_url, trust_score, karma_points, rank
+		SELECT id, username, COALESCE(display_name, username), avatar_url, trust_score, karma_points, rank
 		FROM trust_score_leaderboard
 		LIMIT $1 OFFSET $2
 	`

@@ -343,7 +343,7 @@ func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req 
 
 // searchTags searches for tags
 func (r *SearchRepository) searchTags(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Tag, int, error) {
-	whereClause := "NOT is_tag_blacklisted(t.slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)"
+	whereClause := visibleTagPredicate("t")
 	args := []interface{}{}
 	argPos := 1
 

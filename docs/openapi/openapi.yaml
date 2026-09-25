@@ -4,6 +4,14 @@ info:
   description: |
     Complete API documentation for the Clipper platform - a social platform for Twitch clip curation and sharing.
     
+    ## Base URL
+    Production serves the API at `https://clpr.tv`; every path below includes
+    its `/api/v1` prefix, for example `https://clpr.tv/api/v1/clips`. Of the
+    unversioned routes, only `/health` and `/health/ready` are reachable
+    through the public edge. Operations marked `x-clpr-internal-only` are
+    served by the backend container on the private network, and operations
+    marked `x-clpr-development-only` exist only in debug builds.
+
     ## Authentication
     Most endpoints require authentication via JWT Bearer token:
     ```
@@ -42,10 +50,8 @@ info:
     url: https://git.subcult.tv/subculture-collective/clpr/blob/main/LICENSE
 
 servers:
-  - url: https://staging.clpr.tv
-    description: Staging environment
-  - url: https://api.clpr.tv
-    description: Production API server
+  - url: https://clpr.tv
+    description: Production. Paths include their /api/v1 prefix.
 
 tags:
   - name: SEO
@@ -214,8 +220,12 @@ paths:
     get:
       tags: [Health]
       summary: Liveness check
-      description: Returns 200 if service is alive
+      description: >-
+        Returns 200 if the process is alive. Internal only: the public edge
+        does not route this path; container orchestration calls the backend
+        directly.
       operationId: getHealthLive
+      x-clpr-internal-only: true
       security: []
       responses:
         '200':
@@ -227,119 +237,9 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: ok
+                    example: alive
         '429':
           $ref: '#/components/responses/TooManyRequests'
-
-  /health/stats:
-    get:
-      tags: [Health]
-      summary: Health statistics
-      description: Returns database connection stats and other health metrics
-      operationId: getHealthStats
-      security: []
-      responses:
-        '200':
-          description: Health statistics
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  database:
-                    type: object
-                    properties:
-                      max_connections:
-                        type: integer
-                      open_connections:
-                        type: integer
-                      in_use:
-                        type: integer
-                      idle:
-                        type: integer
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /health/cache:
-    get:
-      tags: [Health]
-      summary: Cache statistics
-      description: Returns Redis cache statistics
-      operationId: getCacheStats
-      security: []
-      responses:
-        '200':
-          description: Cache statistics
-          content:
-            application/json:
-              schema:
-                type: object
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /health/cache/check:
-    get:
-      tags: [Health]
-      summary: Cache health check
-      description: Verifies Redis cache connectivity
-      operationId: getCacheHealth
-      security: []
-      responses:
-        '200':
-          description: Cache is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [status, cache]
-                properties:
-                  status:
-                    type: string
-                    const: healthy
-                  cache:
-                    type: string
-                    const: ok
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /health/webhooks:
-    get:
-      tags: [Health]
-      summary: Webhook retry statistics
-      description: Returns webhook delivery retry statistics
-      operationId: getWebhookRetryStats
-      security: []
-      responses:
-        '200':
-          description: Webhook statistics
-          content:
-            application/json:
-              schema:
-                type: object
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  # ========================================
-  # Debug Endpoints (development only)
-  # ========================================
-  /debug/metrics:
-    get:
-      tags: [Health]
-      summary: Prometheus metrics
-      description: Returns Prometheus metrics (debug mode only)
-      operationId: getMetrics
-      security: []
-      responses:
-        '200':
-          description: Prometheus metrics
-          content:
-            text/plain:
-              schema:
-                type: string
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   # ========================================
   # API v1
@@ -1725,7 +1625,10 @@ paths:
       description: >-
         Lists visible tags. `lane` limits the list to tags from one origin
         (see the `TagLane` schema). The `curated` sort is kept for older
-        clients and is equivalent to `lane=detected&sort=popularity`.
+        clients and is equivalent to `lane=detected&sort=popularity`. Unknown
+        `sort` values fall back to `popularity` and unknown `lane` values list
+        every lane. Responses are cached for up to one minute, so
+        `usage_count` and `total` can lag recent tagging.
       operationId: listTags
       security: []
       parameters:
@@ -1807,9 +1710,14 @@ paths:
         With a nonempty root slug, returns that tag and its descendants, nested
         to at most ten levels below the root. An unknown root returns an empty
         tags array with status 200. Without a root, or with an empty root,
-        returns all root tags with their immediate children attached. In this
-        latter mode a failed child lookup leaves that parent's children omitted;
-        failure to load the root tags or the requested subtree returns 500.
+        returns the top-level tags that have at least one visible child (the
+        taxonomy namespaces such as `content`, `game`, and `streamer`), each
+        with its immediate children. Top-level tags without children are
+        ordinary flat tags; list them with `GET /api/v1/tags`.
+
+        Each parent includes at most `limit` children, highest `usage_count`
+        first; `child_count` reports the full number of visible children.
+        Responses are cached for up to five minutes.
       operationId: getTagTree
       security: []
       parameters:
@@ -1819,6 +1727,17 @@ paths:
           schema:
             type: string
           description: Root tag slug to anchor the subtree
+        - name: limit
+          in: query
+          required: false
+          description: >-
+            Maximum children returned under each parent. Values outside 1-500
+            use the default.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
       responses:
         '200':
           description: Tag hierarchy tree
@@ -1844,7 +1763,7 @@ paths:
                 properties:
                   error:
                     type: string
-                    enum: [failed to fetch tag tree, failed to fetch root tags]
+                    enum: [failed to fetch tag tree]
 
   /api/v1/tags/{slug}:
     get:
@@ -4957,6 +4876,7 @@ paths:
       summary: Get webhook delivery and retry health
       description: Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
       operationId: getInternalOperationsWebhooks
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -5128,6 +5048,7 @@ paths:
       summary: Get typed Redis operational statistics
       description: Requires the dedicated operational bearer token. Missing or malformed required Redis counters return degraded 503 instead of a healthy response.
       operationId: getInternalOperationsCache
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -5149,6 +5070,7 @@ paths:
       summary: Check Redis connectivity
       description: Requires the dedicated operational bearer token.
       operationId: getInternalOperationsCacheCheck
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -5350,7 +5272,11 @@ paths:
     get:
       tags: [Documentation]
       summary: List available Markdown documentation
-      description: Returns a tree of regular Markdown files, excluding hidden, archive, vault, and symlink entries.
+      description: >-
+        Returns a tree of regular Markdown files, excluding hidden, archive,
+        vault, and symlink entries. Release images serve the copy of `docs/`
+        embedded at build time. If no documentation source is available the
+        tree is empty rather than an error.
       operationId: getApiV1Docs
       security: []
       responses:
@@ -5413,7 +5339,7 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '413':
-          description: Document exceeds 1 MiB
+          description: Document exceeds 2 MiB
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ContactErrorResponse'}
@@ -5442,7 +5368,7 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '413':
-          description: Document exceeds 1 MiB
+          description: Document exceeds 2 MiB
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ContactErrorResponse'}
@@ -10414,6 +10340,10 @@ paths:
     get:
       tags: [Playlists]
       summary: Get the most recently generated active daily public playlist
+      description: >-
+        Returns the newest public, non-deleted playlist generated by an active
+        daily playlist script, with up to four preview clips. Returns 404 with
+        code `NOT_FOUND` when no such playlist exists yet.
       operationId: getPlaylistOfTheDay
       security: []
       responses:
@@ -11748,6 +11678,7 @@ paths:
       summary: Get database pool statistics
       description: Returns connection-pool counters only to callers with the operational bearer token.
       operationId: getInternalOperationsDatabase
+      x-clpr-internal-only: true
       security: [{OperationalAuth: []}]
       responses:
         '200':
@@ -11765,6 +11696,7 @@ paths:
       summary: Scrape operational metrics
       description: Returns Prometheus metrics only to callers with the operational bearer token.
       operationId: getInternalOperationsMetrics
+      x-clpr-internal-only: true
       security: [{OperationalAuth: []}]
       responses:
         '200':
@@ -13476,6 +13408,13 @@ components:
           description: Human-readable name with stored namespace prefixes removed.
         evidence:
           $ref: '#/components/schemas/TagEvidence'
+        child_count:
+          type: integer
+          minimum: 1
+          description: >-
+            Number of visible children, including any omitted by the `limit`
+            parameter. Absent when the tag has no children or they were not
+            loaded.
         children:
           type: array
           items:
