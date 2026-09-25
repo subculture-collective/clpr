@@ -9,14 +9,18 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useSyncManager } from '@/hooks/useSyncManager';
 import { useTranslation } from 'react-i18next';
 import { SyncStatus } from '@/lib/sync-manager';
+import { useOverlapsTwitchPlayer } from '@/hooks/useTwitchPlayerLayer';
 
 export function OfflineIndicator() {
   const { t } = useTranslation();
   const { online, queuedRequestCount } = useNetworkStatus();
   const { syncState, pendingCount, triggerSync } = useSyncManager();
+  const visible = !(online && queuedRequestCount === 0 && pendingCount === 0 && syncState.status !== SyncStatus.ERROR);
+  // Twitch forbids covering its players; step aside while over one.
+  const [coversPlayer, rootRef] = useOverlapsTwitchPlayer(visible);
 
   // Don't show anything if online and no pending operations
-  if (online && queuedRequestCount === 0 && pendingCount === 0 && syncState.status !== SyncStatus.ERROR) {
+  if (!visible) {
     return null;
   }
 
@@ -24,7 +28,7 @@ export function OfflineIndicator() {
   const isSyncing = syncState.isSyncing;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50">
+    <div ref={rootRef} className={`fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 ${coversPlayer ? 'invisible' : ''}`}>
       {/* Offline Banner */}
       {!online && (
         <div 

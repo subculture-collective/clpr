@@ -155,17 +155,13 @@ The service is designed for optimal performance:
 
 ## Testing
 
-The service includes comprehensive tests:
-
-- **Unit tests**: 14 tests covering all scenarios
-- **Integration tests**: 7 scenarios with real database
-- All tests verify permission logic, caching, and error handling
+`backend/internal/services/permission_check_service_test.go` contains 13 unit
+tests for ban permissions, moderator scope, and cache invalidation.
 
 Run tests:
 ```bash
-# Unit tests only
-go test -v ./internal/services -run TestPermissionCheck
-
-# Integration tests (requires test database)
-INTEGRATION=1 go test -v ./tests/integration/rbac -run TestPermissionCheckService
+go test -v ./internal/services -run 'TestCan|TestValidateModeratorScope|TestInvalidate'
 ```
+
+The database-backed scenarios formerly in `backend/tests/integration/rbac/`
+were removed in February 2026.

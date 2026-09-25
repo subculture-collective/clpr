@@ -46,24 +46,16 @@ make test-setup
 
 ## Backend Integration Tests
 
-Test CDN failover behavior at the API level:
+The API-level CDN failover suite (`backend/tests/integration/cdn/`) was removed
+in February 2026, so the backend behaviors listed below have no maintained
+automated test. CDN URL generation and cache headers are covered by unit tests:
 
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Run all CDN failover tests
-go test -v -tags=integration ./tests/integration/cdn/...
-
-# Run specific test
-go test -v -tags=integration ./tests/integration/cdn/... -run TestCDNFailover_StaticAssets
-
-# Run with coverage
-go test -v -tags=integration ./tests/integration/cdn/... -coverprofile=coverage.out
-go tool cover -html=coverage.out
+go test -v ./internal/services -run 'CDN|Provider'
 ```
 
-**What's tested:**
+**Behaviors the removed suite covered:**
 - Static asset failover (images, thumbnails)
 - HLS playlist failover
 - HLS segment failover

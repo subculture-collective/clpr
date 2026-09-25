@@ -2570,6 +2570,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/share/clips/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ShareHandler).GetClipPreview-fm",
+    "operation_id": "getApiV1ShareClipsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/streamer-clip-rooms/{channel}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*StreamerClipRoomHandler).GetRoom-fm",
     "operation_id": "getApiV1StreamerClipRoomsChannel",

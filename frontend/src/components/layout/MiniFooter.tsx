@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useOverlapsTwitchPlayer } from '@/hooks/useTwitchPlayerLayer';
+import { cn } from '@/lib/utils';
 
 export function MiniFooter() {
   const [isExpanded, setIsExpanded] = useState(false);
+  // Twitch forbids covering its players, so the collapsed button steps aside
+  // while it would sit on one. The page footer carries the same links.
+  const [coversPlayer, rootRef] = useOverlapsTwitchPlayer(!isExpanded);
 
   return (
-    <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] left-4 xs:left-8 z-40">
+    <div
+      ref={rootRef}
+      className={cn(
+        'fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] left-4 xs:left-8 z-40',
+        coversPlayer && 'invisible',
+      )}
+    >
       {/* Collapsed state - Icon button */}
       {!isExpanded && (
         <button

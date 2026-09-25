@@ -49,6 +49,7 @@ unsupported_references=(
   "test-seed-e2e.sh"
   "setup-e2e-tests.sh"
   "frontend/test-commands.sh"
+  "backend/tests/integration/"
   "backend/tests/load/"
   "backend/tests/security/"
   "infrastructure/k8s/bootstrap/"

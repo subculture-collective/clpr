@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     AlertTriangle,
@@ -266,6 +266,17 @@ export function StreamerClipRoomPage() {
         isBotAuthorized && isClipDownloadAuthorized;
     const [submissionDurationMinutes, setSubmissionDurationMinutes] = useState(10);
     const [nowMs, setNowMs] = useState(() => Date.now());
+    // The fixed header wraps on narrower screens; the theatre starts below its
+    // measured height so the header never covers the Twitch player.
+    const [headerHeight, setHeaderHeight] = useState<number | null>(null);
+    const measureHeader = useCallback((node: HTMLDivElement | null) => {
+        if (!node) return;
+        const update = () => setHeaderHeight(Math.ceil(node.getBoundingClientRect().height));
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, []);
     const submissionsCloseAtMs = room?.submissions_close_at
         ? new Date(room.submissions_close_at).getTime()
         : null;
@@ -459,8 +470,11 @@ export function StreamerClipRoomPage() {
                 description={`Moderate Twitch clip submissions for ${channel}`}
             />
 
-            <div className='min-h-screen bg-black text-white'>
-                <div className='fixed inset-x-0 top-0 z-[60] border-b border-white/10 bg-black/85 backdrop-blur-xl'>
+            <div
+                className='min-h-screen bg-black text-white'
+                style={headerHeight ? ({ '--clip-room-header-height': `${headerHeight}px` } as CSSProperties) : undefined}
+            >
+                <div ref={measureHeader} className='fixed inset-x-0 top-0 z-[60] border-b border-white/10 bg-black/85 backdrop-blur-xl'>
                     <div className='mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 lg:px-6'>
                         <div className='flex flex-wrap items-center gap-3'>
                             <div className='flex min-w-0 items-center gap-3'>
@@ -705,7 +719,7 @@ export function StreamerClipRoomPage() {
                         }}
                         isQueue={false}
                         contained={false}
-                        className='pt-24'
+                        className='pt-[var(--clip-room-header-height,6rem)]'
                     />
                 ) : (
                     <div className='mx-auto flex min-h-screen max-w-[1600px] items-center px-4 pt-28 pb-8 lg:px-6'>

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 
-// Twitch requires clip embeds to be at least 400×300.
+// Twitch requires clip, video and live stream embeds to be at least 400×300.
 // https://dev.twitch.tv/docs/embed/video-and-clips/
 export const TWITCH_EMBED_MIN_WIDTH = 400;
 export const TWITCH_EMBED_MIN_HEIGHT = 300;
