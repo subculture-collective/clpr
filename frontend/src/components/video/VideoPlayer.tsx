@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { useVolumePreference } from '@/hooks';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { useTwitchEmbedFits } from '@/hooks/useTwitchEmbedFits';
+import { useRegisterTwitchPlayer } from '@/hooks/useTwitchPlayerLayer';
 import { MutedIcon } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +79,7 @@ export function VideoPlayer({
     // Twitch requires at least 400×300 and forbids covering the player, so a
     // smaller box links out and the sound control sits below the player.
     const fits = useTwitchEmbedFits(containerRef);
+    useRegisterTwitchPlayer(containerRef, fits === true);
 
     // Global playback control — only one video plays at a time
     const playerId = useId();

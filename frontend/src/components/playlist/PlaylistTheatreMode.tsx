@@ -296,11 +296,12 @@ export function PlaylistTheatreMode({
     })();
 
     return (
+        // Full-screen mode stops above the consent banner so it never sits on the player.
         <div
             className={cn(
                 contained ?
                     'relative w-full bg-background rounded-xl overflow-hidden border border-border'
-                :   'fixed inset-0 z-50 bg-black',
+                :   'fixed inset-x-0 top-0 bottom-[var(--consent-banner-height,0px)] z-50 bg-black',
                 className,
             )}
         >
@@ -357,15 +358,18 @@ export function PlaylistTheatreMode({
                     )}
                 </div>
 
-                {/* Sidebar toggle when hidden */}
+                {/* Sidebar toggle when hidden. It takes its own column because
+                    Twitch forbids drawing controls over the player. */}
                 {!showSidebar && (
-                    <button
-                        onClick={() => setShowSidebar(true)}
-                        className='absolute top-4 right-4 z-10 p-2 bg-surface/80 hover:bg-surface-hover border border-border rounded-lg transition-colors cursor-pointer'
-                        aria-label={`Show ${pendingTabLabel.toLowerCase()}`}
-                    >
-                        <ChevronLeft className='h-5 w-5 text-text-primary' />
-                    </button>
+                    <div className='shrink-0 p-2 border-l border-border'>
+                        <button
+                            onClick={() => setShowSidebar(true)}
+                            className='p-2 bg-surface/80 hover:bg-surface-hover border border-border rounded-lg transition-colors cursor-pointer'
+                            aria-label={`Show ${pendingTabLabel.toLowerCase()}`}
+                        >
+                            <ChevronLeft className='h-5 w-5 text-text-primary' />
+                        </button>
+                    </div>
                 )}
 
                 {/* Playlist/Queue sidebar */}

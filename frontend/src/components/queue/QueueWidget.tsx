@@ -8,6 +8,7 @@ import {
     useReorderQueue,
 } from '@/hooks/useQueue';
 import { useAuth } from '@/context/AuthContext';
+import { useOverlapsTwitchPlayer } from '@/hooks/useTwitchPlayerLayer';
 import { formatDuration, cn } from '@/lib/utils';
 import {
     X,
@@ -145,6 +146,11 @@ export function QueueWidget() {
     );
 
     const location = useLocation();
+    // Twitch forbids covering its players; the collapsed button steps aside
+    // while it would sit on one.
+    const [collapsedCoversPlayer, collapsedRef] = useOverlapsTwitchPlayer(
+        widgetState === 'collapsed',
+    );
 
     // Don't show on queue pages, for logged out users, or empty queues
     if (location.pathname.startsWith('/queue')) {
@@ -158,8 +164,12 @@ export function QueueWidget() {
     if (widgetState === 'collapsed') {
         return (
             <button
+                ref={collapsedRef}
                 onClick={handleExpand}
-                className='fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary-400 hover:bg-primary-300 text-background rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer'
+                className={cn(
+                    'fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--consent-banner-height,0px))] md:bottom-[calc(1.5rem+var(--consent-banner-height,0px))] right-4 sm:right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary-400 hover:bg-primary-300 text-background rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer',
+                    collapsedCoversPlayer && 'invisible',
+                )}
                 aria-label='Open queue'
             >
                 <ListMusic className='h-5 w-5' />

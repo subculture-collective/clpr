@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { SkipLink } from '../ui/SkipLink';
+import { CONSENT_BANNER_SLOT_ID } from '../consent/ConsentBanner';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { CategoriesNav } from './CategoriesNav';
@@ -51,6 +52,8 @@ export function AppLayout() {
     return (
         <div className='min-h-screen flex flex-col bg-background text-foreground'>
             <SkipLink targetId='main-content' label='Skip to main content' />
+            {/* The consent banner moves here when its overlay would cover a Twitch player */}
+            <div id={CONSENT_BANNER_SLOT_ID} />
             <Header />
             {isDiscovery && <CategoriesNav />}
             <main id='main-content' className='min-w-0 flex-1 pb-20 md:pb-0' tabIndex={-1}>
