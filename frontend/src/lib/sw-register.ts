@@ -21,7 +21,10 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
     try {
         // Register the service worker
-        const registration = await navigator.serviceWorker.register('/sw.js', {
+        // The query string is part of Cloudflare's cache key. Bump it with the
+        // worker's CACHE_NAME so returning visitors never get a stale edge copy
+        // of /sw.js, which was once cached with a year-long immutable header.
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3', {
             scope: '/',
         });
 
