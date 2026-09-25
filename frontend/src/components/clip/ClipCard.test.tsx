@@ -273,4 +273,21 @@ describe('ClipCard', () => {
         const progressFill = progressBar.firstElementChild;
         expect(progressFill).toHaveStyle({ width: '0%' });
     });
+
+    it('removes badges from the player area while the clip plays', () => {
+        const clip = {
+            ...mockClip,
+            is_nsfw: true,
+            is_featured: true,
+            watch_progress: { progress_percent: 40, completed: false },
+        } as Clip;
+        const { rerender } = render(<ClipCard clip={clip} />);
+        expect(screen.getByText('NSFW')).toBeInTheDocument();
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+
+        rerender(<ClipCard clip={clip} active />);
+        expect(screen.queryByText('NSFW')).not.toBeInTheDocument();
+        expect(screen.queryByText('Featured')).not.toBeInTheDocument();
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
 });

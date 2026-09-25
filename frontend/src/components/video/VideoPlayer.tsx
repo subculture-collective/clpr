@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useId } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { useVolumePreference } from '@/hooks';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { useTwitchEmbedFits } from '@/hooks/useTwitchEmbedFits';
 import { MutedIcon } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -71,9 +73,11 @@ export function VideoPlayer({
     const embedId = `twitch-embed-${clipId}-${reactId.replaceAll(':', '')}`;
     const embedRef = useRef<TwitchEmbed | null>(null);
     const [useJsEmbed, setUseJsEmbed] = useState(false);
-    const [showMutedIndicator, setShowMutedIndicator] = useState(true);
     const { embedMuted, hasSetPreference, setUnmutedPreference } =
         useVolumePreference();
+    // Twitch requires at least 400×300 and forbids covering the player, so a
+    // smaller box links out and the sound control sits below the player.
+    const fits = useTwitchEmbedFits(containerRef);
 
     // Global playback control — only one video plays at a time
     const playerId = useId();
@@ -110,7 +114,7 @@ export function VideoPlayer({
 
     // Initialize Twitch JS embed
     useEffect(() => {
-        if (!useJsEmbed || !twitchClipId || !window.Twitch?.Embed) return;
+        if (!fits || !useJsEmbed || !twitchClipId || !window.Twitch?.Embed) return;
 
         let active = true;
         // Clear container
@@ -166,62 +170,87 @@ export function VideoPlayer({
             const el = document.getElementById(embedId);
             if (el) el.remove();
         };
-    }, [embedId, useJsEmbed, twitchClipId, embedMuted, requestPlayback]);
-
-    // Auto-hide muted indicator after 3 seconds
-    useEffect(() => {
-        if (!embedMuted || hasSetPreference) return;
-        const timer = setTimeout(() => setShowMutedIndicator(false), 3000);
-        return () => clearTimeout(timer);
-    }, [embedMuted, hasSetPreference]);
+    }, [embedId, fits, useJsEmbed, twitchClipId, embedMuted, requestPlayback]);
 
     const parentDomain =
         typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const twitchEmbedUrl = `${embedUrl}&parent=${parentDomain}&autoplay=true&muted=${embedMuted}`;
 
-    const containerClasses = cn(
-        'relative bg-black rounded-lg overflow-hidden aspect-video',
-        fit === 'height' ? 'h-full w-auto max-w-full' : 'w-full',
-        className,
-    );
+    const twitchUrl = twitchClipId ?
+            `https://clips.twitch.tv/${encodeURIComponent(twitchClipId)}`
+        :   twitchClipUrlFromEmbed(embedUrl);
+    const showSoundHint = fits && embedMuted && !hasSetPreference;
 
     return (
-        <div ref={containerRef} className={containerClasses}>
-            {/* Use JS embed when available (provides play/pause/ended events),
-                fall back to raw iframe otherwise */}
-            {!useJsEmbed && (
-                <iframe
-                    src={twitchEmbedUrl}
-                    className='absolute inset-0 w-full h-full'
-                    allowFullScreen
-                    title={title}
-                    allow='autoplay; fullscreen'
-                />
+        <div
+            className={cn(
+                'flex flex-col',
+                fit === 'height' ? 'h-full max-w-full items-center' : 'w-full',
+                className,
             )}
+        >
+            <div
+                ref={containerRef}
+                className={cn(
+                    'relative bg-black rounded-lg overflow-hidden aspect-video',
+                    // In height-fit mode the row below is always reserved so the
+                    // player never resizes when the sound control comes and goes.
+                    fit === 'height' ?
+                        'h-[calc(100%-2.75rem)] w-auto max-w-full'
+                    :   'w-full',
+                )}
+            >
+                {/* Use JS embed when available (provides play/pause/ended events),
+                    fall back to raw iframe otherwise */}
+                {fits && !useJsEmbed && (
+                    <iframe
+                        src={twitchEmbedUrl}
+                        className='absolute inset-0 w-full h-full'
+                        allowFullScreen
+                        title={title}
+                        allow='autoplay; fullscreen'
+                    />
+                )}
 
-            {/* Muted indicator */}
-            {embedMuted && !hasSetPreference && showMutedIndicator && (
-                <div
-                    className={cn(
-                        'absolute top-3 left-3 bg-black/70 hover:bg-black/90 text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1 cursor-pointer transition-opacity duration-500 pointer-events-auto z-10',
-                        showMutedIndicator ? 'opacity-100' : 'opacity-0',
-                    )}
+                {fits === false && (
+                    <div className='absolute inset-0 grid place-items-center p-4 text-center text-white'>
+                        <div>
+                            <p className='text-sm font-semibold'>
+                                Not enough room for the Twitch player.
+                            </p>
+                            <a
+                                href={twitchUrl}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-cyan-300 underline'
+                            >
+                                Watch on Twitch{' '}
+                                <ExternalLink size={16} aria-hidden='true' />
+                            </a>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {showSoundHint ?
+                <button
+                    type='button'
                     onClick={setUnmutedPreference}
-                    role='button'
-                    tabIndex={0}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setUnmutedPreference();
-                        }
-                    }}
-                    aria-label='Video is muted, click to enable sound on future videos'
-                    title='Video starts muted for autoplay compatibility. Click to enable sound on future videos.'
+                    className='inline-flex min-h-11 shrink-0 items-center gap-1.5 self-start text-xs font-semibold text-text-secondary hover:text-text-primary cursor-pointer'
                 >
-                    <MutedIcon size='sm' />
-                    <span>Muted</span>
-                </div>
-            )}
+                    <MutedIcon size='sm' /> Sound off · Turn on for future clips
+                </button>
+            :   fit === 'height' && <div className='h-11 shrink-0' />}
         </div>
     );
+}
+
+function twitchClipUrlFromEmbed(embedUrl: string): string {
+    try {
+        const slug = new URL(embedUrl).searchParams.get('clip');
+        if (slug) return `https://clips.twitch.tv/${encodeURIComponent(slug)}`;
+    } catch {
+        // Fall through to Twitch's clip index
+    }
+    return 'https://www.twitch.tv/directory';
 }

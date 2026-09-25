@@ -253,68 +253,73 @@ export function ClipCard({
                             onActivate={() => onActivate?.(clip.id)}
                         />
 
-                        {/* Duration badge */}
-                        {clip.duration && (
-                            <div className='burn-in bottom-2 right-2 absolute'>
-                                {formatDuration(clip.duration)}
-                            </div>
-                        )}
-
-                        {/* NSFW badge */}
-                        {clip.is_nsfw && (
-                            <div className='top-2 left-2 absolute'>
-                                <Badge variant='error'>NSFW</Badge>
-                            </div>
-                        )}
-
-                        {/* Featured badge */}
-                        {clip.is_featured && (
-                            <div className='top-2 right-2 absolute'>
-                                <Badge variant='default'>Featured</Badge>
-                            </div>
-                        )}
-
-                        {/* Watch progress indicator */}
-                        {clip.watch_progress && (
+                        {/* Twitch forbids covering the player, so badges only sit on the thumbnail. */}
+                        {!active && (
                             <>
-                                <div
-                                    className='bottom-0 left-0 right-0 absolute h-1 bg-surface-raised'
-                                    role='progressbar'
-                                    aria-valuenow={Math.round(
-                                        Math.min(
-                                            100,
-                                            Math.max(
-                                                0,
-                                                clip.watch_progress
-                                                    .progress_percent,
-                                            ),
-                                        ),
-                                    )}
-                                    aria-valuemin={0}
-                                    aria-valuemax={100}
-                                    aria-label={`${Math.round(
-                                        Math.min(
-                                            100,
-                                            Math.max(
-                                                0,
-                                                clip.watch_progress
-                                                    .progress_percent,
-                                            ),
-                                        ),
-                                    )}% watched`}
-                                >
-                                    <div
-                                        className='h-full bg-tally'
-                                        style={{
-                                            width: `${Math.min(100, Math.max(0, clip.watch_progress.progress_percent))}%`,
-                                        }}
-                                    />
-                                </div>
-                                {clip.watch_progress.completed && (
-                                    <div className='bottom-2 left-2 absolute px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase text-background bg-seen flex items-center gap-1'>
-                                        <Check className='w-3 h-3' />
-                                        Watched
+                                {/* Duration badge */}
+                                {clip.duration && (
+                                    <div className='burn-in bottom-2 right-2 absolute'>
+                                        {formatDuration(clip.duration)}
                                     </div>
+                                )}
+
+                                {/* NSFW badge */}
+                                {clip.is_nsfw && (
+                                    <div className='top-2 left-2 absolute'>
+                                        <Badge variant='error'>NSFW</Badge>
+                                    </div>
+                                )}
+
+                                {/* Featured badge */}
+                                {clip.is_featured && (
+                                    <div className='top-2 right-2 absolute'>
+                                        <Badge variant='default'>Featured</Badge>
+                                    </div>
+                                )}
+
+                                {/* Watch progress indicator */}
+                                {clip.watch_progress && (
+                                    <>
+                                        <div
+                                            className='bottom-0 left-0 right-0 absolute h-1 bg-surface-raised'
+                                            role='progressbar'
+                                            aria-valuenow={Math.round(
+                                                Math.min(
+                                                    100,
+                                                    Math.max(
+                                                        0,
+                                                        clip.watch_progress
+                                                            .progress_percent,
+                                                    ),
+                                                ),
+                                            )}
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                            aria-label={`${Math.round(
+                                                Math.min(
+                                                    100,
+                                                    Math.max(
+                                                        0,
+                                                        clip.watch_progress
+                                                            .progress_percent,
+                                                    ),
+                                                ),
+                                            )}% watched`}
+                                        >
+                                            <div
+                                                className='h-full bg-tally'
+                                                style={{
+                                                    width: `${Math.min(100, Math.max(0, clip.watch_progress.progress_percent))}%`,
+                                                }}
+                                            />
+                                        </div>
+                                        {clip.watch_progress.completed && (
+                                            <div className='bottom-2 left-2 absolute px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase text-background bg-seen flex items-center gap-1'>
+                                                <Check className='w-3 h-3' />
+                                                Watched
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </>
                         )}
