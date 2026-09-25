@@ -101,6 +101,56 @@ fi
 
 (cd frontend && node scripts/generate-edge-routes.mjs --check) || fail "React and edge route manifests differ"
 
+# Route parameters may carry encoded slashes, spaces, and UTF-8 (tag slugs such
+# as content/english link to /tags/content%2Fenglish). nginx decodes $uri, so
+# the route map must match the undecoded request path.
+static_routes="$(mktemp)"
+node frontend/scripts/generate-edge-routes.mjs --nginx-output "$static_routes"
+python3 - "$static_routes" <<'PY' || { rm -f "$static_routes"; fail "edge route map does not match React route parameters"; }
+import re
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+if "map $request_uri $clpr_request_path" not in text or "map $clpr_request_path $clpr_spa_route" not in text:
+    raise SystemExit("edge-routes.conf must map the undecoded request path, not $uri")
+block = text.split("map $clpr_request_path $clpr_spa_route {", 1)[1].split("}", 1)[0]
+patterns = [re.compile(m.group(1)) for m in re.finditer(r"^\s*~(\S+) 1;$", block, re.M)]
+
+
+def routed(path):
+    return any(p.search(path) for p in patterns)
+
+
+spa = [
+    "/tags/content%2Fenglish",
+    "/tags/game%2Fjust-chatting",
+    "/tags/game%2Fjust-chatting/",
+    "/tags/%C3%A9t%C3%A9",
+    "/tags/two%20words",
+    "/tag/content/english",
+    "/tag/content%2Fenglish",
+    "/tags",
+    "/user/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC",
+    "/stream/some%20channel",
+    "/category/a%2Fb",
+    "/game/just%20chatting",
+    "/clip/abc%2Fdef",
+    "/docs",
+]
+unknown = [
+    "/tags/content/english",
+    "/tags/content%2Fenglish/extra",
+    "/tagsx/content",
+    "/definitely-not-a-clpr-route",
+    "/docs/compliance",
+]
+problems = [f"{p} is not routed to the SPA" for p in spa if not routed(p)]
+problems += [f"{p} is routed but no React route matches it" for p in unknown if routed(p)]
+if problems:
+    raise SystemExit("\n".join(problems))
+PY
+rm -f "$static_routes"
+
 for public_file in \
   frontend/public/robots.txt \
   frontend/public/sitemap.xml \
@@ -329,8 +379,24 @@ for path in \
   grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell"
 done
 
+# Encoded slashes, spaces, and UTF-8 in route parameters reach React as one
+# segment, through both Caddy and nginx.
+for path in \
+  /tags/content%2Fenglish \
+  /tags/game%2Fjust-chatting \
+  '/tags/content%2Fenglish?sort=top' \
+  /tags/%C3%A9t%C3%A9 \
+  /tags/two%20words \
+  /tag/content%2Fenglish \
+  /user/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC \
+  /stream/some%20channel \
+  /clip/abc%2Fdef; do
+  assert_status 200 "http://127.0.0.1:$edge_port$path"
+  grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell"
+done
+
 # Unknown paths keep a 404 status but render the SPA's branded not-found page.
-for path in /definitely-not-a-clpr-route /unknown/nested/path /favicon_io/ /assets; do
+for path in /definitely-not-a-clpr-route /unknown/nested/path /favicon_io/ /assets /tags/content/english /tags/content%2Fenglish/extra; do
   assert_status 404 "http://127.0.0.1:$edge_port$path"
   grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell with its 404"
 done
