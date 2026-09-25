@@ -374,7 +374,13 @@ export function ClipFeed({
                     <VirtualClipList key={filterKey + (engagement?.generation ?? '')} clips={validClips}>
                         {(clip, clipIndex) => (
                             <>
-                                {discoverMode ? <MemoizedDiscoverClipCard clip={clip} /> : (
+                                {discoverMode ? (
+                                    <MemoizedDiscoverClipCard
+                                        clip={clip}
+                                        active={activeClipId === clip.id}
+                                        onActivate={handleActivate}
+                                    />
+                                ) : (
                                     <MemoizedClipCard
                                         clip={clip}
                                         rank={RANKED_SORTS.has(sort) ? clipIndex + 1 : undefined}

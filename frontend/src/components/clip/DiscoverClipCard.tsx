@@ -9,6 +9,8 @@ import { Plus, Eye, ExternalLink } from 'lucide-react';
 
 interface DiscoverClipCardProps {
     clip: Clip;
+    active?: boolean;
+    onActivate?: (clipId: string) => void;
 }
 
 /**
@@ -18,7 +20,7 @@ interface DiscoverClipCardProps {
  * social features (voting, comments, favorites) that are available
  * on posted clips.
  */
-export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
+export function DiscoverClipCard({ clip, active = false, onActivate }: DiscoverClipCardProps) {
     const isAuthenticated = useIsAuthenticated();
     const navigate = useNavigate();
     const toast = useToast();
@@ -52,17 +54,20 @@ export function DiscoverClipCard({ clip }: DiscoverClipCardProps) {
                         clipId={clip.twitch_clip_id}
                         thumbnailUrl={clip.thumbnail_url}
                         title={clip.title}
+                        active={active}
+                        onActivate={() => onActivate?.(clip.id)}
                     />
 
+                    {/* Twitch forbids covering the player, so badges only sit on the thumbnail. */}
                     {/* Duration badge */}
-                    {clip.duration && (
+                    {!active && clip.duration && (
                         <div className='burn-in bottom-2 right-2 absolute'>
                             {formatDuration(clip.duration)}
                         </div>
                     )}
 
                     {/* NSFW badge */}
-                    {clip.is_nsfw && (
+                    {!active && clip.is_nsfw && (
                         <div className='top-2 left-2 absolute'>
                             <Badge variant='error'>NSFW</Badge>
                         </div>
