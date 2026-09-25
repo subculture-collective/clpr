@@ -3,7 +3,7 @@
 // Does NOT cache authenticated or sensitive API data
 
 // Bump when precached files (offline page, icons) change so clients refresh them.
-const CACHE_NAME = 'clpr-v3';
+const CACHE_NAME = 'clpr-v4';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to cache for offline shell
@@ -61,8 +61,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Never cache API requests or authenticated endpoints
-  // This ensures user data and sensitive information is never cached
+  // Leave API, auth and non-GET requests to the browser. Proxying them through
+  // respondWith() never cached anything, but it made every API call appear
+  // twice in DevTools and added a hop to each request.
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/auth/') ||
@@ -70,20 +71,6 @@ self.addEventListener('fetch', (event) => {
     request.headers.get('Authorization') ||
     request.headers.get('Cookie')
   ) {
-    // For API requests, just fetch normally (network only)
-    event.respondWith(
-      fetch(request).catch(() => {
-        // If offline and trying to access API, could return error response
-        return new Response(
-          JSON.stringify({ error: 'You are currently offline' }),
-          {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      })
-    );
     return;
   }
 

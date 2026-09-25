@@ -9,6 +9,7 @@ import {
   SortSelector,
 } from '@/components/forum';
 import { forumApi } from '@/lib/forum-api';
+import { parseForumSort } from '@/lib/forum-sort';
 import { useAuth } from '@/context/AuthContext';
 import { FORUM_TOPICS } from './CreateThread';
 import { cn } from '@/lib/utils';
@@ -20,7 +21,7 @@ export function ForumIndex() {
   const navigate = useNavigate();
 
   // Get filters from URL params
-  const sortParam = (searchParams.get('sort') as ForumSort) || 'newest';
+  const sortParam = parseForumSort(searchParams.get('sort'));
   const gameIdParam = searchParams.get('game_id') || undefined;
   const tagsParam = searchParams.get('tags');
   const searchQuery = searchParams.get('q') || undefined;
@@ -171,7 +172,7 @@ export function ForumIndex() {
           <ThreadList threads={sortedThreads} loading={isLoading} />
 
           {/* Empty state for unauthenticated users */}
-          {!user && sortedThreads.length === 0 && !isLoading && (
+          {!user && !error && sortedThreads.length === 0 && !isLoading && (
             <div className="text-center py-12 bg-card rounded-lg border border-border mt-6">
               <p className="text-muted-foreground text-lg mb-4">
                 Join the conversation

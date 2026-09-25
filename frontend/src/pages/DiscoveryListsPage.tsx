@@ -38,7 +38,7 @@ export function DiscoveryListsPage() {
         description="Browse curated Twitch clip collections organized around creators, topics, moments, and community favorites."
         canonicalUrl="/discover/lists"
       />
-      <FeedLayout sidebar={<FeedSidebar />}>
+      <FeedLayout sidebar={<FeedSidebar showTrendingPlaylists={false} />}>
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">

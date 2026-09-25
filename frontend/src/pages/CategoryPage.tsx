@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { Gamepad2 } from 'lucide-react';
-import { Container, Spinner, Button, CategoryIcon, SEO } from '../components';
+import { Container, Spinner, Button, CategoryIcon, SEO, ResourceUnavailable } from '../components';
 import { ClipGridCard } from '../components/clip';
 import { categoryApi } from '../lib/category-api';
+import { isNotFoundError } from '../lib/error-utils';
 import type { Category } from '../types/category';
 import type { GameWithStats } from '../types/game';
 import type { Clip } from '../types/clip';
@@ -21,7 +22,9 @@ export function CategoryPage() {
     const [games, setGames] = useState<GameWithStats[]>([]);
     const [clips, setClips] = useState<Clip[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [clipsLoading, setClipsLoading] = useState(false);
+    const [loadState, setLoadState] = useState<'ok' | 'missing' | 'error'>('ok');
+    const [reloadCount, setReloadCount] = useState(0);
 
     const sort = (searchParams.get('sort') as CategorySort | null) || 'hot';
     const timeframe = searchParams.get('timeframe') as CategoryTimeframe | null;
@@ -36,40 +39,74 @@ export function CategoryPage() {
     };
     const canonicalSlug = categorySlug ? legacyTopicRedirects[categorySlug] : undefined;
 
+    // Category details and related games only change with the slug, so
+    // sorting or paging refetches the clips alone.
     useEffect(() => {
-        const fetchData = async () => {
-            if (!categorySlug) return;
+        if (!categorySlug || canonicalSlug) return;
+        let cancelled = false;
 
+        const fetchCategory = async () => {
             try {
                 setLoading(true);
-                setError(null);
-
-                // Fetch category details and games in parallel
-                const [categoryData, gamesData, clipsData] = await Promise.all([
+                setLoadState('ok');
+                const [categoryData, gamesData] = await Promise.all([
                     categoryApi.getCategory(categorySlug),
                     categoryApi.getCategoryGames(categorySlug, { limit: 10 }),
-                    categoryApi.getCategoryClips(categorySlug, {
-                        page,
-                        limit: 20,
-                        sort,
-                        timeframe: timeframe || undefined,
-                    }),
                 ]);
-
+                if (cancelled) return;
                 setCategory(categoryData.category);
                 setGames(gamesData.games || []);
-                setClips(clipsData.clips || []);
-                setHasMore(clipsData.has_more);
             } catch (err) {
-                console.error('Failed to fetch category data:', err);
-                setError('Failed to load category');
+                if (cancelled) return;
+                setCategory(null);
+                if (isNotFoundError(err)) {
+                    setLoadState('missing');
+                } else {
+                    console.error('Failed to fetch category data:', err);
+                    setLoadState('error');
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
-        fetchData();
-    }, [categorySlug, sort, timeframe, page]);
+        fetchCategory();
+        return () => {
+            cancelled = true;
+        };
+    }, [categorySlug, canonicalSlug, reloadCount]);
+
+    useEffect(() => {
+        if (!categorySlug || canonicalSlug) return;
+        let cancelled = false;
+
+        const fetchClips = async () => {
+            try {
+                setClipsLoading(true);
+                const clipsData = await categoryApi.getCategoryClips(categorySlug, {
+                    page,
+                    limit: 20,
+                    sort,
+                    timeframe: timeframe || undefined,
+                });
+                if (cancelled) return;
+                setClips(clipsData.clips || []);
+                setHasMore(clipsData.has_more);
+            } catch (err) {
+                if (cancelled) return;
+                setClips([]);
+                setHasMore(false);
+                if (!isNotFoundError(err)) console.error('Failed to fetch category clips:', err);
+            } finally {
+                if (!cancelled) setClipsLoading(false);
+            }
+        };
+
+        fetchClips();
+        return () => {
+            cancelled = true;
+        };
+    }, [categorySlug, canonicalSlug, sort, timeframe, page, reloadCount]);
 
     if (canonicalSlug) {
         return <Navigate replace to={`/topics/${canonicalSlug}${location.search}`} />;
@@ -97,12 +134,32 @@ export function CategoryPage() {
         );
     }
 
-    if (error || !category) {
+    if (loadState === 'error') {
         return (
             <Container className='py-8'>
-                <div className='text-center text-muted-foreground py-12'>
-                    <p className='text-lg'>{error || 'Category not found'}</p>
-                </div>
+                <ResourceUnavailable
+                    kind='error'
+                    title="We couldn't load this topic"
+                    description='Check your connection and try again.'
+                    onRetry={() => setReloadCount(count => count + 1)}
+                    links={[{ label: 'Browse topics', href: '/topics' }]}
+                />
+            </Container>
+        );
+    }
+
+    if (!category) {
+        return (
+            <Container className='py-8'>
+                <ResourceUnavailable
+                    kind='not-found'
+                    title="This topic isn't here"
+                    description="It may have been renamed or merged into another topic."
+                    links={[
+                        { label: 'Browse topics', href: '/topics' },
+                        { label: 'Back to the feed', href: '/' },
+                    ]}
+                />
             </Container>
         );
     }
@@ -165,9 +222,9 @@ export function CategoryPage() {
             )}
 
             {/* Sort and Filter Controls */}
-            <div className='mb-6 flex gap-4 items-center'>
+            <div className='mb-6 flex flex-wrap gap-4 items-center'>
                 <h2 className='text-2xl font-bold'>Recent Clips</h2>
-                <div className='ml-auto flex gap-4'>
+                <div className='ml-auto flex flex-wrap gap-4'>
                     <div>
                         <label className='text-sm font-medium mr-2'>
                             Sort by:
@@ -208,7 +265,11 @@ export function CategoryPage() {
             </div>
 
             {/* Clips Grid */}
-            {clips.length === 0 ? (
+            {clipsLoading ? (
+                <div className='flex items-center justify-center min-h-[240px]'>
+                    <Spinner size='lg' />
+                </div>
+            ) : clips.length === 0 ? (
                 <div className='text-center text-muted-foreground py-12'>
                     <p className='text-lg'>No clips found in this category</p>
                 </div>

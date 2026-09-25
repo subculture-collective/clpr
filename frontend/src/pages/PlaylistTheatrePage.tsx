@@ -7,7 +7,8 @@ import {
     useReorderPlaylistClips,
 } from '@/hooks/usePlaylist';
 import { PlaylistTheatreMode } from '@/components/playlist/PlaylistTheatreMode';
-import { Spinner } from '@/components/ui';
+import { ResourceUnavailable, Spinner } from '@/components/ui';
+import { isNotFoundError } from '@/lib/error-utils';
 import { SEO } from '@/components/SEO';
 import type { PlaylistItem } from '@/components/playlist/PlaylistTheatreMode';
 
@@ -18,6 +19,7 @@ export function PlaylistTheatrePage() {
         data: playlistPages,
         isLoading,
         isError,
+        error,
         hasNextPage,
         isFetchingNextPage,
         fetchNextPage,
@@ -129,6 +131,25 @@ export function PlaylistTheatrePage() {
                 <SEO title='Playlist Theatre Mode' />
                 <div className='fixed inset-0 bg-black flex items-center justify-center'>
                     <Spinner size='lg' />
+                </div>
+            </>
+        );
+    }
+
+    if (isNotFoundError(error)) {
+        return (
+            <>
+                <SEO title='Playlist Theatre Mode' />
+                <div className='min-h-screen bg-background px-4 py-8'>
+                    <ResourceUnavailable
+                        kind='not-found'
+                        title="This playlist isn't here"
+                        description='It may be private, or its owner may have deleted it.'
+                        links={[
+                            { label: 'Browse playlists', href: '/discover/lists' },
+                            { label: 'Back to the feed', href: '/' },
+                        ]}
+                    />
                 </div>
             </>
         );

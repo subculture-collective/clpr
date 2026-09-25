@@ -68,6 +68,21 @@ export function isNotFoundError(error: unknown): boolean {
 }
 
 /**
+ * True when repeating the same request could succeed: network failures,
+ * timeouts and 5xx responses. Client errors (400, 404, 429, ...) repeat
+ * identically, and retrying a 429 feeds the rate limiter that sent it.
+ */
+export function isRetryableError(error: unknown): boolean {
+  const status = getHttpStatus(error);
+  return status === undefined || status === 408 || status >= 500;
+}
+
+/** Default React Query retry policy: one retry, and only for retryable errors. */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  return failureCount < 1 && isRetryableError(error);
+}
+
+/**
  * Formats an error for logging purposes
  * @param error - The error to format
  * @returns A formatted error string

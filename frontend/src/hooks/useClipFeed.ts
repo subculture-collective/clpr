@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { isAxiosError } from 'axios';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import * as clipApi from '@/lib/clip-api';
+import { isRetryableError } from '@/lib/error-utils';
 import type { ClipFeedFilters } from '@/types/clip';
 
 // Hook for infinite scrolling clip feed
@@ -18,7 +19,7 @@ export const useClipFeed = (filters?: ClipFeedFilters) => {
         },
         initialPageParam: '',
         retry: (attempt, error) =>
-            !(isAxiosError(error) && error.response?.status === 409) &&
+            isRetryableError(error) &&
             queryClient.getDefaultOptions().queries?.retry !== false && attempt < 3,
     });
     useEffect(() => {

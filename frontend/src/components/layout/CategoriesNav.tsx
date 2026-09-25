@@ -1,56 +1,39 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { categoryApi } from '../../lib/category-api';
-import { tagApi } from '../../lib/tag-api';
 import { isChipLane, tagLane } from '../../lib/tag-lanes';
 import {
-    fetchPopularBroadcasters,
-    type PopularBroadcaster,
-} from '../../lib/broadcaster-api';
+    usePopularBroadcasters,
+    usePopularTags,
+    useTopicCategories,
+} from '../../hooks/useDiscoveryQueries';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import { TagChip } from '../tag/TagChip';
-import type { Category } from '../../types/category';
-import type { Tag } from '../../types/tag';
 
 type NavTab = 'creators' | 'topics' | 'tags';
 
 export function CategoriesNav() {
     const [activeTab, setActiveTab] = useState<NavTab>('creators');
-    const [topics, setTopics] = useState<Category[]>([]);
-    const [tags, setTags] = useState<Tag[]>([]);
-    const [creators, setCreators] = useState<PopularBroadcaster[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Shared with the feed sidebar and topics page, so the nav adds no
+    // requests of its own once any of them has loaded.
+    const topicsQuery = useTopicCategories();
+    const tagsQuery = usePopularTags();
+    const creatorsQuery = usePopularBroadcasters(20);
+    const loading = topicsQuery.isLoading || tagsQuery.isLoading || creatorsQuery.isLoading;
+
+    const topics = useMemo(() => {
+        const all = topicsQuery.data?.categories ?? [];
+        const featured = all.filter(topic => topic.is_featured);
+        return featured.length > 0 ? featured : all;
+    }, [topicsQuery.data]);
+    const tags = useMemo(
+        () => (tagsQuery.data?.tags ?? []).filter(tag => isChipLane(tagLane(tag))),
+        [tagsQuery.data],
+    );
+    const creators = creatorsQuery.data ?? [];
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
-
-    useEffect(() => {
-        const fetchAll = async () => {
-            try {
-                const [featuredRes, tagsRes, creatorsRes] = await Promise.all([
-                    categoryApi.listCategories({ type: 'topic', featured: true }),
-                    tagApi.listTags({ sort: 'popularity', limit: 20 }),
-                    fetchPopularBroadcasters(20),
-                ]);
-
-                let featuredTopics = featuredRes.categories || [];
-                if (featuredTopics.length === 0) {
-                    const all = await categoryApi.listCategories({ type: 'topic' });
-                    featuredTopics = all.categories || [];
-                }
-                setTopics(featuredTopics);
-                setTags((tagsRes.tags || []).filter(tag => isChipLane(tagLane(tag))));
-                setCreators(creatorsRes);
-            } catch (err) {
-                console.error('Failed to fetch nav data:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAll();
-    }, []);
 
     useEffect(() => {
         const el = scrollRef.current;

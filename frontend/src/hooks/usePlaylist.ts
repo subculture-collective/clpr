@@ -170,10 +170,14 @@ export const usePublicPlaylists = (page = 1, limit = 20) => {
     });
 };
 
-export const useFeaturedPlaylists = (page = 1, limit = 20) => {
+/** Home carousel and feed sidebar share this page so they share one request. */
+export const FEATURED_PLAYLISTS_PREVIEW_LIMIT = 8;
+
+export const useFeaturedPlaylists = (page = 1, limit = 20, enabled = true) => {
     return useQuery({
         queryKey: ['playlists', 'featured', page, limit],
         queryFn: () => fetchFeaturedPlaylists(page, limit),
+        enabled,
     });
 };
 

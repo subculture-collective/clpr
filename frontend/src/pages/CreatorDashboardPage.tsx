@@ -5,7 +5,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { Pencil, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchCreatorClips, updateClipMetadata, updateClipVisibility } from '../lib/clip-api';
-import { Container, Button } from '../components';
+import { Container, Button, ResourceUnavailable } from '../components';
 import type { Clip } from '../types/clip';
 
 export function CreatorDashboardPage() {
@@ -16,7 +16,7 @@ export function CreatorDashboardPage() {
   const [editTitle, setEditTitle] = useState('');
 
   // Fetch creator clips
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['creatorClips', creatorId],
     queryFn: () => fetchCreatorClips({ creatorId: creatorId! }),
     enabled: !!creatorId,
@@ -82,7 +82,13 @@ export function CreatorDashboardPage() {
   if (error) {
     return (
       <Container className="py-8">
-        <div className="text-center text-red-600">Failed to load creator clips</div>
+        <ResourceUnavailable
+          kind="error"
+          title="We couldn't load your clips"
+          description="Check your connection and try again."
+          onRetry={() => void refetch()}
+          links={[{ label: 'Back to the feed', href: '/' }]}
+        />
       </Container>
     );
   }

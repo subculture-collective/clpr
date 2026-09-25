@@ -94,7 +94,11 @@ export interface SearchResult {
   rank: number;
 }
 
-export type ForumSort = 'newest' | 'most-replied' | 'trending' | 'hot';
+/** Thread list sort shown in the UI and URL. */
+export type ForumSort = 'newest' | 'most-replied' | 'popular';
+
+/** Sort values accepted by GET /forum/threads. */
+export type ForumBackendSort = 'recent' | 'replies' | 'popular';
 
 export interface ForumFilters {
   game_id?: string;

@@ -11,8 +11,7 @@ interface SortSelectorProps {
 const sortOptions: { value: ForumSort; label: string }[] = [
   { value: 'newest', label: 'Newest' },
   { value: 'most-replied', label: 'Most Replied' },
-  { value: 'trending', label: 'Trending' },
-  { value: 'hot', label: 'Hot' },
+  { value: 'popular', label: 'Most Viewed' },
 ];
 
 export function SortSelector({ value, onChange, className }: SortSelectorProps) {

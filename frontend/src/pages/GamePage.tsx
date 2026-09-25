@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Container, Spinner, Button } from '../components';
+import { Container, Spinner, Button, ResourceUnavailable } from '../components';
 import { ClipGridCard } from '../components/clip';
 import { twitchCategoryApi } from '../lib/game-api';
 import type { GameWithStats } from '../types/game';
 import type { Clip } from '../types/clip';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { isNotFoundError } from '../lib/error-utils';
 
 type GameSort = 'hot' | 'new' | 'top' | 'rising';
 type GameTimeframe = 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
@@ -22,7 +23,11 @@ export function GamePage() {
     const [loading, setLoading] = useState(true);
     const [clipsLoading, setClipsLoading] = useState(false);
     const [following, setFollowing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [loadFailed, setLoadFailed] = useState(false);
+    // The category has no details record. Clips may still be tracked for it.
+    const [gameMissing, setGameMissing] = useState(false);
+    const [clipsLoaded, setClipsLoaded] = useState(false);
+    const [reloadCount, setReloadCount] = useState(0);
 
     const sort = (searchParams.get('sort') as GameSort | null) || 'hot';
     const timeframe = searchParams.get('timeframe') as GameTimeframe | null;
@@ -35,20 +40,26 @@ export function GamePage() {
 
             try {
                 setLoading(true);
-                setError(null);
+                setLoadFailed(false);
+                setGameMissing(false);
                 const data = await twitchCategoryApi.getGame(gameId);
                 setGame(data.game);
                 setFollowing(data.game.is_following);
             } catch (err) {
-                console.error('Failed to fetch game:', err);
-                setError('Failed to load Twitch category details');
+                setGame(null);
+                if (isNotFoundError(err)) {
+                    setGameMissing(true);
+                } else {
+                    console.error('Failed to fetch game:', err);
+                    setLoadFailed(true);
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchGame();
-    }, [gameId]);
+    }, [gameId, reloadCount]);
 
     useEffect(() => {
         const fetchClips = async () => {
@@ -68,14 +79,17 @@ export function GamePage() {
                 setClips(data.clips || []);
                 setHasMore(data.has_more);
             } catch (err) {
-                console.error('Failed to fetch clips:', err);
+                setClips([]);
+                setHasMore(false);
+                if (!isNotFoundError(err)) console.error('Failed to fetch clips:', err);
             } finally {
                 setClipsLoading(false);
+                setClipsLoaded(true);
             }
         };
 
         fetchClips();
-    }, [gameId, sort, timeframe, page]);
+    }, [gameId, sort, timeframe, page, reloadCount]);
 
     const handleFollow = async () => {
         if (!user) {
@@ -125,7 +139,10 @@ export function GamePage() {
         }
     };
 
-    if (loading) {
+    // A missing category is only "not found" when no clips are tracked for it.
+    const decidingMissing = gameMissing && (!clipsLoaded || clipsLoading) && clips.length === 0;
+
+    if (loading || decidingMissing) {
         return (
             <Container className='py-8'>
                 <div className='flex items-center justify-center min-h-[400px]'>
@@ -135,12 +152,33 @@ export function GamePage() {
         );
     }
 
-    if (error || !game) {
+    if (loadFailed) {
         return (
             <Container className='py-8'>
-                <div className='text-center text-muted-foreground py-12'>
-                    <p className='text-lg'>{error || 'Twitch category not found'}</p>
-                </div>
+                <ResourceUnavailable
+                    kind='error'
+                    title="We couldn't load this Twitch category"
+                    description='Check your connection and try again.'
+                    onRetry={() => setReloadCount(count => count + 1)}
+                    links={[{ label: 'Back to the feed', href: '/' }]}
+                />
+            </Container>
+        );
+    }
+
+    if (!game && clips.length === 0) {
+        return (
+            <Container className='py-8'>
+                <ResourceUnavailable
+                    kind='not-found'
+                    title="This Twitch category isn't here"
+                    description="clpr hasn't tracked any clips from this Twitch category yet."
+                    links={[
+                        { label: 'Browse topics', href: '/topics' },
+                        { label: 'Search clips', href: '/search' },
+                        { label: 'Back to the feed', href: '/' },
+                    ]}
+                />
             </Container>
         );
     }
@@ -148,7 +186,18 @@ export function GamePage() {
     return (
         <Container className='py-8'>
             {/* Twitch Category Header */}
-            <div className='mb-8'>
+            {!game ?
+                <div className='mb-8'>
+                    <p className='text-xs font-semibold uppercase tracking-wider text-primary-400 mb-1'>
+                        Twitch Category
+                    </p>
+                    <h1 className='text-4xl font-bold mb-2'>Tracked clips</h1>
+                    <p className='text-sm text-muted-foreground'>
+                        Details for this Twitch category aren't available yet.
+                        These are the clips clpr has tracked from it.
+                    </p>
+                </div>
+            :   <div className='mb-8'>
                 <div className='flex items-start gap-6'>
                     {game.box_art_url && (
                         <img
@@ -180,9 +229,10 @@ export function GamePage() {
                     </div>
                 </div>
             </div>
+            }
 
             {/* Sort and Filter Controls */}
-            <div className='mb-6 flex gap-4 items-center'>
+            <div className='mb-6 flex flex-wrap gap-4 items-center'>
                 <div>
                     <label className='text-sm font-medium mr-2'>Sort by:</label>
                     <select

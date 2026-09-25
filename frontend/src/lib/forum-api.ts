@@ -18,7 +18,11 @@ import type {
   PopularDiscussionsResponse,
   HelpfulRepliesResponse,
   FlagContentRequest,
+  VoteStats,
 } from '@/types/forum';
+import { toBackendForumSort } from './forum-sort';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ListThreadsParams {
   page?: number;
@@ -45,8 +49,12 @@ export const forumApi = {
     
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.sort) queryParams.append('sort', params.sort);
-    if (params.game_id) queryParams.append('game_id', params.game_id);
+    // The backend accepts recent|popular|replies and rejects anything else.
+    if (params.sort) queryParams.append('sort', toBackendForumSort(params.sort));
+    // The backend filters games with `game_filter` and rejects non-UUID values.
+    if (params.game_id && UUID_PATTERN.test(params.game_id)) {
+      queryParams.append('game_filter', params.game_id);
+    }
     if (params.tags && params.tags.length > 0) {
       params.tags.forEach(tag => queryParams.append('tags', tag));
     }
@@ -55,9 +63,15 @@ export const forumApi = {
       `/forum/threads?${queryParams.toString()}`
     );
     const body = response.data;
+    const threads: ForumThread[] = body.data ?? body.threads ?? [];
+    // Current backends ignore `tags`; filter here so topic buttons still work.
+    const wantedTags = params.tags ?? [];
+    const matching = wantedTags.length > 0
+      ? threads.filter(thread => wantedTags.some(tag => thread.tags?.includes(tag)))
+      : threads;
     // Backend returns { data: Thread[], meta: {...}, success } — map to our type
     return {
-      threads: body.data ?? body.threads ?? [],
+      threads: matching,
       total: body.meta?.count ?? body.total ?? 0,
       page: body.meta?.page ?? body.page ?? 1,
       limit: body.meta?.limit ?? body.limit ?? 20,
@@ -167,6 +181,23 @@ export const forumApi = {
 
     const response = await apiClient.get<HelpfulRepliesResponse>(`/forum/helpful-replies?${params.toString()}`);
     return response.data;
+  },
+
+  /**
+   * Vote totals for a reply, including the signed-in user's own vote
+   */
+  async getReplyVotes(replyId: string): Promise<VoteStats> {
+    const response = await apiClient.get<{ success: boolean; data: VoteStats }>(
+      `/forum/replies/${replyId}/votes`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Cast, change or clear (0) a vote on a reply
+   */
+  async voteOnReply(replyId: string, voteValue: -1 | 0 | 1): Promise<void> {
+    await apiClient.post(`/forum/replies/${replyId}/vote`, { vote_value: voteValue });
   },
 
   /**

@@ -45,11 +45,20 @@ export const useClipsByTag = (
   });
 };
 
-// Get clip tags
+// Clip tags live outside the ['clips', ...] feed namespace so feed-wide
+// cancel/reset/set calls never touch (or refetch) the per-card tag queries.
+export const clipTagsQueryKey = (clipId: string) => ["clip-tags", clipId] as const;
+
+const CLIP_TAGS_STALE_TIME = 5 * 60 * 1000;
+
+// Get clip tags: one shared query per clip, reused by every card and detail view.
 export const useClipTags = (clipId: string) => {
   return useQuery({
-    queryKey: ["clips", clipId, "tags"],
+    queryKey: clipTagsQueryKey(clipId),
     queryFn: () => tagApi.getClipTags(clipId),
+    enabled: clipId.length > 0,
+    staleTime: CLIP_TAGS_STALE_TIME,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -63,7 +72,7 @@ export const useAddTagsToClip = () => {
     onSuccess: (_, variables) => {
       // Invalidate clip tags
       queryClient.invalidateQueries({
-        queryKey: ["clips", variables.clipId, "tags"],
+        queryKey: clipTagsQueryKey(variables.clipId),
       });
       // Invalidate tags list
       queryClient.invalidateQueries({
@@ -86,7 +95,7 @@ export const useRemoveTagFromClip = () => {
     onSuccess: (_, variables) => {
       // Invalidate clip tags
       queryClient.invalidateQueries({
-        queryKey: ["clips", variables.clipId, "tags"],
+        queryKey: clipTagsQueryKey(variables.clipId),
       });
       // Invalidate tags list
       queryClient.invalidateQueries({

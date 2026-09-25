@@ -1,13 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CategoryIcon, Container, SEO, Spinner } from '../components';
-import { categoryApi } from '../lib/category-api';
+import { useTopicCategories } from '../hooks/useDiscoveryQueries';
 
 export function TopicsPage() {
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ['categories', 'topic'],
-        queryFn: () => categoryApi.listCategories({ type: 'topic', public: true }),
-    });
+    const { data, isLoading, isError } = useTopicCategories();
     const topics = data?.categories ?? [];
 
     return (

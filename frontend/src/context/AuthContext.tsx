@@ -59,7 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const clearUserContext = useCallback(() => {
         // Public routes can display private or personalized cached responses.
         // Removing queries also cancels in-flight work from the old session.
-        if (principalRef.current !== undefined) queryClient.clear();
+        // An anonymous visitor has no private cache to drop; clearing anyway
+        // refetches every mounted query (and does so twice under StrictMode).
+        if (principalRef.current) queryClient.clear();
         principalRef.current = null;
         setUser(null);
         clearSentryUser();

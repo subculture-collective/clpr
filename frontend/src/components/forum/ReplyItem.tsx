@@ -73,13 +73,7 @@ export function ReplyItem({
     if (!reply.vote_stats && !hasFetchedStats) {
       const fetchVoteStats = async () => {
         try {
-          const response = await fetch(`/api/v1/forum/replies/${reply.id}/votes`, {
-            credentials: 'include',
-          });
-          if (response.ok) {
-            const { data } = await response.json();
-            setVoteStats(data);
-          }
+          setVoteStats(await forumApi.getReplyVotes(reply.id));
         } catch (error) {
           console.error('Failed to fetch vote stats:', error);
           // Set default stats on error

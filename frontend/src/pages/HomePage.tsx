@@ -3,7 +3,7 @@ import { ClipFeed } from '../components/clip';
 import { PlaylistCard } from '../components/playlist/PlaylistCard';
 import { FeedLayout } from '../components/layout/FeedLayout';
 import { FeedSidebar } from '../components/layout/FeedSidebar';
-import { useFeaturedPlaylists } from '../hooks/usePlaylist';
+import { FEATURED_PLAYLISTS_PREVIEW_LIMIT, useFeaturedPlaylists } from '../hooks/usePlaylist';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -35,7 +35,7 @@ export function HomePage() {
 
     const { data: featuredPlaylistsResponse, isLoading } = useFeaturedPlaylists(
         1,
-        8,
+        FEATURED_PLAYLISTS_PREVIEW_LIMIT,
     );
     const featuredPlaylists = (featuredPlaylistsResponse?.data ?? []).filter(
         playlist => (playlist.clip_count ?? 0) > 0,
