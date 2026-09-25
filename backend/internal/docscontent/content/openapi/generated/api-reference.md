@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-09-25T01:17:01.543Z
+generated: 2026-09-25T02:26:06.530Z
 ---
 
 # Clipper API
@@ -39352,6 +39352,108 @@ func main() {
 ---
 
 ## Pages
+
+### Render a clip link preview
+
+`GET /api/v1/share/clips/{id}`
+
+Small HTML document with OpenGraph and Twitter card tags for one clip, used by the frontend edge for link-preview crawlers on /clip/{id}. Accepts a clip UUID or Twitch clip slug. Unknown, removed, or hidden clips return 404 with the site-wide default tags. Responses are cacheable for five minutes; repository failures return a non-cacheable 503.
+
+**Tags:** Pages
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+
+#### Responses
+
+**200** - Success
+
+**404** - Success
+
+**503** - Clip data is temporarily unavailable; the document carries default tags and Cache-Control no-store
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/api/v1/share/clips/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/share/clips/{id}', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/share/clips/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/share/clips/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
 
 ### Render a game clip collection page
 
