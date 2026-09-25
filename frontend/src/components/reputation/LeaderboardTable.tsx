@@ -1,6 +1,7 @@
 import { Film, MessageSquare, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LeaderboardEntry } from '../../types/reputation';
+import { Avatar } from '../ui/Avatar';
 import { RankBadge } from './ReputationDisplay';
 
 interface LeaderboardTableProps {
@@ -29,13 +30,13 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
   if (entries.length === 0) {
     return (
       <div className="py-12 text-center">
-        <div className="text-lg text-muted-foreground">No leaderboard data available</div>
+        <div className="text-lg text-muted-foreground">No rankings yet.</div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden bg-surface-raised rounded-lg">
+    <div className="overflow-x-auto bg-surface-raised rounded-lg">
       <table className="w-full">
         <thead className="bg-surface">
           <tr>
@@ -85,20 +86,13 @@ export function LeaderboardTable({ entries, type, currentUserId }: LeaderboardTa
                     to={`/user/${entry.username}`}
                     className="group flex items-center gap-3"
                   >
-                    {entry.avatar_url ? (
-                      <img
-                        src={entry.avatar_url}
-                        alt={entry.username}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center w-10 h-10 bg-surface-raised rounded-full">
-                        <span className="text-lg font-semibold text-muted-foreground">
-                          {entry.username[0].toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <div>
+                    <Avatar
+                      src={entry.avatar_url}
+                      alt=""
+                      fallback={entry.display_name || entry.username}
+                      className="shrink-0"
+                    />
+                    <div className="min-w-0">
                       <div className="group-hover:text-purple-400 font-semibold text-white transition-colors">
                         {entry.display_name || entry.username}
                       </div>
@@ -153,34 +147,27 @@ export function LeaderboardSummary({ entries, type }: LeaderboardSummaryProps) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-3 gap-2 mb-6 sm:gap-4">
       {topThree.map((entry, index) => (
         <Link
           key={entry.user_id}
           to={`/user/${entry.username}`}
-          className="hover:bg-surface-hover p-6 text-center transition-colors bg-surface-raised rounded-lg"
+          className="min-w-0 hover:bg-surface-hover p-3 text-center transition-colors bg-surface-raised rounded-lg sm:p-6"
         >
           <div className="mb-2 text-4xl"><RankMedal rank={index + 1} /></div>
           <div className="mb-2">
-            {entry.avatar_url ? (
-              <img
-                src={entry.avatar_url}
-                alt={entry.username}
-                className="w-16 h-16 mx-auto rounded-full"
-              />
-            ) : (
-              <div className="flex items-center justify-center w-16 h-16 mx-auto bg-surface-raised rounded-full">
-                <span className="text-2xl font-semibold text-muted-foreground">
-                  {entry.username[0].toUpperCase()}
-                </span>
-              </div>
-            )}
+            <Avatar
+              src={entry.avatar_url}
+              alt=""
+              fallback={entry.display_name || entry.username}
+              frameClassName="h-12 w-12 text-2xl sm:h-16 sm:w-16"
+            />
           </div>
-          <div className="mb-1 font-semibold text-white">
+          <div className="mb-1 truncate font-semibold text-white">
             {entry.display_name || entry.username}
           </div>
           <RankBadge rank={entry.user_rank} size="sm" />
-          <div className="mt-3 text-2xl font-bold text-purple-400">
+          <div className="mt-3 text-xl font-bold text-purple-400 sm:text-2xl">
             {entry.score.toLocaleString()}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
