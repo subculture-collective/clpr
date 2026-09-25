@@ -92,6 +92,9 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	)
 	favoriteHandler := handlers.NewFavoriteHandler(repos.Favorite, repos.Vote, svcs.Clip)
 	tagHandler := handlers.NewTagHandler(repos.Tag, repos.Clip, svcs.AutoTag)
+	if infra.Redis != nil {
+		tagHandler.SetResponseCache(infra.Redis)
+	}
 	searchHandler := handlers.NewSearchHandler(repos.Search, svcs.Auth)
 	if svcs.HybridSearch != nil {
 		// Use hybrid search (BM25 + vector similarity)

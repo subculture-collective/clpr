@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -12,6 +15,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/internal/tagtaxonomy"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -19,20 +23,29 @@ import (
 var adminTagSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 var tagBlacklistGlobPattern = regexp.MustCompile(`^[a-z0-9/_.%?*\\-]+$`)
 
+// Children returned per parent by GET /tags/tree.
+const (
+	defaultTagTreeChildLimit = 50
+	maxTagTreeChildLimit     = 500
+)
+
 // TagTreeNode represents a tag in a hierarchical tree response.
 type TagTreeNode struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        string         `json:"name"`
-	Slug        string         `json:"slug"`
-	ParentSlug  *string        `json:"parent_slug,omitempty"`
-	Description *string        `json:"description,omitempty"`
-	Color       *string        `json:"color,omitempty"`
-	UsageCount  int            `json:"usage_count"`
-	CreatedAt   time.Time      `json:"created_at"`
-	Lane        string         `json:"lane"`
-	DisplayName string         `json:"display_name"`
-	Evidence    string         `json:"evidence,omitempty"`
-	Children    []*TagTreeNode `json:"children,omitempty"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Slug        string    `json:"slug"`
+	ParentSlug  *string   `json:"parent_slug,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Color       *string   `json:"color,omitempty"`
+	UsageCount  int       `json:"usage_count"`
+	CreatedAt   time.Time `json:"created_at"`
+	Lane        string    `json:"lane"`
+	DisplayName string    `json:"display_name"`
+	Evidence    string    `json:"evidence,omitempty"`
+	// ChildCount is the number of visible children, including any beyond the
+	// per-parent limit that were omitted from Children.
+	ChildCount int            `json:"child_count,omitempty"`
+	Children   []*TagTreeNode `json:"children,omitempty"`
 }
 
 func tagToTreeNode(tag *models.Tag) *TagTreeNode {
@@ -52,42 +65,38 @@ func tagToTreeNode(tag *models.Tag) *TagTreeNode {
 	}
 }
 
-// buildTreeFromFlatList converts a flat list of tags from a recursive CTE
-// into a hierarchical tree rooted at rootSlug. maxDepth guards against
-// cycles (which shouldn't exist but safety first).
-func buildTreeFromFlatList(tags []*models.Tag, rootSlug string) []*TagTreeNode {
-	tagMap := make(map[string]*models.Tag, len(tags))
-	childrenMap := make(map[string][]*models.Tag)
-	for _, t := range tags {
-		tagMap[t.Slug] = t
-		if t.ParentSlug != nil {
-			childrenMap[*t.ParentSlug] = append(childrenMap[*t.ParentSlug], t)
+// buildTagTree nests rows from a tag tree query under their depth-0 roots.
+// Rows arrive ordered by depth and usage, so children keep that order.
+func buildTagTree(rows []repository.TagTreeRow) []*TagTreeNode {
+	childrenOf := make(map[string][]*repository.TagTreeRow)
+	var roots []*repository.TagTreeRow
+	for i := range rows {
+		row := &rows[i]
+		if row.Depth == 0 {
+			roots = append(roots, row)
+		} else if row.ParentSlug != nil {
+			childrenOf[*row.ParentSlug] = append(childrenOf[*row.ParentSlug], row)
 		}
 	}
 
-	root, ok := tagMap[rootSlug]
-	if !ok {
-		return nil
+	var build func(row *repository.TagTreeRow, depth int) *TagTreeNode
+	build = func(row *repository.TagTreeRow, depth int) *TagTreeNode {
+		node := tagToTreeNode(&row.Tag)
+		node.ChildCount = row.ChildCount
+		if depth >= repository.MaxTagTreeDepth {
+			return node
+		}
+		for _, child := range childrenOf[row.Slug] {
+			node.Children = append(node.Children, build(child, depth+1))
+		}
+		return node
 	}
 
-	node := tagToTreeNode(root)
-	buildSubtree(node, childrenMap, 0, 10)
-	return []*TagTreeNode{node}
-}
-
-func buildSubtree(node *TagTreeNode, childrenMap map[string][]*models.Tag, depth, maxDepth int) {
-	if depth >= maxDepth {
-		return
+	nodes := make([]*TagTreeNode, 0, len(roots))
+	for _, root := range roots {
+		nodes = append(nodes, build(root, 0))
 	}
-	children, ok := childrenMap[node.Slug]
-	if !ok {
-		return
-	}
-	for _, child := range children {
-		childNode := tagToTreeNode(child)
-		buildSubtree(childNode, childrenMap, depth+1, maxDepth)
-		node.Children = append(node.Children, childNode)
-	}
+	return nodes
 }
 
 func validateAdminTagFields(name, slug string, description *string) (string, string, bool) {
@@ -113,11 +122,29 @@ func writeAdminTagError(c *gin.Context, err error, message string) {
 	}
 }
 
+// Public tag listings are cached as serialized responses. Admin tag writes
+// clear them; usage counts may otherwise lag by up to one TTL.
+const (
+	tagResponseCachePrefix = "tags:api:"
+	tagListCacheTTL        = time.Minute
+	tagTreeCacheTTL        = 5 * time.Minute
+	maxCachedTagRootLength = 100
+)
+
+// TagResponseCache stores serialized public tag responses. *redis.Client from
+// pkg/redis satisfies it.
+type TagResponseCache interface {
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	DeletePattern(ctx context.Context, pattern string) error
+}
+
 // TagHandler handles tag-related HTTP requests
 type TagHandler struct {
 	tagRepo        *repository.TagRepository
 	clipRepo       *repository.ClipRepository
 	autoTagService *services.AutoTagService
+	cache          TagResponseCache
 }
 
 // NewTagHandler creates a new TagHandler
@@ -133,11 +160,67 @@ func NewTagHandler(
 	}
 }
 
+// SetResponseCache enables caching of GET /tags and GET /tags/tree.
+func (h *TagHandler) SetResponseCache(cache TagResponseCache) {
+	h.cache = cache
+}
+
+// writeCachedTagResponse serves key from the cache and reports whether it did.
+func (h *TagHandler) writeCachedTagResponse(c *gin.Context, key string) bool {
+	if h.cache == nil {
+		return false
+	}
+	body, err := h.cache.Get(c.Request.Context(), key)
+	if err != nil || body == "" {
+		return false
+	}
+	c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(body))
+	return true
+}
+
+// writeTagResponse sends payload and stores it under key for ttl.
+func (h *TagHandler) writeTagResponse(c *gin.Context, key string, ttl time.Duration, payload any) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		utils.GetLogger().Error("Failed to encode tag response", err, nil)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode tags"})
+		return
+	}
+	if h.cache != nil {
+		if err := h.cache.Set(c.Request.Context(), key, body, ttl); err != nil {
+			utils.GetLogger().Warn("Failed to cache tag response", map[string]interface{}{"key": key, "error": err.Error()})
+		}
+	}
+	c.Data(http.StatusOK, "application/json; charset=utf-8", body)
+}
+
+// invalidateTagResponses clears cached public tag responses after a
+// successful admin write. Deferred at the top of each write handler.
+func (h *TagHandler) invalidateTagResponses(c *gin.Context) {
+	if h.cache == nil || c.Writer.Status() >= http.StatusMultipleChoices {
+		return
+	}
+	if err := h.cache.DeletePattern(c.Request.Context(), tagResponseCachePrefix+"*"); err != nil {
+		utils.GetLogger().Warn("Failed to invalidate cached tag responses", map[string]interface{}{"error": err.Error()})
+	}
+}
+
 // ListTags handles GET /tags
 func (h *TagHandler) ListTags(c *gin.Context) {
 	// Parse query parameters
 	sort := c.DefaultQuery("sort", "popularity")
+	switch sort {
+	case "popularity", "trending", "alphabetical", "recent", "curated":
+	default:
+		sort = "popularity" // the repository treats unknown sorts as popularity
+	}
 	lane := c.Query("lane")
+	switch tagtaxonomy.Lane(lane) {
+	case tagtaxonomy.LaneCategory, tagtaxonomy.LaneDetected, tagtaxonomy.LaneStreamer,
+		tagtaxonomy.LaneCommunity, tagtaxonomy.LaneDuration, tagtaxonomy.LaneLanguage:
+	default:
+		lane = "" // the repository treats unknown lanes as all lanes
+	}
 	limitStr := c.DefaultQuery("limit", "50")
 	pageStr := c.DefaultQuery("page", "1")
 
@@ -153,9 +236,15 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 
 	offset := (page - 1) * limit
 
+	cacheKey := fmt.Sprintf("%slist:%s:%s:%d:%d", tagResponseCachePrefix, sort, lane, limit, page)
+	if h.writeCachedTagResponse(c, cacheKey) {
+		return
+	}
+
 	// Get tags from repository
 	tags, err := h.tagRepo.List(c.Request.Context(), sort, lane, limit, offset)
 	if err != nil {
+		utils.GetLogger().Error("Failed to list tags", err, map[string]interface{}{"sort": sort, "lane": lane})
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch tags",
 		})
@@ -165,13 +254,14 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 	// Get total count
 	total, err := h.tagRepo.Count(c.Request.Context(), lane)
 	if err != nil {
+		utils.GetLogger().Error("Failed to count tags", err, map[string]interface{}{"lane": lane})
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to count tags",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	h.writeTagResponse(c, cacheKey, tagListCacheTTL, gin.H{
 		"tags":     tags,
 		"total":    total,
 		"page":     page,
@@ -437,54 +527,49 @@ func (h *TagHandler) SearchTags(c *gin.Context) {
 	})
 }
 
-// GetTagTree returns the full tag hierarchy.
-// If ?root=<slug> is provided, returns the subtree rooted at that slug.
-// Otherwise returns all root tags with their immediate children attached.
+// GetTagTree returns the tag hierarchy.
+// Without ?root it returns the top-level tags that have children, each with
+// its highest-usage children; childless top-level tags are listed by GET /tags.
+// With ?root=<slug> it returns that tag's subtree. ?limit (default 50, max
+// 500) caps the children returned under each parent; child_count reports
+// the full number.
 // GET /api/v1/tags/tree
 func (h *TagHandler) GetTagTree(c *gin.Context) {
 	rootSlug := c.DefaultQuery("root", "")
-
-	var treeNodes []*TagTreeNode
-
-	if rootSlug != "" {
-		// Fetch the full subtree as a flat list via recursive CTE
-		tags, err := h.tagRepo.GetTagTree(c.Request.Context(), rootSlug)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag tree"})
-			return
-		}
-		// Build a hierarchical tree from the flat list
-		treeNodes = buildTreeFromFlatList(tags, rootSlug)
-		if treeNodes == nil {
-			// Root slug not found
-			treeNodes = []*TagTreeNode{}
-		}
-	} else {
-		// Get root tags
-		rootTags, err := h.tagRepo.GetRootTags(c.Request.Context())
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch root tags"})
-			return
-		}
-		// Attach immediate children to each root
-		treeNodes = make([]*TagTreeNode, 0, len(rootTags))
-		for _, root := range rootTags {
-			node := tagToTreeNode(root)
-			children, childErr := h.tagRepo.GetChildren(c.Request.Context(), root.Slug)
-			if childErr == nil && len(children) > 0 {
-				for _, child := range children {
-					node.Children = append(node.Children, tagToTreeNode(child))
-				}
-			}
-			treeNodes = append(treeNodes, node)
-		}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultTagTreeChildLimit)))
+	if err != nil || limit < 1 || limit > maxTagTreeChildLimit {
+		limit = defaultTagTreeChildLimit
 	}
 
-	c.JSON(http.StatusOK, gin.H{"tags": treeNodes})
+	cacheKey := fmt.Sprintf("%stree:%d:%s", tagResponseCachePrefix, limit, rootSlug)
+	if h.writeCachedTagResponse(c, cacheKey) {
+		return
+	}
+
+	var rows []repository.TagTreeRow
+	if rootSlug != "" {
+		rows, err = h.tagRepo.GetTagTree(c.Request.Context(), rootSlug, limit)
+	} else {
+		rows, err = h.tagRepo.GetTagForest(c.Request.Context(), limit)
+	}
+	if err != nil {
+		utils.GetLogger().Error("Failed to fetch tag tree", err, map[string]interface{}{"root": rootSlug})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tag tree"})
+		return
+	}
+
+	payload := gin.H{"tags": buildTagTree(rows)}
+	if len(rows) == 0 || len(rootSlug) > maxCachedTagRootLength {
+		// Unknown roots are not cached, so arbitrary slugs cannot fill Redis.
+		c.JSON(http.StatusOK, payload)
+		return
+	}
+	h.writeTagResponse(c, cacheKey, tagTreeCacheTTL, payload)
 }
 
 // CreateTag handles POST /admin/tags
 func (h *TagHandler) CreateTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	var req struct {
 		Name        string  `json:"name" binding:"required,min=2,max=50"`
 		Slug        string  `json:"slug" binding:"required,min=2,max=50"`
@@ -563,6 +648,7 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 
 // UpdateTag handles PUT /admin/tags/:id
 func (h *TagHandler) UpdateTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -649,6 +735,7 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 
 // DeleteTag handles DELETE /admin/tags/:id
 func (h *TagHandler) DeleteTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -680,6 +767,7 @@ func (h *TagHandler) ListAdminTags(c *gin.Context) {
 }
 
 func (h *TagHandler) SuppressTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tag ID"})
@@ -704,6 +792,7 @@ func (h *TagHandler) SuppressTag(c *gin.Context) {
 }
 
 func (h *TagHandler) RestoreTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid tag ID"})
@@ -752,6 +841,7 @@ func (h *TagHandler) ListBlacklistedTags(c *gin.Context) {
 
 // AddBlacklistedTag adds a pattern to the tag blacklist (admin only)
 func (h *TagHandler) AddBlacklistedTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	var req struct {
 		Pattern string  `json:"pattern" binding:"required,min=2,max=50"`
 		Reason  *string `json:"reason" binding:"omitempty,max=500"`
@@ -781,6 +871,7 @@ func (h *TagHandler) AddBlacklistedTag(c *gin.Context) {
 
 // RemoveBlacklistedTag removes a pattern from the tag blacklist (admin only)
 func (h *TagHandler) RemoveBlacklistedTag(c *gin.Context) {
+	defer h.invalidateTagResponses(c)
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {

@@ -112,6 +112,16 @@ func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag
 	return &tag, nil
 }
 
+// visibleTagPredicate excludes blacklisted and suppressed tags for the tags
+// row aliased as alias. It matches is_tag_blacklisted() but is written inline
+// so PostgreSQL hash-joins exact-match patterns (blacklisted_tags.literal_slug,
+// migration 000144) instead of calling the function once per tag.
+func visibleTagPredicate(alias string) string {
+	return `NOT EXISTS (SELECT 1 FROM blacklisted_tags b WHERE b.literal_slug = lower(` + alias + `.slug))
+		  AND NOT EXISTS (SELECT 1 FROM blacklisted_tags b WHERE b.literal_slug IS NULL AND ` + alias + `.slug ILIKE b.like_pattern ESCAPE '\')
+		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = ` + alias + `.id)`
+}
+
 // tagLanePredicate returns a SQL predicate on alias t for a tagtaxonomy lane.
 // slugs is the placeholder bound to the catalog content slugs; every branch
 // references it so the argument count never varies. An empty or unknown lane
@@ -144,7 +154,7 @@ func (r *TagRepository) List(ctx context.Context, sort, lane string, limit, offs
 	if sort == "curated" {
 		sort, lane = "popularity", string(tagtaxonomy.LaneDetected)
 	}
-	visible := `NOT is_tag_blacklisted(t.slug) AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)`
+	visible := visibleTagPredicate("t")
 	laneClause := tagLanePredicate(lane, "$3")
 	var query string
 	switch sort {
@@ -205,8 +215,7 @@ func (r *TagRepository) List(ctx context.Context, sort, lane string, limit, offs
 func (r *TagRepository) Count(ctx context.Context, lane string) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM tags t
-		WHERE NOT is_tag_blacklisted(t.slug)
-		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = t.id)
+		WHERE ` + visibleTagPredicate("t") + `
 		  AND ` + tagLanePredicate(lane, "$1")
 	err := r.pool.QueryRow(ctx, query, tagtaxonomy.DetectedSlugs()).Scan(&count)
 	if err != nil {
@@ -218,12 +227,11 @@ func (r *TagRepository) Count(ctx context.Context, lane string) (int, error) {
 // Search searches for tags by name
 func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]*models.Tag, error) {
 	searchQuery := `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE (name ILIKE $1 OR slug ILIKE $1)
-		AND NOT is_tag_blacklisted(slug)
-		AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = tags.id)
-		ORDER BY usage_count DESC
+		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
+		FROM tags t
+		WHERE (t.name ILIKE $1 OR t.slug ILIKE $1)
+		  AND ` + visibleTagPredicate("t") + `
+		ORDER BY t.usage_count DESC
 		LIMIT $2
 	`
 
@@ -562,122 +570,117 @@ func (r *TagRepository) AddBlacklistedTag(ctx context.Context, pattern string, r
 	return nil
 }
 
-// GetChildren returns all child tags for a parent slug
-func (r *TagRepository) GetChildren(ctx context.Context, parentSlug string) ([]*models.Tag, error) {
-	query := `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE parent_slug = $1
-		  AND NOT is_tag_blacklisted(slug)
-		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=tags.id)
-		ORDER BY usage_count DESC
-	`
+// MaxTagTreeDepth bounds tag subtree traversal in case parent_slug data ever
+// contains a cycle.
+const MaxTagTreeDepth = 10
 
-	rows, err := r.pool.Query(ctx, query, parentSlug)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get child tags: %w", err)
-	}
-	defer rows.Close()
-
-	var tags []*models.Tag
-	for rows.Next() {
-		var tag models.Tag
-		err := rows.Scan(
-			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
-			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan child tag: %w", err)
-		}
-		tags = append(tags, &tag)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating child tags: %w", err)
-	}
-
-	return tags, nil
+// TagTreeRow is a visible tag returned by a tag tree query. ChildCount is the
+// total number of visible children, which may exceed the children returned.
+type TagTreeRow struct {
+	models.Tag
+	Depth      int
+	ChildCount int
 }
 
-// GetTagTree returns a tag and its full subtree using a recursive CTE
-func (r *TagRepository) GetTagTree(ctx context.Context, rootSlug string) ([]*models.Tag, error) {
+// GetTagTree returns the tag rootSlug and its visible descendants, keeping at
+// most childLimit children (highest usage first) under each parent.
+func (r *TagRepository) GetTagTree(ctx context.Context, rootSlug string, childLimit int) ([]TagTreeRow, error) {
 	query := `
 		WITH RECURSIVE tag_tree AS (
-			SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, 0 AS depth
-			FROM tags
-			WHERE slug = $1
-			  AND NOT is_tag_blacklisted(slug)
-			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=tags.id)
+			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at, 0 AS depth
+			FROM tags t
+			WHERE t.slug = $1
+			  AND ` + visibleTagPredicate("t") + `
 			UNION ALL
 			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at, tt.depth + 1
 			FROM tags t
 			INNER JOIN tag_tree tt ON t.parent_slug = tt.slug
-			WHERE NOT is_tag_blacklisted(t.slug)
-			  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=t.id)
+			WHERE tt.depth < $3
+			  AND ` + visibleTagPredicate("t") + `
+		),
+		child_counts AS (
+			SELECT parent_slug, COUNT(*)::int AS child_count
+			FROM tag_tree
+			WHERE depth > 0
+			GROUP BY parent_slug
+		),
+		ranked AS (
+			SELECT tt.*, row_number() OVER (PARTITION BY tt.parent_slug ORDER BY tt.usage_count DESC, tt.name) AS sibling_rank
+			FROM tag_tree tt
 		)
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tag_tree
-		ORDER BY depth, usage_count DESC
+		SELECT r.id, r.name, r.slug, r.parent_slug, r.description, r.color, r.usage_count, r.created_at,
+		       r.depth, COALESCE(cc.child_count, 0)
+		FROM ranked r
+		LEFT JOIN child_counts cc ON cc.parent_slug = r.slug
+		WHERE r.depth = 0 OR r.sibling_rank <= $2
+		ORDER BY r.depth, r.usage_count DESC, r.name
 	`
+	return r.queryTagTree(ctx, query, rootSlug, childLimit, MaxTagTreeDepth)
+}
 
-	rows, err := r.pool.Query(ctx, query, rootSlug)
+// GetTagForest returns every visible top-level tag that has visible children,
+// each followed by at most childLimit of its children (highest usage first).
+// Top-level tags without children are ordinary flat tags; list them with List.
+func (r *TagRepository) GetTagForest(ctx context.Context, childLimit int) ([]TagTreeRow, error) {
+	query := `
+		WITH child_counts AS (
+			SELECT c.parent_slug, COUNT(*)::int AS child_count
+			FROM tags c
+			WHERE c.parent_slug IS NOT NULL
+			  AND ` + visibleTagPredicate("c") + `
+			GROUP BY c.parent_slug
+		),
+		roots AS (
+			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at,
+			       0 AS depth, cc.child_count
+			FROM tags t
+			INNER JOIN child_counts cc ON cc.parent_slug = t.slug
+			WHERE t.parent_slug IS NULL
+			  AND ` + visibleTagPredicate("t") + `
+		),
+		children AS (
+			SELECT c.id, c.name, c.slug, c.parent_slug, c.description, c.color, c.usage_count, c.created_at,
+			       1 AS depth, COALESCE(gc.child_count, 0) AS child_count,
+			       row_number() OVER (PARTITION BY c.parent_slug ORDER BY c.usage_count DESC, c.name) AS sibling_rank
+			FROM tags c
+			INNER JOIN roots ON c.parent_slug = roots.slug
+			LEFT JOIN child_counts gc ON gc.parent_slug = c.slug
+			WHERE ` + visibleTagPredicate("c") + `
+		)
+		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, depth, child_count
+		FROM (
+			SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, depth, child_count FROM roots
+			UNION ALL
+			SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, depth, child_count
+			FROM children WHERE sibling_rank <= $1
+		) forest
+		ORDER BY depth, usage_count DESC, name
+	`
+	return r.queryTagTree(ctx, query, childLimit)
+}
+
+func (r *TagRepository) queryTagTree(ctx context.Context, query string, args ...any) ([]TagTreeRow, error) {
+	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tag tree: %w", err)
 	}
 	defer rows.Close()
 
-	var tags []*models.Tag
+	var tags []TagTreeRow
 	for rows.Next() {
-		var tag models.Tag
+		var row TagTreeRow
 		err := rows.Scan(
-			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
-			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
+			&row.ID, &row.Name, &row.Slug, &row.ParentSlug, &row.Description,
+			&row.Color, &row.UsageCount, &row.CreatedAt, &row.Depth, &row.ChildCount,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan tag tree row: %w", err)
 		}
-		tags = append(tags, &tag)
+		tags = append(tags, row)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating tag tree: %w", err)
-	}
-
-	return tags, nil
-}
-
-// GetRootTags returns all tags with no parent (top-level tags)
-func (r *TagRepository) GetRootTags(ctx context.Context) ([]*models.Tag, error) {
-	query := `
-		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at
-		FROM tags
-		WHERE parent_slug IS NULL
-		  AND NOT is_tag_blacklisted(slug)
-		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id=tags.id)
-		ORDER BY usage_count DESC
-	`
-
-	rows, err := r.pool.Query(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get root tags: %w", err)
-	}
-	defer rows.Close()
-
-	var tags []*models.Tag
-	for rows.Next() {
-		var tag models.Tag
-		err := rows.Scan(
-			&tag.ID, &tag.Name, &tag.Slug, &tag.ParentSlug, &tag.Description,
-			&tag.Color, &tag.UsageCount, &tag.CreatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan root tag: %w", err)
-		}
-		tags = append(tags, &tag)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating root tags: %w", err)
 	}
 
 	return tags, nil
