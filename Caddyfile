@@ -55,8 +55,19 @@ clpr.tv {
     }
 
     # Matchers for different content types
+    # Keep in step with frontend/nginx.conf. Only content-hashed /assets/* is
+    # immutable; un-hashed public files keep their names when replaced.
     @static {
-        path /assets/* *.js *.css *.jpg *.jpeg *.png *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        path /assets/*
+    }
+
+    @service_worker {
+        path /sw.js
+    }
+
+    @public_static {
+        path *.js *.css *.jpg *.jpeg *.png *.gif *.webp *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        not path /assets/* /sw.js
     }
 
     @manifest {
@@ -75,6 +86,16 @@ clpr.tv {
     # Caching headers for hashed static assets (immutable)
     header @static {
         Cache-Control "public, max-age=31536000, immutable"
+    }
+
+    # The service worker must be revalidated so updates reach installed clients.
+    header @service_worker {
+        Cache-Control "no-cache"
+    }
+
+    # Un-hashed public files (logos, icons, social card): 1 hour
+    header @public_static {
+        Cache-Control "public, max-age=3600"
     }
 
     # Manifest files (cache for 1 hour)
