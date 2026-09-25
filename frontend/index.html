@@ -63,11 +63,12 @@
             content="Discover the creators and moments shaping live culture. Browse Twitch clips by creator, topic, tag, or collection."
         />
 
-        <!-- Default Open Graph tags -->
+        <!-- Default Open Graph tags. og:url, twitter:url and rel=canonical are
+             page-specific: the SEO component sets them per route, and the edge
+             serves per-clip tags to link-preview crawlers. -->
         <meta property="og:site_name" content="clpr" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://clpr.tv/" />
         <meta
             property="og:title"
             content="clpr - Discover Creators and Live Moments"
@@ -88,7 +89,6 @@
         <meta name="twitter:site" content="@clpr_tv" />
         <meta name="twitter:creator" content="@clpr_tv" />
         <meta name="twitter:domain" content="clpr.tv" />
-        <meta name="twitter:url" content="https://clpr.tv/" />
         <meta
             name="twitter:title"
             content="clpr - Discover Creators and Live Moments"

@@ -97,7 +97,7 @@ export function AdminAPIDocsPage() {
                 const response = await fetch(
                     selectedVersion === '1.0.0'
                         ? '/api/v1/admin/openapi.json'
-                        : `/docs/openapi/generated/${versionInfo.file}`,
+                        : `/openapi/${versionInfo.file}`,
                 );
                 if (!response.ok)
                     throw new Error(
@@ -392,7 +392,7 @@ export function AdminAPIDocsPage() {
                                     📚 API Documentation
                                 </h1>
                                 <a
-                                    href="/docs/openapi/openapi.yaml"
+                                    href="/openapi/openapi.yaml"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-sm text-link underline underline-offset-2"

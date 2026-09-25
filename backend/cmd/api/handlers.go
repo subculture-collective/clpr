@@ -34,6 +34,7 @@ type Handlers struct {
 	Contact             *handlers.ContactHandler
 	SEO                 *handlers.SEOHandler
 	Pages               *handlers.PagesHandler
+	Share               *handlers.ShareHandler
 	Docs                *handlers.DocsHandler
 	Ad                  *handlers.AdHandler
 	Export              *handlers.ExportHandler
@@ -116,6 +117,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	contactHandler := handlers.NewContactHandler(repos.Contact)
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
+	shareHandler := handlers.NewShareHandler(repos.Clip)
 	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
 	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
@@ -230,6 +232,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Contact:             contactHandler,
 		SEO:                 seoHandler,
 		Pages:               pagesHandler,
+		Share:               shareHandler,
 		Docs:                docsHandler,
 		Ad:                  adHandler,
 		Export:              exportHandler,
