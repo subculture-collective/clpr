@@ -525,7 +525,7 @@ AUTH_TOKEN=$(cat .env | grep JWT_TOKEN | cut -d= -f2) k6 run backend/tests/load/
 **Request:**
 
 ```bash
-curl -X GET "https://api.clpr.tv/v1/clips/123e4567-e89b-12d3-a456-426614174000/comments?sort=best&limit=20" \
+curl -X GET "https://clpr.tv/api/v1/clips/123e4567-e89b-12d3-a456-426614174000/comments?sort=best&limit=20" \
   -H "Accept: application/json"
 ```
 
@@ -566,7 +566,7 @@ curl -X GET "https://api.clpr.tv/v1/clips/123e4567-e89b-12d3-a456-426614174000/c
 **Request:**
 
 ```bash
-curl -X POST "https://api.clpr.tv/v1/clips/123e4567-e89b-12d3-a456-426614174000/comments" \
+curl -X POST "https://clpr.tv/api/v1/clips/123e4567-e89b-12d3-a456-426614174000/comments" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -596,7 +596,7 @@ curl -X POST "https://api.clpr.tv/v1/clips/123e4567-e89b-12d3-a456-426614174000/
 **Request:**
 
 ```bash
-curl -X POST "https://api.clpr.tv/v1/clips/123e4567-e89b-12d3-a456-426614174000/comments" \
+curl -X POST "https://clpr.tv/api/v1/clips/123e4567-e89b-12d3-a456-426614174000/comments" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -610,7 +610,7 @@ curl -X POST "https://api.clpr.tv/v1/clips/123e4567-e89b-12d3-a456-426614174000/
 **Request:**
 
 ```bash
-curl -X GET "https://api.clpr.tv/v1/comments/parent-comment-uuid/replies?limit=10&cursor=0" \
+curl -X GET "https://clpr.tv/api/v1/comments/parent-comment-uuid/replies?limit=10&cursor=0" \
   -H "Accept: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
@@ -642,7 +642,7 @@ curl -X GET "https://api.clpr.tv/v1/comments/parent-comment-uuid/replies?limit=1
 
 ```bash
 # Upvote
-curl -X POST "https://api.clpr.tv/v1/comments/comment-uuid/vote" \
+curl -X POST "https://clpr.tv/api/v1/comments/comment-uuid/vote" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -650,7 +650,7 @@ curl -X POST "https://api.clpr.tv/v1/comments/comment-uuid/vote" \
   }'
 
 # Downvote
-curl -X POST "https://api.clpr.tv/v1/comments/comment-uuid/vote" \
+curl -X POST "https://clpr.tv/api/v1/comments/comment-uuid/vote" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -658,7 +658,7 @@ curl -X POST "https://api.clpr.tv/v1/comments/comment-uuid/vote" \
   }'
 
 # Remove vote
-curl -X POST "https://api.clpr.tv/v1/comments/comment-uuid/vote" \
+curl -X POST "https://clpr.tv/api/v1/comments/comment-uuid/vote" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -679,7 +679,7 @@ curl -X POST "https://api.clpr.tv/v1/comments/comment-uuid/vote" \
 **Request:**
 
 ```bash
-curl -X PUT "https://api.clpr.tv/v1/comments/comment-uuid" \
+curl -X PUT "https://clpr.tv/api/v1/comments/comment-uuid" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -700,7 +700,7 @@ curl -X PUT "https://api.clpr.tv/v1/comments/comment-uuid" \
 **Request:**
 
 ```bash
-curl -X DELETE "https://api.clpr.tv/v1/comments/comment-uuid" \
+curl -X DELETE "https://clpr.tv/api/v1/comments/comment-uuid" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -719,7 +719,7 @@ Using axios:
 ```typescript
 import axios from 'axios';
 
-const API_BASE = 'https://api.clpr.tv/v1';
+const API_BASE = 'https://clpr.tv/api/v1';
 const token = 'YOUR_JWT_TOKEN';
 
 // List comments

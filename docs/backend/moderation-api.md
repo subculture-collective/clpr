@@ -32,7 +32,7 @@ Complete documentation for the Clipper moderation API endpoints, including authe
 
 The Moderation API provides comprehensive tools for managing user bans, moderator roles, and audit logging within the Clipper platform. All endpoints require authentication and appropriate permissions.
 
-**Base URL**: `https://api.clpr.tv/api/v1/moderation`
+**Base URL**: `https://clpr.tv/api/v1/moderation`
 
 **API Version**: v1
 
@@ -1298,7 +1298,7 @@ GET /api/v1/moderation/audit-logs/log-uuid-here
 #### Sync Bans
 
 ```bash
-curl -X POST https://api.clpr.tv/api/v1/moderation/sync-bans \
+curl -X POST https://clpr.tv/api/v1/moderation/sync-bans \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1309,14 +1309,14 @@ curl -X POST https://api.clpr.tv/api/v1/moderation/sync-bans \
 #### List Bans
 
 ```bash
-curl -X GET "https://api.clpr.tv/api/v1/moderation/bans?channelId=123e4567-e89b-12d3-a456-426614174000&limit=20" \
+curl -X GET "https://clpr.tv/api/v1/moderation/bans?channelId=123e4567-e89b-12d3-a456-426614174000&limit=20" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 #### Create Ban
 
 ```bash
-curl -X POST https://api.clpr.tv/api/v1/moderation/ban \
+curl -X POST https://clpr.tv/api/v1/moderation/ban \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1329,14 +1329,14 @@ curl -X POST https://api.clpr.tv/api/v1/moderation/ban \
 #### Revoke Ban
 
 ```bash
-curl -X DELETE https://api.clpr.tv/api/v1/moderation/ban/ban-uuid-here \
+curl -X DELETE https://clpr.tv/api/v1/moderation/ban/ban-uuid-here \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 #### Add Moderator
 
 ```bash
-curl -X POST https://api.clpr.tv/api/v1/moderation/moderators \
+curl -X POST https://clpr.tv/api/v1/moderation/moderators \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1349,7 +1349,7 @@ curl -X POST https://api.clpr.tv/api/v1/moderation/moderators \
 #### List Audit Logs
 
 ```bash
-curl -X GET "https://api.clpr.tv/api/v1/moderation/audit-logs?action=ban_user&limit=50" \
+curl -X GET "https://clpr.tv/api/v1/moderation/audit-logs?action=ban_user&limit=50" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -1361,7 +1361,7 @@ curl -X GET "https://api.clpr.tv/api/v1/moderation/audit-logs?action=ban_user&li
 
 ```javascript
 // Configuration
-const API_BASE = 'https://api.clpr.tv/api/v1/moderation';
+const API_BASE = 'https://clpr.tv/api/v1/moderation';
 const AUTH_TOKEN = 'YOUR_TOKEN';
 
 // Helper function for API calls
@@ -1455,7 +1455,7 @@ try {
 const axios = require('axios');
 
 const api = axios.create({
-  baseURL: 'https://api.clpr.tv/api/v1/moderation',
+  baseURL: 'https://clpr.tv/api/v1/moderation',
   headers: {
     'Authorization': `Bearer ${process.env.API_TOKEN}`,
     'Content-Type': 'application/json',
@@ -1521,7 +1521,7 @@ import (
 )
 
 const (
-	APIBase = "https://api.clpr.tv/api/v1/moderation"
+	APIBase = "https://clpr.tv/api/v1/moderation"
 )
 
 // API Client

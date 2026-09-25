@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	maxDocumentBytes    = 1 << 20
+	maxDocumentBytes    = 2 << 20 // the generated API reference is about 1.1 MB
 	maxDocSearchResults = 100
 )
 
@@ -134,7 +134,7 @@ func (h *DocsHandler) GetDoc(c *gin.Context) {
 		return
 	}
 	if info.Size() > maxDocumentBytes {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Document exceeds 1 MiB"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Document exceeds 2 MiB"})
 		return
 	}
 	content, err := fs.ReadFile(h.docs, docPath)

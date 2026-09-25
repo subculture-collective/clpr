@@ -18,7 +18,7 @@ The Clip Management API provides comprehensive endpoints for managing clips with
 ## Base URL
 
 ```
-/api/v1
+https://clpr.tv/api/v1
 ```
 
 ## Authentication
@@ -548,16 +548,16 @@ const voteResponse = await fetch('/api/v1/clips/clip-id/vote', {
 
 ```bash
 # List clips
-curl -X GET 'http://localhost:8080/api/v1/clips?sort=top&timeframe=week'
+curl -X GET 'https://clpr.tv/api/v1/clips?sort=top&timeframe=week'
 
 # Vote on clip
-curl -X POST 'http://localhost:8080/api/v1/clips/{id}/vote' \
+curl -X POST 'https://clpr.tv/api/v1/clips/{id}/vote' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -d '{"vote": 1}'
 
 # Add to favorites
-curl -X POST 'http://localhost:8080/api/v1/clips/{id}/favorite' \
+curl -X POST 'https://clpr.tv/api/v1/clips/{id}/favorite' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 

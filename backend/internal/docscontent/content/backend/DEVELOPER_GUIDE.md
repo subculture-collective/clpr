@@ -2510,7 +2510,7 @@ Run load test:
 
 ```bash
 k6 run tests/load/moderation.js \
-    --env BASE_URL=https://api.clpr.tv \
+    --env BASE_URL=https://clpr.tv \
     --env AUTH_TOKEN=your_token_here
 ```
 
@@ -2962,13 +2962,13 @@ ORDER BY count DESC;
 
 ```bash
 # Get JWT token
-TOKEN=$(curl -X POST https://api.clpr.tv/api/v1/auth/login \
+TOKEN=$(curl -X POST https://clpr.tv/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"mod@example.com","password":"password"}' \
   | jq -r '.access_token')
 
 # Test ban endpoint
-curl -X POST https://api.clpr.tv/api/v1/moderation/communities/{community_id}/ban \
+curl -X POST https://clpr.tv/api/v1/moderation/communities/{community_id}/ban \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -2977,7 +2977,7 @@ curl -X POST https://api.clpr.tv/api/v1/moderation/communities/{community_id}/ba
   }' | jq
 
 # Get bans list
-curl https://api.clpr.tv/api/v1/moderation/communities/{community_id}/bans \
+curl https://clpr.tv/api/v1/moderation/communities/{community_id}/bans \
   -H "Authorization: Bearer $TOKEN" | jq
 ```
 

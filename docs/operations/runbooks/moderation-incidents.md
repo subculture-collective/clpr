@@ -101,17 +101,17 @@ graph TD
 ```bash
 # 1. Check recent failed auth attempts
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?action=auth_failed&limit=100" | \
+  "https://clpr.tv/api/v1/moderation/audit-logs?action=auth_failed&limit=100" | \
   jq '.logs[] | {time: .created_at, user: .actor_username, ip: .ip_address}'
 
 # 2. Check recent permission denials
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?action=permission_denied&limit=100" | \
+  "https://clpr.tv/api/v1/moderation/audit-logs?action=permission_denied&limit=100" | \
   jq '.logs[] | {time: .created_at, user: .actor_username, action_attempted: .details.action}'
 
 # 3. Identify suspicious IPs
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?start_time=$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%SZ')&limit=5000" | \
+  "https://clpr.tv/api/v1/moderation/audit-logs?start_time=$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%SZ')&limit=5000" | \
   jq -r '.logs[] | .ip_address' | sort | uniq -c | sort -rn | head -20
 ```
 
@@ -126,7 +126,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    
    # Or block at application level
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/admin/firewall/block" \
+     "https://clpr.tv/api/v1/admin/firewall/block" \
      -d '{"ip": "'$SUSPICIOUS_IP'", "reason": "Suspicious activity", "duration": 86400}'
    ```
 
@@ -134,13 +134,13 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    ```bash
    # Get affected users
    AFFECTED_USERS=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/audit-logs?ip_address=$SUSPICIOUS_IP" | \
+     "https://clpr.tv/api/v1/moderation/audit-logs?ip_address=$SUSPICIOUS_IP" | \
      jq -r '.logs[] | .actor_id' | sort -u)
    
    # Force password reset
    for user_id in $AFFECTED_USERS; do
      curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-       "https://api.clpr.tv/api/v1/users/$user_id/force-password-reset" \
+       "https://clpr.tv/api/v1/users/$user_id/force-password-reset" \
        -d '{"reason": "Security incident"}'
    done
    ```
@@ -148,14 +148,14 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 3. **Enable MFA for all moderators**
    ```bash
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/admin/security/require-mfa" \
+     "https://clpr.tv/api/v1/admin/security/require-mfa" \
      -d '{"role": "moderator", "grace_period_hours": 24}'
    ```
 
 4. **Notify security team**
    ```bash
    # Send alert
-   curl -X POST "https://api.clpr.tv/api/v1/notifications/security" \
+   curl -X POST "https://clpr.tv/api/v1/notifications/security" \
      -d '{
        "severity": "high",
        "title": "Unauthorized Access Detected",
@@ -179,13 +179,13 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 ```bash
 # Check ban creation rate
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?action=ban_user&start_time=$(date -u -d '1 hour ago' '+%Y-%m-%dT%H:%M:%SZ')&limit=1000" | \
+  "https://clpr.tv/api/v1/moderation/audit-logs?action=ban_user&start_time=$(date -u -d '1 hour ago' '+%Y-%m-%dT%H:%M:%SZ')&limit=1000" | \
   jq '.logs | length'
 # If > 100, investigate further
 
 # Identify actor creating bans
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?action=ban_user&start_time=$(date -u -d '1 hour ago' '+%Y-%m-%dT%H:%M:%SZ')&limit=1000" | \
+  "https://clpr.tv/api/v1/moderation/audit-logs?action=ban_user&start_time=$(date -u -d '1 hour ago' '+%Y-%m-%dT%H:%M:%SZ')&limit=1000" | \
   jq '.logs | group_by(.actor_id) | .[] | {actor: .[0].actor_username, count: length}' | \
   jq -s 'sort_by(.count) | reverse'
 ```
@@ -198,11 +198,11 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    
    # Revoke all moderator permissions
    curl -X DELETE -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/moderators?user_id=$COMPROMISED_MOD_ID"
+     "https://clpr.tv/api/v1/moderation/moderators?user_id=$COMPROMISED_MOD_ID"
    
    # Suspend account
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/users/$COMPROMISED_MOD_ID/suspend" \
+     "https://clpr.tv/api/v1/users/$COMPROMISED_MOD_ID/suspend" \
      -d '{"reason": "Account compromise - mass ban attack"}'
    ```
 
@@ -212,14 +212,14 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    START_TIME=$(date -u -d '1 hour ago' '+%Y-%m-%dT%H:%M:%SZ')
    
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/audit-logs?action=ban_user&actor_id=$COMPROMISED_MOD_ID&start_time=$START_TIME" | \
+     "https://clpr.tv/api/v1/moderation/audit-logs?action=ban_user&actor_id=$COMPROMISED_MOD_ID&start_time=$START_TIME" | \
      jq -r '.logs[] | .details.ban_id' > /tmp/malicious_bans.txt
    
    # Revert bans
    while IFS= read -r ban_id; do
      echo "Revoking ban: $ban_id"
      curl -X DELETE -H "Authorization: Bearer $API_TOKEN" \
-       "https://api.clpr.tv/api/v1/moderation/bans/$ban_id"
+       "https://clpr.tv/api/v1/moderation/bans/$ban_id"
      sleep 0.2
    done < /tmp/malicious_bans.txt
    ```
@@ -228,13 +228,13 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    ```bash
    # Get list of affected users
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/audit-logs?action=ban_user&actor_id=$COMPROMISED_MOD_ID&start_time=$START_TIME" | \
+     "https://clpr.tv/api/v1/moderation/audit-logs?action=ban_user&actor_id=$COMPROMISED_MOD_ID&start_time=$START_TIME" | \
      jq -r '.logs[] | .resource_id' > /tmp/affected_users.txt
    
    # Send notification
    while IFS= read -r user_id; do
      curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-       "https://api.clpr.tv/api/v1/notifications/send" \
+       "https://clpr.tv/api/v1/notifications/send" \
        -d '{
          "user_id": "'$user_id'",
          "type": "ban_revoked",
@@ -283,7 +283,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    
    # Get actions in compromised window
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/audit-logs?actor_id=$SUSPECT_MOD_ID&start_time=$START_TIME&end_time=$END_TIME" | \
+     "https://clpr.tv/api/v1/moderation/audit-logs?actor_id=$SUSPECT_MOD_ID&start_time=$START_TIME&end_time=$END_TIME" | \
      jq '.logs[] | {action, resource_id, details}'
    ```
 
@@ -317,14 +317,14 @@ echo
 
 # Get user ID
 USER_ID=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/users/by-username/$USERNAME" | jq -r '.id')
+  "https://clpr.tv/api/v1/users/by-username/$USERNAME" | jq -r '.id')
 
 echo "User ID: $USER_ID"
 echo
 
 # Check ban status
 BAN_INFO=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/bans?user_id=$USER_ID")
+  "https://clpr.tv/api/v1/moderation/bans?user_id=$USER_ID")
 
 echo "Ban Status:"
 echo "$BAN_INFO" | jq '{
@@ -351,7 +351,7 @@ echo "$BAN_INFO" | jq '{
 # Revoke incorrect ban
 BAN_ID="ban-abc123"
 curl -X DELETE -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/bans/$BAN_ID" \
+  "https://clpr.tv/api/v1/moderation/bans/$BAN_ID" \
   -d '{"reason": "Ban issued in error"}'
 ```
 
@@ -359,7 +359,7 @@ curl -X DELETE -H "Authorization: Bearer $API_TOKEN" \
 ```bash
 # Clean up expired bans
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/bans/cleanup-expired" \
+  "https://clpr.tv/api/v1/moderation/bans/cleanup-expired" \
   -d '{"user_id": "'$USER_ID'"}'
 ```
 
@@ -379,11 +379,11 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 # Check moderator permissions
 MOD_USERNAME="moderator_name"
 MOD_ID=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/users/by-username/$MOD_USERNAME" | jq -r '.id')
+  "https://clpr.tv/api/v1/users/by-username/$MOD_USERNAME" | jq -r '.id')
 
 # Get moderator info
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/moderators?user_id=$MOD_ID" | \
+  "https://clpr.tv/api/v1/moderation/moderators?user_id=$MOD_ID" | \
   jq '.moderators[] | {
     channel_id,
     scope,
@@ -399,7 +399,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 # Grant ban_users permission
 MODERATOR_ID="mod-xyz789"
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/moderators/$MODERATOR_ID" \
+  "https://clpr.tv/api/v1/moderation/moderators/$MODERATOR_ID" \
   -d '{"permissions": ["ban_users", "moderate_content", "view_audit_logs"]}'
 ```
 
@@ -407,7 +407,7 @@ curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
 ```bash
 # Extend moderator access
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/moderators/$MODERATOR_ID" \
+  "https://clpr.tv/api/v1/moderation/moderators/$MODERATOR_ID" \
   -d '{"expires_at": "'$(date -u -d '+30 days' '+%Y-%m-%dT%H:%M:%SZ')'"}'
 ```
 
@@ -416,7 +416,7 @@ curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
 # Add moderator to correct channel
 CHANNEL_ID="channel-abc123"
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/moderators" \
+  "https://clpr.tv/api/v1/moderation/moderators" \
   -d '{
     "user_id": "'$MOD_ID'",
     "channel_id": "'$CHANNEL_ID'",
@@ -444,7 +444,7 @@ Quick check:
 # Check sync status
 BROADCASTER_ID="123456789"
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?action=sync_bans&channel_id=$BROADCASTER_ID&limit=5" | \
+  "https://clpr.tv/api/v1/moderation/audit-logs?action=sync_bans&channel_id=$BROADCASTER_ID&limit=5" | \
   jq '.logs[] | {time: .created_at, status: .details.status, error: .details.error}'
 ```
 
@@ -453,7 +453,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 **OAuth scope issue:**
 ```bash
 # User must re-authenticate with correct scopes
-echo "Direct user to: https://api.clpr.tv/api/v1/auth/twitch?scope=moderator:manage:banned_users"
+echo "Direct user to: https://clpr.tv/api/v1/auth/twitch?scope=moderator:manage:banned_users"
 ```
 
 **Rate limit:**
@@ -461,7 +461,7 @@ echo "Direct user to: https://api.clpr.tv/api/v1/auth/twitch?scope=moderator:man
 # Wait and retry
 sleep 60
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/sync-bans" \
+  "https://clpr.tv/api/v1/moderation/sync-bans" \
   -d '{"broadcaster_id": "'$BROADCASTER_ID'"}'
 ```
 
@@ -480,11 +480,11 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 ```bash
 # Check if logs are being written
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?limit=1" | jq '.logs[0].created_at'
+  "https://clpr.tv/api/v1/moderation/audit-logs?limit=1" | jq '.logs[0].created_at'
 
 # Compare to current time
 LAST_LOG=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/audit-logs?limit=1" | jq -r '.logs[0].created_at')
+  "https://clpr.tv/api/v1/moderation/audit-logs?limit=1" | jq -r '.logs[0].created_at')
   
 echo "Last log: $LAST_LOG"
 echo "Current time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -500,7 +500,7 @@ psql -h production-db.clpr.tv -U clpr_admin -d clpr_prod \
 ```bash
 # Re-enable audit logging
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/admin/features/audit_logging" \
+  "https://clpr.tv/api/v1/admin/features/audit_logging" \
   -d '{"enabled": true}'
 ```
 
@@ -539,7 +539,7 @@ redis-cli -h redis.clpr.tv LTRIM audit_log_queue 0 1000
 # Check current latency
 START=$(date +%s%N)
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/bans?limit=10" > /dev/null
+  "https://clpr.tv/api/v1/moderation/bans?limit=10" > /dev/null
 END=$(date +%s%N)
 echo "Latency: $(( (END - START) / 1000000 ))ms"
 
@@ -569,7 +569,7 @@ SQL
 ```bash
 # Temporarily increase cache TTL
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/admin/settings/cache_ttl" \
+  "https://clpr.tv/api/v1/admin/settings/cache_ttl" \
   -d '{"ban_list_ttl": 300, "moderator_list_ttl": 600}'
 ```
 

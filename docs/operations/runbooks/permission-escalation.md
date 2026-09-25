@@ -110,7 +110,7 @@ This runbook provides procedures for managing user permissions in the Clipper mo
 2. **Verify user identity**
    ```bash
    API_TOKEN="${API_TOKEN}"
-   API_BASE="https://api.clpr.tv/api/v1"
+   API_BASE="https://clpr.tv/api/v1"
    
    # Get user details
    USER_EMAIL="oncall@clpr.tv"

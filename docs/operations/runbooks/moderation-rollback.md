@@ -110,7 +110,7 @@ sudo systemctl restart clpr-backend
 sudo systemctl restart clpr-frontend
 
 # Verify
-curl -s https://api.clpr.tv/api/v1/features | jq '.twitch_moderation'
+curl -s https://clpr.tv/api/v1/features | jq '.twitch_moderation'
 # Should return: false
 ```
 
@@ -138,23 +138,23 @@ API_TOKEN="${API_TOKEN}"
 
 # Disable feature flag
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/twitch_moderation \
+  https://clpr.tv/api/v1/admin/features/twitch_moderation \
   -d '{"enabled": false, "reason": "Emergency rollback - INC-2026-001"}'
 
 # Verify
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/features | jq '.twitch_moderation'
+  https://clpr.tv/api/v1/features | jq '.twitch_moderation'
 ```
 
 #### Verification
 
 ```bash
 # 1. Check feature flag status
-curl -s https://api.clpr.tv/api/v1/features | jq '.twitch_moderation'
+curl -s https://clpr.tv/api/v1/features | jq '.twitch_moderation'
 
 # 2. Test Twitch ban endpoint (should return feature disabled)
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/moderation/twitch/ban \
+  https://clpr.tv/api/v1/moderation/twitch/ban \
   -d '{"broadcaster_id":"123","user_id":"456"}' | jq
 
 # Expected: {"error": "FEATURE_DISABLED", "message": "Twitch moderation is currently disabled"}
@@ -184,7 +184,7 @@ EOF
 
 # Verify
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/moderation/sync-bans \
+  https://clpr.tv/api/v1/moderation/sync-bans \
   -d '{"broadcaster_id":"123"}' | jq
 # Should return feature disabled error
 ```
@@ -200,12 +200,12 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 ```bash
 # Temporarily disable audit log writes
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/audit_logging \
+  https://clpr.tv/api/v1/admin/features/audit_logging \
   -d '{"enabled": false, "reason": "Emergency - database performance"}'
 
 # Alternative: Switch to async logging
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/settings/audit_log_mode \
+  https://clpr.tv/api/v1/admin/settings/audit_log_mode \
   -d '{"mode": "async", "buffer_size": 1000}'
 ```
 
@@ -312,7 +312,7 @@ echo
 # 1. Stop writes to affected tables
 echo "Step 1: Disabling moderation features..."
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/all_moderation \
+  https://clpr.tv/api/v1/admin/features/all_moderation \
   -d '{"enabled": false}'
 
 # 2. Create current state backup
@@ -366,7 +366,7 @@ SQL
 # 6. Re-enable features
 echo "Step 6: Re-enabling moderation features..."
 curl -X PATCH -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/all_moderation \
+  https://clpr.tv/api/v1/admin/features/all_moderation \
   -d '{"enabled": true}'
 
 echo
@@ -489,7 +489,7 @@ echo
 # 1. Disable all moderation features
 echo "Disabling all features..."
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/emergency/disable-moderation \
+  https://clpr.tv/api/v1/admin/emergency/disable-moderation \
   -d "{\"incident_id\": \"$INCIDENT_ID\", \"reason\": \"Emergency shutdown\"}"
 
 # 2. Close moderation API endpoints at firewall
@@ -541,19 +541,19 @@ sudo iptables -D OUTPUT -p tcp --dport 443 -d api.clpr.tv -m string \
 
 # 2. Re-enable features gradually
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/ban_users \
+  https://clpr.tv/api/v1/admin/features/ban_users \
   -d '{"enabled": true}'
 
 sleep 5
 
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/moderate_content \
+  https://clpr.tv/api/v1/admin/features/moderate_content \
   -d '{"enabled": true}'
 
 sleep 5
 
 curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/admin/features/twitch_moderation \
+  https://clpr.tv/api/v1/admin/features/twitch_moderation \
   -d '{"enabled": true}'
 
 # 3. Re-enable background jobs
@@ -594,7 +594,7 @@ echo
 
 # 1. Check feature flags
 echo "1. Feature Flags:"
-curl -s https://api.clpr.tv/api/v1/features | jq '{
+curl -s https://clpr.tv/api/v1/features | jq '{
   twitch_moderation,
   ban_sync,
   audit_logging
@@ -603,7 +603,7 @@ curl -s https://api.clpr.tv/api/v1/features | jq '{
 # 2. Test API health
 echo
 echo "2. API Health:"
-curl -s https://api.clpr.tv/api/v1/moderation/health | jq
+curl -s https://clpr.tv/api/v1/moderation/health | jq
 
 # 3. Verify database connectivity
 echo
@@ -615,14 +615,14 @@ psql -h production-db.clpr.tv -U clpr_admin -d clpr_prod -c \
 echo
 echo "4. Audit Logs (last 5):"
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  https://api.clpr.tv/api/v1/moderation/audit-logs?limit=5 | \
+  https://clpr.tv/api/v1/moderation/audit-logs?limit=5 | \
   jq '.logs[] | {time: .created_at, action: .action}'
 
 # 5. Performance check
 echo
 echo "5. Performance:"
 START=$(date +%s%N)
-curl -s https://api.clpr.tv/api/v1/moderation/bans?limit=10 > /dev/null
+curl -s https://clpr.tv/api/v1/moderation/bans?limit=10 > /dev/null
 END=$(date +%s%N)
 LATENCY=$(( (END - START) / 1000000 ))
 echo "API latency: ${LATENCY}ms"

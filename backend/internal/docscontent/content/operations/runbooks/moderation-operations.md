@@ -61,13 +61,13 @@ This runbook provides operational procedures for managing the Clipper moderation
    ```bash
    # If not already authenticated
    export API_TOKEN="your_jwt_token"
-   export API_BASE="https://api.clpr.tv/api/v1/moderation"
+   export API_BASE="https://clpr.tv/api/v1/moderation"
    ```
 
 2. **Get user ID (if only username is known)**
    ```bash
    USER_ID=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/users/by-username/${USERNAME}" | jq -r '.id')
+     "https://clpr.tv/api/v1/users/by-username/${USERNAME}" | jq -r '.id')
    ```
 
 3. **Create permanent ban**
@@ -185,7 +185,7 @@ curl -X DELETE "$API_BASE/bans/$BAN_ID" \
    # mass-ban.sh
    
    API_TOKEN="${API_TOKEN}"
-   API_BASE="${API_BASE:-https://api.clpr.tv/api/v1/moderation}"
+   API_BASE="${API_BASE:-https://clpr.tv/api/v1/moderation}"
    CHANNEL_ID="${CHANNEL_ID}"
    REASON="${REASON:-Mass ban - Security incident}"
    
@@ -274,11 +274,11 @@ done < /tmp/bans_to_revoke.txt
    ```bash
    # By username
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/users/by-username/${USERNAME}" | jq
+     "https://clpr.tv/api/v1/users/by-username/${USERNAME}" | jq
    
    # By user ID
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/users/${USER_ID}" | jq
+     "https://clpr.tv/api/v1/users/${USER_ID}" | jq
    ```
 
 2. **Create ban with options**
@@ -354,7 +354,7 @@ done < /tmp/bans_to_revoke.txt
 1. **Verify user exists**
    ```bash
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/users/by-username/${USERNAME}" | jq '{id, username, email}'
+     "https://clpr.tv/api/v1/users/by-username/${USERNAME}" | jq '{id, username, email}'
    ```
 
 2. **Add as moderator**

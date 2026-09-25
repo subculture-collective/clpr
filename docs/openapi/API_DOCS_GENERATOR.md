@@ -126,7 +126,7 @@ The generator creates code samples in multiple languages for each endpoint:
 ### cURL
 
 ```bash
-curl -X GET "https://api.clpr.tv/api/v1/clips" \
+curl -X GET "https://clpr.tv/api/v1/clips" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

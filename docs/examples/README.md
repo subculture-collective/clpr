@@ -34,7 +34,7 @@ chmod +x clip-submission-test.sh
 ./clip-submission-test.sh https://clips.twitch.tv/YourClipID
 
 # Use custom API endpoint (optional)
-API_BASE_URL="https://api.clpr.tv/v1" ./clip-submission-test.sh
+API_BASE_URL="https://clpr.tv/api/v1" ./clip-submission-test.sh
 ```
 
 **What it does:**
@@ -73,7 +73,7 @@ As a library in your project:
 import { ClipSubmissionClient } from './clip-submission-example';
 
 const client = new ClipSubmissionClient(
-  'http://localhost:8080/api/v1',
+  'https://clpr.tv/api/v1',
   'your_jwt_token'
 );
 
@@ -100,6 +100,8 @@ See the [Maintained documentation](../index.md) for the frontend flow.
 ## Running the Examples
 
 ### Quick Test with cURL
+
+These commands target a local backend; use `https://clpr.tv` for production.
 
 ```bash
 # 1. Fetch metadata

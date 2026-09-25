@@ -454,7 +454,7 @@ The client should implement a ±2 second tolerance for synchronization:
 
 1. **Host creates party:**
 ```bash
-curl -X POST https://api.clpr.tv/v1/watch-parties \
+curl -X POST https://clpr.tv/api/v1/watch-parties \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"title": "Movie Night", "visibility": "private"}'
@@ -464,13 +464,13 @@ curl -X POST https://api.clpr.tv/v1/watch-parties \
 
 3. **Friends join party:**
 ```bash
-curl -X POST https://api.clpr.tv/v1/watch-parties/ABC123/join \
+curl -X POST https://clpr.tv/api/v1/watch-parties/ABC123/join \
   -H "Authorization: Bearer <token>"
 ```
 
 4. **Connect to WebSocket:**
 ```javascript
-const ws = new WebSocket('wss://api.clpr.tv/v1/watch-parties/<party-id>/ws');
+const ws = new WebSocket('wss://clpr.tv/api/v1/watch-parties/<party-id>/ws');
 
 ws.onopen = () => {
   // Request initial sync

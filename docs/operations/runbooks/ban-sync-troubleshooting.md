@@ -100,19 +100,19 @@ User hasn't granted Twitch OAuth permissions to read banned users list.
 1. **User must re-authenticate with Twitch**
    ```bash
    # Direct user to re-auth URL
-   echo "https://api.clpr.tv/api/v1/auth/twitch?scope=moderator:read:banned_users"
+   echo "https://clpr.tv/api/v1/auth/twitch?scope=moderator:read:banned_users"
    ```
 
 2. **Verify scopes after re-auth**
    ```bash
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/auth/me" | jq '.twitch_scopes'
+     "https://clpr.tv/api/v1/auth/me" | jq '.twitch_scopes'
    ```
 
 3. **Test sync again**
    ```bash
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans" \
+     "https://clpr.tv/api/v1/moderation/sync-bans" \
      -H "Content-Type: application/json" \
      -d '{"broadcaster_id": "'$BROADCASTER_ID'"}'
    ```
@@ -149,7 +149,7 @@ Too many requests to Twitch API in short time period.
 1. **Check rate limit status**
    ```bash
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans/status" | jq '.rate_limit'
+     "https://clpr.tv/api/v1/moderation/sync-bans/status" | jq '.rate_limit'
    ```
 
 2. **Wait for rate limit reset**
@@ -169,7 +169,7 @@ Too many requests to Twitch API in short time period.
 3. **Retry sync**
    ```bash
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans" \
+     "https://clpr.tv/api/v1/moderation/sync-bans" \
      -H "Content-Type: application/json" \
      -d '{"broadcaster_id": "'$BROADCASTER_ID'"}'
    ```
@@ -219,14 +219,14 @@ Too many requests to Twitch API in short time period.
    ```bash
    # If you have username, get Twitch ID
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/twitch/users?username=$USERNAME" | jq '.id'
+     "https://clpr.tv/api/v1/twitch/users?username=$USERNAME" | jq '.id'
    ```
 
 3. **Verify user has access**
    ```bash
    # Check if user is broadcaster or moderator
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/users/me" | jq '{
+     "https://clpr.tv/api/v1/users/me" | jq '{
        twitch_id,
        is_broadcaster: (.twitch_id == "'$BROADCASTER_ID'"),
        is_moderator: .moderator_channels[]?
@@ -236,7 +236,7 @@ Too many requests to Twitch API in short time period.
 4. **Test with correct ID**
    ```bash
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans" \
+     "https://clpr.tv/api/v1/moderation/sync-bans" \
      -H "Content-Type: application/json" \
      -d '{"broadcaster_id": "'$CORRECT_BROADCASTER_ID'"}'
    ```
@@ -266,7 +266,7 @@ Too many requests to Twitch API in short time period.
 1. **Check token expiration**
    ```bash
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/auth/me" | jq '{
+     "https://clpr.tv/api/v1/auth/me" | jq '{
        twitch_connected: .twitch_id,
        token_expires: .twitch_token_expires_at
      }'
@@ -275,13 +275,13 @@ Too many requests to Twitch API in short time period.
 2. **Refresh Twitch token**
    ```bash
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/auth/twitch/refresh"
+     "https://clpr.tv/api/v1/auth/twitch/refresh"
    ```
 
 3. **If refresh fails, require re-authentication**
    ```bash
    # User must re-connect Twitch account
-   echo "Redirect user to: https://api.clpr.tv/api/v1/auth/twitch"
+   echo "Redirect user to: https://clpr.tv/api/v1/auth/twitch"
    ```
 
 4. **Verify Twitch API status**
@@ -328,7 +328,7 @@ Too many requests to Twitch API in short time period.
    # Get sync job status
    SYNC_JOB_ID="sync-abc123"
    curl -s -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans/$SYNC_JOB_ID" | jq '{
+     "https://clpr.tv/api/v1/moderation/sync-bans/$SYNC_JOB_ID" | jq '{
        status,
        progress: .synced_count,
        total: .total_count,
@@ -343,7 +343,7 @@ Too many requests to Twitch API in short time period.
    # Check status every 30 seconds
    while true; do
      STATUS=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-       "https://api.clpr.tv/api/v1/moderation/sync-bans/$SYNC_JOB_ID" | jq -r '.status')
+       "https://clpr.tv/api/v1/moderation/sync-bans/$SYNC_JOB_ID" | jq -r '.status')
      
      if [ "$STATUS" = "completed" ]; then
        echo "Sync completed successfully"
@@ -362,14 +362,14 @@ Too many requests to Twitch API in short time period.
    ```bash
    # Cancel stalled sync
    curl -X DELETE -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans/$SYNC_JOB_ID"
+     "https://clpr.tv/api/v1/moderation/sync-bans/$SYNC_JOB_ID"
    
    # Wait 30 seconds
    sleep 30
    
    # Retry sync
    curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/moderation/sync-bans" \
+     "https://clpr.tv/api/v1/moderation/sync-bans" \
      -H "Content-Type: application/json" \
      -d '{"broadcaster_id": "'$BROADCASTER_ID'"}'
    ```
@@ -394,7 +394,7 @@ Too many requests to Twitch API in short time period.
 # check-sync-status.sh
 
 API_TOKEN="${API_TOKEN}"
-API_BASE="https://api.clpr.tv/api/v1/moderation"
+API_BASE="https://clpr.tv/api/v1/moderation"
 BROADCASTER_ID="${1:-}"
 
 if [ -z "$BROADCASTER_ID" ]; then
@@ -448,7 +448,7 @@ echo
 
 # Get user's current scopes
 SCOPES=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/auth/me" | jq -r '.twitch_scopes[]')
+  "https://clpr.tv/api/v1/auth/me" | jq -r '.twitch_scopes[]')
 
 # Required scopes for ban sync
 REQUIRED=("moderator:read:banned_users" "channel:read:banned_users")
@@ -482,7 +482,7 @@ if [ "$CAN_SYNC" = true ]; then
 else
   echo "Result: ✗ User CANNOT perform ban sync"
   echo "Action: User must re-authenticate with Twitch"
-  echo "URL: https://api.clpr.tv/api/v1/auth/twitch?scope=moderator:read:banned_users"
+  echo "URL: https://clpr.tv/api/v1/auth/twitch?scope=moderator:read:banned_users"
 fi
 ```
 
@@ -504,7 +504,7 @@ echo
 
 # Get Twitch token from Clipper
 TWITCH_TOKEN=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/auth/me" | jq -r '.twitch_access_token')
+  "https://clpr.tv/api/v1/auth/me" | jq -r '.twitch_access_token')
 
 if [ -z "$TWITCH_TOKEN" ] || [ "$TWITCH_TOKEN" = "null" ]; then
   echo "✗ No Twitch token found"
@@ -589,7 +589,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 # manual-sync-retry.sh
 
 API_TOKEN="${API_TOKEN}"
-API_BASE="https://api.clpr.tv/api/v1/moderation"
+API_BASE="https://clpr.tv/api/v1/moderation"
 BROADCASTER_ID="${1:-}"
 
 if [ -z "$BROADCASTER_ID" ]; then
@@ -660,7 +660,7 @@ fi
 ```bash
 # Check current rate limit status
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/moderation/rate-limit" | jq '{
+  "https://clpr.tv/api/v1/moderation/rate-limit" | jq '{
     limit: .twitch_rate_limit,
     remaining: .twitch_rate_remaining,
     reset_at: .twitch_rate_reset_at,
@@ -757,7 +757,7 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 ```bash
 # 1. Verify broadcaster ID
 curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://api.clpr.tv/api/v1/auth/me" | jq '.twitch_id'
+  "https://clpr.tv/api/v1/auth/me" | jq '.twitch_id'
 
 # 2. Check Twitch directly
 curl -s "https://api.twitch.tv/helix/moderation/banned?broadcaster_id=$BROADCASTER_ID" \

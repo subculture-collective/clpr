@@ -223,7 +223,7 @@ Most endpoints require JWT Bearer authentication:
 ```bash
 # Example authenticated request
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  https://api.clpr.tv/api/v1/clips
+  https://clpr.tv/api/v1/clips
 ```
 
 **Getting a Token:**
@@ -246,17 +246,14 @@ Rate limit headers in responses:
 
 ## 🌍 API Environments
 
-### Development
-- Base URL: `http://localhost:8080`
-- Use for local development and testing
-
-### Staging
-- Base URL: `https://staging.clpr.tv`
-- Pre-production environment for integration testing
-
 ### Production
-- Base URL: `https://api.clpr.tv`
-- Production API with full SLA and monitoring
+- Base URL: `https://clpr.tv` (every path includes its `/api/v1` prefix)
+- Only `/health` and `/health/ready` are public among the unversioned
+  routes; operations marked `x-clpr-internal-only` are reachable only on the
+  private network
+
+### Local development
+- Base URL: `http://localhost:8080` when running the backend locally
 
 ## 📝 Specification Structure
 
