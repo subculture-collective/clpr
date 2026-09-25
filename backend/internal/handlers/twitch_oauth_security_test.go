@@ -11,10 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TestTokenMaskingInLogs verifies that access and refresh tokens are never logged
@@ -23,10 +24,7 @@ func TestTokenMaskingInLogs(t *testing.T) {
 	var logBuffer bytes.Buffer
 	log.SetOutput(&logBuffer)
 	defer log.SetOutput(os.Stderr)
-	connString := os.Getenv("TEST_DATABASE_URL")
-	if connString == "" {
-		connString = "postgres://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable"
-	}
+	connString := testutil.DatabaseURL()
 
 	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {
@@ -144,10 +142,7 @@ func TestTokenNotInJSONResponses(t *testing.T) {
 
 // TestScopesStoredAndRetrieved verifies that scopes are properly stored and retrieved
 func TestScopesStoredAndRetrieved(t *testing.T) {
-	connString := os.Getenv("TEST_DATABASE_URL")
-	if connString == "" {
-		connString = "postgres://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable"
-	}
+	connString := testutil.DatabaseURL()
 
 	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {

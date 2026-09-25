@@ -14,6 +14,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,10 +23,7 @@ import (
 func setupTwitchOAuthTestHandler(t *testing.T) (*TwitchOAuthHandler, *pgxpool.Pool, func()) {
 	t.Helper()
 
-	connString := os.Getenv("TEST_DATABASE_URL")
-	if connString == "" {
-		connString = "postgres://clpr:clpr_password@localhost:5436/clpr_db?sslmode=disable"
-	}
+	connString := testutil.DatabaseURL()
 
 	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {

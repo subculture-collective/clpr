@@ -4,8 +4,7 @@ package migrations
 
 import (
 	"context"
-	"net"
-	"net/url"
+	"os"
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
@@ -15,24 +14,29 @@ import (
 
 type migrationTestHelper struct{ pool *pgxpool.Pool }
 
+// TestMain gives the drills their own database. They roll the schema back and
+// forward, which must never be visible to other packages' tests.
+func TestMain(m *testing.M) {
+	os.Exit(testutil.RunWithDatabase(m, "migrations"))
+}
+
 // Use exactly the database selected by runMigration, so schema assertions and
 // CLI migrations cannot accidentally target different databases.
 func setupMigrationTest(t *testing.T) *migrationTestHelper {
 	t.Helper()
-	database := testutil.GetEnv("TEST_DATABASE_NAME", "clpr_test")
-	require.Equal(t, "clpr_test", database, "migration drills require the disposable clpr_test database")
-	target := url.URL{
-		Scheme:   "postgresql",
-		User:     url.UserPassword(testutil.GetEnv("TEST_DATABASE_USER", "clpr"), testutil.GetEnv("TEST_DATABASE_PASSWORD", "clpr_password")),
-		Host:     net.JoinHostPort(testutil.GetEnv("TEST_DATABASE_HOST", "localhost"), testutil.GetEnv("TEST_DATABASE_PORT", "5437")),
-		Path:     database,
-		RawQuery: "sslmode=disable",
-	}
-	pool, err := pgxpool.New(context.Background(), target.String())
+	testutil.RequirePackageDatabase(t)
+	database := testutil.DatabaseConfig().Name
+	require.Equal(t, testutil.PackageDatabaseName(), database, "migration drills require their disposable package database")
+	return &migrationTestHelper{pool: connectMigrationDatabase(t, testutil.DatabaseURL())}
+}
+
+func connectMigrationDatabase(t *testing.T, databaseURL string) *pgxpool.Pool {
+	t.Helper()
+	pool, err := pgxpool.New(context.Background(), databaseURL)
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 	require.NoError(t, pool.Ping(context.Background()))
-	return &migrationTestHelper{pool: pool}
+	return pool
 }
 
 func (h *migrationTestHelper) exists(ctx context.Context, query string, args ...any) (bool, error) {
