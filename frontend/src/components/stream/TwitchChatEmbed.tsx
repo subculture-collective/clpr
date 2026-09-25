@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { checkTwitchAuthStatus } from '../../lib/twitch-api';
+import { useRegisterTwitchPlayer } from '@/hooks/useTwitchPlayerLayer';
 
 export interface TwitchChatEmbedProps {
   channel: string;
@@ -11,6 +12,9 @@ export function TwitchChatEmbed({ channel, position = 'side' }: TwitchChatEmbedP
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { isAuthenticated: isUserLoggedIn } = useAuth();
+  // The chat embed is a Twitch embed too, so floating controls stay clear of it.
+  const chatRef = useRef<HTMLDivElement>(null);
+  useRegisterTwitchPlayer(chatRef, true);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -44,9 +48,9 @@ export function TwitchChatEmbed({ channel, position = 'side' }: TwitchChatEmbedP
     : 'w-full h-full min-h-[600px]';
 
   return (
-    <div className={`border rounded-lg overflow-hidden bg-surface-raised ${containerClasses}`}>
+    <div className={`flex flex-col border rounded-lg overflow-hidden bg-surface-raised ${containerClasses}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-surface">
+      <div className="flex shrink-0 items-center justify-between p-3 border-b border-border bg-surface">
         <h3 className="font-bold text-white">Twitch Chat</h3>
 
         {isUserLoggedIn && !isCheckingAuth && !isAuthenticated && (
@@ -66,11 +70,11 @@ export function TwitchChatEmbed({ channel, position = 'side' }: TwitchChatEmbedP
         )}
       </div>
 
-      {/* Chat Embed */}
-      <div className="w-full h-[calc(100%-52px)]">
+      {/* Chat Embed: fills the rest of the box so the iframe is never clipped */}
+      <div ref={chatRef} className="relative w-full min-h-0 flex-1">
         <iframe
           src={`https://www.twitch.tv/embed/${encodeURIComponent(channel)}/chat?parent=${encodeURIComponent(window.location.hostname)}&darkpopout`}
-          className="w-full h-full border-0"
+          className="absolute inset-0 w-full h-full border-0"
           title={`${channel} Twitch Chat`}
           sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals"
         />
