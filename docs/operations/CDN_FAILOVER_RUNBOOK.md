@@ -124,18 +124,15 @@ location @origin_fallback {
 
 ### Running Tests
 
-#### Backend Integration Tests
+#### Backend Tests
+
+The backend CDN failover integration suite (`backend/tests/integration/cdn/`)
+was removed in February 2026. CDN URL generation and cache headers are covered
+by unit tests that need no services:
 
 ```bash
-# Start test infrastructure
-make test-setup
-
-# Run CDN failover tests
 cd backend
-go test -v -tags=integration ./tests/integration/cdn/...
-
-# Cleanup
-docker compose -f docker-compose.test.yml down
+go test -v ./internal/services -run 'CDN|Provider'
 ```
 
 #### Frontend E2E Tests
