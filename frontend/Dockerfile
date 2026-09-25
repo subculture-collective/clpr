@@ -13,7 +13,10 @@ RUN npm ci
 
 # Copy source code and environment file
 COPY frontend/ .
-COPY docs/openapi/generated /app/public/docs/openapi/generated
+# Generated API reference and OpenAPI source, served as text at /openapi/.
+# Keep them out of /docs/: that path belongs to the SPA documentation page.
+COPY docs/openapi/generated /app/public/openapi
+COPY docs/openapi/openapi.yaml /app/public/openapi/openapi.yaml
 
 # Use production environment for build
 ARG NODE_ENV=production
@@ -47,6 +50,16 @@ LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
 # Copy custom nginx config
 COPY --chmod=0444 frontend/nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder --chmod=0444 /app/edge-routes.conf /etc/nginx/edge-routes.conf
+RUN install -d -m 0755 /etc/nginx/templates
+COPY --chmod=0444 frontend/nginx-templates/clpr-backend.conf.template /etc/nginx/templates/clpr-backend.conf.template
+
+# Link previews for /clip/:id are proxied to the backend. BACKEND_URL must be
+# reachable from this container (compose: clpr-backend on the shared network).
+# The nginx entrypoint renders the template into writable /tmp at start-up and
+# takes the resolver from /etc/resolv.conf.
+ENV BACKEND_URL=http://clpr-backend:8080 \
+    NGINX_ENVSUBST_OUTPUT_DIR=/tmp \
+    NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html

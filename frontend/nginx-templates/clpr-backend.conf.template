@@ -1,0 +1,15 @@
+# Rendered by the nginx image entrypoint (20-envsubst-on-templates.sh) into
+# /tmp/clpr-backend.conf and included from nginx.conf.
+#
+# BACKEND_URL is the backend origin reachable from this container, without a
+# trailing slash. The image default is http://clpr-backend:8080 (the compose
+# container name on the shared network); blue-green slots override it.
+# NGINX_LOCAL_RESOLVERS comes from /etc/resolv.conf (Docker's 127.0.0.11 on
+# user-defined networks), so the backend name is resolved per request and nginx
+# still starts while the backend is down.
+resolver ${NGINX_LOCAL_RESOLVERS} valid=30s ipv6=off;
+resolver_timeout 3s;
+
+map $host $clpr_backend_url {
+    default "${BACKEND_URL}";
+}

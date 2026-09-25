@@ -37,6 +37,10 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 	})
 	r.GET("/clips/streamer/:broadcasterName/:gameSlug", h.Pages.GetStreamerGamePage)
 
+	// Link-preview documents for chat/social crawlers. The frontend nginx edge
+	// proxies known preview user agents on /clip/:id and /clips/:id here.
+	v1.GET("/share/clips/:id", h.Share.GetClipPreview)
+
 	// Health check endpoints (additional checks requiring middleware)
 
 	// Basic health check (used by Docker HEALTHCHECK)

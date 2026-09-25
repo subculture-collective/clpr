@@ -65,6 +65,31 @@ require_literal frontend/nginx.conf 'location @spa_route {'
 require_literal frontend/Dockerfile 'cp /usr/share/nginx/html/favicon_io/favicon.ico /usr/share/nginx/html/favicon.ico'
 require_literal frontend/Dockerfile 'COPY --chmod=0444 frontend/nginx.conf /etc/nginx/nginx.conf'
 require_literal frontend/Dockerfile 'COPY --from=builder --chmod=0444 /app/edge-routes.conf /etc/nginx/edge-routes.conf'
+require_literal frontend/Dockerfile 'COPY --chmod=0444 frontend/nginx-templates/clpr-backend.conf.template /etc/nginx/templates/clpr-backend.conf.template'
+require_literal frontend/Dockerfile 'ENV BACKEND_URL=http://clpr-backend:8080'
+require_literal frontend/Dockerfile 'COPY docs/openapi/generated /app/public/openapi'
+require_literal frontend/nginx.conf 'server_tokens off;'
+require_literal frontend/nginx.conf 'absolute_redirect off;'
+require_literal frontend/nginx.conf 'port_in_redirect off;'
+require_literal frontend/nginx.conf 'include /tmp/clpr-backend.conf;'
+require_literal frontend/nginx.conf 'location @clip_preview {'
+require_literal frontend/nginx.conf 'location ^~ /openapi/ {'
+# shellcheck disable=SC2016 # literal envsubst placeholder
+require_literal frontend/nginx-templates/clpr-backend.conf.template 'default "${BACKEND_URL}";'
+
+# Directories under the web root must never be served or redirected; only the
+# SPA, files, and explicit locations answer.
+# shellcheck disable=SC2016 # literal nginx variable
+if grep -Eq 'try_files[^;]*\$uri/' frontend/nginx.conf; then
+  fail "frontend/nginx.conf serves directories through try_files \$uri/"
+fi
+if grep -Fq '/app/public/docs' frontend/Dockerfile; then
+  fail "frontend/Dockerfile publishes files under /docs/, which belongs to the SPA"
+fi
+# Search crawlers must keep the SPA; only link-preview bots get server-rendered tags.
+if grep -Eiq 'clpr_preview_bot[^}]*googlebot' frontend/nginx.conf; then
+  fail "Googlebot must not receive link-preview documents"
+fi
 
 (cd frontend && node scripts/generate-edge-routes.mjs --check) || fail "React and edge route manifests differ"
 
@@ -133,9 +158,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$tmp_dir/frontend"
+mkdir -p "$tmp_dir/frontend/openapi"
 cp -R frontend/dist/. "$tmp_dir/frontend/"
 cp frontend/public/favicon_io/favicon.ico "$tmp_dir/frontend/favicon.ico"
+# Mirror the Dockerfile's API reference layout.
+cp -R docs/openapi/generated/. "$tmp_dir/frontend/openapi/"
+cp docs/openapi/openapi.yaml "$tmp_dir/frontend/openapi/openapi.yaml"
 find "$tmp_dir/frontend" -type d -exec chmod 755 {} +
 find "$tmp_dir/frontend" -type f -exec chmod 644 {} +
 node frontend/scripts/generate-edge-routes.mjs \
@@ -154,6 +182,25 @@ port = int(sys.argv[1])
 
 class Backend(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        share_prefix = "/api/v1/share/clips/"
+        if self.path.startswith(share_prefix):
+            clip_id = self.path[len(share_prefix):]
+            status = 404 if clip_id == "missing-clip" else 200
+            url = "https://clpr.tv/" if status == 404 else f"https://clpr.tv/clip/{clip_id}"
+            body = (
+                "<!doctype html><html><head>"
+                f'<meta property="og:url" content="{url}">'
+                f'<meta property="og:title" content="contract clip {clip_id}">'
+                "</head><body>preview</body></html>"
+            ).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "public, max-age=300")
+            self.send_header("X-Frame-Options", "SAMEORIGIN")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         statuses = {
             "/health": (200, {"status": "healthy"}),
             "/health/ready": (200, {"status": "ready"}),
@@ -190,9 +237,16 @@ awk '/^http:\/\/clpr\.tv/{exit} {print}' "$tmp_dir/Caddyfile.rendered" \
       -e 's|output file /var/log/caddy/access.log|output file /tmp/access.log|' \
   > "$tmp_dir/Caddyfile"
 
-validation_container="$(docker create nginx:1.29-alpine nginx -t)"
+nginx_env=(
+  -e "BACKEND_URL=http://127.0.0.1:$backend_port"
+  -e NGINX_ENVSUBST_OUTPUT_DIR=/tmp
+  -e NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+)
+
+validation_container="$(docker create "${nginx_env[@]}" nginx:1.29-alpine nginx -t)"
 docker cp "$tmp_dir/nginx.conf" "$validation_container:/etc/nginx/nginx.conf"
 docker cp "$tmp_dir/edge-routes.conf" "$validation_container:/etc/nginx/edge-routes.conf"
+docker cp frontend/nginx-templates/. "$validation_container:/etc/nginx/templates"
 docker start --attach "$validation_container" >/dev/null
 docker rm "$validation_container" >/dev/null
 validation_container=""
@@ -203,10 +257,11 @@ docker start --attach "$validation_container" >/dev/null
 docker rm "$validation_container" >/dev/null
 validation_container=""
 
-docker create --name "$frontend_container" --network "$runtime_network" \
+docker create --name "$frontend_container" --network "$runtime_network" "${nginx_env[@]}" \
   nginx:1.29-alpine nginx -g 'daemon off;' >/dev/null
 docker cp "$tmp_dir/nginx.conf" "$frontend_container:/etc/nginx/nginx.conf"
 docker cp "$tmp_dir/edge-routes.conf" "$frontend_container:/etc/nginx/edge-routes.conf"
+docker cp frontend/nginx-templates/. "$frontend_container:/etc/nginx/templates"
 docker cp "$tmp_dir/frontend/." "$frontend_container:/usr/share/nginx/html"
 docker start "$frontend_container" >/dev/null
 
@@ -234,8 +289,9 @@ curl --silent --fail "http://127.0.0.1:$edge_port/health" >/dev/null || fail "Ca
 assert_status() {
   local expected="$1"
   local url="$2"
+  shift 2
   local actual
-  actual="$(curl --silent --output "$tmp_dir/body" --dump-header "$tmp_dir/headers" --write-out '%{http_code}' "$url")"
+  actual="$(curl --silent --output "$tmp_dir/body" --dump-header "$tmp_dir/headers" --write-out '%{http_code}' "$@" "$url")"
   [[ "$actual" == "$expected" ]] || fail "$url returned $actual, expected $expected"
 }
 
@@ -265,8 +321,53 @@ for path in \
   grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell"
 done
 
-for path in /definitely-not-a-clpr-route /unknown/nested/path; do
+# Unknown paths keep a 404 status but render the SPA's branded not-found page.
+for path in /definitely-not-a-clpr-route /unknown/nested/path /favicon_io/ /assets; do
   assert_status 404 "http://127.0.0.1:$edge_port$path"
+  grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell with its 404"
+done
+
+# /docs is the SPA documentation page; directories never redirect or leak the
+# internal port.
+for path in /docs /docs/ /about/; do
+  assert_status 200 "http://127.0.0.1:$edge_port$path"
+  grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell"
+  if grep -Eiq '^location:' "$tmp_dir/headers"; then
+    fail "$path redirected"
+  fi
+done
+
+assert_status 404 "http://127.0.0.1:$frontend_port/this-page-does-not-exist"
+if grep -Eiq '^server: nginx/[0-9]' "$tmp_dir/headers"; then
+  fail "nginx advertises its version"
+fi
+
+# The generated API reference is readable text at a stable URL; old links redirect relatively.
+assert_status 200 "http://127.0.0.1:$edge_port/openapi/api-reference.md"
+assert_header Content-Type 'text/plain; charset=utf-8'
+assert_status 200 "http://127.0.0.1:$edge_port/openapi/openapi.yaml"
+assert_header Content-Type 'text/plain; charset=utf-8'
+assert_status 301 "http://127.0.0.1:$frontend_port/docs/openapi/generated/api-reference.md"
+assert_header Location /openapi/api-reference.md
+
+# Link-preview crawlers receive per-clip tags from the backend; browsers and
+# search crawlers receive the SPA.
+assert_status 200 "http://127.0.0.1:$edge_port/clip/contract-clip-1" -A 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)'
+grep -Fq '<meta property="og:url" content="https://clpr.tv/clip/contract-clip-1">' "$tmp_dir/body" \
+  || fail "Discordbot did not receive the clip preview"
+assert_header Vary 'User-Agent'
+assert_header X-Frame-Options DENY
+[[ "$(grep -Eic '^x-frame-options:' "$tmp_dir/headers")" == 1 ]] || fail "clip preview duplicated X-Frame-Options"
+assert_status 200 "http://127.0.0.1:$edge_port/clips/contract-clip-1" -A 'Twitterbot/1.0'
+grep -Fq 'contract clip contract-clip-1' "$tmp_dir/body" || fail "Twitterbot did not receive the clip preview"
+assert_status 200 "http://127.0.0.1:$edge_port/clip/contract-clip-1" -I -A 'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)'
+assert_status 404 "http://127.0.0.1:$edge_port/clip/missing-clip" -A 'Discordbot/2.0'
+grep -Fq '<meta property="og:url" content="https://clpr.tv/">' "$tmp_dir/body" || fail "missing clip did not receive generic tags"
+for agent in \
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36' \
+  'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'; do
+  assert_status 200 "http://127.0.0.1:$edge_port/clip/contract-clip-1" -A "$agent"
+  grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$agent did not receive the SPA shell"
 done
 
 assert_status 200 "http://127.0.0.1:$edge_port/manifest.webmanifest"
