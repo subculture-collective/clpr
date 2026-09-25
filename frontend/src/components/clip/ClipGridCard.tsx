@@ -41,7 +41,7 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 
 	return (
 		<article
-			className="group flex h-full flex-col border border-border bg-card p-3 transition-colors motion-reduce:transition-none hover:border-line-strong focus-within:border-primary-400"
+			className="group flex h-full min-w-0 flex-col border border-border bg-card p-3 transition-colors motion-reduce:transition-none hover:border-line-strong focus-within:border-primary-400"
 			data-testid="clip-grid-card"
 		>
 			<Link
@@ -147,9 +147,9 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 			)}
 			</Link>
 
-			{/* Stats — pushed to bottom, aligned with thumbnail edges */}
-			<div className="-mb-3 flex-no-wrap mt-auto flex items-center justify-between gap-1.5 font-mono text-xs text-muted-foreground">
-				<div className="flex flex-no-wrap items-center gap-x-1.5 gap-y-1">
+			{/* Stats — pushed to bottom; views and date wrap below the actions on narrow cards */}
+			<div className="-mb-3 mt-auto flex flex-wrap items-center justify-between gap-x-1.5 font-mono text-xs text-muted-foreground">
+				<div className="flex min-w-0 items-center gap-x-1.5">
 					{/* Vote buttons */}
 					<button
 						type="button"
@@ -227,19 +227,19 @@ export function ClipGridCard({ clip }: ClipGridCardProps) {
 						iconClassName="h-3.5 w-3.5"
 						preventLinkNavigation={true}
 					/>
-
-					{/* Views */}
-					<span className="inline-flex items-center gap-1">
-						<Eye size={14} />
-						<span>{formatCompactNumber(clip.view_count)}</span>
-					</span>
 				</div>
 
-				<div
-					className="shrink-0 whitespace-nowrap text-right text-xs text-muted-foreground"
-					title={timestamp.title}
-				>
-					{timestamp.display}
+				<div className="ml-auto flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap text-right">
+					{/* Views: clpr's last Twitch sync, not a live count */}
+					<span
+						className="inline-flex items-center gap-1"
+						title={`${clip.view_count.toLocaleString()} Twitch views at last sync`}
+					>
+						<Eye size={14} aria-hidden="true" />
+						<span>{formatCompactNumber(clip.view_count)}</span>
+						<span className="sr-only">views</span>
+					</span>
+					<span title={timestamp.title}>{timestamp.display}</span>
 				</div>
 			</div>
 		</article>

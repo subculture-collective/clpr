@@ -5,13 +5,14 @@ import { ArrowLeft, Flag, Lock, MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Container, SEO } from '@/components';
-import { Avatar, Modal } from '@/components/ui';
+import { Avatar, Modal, ResourceUnavailable } from '@/components/ui';
 import { ReplyTree, ReplyComposer } from '@/components/forum';
 import { forumApi } from '@/lib/forum-api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { formatTimestamp } from '@/lib/utils';
+import { isNotFoundError } from '@/lib/error-utils';
 import type { FlagContentRequest } from '@/types/forum';
 
 export function ThreadDetail() {
@@ -29,7 +30,7 @@ export function ThreadDetail() {
   const [reportDetails, setReportDetails] = useState('');
 
   // Fetch thread with replies
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['forum-thread', threadId],
     queryFn: () => forumApi.getThread(threadId!),
     enabled: !!threadId,
@@ -140,14 +141,29 @@ export function ThreadDetail() {
   }
 
   if (error || !data) {
+    const notFound = !error || isNotFoundError(error);
     return (
-      <Container className="py-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="p-4 bg-red-900/20 border border-red-800 rounded-lg">
-            <p className="text-red-400">Failed to load thread</p>
-          </div>
-        </div>
-      </Container>
+      <>
+        <SEO title={notFound ? 'Thread not found' : 'Thread unavailable'} noindex />
+        <Container className="py-6">
+          {notFound ? (
+            <ResourceUnavailable
+              kind="not-found"
+              title="This thread isn't here"
+              description="It may have been removed, or the link is incomplete."
+              links={[{ label: 'Back to the forum', href: '/forum' }]}
+            />
+          ) : (
+            <ResourceUnavailable
+              kind="error"
+              title="We couldn't load this thread"
+              description="Check your connection and try again."
+              onRetry={() => void refetch()}
+              links={[{ label: 'Back to the forum', href: '/forum' }]}
+            />
+          )}
+        </Container>
+      </>
     );
   }
 

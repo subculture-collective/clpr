@@ -6,6 +6,7 @@ import {
     SEO,
     VideoPlayer,
     TheatreMode,
+    ResourceUnavailable,
 } from '../components';
 import {
     useClipById,
@@ -23,10 +24,11 @@ import { TagList } from '@/components/tag/TagList';
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { topicApi } from '@/lib/topic-api';
+import { isNotFoundError } from '@/lib/error-utils';
 
 export function ClipDetailPage() {
     const { id } = useParams<{ id: string }>();
-    const { data: clip, isLoading, error } = useClipById(id || '');
+    const { data: clip, isLoading, error, refetch } = useClipById(id || '');
     const user = useUser();
     const isAuthenticated = useIsAuthenticated();
     const voteMutation = useClipVote();
@@ -135,35 +137,30 @@ export function ClipDetailPage() {
         );
     }
 
-    if (error) {
+    if (error || !clip) {
+        const notFound = !error || isNotFoundError(error);
         return (
             <>
-                <SEO title='Error Loading Clip' noindex />
+                <SEO title={notFound ? 'Clip not found' : 'Clip unavailable'} noindex />
                 <Container className='py-8'>
-                    <div className='text-center py-12'>
-                        <h2 className='text-3xl text-error-300 mb-4'>
-                            Error Loading Clip
-                        </h2>
-                        <p className='text-muted-foreground'>{error.message}</p>
-                    </div>
-                </Container>
-            </>
-        );
-    }
-
-    if (!clip) {
-        return (
-            <>
-                <SEO title='Clip Not Found' noindex />
-                <Container className='py-8'>
-                    <div className='text-center py-12'>
-                        <h2 className='text-3xl mb-4'>
-                            Clip Not Found
-                        </h2>
-                        <p className='text-muted-foreground'>
-                            The clip you're looking for doesn't exist.
-                        </p>
-                    </div>
+                    {notFound ?
+                        <ResourceUnavailable
+                            kind='not-found'
+                            title="This clip isn't here"
+                            description='It may have been removed, or the link is incomplete.'
+                            links={[
+                                { label: 'Back to the feed', href: '/' },
+                                { label: 'Search clips', href: '/search' },
+                            ]}
+                        />
+                    :   <ResourceUnavailable
+                            kind='error'
+                            title="We couldn't load this clip"
+                            description='Check your connection and try again.'
+                            onRetry={() => void refetch()}
+                            links={[{ label: 'Back to the feed', href: '/' }]}
+                        />
+                    }
                 </Container>
             </>
         );
@@ -292,7 +289,10 @@ export function ClipDetailPage() {
                             </>
                         )}
                         <span className='text-text-disabled'>·</span>
-                        <span>{clip.view_count.toLocaleString()} views</span>
+                        {/* view_count is clpr's last Twitch sync; the embed shows Twitch's live count. */}
+                        <span title='Twitch view count when clpr last synced this clip. The player shows the live count.'>
+                            {clip.view_count.toLocaleString()} views at last sync
+                        </span>
                         <span className='text-text-disabled'>·</span>
                         <span>
                             {new Date(clip.created_at).toLocaleDateString('en-US', {
