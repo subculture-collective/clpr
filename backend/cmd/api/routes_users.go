@@ -121,7 +121,7 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	{
 		// Popular broadcasters (must come before /:id route)
 		broadcasters.GET("/popular", h.Broadcaster.ListPopularBroadcasters)
-		broadcasters.GET("/discover", h.Broadcaster.ListCreatorDiscovery)
+		broadcasters.GET("/discover", publicCache(infra), h.Broadcaster.ListCreatorDiscovery)
 
 		// Broadcaster rankings by engagement score (must come before /:id route)
 		broadcasters.GET("/rankings", h.Broadcaster.GetBroadcasterRankings)
@@ -155,6 +155,6 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		categories.GET("", h.Category.ListCategories)
 		categories.GET("/:slug", h.Category.GetCategory)
 		categories.GET("/:slug/games", middleware.OptionalAuthMiddleware(svcs.Auth), h.Category.ListCategoryGames)
-		categories.GET("/:slug/clips", h.Category.ListCategoryClips)
+		categories.GET("/:slug/clips", publicCache(infra), h.Category.ListCategoryClips)
 	}
 }

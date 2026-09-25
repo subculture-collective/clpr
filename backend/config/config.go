@@ -52,6 +52,12 @@ type ServerConfig struct {
 	Environment string
 	ExportDir   string
 	DocsPath    string
+
+	// Anonymous responses of hot public listing endpoints are cached in
+	// Redis for PublicCacheTTL; the last good copy is kept for
+	// PublicCacheStaleTTL and served when the handler fails with a 5xx.
+	PublicCacheTTL      time.Duration
+	PublicCacheStaleTTL time.Duration
 }
 
 // DatabaseConfig holds database connection configuration
@@ -192,6 +198,10 @@ type JobsConfig struct {
 	LiveStatusCandidateLimit          int // 0 disables; 100 per Helix request
 	LiveStatusCandidateWindowDays     int
 	LiveStatusCandidateRefreshMinutes int
+
+	// EngagementPublishInterval spaces out recent-engagement ranking
+	// publishes; polling still runs every minute.
+	EngagementPublishInterval time.Duration
 }
 
 // RateLimitConfig holds rate limiting configuration
@@ -482,6 +492,9 @@ func Load() (*Config, error) {
 			Environment: getEnv("ENVIRONMENT", "development"),
 			ExportDir:   getEnv("EXPORT_DIR", "./exports"),
 			DocsPath:    getEnv("DOCS_PATH", "../docs"),
+
+			PublicCacheTTL:      getEnvDuration("PUBLIC_CACHE_TTL", 30*time.Second),
+			PublicCacheStaleTTL: getEnvDuration("PUBLIC_CACHE_STALE_TTL", 15*time.Minute),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -592,6 +605,8 @@ func Load() (*Config, error) {
 			LiveStatusCandidateLimit:          getEnvInt("LIVE_STATUS_CANDIDATE_LIMIT", 300),
 			LiveStatusCandidateWindowDays:     getEnvInt("LIVE_STATUS_CANDIDATE_WINDOW_DAYS", 30),
 			LiveStatusCandidateRefreshMinutes: getEnvInt("LIVE_STATUS_CANDIDATE_REFRESH_MINUTES", 10),
+
+			EngagementPublishInterval: getEnvDuration("ENGAGEMENT_PUBLISH_INTERVAL", 5*time.Minute),
 		},
 		RateLimit: RateLimitConfig{
 			// Unauthenticated: 100 requests per 15 minutes per IP

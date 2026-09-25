@@ -48,6 +48,32 @@ func TestLoadAbuseDetectionOverrides(t *testing.T) {
 	}
 }
 
+func TestLoadLaunchLoadSheddingDefaults(t *testing.T) {
+	for _, key := range []string{"PUBLIC_CACHE_TTL", "PUBLIC_CACHE_STALE_TTL", "ENGAGEMENT_PUBLISH_INTERVAL", "LIVE_STATUS_CANDIDATE_LIMIT"} {
+		t.Setenv(key, "")
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Server.PublicCacheTTL != 30*time.Second || cfg.Server.PublicCacheStaleTTL != 15*time.Minute {
+		t.Fatalf("public cache defaults = %v / %v", cfg.Server.PublicCacheTTL, cfg.Server.PublicCacheStaleTTL)
+	}
+	if cfg.Jobs.EngagementPublishInterval != 5*time.Minute || cfg.Jobs.LiveStatusCandidateLimit != 300 {
+		t.Fatalf("job defaults = %v / %d", cfg.Jobs.EngagementPublishInterval, cfg.Jobs.LiveStatusCandidateLimit)
+	}
+
+	t.Setenv("PUBLIC_CACHE_TTL", "45s")
+	t.Setenv("ENGAGEMENT_PUBLISH_INTERVAL", "2m")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Server.PublicCacheTTL != 45*time.Second || cfg.Jobs.EngagementPublishInterval != 2*time.Minute {
+		t.Fatalf("overrides not applied: %v / %v", cfg.Server.PublicCacheTTL, cfg.Jobs.EngagementPublishInterval)
+	}
+}
+
 func TestLoadAbuseBanDurationsRejectsInvalidList(t *testing.T) {
 	t.Setenv("ABUSE_BAN_DURATIONS", "15m,forever")
 	cfg, err := Load()

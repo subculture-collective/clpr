@@ -1,12 +1,26 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
+
+// respondCategoryLookupError answers 404 only for a missing category. Other
+// failures (such as statement timeouts) are logged and reported as 500 rather
+// than disguised as "Category not found".
+func respondCategoryLookupError(c *gin.Context, slug string, err error) {
+	if errors.Is(err, repository.ErrCategoryNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		return
+	}
+	utils.GetLogger().Error("Failed to load category", err, map[string]interface{}{"category": slug})
+	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load category"})
+}
 
 // CategoryHandler handles category-related HTTP requests
 type CategoryHandler struct {
@@ -80,9 +94,7 @@ func (h *CategoryHandler) GetCategory(c *gin.Context) {
 
 	category, err := h.categoryRepo.GetBySlug(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Category not found",
-		})
+		respondCategoryLookupError(c, slug, err)
 		return
 	}
 
@@ -116,9 +128,7 @@ func (h *CategoryHandler) ListCategoryGames(c *gin.Context) {
 	// Get category
 	category, err := h.categoryRepo.GetBySlug(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Category not found",
-		})
+		respondCategoryLookupError(c, slug, err)
 		return
 	}
 
@@ -170,15 +180,14 @@ func (h *CategoryHandler) ListCategoryClips(c *gin.Context) {
 	// Get category
 	category, err := h.categoryRepo.GetBySlug(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Category not found",
-		})
+		respondCategoryLookupError(c, slug, err)
 		return
 	}
 
 	filters := repository.ClipFilters{CategoryID: &category.ID, Sort: sort, Timeframe: &timeframe}
 	clips, total, err := h.clipRepo.ListWithFilters(c.Request.Context(), filters, limit, offset)
 	if err != nil {
+		utils.GetLogger().Error("Failed to list category clips", err, map[string]interface{}{"category": slug, "sort": sort})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch clips"})
 		return
 	}

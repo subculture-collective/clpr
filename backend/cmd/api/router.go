@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,6 +15,17 @@ func newRouter() *gin.Engine {
 	r.UseRawPath = true
 	r.UnescapePathValues = true
 	return r
+}
+
+// publicCache caches anonymous responses of a hot public listing route. Each
+// route gets its own instance so in-flight deduplication stays per route.
+func publicCache(infra *Infrastructure) gin.HandlerFunc {
+	cfg := middleware.PublicResponseCacheConfig{}
+	if infra.Config != nil {
+		cfg.TTL = infra.Config.Server.PublicCacheTTL
+		cfg.StaleTTL = infra.Config.Server.PublicCacheStaleTTL
+	}
+	return middleware.PublicResponseCache(infra.Redis, cfg)
 }
 
 // configureClientIP makes c.ClientIP() return the visitor address instead of

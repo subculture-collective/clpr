@@ -98,7 +98,7 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 	{
 		// Public playlist endpoints
 		playlists.GET("/public", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.ListPublicPlaylists)
-		playlists.GET("/featured", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.ListFeaturedPlaylists)
+		playlists.GET("/featured", middleware.OptionalAuthMiddleware(svcs.Auth), publicCache(infra), h.Playlist.ListFeaturedPlaylists)
 		playlists.GET("/today", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.GetPlaylistOfTheDay)
 		playlists.GET("/share/:token", middleware.OptionalAuthMiddleware(svcs.Auth), h.Playlist.GetPlaylistByShareToken)
 		playlists.GET("/bookmarks", middleware.AuthMiddleware(svcs.Auth), h.Playlist.ListBookmarkedPlaylists)

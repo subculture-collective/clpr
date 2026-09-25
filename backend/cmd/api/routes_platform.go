@@ -84,7 +84,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 	{
 		twitchCategories.GET("/trending", h.Game.GetTrendingGames)
 		twitchCategories.GET("/:gameId", middleware.OptionalAuthMiddleware(svcs.Auth), h.Game.GetGame)
-		twitchCategories.GET("/:gameId/clips", h.Game.ListGameClips)
+		twitchCategories.GET("/:gameId/clips", publicCache(infra), h.Game.ListGameClips)
 		twitchCategories.POST("/:gameId/follow", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Game.FollowGame)
 		twitchCategories.DELETE("/:gameId/follow", middleware.AuthMiddleware(svcs.Auth), h.Game.UnfollowGame)
 	}
@@ -122,7 +122,7 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		feeds.GET("/search", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Feed.SearchFeeds)
 
 		// Comprehensive feed filtering endpoint
-		feeds.GET("/clips", middleware.OptionalAuthMiddleware(svcs.Auth), h.Feed.GetFilteredClips)
+		feeds.GET("/clips", middleware.OptionalAuthMiddleware(svcs.Auth), publicCache(infra), h.Feed.GetFilteredClips)
 
 		// Following feed (authenticated)
 		feeds.GET("/following", middleware.AuthMiddleware(svcs.Auth), h.Feed.GetFollowingFeed)
