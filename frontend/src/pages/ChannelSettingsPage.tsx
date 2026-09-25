@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/ui/Avatar';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
@@ -170,17 +171,13 @@ export function ChannelSettingsPage() {
                 className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  {member.avatar_url ? (
-                    <img
-                      src={member.avatar_url}
-                      alt={member.username}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center text-background font-heading font-bold uppercase tracking-[0.06em]">
-                      {member.username?.[0]?.toUpperCase() || '?'}
-                    </div>
-                  )}
+                  <Avatar
+                    src={member.avatar_url}
+                    alt=""
+                    fallback={member.username}
+                    className="shrink-0"
+                    frameClassName="bg-primary-400 text-background"
+                  />
                   <div>
                     <div className="font-medium">{member.display_name || member.username}</div>
                     <div className="text-sm text-muted-foreground">@{member.username}</div>

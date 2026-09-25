@@ -1,3 +1,4 @@
+import { Avatar } from '../ui/Avatar';
 import type { UserReputation } from '../../types/reputation';
 import { BadgeDisplay } from './BadgeDisplay';
 
@@ -55,10 +56,12 @@ export function ReputationDisplay({ reputation, compact = false }: ReputationDis
           </div>
         </div>
         {reputation.avatar_url && (
-          <img
+          <Avatar
             src={reputation.avatar_url}
             alt={reputation.username}
-            className="w-16 h-16 rounded-full"
+            fallback={reputation.username}
+            size="xl"
+            className="shrink-0"
           />
         )}
       </div>

@@ -45,3 +45,5 @@ export { MutedIcon } from './MutedIcon';
 export { DocHeader } from './DocHeader';
 
 export { DocTOC } from './DocTOC';
+
+export { ResourceUnavailable } from './ResourceUnavailable';

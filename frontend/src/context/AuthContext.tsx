@@ -30,7 +30,7 @@ import type { UserProperties } from '../lib/telemetry';
 import { setUnauthorizedHandler } from '../lib/api';
 import {
     clearAuthStorage,
-    hasAuthSessionHint,
+    readAuthSessionHint,
     markAuthSession,
 } from '../lib/auth-storage';
 
@@ -109,9 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check for existing session on mount
     const checkAuth = useCallback(async () => {
+        const sessionHint = readAuthSessionHint();
+        if (sessionHint === false && !autoLoginEnabled) {
+            // Every sign-in records the hint, so without it the visitor is
+            // logged out. Skipping /auth/me avoids a 401 that browsers log as
+            // a console error on every anonymous page load.
+            clearUserContext();
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const currentUser = await getCurrentUser({
-                anonymousProbe: !hasAuthSessionHint(),
+                anonymousProbe: sessionHint !== true,
             });
             applyUserContext(currentUser);
         } catch {
@@ -131,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [applyUserContext, clearUserContext, tryAutoLogin]);
+    }, [applyUserContext, autoLoginEnabled, clearUserContext, tryAutoLogin]);
 
     useEffect(() => {
         checkAuth();

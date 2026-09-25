@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/ui/Avatar';
 import { useState, useEffect, useCallback } from 'react';
 import { UserPlus, Shield, Edit, Eye, Trash2 } from 'lucide-react';
 import apiClient from '@/lib/api';
@@ -241,17 +242,13 @@ export function CollaboratorManager({ playlistId, isOwner, canManageCollaborator
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 {/* Avatar */}
-                                {collab.user?.avatar_url ? (
-                                    <img
-                                        src={collab.user.avatar_url}
-                                        alt={collab.user.display_name}
-                                        className="w-10 h-10 rounded-full"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center text-background font-heading font-bold uppercase">
-                                        {collab.user?.display_name?.charAt(0) || '?'}
-                                    </div>
-                                )}
+                                <Avatar
+                                    src={collab.user?.avatar_url}
+                                    alt=""
+                                    fallback={collab.user?.display_name}
+                                    className="shrink-0"
+                                    frameClassName="bg-primary-400 text-background"
+                                />
 
                                 {/* User Info */}
                                 <div className="flex-1 min-w-0">

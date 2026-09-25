@@ -13,6 +13,8 @@ async function login(context: BrowserContext, browser: string, role: string) {
         data: { username: `clpr-e2e-${browser}-${role}` },
     });
     expect(response.status()).toBe(200);
+    // A browser sign-in records this hint; the app skips the session probe without it.
+    await context.addInitScript(() => localStorage.setItem('auth_session_hint', '1'));
     return (await response.json()).user as { id: string };
 }
 
@@ -87,7 +89,7 @@ test('private playlist persists edits and excludes another member; privileged op
     expect((await context.request.get(`${api}/api/v1/playlists/${playlist.id}`)).status()).toBe(404);
     await page.goBack({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: `${title} edited`, exact: true })).toHaveCount(0);
-    await expect(page.getByText('Playlist not found', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: "This playlist isn't here" })).toBeVisible();
     await login(context, browserName, 'member');
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: `${title} edited`, exact: true })).toBeVisible();
