@@ -359,9 +359,6 @@ Run evaluation suite:
 cd backend
 go test ./internal/services/...
 
-# Integration tests
-go test ./tests/integration/search/...
-
 # Evaluation
 go run cmd/evaluate-search/main.go -verbose
 ```
