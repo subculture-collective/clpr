@@ -42,8 +42,7 @@ export function ChatPage() {
       }
     } catch (err) {
       console.error('Error fetching channels:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Failed to load channels: ${errorMessage}. Please check your connection and try again.`);
+      setError("We couldn't load chat channels. Check your connection and try again.");
 
       // For development: Create mock channels if API fails
       if (import.meta.env.DEV) {
@@ -108,7 +107,7 @@ export function ChatPage() {
       setSelectedChannel(channelId);
     } catch (err) {
       console.error('Error refreshing channels after creation:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh channel list. Please reload the page.');
+      setError("We couldn't refresh the channel list. Reload the page to see the new channel.");
     }
   };
 

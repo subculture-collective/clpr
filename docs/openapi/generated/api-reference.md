@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-09-25T05:39:04.119Z
+generated: 2026-09-25T14:20:23.097Z
 ---
 
 # Clipper API
@@ -39770,7 +39770,7 @@ API documentation
 
 `GET /api/v1/docs`
 
-Returns a tree of regular Markdown files, excluding hidden, archive, vault, and symlink entries. Release images serve the copy of `docs/` embedded at build time. If no documentation source is available the tree is empty rather than an error.
+Returns a tree of the published Markdown documents listed in `docs/public-docs.json`; other files in the documentation source are never listed. Each file carries the title of its own first heading or front matter. Release images serve the copy embedded at build time. If no documentation source is available the tree is empty rather than an error.
 
 **Tags:** Documentation
 
@@ -39866,7 +39866,7 @@ func main() {
 
 `GET /api/v1/docs/search`
 
-Searches bounded regular Markdown files and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
+Searches the published Markdown documents and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
 
 **Tags:** Documentation
 
@@ -39969,6 +39969,8 @@ func main() {
 ### Get a top-level Markdown document
 
 `GET /api/v1/docs/{path}`
+
+Returns a published document. An encoded slash (`%2F`) selects a nested document; prefer `/api/v1/docs/content/{path}` for those. Documents not listed in `docs/public-docs.json` return 404 even when the file exists.
 
 **Tags:** Documentation
 
@@ -40078,7 +40080,7 @@ func main() {
 
 `GET /api/v1/docs/content/{path}`
 
-Resolves the real path and rejects symlinks that escape the configured documentation root.
+Returns a published document such as `compliance/twitch-embeds`. Documents not listed in `docs/public-docs.json` return 404, and symlinks on the path are rejected.
 
 **Tags:** Documentation
 

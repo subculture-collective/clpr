@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
 import { TagChip } from '../tag/TagChip';
 import { useQuery } from '@tanstack/react-query';
-import { useFeaturedPlaylists, usePlaylists } from '@/hooks/usePlaylist';
-import { useTags } from '@/hooks/useTags';
+import { FEATURED_PLAYLISTS_PREVIEW_LIMIT, useFeaturedPlaylists, usePlaylists } from '@/hooks/usePlaylist';
+import { usePopularTags, useTopicCategories } from '@/hooks/useDiscoveryQueries';
 import { isChipLane, tagLane } from '@/lib/tag-lanes';
 import { useQueueCount } from '@/hooks/useQueue';
 import { useIsAuthenticated } from '@/hooks';
-import { categoryApi } from '@/lib/category-api';
 import { apiClient } from '@/lib/api';
 import {
     ChevronRight,
@@ -75,26 +74,36 @@ function SidebarLink({
     );
 }
 
-export function FeedSidebar() {
+interface FeedSidebarProps {
+    /** Off where the main column already lists featured playlists. */
+    showTrendingPlaylists?: boolean;
+}
+
+const SIDEBAR_PLAYLIST_COUNT = 5;
+const SIDEBAR_TAG_COUNT = 12;
+
+export function FeedSidebar({ showTrendingPlaylists = true }: FeedSidebarProps) {
     const isAuthenticated = useIsAuthenticated();
 
-    // Data hooks
-    const { data: featuredResponse } = useFeaturedPlaylists(1, 5);
-    const featuredPlaylists = (featuredResponse?.data ?? []).filter(
-        (playlist) => (playlist.clip_count ?? 0) > 0,
+    // Data hooks. Playlists, tags and topics use the same query keys as the
+    // home carousel and top nav, so the sidebar reuses their responses.
+    const { data: featuredResponse } = useFeaturedPlaylists(
+        1,
+        FEATURED_PLAYLISTS_PREVIEW_LIMIT,
+        showTrendingPlaylists,
     );
+    const featuredPlaylists = showTrendingPlaylists
+        ? (featuredResponse?.data ?? [])
+              .filter((playlist) => (playlist.clip_count ?? 0) > 0)
+              .slice(0, SIDEBAR_PLAYLIST_COUNT)
+        : [];
 
-    const { data: tagsResponse } = useTags({
-        sort: 'popularity',
-        limit: 12,
-    });
-    const tags = (tagsResponse?.tags ?? []).filter(tag => isChipLane(tagLane(tag)));
+    const { data: tagsResponse } = usePopularTags();
+    const tags = (tagsResponse?.tags ?? [])
+        .filter(tag => isChipLane(tagLane(tag)))
+        .slice(0, SIDEBAR_TAG_COUNT);
 
-    const { data: topicsResponse } = useQuery({
-        queryKey: ['categories', 'topic'],
-        queryFn: () =>
-            categoryApi.listCategories({ type: 'topic', public: true }),
-    });
+    const { data: topicsResponse } = useTopicCategories();
     const topics =
         (
             topicsResponse as {

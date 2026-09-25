@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { forumApi } from '@/lib/forum-api';
 import type { VoteStats } from '@/types/forum';
 
 interface VoteButtonsProps {
@@ -36,52 +37,32 @@ export function VoteButtons({
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/forum/replies/${replyId}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ vote_value: newVote }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to vote');
-      }
+      await forumApi.voteOnReply(replyId, newVote);
 
       // Fetch updated stats to ensure consistency
-      const statsResponse = await fetch(`/api/v1/forum/replies/${replyId}/votes`, {
-        credentials: 'include',
-      });
-      
-      if (statsResponse.ok) {
-        const { data } = await statsResponse.json();
+      try {
+        const data = await forumApi.getReplyVotes(replyId);
         if (data) {
           // Validate response data
           const validatedStats: VoteStats = {
             upvotes: typeof data.upvotes === 'number' ? data.upvotes : 0,
             downvotes: typeof data.downvotes === 'number' ? data.downvotes : 0,
             net_votes: typeof data.net_votes === 'number' ? data.net_votes : 0,
-            user_vote: (data.user_vote === -1 || data.user_vote === 0 || data.user_vote === 1) 
-              ? data.user_vote 
+            user_vote: (data.user_vote === -1 || data.user_vote === 0 || data.user_vote === 1)
+              ? data.user_vote
               : 0,
           };
-          
+
           setVoteCount(validatedStats.net_votes);
           setLocalVote(validatedStats.user_vote);
-          
+
           if (onVoteChange) {
             onVoteChange(validatedStats);
           }
         }
-      } else {
+      } catch (statsError) {
         // Keep optimistic update but log that stats could not be refreshed
-        console.warn(
-          'Failed to refresh vote stats for reply',
-          replyId,
-          'Status:',
-          statsResponse.status
-        );
+        console.warn('Failed to refresh vote stats for reply', replyId, statsError);
       }
     } catch (error) {
       // Revert on error

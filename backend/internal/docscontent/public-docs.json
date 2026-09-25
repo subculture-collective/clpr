@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "description": "Markdown documents published on clpr.tv/docs. Only these files are embedded by `npm run docs:embed` and served by /api/v1/docs; everything else in docs/ stays in the repository. Paths are relative to docs/ and sorted.",
+  "documents": [
+    "compliance/twitch-api-usage.md",
+    "compliance/twitch-embeds.md"
+  ]
+}
