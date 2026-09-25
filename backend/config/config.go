@@ -186,6 +186,12 @@ type JobsConfig struct {
 	PlaylistStartDelaySeconds      int
 	TrendingStartDelaySeconds      int
 	EmbeddingStartDelaySeconds     int
+
+	// Live status also covers the most-clipped broadcasters, not only
+	// followed ones, so the public live list reflects popular streams.
+	LiveStatusCandidateLimit          int // 0 disables; 100 per Helix request
+	LiveStatusCandidateWindowDays     int
+	LiveStatusCandidateRefreshMinutes int
 }
 
 // RateLimitConfig holds rate limiting configuration
@@ -582,6 +588,10 @@ func Load() (*Config, error) {
 			PlaylistStartDelaySeconds:      getEnvInt("PLAYLIST_START_DELAY_SECONDS", 240),
 			TrendingStartDelaySeconds:      getEnvInt("TRENDING_START_DELAY_SECONDS", 420),
 			EmbeddingStartDelaySeconds:     getEnvInt("EMBEDDING_START_DELAY_SECONDS", 720),
+
+			LiveStatusCandidateLimit:          getEnvInt("LIVE_STATUS_CANDIDATE_LIMIT", 300),
+			LiveStatusCandidateWindowDays:     getEnvInt("LIVE_STATUS_CANDIDATE_WINDOW_DAYS", 30),
+			LiveStatusCandidateRefreshMinutes: getEnvInt("LIVE_STATUS_CANDIDATE_REFRESH_MINUTES", 10),
 		},
 		RateLimit: RateLimitConfig{
 			// Unauthenticated: 100 requests per 15 minutes per IP
