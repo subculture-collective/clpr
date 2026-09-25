@@ -65,6 +65,7 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 		engagementProvider = infra.TwitchClient
 	}
 	sg.Engagement = scheduler.NewEngagementScheduler(repos.Engagement, engagementProvider)
+	sg.Engagement.SetPublishInterval(cfg.Jobs.EngagementPublishInterval)
 	sg.launch(ctx, 0, sg.Engagement.Start)
 
 	// Start background scheduler if Twitch client is available

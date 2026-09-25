@@ -117,3 +117,29 @@ func TestEngagementPollingBudgetAndProviderFailure(t *testing.T) {
 		})
 	}
 }
+
+// Rankings are republished at most once per publish interval (default five
+// minutes) while polling continues every tick.
+func TestEngagementTicksPollEveryMinuteButPublishOnInterval(t *testing.T) {
+	id := uuid.New()
+	f := &engagementFake{clips: []repository.EngagementPollClip{{ID: id, TwitchID: "clip"}}, observed: map[uuid.UUID]int{}, repeat: true}
+	polls := 0
+	provider := engagementProviderFunc(func(context.Context, *twitch.ClipParams) (*twitch.ClipsResponse, error) {
+		polls++
+		return &twitch.ClipsResponse{Data: []twitch.Clip{{ID: "clip", ViewCount: 25}}}, nil
+	})
+	s := NewEngagementScheduler(f, provider)
+	s.SetPublishInterval(0) // ignored: keeps the default
+	require.Equal(t, DefaultEngagementPublishInterval, s.publishEvery)
+
+	start := time.Date(2026, 9, 25, 5, 0, 0, 0, time.UTC)
+	for minute := 0; minute < 11; minute++ {
+		require.NoError(t, s.runTick(context.Background(), start.Add(time.Duration(minute)*time.Minute)))
+	}
+	require.Equal(t, 3, f.published, "publishes at minutes 0, 5 and 10")
+	require.Equal(t, 11*10, polls, "every tick polls its full bounded sweep")
+
+	s.SetPublishInterval(time.Minute)
+	require.NoError(t, s.runTick(context.Background(), start.Add(11*time.Minute)))
+	require.Equal(t, 4, f.published)
+}
