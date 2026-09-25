@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-09-25T05:37:13.635Z
+generated: 2026-09-25T05:39:04.119Z
 ---
 
 # Clipper API

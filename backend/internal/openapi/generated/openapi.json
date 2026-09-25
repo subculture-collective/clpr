@@ -24284,7 +24284,7 @@
         "required": true,
         "schema": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9_]{4,25}$"
+          "pattern": "^[A-Za-z0-9_]{1,25}$"
         }
       },
       "FeedOwnerID": {
@@ -32203,7 +32203,7 @@
         "properties": {
           "streamer_username": {
             "type": "string",
-            "pattern": "^[a-z0-9_]{4,25}$"
+            "pattern": "^[a-z0-9_]{1,25}$"
           },
           "is_live": {
             "type": "boolean"
@@ -32253,7 +32253,7 @@
           },
           "streamer_username": {
             "type": "string",
-            "pattern": "^[a-z0-9_]{4,25}$"
+            "pattern": "^[a-z0-9_]{1,25}$"
           },
           "notifications_enabled": {
             "type": "boolean"

@@ -38,11 +38,13 @@ func NewStreamHandler(twitchClient *twitch.Client, streamRepo *repository.Stream
 	}
 }
 
-// validateStreamerUsername validates a Twitch username
-// Twitch usernames: 4-25 characters, alphanumeric + underscore only
+// validateStreamerUsername validates a Twitch login name: 1-25 letters,
+// numbers, or underscores. New accounts need 4+ characters, but older
+// accounts such as "xqc" keep shorter names, so only the upper bound is
+// enforced (matching services.twitchChannelPattern).
 func validateStreamerUsername(username string) error {
-	if len(username) < 4 || len(username) > 25 {
-		return fmt.Errorf("username must be between 4 and 25 characters")
+	if len(username) < 1 || len(username) > 25 {
+		return fmt.Errorf("username must be between 1 and 25 characters")
 	}
 	for _, ch := range username {
 		if !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_') {

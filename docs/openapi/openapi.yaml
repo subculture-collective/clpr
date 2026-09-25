@@ -11892,7 +11892,7 @@ components:
       name: streamer
       in: path
       required: true
-      schema: {type: string, pattern: '^[A-Za-z0-9_]{4,25}$'}
+      schema: {type: string, pattern: '^[A-Za-z0-9_]{1,25}$'}
 
     FeedOwnerID:
       name: id
@@ -14830,7 +14830,7 @@ components:
       type: object
       required: [streamer_username, is_live, viewer_count]
       properties:
-        streamer_username: {type: string, pattern: '^[a-z0-9_]{4,25}$'}
+        streamer_username: {type: string, pattern: '^[a-z0-9_]{1,25}$'}
         is_live: {type: boolean}
         title: {type: string}
         game_name: {type: string}
@@ -14845,7 +14845,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         user_id: {type: string, format: uuid}
-        streamer_username: {type: string, pattern: '^[a-z0-9_]{4,25}$'}
+        streamer_username: {type: string, pattern: '^[a-z0-9_]{1,25}$'}
         notifications_enabled: {type: boolean}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
