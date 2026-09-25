@@ -16,6 +16,8 @@ on:
       - 'docs/**'
       - 'README.md'
       - 'scripts/check-*.js'
+      - 'scripts/embed-docs.mjs'
+      - 'backend/internal/docscontent/content/**'
       - '.markdownlint.jsonc'
       - '.cspell.json'
       - '.lycheeignore'
@@ -27,6 +29,8 @@ on:
       - 'docs/**'
       - 'README.md'
       - 'scripts/check-*.js'
+      - 'scripts/embed-docs.mjs'
+      - 'backend/internal/docscontent/content/**'
       - '.markdownlint.jsonc'
       - '.cspell.json'
       - '.lycheeignore'
@@ -76,6 +80,9 @@ jobs:
         run: |
           npm run docs:inventory
           git diff --exit-code -- docs/reference-inventory.md
+
+      - name: Verify the API's embedded documentation copy is current
+        run: npm run docs:embed:check
 
       - name: Check assets
         run: npm run docs:assets

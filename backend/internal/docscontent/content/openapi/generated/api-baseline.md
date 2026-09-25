@@ -1,0 +1,532 @@
+---
+title: "API Reference - Baseline"
+summary: "Baseline API reference for version 1.0.0"
+tags: ["api", "changelog", "openapi"]
+area: "openapi"
+generated: 2026-07-12T08:06:40.921Z
+---
+
+# API Baseline - Version 1.0.0
+
+**Total Endpoints:** 484
+
+## Endpoints by Category
+
+### Health (14)
+
+- **GET /sitemap.xml** - Get sitemap XML
+- **GET /robots.txt** - Get robots.txt
+- **GET /health/ready** - Readiness check
+- **GET /health/live** - Liveness check
+- **GET /health/stats** - Health statistics
+- **GET /health/cache** - Cache statistics
+- **GET /health/cache/check** - Cache health check
+- **GET /health/webhooks** - Webhook retry statistics
+- **GET /debug/metrics** - Prometheus metrics
+- **GET /api/v1/health** - API health check
+- **GET /api/v1/ping** - Ping endpoint
+- **GET /api/v1/config** - Get public configuration
+- **POST /api/v1/logs** - Submit application logs
+- **GET /api/v1/logs/stats** - Get log statistics
+
+### Authentication (8)
+
+- **GET /api/v1/auth/twitch** - Initiate Twitch OAuth
+- **GET /api/v1/auth/twitch/callback** - Twitch OAuth callback
+- **POST /api/v1/auth/twitch/callback** - PKCE OAuth callback
+- **POST /api/v1/auth/test-login** - Test login (development only)
+- **POST /api/v1/auth/refresh** - Refresh access token
+- **POST /api/v1/auth/logout** - Logout
+- **GET /api/v1/auth/me** - Get current user
+- **POST /api/v1/auth/twitch/reauthorize** - Reauthorize Twitch
+
+### MFA (8)
+
+- **POST /api/v1/auth/mfa/enroll** - Start MFA enrollment
+- **POST /api/v1/auth/mfa/verify-enrollment** - Verify MFA enrollment
+- **GET /api/v1/auth/mfa/status** - Get MFA status
+- **POST /api/v1/auth/mfa/regenerate-backup-codes** - Regenerate backup codes
+- **POST /api/v1/auth/mfa/disable** - Disable MFA
+- **GET /api/v1/auth/mfa/trusted-devices** - Get trusted devices
+- **DELETE /api/v1/auth/mfa/trusted-devices/{id}** - Revoke trusted device
+- **POST /api/v1/auth/mfa/verify-login** - Verify MFA login
+
+### Clips (17)
+
+- **GET /api/v1/clips** - List clips
+- **GET /api/v1/clips/{id}** - Get clip by ID
+- **PUT /api/v1/clips/{id}** - Update clip (Admin)
+- **DELETE /api/v1/clips/{id}** - Delete clip (Admin)
+- **GET /api/v1/clips/{id}/related** - Get related clips
+- **POST /api/v1/clips/batch-media** - Batch get clip media URLs
+- **GET /api/v1/clips/{id}/analytics** - Get clip analytics
+- **POST /api/v1/clips/{id}/track-view** - Track clip view
+- **GET /api/v1/clips/{id}/engagement** - Get clip engagement score
+- **POST /api/v1/clips/{id}/vote** - Vote on clip
+- **POST /api/v1/clips/{id}/favorite** - Add clip to favorites
+- **DELETE /api/v1/clips/{id}/favorite** - Remove clip from favorites
+- **PUT /api/v1/clips/{id}/metadata** - Update clip metadata
+- **PUT /api/v1/clips/{id}/visibility** - Update clip visibility
+- **POST /api/v1/clips/request** - Request clip sync
+- **GET /api/v1/scraped-clips** - List scraped clips
+- **GET /api/v1/favorites** - List user favorites
+
+### Tags (7)
+
+- **GET /api/v1/clips/{id}/tags** - Get clip tags
+- **POST /api/v1/clips/{id}/tags** - Add tags to clip
+- **DELETE /api/v1/clips/{id}/tags/{slug}** - Remove tag from clip
+- **GET /api/v1/tags** - List tags
+- **GET /api/v1/tags/search** - Search tags
+- **GET /api/v1/tags/{slug}** - Get tag by slug
+- **GET /api/v1/tags/{slug}/clips** - Get clips by tag
+
+### Watch History (1)
+
+- **GET /api/v1/clips/{id}/progress** - Get resume position
+
+### Comments (6)
+
+- **GET /api/v1/clips/{id}/comments** - List clip comments
+- **POST /api/v1/clips/{id}/comments** - Create comment
+- **GET /api/v1/comments/{id}/replies** - Get comment replies
+- **PUT /api/v1/comments/{id}** - Update comment
+- **DELETE /api/v1/comments/{id}** - Delete comment
+- **POST /api/v1/comments/{id}/vote** - Vote on comment
+
+### Search (7)
+
+- **GET /api/v1/search** - Search clips
+- **GET /api/v1/search/suggestions** - Get search suggestions
+- **GET /api/v1/search/scores** - Search with scores
+- **GET /api/v1/search/trending** - Get trending searches
+- **GET /api/v1/search/history** - Get search history
+- **GET /api/v1/search/failed** - Get failed searches (Admin)
+- **GET /api/v1/search/analytics** - Get search analytics (Admin)
+
+### Submissions (5)
+
+- **GET /api/v1/submissions** - Get user submissions
+- **POST /api/v1/submissions** - Submit clip
+- **GET /api/v1/submissions/stats** - Get submission statistics
+- **GET /api/v1/submissions/metadata** - Get clip metadata
+- **GET /api/v1/submissions/check/{clip_id}** - Check clip status
+
+### Reports (1)
+
+- **POST /api/v1/reports** - Submit report
+
+### Moderation (22)
+
+- **GET /api/v1/moderation/appeals** - Get user appeals
+- **POST /api/v1/moderation/appeals** - Create appeal
+- **POST /api/v1/moderation/sync-bans** - Sync bans from Twitch
+- **GET /api/v1/moderation/bans** - List channel bans
+- **POST /api/v1/moderation/bans** - Create ban
+- **GET /api/v1/moderation/ban/{id}** - Get ban details
+- **DELETE /api/v1/moderation/ban/{id}** - Revoke ban
+- **POST /api/v1/moderation/twitch/ban** - Ban user on Twitch
+- **DELETE /api/v1/moderation/twitch/ban** - Unban user on Twitch
+- **GET /api/v1/moderation/moderators** - List moderators
+- **POST /api/v1/moderation/moderators** - Add moderator
+- **PATCH /api/v1/moderation/moderators/{id}** - Update moderator permissions
+- **DELETE /api/v1/moderation/moderators/{id}** - Remove moderator
+- **GET /api/v1/moderation/audit-logs** - List moderation audit logs
+- **GET /api/v1/moderation/audit-logs/export** - Export moderation audit logs
+- **GET /api/v1/moderation/audit-logs/{id}** - Get audit log
+- **GET /api/v1/moderation/ban-templates** - List ban reason templates
+- **POST /api/v1/moderation/ban-templates** - Create ban template
+- **GET /api/v1/moderation/ban-templates/stats** - Get template usage statistics
+- **GET /api/v1/moderation/ban-templates/{id}** - Get ban template
+- **PATCH /api/v1/moderation/ban-templates/{id}** - Update ban template
+- **DELETE /api/v1/moderation/ban-templates/{id}** - Delete ban template
+
+### Users (29)
+
+- **GET /api/v1/users/by-username/{username}** - Get user by username
+- **GET /api/v1/users/autocomplete** - User autocomplete
+- **GET /api/v1/users/{id}** - Get user profile
+- **POST /api/v1/users/claim-account** - Claim account
+- **GET /api/v1/users/{id}/reputation** - Get user reputation
+- **GET /api/v1/users/{id}/karma** - Get user karma
+- **GET /api/v1/users/{id}/badges** - Get user badges
+- **GET /api/v1/users/{id}/comments** - Get user comments
+- **GET /api/v1/users/{id}/clips** - Get user clips
+- **GET /api/v1/users/{id}/activity** - Get user activity
+- **GET /api/v1/users/{id}/upvoted** - Get user upvoted clips
+- **GET /api/v1/users/{id}/downvoted** - Get user downvoted clips
+- **GET /api/v1/users/{id}/followers** - Get user followers
+- **GET /api/v1/users/{id}/following** - Get following
+- **GET /api/v1/users/{id}/following/broadcasters** - Get followed broadcasters
+- **POST /api/v1/users/{id}/follow** - Follow user
+- **DELETE /api/v1/users/{id}/follow** - Unfollow user
+- **POST /api/v1/users/{id}/block** - Block user
+- **DELETE /api/v1/users/{id}/block** - Unblock user
+- **GET /api/v1/users/me/blocked** - Get blocked users
+- **GET /api/v1/users/me/stats** - Get personal statistics
+- **GET /api/v1/users/{id}/engagement** - Get user engagement score
+- **PUT /api/v1/users/me/profile** - Update profile
+- **PUT /api/v1/users/me/social-links** - Update social links
+- **GET /api/v1/users/me/settings** - Get user settings
+- **PUT /api/v1/users/me/settings** - Update settings
+- **GET /api/v1/users/me/consent** - Get cookie consent
+- **POST /api/v1/users/me/consent** - Save cookie consent
+- **GET /api/v1/users/me/email-logs** - Get email logs
+
+### Generated Route Contracts (359)
+
+- **GET /api/v1/admin/account-types/conversions** - GET /api/v1/admin/account-types/conversions
+- **GET /api/v1/admin/account-types/stats** - GET /api/v1/admin/account-types/stats
+- **POST /api/v1/admin/account-types/users/{id}/convert-to-moderator** - POST /api/v1/admin/account-types/users/{id}/convert-to-moderator
+- **GET /api/v1/admin/ads/campaigns** - GET /api/v1/admin/ads/campaigns
+- **POST /api/v1/admin/ads/campaigns** - POST /api/v1/admin/ads/campaigns
+- **GET /api/v1/admin/ads/campaigns/{id}** - GET /api/v1/admin/ads/campaigns/{id}
+- **PUT /api/v1/admin/ads/campaigns/{id}** - PUT /api/v1/admin/ads/campaigns/{id}
+- **DELETE /api/v1/admin/ads/campaigns/{id}** - DELETE /api/v1/admin/ads/campaigns/{id}
+- **GET /api/v1/admin/ads/experiments** - GET /api/v1/admin/ads/experiments
+- **GET /api/v1/admin/ads/experiments/{id}/report** - GET /api/v1/admin/ads/experiments/{id}/report
+- **GET /api/v1/admin/ads/reports/by-campaign** - GET /api/v1/admin/ads/reports/by-campaign
+- **GET /api/v1/admin/ads/reports/by-date** - GET /api/v1/admin/ads/reports/by-date
+- **GET /api/v1/admin/ads/reports/by-placement** - GET /api/v1/admin/ads/reports/by-placement
+- **GET /api/v1/admin/ads/reports/by-slot** - GET /api/v1/admin/ads/reports/by-slot
+- **POST /api/v1/admin/ads/validate-creative** - POST /api/v1/admin/ads/validate-creative
+- **GET /api/v1/admin/analytics/alerts** - GET /api/v1/admin/analytics/alerts
+- **GET /api/v1/admin/analytics/content** - GET /api/v1/admin/analytics/content
+- **GET /api/v1/admin/analytics/export** - GET /api/v1/admin/analytics/export
+- **GET /api/v1/admin/analytics/health** - GET /api/v1/admin/analytics/health
+- **GET /api/v1/admin/analytics/overview** - GET /api/v1/admin/analytics/overview
+- **GET /api/v1/admin/analytics/trending** - GET /api/v1/admin/analytics/trending
+- **GET /api/v1/admin/analytics/trends** - GET /api/v1/admin/analytics/trends
+- **GET /api/v1/admin/audit-logs** - GET /api/v1/admin/audit-logs
+- **GET /api/v1/admin/audit-logs/export** - GET /api/v1/admin/audit-logs/export
+- **POST /api/v1/admin/broadcasters/refresh-rankings** - POST /api/v1/admin/broadcasters/refresh-rankings
+- **GET /api/v1/admin/contact** - GET /api/v1/admin/contact
+- **PUT /api/v1/admin/contact/{id}/status** - PUT /api/v1/admin/contact/{id}/status
+- **GET /api/v1/admin/discovery-lists** - GET /api/v1/admin/discovery-lists
+- **POST /api/v1/admin/discovery-lists** - POST /api/v1/admin/discovery-lists
+- **GET /api/v1/admin/discovery-lists/{id}** - GET /api/v1/admin/discovery-lists/{id}
+- **PUT /api/v1/admin/discovery-lists/{id}** - PUT /api/v1/admin/discovery-lists/{id}
+- **DELETE /api/v1/admin/discovery-lists/{id}** - DELETE /api/v1/admin/discovery-lists/{id}
+- **GET /api/v1/admin/discovery-lists/{id}/clips** - GET /api/v1/admin/discovery-lists/{id}/clips
+- **POST /api/v1/admin/discovery-lists/{id}/clips** - POST /api/v1/admin/discovery-lists/{id}/clips
+- **PUT /api/v1/admin/discovery-lists/{id}/clips/reorder** - PUT /api/v1/admin/discovery-lists/{id}/clips/reorder
+- **DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}** - DELETE /api/v1/admin/discovery-lists/{id}/clips/{clipId}
+- **GET /api/v1/admin/email/alerts** - GET /api/v1/admin/email/alerts
+- **POST /api/v1/admin/email/alerts/{id}/acknowledge** - POST /api/v1/admin/email/alerts/{id}/acknowledge
+- **POST /api/v1/admin/email/alerts/{id}/resolve** - POST /api/v1/admin/email/alerts/{id}/resolve
+- **GET /api/v1/admin/email/logs** - GET /api/v1/admin/email/logs
+- **GET /api/v1/admin/email/metrics** - GET /api/v1/admin/email/metrics
+- **GET /api/v1/admin/email/metrics/dashboard** - GET /api/v1/admin/email/metrics/dashboard
+- **GET /api/v1/admin/email/metrics/templates** - GET /api/v1/admin/email/metrics/templates
+- **GET /api/v1/admin/forum/bans** - GET /api/v1/admin/forum/bans
+- **GET /api/v1/admin/forum/flagged** - GET /api/v1/admin/forum/flagged
+- **GET /api/v1/admin/forum/moderation-log** - GET /api/v1/admin/forum/moderation-log
+- **POST /api/v1/admin/forum/threads/{id}/delete** - POST /api/v1/admin/forum/threads/{id}/delete
+- **POST /api/v1/admin/forum/threads/{id}/lock** - POST /api/v1/admin/forum/threads/{id}/lock
+- **POST /api/v1/admin/forum/threads/{id}/pin** - POST /api/v1/admin/forum/threads/{id}/pin
+- **POST /api/v1/admin/forum/users/{id}/ban** - POST /api/v1/admin/forum/users/{id}/ban
+- **GET /api/v1/admin/moderation/abuse/{userId}** - GET /api/v1/admin/moderation/abuse/{userId}
+- **GET /api/v1/admin/moderation/analytics** - GET /api/v1/admin/moderation/analytics
+- **GET /api/v1/admin/moderation/appeals** - GET /api/v1/admin/moderation/appeals
+- **POST /api/v1/admin/moderation/appeals/{id}/resolve** - POST /api/v1/admin/moderation/appeals/{id}/resolve
+- **GET /api/v1/admin/moderation/audit** - GET /api/v1/admin/moderation/audit
+- **POST /api/v1/admin/moderation/bulk** - POST /api/v1/admin/moderation/bulk
+- **GET /api/v1/admin/moderation/events** - GET /api/v1/admin/moderation/events
+- **POST /api/v1/admin/moderation/events/{id}/process** - POST /api/v1/admin/moderation/events/{id}/process
+- **POST /api/v1/admin/moderation/events/{id}/review** - POST /api/v1/admin/moderation/events/{id}/review
+- **GET /api/v1/admin/moderation/events/{type}** - GET /api/v1/admin/moderation/events/{type}
+- **GET /api/v1/admin/moderation/queue** - GET /api/v1/admin/moderation/queue
+- **GET /api/v1/admin/moderation/queue/stats** - GET /api/v1/admin/moderation/queue/stats
+- **GET /api/v1/admin/moderation/stats** - GET /api/v1/admin/moderation/stats
+- **GET /api/v1/admin/moderation/toxicity/metrics** - GET /api/v1/admin/moderation/toxicity/metrics
+- **POST /api/v1/admin/moderation/{id}/approve** - POST /api/v1/admin/moderation/{id}/approve
+- **POST /api/v1/admin/moderation/{id}/reject** - POST /api/v1/admin/moderation/{id}/reject
+- **POST /api/v1/admin/nsfw/batch-detect** - POST /api/v1/admin/nsfw/batch-detect
+- **GET /api/v1/admin/nsfw/config** - GET /api/v1/admin/nsfw/config
+- **POST /api/v1/admin/nsfw/detect** - POST /api/v1/admin/nsfw/detect
+- **GET /api/v1/admin/nsfw/health** - GET /api/v1/admin/nsfw/health
+- **GET /api/v1/admin/nsfw/metrics** - GET /api/v1/admin/nsfw/metrics
+- **POST /api/v1/admin/nsfw/scan-clips** - POST /api/v1/admin/nsfw/scan-clips
+- **GET /api/v1/admin/playlist-scripts** - GET /api/v1/admin/playlist-scripts
+- **POST /api/v1/admin/playlist-scripts** - POST /api/v1/admin/playlist-scripts
+- **PUT /api/v1/admin/playlist-scripts/{id}** - PUT /api/v1/admin/playlist-scripts/{id}
+- **DELETE /api/v1/admin/playlist-scripts/{id}** - DELETE /api/v1/admin/playlist-scripts/{id}
+- **POST /api/v1/admin/playlist-scripts/{id}/generate** - POST /api/v1/admin/playlist-scripts/{id}/generate
+- **GET /api/v1/admin/reports** - GET /api/v1/admin/reports
+- **GET /api/v1/admin/reports/{id}** - GET /api/v1/admin/reports/{id}
+- **PUT /api/v1/admin/reports/{id}** - PUT /api/v1/admin/reports/{id}
+- **GET /api/v1/admin/revenue** - GET /api/v1/admin/revenue
+- **GET /api/v1/admin/submissions** - GET /api/v1/admin/submissions
+- **POST /api/v1/admin/submissions/bulk-approve** - POST /api/v1/admin/submissions/bulk-approve
+- **POST /api/v1/admin/submissions/bulk-reject** - POST /api/v1/admin/submissions/bulk-reject
+- **GET /api/v1/admin/submissions/rejection-reasons** - GET /api/v1/admin/submissions/rejection-reasons
+- **POST /api/v1/admin/submissions/{id}/approve** - POST /api/v1/admin/submissions/{id}/approve
+- **POST /api/v1/admin/submissions/{id}/reject** - POST /api/v1/admin/submissions/{id}/reject
+- **POST /api/v1/admin/sync/clips** - POST /api/v1/admin/sync/clips
+- **GET /api/v1/admin/sync/status** - GET /api/v1/admin/sync/status
+- **POST /api/v1/admin/tags** - POST /api/v1/admin/tags
+- **GET /api/v1/admin/tags/blacklist** - GET /api/v1/admin/tags/blacklist
+- **POST /api/v1/admin/tags/blacklist** - POST /api/v1/admin/tags/blacklist
+- **DELETE /api/v1/admin/tags/blacklist/{id}** - DELETE /api/v1/admin/tags/blacklist/{id}
+- **PUT /api/v1/admin/tags/{id}** - PUT /api/v1/admin/tags/{id}
+- **DELETE /api/v1/admin/tags/{id}** - DELETE /api/v1/admin/tags/{id}
+- **GET /api/v1/admin/users** - GET /api/v1/admin/users
+- **POST /api/v1/admin/users/{id}/badges** - POST /api/v1/admin/users/{id}/badges
+- **DELETE /api/v1/admin/users/{id}/badges/{badgeId}** - DELETE /api/v1/admin/users/{id}/badges/{badgeId}
+- **POST /api/v1/admin/users/{id}/ban** - POST /api/v1/admin/users/{id}/ban
+- **GET /api/v1/admin/users/{id}/comment-suspension-history** - GET /api/v1/admin/users/{id}/comment-suspension-history
+- **PATCH /api/v1/admin/users/{id}/karma** - PATCH /api/v1/admin/users/{id}/karma
+- **POST /api/v1/admin/users/{id}/lift-comment-suspension** - POST /api/v1/admin/users/{id}/lift-comment-suspension
+- **PATCH /api/v1/admin/users/{id}/role** - PATCH /api/v1/admin/users/{id}/role
+- **POST /api/v1/admin/users/{id}/suspend-comments** - POST /api/v1/admin/users/{id}/suspend-comments
+- **POST /api/v1/admin/users/{id}/toggle-comment-review** - POST /api/v1/admin/users/{id}/toggle-comment-review
+- **POST /api/v1/admin/users/{id}/unban** - POST /api/v1/admin/users/{id}/unban
+- **GET /api/v1/admin/verification/applications** - GET /api/v1/admin/verification/applications
+- **GET /api/v1/admin/verification/applications/{id}** - GET /api/v1/admin/verification/applications/{id}
+- **POST /api/v1/admin/verification/applications/{id}/review** - POST /api/v1/admin/verification/applications/{id}/review
+- **GET /api/v1/admin/verification/audit-logs** - GET /api/v1/admin/verification/audit-logs
+- **GET /api/v1/admin/verification/stats** - GET /api/v1/admin/verification/stats
+- **GET /api/v1/admin/verification/users/{user_id}/audit-logs** - GET /api/v1/admin/verification/users/{user_id}/audit-logs
+- **GET /api/v1/admin/webhooks/dlq** - GET /api/v1/admin/webhooks/dlq
+- **DELETE /api/v1/admin/webhooks/dlq/{id}** - DELETE /api/v1/admin/webhooks/dlq/{id}
+- **POST /api/v1/admin/webhooks/dlq/{id}/replay** - POST /api/v1/admin/webhooks/dlq/{id}/replay
+- **GET /api/v1/ads/select** - GET /api/v1/ads/select
+- **POST /api/v1/ads/track/{id}** - POST /api/v1/ads/track/{id}
+- **GET /api/v1/ads/{id}** - GET /api/v1/ads/{id}
+- **GET /api/v1/badges** - GET /api/v1/badges
+- **GET /api/v1/broadcasters/live** - GET /api/v1/broadcasters/live
+- **GET /api/v1/broadcasters/popular** - GET /api/v1/broadcasters/popular
+- **GET /api/v1/broadcasters/rankings** - GET /api/v1/broadcasters/rankings
+- **GET /api/v1/broadcasters/{id}** - GET /api/v1/broadcasters/{id}
+- **GET /api/v1/broadcasters/{id}/clips** - GET /api/v1/broadcasters/{id}/clips
+- **POST /api/v1/broadcasters/{id}/follow** - POST /api/v1/broadcasters/{id}/follow
+- **DELETE /api/v1/broadcasters/{id}/follow** - DELETE /api/v1/broadcasters/{id}/follow
+- **GET /api/v1/broadcasters/{id}/live-status** - GET /api/v1/broadcasters/{id}/live-status
+- **GET /api/v1/categories** - GET /api/v1/categories
+- **GET /api/v1/categories/{slug}** - GET /api/v1/categories/{slug}
+- **GET /api/v1/categories/{slug}/clips** - GET /api/v1/categories/{slug}/clips
+- **GET /api/v1/categories/{slug}/games** - GET /api/v1/categories/{slug}/games
+- **GET /api/v1/chat/channels** - GET /api/v1/chat/channels
+- **POST /api/v1/chat/channels** - POST /api/v1/chat/channels
+- **GET /api/v1/chat/channels/{id}** - GET /api/v1/chat/channels/{id}
+- **PATCH /api/v1/chat/channels/{id}** - PATCH /api/v1/chat/channels/{id}
+- **DELETE /api/v1/chat/channels/{id}** - DELETE /api/v1/chat/channels/{id}
+- **POST /api/v1/chat/channels/{id}/ban** - POST /api/v1/chat/channels/{id}/ban
+- **DELETE /api/v1/chat/channels/{id}/ban/{user_id}** - DELETE /api/v1/chat/channels/{id}/ban/{user_id}
+- **GET /api/v1/chat/channels/{id}/check-ban** - GET /api/v1/chat/channels/{id}/check-ban
+- **GET /api/v1/chat/channels/{id}/members** - GET /api/v1/chat/channels/{id}/members
+- **POST /api/v1/chat/channels/{id}/members** - POST /api/v1/chat/channels/{id}/members
+- **PATCH /api/v1/chat/channels/{id}/members/{user_id}** - PATCH /api/v1/chat/channels/{id}/members/{user_id}
+- **DELETE /api/v1/chat/channels/{id}/members/{user_id}** - DELETE /api/v1/chat/channels/{id}/members/{user_id}
+- **GET /api/v1/chat/channels/{id}/messages** - GET /api/v1/chat/channels/{id}/messages
+- **GET /api/v1/chat/channels/{id}/moderation-log** - GET /api/v1/chat/channels/{id}/moderation-log
+- **POST /api/v1/chat/channels/{id}/mute** - POST /api/v1/chat/channels/{id}/mute
+- **GET /api/v1/chat/channels/{id}/role** - GET /api/v1/chat/channels/{id}/role
+- **POST /api/v1/chat/channels/{id}/timeout** - POST /api/v1/chat/channels/{id}/timeout
+- **GET /api/v1/chat/channels/{id}/ws** - GET /api/v1/chat/channels/{id}/ws
+- **GET /api/v1/chat/health** - GET /api/v1/chat/health
+- **DELETE /api/v1/chat/messages/{id}** - DELETE /api/v1/chat/messages/{id}
+- **GET /api/v1/chat/stats** - GET /api/v1/chat/stats
+- **POST /api/v1/clips/{id}/backfill** - POST /api/v1/clips/{id}/backfill
+- **GET /api/v1/clips/{id}/media** - GET /api/v1/clips/{id}/media
+- **GET /api/v1/clips/{id}/processing-status** - GET /api/v1/clips/{id}/processing-status
+- **GET /api/v1/communities** - GET /api/v1/communities
+- **POST /api/v1/communities** - POST /api/v1/communities
+- **GET /api/v1/communities/search** - GET /api/v1/communities/search
+- **GET /api/v1/communities/{id}** - GET /api/v1/communities/{id}
+- **PUT /api/v1/communities/{id}** - PUT /api/v1/communities/{id}
+- **DELETE /api/v1/communities/{id}** - DELETE /api/v1/communities/{id}
+- **POST /api/v1/communities/{id}/ban** - POST /api/v1/communities/{id}/ban
+- **DELETE /api/v1/communities/{id}/ban/{userId}** - DELETE /api/v1/communities/{id}/ban/{userId}
+- **GET /api/v1/communities/{id}/bans** - GET /api/v1/communities/{id}/bans
+- **POST /api/v1/communities/{id}/clips** - POST /api/v1/communities/{id}/clips
+- **DELETE /api/v1/communities/{id}/clips/{clipId}** - DELETE /api/v1/communities/{id}/clips/{clipId}
+- **GET /api/v1/communities/{id}/discussions** - GET /api/v1/communities/{id}/discussions
+- **POST /api/v1/communities/{id}/discussions** - POST /api/v1/communities/{id}/discussions
+- **GET /api/v1/communities/{id}/discussions/{discussionId}** - GET /api/v1/communities/{id}/discussions/{discussionId}
+- **PUT /api/v1/communities/{id}/discussions/{discussionId}** - PUT /api/v1/communities/{id}/discussions/{discussionId}
+- **DELETE /api/v1/communities/{id}/discussions/{discussionId}** - DELETE /api/v1/communities/{id}/discussions/{discussionId}
+- **GET /api/v1/communities/{id}/feed** - GET /api/v1/communities/{id}/feed
+- **POST /api/v1/communities/{id}/join** - POST /api/v1/communities/{id}/join
+- **POST /api/v1/communities/{id}/leave** - POST /api/v1/communities/{id}/leave
+- **GET /api/v1/communities/{id}/members** - GET /api/v1/communities/{id}/members
+- **PUT /api/v1/communities/{id}/members/{userId}/role** - PUT /api/v1/communities/{id}/members/{userId}/role
+- **POST /api/v1/contact** - POST /api/v1/contact
+- **GET /api/v1/creators/me/export/download/{id}** - GET /api/v1/creators/me/export/download/{id}
+- **POST /api/v1/creators/me/export/request** - POST /api/v1/creators/me/export/request
+- **GET /api/v1/creators/me/export/status/{id}** - GET /api/v1/creators/me/export/status/{id}
+- **GET /api/v1/creators/me/exports** - GET /api/v1/creators/me/exports
+- **GET /api/v1/creators/{creatorName}/analytics/audience** - GET /api/v1/creators/{creatorName}/analytics/audience
+- **GET /api/v1/creators/{creatorName}/analytics/clips** - GET /api/v1/creators/{creatorName}/analytics/clips
+- **GET /api/v1/creators/{creatorName}/analytics/overview** - GET /api/v1/creators/{creatorName}/analytics/overview
+- **GET /api/v1/creators/{creatorName}/analytics/trends** - GET /api/v1/creators/{creatorName}/analytics/trends
+- **GET /api/v1/creators/{creatorName}/clips** - GET /api/v1/creators/{creatorName}/clips
+- **GET /api/v1/discovery-lists** - GET /api/v1/discovery-lists
+- **GET /api/v1/discovery-lists/{id}** - GET /api/v1/discovery-lists/{id}
+- **POST /api/v1/discovery-lists/{id}/bookmark** - POST /api/v1/discovery-lists/{id}/bookmark
+- **DELETE /api/v1/discovery-lists/{id}/bookmark** - DELETE /api/v1/discovery-lists/{id}/bookmark
+- **GET /api/v1/discovery-lists/{id}/clips** - GET /api/v1/discovery-lists/{id}/clips
+- **POST /api/v1/discovery-lists/{id}/follow** - POST /api/v1/discovery-lists/{id}/follow
+- **DELETE /api/v1/discovery-lists/{id}/follow** - DELETE /api/v1/discovery-lists/{id}/follow
+- **GET /api/v1/docs** - GET /api/v1/docs
+- **GET /api/v1/docs/search** - GET /api/v1/docs/search
+- **GET /api/v1/docs/{path}** - GET /api/v1/docs/{path}
+- **POST /api/v1/events** - POST /api/v1/events
+- **GET /api/v1/feeds/analytics** - GET /api/v1/feeds/analytics
+- **GET /api/v1/feeds/analytics/hourly** - GET /api/v1/feeds/analytics/hourly
+- **GET /api/v1/feeds/clips** - GET /api/v1/feeds/clips
+- **GET /api/v1/feeds/discover** - GET /api/v1/feeds/discover
+- **GET /api/v1/feeds/following** - GET /api/v1/feeds/following
+- **GET /api/v1/feeds/search** - GET /api/v1/feeds/search
+- **GET /api/v1/forum/analytics** - GET /api/v1/forum/analytics
+- **POST /api/v1/forum/flag** - POST /api/v1/forum/flag
+- **GET /api/v1/forum/helpful-replies** - GET /api/v1/forum/helpful-replies
+- **GET /api/v1/forum/popular** - GET /api/v1/forum/popular
+- **PATCH /api/v1/forum/replies/{id}** - PATCH /api/v1/forum/replies/{id}
+- **DELETE /api/v1/forum/replies/{id}** - DELETE /api/v1/forum/replies/{id}
+- **POST /api/v1/forum/replies/{id}/vote** - POST /api/v1/forum/replies/{id}/vote
+- **GET /api/v1/forum/replies/{id}/votes** - GET /api/v1/forum/replies/{id}/votes
+- **GET /api/v1/forum/search** - GET /api/v1/forum/search
+- **GET /api/v1/forum/threads** - GET /api/v1/forum/threads
+- **POST /api/v1/forum/threads** - POST /api/v1/forum/threads
+- **GET /api/v1/forum/threads/{id}** - GET /api/v1/forum/threads/{id}
+- **POST /api/v1/forum/threads/{id}/replies** - POST /api/v1/forum/threads/{id}/replies
+- **GET /api/v1/forum/users/{id}/reputation** - GET /api/v1/forum/users/{id}/reputation
+- **GET /api/v1/games/trending** - GET /api/v1/games/trending
+- **GET /api/v1/games/{gameId}** - GET /api/v1/games/{gameId}
+- **GET /api/v1/games/{gameId}/clips** - GET /api/v1/games/{gameId}/clips
+- **POST /api/v1/games/{gameId}/follow** - POST /api/v1/games/{gameId}/follow
+- **DELETE /api/v1/games/{gameId}/follow** - DELETE /api/v1/games/{gameId}/follow
+- **GET /api/v1/leaderboards/{type}** - GET /api/v1/leaderboards/{type}
+- **POST /api/v1/moderation/ban** - POST /api/v1/moderation/ban
+- **GET /api/v1/notifications** - GET /api/v1/notifications
+- **GET /api/v1/notifications/count** - GET /api/v1/notifications/count
+- **GET /api/v1/notifications/preferences** - GET /api/v1/notifications/preferences
+- **PUT /api/v1/notifications/preferences** - PUT /api/v1/notifications/preferences
+- **POST /api/v1/notifications/preferences/reset** - POST /api/v1/notifications/preferences/reset
+- **PUT /api/v1/notifications/read-all** - PUT /api/v1/notifications/read-all
+- **POST /api/v1/notifications/register** - POST /api/v1/notifications/register
+- **DELETE /api/v1/notifications/unregister** - DELETE /api/v1/notifications/unregister
+- **GET /api/v1/notifications/unsubscribe** - GET /api/v1/notifications/unsubscribe
+- **DELETE /api/v1/notifications/{id}** - DELETE /api/v1/notifications/{id}
+- **PUT /api/v1/notifications/{id}/read** - PUT /api/v1/notifications/{id}/read
+- **GET /api/v1/playlist-scripts** - GET /api/v1/playlist-scripts
+- **POST /api/v1/playlist-scripts** - POST /api/v1/playlist-scripts
+- **PUT /api/v1/playlist-scripts/{id}** - PUT /api/v1/playlist-scripts/{id}
+- **DELETE /api/v1/playlist-scripts/{id}** - DELETE /api/v1/playlist-scripts/{id}
+- **POST /api/v1/playlist-scripts/{id}/generate** - POST /api/v1/playlist-scripts/{id}/generate
+- **GET /api/v1/playlists** - GET /api/v1/playlists
+- **POST /api/v1/playlists** - POST /api/v1/playlists
+- **GET /api/v1/playlists/bookmarks** - GET /api/v1/playlists/bookmarks
+- **GET /api/v1/playlists/featured** - GET /api/v1/playlists/featured
+- **GET /api/v1/playlists/public** - GET /api/v1/playlists/public
+- **GET /api/v1/playlists/share/{token}** - GET /api/v1/playlists/share/{token}
+- **GET /api/v1/playlists/today** - GET /api/v1/playlists/today
+- **GET /api/v1/playlists/{id}** - GET /api/v1/playlists/{id}
+- **PATCH /api/v1/playlists/{id}** - PATCH /api/v1/playlists/{id}
+- **DELETE /api/v1/playlists/{id}** - DELETE /api/v1/playlists/{id}
+- **POST /api/v1/playlists/{id}/bookmark** - POST /api/v1/playlists/{id}/bookmark
+- **DELETE /api/v1/playlists/{id}/bookmark** - DELETE /api/v1/playlists/{id}/bookmark
+- **POST /api/v1/playlists/{id}/clips** - POST /api/v1/playlists/{id}/clips
+- **PUT /api/v1/playlists/{id}/clips/order** - PUT /api/v1/playlists/{id}/clips/order
+- **DELETE /api/v1/playlists/{id}/clips/{clip_id}** - DELETE /api/v1/playlists/{id}/clips/{clip_id}
+- **GET /api/v1/playlists/{id}/collaborators** - GET /api/v1/playlists/{id}/collaborators
+- **POST /api/v1/playlists/{id}/collaborators** - POST /api/v1/playlists/{id}/collaborators
+- **PATCH /api/v1/playlists/{id}/collaborators/{user_id}** - PATCH /api/v1/playlists/{id}/collaborators/{user_id}
+- **DELETE /api/v1/playlists/{id}/collaborators/{user_id}** - DELETE /api/v1/playlists/{id}/collaborators/{user_id}
+- **POST /api/v1/playlists/{id}/copy** - POST /api/v1/playlists/{id}/copy
+- **POST /api/v1/playlists/{id}/like** - POST /api/v1/playlists/{id}/like
+- **DELETE /api/v1/playlists/{id}/like** - DELETE /api/v1/playlists/{id}/like
+- **GET /api/v1/playlists/{id}/share-link** - GET /api/v1/playlists/{id}/share-link
+- **POST /api/v1/playlists/{id}/track-share** - POST /api/v1/playlists/{id}/track-share
+- **GET /api/v1/queue** - GET /api/v1/queue
+- **POST /api/v1/queue** - POST /api/v1/queue
+- **DELETE /api/v1/queue** - DELETE /api/v1/queue
+- **POST /api/v1/queue/convert-to-playlist** - POST /api/v1/queue/convert-to-playlist
+- **GET /api/v1/queue/count** - GET /api/v1/queue/count
+- **PATCH /api/v1/queue/reorder** - PATCH /api/v1/queue/reorder
+- **DELETE /api/v1/queue/{id}** - DELETE /api/v1/queue/{id}
+- **POST /api/v1/queue/{id}/played** - POST /api/v1/queue/{id}/played
+- **GET /api/v1/recommendations/clips** - GET /api/v1/recommendations/clips
+- **POST /api/v1/recommendations/feedback** - POST /api/v1/recommendations/feedback
+- **POST /api/v1/recommendations/onboarding** - POST /api/v1/recommendations/onboarding
+- **GET /api/v1/recommendations/preferences** - GET /api/v1/recommendations/preferences
+- **PUT /api/v1/recommendations/preferences** - PUT /api/v1/recommendations/preferences
+- **POST /api/v1/recommendations/track-view/{id}** - POST /api/v1/recommendations/track-view/{id}
+- **GET /api/v1/streamer-clip-rooms/{channel}** - GET /api/v1/streamer-clip-rooms/{channel}
+- **GET /api/v1/streamer-clip-rooms/{channel}/items** - GET /api/v1/streamer-clip-rooms/{channel}/items
+- **PUT /api/v1/streamer-clip-rooms/{channel}/items/order** - PUT /api/v1/streamer-clip-rooms/{channel}/items/order
+- **POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve** - POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/approve
+- **POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject** - POST /api/v1/streamer-clip-rooms/{channel}/items/{itemId}/reject
+- **POST /api/v1/streamer-clip-rooms/{channel}/start** - POST /api/v1/streamer-clip-rooms/{channel}/start
+- **POST /api/v1/streamer-clip-rooms/{channel}/stop** - POST /api/v1/streamer-clip-rooms/{channel}/stop
+- **GET /api/v1/streamer-clip-rooms/{channel}/ws** - GET /api/v1/streamer-clip-rooms/{channel}/ws
+- **GET /api/v1/streams/following** - GET /api/v1/streams/following
+- **GET /api/v1/streams/{streamer}** - GET /api/v1/streams/{streamer}
+- **POST /api/v1/streams/{streamer}/follow** - POST /api/v1/streams/{streamer}/follow
+- **DELETE /api/v1/streams/{streamer}/follow** - DELETE /api/v1/streams/{streamer}/follow
+- **GET /api/v1/streams/{streamer}/follow-status** - GET /api/v1/streams/{streamer}/follow-status
+- **POST /api/v1/subscriptions/change-plan** - POST /api/v1/subscriptions/change-plan
+- **POST /api/v1/subscriptions/checkout** - POST /api/v1/subscriptions/checkout
+- **POST /api/v1/subscriptions/portal** - POST /api/v1/subscriptions/portal
+- **POST /api/v1/subscriptions/reactivate** - POST /api/v1/subscriptions/reactivate
+- **DELETE /api/v1/twitch/auth** - DELETE /api/v1/twitch/auth
+- **GET /api/v1/twitch/auth/status** - GET /api/v1/twitch/auth/status
+- **GET /api/v1/twitch/oauth/authorize** - GET /api/v1/twitch/oauth/authorize
+- **GET /api/v1/twitch/oauth/callback** - GET /api/v1/twitch/oauth/callback
+- **POST /api/v1/users/me/convert-to-broadcaster** - POST /api/v1/users/me/convert-to-broadcaster
+- **GET /api/v1/users/me/discovery-list-follows** - GET /api/v1/users/me/discovery-list-follows
+- **GET /api/v1/users/{id}/account-type** - GET /api/v1/users/{id}/account-type
+- **GET /api/v1/users/{id}/account-type/history** - GET /api/v1/users/{id}/account-type/history
+- **GET /api/v1/users/{id}/feeds** - GET /api/v1/users/{id}/feeds
+- **POST /api/v1/users/{id}/feeds** - POST /api/v1/users/{id}/feeds
+- **GET /api/v1/users/{id}/feeds/{feedId}** - GET /api/v1/users/{id}/feeds/{feedId}
+- **PUT /api/v1/users/{id}/feeds/{feedId}** - PUT /api/v1/users/{id}/feeds/{feedId}
+- **DELETE /api/v1/users/{id}/feeds/{feedId}** - DELETE /api/v1/users/{id}/feeds/{feedId}
+- **GET /api/v1/users/{id}/feeds/{feedId}/clips** - GET /api/v1/users/{id}/feeds/{feedId}/clips
+- **POST /api/v1/users/{id}/feeds/{feedId}/clips** - POST /api/v1/users/{id}/feeds/{feedId}/clips
+- **PUT /api/v1/users/{id}/feeds/{feedId}/clips/reorder** - PUT /api/v1/users/{id}/feeds/{feedId}/clips/reorder
+- **DELETE /api/v1/users/{id}/feeds/{feedId}/clips/{clipId}** - DELETE /api/v1/users/{id}/feeds/{feedId}/clips/{clipId}
+- **POST /api/v1/users/{id}/feeds/{feedId}/follow** - POST /api/v1/users/{id}/feeds/{feedId}/follow
+- **DELETE /api/v1/users/{id}/feeds/{feedId}/follow** - DELETE /api/v1/users/{id}/feeds/{feedId}/follow
+- **GET /api/v1/users/{id}/filter-presets** - GET /api/v1/users/{id}/filter-presets
+- **POST /api/v1/users/{id}/filter-presets** - POST /api/v1/users/{id}/filter-presets
+- **GET /api/v1/users/{id}/filter-presets/{presetId}** - GET /api/v1/users/{id}/filter-presets/{presetId}
+- **PUT /api/v1/users/{id}/filter-presets/{presetId}** - PUT /api/v1/users/{id}/filter-presets/{presetId}
+- **DELETE /api/v1/users/{id}/filter-presets/{presetId}** - DELETE /api/v1/users/{id}/filter-presets/{presetId}
+- **GET /api/v1/users/{id}/games/following** - GET /api/v1/users/{id}/games/following
+- **POST /api/v1/verification/applications** - POST /api/v1/verification/applications
+- **GET /api/v1/verification/applications/me** - GET /api/v1/verification/applications/me
+- **GET /api/v1/watch-history** - GET /api/v1/watch-history
+- **POST /api/v1/watch-history** - POST /api/v1/watch-history
+- **DELETE /api/v1/watch-history** - DELETE /api/v1/watch-history
+- **GET /api/v1/webhooks** - GET /api/v1/webhooks
+- **POST /api/v1/webhooks** - POST /api/v1/webhooks
+- **GET /api/v1/webhooks/events** - GET /api/v1/webhooks/events
+- **POST /api/v1/webhooks/sendgrid** - POST /api/v1/webhooks/sendgrid
+- **GET /api/v1/webhooks/{id}** - GET /api/v1/webhooks/{id}
+- **PATCH /api/v1/webhooks/{id}** - PATCH /api/v1/webhooks/{id}
+- **DELETE /api/v1/webhooks/{id}** - DELETE /api/v1/webhooks/{id}
+- **GET /api/v1/webhooks/{id}/deliveries** - GET /api/v1/webhooks/{id}/deliveries
+- **POST /api/v1/webhooks/{id}/regenerate-secret** - POST /api/v1/webhooks/{id}/regenerate-secret
+- **GET /clips/best/{path}** - GET /clips/best/{path}
+- **GET /clips/game/{gameSlug}** - GET /clips/game/{gameSlug}
+- **GET /clips/streamer/{broadcasterName}** - GET /clips/streamer/{broadcasterName}
+- **GET /clips/streamer/{broadcasterName}/{gameSlug}** - GET /clips/streamer/{broadcasterName}/{gameSlug}
+- **GET /debug/pprof** - GET /debug/pprof
+- **GET /debug/pprof/allocs** - GET /debug/pprof/allocs
+- **GET /debug/pprof/block** - GET /debug/pprof/block
+- **GET /debug/pprof/cmdline** - GET /debug/pprof/cmdline
+- **GET /debug/pprof/goroutine** - GET /debug/pprof/goroutine
+- **GET /debug/pprof/heap** - GET /debug/pprof/heap
+- **GET /debug/pprof/mutex** - GET /debug/pprof/mutex
+- **GET /debug/pprof/profile** - GET /debug/pprof/profile
+- **GET /debug/pprof/symbol** - GET /debug/pprof/symbol
+- **GET /debug/pprof/threadcreate** - GET /debug/pprof/threadcreate
+- **GET /debug/pprof/trace** - GET /debug/pprof/trace
+- **GET /health** - GET /health
+- **GET /internal/operations/cache** - GET /internal/operations/cache
+- **GET /internal/operations/cache/check** - GET /internal/operations/cache/check
+- **GET /internal/operations/database** - GET /internal/operations/database
+- **GET /internal/operations/metrics** - GET /internal/operations/metrics
+- **GET /internal/operations/webhooks** - GET /internal/operations/webhooks

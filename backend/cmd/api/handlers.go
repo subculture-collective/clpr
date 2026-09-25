@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/docscontent"
 	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/internal/storage"
@@ -91,6 +92,9 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	)
 	favoriteHandler := handlers.NewFavoriteHandler(repos.Favorite, repos.Vote, svcs.Clip)
 	tagHandler := handlers.NewTagHandler(repos.Tag, repos.Clip, svcs.AutoTag)
+	if infra.Redis != nil {
+		tagHandler.SetResponseCache(infra.Redis)
+	}
 	searchHandler := handlers.NewSearchHandler(repos.Search, svcs.Auth)
 	if svcs.HybridSearch != nil {
 		// Use hybrid search (BM25 + vector similarity)
@@ -116,7 +120,9 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	contactHandler := handlers.NewContactHandler(repos.Contact)
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
-	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
+	docsFS, docsSource := docscontent.Open(cfg.Server.DocsPath)
+	log.Printf("Serving documentation from %s source", docsSource)
+	docsHandler := handlers.NewDocsHandlerFS(docsFS, "subculture-collective", "clpr", "main")
 	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
 	webhookMonitoringHandler := handlers.NewWebhookMonitoringHandler(svcs.OutboundWebhook)

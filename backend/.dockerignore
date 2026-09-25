@@ -6,6 +6,8 @@
 *.md
 README.md
 docs
+# The API embeds this copy of the published docs (npm run docs:embed).
+!internal/docscontent/content/**
 
 # Build artifacts
 bin/

@@ -28,7 +28,7 @@ function loadOpenAPISpec() {
  * Generate code sample for curl
  */
 function generateCurlSample(path, method, operation, servers) {
-    const server = servers[0]?.url || 'https://api.clpr.tv';
+    const server = servers[0]?.url || 'https://clpr.tv';
     const url = `${server}${path}`;
     
     let sample = `curl -X ${method.toUpperCase()} "${url}"`;

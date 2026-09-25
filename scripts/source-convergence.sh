@@ -259,6 +259,7 @@ phase_docs() {
     npm run docs:check
     npm run docs:inventory
     git diff --exit-code -- docs/reference-inventory.md
+    npm run docs:embed:check
 }
 
 phase_secrets() {

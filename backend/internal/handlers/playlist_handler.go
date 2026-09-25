@@ -1451,6 +1451,7 @@ func (h *PlaylistHandler) GetPlaylistOfTheDay(c *gin.Context) {
 			})
 			return
 		}
+		log.Printf("ERROR: GetPlaylistOfTheDay failed: %v", err)
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
