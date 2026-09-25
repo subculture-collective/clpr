@@ -14,6 +14,17 @@ import {
   AudienceInsightsSection,
 } from '../components/analytics';
 import { useDebounce } from '../hooks/useDebounce';
+import { ResourceUnavailable } from '../components/ui';
+import { isNotFoundError } from '../lib/error-utils';
+
+function AnalyticsNotice({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-line-strong bg-surface p-6">
+      <p className="kicker mb-2">{title}</p>
+      <p className="text-text-secondary">{children}</p>
+    </div>
+  );
+}
 
 const CreatorAnalyticsPage: React.FC = () => {
   const { creatorName } = useParams<{ creatorName: string }>();
@@ -24,7 +35,12 @@ const CreatorAnalyticsPage: React.FC = () => {
   const debouncedTimeRange = useDebounce(timeRange, 300);
 
   // Fetch analytics overview
-  const { data: overview, isLoading: overviewLoading } = useQuery({
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    error: overviewError,
+    refetch: refetchOverview,
+  } = useQuery({
     queryKey: ['creatorAnalyticsOverview', creatorName],
     queryFn: () => getCreatorAnalyticsOverview(creatorName!),
     enabled: !!creatorName,
@@ -53,10 +69,29 @@ const CreatorAnalyticsPage: React.FC = () => {
     enabled: !!creatorName,
   });
 
-  if (!creatorName) {
+  // The API answers 404 until it has built a summary for this creator.
+  const overviewMissing = isNotFoundError(overviewError);
+  const nothingTracked =
+    overviewMissing && !clipsLoading && (topClips?.clips?.length ?? 0) === 0;
+
+  if (!creatorName || nothingTracked) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <p className="text-red-600">Invalid creator name</p>
+        <Helmet>
+          <title>{creatorName ? `${creatorName} Analytics` : 'Creator analytics'} - clpr</title>
+        </Helmet>
+        <ResourceUnavailable
+          kind="not-found"
+          kicker="No analytics yet"
+          title={creatorName ? `No analytics for ${creatorName} yet` : 'No creator selected'}
+          description="Analytics appear once clpr has tracked clips from this creator."
+          links={[
+            ...(creatorName
+              ? [{ label: 'View creator page', href: `/creator/${encodeURIComponent(creatorName)}` }]
+              : []),
+            { label: 'Browse creators', href: '/creators' },
+          ]}
+        />
       </div>
     );
   }
@@ -124,11 +159,28 @@ const CreatorAnalyticsPage: React.FC = () => {
               subtitle="Community size"
             />
           </div>
+        ) : overviewMissing ? (
+          <div className="mb-8">
+            <AnalyticsNotice title="Summary not available yet">
+              clpr hasn't built an overview for {creatorName} yet. The clips and
+              trends below cover what has been tracked so far.
+            </AnalyticsNotice>
+          </div>
+        ) : overviewError ? (
+          <div className="mb-8">
+            <ResourceUnavailable
+              kind="error"
+              headingLevel="h2"
+              title="We couldn't load the summary"
+              description="Check your connection and try again."
+              onRetry={() => void refetchOverview()}
+            />
+          </div>
         ) : null}
 
         {/* Top Clips Section */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-2xl font-bold text-foreground">
               Top Performing Clips
             </h2>
@@ -160,7 +212,7 @@ const CreatorAnalyticsPage: React.FC = () => {
               ))}
             </div>
           ) : topClips?.clips && topClips.clips.length > 0 ? (
-            <div className="bg-surface rounded-lg shadow overflow-hidden">
+            <div className="bg-surface rounded-lg shadow overflow-x-auto">
               <table className="min-w-full divide-y divide-border">
                 <caption className="sr-only">
                   Top performing clips sorted by {sortBy}
@@ -219,7 +271,7 @@ const CreatorAnalyticsPage: React.FC = () => {
 
         {/* Performance Trends */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-2xl font-bold text-foreground">
               Performance Trends
             </h2>
@@ -232,28 +284,36 @@ const CreatorAnalyticsPage: React.FC = () => {
                 <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
                 <div className="h-full bg-muted rounded"></div>
               </div>
-            ) : viewsTrend?.data ? (
+            ) : viewsTrend?.data?.length ? (
               <LineChartComponent
                 data={viewsTrend.data}
                 title="Views Over Time"
                 valueLabel="Views"
                 color="#8b5cf6"
               />
-            ) : null}
+            ) : (
+              <AnalyticsNotice title="Views over time">
+                No view history recorded for this period yet.
+              </AnalyticsNotice>
+            )}
 
             {votesTrendLoading ? (
               <div className="bg-surface rounded-lg shadow p-6 h-80 animate-pulse">
                 <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
                 <div className="h-full bg-muted rounded"></div>
               </div>
-            ) : votesTrend?.data ? (
+            ) : votesTrend?.data?.length ? (
               <LineChartComponent
                 data={votesTrend.data}
                 title="Votes Over Time"
                 valueLabel="Votes"
                 color="#ec4899"
               />
-            ) : null}
+            ) : (
+              <AnalyticsNotice title="Votes over time">
+                No votes recorded for this period yet.
+              </AnalyticsNotice>
+            )}
           </div>
         </div>
 
