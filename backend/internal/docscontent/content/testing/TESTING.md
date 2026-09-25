@@ -16,6 +16,7 @@ Run from the repository root unless a command changes directory.
 | Unused frontend source | `cd frontend && npm run code:unused` | All application files are reachable from the entry point |
 | Test ownership and discovery | `cd frontend && npm run test:inventory` | Critical suites exist; browser specs belong to an executable tier; no focused or placeholder frontend tests |
 | Disposable services | `task test:setup` | Starts PostgreSQL, Redis, and OpenSearch and applies test migrations |
+| Backend integration packages | `task test:integration` | Integration-tagged tests in `internal/handlers`, `internal/repository`, `internal/services`, and `tests/migrations`, run in parallel |
 | Release-critical backend | `task test:release-critical` | Runs security and mutation tests without skips, plus real webhook persistence and idempotency |
 | Mocked browser | `task test:e2e:mocked` | Browser layout, keyboard access, consent, and public UI |
 | Real backend browser | `task test:e2e:real` | Builds the API, seeds disposable data, and checks the real application in three browsers |
@@ -25,6 +26,16 @@ Use the Go toolchain in `backend/go.mod`. After service-backed checks, run
 `task test:teardown`. Never point test fixtures or migration drills at production.
 If the default ports are occupied, use the `TEST_DATABASE_PORT`,
 `TEST_REDIS_PORT`, and `TEST_OPENSEARCH_PORT` overrides before setup.
+
+Each database-backed Go package calls `testutil.RunWithDatabase` from
+`TestMain`. It clones a private database from `clpr_test_template`, which is
+refreshed from the migrated `clpr_test` database whenever their migration
+versions differ, and drops the clone when the package finishes. Packages
+therefore run in parallel without sharing rows or schema state, and
+`clpr_test` itself is left for the API used by browser tests. A new
+database-backed package must add the same `TestMain`; `testutil.SetupTestDB`
+fails without it. Set `TEST_DATABASE_KEEP=1` to keep the clones for
+inspection. Run one package with `task test:integration:pkg PKG=internal/repository`.
 
 ## Behavior ownership
 

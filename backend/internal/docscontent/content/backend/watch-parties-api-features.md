@@ -550,5 +550,5 @@ These metrics should be monitored in production to ensure sync quality and ident
 
 - Implementation: `backend/internal/services/watch_party_hub.go`
 - Models: `backend/internal/models/models.go`
-- Tests: `backend/tests/integration/watch_parties/`
+- Tests: `backend/internal/handlers/watch_party_handler_test.go`, `backend/internal/repository/watch_party_repository_test.go`
 - Testing Guide: `docs/testing/TESTING.md`

@@ -62,10 +62,10 @@ go test -v ./internal/middleware/ -run "TestInputValidation|TestSanitizeInput"
 go test -v ./internal/middleware/ -run TestInputValidationMiddleware_SQLInjectionEdgeCases
 go test -v ./internal/middleware/ -run TestInputValidationMiddleware_XSSEdgeCases
 go test -v ./internal/middleware/ -run TestInputValidationMiddleware_FuzzerSmoke
-
-# Run integration tests (requires test database)
-go test -v -tags=integration ./tests/integration/validation/
 ```
+
+The former `backend/tests/integration/validation/` suite was removed in
+February 2026; the middleware tests above are the maintained validation checks.
 
 **Key Features:**
 - ✅ Detects common SQLi patterns (UNION SELECT, subqueries)
