@@ -17,7 +17,7 @@ import {
 import { VerifiedBadge } from '../components/user';
 import { ClipCard } from '../components/clip/ClipCard';
 import { ClipCardSkeleton } from '../components/clip/ClipCardSkeleton';
-import { CommentSkeleton } from '../components/ui';
+import { Avatar, CommentSkeleton } from '../components/ui';
 import {
     BadgeGrid,
     KarmaBreakdownChart,
@@ -223,16 +223,12 @@ export function ProfilePage() {
                         <div className='flex flex-col xs:flex-row items-start gap-4 xs:gap-6'>
                             {/* Avatar */}
                             <div className='shrink-0 mx-auto xs:mx-0'>
-                                {user.avatar_url ?
-                                    <img
-                                        src={user.avatar_url}
-                                        alt={user.username}
-                                        className='border-border w-20 h-20 xs:w-24 xs:h-24 border-2 rounded-full'
-                                    />
-                                :   <div className='bg-primary-100 dark:bg-primary-900 text-link flex items-center justify-center w-20 h-20 xs:w-24 xs:h-24 text-2xl xs:text-3xl font-bold rounded-full'>
-                                        {user.username.charAt(0).toUpperCase()}
-                                    </div>
-                                }
+                                <Avatar
+                                    src={user.avatar_url}
+                                    alt=''
+                                    fallback={user.username}
+                                    frameClassName='border-border h-20 w-20 border-2 text-2xl xs:h-24 xs:w-24 xs:text-3xl'
+                                />
                             </div>
 
                             {/* User Info */}

@@ -8,6 +8,7 @@ import App from './App.tsx'
 import { initSentry } from './lib/sentry-client'
 import ErrorBoundary from './components/ErrorBoundary'
 import { registerServiceWorker } from './lib/sw-register'
+import { isNotFoundError } from './lib/error-utils'
 
 // Force dark mode - add 'dark' class to root element
 document.documentElement.classList.add('dark');
@@ -45,7 +46,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
+      // One retry for transient failures; a missing resource stays missing.
+      retry: (failureCount, error) => failureCount < 1 && !isNotFoundError(error),
       staleTime: 1000 * 60 * 5, // 5 minutes
     },
   },

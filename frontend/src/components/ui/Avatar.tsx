@@ -5,13 +5,15 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Image source URL
    */
-  src?: string;
+  src?: string | null;
   /**
-   * Alt text for image
+   * Alt text for image. Pass an empty string when the name is shown beside
+   * the avatar, so screen readers do not announce it twice.
    */
   alt?: string;
   /**
-   * Fallback text (usually initials)
+   * Fallback text shown when there is no image or it fails to load. Longer
+   * names are reduced to their first letter.
    */
   fallback?: string;
   /**
@@ -19,6 +21,11 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
    * @default 'md'
    */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  /**
+   * Classes for the circular frame; use for sizes or borders outside the
+   * preset scale (they override the `size` classes).
+   */
+  frameClassName?: string;
   /**
    * Status indicator
    */
@@ -40,14 +47,23 @@ const statusClasses = {
   busy: 'bg-error-500',
 };
 
+function initialOf(...candidates: Array<string | undefined>): string {
+  for (const candidate of candidates) {
+    const letter = candidate?.trim().replace(/^@/, '').charAt(0);
+    if (letter) return letter.toUpperCase();
+  }
+  return '?';
+}
+
 /**
  * Avatar component with image fallback and status indicator
  */
 export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
-  ({ className, src, alt, fallback, size = 'md', status, ...props }, ref) => {
-    const [imageError, setImageError] = React.useState(false);
+  ({ className, src, alt, fallback, size = 'md', frameClassName, status, ...props }, ref) => {
+    // Track the URL that failed rather than a boolean, so a new src gets a fresh attempt.
+    const [failedSrc, setFailedSrc] = React.useState<string | null>(null);
 
-    const showImage = src && !imageError;
+    const showImage = !!src && failedSrc !== src;
 
     return (
       <div
@@ -56,24 +72,29 @@ export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         {...props}
       >
         <div
+          role={!showImage && alt ? 'img' : undefined}
+          aria-label={!showImage && alt ? alt : undefined}
           className={cn(
             'rounded-full overflow-hidden flex items-center justify-center',
             'bg-surface-raised text-link font-heading font-bold uppercase',
             'font-medium',
-            sizeClasses[size]
+            sizeClasses[size],
+            frameClassName
           )}
         >
           {showImage ? (
             <img
-              src={src}
-              alt={alt || 'Avatar'}
+              src={src ?? undefined}
+              alt={alt ?? 'Avatar'}
               loading="lazy"
               decoding="async"
               className="h-full w-full object-cover"
-              onError={() => setImageError(true)}
+              onError={() => setFailedSrc(src ?? null)}
             />
           ) : (
-            <span>{fallback || '?'}</span>
+            <span aria-hidden="true" data-testid="avatar-fallback">
+              {initialOf(fallback, alt)}
+            </span>
           )}
         </div>
         {status && (

@@ -85,11 +85,16 @@ export function markAuthSession(): void {
   }
 }
 
-/** Determines whether startup may attempt refresh after an expired access token. */
-export function hasAuthSessionHint(): boolean {
+/**
+ * Reads the session hint, distinguishing "no session recorded" (false) from
+ * "storage unavailable" (null), where the hint cannot be trusted either way.
+ * Startup skips the session probe for `false` and only attempts a token
+ * refresh for `true`.
+ */
+export function readAuthSessionHint(): boolean | null {
   try {
     return localStorage.getItem(AUTH_SESSION_HINT_KEY) === '1';
   } catch {
-    return false;
+    return null;
   }
 }

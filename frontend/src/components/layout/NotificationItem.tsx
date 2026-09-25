@@ -1,3 +1,4 @@
+import { Avatar } from '../ui/Avatar';
 import { Link } from 'react-router-dom';
 import { formatTimestamp } from '@/lib/utils';
 import type { Notification } from '../../types/notification';
@@ -84,10 +85,11 @@ export function NotificationItem({
                     {notification.source_display_name && (
                         <div className='flex items-center gap-2 mt-2'>
                             {notification.source_avatar_url && (
-                                <img
+                                <Avatar
                                     src={notification.source_avatar_url}
-                                    alt={notification.source_display_name}
-                                    className='w-5 h-5 rounded-full'
+                                    alt=''
+                                    fallback={notification.source_display_name}
+                                    frameClassName='h-5 w-5 text-[10px]'
                                 />
                             )}
                             <span className='text-xs text-muted-foreground'>

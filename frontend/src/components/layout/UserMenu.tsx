@@ -1,3 +1,4 @@
+import { Avatar } from '../ui/Avatar';
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -65,16 +66,13 @@ export function UserMenu() {
                 aria-label='User menu'
                 data-testid='user-menu'
             >
-                {user.avatar_url ?
-                    <img
-                        src={user.avatar_url}
-                        alt={user.username}
-                        className='w-8 h-8 rounded-full'
-                    />
-                :   <div className='w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center text-background font-heading font-bold uppercase'>
-                        {user.username.charAt(0).toUpperCase()}
-                    </div>
-                }
+                <Avatar
+                    src={user.avatar_url}
+                    alt=''
+                    fallback={user.username}
+                    size='sm'
+                    frameClassName='bg-primary-400 text-background'
+                />
                 <span className='hidden md:inline text-sm font-medium'>
                     {user.username}
                 </span>

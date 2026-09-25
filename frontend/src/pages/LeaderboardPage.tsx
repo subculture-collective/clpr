@@ -1,4 +1,5 @@
 import { Trophy, Tv, Zap } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -9,7 +10,7 @@ import { LeaderboardSkeleton, EmptyStateWithAction } from '../components/ui';
 import { SEO } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/api';
-import type { LeaderboardResponse, LeaderboardType } from '../types/reputation';
+import type { LeaderboardEntry, LeaderboardResponse, LeaderboardType } from '../types/reputation';
 
 interface StreamerRanking {
     broadcaster_id: string;
@@ -22,6 +23,37 @@ interface StreamerRanking {
     follower_count: number;
 }
 
+const tabs: Array<{ type: LeaderboardType; label: string; icon: ReactNode }> = [
+    { type: 'karma', label: 'Uppies', icon: <Trophy size={20} aria-hidden='true' /> },
+    { type: 'engagement', label: 'Engagement', icon: <Zap size={20} aria-hidden='true' /> },
+    { type: 'streamers', label: 'Creators', icon: <Tv size={20} aria-hidden='true' /> },
+];
+
+const emptyCopy: Record<LeaderboardType, string> = {
+    karma: 'Uppies rankings fill in as people vote on clips and comments.',
+    engagement: 'Engagement rankings fill in as people vote, comment, and submit clips.',
+    streamers: 'Creator rankings fill in as their clips get votes and comments on clpr.',
+};
+
+function LeaderboardEmptyState({ type }: { type: LeaderboardType }) {
+    return (
+        <EmptyStateWithAction
+            title='No rankings yet'
+            description={emptyCopy[type]}
+            primaryAction={{ label: 'Browse clips', href: '/' }}
+        />
+    );
+}
+
+/**
+ * The API lists every member, ordered by score. Members who have not earned
+ * any points yet would all tie at zero in arbitrary order, so only positive
+ * scores are ranked.
+ */
+function rankedEntriesOf(leaderboard: LeaderboardResponse | null): LeaderboardEntry[] {
+    return (leaderboard?.entries ?? []).filter(entry => entry.score > 0);
+}
+
 export default function LeaderboardPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const { user } = useAuth();
@@ -30,21 +62,24 @@ export default function LeaderboardPage() {
     );
     const [streamerRankings, setStreamerRankings] = useState<StreamerRanking[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [failed, setFailed] = useState(false);
 
-    const type = (searchParams.get('type') as LeaderboardType) || 'karma';
-    const page = parseInt(searchParams.get('page') || '1', 10);
+    const requestedType = searchParams.get('type');
+    const type: LeaderboardType = tabs.some(tab => tab.type === requestedType)
+        ? (requestedType as LeaderboardType)
+        : 'karma';
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
     const limit = 50;
 
     const fetchLeaderboard = useCallback(async () => {
         try {
             setLoading(true);
-            setError(null);
+            setFailed(false);
 
             if (type === 'streamers') {
                 const res = await apiClient.get<{
                     success: boolean;
-                    data: StreamerRanking[];
+                    data: StreamerRanking[] | null;
                 }>('/broadcasters/rankings?limit=100');
                 setStreamerRankings((res.data?.data || []).filter(item => item.engagement_score > 0));
                 setLeaderboard(null);
@@ -52,36 +87,18 @@ export default function LeaderboardPage() {
                 const response = await fetch(
                     `/api/v1/leaderboards/${type}?page=${page}&limit=${limit}`
                 );
-
-                // Handle non-OK responses
-                if (!response.ok) {
-                    let errorMessage = 'Failed to fetch leaderboard';
-
-                    // Try to parse JSON error response
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.message || errorData.error || errorMessage;
-                    } catch {
-                        // If JSON parsing fails, use status text
-                        errorMessage = response.statusText || errorMessage;
-                    }
-
-                    throw new Error(errorMessage);
-                }
-
-                // Ensure response is JSON
                 const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid response format from server');
+                if (!response.ok || !contentType?.includes('application/json')) {
+                    throw new Error(`Leaderboard request failed with status ${response.status}`);
                 }
 
-                const data = await response.json();
+                const data = await response.json() as LeaderboardResponse;
                 setLeaderboard(data);
                 setStreamerRankings([]);
             }
         } catch (err) {
             console.error('Leaderboard fetch error:', err);
-            setError(err instanceof Error ? err.message : 'An error occurred');
+            setFailed(true);
         } finally {
             setLoading(false);
         }
@@ -99,7 +116,13 @@ export default function LeaderboardPage() {
         setSearchParams({ type, page: newPage.toString() });
     };
 
-    const rankedEntries = leaderboard?.entries.filter(entry => entry.score > 0) ?? [];
+    const rankedEntries = rankedEntriesOf(leaderboard);
+    const returnedEntries = leaderboard?.entries ?? [];
+    // Entries arrive ordered by score, so a zero on this page means every later page is zeros too.
+    const hasNextPage =
+        returnedEntries.length === limit &&
+        rankedEntries.length === returnedEntries.length;
+    const showPagination = page > 1 || hasNextPage;
     const displayValue = (value: number) => value > 0 ? value.toLocaleString() : '—';
 
     return (
@@ -115,37 +138,22 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Type Selector */}
-            <div className='flex gap-2 mb-6'>
-                <button
-                    onClick={() => handleTypeChange('karma')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
-                        type === 'karma'
-                            ? 'bg-primary-400 text-background'
-                            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
-                    }`}
-                >
-                    <Trophy size={20} /> Uppies
-                </button>
-                <button
-                    onClick={() => handleTypeChange('engagement')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
-                        type === 'engagement'
-                            ? 'bg-primary-400 text-background'
-                            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
-                    }`}
-                >
-                    <Zap size={20} /> Engagement
-                </button>
-                <button
-                    onClick={() => handleTypeChange('streamers')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
-                        type === 'streamers'
-                            ? 'bg-primary-400 text-background'
-                            : 'bg-surface text-muted-foreground hover:bg-surface-hover'
-                    }`}
-                >
-                    <Tv size={20} /> Creators
-                </button>
+            <div className='flex flex-wrap gap-2 mb-6' role='group' aria-label='Leaderboard type'>
+                {tabs.map(tab => (
+                    <button
+                        key={tab.type}
+                        type='button'
+                        onClick={() => handleTypeChange(tab.type)}
+                        aria-pressed={type === tab.type}
+                        className={`flex min-h-11 items-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-colors sm:px-6 sm:py-3 ${
+                            type === tab.type
+                                ? 'bg-primary-400 text-background'
+                                : 'bg-surface text-muted-foreground hover:bg-surface-hover'
+                        }`}
+                    >
+                        {tab.icon} {tab.label}
+                    </button>
+                ))}
             </div>
 
             {/* Loading State */}
@@ -154,29 +162,29 @@ export default function LeaderboardPage() {
             )}
 
             {/* Error State */}
-            {error && (
+            {!loading && failed && (
                 <EmptyStateWithAction
                     icon={
-                        <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden='true'>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     }
-                    title="Failed to load leaderboard"
-                    description={error}
+                    title="We couldn't load the leaderboard"
+                    description='Check your connection and try again.'
                     primaryAction={{
-                        label: "Try Again",
+                        label: "Try again",
                         onClick: fetchLeaderboard
                     }}
                     secondaryAction={{
-                        label: "Go Home",
+                        label: "Go home",
                         href: "/"
                     }}
                 />
             )}
 
             {/* Leaderboard Content */}
-            {!loading && !error && type === 'streamers' && streamerRankings.length > 0 && (
-                <div className='bg-surface rounded-xl border border-border overflow-hidden'>
+            {!loading && !failed && type === 'streamers' && streamerRankings.length > 0 && (
+                <div className='bg-surface rounded-xl border border-border overflow-x-auto'>
                     <table className='w-full'>
                         <thead>
                             <tr className='border-b border-border text-text-secondary text-sm'>
@@ -235,40 +243,46 @@ export default function LeaderboardPage() {
                 </div>
             )}
 
-            {!loading && !error && type === 'streamers' && streamerRankings.length === 0 && (
-                <div className='text-center text-muted-foreground py-12'>
-                    <p className='mb-4'>Streamer rankings will appear after eligible clips receive community activity.</p>
-                    <Link className='inline-flex min-h-11 items-center rounded-md border border-border px-4 text-foreground' to='/explore'>Explore clips</Link>
-                </div>
+            {!loading && !failed && type === 'streamers' && streamerRankings.length === 0 && (
+                <LeaderboardEmptyState type={type} />
             )}
 
-            {!loading && !error && type !== 'streamers' && leaderboard && (
+            {!loading && !failed && type !== 'streamers' && leaderboard && (
                 <>
-                    {leaderboard.entries.length === 0 && (
-                        <div className='py-12 text-center text-muted-foreground'>
-                            <p className='mb-4'>No rankings are available yet. Explore clips and participate to help build the leaderboard.</p>
-                            <Link className='inline-flex min-h-11 items-center rounded-md border border-border px-4 text-foreground' to='/explore'>Explore clips</Link>
-                        </div>
-                    )}
-                    {/* Top 3 Summary */}
-                    {page === 1 && (
-                        <LeaderboardSummary
-                            entries={rankedEntries}
-                            type={type}
-                        />
-                    )}
+                    {rankedEntries.length === 0 ? (
+                        page === 1 ? (
+                            <LeaderboardEmptyState type={type} />
+                        ) : (
+                            <EmptyStateWithAction
+                                title='No more rankings'
+                                description='Everyone with points is on an earlier page.'
+                                primaryAction={{ label: 'Back to page 1', onClick: () => handlePageChange(1) }}
+                            />
+                        )
+                    ) : (
+                        <>
+                            {/* Top 3 Summary */}
+                            {page === 1 && (
+                                <LeaderboardSummary
+                                    entries={rankedEntries}
+                                    type={type}
+                                />
+                            )}
 
-                    {/* Leaderboard Table */}
-                    <LeaderboardTable
-                        entries={rankedEntries}
-                        type={type}
-                        currentUserId={user?.id}
-                    />
+                            {/* Leaderboard Table */}
+                            <LeaderboardTable
+                                entries={rankedEntries}
+                                type={type}
+                                currentUserId={user?.id}
+                            />
+                        </>
+                    )}
 
                     {/* Pagination */}
-                    {leaderboard.entries.length > 0 && leaderboard.entries.length === limit && (
-                        <div className='flex justify-center gap-4 mt-6'>
+                    {rankedEntries.length > 0 && showPagination && (
+                        <nav className='flex flex-wrap justify-center gap-4 mt-6' aria-label='Leaderboard pages'>
                             <button
+                                type='button'
                                 onClick={() => handlePageChange(page - 1)}
                                 disabled={page === 1}
                                 className='px-6 py-3 bg-surface text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-hover transition-colors'
@@ -279,13 +293,14 @@ export default function LeaderboardPage() {
                                 Page {page}
                             </div>
                             <button
+                                type='button'
                                 onClick={() => handlePageChange(page + 1)}
-                                disabled={leaderboard.entries.length < limit}
+                                disabled={!hasNextPage}
                                 className='px-6 py-3 bg-surface text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-hover transition-colors'
                             >
                                 Next
                             </button>
-                        </div>
+                        </nav>
                     )}
                 </>
             )}

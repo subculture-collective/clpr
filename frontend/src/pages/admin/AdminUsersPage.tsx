@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/ui/Avatar';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Card, CardHeader, CardBody, Button, Input } from '../../components';
@@ -602,10 +603,12 @@ export function AdminUsersPage() {
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           {user.avatar_url && (
-                            <img
+                            <Avatar
                               src={user.avatar_url}
-                              alt={user.username}
-                              className="w-8 h-8 rounded-full"
+                              alt=""
+                              fallback={user.username}
+                              size="sm"
+                              className="shrink-0"
                             />
                           )}
                           <div>

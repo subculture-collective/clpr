@@ -13,6 +13,8 @@ async function login(context: BrowserContext, browser: string, role: string) {
         data: { username: `clpr-e2e-${browser}-${role}` },
     });
     expect(response.status()).toBe(200);
+    // A browser sign-in records this hint; the app skips the session probe without it.
+    await context.addInitScript(() => localStorage.setItem('auth_session_hint', '1'));
     return (await response.json()).user as { id: string };
 }
 

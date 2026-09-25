@@ -265,9 +265,9 @@ export function ClipFeed({
 
             {engagement && (
                 <p role="status" className="mb-4 text-sm text-muted-foreground">
-                    Estimated observed engagement.
-                    {engagement.partial_coverage && ' History is incomplete for this period.'}
-                    {!!engagement.stale_clips && ' Some Twitch observations are stale.'}
+                    {engagement.partial_coverage
+                        ? 'Ranked by new views, votes, and comments. Estimates cover what clpr has tracked so far.'
+                        : 'Ranked by new views, votes, and comments (estimated).'}
                 </p>
             )}
 

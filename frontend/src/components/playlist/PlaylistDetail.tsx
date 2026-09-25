@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui';
+import { Badge, ResourceUnavailable } from '@/components/ui';
 import { useAuth, useIsAuthenticated, useToast } from '@/hooks';
 import {
     useInfinitePlaylist,
@@ -12,6 +12,7 @@ import {
     useReorderPlaylistClips,
 } from '@/hooks/usePlaylist';
 import apiClient from '@/lib/api';
+import { getHttpStatus } from '@/lib/error-utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Heart,
@@ -276,27 +277,37 @@ export function PlaylistDetail() {
     }
 
     if (isError) {
-        const status = (error as { response?: { status?: number } })?.response
-            ?.status;
-        const message =
-            status === 404 ? 'Playlist not found'
-            : status === 403 ? 'You do not have permission to view this playlist'
-            : status === 400 ? 'This playlist request is invalid'
-            : 'The playlist could not be loaded';
-        const actionClass =
-            'min-h-11 rounded-md border border-border px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400';
+        const status = getHttpStatus(error);
+        const links = [{ label: 'Browse playlists', href: '/playlists/discover' }];
+        if (status === 404 || status === 400) {
+            return (
+                <ResourceUnavailable
+                    kind='not-found'
+                    title="This playlist isn't here"
+                    description='It may have been deleted, or the link is incomplete.'
+                    links={links}
+                />
+            );
+        }
+        if (status === 403) {
+            return (
+                <ResourceUnavailable
+                    kind='not-found'
+                    kicker='Private'
+                    title='This playlist is private'
+                    description="Its owner hasn't shared it with you."
+                    links={links}
+                />
+            );
+        }
         return (
-            <div className='py-12 text-center'>
-                <p className='mb-4 text-muted-foreground'>{message}</p>
-                <div className='flex justify-center gap-3'>
-                    <button className={actionClass} onClick={() => void refetch()}>
-                        Retry
-                    </button>
-                    <button className={actionClass} onClick={() => navigate('/playlists')}>
-                        Back to playlists
-                    </button>
-                </div>
-            </div>
+            <ResourceUnavailable
+                kind='error'
+                title="We couldn't load this playlist"
+                description='Check your connection and try again.'
+                onRetry={() => void refetch()}
+                links={links}
+            />
         );
     }
 

@@ -51,7 +51,7 @@ export async function fetchUserUpvotedClips(
     });
 
     return {
-        clips: response.data.data,
+        clips: response.data.data ?? [],
         total: response.data.meta.total,
         page: response.data.meta.page,
         limit: response.data.meta.limit,
@@ -83,7 +83,7 @@ export async function fetchUserDownvotedClips(
     });
 
     return {
-        clips: response.data.data,
+        clips: response.data.data ?? [],
         total: response.data.meta.total,
         page: response.data.meta.page,
         limit: response.data.meta.limit,
@@ -216,7 +216,7 @@ export async function fetchUserClips(
     });
 
     return {
-        clips: response.data.data,
+        clips: response.data.data ?? [],
         total: response.data.meta.total,
         page: response.data.meta.page,
         limit: response.data.meta.limit,

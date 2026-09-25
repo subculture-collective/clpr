@@ -63,15 +63,27 @@ describe('AuthProvider session restoration', () => {
         vi.clearAllMocks();
     });
 
-    it('uses a quiet probe when no authenticated session is known', async () => {
-        authApi.getCurrentUser.mockRejectedValueOnce(new Error('401'));
-
+    it('skips the session probe when this browser has no recorded sign-in', async () => {
         const client = renderAuth();
         client.setQueryData(['publicFeed'], { clips: [] });
 
         expect(await screen.findByText('anonymous')).toBeVisible();
         expect(client.getQueryData(['publicFeed'])).toEqual({ clips: [] });
-        expect(authApi.getCurrentUser).toHaveBeenCalledWith({ anonymousProbe: true });
+        expect(authApi.getCurrentUser).not.toHaveBeenCalled();
+    });
+
+    it('uses a quiet probe when storage is unavailable', async () => {
+        const getItem = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+            throw new DOMException('blocked', 'SecurityError');
+        });
+        authApi.getCurrentUser.mockRejectedValueOnce(new Error('401'));
+        try {
+            renderAuth();
+            expect(await screen.findByText('anonymous')).toBeVisible();
+            expect(authApi.getCurrentUser).toHaveBeenCalledWith({ anonymousProbe: true });
+        } finally {
+            getItem.mockRestore();
+        }
     });
 
     it('allows refresh while restoring a known authenticated session', async () => {
@@ -100,6 +112,7 @@ describe('AuthProvider session restoration', () => {
     });
 
     it('clears a revoked session once when concurrent requests become unauthorized', async () => {
+        localStorage.setItem('auth_session_hint', '1');
         authApi.getCurrentUser.mockResolvedValueOnce({ ...user('revoked'), is_verified: true });
         const client = renderAuth();
         await screen.findByText('revoked');
@@ -115,6 +128,7 @@ describe('AuthProvider session restoration', () => {
 
     it('removes local access even when the logout endpoint fails, preserving preferences', async () => {
         allowTestConsole('error', /Logout error: Error: network unavailable/);
+        localStorage.setItem('auth_session_hint', '1');
         authApi.getCurrentUser.mockResolvedValueOnce(user('leaving'));
         authApi.logout.mockRejectedValueOnce(new Error('network unavailable'));
         localStorage.setItem('theme', 'dark');
@@ -138,6 +152,7 @@ describe('AuthProvider session restoration', () => {
         expect(client.getQueryCache().getAll()).toHaveLength(0);
     });
     it('retains cache for the same account but discards it when the principal changes', async () => {
+        localStorage.setItem('auth_session_hint', '1');
         authApi.getCurrentUser.mockResolvedValueOnce(user('member'))
             .mockResolvedValueOnce({ ...user('member'), display_name: 'Updated profile' })
             .mockResolvedValueOnce(user('second'));

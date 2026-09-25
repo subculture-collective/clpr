@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Container, SEO } from '../components';
 import { ClipGridCard } from '../components/clip';
-import { Button } from '../components/ui';
+import { Avatar, Button, ResourceUnavailable } from '../components/ui';
 import { Spinner } from '../components';
 import { LiveBadge } from '../components/broadcaster';
 import {
@@ -16,6 +16,7 @@ import {
 import { apiClient } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { isNotFoundError } from '../lib/error-utils';
 
 export function BroadcasterPage() {
     const { broadcasterId } = useParams<{ broadcasterId: string }>();
@@ -32,6 +33,7 @@ export function BroadcasterPage() {
         data: profile,
         isLoading: isLoadingProfile,
         error: profileError,
+        refetch: refetchProfile,
     } = useQuery({
         queryKey: ['broadcaster', broadcasterId],
         queryFn: () => fetchBroadcasterProfile(broadcasterId!),
@@ -136,18 +138,31 @@ export function BroadcasterPage() {
     }
 
     if (profileError || !profile) {
+        const notFound = !profileError || isNotFoundError(profileError);
         return (
-            <Container className='py-8'>
-                <div className='text-center text-muted-foreground py-12'>
-                    <h2 className='text-2xl font-bold mb-2'>
-                        Creator Not Found
-                    </h2>
-                    <p>
-                        The creator you're looking for doesn't exist or has
-                        no clips yet.
-                    </p>
-                </div>
-            </Container>
+            <>
+                <SEO title={notFound ? 'Creator not found' : 'Creator unavailable'} noindex />
+                <Container className='py-8'>
+                    {notFound ?
+                        <ResourceUnavailable
+                            kind='not-found'
+                            title="This creator isn't here"
+                            description="We don't have a creator page for this link yet."
+                            links={[
+                                { label: 'Browse creators', href: '/creators' },
+                                { label: 'Back to the feed', href: '/' },
+                            ]}
+                        />
+                    :   <ResourceUnavailable
+                            kind='error'
+                            title="We couldn't load this creator"
+                            description='Check your connection and try again.'
+                            onRetry={() => void refetchProfile()}
+                            links={[{ label: 'Back to the feed', href: '/' }]}
+                        />
+                    }
+                </Container>
+            </>
         );
     }
 
@@ -162,18 +177,18 @@ export function BroadcasterPage() {
                 <div className='mb-8'>
                     <div className='flex flex-col md:flex-row items-start md:items-center gap-6 mb-6'>
                         {/* Avatar */}
-                        {profile.avatar_url && (
-                            <img
-                                src={profile.avatar_url}
-                                alt={`${profile.display_name} profile picture`}
-                                className='w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-primary'
-                            />
-                        )}
+                        <Avatar
+                            src={profile.avatar_url}
+                            alt=''
+                            fallback={profile.display_name}
+                            frameClassName='h-24 w-24 border-4 border-primary text-4xl md:h-32 md:w-32'
+                            className='shrink-0'
+                        />
 
                         {/* Info */}
-                        <div className='flex-1'>
-                            <div className='flex items-center gap-3 mb-2'>
-                                <h1 className='text-4xl font-bold'>
+                        <div className='min-w-0 flex-1'>
+                            <div className='flex flex-wrap items-center gap-3 mb-2'>
+                                <h1 className='min-w-0 break-words text-4xl font-bold'>
                                     {profile.display_name}
                                 </h1>
                                 <LiveBadge
@@ -192,7 +207,7 @@ export function BroadcasterPage() {
                                 />
                             </div>
                             {profile.bio && (
-                                <p className='text-muted-foreground mb-4'>
+                                <p className='text-muted-foreground mb-4 break-words'>
                                     {profile.bio}
                                 </p>
                             )}
@@ -292,9 +307,9 @@ export function BroadcasterPage() {
                 </div>
 
                 {/* Sort Controls */}
-                <div className='mb-6 flex items-center gap-4'>
+                <div className='mb-6 flex flex-wrap items-center gap-x-4 gap-y-2'>
                     <h2 className='text-2xl font-bold'>Clips</h2>
-                    <div className='flex gap-2'>
+                    <div className='flex flex-wrap gap-2'>
                         <Button
                             size='sm'
                             variant={

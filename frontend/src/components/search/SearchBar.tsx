@@ -4,6 +4,7 @@ import { Gamepad2, User, Tag, Search } from 'lucide-react';
 import { searchApi } from '../../lib/search-api';
 import type { SearchSuggestion } from '../../types/search';
 import { Input } from '../ui/Input';
+import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
     initialQuery?: string;
@@ -169,7 +170,11 @@ export function SearchBar({
                         placeholder='Search clips, creators, tags, categories...'
                         aria-label='Search'
                         autoFocus={autoFocus}
-                        className={query ? 'pr-24' : 'pr-12'}
+                        // The custom clear button replaces the browser's native one.
+                        className={cn(
+                            query ? 'pr-24' : 'pr-12',
+                            '[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none',
+                        )}
                         data-testid='search-input'
                     />
                     <button
