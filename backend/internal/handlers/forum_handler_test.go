@@ -161,6 +161,9 @@ func TestForumListAndSearchRejectMalformedQueries(t *testing.T) {
 	}{
 		{"thread page", "/api/v1/forum/threads?page=zero", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
 		{"thread sort", "/api/v1/forum/threads?sort=unknown", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
+		{"thread limit", "/api/v1/forum/threads?limit=101", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
+		{"thread game_id", "/api/v1/forum/threads?game_id=not-a-game", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
+		{"thread too many tags", "/api/v1/forum/threads?tags=a,b,c,d,e,f,g,h,i,j,k", func(h *ForumHandler, c *gin.Context) { h.ListThreads(c) }},
 		{"search page", "/api/v1/forum/search?q=hello&page=0", func(h *ForumHandler, c *gin.Context) { h.SearchThreads(c) }},
 		{"search sort", "/api/v1/forum/search?q=hello&sort=unknown", func(h *ForumHandler, c *gin.Context) { h.SearchThreads(c) }},
 		{"popular timeframe", "/api/v1/forum/popular?timeframe=year", func(h *ForumHandler, c *gin.Context) { h.GetPopularDiscussions(c) }},
@@ -626,5 +629,26 @@ func TestSearchThreads_EmptyQueryValidation(t *testing.T) {
 
 	if response["error"] != "Search query is required" {
 		t.Errorf("expected error message 'Search query is required', got %v", response["error"])
+	}
+}
+
+// frontend/src/types/forum.ts ForumSort values plus the original API values.
+func TestForumThreadSortAliases(t *testing.T) {
+	want := map[string]string{
+		"newest": "recent", "most-replied": "replies", "trending": "hot", "hot": "hot",
+		"recent": "recent", "popular": "popular", "replies": "replies",
+	}
+	for input, canonical := range want {
+		if got := forumThreadSortAliases[input]; got != canonical {
+			t.Errorf("sort=%s maps to %q, want %q", input, got, canonical)
+		}
+	}
+}
+
+func TestIsTwitchGameID(t *testing.T) {
+	for value, want := range map[string]bool{"509658": true, "": false, "12a": false, "123456789012345678901": false} {
+		if got := isTwitchGameID(value); got != want {
+			t.Errorf("isTwitchGameID(%q) = %v, want %v", value, got, want)
+		}
 	}
 }
