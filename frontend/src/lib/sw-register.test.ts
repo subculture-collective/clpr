@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { registerServiceWorker, unregisterServiceWorker, isPWAInstalled, canInstallPWA } from './sw-register';
 
 describe('sw-register', () => {
@@ -57,6 +59,16 @@ describe('sw-register', () => {
       });
       return { worker, registration, container, reload, confirm };
     }
+
+    it('registers the worker under a query version that matches its cache name', async () => {
+      const { container } = productionRegistration();
+      await registerServiceWorker();
+      const [url] = container.register.mock.calls[0];
+      const source = readFileSync(resolve(__dirname, '../../public/sw.js'), 'utf8');
+      const cacheVersion = source.match(/CACHE_NAME = 'clpr-v(\d+)'/)?.[1];
+      expect(cacheVersion).toBeDefined();
+      expect(url).toBe(`/sw.js?v=${cacheVersion}`);
+    });
 
     it('preserves the page when its first worker claims control', async () => {
       const { container, worker, reload, confirm } = productionRegistration();

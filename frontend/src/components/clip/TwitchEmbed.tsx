@@ -6,6 +6,7 @@ import { useRef, useState } from 'react';
 import { ExternalLink, Play, RotateCw } from 'lucide-react';
 import { useVolumePreference } from '@/hooks';
 import { useTwitchEmbedFits } from '@/hooks/useTwitchEmbedFits';
+import { useRegisterTwitchPlayer } from '@/hooks/useTwitchPlayerLayer';
 import { MutedIcon } from '@/components/ui';
 import { ErrorEvents, trackEvent } from '@/lib/telemetry';
 
@@ -38,6 +39,7 @@ export function TwitchEmbed({
   const shouldAutoplay = active || autoplay;
   const embedUrl = `https://clips.twitch.tv/embed?clip=${encodeURIComponent(clipId)}&parent=${encodeURIComponent(parentDomain)}&autoplay=${shouldAutoplay ? 'true' : 'false'}&muted=${embedMuted ? 'true' : 'false'}`;
   const playing = active && fits === true && !hasError;
+  useRegisterTwitchPlayer(boxRef, playing);
 
   const thumbnail = thumbnailUrl ? (
     <img

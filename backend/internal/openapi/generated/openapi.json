@@ -8904,6 +8904,56 @@
         }
       }
     },
+    "/api/v1/share/clips/{id}": {
+      "get": {
+        "tags": [
+          "Pages"
+        ],
+        "summary": "Render a clip link preview",
+        "description": "Small HTML document with OpenGraph and Twitter card tags for one clip, used by the frontend edge for link-preview crawlers on /clip/{id}. Accepts a clip UUID or Twitch clip slug. Unknown, removed, or hidden clips return 404 with the site-wide default tags. Responses are cacheable for five minutes; repository failures return a non-cacheable 503.",
+        "operationId": "getApiV1ShareClipsId",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PageHTML"
+          },
+          "404": {
+            "$ref": "#/components/responses/PageNotFound"
+          },
+          "503": {
+            "description": "Clip data is temporarily unavailable; the document carries default tags and Cache-Control no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clips/game/{gameSlug}": {
       "get": {
         "tags": [

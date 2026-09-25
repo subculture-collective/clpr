@@ -72,8 +72,10 @@ func TestDiscoveryListRepository_GetDiscoveryList(t *testing.T) {
 	userID := uuid.New()
 	insertTestUser(t, pool, userID)
 
-	// Create a test list
-	list, err := repo.CreateList(ctx, "Test List", "test-list", "Test description", false, userID)
+	// Other tests in this package also create "test-list" and slugs are not
+	// unique, so use a slug that only this list can match.
+	slug := "test-list-" + userID.String()[:8]
+	list, err := repo.CreateList(ctx, "Test List", slug, "Test description", false, userID)
 	if err != nil {
 		t.Fatalf("Failed to create discovery list: %v", err)
 	}
@@ -89,7 +91,7 @@ func TestDiscoveryListRepository_GetDiscoveryList(t *testing.T) {
 	}
 
 	// Test getting by slug
-	retrievedBySlug, err := repo.GetDiscoveryList(ctx, "test-list", nil)
+	retrievedBySlug, err := repo.GetDiscoveryList(ctx, slug, nil)
 	if err != nil {
 		t.Fatalf("Failed to get discovery list by slug: %v", err)
 	}

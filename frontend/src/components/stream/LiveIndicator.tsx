@@ -11,9 +11,10 @@ function formatViewerCount(count: number): string {
   return count.toString();
 }
 
+// Rendered beside the stream title, never over the player (Twitch forbids covering embeds).
 export function LiveIndicator({ viewerCount }: LiveIndicatorProps) {
   return (
-    <div className="absolute top-4 left-4 bg-red-600 px-3 py-1.5 rounded-md flex items-center gap-2 shadow-lg z-10">
+    <div className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5">
       {/* Pulsing Live Dot */}
       <span className="relative flex h-2 w-2">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
