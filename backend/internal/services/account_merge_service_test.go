@@ -5,55 +5,22 @@ package services
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"git.subcult.tv/subculture-collective/clpr/config"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
-	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 )
 
-// setupTestDB creates a test database connection
+// setupTestDB connects to this package's isolated test database.
 func setupTestDB(t *testing.T) *database.DB {
-	// Use environment variables for test database configuration
-	host := os.Getenv("TEST_DATABASE_HOST")
-	if host == "" {
-		host = "localhost"
-	}
-
-	port := os.Getenv("TEST_DATABASE_PORT")
-	if port == "" {
-		port = "5437" // Default test database port
-	}
-
-	user := os.Getenv("TEST_DATABASE_USER")
-	if user == "" {
-		user = "clpr"
-	}
-
-	password := os.Getenv("TEST_DATABASE_PASSWORD")
-	if password == "" {
-		password = "clpr_password_test_only" // Obviously test-only default
-	}
-
-	dbName := os.Getenv("TEST_DATABASE_NAME")
-	if dbName == "" {
-		dbName = "clpr_test"
-	}
-
-	cfg := &config.DatabaseConfig{
-		Host:     host,
-		Port:     port,
-		User:     user,
-		Password: password,
-		Name:     dbName,
-		SSLMode:  "disable",
-	}
+	testutil.RequirePackageDatabase(t)
+	cfg := testutil.DatabaseConfig()
 
 	db, err := database.NewDB(cfg)
 	require.NoError(t, err, "Failed to connect to test database")

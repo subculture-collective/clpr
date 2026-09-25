@@ -420,32 +420,23 @@ This authorization framework helps meet compliance requirements:
 
 ### Test Suite Overview
 
-A comprehensive RBAC regression suite is available at `backend/tests/integration/rbac/` that validates:
-- Access matrices (guest/user/moderator/admin) for all protected endpoints
-- Privilege escalation prevention
-- Audit logging for admin/moderation actions
-- Consistent error responses (401/403)
+The standalone RBAC regression suite formerly at `backend/tests/integration/rbac/`
+was removed in February 2026. Permission enforcement for each role, including
+community-moderator channel scoping, is covered by
+`backend/internal/middleware/permission_middleware_test.go`. Database-backed
+handler tests live in `backend/internal/handlers` behind the `integration`
+build tag.
 
 ### Running RBAC Tests
 
 ```bash
-# Setup test infrastructure
-docker compose -f docker-compose.test.yml up -d
-
-# Run migrations
-migrate -path backend/migrations -database "postgresql://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable" up
-
-# Run all RBAC tests
+# Permission middleware (no services required)
 cd backend
-go test -v -tags=integration ./tests/integration/rbac/...
+go test -v ./internal/middleware -run 'TestRequire(Permission|AnyPermission|AccountType)'
 
-# Run specific test suites
-go test -v -tags=integration ./tests/integration/rbac -run TestRBACRegressionSuite
-go test -v -tags=integration ./tests/integration/rbac -run TestPrivilegeEscalation
-go test -v -tags=integration ./tests/integration/rbac -run TestNegativeCases
-
-# Cleanup
-docker compose -f docker-compose.test.yml down
+# Database-backed handler tests (starts and stops disposable services)
+cd ..
+task test:integration:pkg PKG=internal/handlers
 ```
 
 ### Test Coverage
@@ -503,27 +494,14 @@ When adding a new protected endpoint:
    )
    ```
 
-2. **Add test case** to `backend/tests/integration/rbac/rbac_endpoints_test.go`:
-   ```go
-   {
-       Name:   "POST /admin/new-endpoint",
-       Method: "POST",
-       Path:   "/api/v1/admin/new-endpoint",
-       Body:   map[string]interface{}{"field": "value"},
-       AccessMatrix: AccessMatrix{
-           Guest:     http.StatusUnauthorized,
-           User:      http.StatusForbidden,
-           Moderator: http.StatusOK,
-           Admin:     http.StatusOK,
-       },
-       RequiresAudit: true,
-       AuditAction:   "action_name",
-   },
-   ```
+2. **Add a test case** to `backend/internal/middleware/permission_middleware_test.go`
+   that asserts the expected status for guest, user, moderator, and admin
+   requests. Add a handler test in `backend/internal/handlers` when the check
+   depends on stored data.
 
 3. **Run tests** to verify:
    ```bash
-   go test -v -tags=integration ./tests/integration/rbac/...
+   go test -v ./internal/middleware -run 'TestRequire(Permission|AnyPermission|AccountType)'
    ```
 
 4. **Update documentation** with the new endpoint coverage

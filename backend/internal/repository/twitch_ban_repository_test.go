@@ -8,7 +8,8 @@ import (
 )
 
 // Note: These are unit tests for the repository layer.
-// Integration tests with a real database should be in tests/integration/
+// Integration tests with a real database belong in an integration-tagged file in
+// this package that uses testutil.SetupTestDB.
 
 func TestTwitchBan_StructFields(t *testing.T) {
 	// This test validates the TwitchBan struct has all required fields
@@ -118,7 +119,7 @@ func TestNewTwitchBanRepository(t *testing.T) {
 }
 
 // Integration tests would test actual database operations
-// Example structure for integration tests (to be implemented in tests/integration/):
+// Example structure for integration tests (to be implemented in this package):
 //
 // func TestTwitchBanRepository_UpsertBan_Integration(t *testing.T) {
 //     if testing.Short() {

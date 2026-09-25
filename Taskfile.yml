@@ -21,6 +21,9 @@ vars:
     sh: 'printf "%s" "${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:${TEST_OPENSEARCH_PORT:-9201}}"'
   TEST_DB_URL: 'postgresql://clpr:clpr_password@{{.TEST_DB_HOST}}:{{.TEST_DB_PORT}}/clpr_test?sslmode=disable'
   MIGRATIONS_PATH: 'backend/migrations'
+  # Backend packages containing integration-tagged tests, e.g. ./internal/repository.
+  INTEGRATION_PKGS:
+    sh: "cd backend && grep -rlE --include='*_test.go' '^//go:build .*integration' . | xargs -n1 dirname | sort -u | tr '\\n' ' ' | sed 's/ $//'"
   BACKEND_BIN_DIR:
     sh: 'if [ -d backend/bin ] && [ ! -w backend/bin ]; then echo .tmp/bin; else echo backend/bin; fi'
 
@@ -335,33 +338,36 @@ tasks:
       - cd backend && go test -coverprofile=coverage.out -covermode=atomic ./...
       - cd backend && go tool cover -html=coverage.out -o coverage.html
 
+  # Each integration package clones its own database from the migrated test
+  # database in TestMain (internal/testutil.RunWithDatabase), so packages run
+  # in parallel without sharing rows, locks, or migration state.
   test:integration:
-    desc: Run all integration tests
+    desc: Run all integration-tagged backend packages, each against its own database
     aliases: [test-integration]
     cmds:
       - task: test:setup
-      - cd backend && go test -v -tags=integration -race -parallel=4 ./tests/integration/...
-      - task: test:teardown
+      - defer: { task: test:teardown }
+      - cd backend && set -a && . ./.env.test && set +a && go test -count=1 -v -tags=integration -race -parallel=4 {{.INTEGRATION_PKGS}}
 
   test:integration:coverage:
-    desc: Run integration tests with coverage report
+    desc: Run integration-tagged backend packages with coverage report
     aliases: [test-integration-coverage]
     cmds:
       - task: test:setup
-      - cd backend && go test -v -tags=integration -race -parallel=4 -coverprofile=coverage-integration.out -covermode=atomic ./tests/integration/...
+      - defer: { task: test:teardown }
+      - cd backend && set -a && . ./.env.test && set +a && go test -count=1 -v -tags=integration -race -parallel=4 -coverprofile=coverage-integration.out -covermode=atomic {{.INTEGRATION_PKGS}}
       - cd backend && go tool cover -html=coverage-integration.out -o coverage-integration.html
       - |
         cd backend && go tool cover -func=coverage-integration.out | grep total | awk '{print "Integration test coverage: " $3}'
-      - task: test:teardown
 
   test:integration:pkg:
-    desc: Run an existing integration package (currently PKG=premium)
+    desc: Run one integration package (e.g. PKG=internal/repository or PKG=tests/migrations)
     cmds:
-      - 'test -n "{{.PKG}}" || (echo "Set PKG=premium"; exit 1)'
-      - 'test -d "backend/tests/integration/{{.PKG}}" || (echo "Integration package does not exist: {{.PKG}}"; exit 1)'
+      - 'test -n "{{.PKG}}" || (echo "Set PKG to one of: {{.INTEGRATION_PKGS}}"; exit 1)'
+      - 'case " {{.INTEGRATION_PKGS}} " in *" ./{{trimPrefix "./" .PKG}} "*) ;; *) echo "Not an integration package: {{.PKG}} (choose from: {{.INTEGRATION_PKGS}})"; exit 1;; esac'
       - task: test:setup
-      - cd backend && go test -v -tags=integration ./tests/integration/{{.PKG}}/...
-      - task: test:teardown
+      - defer: { task: test:teardown }
+      - cd backend && set -a && . ./.env.test && set +a && go test -count=1 -v -tags=integration -race ./{{trimPrefix "./" .PKG}}
 
   migrate:up:
     desc: Run database migrations up

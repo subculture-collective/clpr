@@ -100,7 +100,7 @@ jobs:
           set +e  # Don't exit on error
           go test -v -tags=integration \
             -timeout=30m \
-            -run="TestShadowDatabaseMigrationDrills|TestMigrationDriftDetection|TestResidualObjectsDetection" \
+            -run="TestShadowDatabaseMigrationDrills|TestMigrationDriftDetection|TestResidualObjectsDetection|TestMigrationFullRoundTrip" \
             ./tests/migrations/... \
             | tee test-reports/migration-drills/test-output.log
           test_exit_code=${PIPESTATUS[0]}

@@ -9,12 +9,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/middleware"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	"github.com/gin-gonic/gin"
 )
 
 func TestLeaderboardIntegration(t *testing.T) {
@@ -27,14 +27,8 @@ func TestLeaderboardIntegration(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	// Setup database connection
-	dbConfig := &config.DatabaseConfig{
-		Host:     getEnvOrDefault("DB_HOST", "localhost"),
-		Port:     getEnvOrDefault("DB_PORT", "5437"), // Test DB port (see docker-compose.test.yml)
-		User:     getEnvOrDefault("DB_USER", "clpr"),
-		Password: getEnvOrDefault("DB_PASSWORD", "clpr_password"),
-		Name:     getEnvOrDefault("DB_NAME", "clpr_test"),
-		SSLMode:  "disable",
-	}
+	testutil.RequirePackageDatabase(t)
+	dbConfig := testutil.DatabaseConfig()
 
 	db, err := database.NewDB(dbConfig)
 	if err != nil {

@@ -38,7 +38,13 @@ go test -v -tags=integration ./tests/migrations/... -run TestModerationQueueMigr
 
 # Run with coverage
 go test -tags=integration ./tests/migrations/... -coverprofile=coverage.out
+
+# From the repository root, including service setup and teardown
+task test:integration:pkg PKG=tests/migrations
 ```
+
+Load `backend/.env.test` (written by `task test:setup`) first when the test
+services use non-default ports.
 
 ## Test Coverage
 
@@ -218,7 +224,12 @@ When adding a new migration test:
 ## Notes
 
 - Tests use the `//go:build integration` build tag
-- Test database is isolated (clpr_test on port 5437)
+- `TestMain` clones this package's own database from `clpr_test_template`
+  (see `testutil.RunWithDatabase`), so drills that roll migrations back never
+  change the schema seen by other packages or by `clpr_test`
+- `TestMigrationFullRoundTrip` applies every migration to an empty database,
+  runs `migrate down -all`, checks that no application objects remain, and
+  re-applies every migration, comparing the schema with the first pass
 - Coverage metrics are not applicable as these are schema tests
 - All tests should clean up after themselves
 - Tests should be idempotent and can run in any order

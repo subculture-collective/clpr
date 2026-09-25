@@ -3,11 +3,11 @@ package repository
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -17,11 +17,7 @@ import (
 func setupTwitchAuthTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 	t.Helper()
 
-	// Build connection string from environment or defaults
-	connString := os.Getenv("TEST_DATABASE_URL")
-	if connString == "" {
-		connString = "postgres://clpr:clpr_password@localhost:5437/clpr_test?sslmode=disable"
-	}
+	connString := testutil.DatabaseURL()
 
 	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {
