@@ -1,9 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useConsent } from '../../context/ConsentContext';
 import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Toggle';
 import { cn } from '../../lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useOverlapsTwitchPlayer } from '../../hooks/useTwitchPlayerLayer';
+
+/** AppLayout renders this element at the top of the page for the in-page banner. */
+export const CONSENT_BANNER_SLOT_ID = 'consent-banner-slot';
 
 export interface ConsentBannerProps {
   /** Additional CSS classes */
@@ -12,7 +17,9 @@ export interface ConsentBannerProps {
 
 /**
  * Consent banner component for GDPR/privacy compliance
- * Shows a banner at the bottom of the screen for users to manage their consent preferences
+ * Shows a banner at the bottom of the screen for users to manage their consent preferences.
+ * Twitch forbids covering its players, so when the overlay would sit on one the
+ * banner moves into the page flow above the header for the rest of that page.
  */
 export function ConsentBanner({ className }: ConsentBannerProps) {
   const {
@@ -32,7 +39,19 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
     advertising: consent.advertising,
   });
 
-  const bannerRef = useRef<HTMLDivElement>(null);
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+  const { pathname } = useLocation();
+  const [inlinePath, setInlinePath] = useState<string | null>(null);
+  const slot = typeof document === 'undefined' ? null : document.getElementById(CONSENT_BANNER_SLOT_ID);
+  const inline = inlinePath === pathname && slot !== null;
+  const [coversPlayer, watchOverlap] = useOverlapsTwitchPlayer(showConsentBanner && !inline);
+  const setBannerNode = useCallback((node: HTMLDivElement | null) => {
+    bannerRef.current = node;
+    watchOverlap(node);
+  }, [watchOverlap]);
+
+  // Adjusted during render so the overlay never paints over the player before moving.
+  if (coversPlayer && inlinePath !== pathname) setInlinePath(pathname);
   const detailsTitleRef = useRef<HTMLHeadingElement>(null);
   const customizeRef = useRef<HTMLButtonElement>(null);
   const wasDetailed = useRef(false);
@@ -45,7 +64,8 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
 
   useEffect(() => {
     const banner = bannerRef.current;
-    if (!showConsentBanner || !banner) return;
+    // The in-page banner takes its own space; only the overlay reserves room.
+    if (!showConsentBanner || inline || !banner) return;
     const previousPadding = document.body.style.paddingBottom;
     const previousBannerHeight = document.documentElement.style.getPropertyValue('--consent-banner-height');
     const previousScrollPadding = document.documentElement.style.scrollPaddingBottom;
@@ -83,7 +103,7 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
       document.body.style.paddingBottom = previousPadding;
       document.documentElement.style.scrollPaddingBottom = previousScrollPadding;
     };
-  }, [showConsentBanner]);
+  }, [showConsentBanner, inline]);
 
   const finish = (save: () => void) => {
     save();
@@ -98,12 +118,14 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
     finish(() => updateConsent(pendingPreferences));
   };
 
-  return (
+  const banner = (
     <div
-      ref={bannerRef}
+      ref={setBannerNode}
+      data-placement={inline ? 'inline' : 'overlay'}
       className={cn(
-        'fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto bg-background border-t border-border shadow-2xl md:bottom-0',
-        'animate-in slide-in-from-bottom duration-300',
+        inline
+          ? 'relative w-full bg-background border-b border-border'
+          : 'fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto bg-background border-t border-border shadow-2xl md:bottom-0 animate-in slide-in-from-bottom duration-300',
         className
       )}
       role="region"
@@ -310,4 +332,6 @@ export function ConsentBanner({ className }: ConsentBannerProps) {
       </div>
     </div>
   );
+
+  return inline && slot ? createPortal(banner, slot) : banner;
 }
