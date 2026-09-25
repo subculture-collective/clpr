@@ -157,11 +157,6 @@ func TestFollowStreamer_InvalidUsername(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "Username too short",
-			streamer:       "abc",
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
 			name:           "Username too long",
 			streamer:       "thisusernameiswaytooolongfortwitch",
 			expectedStatus: http.StatusBadRequest,
@@ -199,9 +194,11 @@ func TestValidateStreamerUsername(t *testing.T) {
 		wantError bool
 	}{
 		{"Valid 4 chars", "test", false},
-		{"Valid 25 chars", "TwentyFiveCharUsername1", false},
+		{"Valid legacy 3 chars", "xqc", false},
+		{"Valid legacy 1 char", "x", false},
+		{"Valid 25 chars", "abcdefghijklmnopqrstuvwxy", false},
+		{"Too long 26 chars", "abcdefghijklmnopqrstuvwxyz", true},
 		{"Valid with underscore", "test_user", false},
-		{"Too short", "abc", true},
 		{"Too long", "thisusernameiswaytooolongfortwitch", true},
 		{"Invalid char @", "user@name", true},
 		{"Empty", "", true},

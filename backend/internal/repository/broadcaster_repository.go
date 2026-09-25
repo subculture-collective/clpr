@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
@@ -394,6 +395,87 @@ func (r *BroadcasterRepository) GetAllFollowedBroadcasterIDs(ctx context.Context
 	}
 
 	return broadcasterIDs, nil
+}
+
+// GetLiveStatusCandidateBroadcasterIDs returns up to limit broadcasters that
+// matter to the public site: those with the most visible clips created within
+// window, most recently clipped first on ties. The live status scheduler checks
+// them in addition to followed broadcasters.
+func (r *BroadcasterRepository) GetLiveStatusCandidateBroadcasterIDs(ctx context.Context, limit int, window time.Duration) ([]string, error) {
+	if limit <= 0 {
+		return []string{}, nil
+	}
+	query := `
+		SELECT broadcaster_id
+		FROM clips
+		WHERE is_removed = false
+		  AND is_hidden = false
+		  AND broadcaster_id IS NOT NULL
+		  AND broadcaster_id <> ''
+		  AND created_at > NOW() - make_interval(secs => $2)
+		GROUP BY broadcaster_id
+		ORDER BY COUNT(*) DESC, MAX(created_at) DESC, broadcaster_id
+		LIMIT $1
+	`
+	rows, err := r.pool.Query(ctx, query, limit, window.Seconds())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get live status candidate broadcasters: %w", err)
+	}
+	defer rows.Close()
+
+	ids := make([]string, 0, limit)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("failed to scan candidate broadcaster ID: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating candidate broadcaster IDs: %w", err)
+	}
+	return ids, nil
+}
+
+// GetSyncStatuses returns the stored sync status for each of broadcasterIDs
+// that has one, keyed by broadcaster ID, in a single query.
+func (r *BroadcasterRepository) GetSyncStatuses(ctx context.Context, broadcasterIDs []string) (map[string]*models.BroadcasterSyncStatus, error) {
+	statuses := make(map[string]*models.BroadcasterSyncStatus, len(broadcasterIDs))
+	if len(broadcasterIDs) == 0 {
+		return statuses, nil
+	}
+	query := `
+		SELECT broadcaster_id, is_live, stream_started_at, last_synced, game_name, viewer_count,
+		       stream_title, created_at, updated_at
+		FROM broadcaster_sync_status
+		WHERE broadcaster_id = ANY($1)
+	`
+	rows, err := r.pool.Query(ctx, query, broadcasterIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sync statuses: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var status models.BroadcasterSyncStatus
+		if err := rows.Scan(
+			&status.BroadcasterID,
+			&status.IsLive,
+			&status.StreamStartedAt,
+			&status.LastSynced,
+			&status.GameName,
+			&status.ViewerCount,
+			&status.StreamTitle,
+			&status.CreatedAt,
+			&status.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan sync status: %w", err)
+		}
+		statuses[status.BroadcasterID] = &status
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating sync statuses: %w", err)
+	}
+	return statuses, nil
 }
 
 // UpsertSyncStatus updates or inserts broadcaster sync status

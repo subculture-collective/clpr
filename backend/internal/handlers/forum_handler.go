@@ -191,22 +191,94 @@ func (h *ForumHandler) CreateThread(c *gin.Context) {
 	})
 }
 
+// forumThreadSortAliases maps every accepted sort value to its canonical
+// ordering. The web client sends newest|most-replied|trending|hot; the
+// original API values recent|popular|replies remain valid.
+var forumThreadSortAliases = map[string]string{
+	"recent":       "recent",
+	"newest":       "recent",
+	"popular":      "popular",
+	"replies":      "replies",
+	"most-replied": "replies",
+	"hot":          "hot",
+	"trending":     "hot",
+}
+
+// forumHotScoreSQL ranks threads by engagement (the same weighting as the
+// popular-discussions dashboard) decayed by age, so active new threads rise
+// above old threads with large lifetime totals.
+const forumHotScoreSQL = `((ft.reply_count * 3 + ft.view_count / 10.0 + 1) / POWER(EXTRACT(EPOCH FROM (NOW() - ft.created_at)) / 3600.0 + 2, 1.5))`
+
+const (
+	maxForumTagFilters  = 10
+	maxForumTagLength   = 50
+	maxTwitchGameIDSize = 20
+)
+
+// parseForumTagFilters reads tags from repeated (?tags=a&tags=b) or
+// comma-separated (?tags=a,b) parameters.
+func parseForumTagFilters(c *gin.Context) ([]string, bool) {
+	var tags []string
+	for _, raw := range c.QueryArray("tags") {
+		for _, tag := range strings.Split(raw, ",") {
+			if tag = strings.TrimSpace(tag); tag != "" {
+				tags = append(tags, tag)
+			}
+		}
+	}
+	if len(tags) > maxForumTagFilters {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("at most %d tags may be filtered", maxForumTagFilters)})
+		return nil, false
+	}
+	for _, tag := range tags {
+		if len(tag) > maxForumTagLength {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("tags cannot exceed %d characters", maxForumTagLength)})
+			return nil, false
+		}
+	}
+	return tags, true
+}
+
+func isTwitchGameID(value string) bool {
+	if value == "" || len(value) > maxTwitchGameIDSize {
+		return false
+	}
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 // ListThreads retrieves a list of forum threads with filters
-// GET /api/v1/forum/threads?page=1&sort=recent&game_filter=<game_id>&search=<query>
+// GET /api/v1/forum/threads?page=1&limit=20&sort=newest&game_id=<game>&tags=<tag>&search=<query>
+// sort: newest|recent, most-replied|replies, popular, hot|trending.
+// game_id (alias game_filter): internal game UUID or Twitch game ID.
 func (h *ForumHandler) ListThreads(c *gin.Context) {
 	page, ok := parseForumPage(c)
 	if !ok {
 		return
 	}
-	limit := 20
-	offset := (page - 1) * limit
-
-	sort := c.DefaultQuery("sort", "recent") // recent, popular, replies
-	if sort != "recent" && sort != "popular" && sort != "replies" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "sort must be recent, popular, or replies"})
+	limit, ok := parseForumLimit(c, 20)
+	if !ok {
 		return
 	}
-	gameFilter := c.Query("game_filter")
+	offset := (page - 1) * limit
+
+	sort, validSort := forumThreadSortAliases[c.DefaultQuery("sort", "recent")]
+	if !validSort {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sort must be one of newest, recent, most-replied, replies, popular, trending, or hot"})
+		return
+	}
+	gameFilter := strings.TrimSpace(c.Query("game_id"))
+	if gameFilter == "" {
+		gameFilter = strings.TrimSpace(c.Query("game_filter"))
+	}
+	tagFilters, ok := parseForumTagFilters(c)
+	if !ok {
+		return
+	}
 	searchQuery := strings.TrimSpace(c.Query("search"))
 	if len(searchQuery) > 200 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "search cannot exceed 200 characters"})
@@ -231,15 +303,24 @@ func (h *ForumHandler) ListThreads(c *gin.Context) {
 
 	// Filter by game
 	if gameFilter != "" {
-		gameID, err := uuid.Parse(gameFilter)
-		if err != nil {
+		if gameID, err := uuid.Parse(gameFilter); err == nil {
+			queryBuilder.WriteString(fmt.Sprintf(" AND ft.game_id = $%d", argCount))
+			args = append(args, gameID)
+		} else if isTwitchGameID(gameFilter) {
+			queryBuilder.WriteString(fmt.Sprintf(" AND ft.game_id IN (SELECT id FROM games WHERE twitch_game_id = $%d)", argCount))
+			args = append(args, gameFilter)
+		} else {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid game_filter format",
+				"error": "Invalid game_id format",
 			})
 			return
 		}
-		queryBuilder.WriteString(fmt.Sprintf(" AND ft.game_id = $%d", argCount))
-		args = append(args, gameID)
+		argCount++
+	}
+
+	if len(tagFilters) > 0 {
+		queryBuilder.WriteString(fmt.Sprintf(" AND ft.tags @> $%d::varchar[]", argCount))
+		args = append(args, tagFilters)
 		argCount++
 	}
 
@@ -256,6 +337,8 @@ func (h *ForumHandler) ListThreads(c *gin.Context) {
 		queryBuilder.WriteString(" ORDER BY ft.pinned DESC, ft.view_count DESC, ft.created_at DESC")
 	case "replies":
 		queryBuilder.WriteString(" ORDER BY ft.pinned DESC, ft.reply_count DESC, ft.created_at DESC")
+	case "hot":
+		queryBuilder.WriteString(" ORDER BY ft.pinned DESC, " + forumHotScoreSQL + " DESC, ft.created_at DESC")
 	default: // recent
 		queryBuilder.WriteString(" ORDER BY ft.pinned DESC, ft.updated_at DESC")
 	}
@@ -265,6 +348,7 @@ func (h *ForumHandler) ListThreads(c *gin.Context) {
 
 	rows, err := h.db.Query(c.Request.Context(), queryBuilder.String(), args...)
 	if err != nil {
+		utils.GetLogger().Error("Failed to list forum threads", err, map[string]interface{}{"sort": sort})
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to retrieve threads",
 		})
@@ -283,6 +367,7 @@ func (h *ForumHandler) ListThreads(c *gin.Context) {
 			&thread.Locked, &thread.LockedAt, &thread.Pinned, &thread.CreatedAt, &thread.UpdatedAt,
 		)
 		if err != nil {
+			utils.GetLogger().Error("Failed to scan forum thread", err, nil)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to scan thread",
 			})
@@ -296,6 +381,7 @@ func (h *ForumHandler) ListThreads(c *gin.Context) {
 		threads = append(threads, thread)
 	}
 	if err := rows.Err(); err != nil {
+		utils.GetLogger().Error("Failed to iterate forum threads", err, map[string]interface{}{"sort": sort})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve threads"})
 		return
 	}

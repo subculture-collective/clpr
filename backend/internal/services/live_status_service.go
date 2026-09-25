@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"sync"
@@ -14,11 +13,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// liveStreamsClient is the Twitch dependency of the live status service:
+// Helix Get Streams for up to 100 user IDs per call.
+type liveStreamsClient interface {
+	GetStreams(ctx context.Context, userIDs []string) (*twitch.StreamsResponse, error)
+}
+
 // LiveStatusService handles live status updates and queries
 type LiveStatusService struct {
 	broadcasterRepo     *repository.BroadcasterRepository
 	streamFollowRepo    *repository.StreamFollowRepository
-	twitchClient        *twitch.Client
+	twitchClient        liveStreamsClient
 	notificationService *NotificationService
 }
 
@@ -33,11 +38,14 @@ func NewLiveStatusService(
 	streamFollowRepo *repository.StreamFollowRepository,
 	twitchClient *twitch.Client,
 ) *LiveStatusService {
-	return &LiveStatusService{
+	service := &LiveStatusService{
 		broadcasterRepo:  broadcasterRepo,
 		streamFollowRepo: streamFollowRepo,
-		twitchClient:     twitchClient,
 	}
+	if twitchClient != nil {
+		service.twitchClient = twitchClient
+	}
+	return service
 }
 
 // SetNotificationService sets the notification service after initialization.
@@ -97,13 +105,31 @@ func (s *LiveStatusService) UpdateLiveStatusForBroadcasters(ctx context.Context,
 			liveMap[stream.UserID] = stream
 		}
 
+		// Load previous sync statuses for the batch in one query to detect changes
+		previous, err := s.broadcasterRepo.GetSyncStatuses(ctx, batch)
+		if err != nil {
+			log.Printf("Failed to get previous sync statuses for batch %d/%d: %v", batchNum, totalBatches, err)
+			previous = nil
+		}
+
 		// Update status for each broadcaster in batch
-		now := time.Now()
+		// last_checked is a TIMESTAMP without time zone compared against NOW();
+		// write UTC wall time so freshness does not depend on the host TZ.
+		now := time.Now().UTC()
 		for _, broadcasterID := range batch {
-			// Get previous sync status to detect changes
-			oldSyncStatus, err := s.broadcasterRepo.GetSyncStatus(ctx, broadcasterID)
-			if err != nil && err != sql.ErrNoRows {
-				log.Printf("Failed to get previous sync status for broadcaster %s: %v", broadcasterID, err)
+			var oldSyncStatus *models.BroadcasterSyncStatus
+			if previous != nil {
+				oldSyncStatus = previous[broadcasterID]
+			}
+			stream, isLive := liveMap[broadcasterID]
+			isLive = isLive && stream.Type == "live"
+
+			// A broadcaster that was already recorded offline and is still
+			// offline needs no write: offline and stale rows both read as
+			// offline. Skipping these keeps the per-tick write volume
+			// proportional to live broadcasters, not to everyone checked.
+			if !isLive && previous != nil && oldSyncStatus != nil && !oldSyncStatus.IsLive {
+				continue
 			}
 
 			// Prepare new status
@@ -122,7 +148,7 @@ func (s *LiveStatusService) UpdateLiveStatusForBroadcasters(ctx context.Context,
 			}
 
 			var statusChange *string
-			if stream, isLive := liveMap[broadcasterID]; isLive && stream.Type == "live" {
+			if isLive {
 				status.IsLive = true
 				status.UserLogin = &stream.UserLogin
 				status.UserName = &stream.UserName

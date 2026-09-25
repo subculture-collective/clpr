@@ -18958,9 +18958,91 @@
           "Forum"
         ],
         "summary": "List visible forum threads",
-        "description": "Lists non-deleted threads with strict pagination, sorting, game filtering, and bounded search.",
+        "description": "Lists non-deleted threads with strict pagination, sorting, game and tag filtering, and bounded search. Pinned threads come first in every ordering.",
         "operationId": "getApiV1ForumThreads",
         "security": [],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Thread ordering. `newest` (alias `recent`) orders by last activity; `most-replied` (alias `replies`) by reply count; `popular` by view count; `hot` (alias `trending`) by replies and views decayed by thread age.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "recent",
+                "most-replied",
+                "replies",
+                "popular",
+                "hot",
+                "trending"
+              ],
+              "default": "recent"
+            }
+          },
+          {
+            "name": "game_id",
+            "in": "query",
+            "description": "Internal game UUID or numeric Twitch game ID.",
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "game_filter",
+            "in": "query",
+            "deprecated": true,
+            "description": "Former name of `game_id`; used only when `game_id` is absent.",
+            "schema": {
+              "type": "string",
+              "maxLength": 36
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "description": "Return threads carrying every listed tag. Repeat the parameter or separate values with commas; at most 10 tags of 50 characters each.",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "maxItems": 10,
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              }
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Full-text search over thread titles and content.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/components/responses/RouterDerivedSuccess"
@@ -24203,7 +24285,7 @@
         "required": true,
         "schema": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9_]{4,25}$"
+          "pattern": "^[A-Za-z0-9_]{1,25}$"
         }
       },
       "FeedOwnerID": {
@@ -32134,7 +32216,7 @@
         "properties": {
           "streamer_username": {
             "type": "string",
-            "pattern": "^[a-z0-9_]{4,25}$"
+            "pattern": "^[a-z0-9_]{1,25}$"
           },
           "is_live": {
             "type": "boolean"
@@ -32184,7 +32266,7 @@
           },
           "streamer_username": {
             "type": "string",
-            "pattern": "^[a-z0-9_]{4,25}$"
+            "pattern": "^[a-z0-9_]{1,25}$"
           },
           "notifications_enabled": {
             "type": "boolean"

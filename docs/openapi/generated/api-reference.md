@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-09-25T05:37:22.294Z
+generated: 2026-09-25T14:20:23.097Z
 ---
 
 # Clipper API
@@ -47349,9 +47349,21 @@ func main() {
 
 `GET /api/v1/forum/threads`
 
-Lists non-deleted threads with strict pagination, sorting, game filtering, and bounded search.
+Lists non-deleted threads with strict pagination, sorting, game and tag filtering, and bounded search. Pinned threads come first in every ordering.
 
 **Tags:** Forum
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+| sort | query | string |  | Thread ordering. `newest` (alias `recent`) orders by last activity; `most-replied` (alias `replies`) by reply count; `popular` by view count; `hot` (alias `trending`) by replies and views decayed by thread age. |
+| game_id | query | string |  | Internal game UUID or numeric Twitch game ID. |
+| game_filter | query | string |  | Former name of `game_id`; used only when `game_id` is absent. |
+| tags | query | array |  | Return threads carrying every listed tag. Repeat the parameter or separate values with commas; at most 10 tags of 50 characters each. |
+| search | query | string |  | Full-text search over thread titles and content. |
 
 #### Responses
 

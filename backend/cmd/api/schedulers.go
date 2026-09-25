@@ -65,6 +65,7 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 		engagementProvider = infra.TwitchClient
 	}
 	sg.Engagement = scheduler.NewEngagementScheduler(repos.Engagement, engagementProvider)
+	sg.Engagement.SetPublishInterval(cfg.Jobs.EngagementPublishInterval)
 	sg.launch(ctx, 0, sg.Engagement.Start)
 
 	// Start background scheduler if Twitch client is available
@@ -109,7 +110,11 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 
 	// Start live status scheduler (runs every 30 seconds if Twitch client is available)
 	if svcs.LiveStatus != nil {
-		sg.LiveStatus = scheduler.NewLiveStatusScheduler(svcs.LiveStatus, repos.Broadcaster, 30)
+		sg.LiveStatus = scheduler.NewLiveStatusScheduler(svcs.LiveStatus, repos.Broadcaster, 30, scheduler.LiveStatusCandidateConfig{
+			Limit:   cfg.Jobs.LiveStatusCandidateLimit,
+			Window:  time.Duration(cfg.Jobs.LiveStatusCandidateWindowDays) * 24 * time.Hour,
+			Refresh: time.Duration(cfg.Jobs.LiveStatusCandidateRefreshMinutes) * time.Minute,
+		})
 		sg.launch(ctx, 0, sg.LiveStatus.Start)
 	}
 

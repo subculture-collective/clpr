@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -9,6 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// ErrCategoryNotFound is returned when no category matches the lookup.
+var ErrCategoryNotFound = errors.New("category not found")
 
 // CategoryRepository handles database operations for categories
 type CategoryRepository struct {
@@ -97,7 +101,7 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("category not found")
+			return nil, ErrCategoryNotFound
 		}
 		return nil, fmt.Errorf("failed to get category by ID: %w", err)
 	}
@@ -125,7 +129,7 @@ func (r *CategoryRepository) GetBySlug(ctx context.Context, slug string) (*model
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("category not found")
+			return nil, ErrCategoryNotFound
 		}
 		return nil, fmt.Errorf("failed to get category by slug: %w", err)
 	}

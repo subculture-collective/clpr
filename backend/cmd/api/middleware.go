@@ -105,7 +105,7 @@ func applyGlobalMiddleware(r *gin.Engine, cfg *config.Config, infra *Infrastruct
 	r.Use(middleware.InputValidationMiddleware())
 
 	// Apply abuse detection middleware
-	r.Use(middleware.AbuseDetectionMiddleware(infra.Redis))
+	r.Use(middleware.AbuseDetectionMiddleware(infra.Redis, cfg.RateLimit.Abuse))
 
 	// Apply CSRF protection middleware (secure in production)
 	r.Use(middleware.CSRFMiddleware(infra.Redis, infra.IsProduction))

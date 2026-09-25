@@ -26,11 +26,47 @@ type EngagementScheduler struct {
 	provider EngagementProvider
 	stop     chan struct{}
 	once     sync.Once
+
+	// publishEvery spaces out ranking publishes. Each publish rewrites every
+	// period's ranking (~140k rows in production), so publishing on every
+	// one-minute poll dominated database writes and mostly timed out.
+	publishEvery  time.Duration
+	lastPublishAt time.Time
 }
 
+// DefaultEngagementPublishInterval is how often rankings are republished.
+// Rankings stay resolvable for an hour after publication.
+const DefaultEngagementPublishInterval = 5 * time.Minute
+
 func NewEngagementScheduler(store EngagementStore, provider EngagementProvider) *EngagementScheduler {
-	return &EngagementScheduler{store: store, provider: provider, stop: make(chan struct{})}
+	return &EngagementScheduler{store: store, provider: provider, stop: make(chan struct{}), publishEvery: DefaultEngagementPublishInterval}
 }
+
+// SetPublishInterval changes how often Start republishes rankings; values
+// below one minute publish on every poll.
+func (s *EngagementScheduler) SetPublishInterval(d time.Duration) {
+	if d > 0 {
+		s.publishEvery = d
+	}
+}
+
+// publishDue reports whether a scheduled tick should publish. Failed
+// attempts count too, so a timing-out publish is not retried every minute.
+func (s *EngagementScheduler) publishDue(now time.Time) bool {
+	return s.lastPublishAt.IsZero() || now.Sub(s.lastPublishAt) >= s.publishEvery
+}
+
+// runTick polls every tick and publishes when due.
+func (s *EngagementScheduler) runTick(ctx context.Context, now time.Time) error {
+	if s.publishDue(now) {
+		s.lastPublishAt = now
+		return s.RunOnce(ctx)
+	}
+	pollCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+	return s.poll(pollCtx)
+}
+
 func (s *EngagementScheduler) Stop() { s.once.Do(func() { close(s.stop) }) }
 func (s *EngagementScheduler) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -45,7 +81,7 @@ func (s *EngagementScheduler) Start(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {
-		if err := s.RunOnce(ctx); err != nil && ctx.Err() == nil {
+		if err := s.runTick(ctx, time.Now()); err != nil && ctx.Err() == nil {
 			utils.Error("Recent engagement refresh failed", err, nil)
 		}
 		select {

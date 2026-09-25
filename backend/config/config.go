@@ -52,6 +52,12 @@ type ServerConfig struct {
 	Environment string
 	ExportDir   string
 	DocsPath    string
+
+	// Anonymous responses of hot public listing endpoints are cached in
+	// Redis for PublicCacheTTL; the last good copy is kept for
+	// PublicCacheStaleTTL and served when the handler fails with a 5xx.
+	PublicCacheTTL      time.Duration
+	PublicCacheStaleTTL time.Duration
 }
 
 // DatabaseConfig holds database connection configuration
@@ -186,6 +192,16 @@ type JobsConfig struct {
 	PlaylistStartDelaySeconds      int
 	TrendingStartDelaySeconds      int
 	EmbeddingStartDelaySeconds     int
+
+	// Live status also covers the most-clipped broadcasters, not only
+	// followed ones, so the public live list reflects popular streams.
+	LiveStatusCandidateLimit          int // 0 disables; 100 per Helix request
+	LiveStatusCandidateWindowDays     int
+	LiveStatusCandidateRefreshMinutes int
+
+	// EngagementPublishInterval spaces out recent-engagement ranking
+	// publishes; polling still runs every minute.
+	EngagementPublishInterval time.Duration
 }
 
 // RateLimitConfig holds rate limiting configuration
@@ -213,6 +229,32 @@ type RateLimitConfig struct {
 
 	// IP whitelist for bypassing rate limits (comma-separated, for development/testing)
 	WhitelistIPs string
+
+	// TrustedProxies lists the proxy addresses/CIDRs whose X-Forwarded-For
+	// entries are believed when deriving the client IP. Anything outside
+	// this list is treated as the client, so a visitor-supplied header cannot
+	// replace the address appended by the edge proxy.
+	TrustedProxies []string
+
+	// Abuse detection: IP-wide volume limits applied to every API request.
+	Abuse AbuseDetectionConfig
+}
+
+// AbuseDetectionConfig controls the global per-IP abuse limiter. Reads and
+// writes are counted separately so ordinary browsing (many parallel GETs per
+// page) is judged against a much higher budget than state-changing requests.
+type AbuseDetectionConfig struct {
+	Enabled bool
+
+	ReadPerMinute  int // GET/HEAD and non-authoritative telemetry
+	ReadPerHour    int
+	WritePerMinute int // mutations and authentication endpoints
+	WritePerHour   int
+
+	// BanDurations escalate with each offense inside OffenseWindow; the last
+	// entry repeats for further offenses.
+	BanDurations  []time.Duration
+	OffenseWindow time.Duration
 }
 
 // SecurityConfig holds security-related configuration
@@ -450,6 +492,9 @@ func Load() (*Config, error) {
 			Environment: getEnv("ENVIRONMENT", "development"),
 			ExportDir:   getEnv("EXPORT_DIR", "./exports"),
 			DocsPath:    getEnv("DOCS_PATH", "../docs"),
+
+			PublicCacheTTL:      getEnvDuration("PUBLIC_CACHE_TTL", 30*time.Second),
+			PublicCacheStaleTTL: getEnvDuration("PUBLIC_CACHE_STALE_TTL", 15*time.Minute),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -556,6 +601,12 @@ func Load() (*Config, error) {
 			PlaylistStartDelaySeconds:      getEnvInt("PLAYLIST_START_DELAY_SECONDS", 240),
 			TrendingStartDelaySeconds:      getEnvInt("TRENDING_START_DELAY_SECONDS", 420),
 			EmbeddingStartDelaySeconds:     getEnvInt("EMBEDDING_START_DELAY_SECONDS", 720),
+
+			LiveStatusCandidateLimit:          getEnvInt("LIVE_STATUS_CANDIDATE_LIMIT", 300),
+			LiveStatusCandidateWindowDays:     getEnvInt("LIVE_STATUS_CANDIDATE_WINDOW_DAYS", 30),
+			LiveStatusCandidateRefreshMinutes: getEnvInt("LIVE_STATUS_CANDIDATE_REFRESH_MINUTES", 10),
+
+			EngagementPublishInterval: getEnvDuration("ENGAGEMENT_PUBLISH_INTERVAL", 5*time.Minute),
 		},
 		RateLimit: RateLimitConfig{
 			// Unauthenticated: 100 requests per 15 minutes per IP
@@ -582,6 +633,18 @@ func Load() (*Config, error) {
 
 			// IP whitelist for development/testing (localhost always included)
 			WhitelistIPs: getEnv("RATE_LIMIT_WHITELIST_IPS", ""),
+
+			TrustedProxies: parseCommaSeparatedList(getEnv("TRUSTED_PROXIES", DefaultTrustedProxies)),
+
+			Abuse: AbuseDetectionConfig{
+				Enabled:        getEnvBool("ABUSE_DETECTION_ENABLED", true),
+				ReadPerMinute:  getEnvInt("ABUSE_READ_PER_MINUTE", 1200),
+				ReadPerHour:    getEnvInt("ABUSE_READ_PER_HOUR", 12000),
+				WritePerMinute: getEnvInt("ABUSE_WRITE_PER_MINUTE", 120),
+				WritePerHour:   getEnvInt("ABUSE_WRITE_PER_HOUR", 1500),
+				BanDurations:   getEnvDurationList("ABUSE_BAN_DURATIONS", DefaultAbuseBanDurations),
+				OffenseWindow:  getEnvDuration("ABUSE_OFFENSE_WINDOW", 24*time.Hour),
+			},
 		},
 		Security: SecurityConfig{
 			MFAEncryptionKey: getEnv("MFA_ENCRYPTION_KEY", ""),
@@ -760,6 +823,47 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 		}
 	}
 	return defaultValue
+}
+
+// DefaultTrustedProxies trusts loopback and private/container networks. In
+// production the backend is only reachable through the shared Caddy on a
+// Docker network, so the first public address from the right of
+// X-Forwarded-For is the visitor address appended by Cloudflare.
+const DefaultTrustedProxies = "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
+
+// DefaultAbuseBanDurations escalates from a short cool-off to a day.
+var DefaultAbuseBanDurations = []time.Duration{15 * time.Minute, time.Hour, 6 * time.Hour, 24 * time.Hour}
+
+// getEnvDuration parses a Go duration (for example "90s" or "24h").
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if d, err := time.ParseDuration(value); err == nil && d > 0 {
+			return d
+		}
+	}
+	return defaultValue
+}
+
+// getEnvDurationList parses a comma-separated list of positive durations.
+// An invalid entry makes the whole value fall back to the default.
+func getEnvDurationList(key string, defaultValue []time.Duration) []time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return append([]time.Duration(nil), defaultValue...)
+	}
+	items := parseCommaSeparatedList(value)
+	out := make([]time.Duration, 0, len(items))
+	for _, item := range items {
+		d, err := time.ParseDuration(item)
+		if err != nil || d <= 0 {
+			return append([]time.Duration(nil), defaultValue...)
+		}
+		out = append(out, d)
+	}
+	if len(out) == 0 {
+		return append([]time.Duration(nil), defaultValue...)
+	}
+	return out
 }
 
 // getEnvInt gets an int environment variable with a fallback default value

@@ -76,6 +76,9 @@ func main() {
 
 	// Initialize router
 	r := newRouter()
+	if err := configureClientIP(r, cfg.RateLimit.TrustedProxies); err != nil {
+		log.Fatalf("Failed to configure client IP resolution: %v", err)
+	}
 
 	// Apply global middleware (includes template loading and rate limit whitelist)
 	applyGlobalMiddleware(r, cfg, infra, svcs, logger)

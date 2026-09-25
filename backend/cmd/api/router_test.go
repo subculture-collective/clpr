@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
@@ -40,5 +41,53 @@ func TestNamespacedTagSlugsRouteAsOneSegment(t *testing.T) {
 		if got := rec.Header().Get("X-CLPR-Slug"); got != tc.slug {
 			t.Errorf("%s %s slug = %q, want %q", tc.method, tc.path, got, tc.slug)
 		}
+	}
+}
+
+func TestClientIPIgnoresVisitorSuppliedForwardingHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := newRouter()
+	if err := configureClientIP(router, strings.Split(config.DefaultTrustedProxies, ",")); err != nil {
+		t.Fatal(err)
+	}
+	router.GET("/ip", func(c *gin.Context) { c.String(http.StatusOK, c.ClientIP()) })
+
+	tests := []struct {
+		name, remote, xff, realIP, cfIP, want string
+	}{
+		// Cloudflare appends the visitor to any client-sent XFF; Caddy appends cloudflared.
+		{"production chain", "172.27.0.12:40000", "154.47.25.168, 172.20.0.249", "", "", "154.47.25.168"},
+		{"spoofed XFF prefix", "172.27.0.12:40000", "203.0.113.77, 154.47.25.168, 172.20.0.249", "", "", "154.47.25.168"},
+		{"spoofed private XFF prefix", "172.27.0.12:40000", "10.0.0.1, 154.47.25.168, 172.20.0.249", "", "", "154.47.25.168"},
+		{"spoofed X-Real-IP and CF header", "172.27.0.12:40000", "154.47.25.168, 172.20.0.249", "203.0.113.78", "203.0.113.79", "154.47.25.168"},
+		{"IPv6 visitor", "172.27.0.12:40000", "2001:db8::1, 172.20.0.249", "", "", "2001:db8::1"},
+		{"public peer cannot forward", "198.51.100.9:40000", "203.0.113.77", "", "", "198.51.100.9"},
+		{"internal caller without header", "172.27.0.20:40000", "", "", "", "172.27.0.20"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/ip", nil)
+			req.RemoteAddr = tc.remote
+			if tc.xff != "" {
+				req.Header.Set("X-Forwarded-For", tc.xff)
+			}
+			if tc.realIP != "" {
+				req.Header.Set("X-Real-IP", tc.realIP)
+			}
+			if tc.cfIP != "" {
+				req.Header.Set("CF-Connecting-IP", tc.cfIP)
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			if got := rec.Body.String(); got != tc.want {
+				t.Fatalf("ClientIP = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestConfigureClientIPRejectsInvalidProxy(t *testing.T) {
+	if err := configureClientIP(newRouter(), []string{"not-an-ip"}); err == nil {
+		t.Fatal("expected invalid TRUSTED_PROXIES to fail")
 	}
 }
