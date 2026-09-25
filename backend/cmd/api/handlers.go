@@ -123,8 +123,14 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
 	shareHandler := handlers.NewShareHandler(repos.Clip)
 	docsFS, docsSource := docscontent.Open(cfg.Server.DocsPath)
-	log.Printf("Serving documentation from %s source", docsSource)
-	docsHandler := handlers.NewDocsHandlerFS(docsFS, "subculture-collective", "clpr", "main")
+	publicDocs, docsErr := docscontent.PublicDocuments()
+	if docsErr != nil {
+		// Fail closed: without a valid allowlist no document is published.
+		log.Printf("Public documentation manifest is invalid; serving no documents: %v", docsErr)
+		publicDocs = nil
+	}
+	log.Printf("Serving %d public documents from %s source", len(publicDocs), docsSource)
+	docsHandler := handlers.NewDocsHandlerFS(docsFS, publicDocs, "subculture-collective", "clpr", "main")
 	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
 	webhookMonitoringHandler := handlers.NewWebhookMonitoringHandler(svcs.OutboundWebhook)

@@ -256,8 +256,8 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	if scope == "" {
 		t.Error("Expected scope parameter in redirect URL")
 	}
-	if !strings.Contains(scope, "chat:read") || !strings.Contains(scope, "chat:edit") {
-		t.Error("Expected chat scopes in redirect URL")
+	if strings.Contains(scope, "chat:read") || strings.Contains(scope, "chat:edit") {
+		t.Error("Chat scopes are unused by the server and must not be requested")
 	}
 	if !strings.Contains(scope, "channel:bot") {
 		t.Error("Expected channel:bot scope in redirect URL")

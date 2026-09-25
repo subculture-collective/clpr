@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -17,17 +17,25 @@ import {
     extractTextFromChildren,
 } from '../lib/markdown-utils';
 import type { ProcessedMarkdown } from '../lib/markdown-utils';
+import {
+    docContentUrl,
+    publishedDocPaths,
+    resolveDocLink,
+} from '../lib/docs-links';
 import axios from 'axios';
 
 interface DocNode {
     name: string;
     path: string;
     type: 'file' | 'directory';
+    /** Title from the document's own heading or front matter. */
+    title?: string;
     children?: DocNode[];
 }
 
 interface DocContent {
     path: string;
+    title?: string;
     content: string;
     github_url?: string;
 }
@@ -35,13 +43,27 @@ interface DocContent {
 interface SearchResult {
     path: string;
     name: string;
+    title?: string;
     matches: string[];
     score: number;
 }
 
+function readableName(name: string): string {
+    return name.replace(/[-_]/g, ' ');
+}
+
+/** Site pages that hold the canonical versions of policy documents. */
+const policyLinks = [
+    { to: '/terms', label: 'Terms of Service' },
+    { to: '/privacy', label: 'Privacy Policy' },
+    { to: '/community-rules', label: 'Community Rules' },
+    { to: '/legal/dmca', label: 'DMCA Policy' },
+];
+
 /**
  * Documentation Hub Page
- * Displays documentation served from the backend /docs folder
+ * Displays the public documents served by /api/v1/docs (the allowlist in
+ * docs/public-docs.json).
  */
 export function DocsPage() {
     const [searchParams] = useSearchParams();
@@ -56,6 +78,7 @@ export function DocsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searching, setSearching] = useState(false);
+    const publishedPaths = useMemo(() => publishedDocPaths(docs), [docs]);
 
     const fetchDocsList = useCallback(async () => {
         try {
@@ -72,7 +95,10 @@ export function DocsPage() {
     const fetchDoc = useCallback(async (path: string) => {
         try {
             setLoading(true);
-            const response = await axios.get(`/api/v1/docs/${path}`);
+            setError(null);
+            // Nested documents use the wildcard route; an unencoded slash on
+            // /api/v1/docs/:path would not match.
+            const response = await axios.get(docContentUrl(path));
             setSelectedDoc(response.data);
 
             // Process markdown: parse frontmatter, remove doctoc, handle Dataview, generate TOC
@@ -163,7 +189,7 @@ export function DocsPage() {
                                 onClick={() => fetchDoc(node.path)}
                                 className='text-left text-link underline underline-offset-2 block py-1'
                             >
-                                {node.name.replace(/-/g, ' ')}
+                                {node.title || readableName(node.name)}
                             </button>
                         }
                     </div>
@@ -183,32 +209,37 @@ export function DocsPage() {
                 href?: string;
                 children?: React.ReactNode;
             }) => {
-                // Handle relative doc links (wikilinks are already converted)
-                if (href && !href.startsWith('http') && !href.startsWith('#')) {
-                    const cleanPath = href
-                        .replace(/^\.\.\//, '')
-                        .replace(/\.md$/, '')
-                        .replace(/^\//, '');
+                // Relative links (wikilinks are already converted) open
+                // published documents in place; links to unpublished
+                // documents render as plain text.
+                const target =
+                    href ?
+                        resolveDocLink(
+                            selectedDoc?.path.replace(/\.md$/, '') ?? '',
+                            href,
+                            publishedPaths,
+                        )
+                    :   ({ kind: 'unpublished' } as const);
+                if (target.kind === 'document') {
                     return (
                         <button
-                            onClick={() => fetchDoc(cleanPath)}
+                            onClick={() => fetchDoc(target.path)}
                             className='text-link underline underline-offset-2'
                         >
                             {children}
                         </button>
                     );
                 }
+                if (target.kind === 'unpublished') {
+                    return <span>{children}</span>;
+                }
 
-                // External links
+                const external = target.kind === 'external';
                 return (
                     <a
                         href={href}
-                        target={href?.startsWith('http') ? '_blank' : undefined}
-                        rel={
-                            href?.startsWith('http') ?
-                                'noopener noreferrer'
-                            :   undefined
-                        }
+                        target={external ? '_blank' : undefined}
+                        rel={external ? 'noopener noreferrer' : undefined}
                         className='text-link underline underline-offset-2'
                     >
                         {children}
@@ -315,7 +346,7 @@ export function DocsPage() {
                 </blockquote>
             ),
         }),
-        [fetchDoc],
+        [fetchDoc, publishedPaths, selectedDoc?.path],
     );
 
     if (loading && !viewingDoc) {
@@ -345,10 +376,10 @@ export function DocsPage() {
             <SEO
                 title={
                     viewingDoc && selectedDoc ?
-                        selectedDoc.path
+                        selectedDoc.title || selectedDoc.path
                     :   'Documentation'
                 }
-                description='Comprehensive documentation for Clipper - architecture, APIs, operations, user guides, and contributor information.'
+                description='clpr developer documentation: how clpr uses the Twitch API and Twitch embeds, and the public API reference.'
                 canonicalUrl='/docs'
             />
             <Container className='py-8 max-w-6xl'>
@@ -393,8 +424,8 @@ export function DocsPage() {
                                     Documentation Hub
                                 </h1>
                                 <p className='text-lg text-muted-foreground mb-4'>
-                                    Comprehensive guides, API references, and
-                                    operational procedures
+                                    How clpr works with Twitch, and the public
+                                    API reference
                                 </p>
 
                                 {/* Search Bar */}
@@ -443,7 +474,10 @@ export function DocsPage() {
                                                         className='text-left w-full hover:bg-accent p-2 rounded transition-colors'
                                                     >
                                                         <h3 className='font-semibold text-link mb-1'>
-                                                            {result.name}
+                                                            {result.title ||
+                                                                readableName(
+                                                                    result.name,
+                                                                )}
                                                         </h3>
                                                         <p className='text-sm text-muted-foreground mb-2'>
                                                             {result.path}
@@ -483,7 +517,40 @@ export function DocsPage() {
                             {/* Documentation Tree (show only when not searching) */}
                             {!searchQuery && (
                                 <Card>
-                                    <CardBody>{renderDocTree(docs)}</CardBody>
+                                    <CardBody>
+                                        {renderDocTree(docs)}
+                                        <h3 className='font-semibold text-xl mt-4 mb-2'>
+                                            API reference
+                                        </h3>
+                                        <div className='mb-2'>
+                                            <a
+                                                href='/openapi/api-reference.md'
+                                                className='text-link underline underline-offset-2 block py-1'
+                                            >
+                                                API reference (Markdown)
+                                            </a>
+                                            <a
+                                                href='/openapi/openapi.yaml'
+                                                className='text-link underline underline-offset-2 block py-1'
+                                            >
+                                                OpenAPI specification (YAML)
+                                            </a>
+                                        </div>
+                                        <h3 className='font-semibold text-xl mt-4 mb-2'>
+                                            Policies
+                                        </h3>
+                                        <div className='mb-2'>
+                                            {policyLinks.map(link => (
+                                                <Link
+                                                    key={link.to}
+                                                    to={link.to}
+                                                    className='text-link underline underline-offset-2 block py-1'
+                                                >
+                                                    {link.label}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </CardBody>
                                 </Card>
                             )}
 

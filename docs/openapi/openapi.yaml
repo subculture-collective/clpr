@@ -5273,10 +5273,12 @@ paths:
       tags: [Documentation]
       summary: List available Markdown documentation
       description: >-
-        Returns a tree of regular Markdown files, excluding hidden, archive,
-        vault, and symlink entries. Release images serve the copy of `docs/`
-        embedded at build time. If no documentation source is available the
-        tree is empty rather than an error.
+        Returns a tree of the published Markdown documents listed in
+        `docs/public-docs.json`; other files in the documentation source are
+        never listed. Each file carries the title of its own first heading or
+        front matter. Release images serve the copy embedded at build time. If
+        no documentation source is available the tree is empty rather than an
+        error.
       operationId: getApiV1Docs
       security: []
       responses:
@@ -5296,7 +5298,7 @@ paths:
     get:
       tags: [Documentation]
       summary: Search documentation text
-      description: Searches bounded regular Markdown files and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
+      description: Searches the published Markdown documents and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
       operationId: getApiV1DocsSearch
       security: []
       parameters:
@@ -5322,6 +5324,10 @@ paths:
     get:
       tags: [Documentation]
       summary: Get a top-level Markdown document
+      description: >-
+        Returns a published document. An encoded slash (`%2F`) selects a nested
+        document; prefer `/api/v1/docs/content/{path}` for those. Documents not
+        listed in `docs/public-docs.json` return 404 even when the file exists.
       operationId: getApiV1DocsPath
       security: []
       parameters:
@@ -5350,7 +5356,10 @@ paths:
     get:
       tags: [Documentation]
       summary: Get a nested Markdown document
-      description: Resolves the real path and rejects symlinks that escape the configured documentation root.
+      description: >-
+        Returns a published document such as `compliance/twitch-embeds`.
+        Documents not listed in `docs/public-docs.json` return 404, and symlinks
+        on the path are rejected.
       operationId: getApiV1DocsContentPath
       security: []
       parameters:
@@ -13980,6 +13989,9 @@ components:
         name: {type: string}
         path: {type: string}
         type: {type: string, enum: [file, directory]}
+        title:
+          type: string
+          description: Title of a file node, from its first level-one heading or front matter
         children:
           type: array
           items: {$ref: '#/components/schemas/DocNode'}
@@ -13994,18 +14006,20 @@ components:
 
     DocContentResponse:
       type: object
-      required: [path, content, github_url]
+      required: [path, title, content, github_url]
       properties:
         path: {type: string}
+        title: {type: string}
         content: {type: string, maxLength: 1048576}
         github_url: {type: string}
 
     DocsSearchResult:
       type: object
-      required: [path, name, matches, score]
+      required: [path, name, title, matches, score]
       properties:
         path: {type: string}
         name: {type: string}
+        title: {type: string}
         matches: {type: array, maxItems: 3, items: {type: string}}
         score: {type: integer, minimum: 1}
 

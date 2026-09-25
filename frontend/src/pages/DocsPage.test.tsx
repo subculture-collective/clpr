@@ -24,25 +24,32 @@ const mockedAxios = axios as Mocked<typeof axios>;
 const mockDocsResponse = {
   docs: [
     {
+      name: 'compliance',
+      path: 'compliance',
+      type: 'directory' as const,
+      children: [
+        {
+          name: 'README',
+          path: 'compliance/README',
+          type: 'file' as const,
+          title: 'Twitch Compliance Overview',
+        },
+        {
+          name: 'twitch-embeds',
+          path: 'compliance/twitch-embeds',
+          type: 'file' as const,
+          title: 'Twitch Embed Compliance',
+        },
+      ],
+    },
+    {
       name: 'getting-started',
       path: 'getting-started',
       type: 'directory' as const,
       children: [
         {
-          name: 'user-guide.md',
-          path: 'getting-started/user-guide.md',
-          type: 'file' as const,
-        },
-      ],
-    },
-    {
-      name: 'development',
-      path: 'development',
-      type: 'directory' as const,
-      children: [
-        {
-          name: 'dev-setup.md',
-          path: 'development/dev-setup.md',
+          name: 'user-guide',
+          path: 'getting-started/user-guide',
           type: 'file' as const,
         },
       ],
@@ -50,14 +57,27 @@ const mockDocsResponse = {
   ],
 };
 
-const mockDocContent = {
-  path: 'getting-started/user-guide.md',
-  content: '# Getting Started\nSome content',
-  frontmatter: {
-    title: 'Getting Started',
+const documents: Record<string, { path: string; title: string; content: string }> = {
+  '/api/v1/docs/content/compliance/README': {
+    path: 'compliance/README.md',
+    title: 'Twitch Compliance Overview',
+    content: [
+      '# Twitch Compliance Overview',
+      '',
+      'See [embeds](twitch-embeds.md#parent-domain), [guardrails](guardrails.md),',
+      'and the [privacy policy](/privacy).',
+    ].join('\n'),
   },
-  toc: [],
-  github_url: 'https://git.subcult.tv/subculture-collective/clpr/blob/main/docs/getting-started.md',
+  '/api/v1/docs/content/compliance/twitch-embeds': {
+    path: 'compliance/twitch-embeds.md',
+    title: 'Twitch Embed Compliance',
+    content: '# Twitch Embed Compliance\nEmbeds use the official player.',
+  },
+  '/api/v1/docs/content/getting-started/user-guide': {
+    path: 'getting-started/user-guide.md',
+    title: 'Getting Started',
+    content: '---\ntitle: Getting Started\n---\n# Getting Started\nSome content',
+  },
 };
 
 beforeAll(() => {
@@ -70,13 +90,13 @@ beforeEach(() => {
     if (url === '/api/v1/docs') {
       return Promise.resolve({ data: mockDocsResponse });
     }
-    if (url.startsWith('/api/v1/docs/')) {
-      return Promise.resolve({ data: mockDocContent });
-    }
     if (url.startsWith('/api/v1/docs/search')) {
       return Promise.resolve({ data: { results: [] } });
     }
-    return Promise.resolve({ data: {} });
+    if (documents[url]) {
+      return Promise.resolve({ data: documents[url] });
+    }
+    return Promise.reject(new Error(`unexpected request ${url}`));
   });
 });
 
@@ -96,7 +116,19 @@ describe('DocsPage', () => {
     expect(await screen.findByRole('button', { name: /user guide/i })).toBeInTheDocument();
   });
 
-  it('allows opening a document from the tree', async () => {
+  it('labels each entry with its own title', async () => {
+    render(
+      <MemoryRouter>
+        <DocsPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('button', { name: 'Twitch Embed Compliance' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Twitch Compliance Overview' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'README' })).not.toBeInTheDocument();
+  });
+
+  it('opens a nested document through the wildcard content route', async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -110,7 +142,44 @@ describe('DocsPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('doc-header')).toBeInTheDocument();
     });
-    expect(mockedAxios.get).toHaveBeenCalledWith('/api/v1/docs/getting-started/user-guide.md');
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/v1/docs/content/getting-started/user-guide');
+    expect(screen.getByTestId('seo')).toHaveTextContent('Getting Started');
+  });
+
+  it('follows relative links to published documents only', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DocsPage />
+      </MemoryRouter>
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Twitch Compliance Overview' }));
+    const embedsLink = await screen.findByRole('button', { name: 'embeds' });
+    // Unpublished documents are plain text, not links that fail to load.
+    expect(screen.getByText('guardrails').closest('a, button')).toBeNull();
+    expect(screen.getByRole('link', { name: 'privacy policy' })).toHaveAttribute('href', '/privacy');
+
+    await user.click(embedsLink);
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith('/api/v1/docs/content/compliance/twitch-embeds');
+    });
+    expect(await screen.findByText('Embeds use the official player.')).toBeInTheDocument();
+  });
+
+  it('links to the API reference and the canonical policy pages', async () => {
+    render(
+      <MemoryRouter>
+        <DocsPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('link', { name: /api reference/i })).toHaveAttribute(
+      'href',
+      '/openapi/api-reference.md',
+    );
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
   });
 
   it('does not render repository resources', async () => {

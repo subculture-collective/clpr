@@ -27,6 +27,19 @@ The documentation quality enforcement system includes six automated checks that 
 
 These checks run against repository documentation and intentionally skip dependency directories such as `node_modules`.
 
+## Publishing on clpr.tv/docs
+
+Only the documents listed in `docs/public-docs.json` appear on the site's
+`/docs` page. The API embeds and serves that list and returns 404 for any
+other path. Everything else in `docs/` stays in the repository only.
+
+To publish a document, add its path (relative to `docs/`, sorted) to the
+manifest, then run `npm run docs:embed` and commit the regenerated
+`backend/internal/docscontent/` copy. `npm run docs:embed:check` fails when
+the embedded files differ from the manifest. Publish only material written
+for users or outside developers; operations runbooks, security reviews,
+internal design notes, and test plans stay unlisted.
+
 ## Running Checks Locally
 
 ### All Checks at Once
