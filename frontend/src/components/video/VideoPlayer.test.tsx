@@ -15,8 +15,13 @@ beforeEach(() => {
     volume.setUnmutedPreference.mockClear();
     volume.embedMuted = true;
     volume.hasSetPreference = false;
+    stubBoxSize(640, 360);
 });
-afterEach(() => { delete window.Twitch; vi.useRealTimers(); });
+afterEach(() => { delete window.Twitch; vi.useRealTimers(); vi.restoreAllMocks(); });
+
+function stubBoxSize(width: number, height: number) {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width, height } as DOMRect);
+}
 
 describe('video playback boundary', () => {
     it('keeps the iframe playable with parent and mute preferences when no SDK clip is available', () => {
@@ -33,17 +38,19 @@ describe('video playback boundary', () => {
         expect(screen.queryByRole('button')).toBeNull();
     });
 
-    it('supports keyboard and pointer sound preference and expires the initial hint', () => {
-        vi.useFakeTimers();
+    it('offers the sound preference below the player, not over it', () => {
         render(<VideoPlayer {...props} />);
-        const sound = screen.getByRole('button', { name: /enable sound/ });
-        fireEvent.keyDown(sound, { key: 'Tab' });
-        expect(volume.setUnmutedPreference).not.toHaveBeenCalled();
-        fireEvent.keyDown(sound, { key: 'Enter' });
-        fireEvent.keyDown(sound, { key: ' ' });
+        const sound = screen.getByRole('button', { name: /turn on for future clips/i });
+        expect(screen.getByTitle('Clip video').parentElement).not.toContainElement(sound);
         fireEvent.click(sound);
-        expect(volume.setUnmutedPreference).toHaveBeenCalledTimes(3);
-        act(() => vi.advanceTimersByTime(3000));
+        expect(volume.setUnmutedPreference).toHaveBeenCalledOnce();
+    });
+
+    it('links to Twitch instead of embedding below the 400×300 minimum', () => {
+        stubBoxSize(320, 180);
+        render(<VideoPlayer {...props} />);
+        expect(screen.queryByTitle('Clip video')).toBeNull();
+        expect(screen.getByRole('link', { name: /watch on twitch/i })).toHaveAttribute('href', 'https://clips.twitch.tv/slug');
         expect(screen.queryByRole('button')).toBeNull();
     });
 
