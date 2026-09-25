@@ -100,7 +100,9 @@ func TestShareClipPreviewRendersClipTags(t *testing.T) {
 		`<link rel="canonical" href="`+pageURL+`">`,
 		`<meta property="og:url" content="`+pageURL+`">`,
 		`<meta property="og:type" content="video.other">`,
-		`<meta property="og:title" content="Insane 1v5 clutch">`,
+		`<meta property="og:title" content="Insane 1v5 clutch · xQc">`,
+		`<meta name="twitter:title" content="Insane 1v5 clutch · xQc">`,
+		`<h1>Insane 1v5 clutch</h1>`,
 		`<meta property="og:description" content="Clip from xQc · Valorant · 12,345 views · 30s — on clpr">`,
 		`<meta property="og:image" content="https://static-cdn.jtvnw.net/twitch-clips/abc-preview-480x272.jpg">`,
 		`<meta name="twitter:card" content="summary_large_image">`,
@@ -109,6 +111,23 @@ func TestShareClipPreviewRendersClipTags(t *testing.T) {
 	)
 	if strings.Contains(recorder.Body.String(), "og:image:width") {
 		t.Error("clip thumbnails must not claim the default social card dimensions")
+	}
+}
+
+func TestShareClipPreviewSocialTitle(t *testing.T) {
+	cases := []struct {
+		title, broadcaster, want string
+	}{
+		{"re", "caseoh_", "re · caseoh_"},
+		{"  Clutch  ", "  xQc ", "Clutch · xQc"},
+		{"No broadcaster", "", "No broadcaster"},
+		{"", "xQc", "Twitch clip · xQc"},
+	}
+	for _, tc := range cases {
+		preview := buildClipPreview("https://clpr.example", &models.Clip{ID: uuid.New(), Title: tc.title, BroadcasterName: tc.broadcaster})
+		if preview.SocialTitle != tc.want {
+			t.Errorf("title %q / broadcaster %q: SocialTitle = %q, want %q", tc.title, tc.broadcaster, preview.SocialTitle, tc.want)
+		}
 	}
 }
 
@@ -136,6 +155,7 @@ func TestShareClipPreviewEscapesClipFields(t *testing.T) {
 	}
 	assertShareContains(t, body,
 		`&lt;script&gt;alert(1)&lt;/script&gt; &amp; &#39;quotes&#39;`,
+		`<meta property="og:title" content="&#34;&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; &#39;quotes&#39; · &lt;img src=x onerror=alert(2)&gt;">`,
 		`Clip from &lt;img src=x onerror=alert(2)&gt; · Game &#34;One&#34; · 1 view`,
 		// Unsafe thumbnail schemes fall back to the site social card.
 		`<meta property="og:image" content="https://clpr.example/social-card.png">`,

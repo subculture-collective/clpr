@@ -51,6 +51,7 @@ const (
 
 type clipPreview struct {
 	Title        string
+	SocialTitle  string // og:title and twitter:title; names the broadcaster for clips
 	Description  string
 	PageURL      string
 	ImageURL     string
@@ -72,7 +73,7 @@ var clipPreviewTemplate = template.Must(template.New("clip_preview").Parse(`<!do
 <meta property="og:locale" content="en_US">
 <meta property="og:type" content="{{if .IsDefault}}website{{else}}video.other{{end}}">
 <meta property="og:url" content="{{.PageURL}}">
-<meta property="og:title" content="{{.Title}}">
+<meta property="og:title" content="{{.SocialTitle}}">
 <meta property="og:description" content="{{.Description}}">
 <meta property="og:image" content="{{.ImageURL}}">
 <meta property="og:image:secure_url" content="{{.ImageURL}}">
@@ -85,7 +86,7 @@ var clipPreviewTemplate = template.Must(template.New("clip_preview").Parse(`<!do
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@clpr_tv">
 <meta name="twitter:url" content="{{.PageURL}}">
-<meta name="twitter:title" content="{{.Title}}">
+<meta name="twitter:title" content="{{.SocialTitle}}">
 <meta name="twitter:description" content="{{.Description}}">
 <meta name="twitter:image" content="{{.ImageURL}}">
 <meta name="twitter:image:alt" content="{{.ImageAlt}}">
@@ -163,6 +164,7 @@ func (h *ShareHandler) renderWithoutCache(c *gin.Context, status int, preview cl
 func defaultClipPreview(baseURL string) clipPreview {
 	return clipPreview{
 		Title:        shareDefaultTitle,
+		SocialTitle:  shareDefaultTitle,
 		Description:  shareDefaultDescription,
 		PageURL:      baseURL + "/",
 		ImageURL:     baseURL + "/social-card.png",
@@ -183,8 +185,16 @@ func buildClipPreview(baseURL string, clip *models.Clip) clipPreview {
 		pageID = clip.TwitchClipID
 	}
 
+	// Clip titles are often a word or two ("re"); naming the broadcaster
+	// makes the unfurled card meaningful on its own.
+	socialTitle := title
+	if name := strings.TrimSpace(clip.BroadcasterName); name != "" {
+		socialTitle = title + " · " + name
+	}
+
 	preview := clipPreview{
 		Title:       title,
+		SocialTitle: socialTitle,
 		Description: clipPreviewDescription(clip),
 		PageURL:     baseURL + "/clip/" + url.PathEscape(pageID),
 		ImageURL:    baseURL + "/social-card.png",
