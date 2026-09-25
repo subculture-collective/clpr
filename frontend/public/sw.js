@@ -3,7 +3,7 @@
 // Does NOT cache authenticated or sensitive API data
 
 // Bump when precached files (offline page, icons) change so clients refresh them.
-const CACHE_NAME = 'clpr-v2';
+const CACHE_NAME = 'clpr-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to cache for offline shell
@@ -54,6 +54,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Leave cross-origin requests (Twitch thumbnails, avatars, embeds) to the
+  // browser. A fetch() from the worker is checked against connect-src, which
+  // does not list image CDNs, so re-fetching them here fails every time.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Never cache API requests or authenticated endpoints
   // This ensures user data and sensitive information is never cached
   if (
@@ -88,8 +95,7 @@ self.addEventListener('fetch', (event) => {
         // Clone the response before caching
         const responseToCache = response.clone();
         
-        // Only cache successful responses for same-origin requests
-        if (response.status === 200 && url.origin === self.location.origin) {
+        if (response.status === 200) {
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseToCache);
           }).catch((err) => {

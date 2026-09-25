@@ -27,8 +27,19 @@ clpr.tv {
         }
     }
 
-    @static path /assets/* *.js *.css *.jpg *.jpeg *.png *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
-    header @static Cache-Control "public, max-age=31536000, immutable"
+    # Keep in step with frontend/nginx.conf. Only content-hashed /assets/* is
+    # immutable; this header replaces the one nginx sends.
+    @hashed path /assets/*
+    header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+    @service_worker path /sw.js
+    header @service_worker Cache-Control "no-cache"
+
+    @public_static {
+        path *.js *.css *.jpg *.jpeg *.png *.gif *.webp *.ico *.svg *.woff *.woff2 *.ttf *.eot
+        not path /assets/* /sw.js
+    }
+    header @public_static Cache-Control "public, max-age=3600"
 
     @canary_api {
         header X-CLPR-Canary "__CANARY_TOKEN__"
