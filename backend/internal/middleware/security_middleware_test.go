@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -122,6 +123,17 @@ func TestContentSecurityPolicyAllowsRequiredProvidersAndRejectsArbitraryScripts(
 	} {
 		if !strings.Contains(csp, required) {
 			t.Errorf("CSP missing required provider %q", required)
+		}
+	}
+	// The live stream page frames Twitch chat from www.twitch.tv/embed/<channel>/chat.
+	for _, frame := range []string{
+		"https://clips.twitch.tv",
+		"https://player.twitch.tv",
+		"https://embed.twitch.tv",
+		"https://www.twitch.tv",
+	} {
+		if !regexp.MustCompile(`frame-src [^;]*` + regexp.QuoteMeta(frame) + `[ ;]`).MatchString(csp) {
+			t.Errorf("CSP frame-src missing %q", frame)
 		}
 	}
 	for _, forbidden := range []string{"'unsafe-eval'", "script-src 'self' 'unsafe-inline'", "https://evil.example"} {

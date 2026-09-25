@@ -13,7 +13,7 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"font-src 'self' https://fonts.gstatic.com; " +
 	"img-src 'self' data: blob: https://static-cdn.jtvnw.net https://*.twitchcdn.net https://*.twitch.tv https://api.dicebear.com https://us-assets.i.posthog.com; " +
 	"media-src 'self' blob: https://clips-media-assets2.twitch.tv https://clips.twitch.tv https://static.twitchcdn.net; " +
-	"frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv; " +
+	"frame-src 'self' https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://www.twitch.tv; " +
 	"connect-src 'self' wss: https://api.twitch.tv https://gql.twitch.tv https://*.posthog.com https://*.i.posthog.com https://*.ingest.sentry.io https://www.google-analytics.com; " +
 	"worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; " +
 	"form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"

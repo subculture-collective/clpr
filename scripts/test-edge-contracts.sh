@@ -52,6 +52,14 @@ if grep -Eq "script-src[^;]*(unsafe-inline|unsafe-eval)" \
   fail "executable inline scripts or eval are allowed by an edge CSP"
 fi
 
+# The live stream page frames chat from https://www.twitch.tv/embed/<channel>/chat.
+for csp_file in Caddyfile deploy/Caddyfile.blue-green.template frontend/nginx.conf; do
+  for frame_origin in https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://www.twitch.tv; do
+    grep -Eq "frame-src [^;]*${frame_origin//./\\.}[ ;]" "$csp_file" ||
+      fail "$csp_file CSP frame-src is missing $frame_origin"
+  done
+done
+
 require_literal Caddyfile 'handle /health {'
 require_literal Caddyfile 'handle /health/ready {'
 require_literal Caddyfile 'handle /ready {'
