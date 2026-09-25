@@ -73,7 +73,6 @@ The `state` value is signed and bound to the clpr user. This flow requests:
 
 | Scope | Purpose stated in the code | Used by |
 | --- | --- | --- |
-| `chat:read`, `chat:edit` | Chat functionality | No current server code sends or reads chat with the user's token |
 | `channel:bot` | Let the clpr bot account join and read this broadcaster's chat | Streamer clip room, below |
 | `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room |
 | `moderator:manage:banned_users` | Moderators banning and unbanning users | Requested; ban actions are currently limited to broadcasters |
