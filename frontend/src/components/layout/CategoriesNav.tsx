@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { categoryApi } from '../../lib/category-api';
 import { tagApi } from '../../lib/tag-api';
+import { isChipLane, tagLane } from '../../lib/tag-lanes';
 import {
     fetchPopularBroadcasters,
     type PopularBroadcaster,
@@ -29,7 +30,7 @@ export function CategoriesNav() {
             try {
                 const [featuredRes, tagsRes, creatorsRes] = await Promise.all([
                     categoryApi.listCategories({ type: 'topic', featured: true }),
-                    tagApi.listTags({ lane: 'detected', sort: 'popularity', limit: 20 }),
+                    tagApi.listTags({ sort: 'popularity', limit: 20 }),
                     fetchPopularBroadcasters(20),
                 ]);
 
@@ -39,7 +40,7 @@ export function CategoriesNav() {
                     featuredTopics = all.categories || [];
                 }
                 setTopics(featuredTopics);
-                setTags(tagsRes.tags || []);
+                setTags((tagsRes.tags || []).filter(tag => isChipLane(tagLane(tag))));
                 setCreators(creatorsRes);
             } catch (err) {
                 console.error('Failed to fetch nav data:', err);

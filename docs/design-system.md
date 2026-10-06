@@ -1,7 +1,7 @@
 # clpr Design System — "Tally · Ultraviolet"
 
 > **Idea**: clpr is a broadcast control room for Twitch moments. Clips are
-> monitors, rank is read across the room, and every tag says where it came from.
+> monitors, rank is read across the room, and colorful tags help people explore.
 > Discussion stays beside the clip.
 
 ---
@@ -31,10 +31,10 @@
 4. **Clpr's own purple**: the violet sits near Twitch's purple to suggest the relationship without copying it. Never use Twitch's exact brand purple or their logo.
 5. **No gaming visual language**: clpr covers every kind of Twitch moment. Avoid gamer tropes such as HUD meters, neon RGB or esports scoreboards.
 
-### Tags say where they came from
+### Tags stand on their own
 
-6. **One colour per tag origin, not per tag**: Twitch category, what clpr saw (the vision tagger), community tags, and the streamer's own Twitch channel tags each have one treatment. Duration and language are metadata, not chips.
-7. **Evidence is visible**: tags from the vision tagger show the evidence level the backend assigned (`visible`, `contextual`, or `strong`; see `backend/internal/services/content_tags.go`).
+6. **Consistent colour for each tag**: tags share one chip shape, with violet, mint, amber, sky, pink, and coral accents. The label determines the accent; its source does not. Duration and language stay in clip metadata.
+7. **Keep the machinery behind the scenes**: public tags show their names and optional counts. Browse by popularity, recent trends, or search. Source lanes and evidence levels remain internal data.
 
 ### Comment-forward
 
@@ -75,9 +75,9 @@ All colours are CSS custom properties holding space-separated RGB so Tailwind al
 | ---------------------- | --------- | -------------------------------------------------------------------- |
 | `--clpr-brand` (tally) | `#8C5CFF` | On air: active item, top rank, primary action, upvote                |
 | `--clpr-link`          | `#B79BFF` | Links and focus ring                                                 |
-| `--clpr-seen`          | `#3DDC97` | Tag evidence `visible` (seen in the frame); success                  |
-| `--clpr-context`       | `#FFC24A` | Tag evidence `contextual` (metadata or transcript plus frame); warning |
-| `--clpr-category`      | `#9FD8FF` | Twitch category lane; info; downvote                                 |
+| `--clpr-seen`          | `#3DDC97` | Legacy mint token; success                  |
+| `--clpr-context`       | `#FFC24A` | Legacy amber token; warning |
+| `--clpr-category`      | `#9FD8FF` | Sky accent; info; downvote                                 |
 
 Primary buttons use `primary-400` (`#A07CFF`) with ink text. Ink on `#8C5CFF` measures about 4.7:1; white on it measures about 4.1:1 and fails AA, so text on solid violet is always ink (`text-background`). Hover lightens (`primary-300`) instead of darkening.
 
@@ -143,7 +143,7 @@ New code should use the semantic names (`primary-*`, `tally`, `seen`, `context`,
 | Body                | Barlow           | 15px    | 400    | Line-height 1.6                |
 | Comment body        | Barlow           | 14px    | 400    | `.comment-body`                |
 | Metadata / counts   | IBM Plex Mono    | 11–12px | 400–500 | Tabular figures               |
-| Tag chip            | IBM Plex Mono    | 12px    | 500    | See tag lanes in §6            |
+| Tag chip            | IBM Plex Mono    | 12px    | 500    | See tag accents in §6            |
 
 ---
 
@@ -507,7 +507,7 @@ Feed card (`frontend/src/components/clip/ClipCard.tsx`):
 │  ▼   │               [▶]                    │                  │
 │      │                               0:20  │ ← burn-in       │
 │      └──────────────────────────────────────┘                  │
-│      [Singing CTX] [Music] [#goosebumps] +2  ← tag lanes      │
+│      [Singing] [Music] [goosebumps] +2      ← tags      │
 │      💬 418 COMMENTS  ♥ 12  SHARE     👁 2.1K  PLAYLIST QUEUE  │
 └───────────────────────────────────────────────────────────────┘
 ```
@@ -521,18 +521,11 @@ Feed card (`frontend/src/components/clip/ClipCard.tsx`):
 | Metadata       | IBM Plex Mono 11px uppercase, `·` separators                                       |
 | Duration       | `.burn-in` in the bottom-right media corner                                        |
 | Play control   | Square `primary-400` tile with ink icon; no blur or glow                           |
-| Tags           | `TagList`, ordered by lane; length and language are not chips                      |
+| Tags           | `TagList`, ordered by popularity; length and language are not chips                      |
 
-Tag chips (`frontend/src/components/tag/TagChip.tsx`) are 12px mono with a 1px border. Colour depends on the lane, never on per-tag colour:
+Tag chips (`frontend/src/components/tag/TagChip.tsx`) are 12px mono with a 1px border. Each label receives a stable accent from `primary-300`, `success-300`, `warning-300`, `info-300`, `secondary-300`, or `error-300`. The border uses that colour at 40% opacity and the background at 10%; hover raises them to 70% and 20%. Tag detail headings use the same accent.
 
-| Lane       | Treatment                                                             |
-| ---------- | --------------------------------------------------------------------- |
-| Detected   | Ice text, `line-strong` border, evidence mark: Seen (mint), Ctx (amber), Outcome (violet) |
-| Category   | Sky text and border                                                   |
-| Community  | `#` prefix, link violet                                               |
-| Streamer   | Dashed border, tertiary text                                          |
-
-The evidence mark describes what the tag definition requires, not a verdict about the clip.
+All tags share this treatment. Public chips have no source prefixes, evidence marks, source-specific borders, or provenance tooltips. The tag directory combines sources under **Trending this week** and **Popular tags**, and search retains the API's result order.
 
 ### 6.7 Playlist Sidebar Tabs
 
@@ -664,7 +657,7 @@ All text tokens verified against their intended background:
 
 Use `Container` for page wrappers and `page-container` in the shared navigation. Both cap content at 1440px and use 16px, 24px, and 32px responsive gutters. Avoid Tailwind's built-in `container` utility where the shared page width is intended.
 
-Use `text-link` for small accent text and links. Solid violet belongs on filled controls and the tally light, and text on it is always ink (`text-background`). Links within paragraphs need a persistent underline. Provider-supplied tag colors use linearized sRGB luminance to choose black or white text; unsupported color strings fall back to the standard violet.
+Use `text-link` for small accent text and links. Solid violet belongs on filled controls and the tally light, and text on it is always ink (`text-background`). Links within paragraphs need a persistent underline. Tag chips use the fixed accent palette above; provider-supplied colours do not control their appearance.
 
 Clip detail switches to a two-column grid at `xl` (1280px): flexible playback and a 24rem discussion panel. At smaller widths the discussion follows playback. On wide screens the discussion list scrolls independently while its composer remains visible. Full comment text and author/moderation actions remain available in that panel.
 

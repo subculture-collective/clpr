@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Container, SEO } from '../components';
 import { ClipFeed } from '../components/clip';
 import { useTag } from '../hooks/useTags';
-import { TAG_EVIDENCE, TAG_LANES, tagHref, tagLabel, tagLane } from '../lib/tag-lanes';
+import { tagAccent, tagHref, tagLabel } from '../lib/tag-lanes';
 
 export function TagPage() {
     const { tagSlug = '' } = useParams<{ tagSlug: string }>();
@@ -19,9 +19,7 @@ export function TagPage() {
     }
 
     const tag = data?.tag;
-    const lane = tagLane(tag ?? { slug: tagSlug });
-    const label = tag ? tagLabel(tag) : tagSlug;
-    const evidence = lane === 'detected' ? tag?.evidence : undefined;
+    const label = tag ? tagLabel(tag) : tagSlug.split('/').pop()!.replace(/-/g, ' ');
 
     return (
         <>
@@ -34,14 +32,11 @@ export function TagPage() {
                 <nav aria-label='Breadcrumb' className='kicker mb-4'>
                     <Link to='/tags' className='text-text-tertiary hover:text-foreground'>Tags</Link>
                     <span aria-hidden='true'> / </span>
-                    <span>{TAG_LANES[lane].label}</span>
+                    <span aria-current='page'>{label}</span>
                 </nav>
                 <div className='mb-8 grid gap-4 border-b border-line-strong pb-6 md:grid-cols-[1fr_auto] md:items-end'>
                     <div>
-                        <h1 className='text-4xl lg:text-5xl'>{lane === 'community' ? `#${label}` : label}</h1>
-                        <p className='mt-2 max-w-2xl text-text-secondary'>
-                            {evidence ? `${TAG_EVIDENCE[evidence].label} tag. ${TAG_EVIDENCE[evidence].description}` : TAG_LANES[lane].description}
-                        </p>
+                        <h1 className={`text-4xl lg:text-5xl ${tagAccent(label)}`}>{label}</h1>
                     </div>
                     {data && (
                         <p className='font-mono text-sm text-text-secondary'>

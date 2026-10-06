@@ -53,18 +53,18 @@ describe('TagPage', () => {
         expect(screen.getByTestId('filters').textContent).toContain('"tags":["content/highlights"]');
     });
 
-    it('labels the tag by lane, name, evidence, and clip count once details load', () => {
+    it('shows the tag name and clip count without provenance', () => {
         useTagMock.mockReturnValue({ data: { tag: facecam, clip_count: 1234 } });
         renderAt('/tags/content%2Ffacecam');
         expect(screen.getByRole('heading', { level: 1, name: 'Facecam' })).toBeInTheDocument();
-        expect(screen.getByText('What clpr saw')).toBeInTheDocument();
-        expect(screen.getByText(/Seen tag\. Something visible in a single frame\./)).toBeInTheDocument();
+        expect(screen.queryByText('What clpr saw')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Seen tag/)).not.toBeInTheDocument();
         expect(screen.getByText('1,234')).toBeInTheDocument();
     });
 
     it('falls back to the slug while details are unavailable', () => {
         renderAt('/tags/funny');
-        expect(screen.getByRole('heading', { level: 1, name: '#funny' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'funny' })).toBeInTheDocument();
         expect(screen.getByTestId('filters').textContent).toContain('"tags":["funny"]');
     });
 

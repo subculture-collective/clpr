@@ -3,6 +3,7 @@ import { TagChip } from '../tag/TagChip';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedPlaylists, usePlaylists } from '@/hooks/usePlaylist';
 import { useTags } from '@/hooks/useTags';
+import { isChipLane, tagLane } from '@/lib/tag-lanes';
 import { useQueueCount } from '@/hooks/useQueue';
 import { useIsAuthenticated } from '@/hooks';
 import { categoryApi } from '@/lib/category-api';
@@ -84,11 +85,10 @@ export function FeedSidebar() {
     );
 
     const { data: tagsResponse } = useTags({
-        lane: 'detected',
         sort: 'popularity',
         limit: 12,
     });
-    const tags = tagsResponse?.tags ?? [];
+    const tags = (tagsResponse?.tags ?? []).filter(tag => isChipLane(tagLane(tag)));
 
     const { data: topicsResponse } = useQuery({
         queryKey: ['categories', 'topic'],
@@ -201,7 +201,7 @@ export function FeedSidebar() {
 
             {/* Popular Tags */}
             {tags.length > 0 && (
-                <SidebarSection title="What clpr sees" icon={Tag} viewAllHref="/tags">
+                <SidebarSection title="Popular tags" icon={Tag} viewAllHref="/tags">
                     <div className="flex flex-wrap gap-1.5">
                         {tags.map((tag) => (
                             <TagChip key={tag.id} tag={tag} size="small" />

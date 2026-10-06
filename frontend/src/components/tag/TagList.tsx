@@ -1,6 +1,6 @@
 import React from 'react';
 import { useClipTags } from '../../hooks/useTags';
-import { isChipLane, sortByLane, tagLane } from '@/lib/tag-lanes';
+import { isChipLane, sortByPopularity, tagLane } from '@/lib/tag-lanes';
 import { TagChip } from './TagChip';
 
 interface TagListProps {
@@ -8,11 +8,7 @@ interface TagListProps {
     maxVisible?: number;
 }
 
-/**
- * Clip tags ordered by lane: what clpr saw, Twitch category, community, then
- * the streamer's own channel tags. Length and language are clip metadata and
- * are not repeated as chips.
- */
+/** Clip tags share one presentation; length and language stay in metadata. */
 export const TagList: React.FC<TagListProps> = ({ clipId, maxVisible = 5 }) => {
     const { data, isLoading } = useClipTags(clipId);
 
@@ -26,7 +22,7 @@ export const TagList: React.FC<TagListProps> = ({ clipId, maxVisible = 5 }) => {
         );
     }
 
-    const tags = sortByLane((data?.tags ?? []).filter(tag => isChipLane(tagLane(tag))));
+    const tags = sortByPopularity((data?.tags ?? []).filter(tag => isChipLane(tagLane(tag))));
     if (tags.length === 0) return null;
 
     const visibleTags = tags.slice(0, maxVisible);
