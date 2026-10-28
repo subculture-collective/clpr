@@ -1981,7 +1981,8 @@ func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchS
 	defer func() {
 		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:trending_score'))`)
 	}()
-	if _, err := conn.Exec(ctx, `TRUNCATE clip_score_refresh_stage`); err != nil {
+	// pg_dump retains ACCESS SHARE locks; DELETE avoids an exclusive table lock.
+	if _, err := conn.Exec(ctx, `DELETE FROM clip_score_refresh_stage`); err != nil {
 		return 0, fmt.Errorf("clearing trending score stage: %w", err)
 	}
 	if _, err := conn.Exec(ctx, trendingScoreStageQuery); err != nil {

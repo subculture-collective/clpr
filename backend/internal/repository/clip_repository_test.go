@@ -284,8 +284,19 @@ func TestClipRepository_TrendingRefreshBatchesRecoversAndExcludesConcurrentRun(t
 		t.Fatalf("seed stale stage: %v", err)
 	}
 
+	// pg_dump holds ACCESS SHARE until its snapshot ends. Refresh must not wait.
+	backup, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer backup.Rollback(context.Background())
+	if _, err := backup.Exec(ctx, `LOCK TABLE clip_score_refresh_stage IN ACCESS SHARE MODE`); err != nil {
+		t.Fatal(err)
+	}
+	refreshCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	repo := NewClipRepository(pool)
-	updated, err := repo.UpdateTrendingScoresBatched(ctx, 1000)
+	updated, err := repo.UpdateTrendingScoresBatched(refreshCtx, 1000)
 	if err != nil || updated != 1001 {
 		t.Fatalf("batched refresh updated=%d err=%v", updated, err)
 	}
