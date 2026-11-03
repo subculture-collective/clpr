@@ -439,6 +439,7 @@ func TestCalculateNDCGInRecommendationContext(t *testing.T) {
 	tests := []struct {
 		name       string
 		relevances []int
+		judged     []int
 		k          int
 		want       float64
 	}{
@@ -502,11 +503,24 @@ func TestCalculateNDCGInRecommendationContext(t *testing.T) {
 			k:          5,
 			want:       0.78, // Relevant items present but not in ideal order
 		},
+		{
+			name:       "Ideal order but best judged clips missing",
+			relevances: []int{2, 1, 0},
+			judged:     []int{4, 4, 2, 1},
+			k:          5,
+			want:       0.14, // 3.63 / 26.39: missing the 4s must not score 1.0
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := CalculateNDCG(tt.relevances, tt.k)
+			// Unless a case sets judged, the ground truth is exactly the
+			// recommended set.
+			judged := tt.judged
+			if judged == nil {
+				judged = tt.relevances
+			}
+			got := CalculateNDCG(tt.relevances, judged, tt.k)
 			assert.InDelta(t, tt.want, got, 0.05, "nDCG should match expected value within tolerance")
 		})
 	}

@@ -61,7 +61,14 @@ export async function initiateOAuth(redirect: (url: string) => void = url => { w
  * Handle OAuth callback with PKCE
  * Validates state and sends code verifier to backend
  */
-export async function handleOAuthCallback(code: string, state: string): Promise<{ success: boolean; error?: string }> {
+export interface OAuthCallbackResult {
+  success: boolean;
+  /** The user has MFA enabled; the sign-in continues at /auth/mfa. */
+  mfaRequired?: boolean;
+  error?: string;
+}
+
+export async function handleOAuthCallback(code: string, state: string): Promise<OAuthCallbackResult> {
   try {
     // Retrieve stored state and code verifier
     const storedState = await getSecureItem('oauth_state');
@@ -78,7 +85,7 @@ export async function handleOAuthCallback(code: string, state: string): Promise<
 
     // Send code and verifier to backend
     // Backend will validate the verifier against the challenge
-    await apiClient.post('/auth/twitch/callback', {
+    const response = await apiClient.post<{ mfa_required?: boolean }>('/auth/twitch/callback', {
       code,
       state,
       code_verifier: codeVerifier,
@@ -88,7 +95,7 @@ export async function handleOAuthCallback(code: string, state: string): Promise<
     await removeSecureItem('oauth_state');
     await removeSecureItem('oauth_code_verifier');
 
-    return { success: true };
+    return { success: true, mfaRequired: response?.data?.mfa_required === true };
   } catch (error) {
     // Clean up on error (reuse the imported function)
     await removeSecureItem('oauth_state');
@@ -131,6 +138,9 @@ export async function logout(): Promise<void> {
  * Test-only login helper for E2E/local environments
  */
 export async function testLogin(params: TestLoginParams): Promise<User> {
-  const response = await apiClient.post<{ user: User }>('/auth/test-login', params);
+  const response = await apiClient.post<{ user?: User; mfa_required?: boolean }>('/auth/test-login', params);
+  if (response.data.mfa_required || !response.data.user) {
+    throw new Error('MFA verification required for this test user');
+  }
   return response.data.user;
 }

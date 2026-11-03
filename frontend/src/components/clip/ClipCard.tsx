@@ -67,7 +67,10 @@ export function ClipCard({
             toast.info('Please log in to favorite clips');
             return;
         }
-        favoriteMutation.mutate({ clip_id: clip.id });
+        favoriteMutation.mutate({
+            clip_id: clip.id,
+            is_favorited: Boolean(clip.is_favorited),
+        });
     };
 
     const voteColor =

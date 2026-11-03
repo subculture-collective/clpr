@@ -132,11 +132,26 @@ func (s *AuthService) GenerateAuthURL(ctx context.Context, codeChallenge, codeCh
 // HandleCallback handles the OAuth callback
 // Supports PKCE: if codeVerifier is provided, validates it against stored challenge
 func (s *AuthService) HandleCallback(ctx context.Context, code, state, codeVerifier string) (*models.User, string, string, error) {
+	user, err := s.AuthenticateCallback(ctx, code, state, codeVerifier)
+	if err != nil {
+		return nil, "", "", err
+	}
+	accessToken, refreshToken, err := s.generateTokens(ctx, user)
+	if err != nil {
+		return nil, "", "", err
+	}
+	return user, accessToken, refreshToken, nil
+}
+
+// AuthenticateCallback completes the Twitch OAuth exchange and returns the
+// signed-in user without issuing session tokens, so the caller can require a
+// second factor first.
+func (s *AuthService) AuthenticateCallback(ctx context.Context, code, state, codeVerifier string) (*models.User, error) {
 	// Validate state and get PKCE challenge if exists
 	stateKey := fmt.Sprintf("oauth:state:%s", state)
 	stateValue, err := s.redis.Get(ctx, stateKey)
 	if err != nil || stateValue == "" {
-		return nil, "", "", ErrInvalidState
+		return nil, ErrInvalidState
 	}
 
 	// Delete state to prevent reuse
@@ -151,11 +166,11 @@ func (s *AuthService) HandleCallback(ctx context.Context, code, state, codeVerif
 
 			// Verify code verifier if PKCE is enabled
 			if codeVerifier == "" {
-				return nil, "", "", ErrInvalidCodeVerifier
+				return nil, ErrInvalidCodeVerifier
 			}
 
 			if err := verifyPKCE(codeVerifier, codeChallenge, codeChallengeMethod); err != nil {
-				return nil, "", "", ErrInvalidCodeVerifier
+				return nil, ErrInvalidCodeVerifier
 			}
 		}
 	}
@@ -163,36 +178,27 @@ func (s *AuthService) HandleCallback(ctx context.Context, code, state, codeVerif
 	// Exchange code for access token
 	twitchAccessToken, err := s.exchangeCodeForToken(code)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to exchange code: %w", err)
+		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
 
 	// Fetch user profile from Twitch
 	twitchUser, err := s.fetchTwitchUser(twitchAccessToken)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to fetch user: %w", err)
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
 	// Create or update user in database
 	user, err := s.createOrUpdateUser(ctx, twitchUser)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to create/update user: %w", err)
+		return nil, fmt.Errorf("failed to create/update user: %w", err)
 	}
 
 	// Check if user is banned
 	if user.IsBanned {
-		return nil, "", "", ErrUserBanned
+		return nil, ErrUserBanned
 	}
 
-	// Update last login
-	_ = s.userRepo.UpdateLastLogin(ctx, user.ID)
-
-	// Generate JWT tokens
-	accessToken, refreshToken, err := s.generateTokens(ctx, user)
-	if err != nil {
-		return nil, "", "", err
-	}
-
-	return user, accessToken, refreshToken, nil
+	return user, nil
 }
 
 // GenerateTokensForUser issues fresh tokens for an existing user (used by non-production test logins)

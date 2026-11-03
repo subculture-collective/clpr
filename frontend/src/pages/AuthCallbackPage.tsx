@@ -5,8 +5,7 @@ import { Container, Spinner } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { handleOAuthCallback } from '../lib/auth-api';
 import { trackEvent, AuthEvents } from '../lib/telemetry';
-import { fetchRecommendationPreferences } from '../lib/recommendation-api';
-import { getAuthReturnTo } from '../lib/auth-return';
+import { completeSignIn } from '../lib/complete-sign-in';
 
 export function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -47,6 +46,12 @@ export function AuthCallbackPage() {
         return;
       }
 
+      // The backend paused this sign-in for an MFA code.
+      if (searchParams.get('mfa_required') === 'true') {
+        navigate('/auth/mfa', { replace: true });
+        return;
+      }
+
       // Check if we have PKCE parameters (code and state)
       const code = searchParams.get('code');
       const state = searchParams.get('state');
@@ -65,34 +70,15 @@ export function AuthCallbackPage() {
             }, 1500);
             return;
           }
-        }
 
-        // After successful OAuth callback (or if backend already set cookies)
-        // Fetch the user data
-        await refreshUser();
-
-        // Track successful login
-        trackEvent(AuthEvents.LOGIN_COMPLETED, {
-          method: 'twitch',
-        });
-
-        // Get the intended destination from session storage or default to home
-        const returnTo = getAuthReturnTo(sessionStorage.getItem('auth_return_to'));
-        sessionStorage.removeItem('auth_return_to');
-
-        if (returnTo === '/') {
-          try {
-            const preferences = await fetchRecommendationPreferences();
-            if (!preferences.onboarding_completed) {
-              navigate('/onboarding', { replace: true });
-              return;
-            }
-          } catch {
-            // Authentication succeeded; preference setup can remain optional.
+          if (result.mfaRequired) {
+            navigate('/auth/mfa', { replace: true });
+            return;
           }
         }
 
-        navigate(returnTo, { replace: true });
+        // After successful OAuth callback (or if backend already set cookies)
+        await completeSignIn(navigate, refreshUser);
       } catch (err) {
         console.error('[AuthCallback] Auth callback error:', err);
         setError('Failed to complete authentication. Please try again.');

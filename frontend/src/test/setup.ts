@@ -1,9 +1,13 @@
 import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import { server } from './mocks/server';
 import 'fake-indexeddb/auto';
+
+// The 1s default for findBy*/waitFor expires intermittently during the full
+// four-worker run, while lazily loaded pages are still rendering skeletons.
+configure({ asyncUtilTimeout: 5000 });
 
 type ConsoleLevel = 'error' | 'warn';
 type ConsoleAllowance = {

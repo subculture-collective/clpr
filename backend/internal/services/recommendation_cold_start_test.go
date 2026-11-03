@@ -3,9 +3,9 @@ package services
 import (
 	"testing"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 )
 
 // TestColdStartWithOnboarding tests cold start recommendations for users with onboarding preferences
@@ -190,4 +190,21 @@ func TestColdStartMetadataTracking(t *testing.T) {
 		assert.False(t, metadata.ColdStart, "Should not mark as cold start")
 		assert.True(t, metadata.DiversityApplied, "Should apply diversity for non-cold start")
 	})
+}
+
+// TestAppendUniqueClipScores verifies the cold-start popularity fallback
+// cannot repeat a clip that trending already returned.
+func TestAppendUniqueClipScores(t *testing.T) {
+	a, b, c := uuid.New(), uuid.New(), uuid.New()
+	trending := []models.ClipScore{{ClipID: a, SimilarityRank: 1}, {ClipID: b, SimilarityRank: 2}}
+	popular := []models.ClipScore{{ClipID: b, SimilarityRank: 1}, {ClipID: c, SimilarityRank: 2}, {ClipID: c, SimilarityRank: 3}}
+
+	got := appendUniqueClipScores(trending, popular)
+
+	ids := make([]uuid.UUID, len(got))
+	for i, score := range got {
+		ids[i] = score.ClipID
+	}
+	assert.Equal(t, []uuid.UUID{a, b, c}, ids)
+	assert.Equal(t, 2, got[1].SimilarityRank, "trending entry for a shared clip is kept")
 }

@@ -20,6 +20,7 @@ type Services struct {
 	Auth                     *services.AuthService
 	Email                    *services.EmailService
 	MFA                      *services.MFAService
+	MFAChallenges            *services.MFALoginChallengeStore
 	Notification             *services.NotificationService
 	ToxicityClassifier       *services.ToxicityClassifier
 	NSFWDetector             *services.NSFWDetector
@@ -360,6 +361,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Auth:                     authService,
 		Email:                    emailService,
 		MFA:                      mfaService,
+		MFAChallenges:            services.NewMFALoginChallengeStore(infra.Redis),
 		Notification:             notificationService,
 		ToxicityClassifier:       toxicityClassifier,
 		NSFWDetector:             nsfwDetector,

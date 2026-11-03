@@ -64,6 +64,85 @@ func (r *ClipRepository) TrySchedulerLock(ctx context.Context, name string) (fun
 	}, true, nil
 }
 
+// newSortExpression is the ordering key of the "new" feed sort. The cursor
+// condition and the cursor value (see NewSortCursorValue) must use it too.
+const newSortExpression = "COALESCE(c.submitted_at, c.created_at)"
+
+// legacyCursorSecondsLimit separates cursor sort values written as Unix
+// seconds (older "new" cursors) from Unix microseconds.
+const legacyCursorSecondsLimit = 1e11
+
+// NewSortCursorValue returns the cursor sort value for a clip in the "new"
+// sort: COALESCE(submitted_at, created_at) as Unix microseconds. float64
+// represents current Unix microsecond values exactly.
+func NewSortCursorValue(clip *models.Clip) float64 {
+	t := clip.CreatedAt
+	if clip.SubmittedAt != nil {
+		t = *clip.SubmittedAt
+	}
+	return float64(t.UnixMicro())
+}
+
+// NewSortCursorTime converts a "new" sort cursor value back into the
+// timestamp compared against newSortExpression. Values that look like Unix
+// seconds are accepted so cursors issued before this format still decode.
+func NewSortCursorTime(sortValue float64) time.Time {
+	if sortValue < legacyCursorSecondsLimit {
+		return time.Unix(int64(sortValue), 0).UTC()
+	}
+	return time.UnixMicro(int64(sortValue)).UTC()
+}
+
+// hotRankExpression is the "hot" ordering key. calculate_hot_score is
+// sign*log10(max(|score|,1)) - age_hours/12.5, and every row of one query sees
+// the same NOW(), so ordering by it equals ordering by
+// sign*log10(max(|score|,1)) + epoch(created_at)/45000. This form does not
+// depend on the request time, so it can be used for the cursor as well:
+// a cursor built from (vote_score, created_at) compares exactly.
+func hotRankExpression(scoreExpr, createdAtExpr string) string {
+	return fmt.Sprintf(
+		"(SIGN(%[1]s)::float8 * LOG(GREATEST(ABS(%[1]s), 1)::float8) + EXTRACT(EPOCH FROM %[2]s)::float8 / 45000.0)",
+		scoreExpr, createdAtExpr)
+}
+
+// risingRankExpression is the "rising" ordering key evaluated at a fixed
+// snapshot time instead of NOW(). Its time dependence cannot be separated
+// out, so the feed fixes the snapshot on the first page and carries it in
+// the cursor; every page of a session then uses one ordering. Ages are
+// clamped at zero so clips created after the snapshot cannot divide by zero.
+func risingRankExpression(baseExpr, createdAtExpr, snapshotExpr string) string {
+	return fmt.Sprintf(
+		"((%s)::float8 * (1 + 1.0 / (GREATEST(EXTRACT(EPOCH FROM (%s - %s))::float8, 0) / 3600.0 + 2)))",
+		baseExpr, snapshotExpr, createdAtExpr)
+}
+
+// risingBaseExpression is the rising score's engagement component.
+const risingBaseExpression = "c.vote_score + (c.view_count / 100)"
+
+// RisingCursorBase returns the rising engagement component for a clip, using
+// the same integer arithmetic as risingBaseExpression.
+func RisingCursorBase(clip *models.Clip) float64 {
+	return float64(clip.VoteScore + clip.ViewCount/100)
+}
+
+// hasCustomDateRange reports whether the caller set date_from or date_to,
+// which replaces the sort-specific timeframe windows.
+func hasCustomDateRange(filters ClipFilters) bool {
+	return (filters.DateFrom != nil && *filters.DateFrom != "") || (filters.DateTo != nil && *filters.DateTo != "")
+}
+
+// resolveSortSnapshot returns the time a "rising" feed is evaluated at: the
+// cursor's snapshot when paginating, else the caller's, else now.
+func resolveSortSnapshot(filters ClipFilters, cursor *utils.Cursor) time.Time {
+	if cursor != nil && cursor.Snapshot != 0 {
+		return utils.CursorTime(cursor.Snapshot)
+	}
+	if filters.SortSnapshot != nil {
+		return filters.SortSnapshot.UTC().Truncate(time.Microsecond)
+	}
+	return time.Now().UTC().Truncate(time.Microsecond)
+}
+
 const clipSelectColumns = `
 			id, twitch_clip_id, twitch_clip_url, embed_url, title,
 			creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id,
@@ -570,6 +649,7 @@ type ClipFilters struct {
 	UserSubmittedOnly   bool    // If true, only show clips with submitted_by_user_id IS NOT NULL
 	Cursor              *string // Cursor for cursor-based pagination (base64 encoded)
 	TrendingShuffleSeed *string // Stateless per-session seed; applied only to automated clips in trending feeds
+	SortSnapshot        *time.Time // Evaluation time for the "rising" sort; carried in cursors so pages share one ordering
 }
 
 // buildDateFilterClauses adds date range and timeframe filtering clauses
@@ -589,7 +669,7 @@ func buildDateFilterClauses(filters ClipFilters, whereClauses []string, args []i
 	}
 
 	// Only apply timeframe if custom date range is not provided
-	customDateRangeProvided := (filters.DateFrom != nil && *filters.DateFrom != "") || (filters.DateTo != nil && *filters.DateTo != "")
+	customDateRangeProvided := hasCustomDateRange(filters)
 
 	if !customDateRangeProvided {
 		// Add timeframe filter for top sort
@@ -608,10 +688,8 @@ func buildDateFilterClauses(filters ClipFilters, whereClauses []string, args []i
 			}
 		}
 
-		// Add timeframe for rising (recent clips only)
-		if filters.Sort == "rising" {
-			whereClauses = append(whereClauses, "c.created_at > NOW() - INTERVAL '48 hours'")
-		}
+		// The rising window (recent clips only) is added with the sort
+		// snapshot in ListWithFilters so it stays fixed across pages.
 
 		// Add timeframe for discussed (recent clips only, optional)
 		if filters.Sort == "discussed" && filters.Timeframe != nil {
@@ -783,12 +861,37 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 		END`, baseTrendingScore, seedPlaceholder, baseTrendingScore)
 	}
 
-	// Add cursor-based filtering if cursor is provided
+	var decodedCursor *utils.Cursor
 	if filters.Cursor != nil && *filters.Cursor != "" {
-		cursor, err := utils.DecodeCursor(*filters.Cursor)
+		var err error
+		decodedCursor, err = utils.DecodeCursor(*filters.Cursor)
 		if err != nil {
 			return nil, 0, fmt.Errorf("invalid cursor: %w", err)
 		}
+	}
+
+	hotRank := hotRankExpression("c.vote_score", "c.created_at")
+	risingRank, snapshotParam := "", ""
+	if filters.Sort == "rising" {
+		snapshotPlaceholder := utils.SQLPlaceholder(argIndex)
+		if hasCustomDateRange(filters) {
+			// Keeps the COUNT query's parameter list valid; the ORDER BY uses
+			// the same placeholder.
+			whereClauses = append(whereClauses, fmt.Sprintf("CAST(%s AS TIMESTAMP) IS NOT NULL", snapshotPlaceholder))
+		} else {
+			// Recent clips only, measured from the snapshot so the set of
+			// clips does not change between pages of one session.
+			whereClauses = append(whereClauses, fmt.Sprintf("c.created_at > CAST(%s AS TIMESTAMP) - INTERVAL '48 hours'", snapshotPlaceholder))
+		}
+		args = append(args, resolveSortSnapshot(filters, decodedCursor))
+		argIndex++
+		snapshotParam = "CAST(" + snapshotPlaceholder + " AS TIMESTAMP)"
+		risingRank = risingRankExpression(risingBaseExpression, "c.created_at", snapshotParam)
+	}
+
+	// Add cursor-based filtering if cursor is provided
+	if decodedCursor != nil {
+		cursor := decodedCursor
 
 		// Validate that cursor sort key matches requested sort
 		if cursor.SortKey != filters.Sort {
@@ -801,7 +904,7 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 		// Add cursor WHERE clause based on sort type
 		// For DESC sorts: WHERE (sort_field < cursor_value) OR (sort_field = cursor_value AND id < cursor_id)
 		// This ensures stable pagination even with duplicate sort values
-		cursorTimestamp := time.Unix(cursor.CreatedAt, 0)
+		cursorTimestamp := utils.CursorTime(cursor.CreatedAt)
 
 		switch filters.Sort {
 		case "trending":
@@ -824,10 +927,13 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 			args = append(args, cursor.SortValue, cursor.SortValue, cursorTimestamp, cursorTimestamp, cursor.ClipID)
 			argIndex += 5
 		case "new":
+			// Must use the same expression as the "new" ORDER BY so pages neither
+			// skip nor repeat clips whose submitted_at differs from created_at.
+			newSortTime := NewSortCursorTime(cursor.SortValue)
 			whereClauses = append(whereClauses, fmt.Sprintf(
-				"(c.created_at < %s OR (c.created_at = %s AND c.id < %s))",
-				utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1), utils.SQLPlaceholder(argIndex+2)))
-			args = append(args, cursorTimestamp, cursorTimestamp, cursor.ClipID)
+				"(%s < %s OR (%s = %s AND c.id < %s))",
+				newSortExpression, utils.SQLPlaceholder(argIndex), newSortExpression, utils.SQLPlaceholder(argIndex+1), utils.SQLPlaceholder(argIndex+2)))
+			args = append(args, newSortTime, newSortTime, cursor.ClipID)
 			argIndex += 3
 		case "top":
 			whereClauses = append(whereClauses, fmt.Sprintf(
@@ -842,13 +948,30 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 			args = append(args, cursor.SortValue, cursor.SortValue, cursorTimestamp, cursorTimestamp, cursor.ClipID)
 			argIndex += 5
 		case "hot", "rising":
-			// For hot and rising, we use created_at as the cursor since the score is dynamically calculated
-			// Note: This means pagination is based on created_at, not the hot/rising score
-			// This is a known limitation but avoids storing calculated scores
+			if cursor.Snapshot == 0 {
+				// Cursor issued before ranked cursors existed: it only carries
+				// created_at, so keep its original created_at-based boundary.
+				whereClauses = append(whereClauses, fmt.Sprintf(
+					"(c.created_at < %s OR (c.created_at = %s AND c.id < %s))",
+					utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1), utils.SQLPlaceholder(argIndex+2)))
+				args = append(args, cursorTimestamp, cursorTimestamp, cursor.ClipID)
+				argIndex += 3
+				break
+			}
+			// The cursor carries the last clip's score inputs, so the boundary
+			// is computed with the same SQL expression as the ORDER BY and the
+			// last clip compares exactly equal to it.
+			scoreParam := "CAST(" + utils.SQLPlaceholder(argIndex) + " AS INTEGER)"
+			createdParam := "CAST(" + utils.SQLPlaceholder(argIndex+1) + " AS TIMESTAMP)"
+			idParam := "CAST(" + utils.SQLPlaceholder(argIndex+2) + " AS UUID)"
+			rowRank, cursorRank := hotRank, hotRankExpression(scoreParam, createdParam)
+			if filters.Sort == "rising" {
+				rowRank = risingRank
+				cursorRank = risingRankExpression(scoreParam, createdParam, snapshotParam)
+			}
 			whereClauses = append(whereClauses, fmt.Sprintf(
-				"(c.created_at < %s OR (c.created_at = %s AND c.id < %s))",
-				utils.SQLPlaceholder(argIndex), utils.SQLPlaceholder(argIndex+1), utils.SQLPlaceholder(argIndex+2)))
-			args = append(args, cursorTimestamp, cursorTimestamp, cursor.ClipID)
+				"(%s, c.created_at, c.id) < (%s, %s, %s)", rowRank, cursorRank, createdParam, idParam))
+			args = append(args, int(cursor.SortValue), cursorTimestamp, cursor.ClipID)
 			argIndex += 3
 		default:
 			// Default to hot score behavior
@@ -869,9 +992,9 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 	var orderBy string
 	switch filters.Sort {
 	case "hot":
-		orderBy = "ORDER BY calculate_hot_score(c.vote_score, c.created_at) DESC, c.created_at DESC, c.id DESC"
+		orderBy = "ORDER BY " + hotRank + " DESC, c.created_at DESC, c.id DESC"
 	case "new":
-		orderBy = "ORDER BY COALESCE(c.submitted_at, c.created_at) DESC, c.id DESC"
+		orderBy = "ORDER BY " + newSortExpression + " DESC, c.id DESC"
 	case "top":
 		orderBy = "ORDER BY c.vote_score DESC, c.created_at DESC, c.id DESC"
 	case "trending":
@@ -884,12 +1007,12 @@ func (r *ClipRepository) ListWithFilters(ctx context.Context, filters ClipFilter
 		orderBy = "ORDER BY COALESCE(c.popularity_index, c.engagement_count, (c.view_count + c.vote_score * 2 + c.comment_count * 3 + c.favorite_count * 2)) DESC, c.created_at DESC, c.id DESC"
 	case "rising":
 		// Rising: recent clips with high velocity (view_count + vote_score combined with recency)
-		orderBy = "ORDER BY (c.vote_score + (c.view_count / 100)) * (1 + 1.0 / (EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600.0 + 2)) DESC, c.created_at DESC, c.id DESC"
+		orderBy = "ORDER BY " + risingRank + " DESC, c.created_at DESC, c.id DESC"
 	case "discussed":
 		// Discussed: clips with most comments, breaking ties by creation date
 		orderBy = "ORDER BY c.comment_count DESC, c.created_at DESC, c.id DESC"
 	default:
-		orderBy = "ORDER BY calculate_hot_score(c.vote_score, c.created_at) DESC, c.created_at DESC, c.id DESC"
+		orderBy = "ORDER BY " + hotRank + " DESC, c.created_at DESC, c.id DESC"
 	}
 
 	// Count query
@@ -1036,6 +1159,11 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 
 	// Add date range and timeframe filtering
 	whereClauses, args, argIndex = buildDateFilterClauses(filters, whereClauses, args, argIndex)
+	if filters.Sort == "rising" && !hasCustomDateRange(filters) {
+		// Rising covers recent clips only. This list pages by offset and has
+		// no session snapshot, so the window is measured from NOW().
+		whereClauses = append(whereClauses, "c.created_at > NOW() - INTERVAL '48 hours'")
+	}
 
 	whereClause := "WHERE " + whereClauses[0]
 	for i := 1; i < len(whereClauses); i++ {
@@ -1046,24 +1174,24 @@ func (r *ClipRepository) ListScrapedClipsWithFilters(ctx context.Context, filter
 	var orderBy string
 	switch filters.Sort {
 	case "hot":
-		orderBy = "ORDER BY calculate_hot_score(c.vote_score, c.created_at) DESC"
+		orderBy = "ORDER BY calculate_hot_score(c.vote_score, c.created_at) DESC, c.id DESC"
 	case "new":
-		orderBy = "ORDER BY c.created_at DESC"
+		orderBy = "ORDER BY c.created_at DESC, c.id DESC"
 	case "top":
-		orderBy = "ORDER BY c.vote_score DESC, c.created_at DESC"
+		orderBy = "ORDER BY c.vote_score DESC, c.created_at DESC, c.id DESC"
 	case "views":
-		orderBy = "ORDER BY c.view_count DESC, c.created_at DESC"
+		orderBy = "ORDER BY c.view_count DESC, c.created_at DESC, c.id DESC"
 	case "trending":
 		// Similar to rising but with higher view count weight
-		orderBy = "ORDER BY (c.view_count / 10 + c.vote_score) * (1 + 1.0 / (EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600.0 + 2)) DESC"
+		orderBy = "ORDER BY (c.view_count / 10 + c.vote_score) * (1 + 1.0 / (EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600.0 + 2)) DESC, c.id DESC"
 	case "rising":
 		// Rising: recent clips with high velocity (view_count + vote_score combined with recency)
-		orderBy = "ORDER BY (c.vote_score + (c.view_count / 100)) * (1 + 1.0 / (EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600.0 + 2)) DESC"
+		orderBy = "ORDER BY (c.vote_score + (c.view_count / 100)) * (1 + 1.0 / (EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600.0 + 2)) DESC, c.id DESC"
 	case "discussed":
 		// Discussed: clips with most comments, breaking ties by creation date
-		orderBy = "ORDER BY c.comment_count DESC, c.created_at DESC"
+		orderBy = "ORDER BY c.comment_count DESC, c.created_at DESC, c.id DESC"
 	default:
-		orderBy = "ORDER BY c.created_at DESC"
+		orderBy = "ORDER BY c.created_at DESC, c.id DESC"
 	}
 
 	// Count query

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -143,17 +144,25 @@ func (h *WebSocketHandler) GetMessageHistory(c *gin.Context) {
 
 	// Add cursor condition if provided
 	if cursor != "" {
-		cursorTime, err := time.Parse(time.RFC3339, cursor)
+		cursorTime, cursorID, err := parseChatHistoryCursor(cursor)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor format; expected RFC3339 timestamp"})
 			return
 		}
-		query += fmt.Sprintf(" AND cm.created_at < $%d", argIndex)
-		args = append(args, cursorTime)
-		argIndex++
+		if cursorID != nil {
+			// Keyset on (created_at, id) so messages sharing a timestamp are
+			// neither skipped nor repeated across page boundaries.
+			query += fmt.Sprintf(" AND (cm.created_at, cm.id) < ($%d, $%d)", argIndex, argIndex+1)
+			args = append(args, cursorTime, *cursorID)
+			argIndex += 2
+		} else {
+			query += fmt.Sprintf(" AND cm.created_at < $%d", argIndex)
+			args = append(args, cursorTime)
+			argIndex++
+		}
 	}
 
-	query += fmt.Sprintf(" ORDER BY cm.created_at DESC LIMIT $%d", argIndex)
+	query += fmt.Sprintf(" ORDER BY cm.created_at DESC, cm.id DESC LIMIT $%d", argIndex)
 	args = append(args, limit)
 
 	// Execute query
@@ -192,7 +201,7 @@ func (h *WebSocketHandler) GetMessageHistory(c *gin.Context) {
 	// Set next cursor if we have messages
 	if len(messages) > 0 {
 		lastMessage := messages[len(messages)-1]
-		cursorStr := lastMessage.CreatedAt.Format(time.RFC3339)
+		cursorStr := formatChatHistoryCursor(lastMessage.CreatedAt, lastMessage.ID)
 		nextCursor = &cursorStr
 	}
 
@@ -207,6 +216,37 @@ func (h *WebSocketHandler) GetMessageHistory(c *gin.Context) {
 		"cursor":   nextCursor,
 		"limit":    limit,
 	})
+}
+
+// chatHistoryCursorSep separates the timestamp and message ID in a history
+// cursor. It cannot appear in an RFC3339 timestamp or a UUID.
+const chatHistoryCursorSep = "_"
+
+// formatChatHistoryCursor encodes a keyset cursor with full sub-second
+// precision plus the message ID as a tie-breaker.
+func formatChatHistoryCursor(createdAt time.Time, id uuid.UUID) string {
+	return createdAt.UTC().Format(time.RFC3339Nano) + chatHistoryCursorSep + id.String()
+}
+
+// parseChatHistoryCursor accepts "<RFC3339[Nano]>_<uuid>" cursors, and plain
+// RFC3339/RFC3339Nano timestamps issued by earlier versions (no tie-breaker).
+func parseChatHistoryCursor(cursor string) (time.Time, *uuid.UUID, error) {
+	timestamp := cursor
+	var id *uuid.UUID
+	if i := strings.LastIndex(cursor, chatHistoryCursorSep); i >= 0 {
+		parsedID, err := uuid.Parse(cursor[i+1:])
+		if err != nil {
+			return time.Time{}, nil, err
+		}
+		id = &parsedID
+		timestamp = cursor[:i]
+	}
+	// time.RFC3339Nano parsing also accepts timestamps without fractions.
+	t, err := time.Parse(time.RFC3339Nano, timestamp)
+	if err != nil {
+		return time.Time{}, nil, err
+	}
+	return t, id, nil
 }
 
 // GetHealthCheck returns health information about WebSocket connections

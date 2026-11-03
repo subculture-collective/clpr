@@ -35,6 +35,7 @@ func registerContentRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, inf
 		searchAdmin := search.Group("")
 		searchAdmin.Use(middleware.AuthMiddleware(svcs.Auth))
 		searchAdmin.Use(middleware.RequireRole("admin"))
+		searchAdmin.Use(middleware.RequireMFAForAdminMiddleware(svcs.MFA))
 		{
 			searchAdmin.GET("/failed", h.Search.GetFailedSearches)     // Failed searches (admin only)
 			searchAdmin.GET("/analytics", h.Search.GetSearchAnalytics) // Search analytics summary (admin only)
@@ -91,9 +92,9 @@ func registerContentRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, inf
 			moderationAppeals.PATCH("/moderators/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Moderation.UpdateModeratorPermissions)
 
 			// Audit log endpoints (requires moderator or admin role)
-			moderationAppeals.GET("/audit-logs", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.AuditLog.ListModerationAuditLogs)
-			moderationAppeals.GET("/audit-logs/export", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.AuditLog.ExportModerationAuditLogs)
-			moderationAppeals.GET("/audit-logs/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.AuditLog.GetModerationAuditLog)
+			moderationAppeals.GET("/audit-logs", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.AuditLog.ListModerationAuditLogs)
+			moderationAppeals.GET("/audit-logs/export", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.AuditLog.ExportModerationAuditLogs)
+			moderationAppeals.GET("/audit-logs/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.AuditLog.GetModerationAuditLog)
 
 			// Ban reason template endpoints
 			moderationAppeals.GET("/ban-templates", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.BanReasonTemplate.ListTemplates)

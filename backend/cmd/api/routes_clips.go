@@ -61,8 +61,8 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		}
 
 		// Admin clip endpoints
-		clips.PUT("/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), h.Clip.UpdateClip)
-		clips.DELETE("/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), h.Clip.DeleteClip)
+		clips.PUT("/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), h.Clip.UpdateClip)
+		clips.DELETE("/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), h.Clip.DeleteClip)
 	}
 
 	// Scraped clips routes

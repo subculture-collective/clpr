@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"log"
 	"math/big"
 	"net"
 	"net/url"
@@ -551,7 +552,9 @@ func (s *AdService) updateFrequencyCaps(ctx context.Context, adID uuid.UUID, use
 
 	for _, windowType := range windowTypes {
 		windowStart := s.calculateWindowStart(windowType)
-		_ = s.adRepo.UpsertFrequencyCap(ctx, adID, userID, sessionID, windowType, windowStart)
+		if err := s.adRepo.UpsertFrequencyCap(ctx, adID, userID, sessionID, windowType, windowStart); err != nil {
+			log.Printf("failed to update ad frequency cap: ad_id=%s window=%s error=%v", adID, windowType, err)
+		}
 	}
 }
 

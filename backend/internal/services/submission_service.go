@@ -2137,10 +2137,8 @@ func (s *SubmissionService) ApproveSubmission(ctx context.Context, submissionID,
 		return fmt.Errorf("failed to approve submission: %w", err)
 	}
 	submission := submissions[0]
-	if s.clipStorage != nil && submission.StorageKey != nil {
-		if err := s.clipStorage.DeleteObject(ctx, strings.TrimSpace(*submission.StorageKey)); err != nil {
-			log.Printf("Failed to delete pending upload after approval: %v\n", err)
-		}
+	if err := s.deletePendingUploadAfterApproval(ctx, submission); err != nil {
+		log.Printf("Failed to delete pending upload after approval: %v\n", err)
 	}
 	s.runApprovedSubmissionSideEffects(ctx, submission)
 
@@ -2215,6 +2213,21 @@ func (s *SubmissionService) RejectSubmission(ctx context.Context, submissionID, 
 	return nil
 }
 
+// deletePendingUploadAfterApproval removes the pending upload object once an
+// approved clip has been promoted. Keys outside the pending prefix (for example
+// an upload already under uploads/public/) are the approved clip's own file and
+// must be kept.
+func (s *SubmissionService) deletePendingUploadAfterApproval(ctx context.Context, submission *models.ClipSubmission) error {
+	if s.clipStorage == nil || submission == nil || submission.StorageKey == nil {
+		return nil
+	}
+	key := strings.TrimSpace(*submission.StorageKey)
+	if !storage.IsPendingClipStorageKey(key) {
+		return nil
+	}
+	return s.clipStorage.DeleteObject(ctx, key)
+}
+
 // BulkApproveSubmissions approves multiple submissions
 func (s *SubmissionService) BulkApproveSubmissions(ctx context.Context, submissionIDs []uuid.UUID, reviewerID uuid.UUID) error {
 	preparedClips, err := s.prepareApprovalClips(ctx, submissionIDs)
@@ -2226,10 +2239,8 @@ func (s *SubmissionService) BulkApproveSubmissions(ctx context.Context, submissi
 		return fmt.Errorf("failed to bulk approve submissions: %w", err)
 	}
 	for _, submission := range submissions {
-		if s.clipStorage != nil && submission.StorageKey != nil {
-			if err := s.clipStorage.DeleteObject(ctx, strings.TrimSpace(*submission.StorageKey)); err != nil {
-				log.Printf("Failed to delete pending upload after bulk approval for submission %s: %v\n", submission.ID, err)
-			}
+		if err := s.deletePendingUploadAfterApproval(ctx, submission); err != nil {
+			log.Printf("Failed to delete pending upload after bulk approval for submission %s: %v\n", submission.ID, err)
 		}
 		s.runApprovedSubmissionSideEffects(ctx, submission)
 	}

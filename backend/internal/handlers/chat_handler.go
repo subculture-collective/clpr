@@ -356,6 +356,68 @@ func joinStrings(strs []string, sep string) string {
 	return result
 }
 
+// chatRoleRank orders channel roles for moderation. Non-members rank lowest.
+func chatRoleRank(role string) int {
+	switch role {
+	case "owner":
+		return 3
+	case "admin":
+		return 2
+	case "moderator":
+		return 1
+	default:
+		return 0
+	}
+}
+
+// canModerateChatTarget reports whether an actor may ban, mute or time out a
+// target. Matching RemoveChannelMember's rules, staff can act only on users
+// ranked strictly below them, so moderators cannot act on admins/owners or
+// each other, admins cannot act on the owner, and nobody can act on themselves.
+func canModerateChatTarget(actorRole, targetRole string) bool {
+	return chatRoleRank(actorRole) > chatRoleRank(targetRole)
+}
+
+// requireModerationTarget loads the caller's and target's channel roles and
+// rejects moderation of targets at or above the caller's rank.
+func (h *ChatHandler) requireModerationTarget(c *gin.Context, channelID, actorID uuid.UUID, targetIDStr string) bool {
+	targetID, err := uuid.Parse(targetIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return false
+	}
+	if targetID == actorID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You cannot moderate yourself"})
+		return false
+	}
+
+	ctx := c.Request.Context()
+	var actorRole, targetRole string
+	if err := h.db.QueryRow(ctx,
+		`SELECT role FROM channel_members WHERE channel_id = $1 AND user_id = $2`,
+		channelID, actorID).Scan(&actorRole); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Channel staff role required"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify channel role"})
+		}
+		return false
+	}
+	err = h.db.QueryRow(ctx,
+		`SELECT role FROM channel_members WHERE channel_id = $1 AND user_id = $2`,
+		channelID, targetID).Scan(&targetRole)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify target role"})
+		return false
+	}
+
+	if !canModerateChatTarget(actorRole, targetRole) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Cannot moderate a user with an equal or higher channel role"})
+		return false
+	}
+	return true
+}
+
 // BanUser bans a user from a channel
 func (h *ChatHandler) BanUser(c *gin.Context) {
 	channelID := c.Param("id")
@@ -373,6 +435,10 @@ func (h *ChatHandler) BanUser(c *gin.Context) {
 	var req models.BanUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !h.requireModerationTarget(c, channelUUID, moderatorID, req.UserID) {
 		return
 	}
 
@@ -516,6 +582,10 @@ func (h *ChatHandler) MuteUser(c *gin.Context) {
 		return
 	}
 
+	if !h.requireModerationTarget(c, channelUUID, moderatorID, req.UserID) {
+		return
+	}
+
 	// Calculate expiration time if duration is provided
 	var expiresAt *time.Time
 	if req.DurationMinutes != nil {
@@ -594,6 +664,10 @@ func (h *ChatHandler) TimeoutUser(c *gin.Context) {
 	var req models.TimeoutUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !h.requireModerationTarget(c, channelUUID, moderatorID, req.UserID) {
 		return
 	}
 

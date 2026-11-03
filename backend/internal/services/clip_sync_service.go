@@ -1034,7 +1034,13 @@ func generateUnclaimedUsername(displayName, twitchID string) string {
 
 	// If username is empty or too short, use a prefix
 	if len(username) < 3 {
-		username = "user_" + twitchID[:8]
+		// Twitch IDs are usually longer than 8 digits, but short or empty IDs
+		// must not panic the sync.
+		idPart := twitchID
+		if len(idPart) > 8 {
+			idPart = idPart[:8]
+		}
+		username = "user_" + idPart
 	}
 
 	// Truncate if too long (max 50 chars from schema)

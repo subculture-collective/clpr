@@ -8,69 +8,75 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 )
 
+// defaultRateLimitWindow is the Twitch API rate-limit window.
+const defaultRateLimitWindow = time.Minute
+
 // RateLimiter implements token bucket rate limiting for Twitch API
 type RateLimiter struct {
 	tokens    int
 	maxTokens int
+	window    time.Duration
 	refillAt  time.Time
 	mu        sync.Mutex
 }
 
 // NewRateLimiter creates a new rate limiter
 func NewRateLimiter(maxTokens int) *RateLimiter {
+	return newRateLimiterWithWindow(maxTokens, defaultRateLimitWindow)
+}
+
+func newRateLimiterWithWindow(maxTokens int, window time.Duration) *RateLimiter {
 	return &RateLimiter{
 		tokens:    maxTokens,
 		maxTokens: maxTokens,
-		refillAt:  time.Now().Add(time.Minute),
+		window:    window,
+		refillAt:  time.Now().Add(window),
 	}
 }
 
-// Wait blocks until a token is available or context is cancelled
+// refillLocked restores the bucket once the window has elapsed. Caller holds rl.mu.
+func (rl *RateLimiter) refillLocked() {
+	now := time.Now()
+	if !now.Before(rl.refillAt) {
+		rl.tokens = rl.maxTokens
+		rl.refillAt = now.Add(rl.window)
+	}
+}
+
+// Wait blocks until a token is available and consumes it, or returns the
+// context error if ctx ends first. Waiters that wake after a refill compete
+// for the new tokens again, so no more than maxTokens calls succeed per window.
 func (rl *RateLimiter) Wait(ctx context.Context) error {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	// Refill tokens if minute has passed
-	if time.Now().After(rl.refillAt) {
-		rl.tokens = rl.maxTokens
-		rl.refillAt = time.Now().Add(time.Minute)
-	}
+	for {
+		rl.refillLocked()
+		if rl.tokens > 0 {
+			rl.tokens--
+			return nil
+		}
 
-	// Wait if no tokens available
-	if rl.tokens <= 0 {
 		waitTime := time.Until(rl.refillAt)
-		if waitTime > 0 {
-			logger := utils.GetLogger()
-			logger.Warn("Rate limit reached, waiting", map[string]interface{}{
-				"wait_time": waitTime.String(),
-			})
+		logger := utils.GetLogger()
+		logger.Warn("Rate limit reached, waiting", map[string]interface{}{
+			"wait_time": waitTime.String(),
+		})
 
-			// Release lock while waiting to avoid blocking other operations
-			rl.mu.Unlock()
-			timer := time.NewTimer(waitTime)
-
-			select {
-			case <-timer.C:
-				// Reacquire lock and refill
-				rl.mu.Lock()
-				// Recheck state as it may have changed
-				if time.Now().After(rl.refillAt) {
-					rl.tokens = rl.maxTokens
-					rl.refillAt = time.Now().Add(time.Minute)
-				}
-				// Don't defer unlock here as we already have deferred unlock at function level
-				return nil
-			case <-ctx.Done():
-				timer.Stop()
-				// Need to reacquire lock to satisfy defer unlock
-				rl.mu.Lock()
-				return ctx.Err()
-			}
+		// Release lock while waiting to avoid blocking other operations
+		rl.mu.Unlock()
+		timer := time.NewTimer(waitTime)
+		select {
+		case <-timer.C:
+			rl.mu.Lock()
+			// Loop: recheck state, since other waiters may have taken the refill.
+		case <-ctx.Done():
+			timer.Stop()
+			// Reacquire lock to satisfy the deferred unlock
+			rl.mu.Lock()
+			return ctx.Err()
 		}
 	}
-
-	rl.tokens--
-	return nil
 }
 
 // Available returns the number of tokens currently available
@@ -78,12 +84,7 @@ func (rl *RateLimiter) Available() int {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	// Refill if needed
-	if time.Now().After(rl.refillAt) {
-		rl.tokens = rl.maxTokens
-		rl.refillAt = time.Now().Add(time.Minute)
-	}
-
+	rl.refillLocked()
 	return rl.tokens
 }
 

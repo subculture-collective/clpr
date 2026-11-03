@@ -45,10 +45,14 @@ func (r *CommentRepository) ListByClipID(ctx context.Context, clipID uuid.UUID, 
 	case "old":
 		orderClause = "created_at ASC"
 	case "controversial":
-		// Controversial: high vote count but score near zero
+		// Controversial: many votes on both sides. The smaller side of the
+		// up/down split measures how contested a comment is, so one-sided
+		// comments (LEAST = 0) rank below evenly split ones.
 		orderClause = `
-			(ABS(vote_score) / NULLIF(GREATEST(ABS(vote_score), 1), 0)) DESC,
-			ABS(vote_score) DESC
+			LEAST(upvotes, downvotes) DESC,
+			total_votes DESC,
+			created_at DESC,
+			id DESC
 		`
 	case "best":
 		fallthrough
@@ -60,11 +64,12 @@ func (r *CommentRepository) ListByClipID(ctx context.Context, clipID uuid.UUID, 
 				WHEN total_votes = 0 THEN 0
 				ELSE (
 					((upvotes + 1.9208) / total_votes -
-					1.96 * SQRT((upvotes * downvotes) / total_votes + 0.9604) / total_votes)
+					1.96 * SQRT((upvotes::float8 * downvotes) / total_votes + 0.9604) / total_votes)
 				) / (1 + 3.8416 / total_votes)
 			END DESC,
 			vote_score DESC,
-			created_at DESC
+			created_at DESC,
+			id DESC
 		`
 	}
 

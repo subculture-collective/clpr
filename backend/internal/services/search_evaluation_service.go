@@ -126,10 +126,15 @@ func (s *SearchEvaluationService) GetDataset() *EvaluationDataset {
 }
 
 // CalculateNDCG calculates Normalized Discounted Cumulative Gain at k
-// DCG = sum(relevance_i / log2(i + 1)) for i in 1..k
-// IDCG = DCG for ideal ranking (sorted by relevance descending)
+// DCG = sum((2^relevance_i - 1) / log2(i + 1)) for i in 1..k
+// IDCG = DCG of the ideal ranking of all judged documents
 // NDCG = DCG / IDCG
-func CalculateNDCG(relevances []int, k int) float64 {
+//
+// relevances are the graded relevances of the retrieved documents in rank
+// order. judgedRelevances are the relevances of every ground-truth judgment
+// for the query, in any order; the ideal ranking is built from them, so a
+// result list that misses the most relevant documents scores below 1.0.
+func CalculateNDCG(relevances []int, judgedRelevances []int, k int) float64 {
 	if len(relevances) == 0 || k <= 0 {
 		return 0.0
 	}
@@ -137,9 +142,9 @@ func CalculateNDCG(relevances []int, k int) float64 {
 	// Calculate DCG for actual ranking
 	dcg := calculateDCG(relevances, k)
 
-	// Calculate IDCG (ideal DCG) by sorting relevances descending
-	ideal := make([]int, len(relevances))
-	copy(ideal, relevances)
+	// Calculate IDCG (ideal DCG) by sorting the ground-truth relevances descending
+	ideal := make([]int, len(judgedRelevances))
+	copy(ideal, judgedRelevances)
 	sort.Sort(sort.Reverse(sort.IntSlice(ideal)))
 	idcg := calculateDCG(ideal, k)
 
@@ -246,6 +251,12 @@ func (s *SearchEvaluationService) EvaluateQuery(ctx context.Context, evalQuery E
 		}
 	}
 
+	// Ground-truth relevances (one per judged document) for the ideal ranking
+	judgedRelevances := make([]int, 0, len(relevanceMap))
+	for _, rel := range relevanceMap {
+		judgedRelevances = append(judgedRelevances, rel)
+	}
+
 	// Get relevances for retrieved documents
 	relevances := make([]int, len(retrievedIDs))
 	queryResults := make([]QueryResultItem, len(retrievedIDs))
@@ -271,8 +282,8 @@ func (s *SearchEvaluationService) EvaluateQuery(ctx context.Context, evalQuery E
 	result := EvaluationResult{
 		QueryID:          evalQuery.ID,
 		Query:            evalQuery.Query,
-		NDCG5:            CalculateNDCG(relevances, 5),
-		NDCG10:           CalculateNDCG(relevances, 10),
+		NDCG5:            CalculateNDCG(relevances, judgedRelevances, 5),
+		NDCG10:           CalculateNDCG(relevances, judgedRelevances, 10),
 		MRR:              CalculateRR(relevances, 2), // Threshold of 2 for "relevant"
 		Precision5:       CalculatePrecision(relevances, 5, 2),
 		Precision10:      CalculatePrecision(relevances, 10, 2),

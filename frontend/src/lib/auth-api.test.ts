@@ -41,11 +41,22 @@ describe('authentication boundary', () => {
     });
 
     it('exchanges only matching state and consumes its verifier after success', async () => {
-        await expect(handleOAuthCallback('code', 'expected-state')).resolves.toEqual({ success: true });
+        await expect(handleOAuthCallback('code', 'expected-state')).resolves.toEqual({ success: true, mfaRequired: false });
         expect(mocks.post).toHaveBeenCalledWith('/auth/twitch/callback', {
             code: 'code', state: 'expected-state', code_verifier: 'secret-verifier',
         });
         expect(mocks.removeSecureItem.mock.calls).toEqual([['oauth_state'], ['oauth_code_verifier']]);
+    });
+
+    it('reports when the sign-in continues with an MFA code', async () => {
+        mocks.post.mockResolvedValue({ data: { message: 'MFA verification required', mfa_required: true } });
+        await expect(handleOAuthCallback('code', 'expected-state')).resolves.toEqual({ success: true, mfaRequired: true });
+        expect(mocks.removeSecureItem.mock.calls).toEqual([['oauth_state'], ['oauth_code_verifier']]);
+    });
+
+    it('rejects test logins that stop for MFA instead of returning no user', async () => {
+        mocks.post.mockResolvedValue({ data: { mfa_required: true } });
+        await expect(testLogin({ username: 'mfa-fixture' })).rejects.toThrow('MFA verification required');
     });
 
     it.each([new Error('Rejected'), 'Rejected'])('cleans up credentials after exchange failure', async error => {

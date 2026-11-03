@@ -13,6 +13,7 @@ func TestCalculateNDCG(t *testing.T) {
 	tests := []struct {
 		name       string
 		relevances []int
+		judged     []int
 		k          int
 		expected   float64
 		tolerance  float64
@@ -80,11 +81,47 @@ func TestCalculateNDCG(t *testing.T) {
 			expected:   0.885, // Calculated: DCG / IDCG for binary
 			tolerance:  0.01,
 		},
+		{
+			// Retrieved docs are in perfect order among themselves, but the
+			// two best judged docs (4, 3) were never retrieved.
+			// DCG = 3/1 + 1/log2(3) = 3.631; IDCG = 15 + 7/log2(3) + 3/2 + 1/log2(5) = 21.347
+			name:       "missing best judged documents",
+			relevances: []int{2, 1},
+			judged:     []int{4, 3, 2, 1},
+			k:          5,
+			expected:   0.170,
+			tolerance:  0.001,
+		},
+		{
+			// Unjudged retrieved docs count as relevance 0; the ideal ranking
+			// still comes from all four judgments.
+			// DCG = 15/log2(3) = 9.464; IDCG = 15 + 15/log2(3) + 7/2 + 7/log2(5) = 30.979
+			name:       "best documents ranked below an unjudged one",
+			relevances: []int{0, 4},
+			judged:     []int{4, 4, 3, 3},
+			k:          5,
+			expected:   0.305,
+			tolerance:  0.001,
+		},
+		{
+			name:       "nothing judged relevant",
+			relevances: []int{0, 0},
+			judged:     []int{},
+			k:          5,
+			expected:   0.0,
+			tolerance:  0.001,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CalculateNDCG(tt.relevances, tt.k)
+			// Unless a case sets judged, the ground truth is exactly the
+			// retrieved set, so the ideal ranking is those relevances sorted.
+			judged := tt.judged
+			if judged == nil {
+				judged = tt.relevances
+			}
+			result := CalculateNDCG(tt.relevances, judged, tt.k)
 			assert.InDelta(t, tt.expected, result, tt.tolerance,
 				"NDCG should be approximately %v, got %v", tt.expected, result)
 		})

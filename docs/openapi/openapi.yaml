@@ -380,7 +380,13 @@ paths:
     get:
       tags: [Authentication]
       summary: Twitch OAuth callback
-      description: Handles OAuth callback from Twitch (rate limited - 50/minute)
+      description: >-
+        Handles OAuth callback from Twitch (rate limited - 50/minute). PKCE
+        sign-ins are redirected to the frontend to finish the exchange. Other
+        sign-ins redirect to `/auth/success?success=true`, or to
+        `/auth/success?mfa_required=true` with an HttpOnly `mfa_challenge`
+        cookie when the user has MFA enabled on an untrusted device; the
+        session is then issued by `POST /api/v1/auth/mfa/verify-login`.
       operationId: handleTwitchCallback
       security: []
       parameters:
@@ -408,7 +414,12 @@ paths:
     post:
       tags: [Authentication]
       summary: PKCE OAuth callback
-      description: Handles PKCE OAuth callback (rate limited - 50/minute)
+      description: >-
+        Handles PKCE OAuth callback (rate limited - 50/minute). When the user
+        has MFA enabled on an untrusted device, no session cookies are set:
+        the response has `mfa_required: true` and an HttpOnly `mfa_challenge`
+        cookie, and the session is issued by
+        `POST /api/v1/auth/mfa/verify-login`.
       operationId: handlePKCECallback
       security: []
       requestBody:
@@ -417,19 +428,29 @@ paths:
           application/json:
             schema:
               type: object
-              required: [code, code_verifier]
+              required: [code, state, code_verifier]
               properties:
                 code:
+                  type: string
+                state:
                   type: string
                 code_verifier:
                   type: string
       responses:
         '200':
-          description: Authentication successful
+          description: >-
+            Sign-in step completed. `mfa_required` is true when an MFA code
+            must still be submitted to `/api/v1/auth/mfa/verify-login`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required: [message, mfa_required]
+                properties:
+                  message:
+                    type: string
+                  mfa_required:
+                    type: boolean
         '400':
           $ref: '#/components/responses/BadRequest'
         '429':
@@ -439,7 +460,10 @@ paths:
     post:
       tags: [Authentication]
       summary: Test login (development only)
-      description: Creates test user session for development (rate limited - 30/minute)
+      description: >-
+        Creates test user session for development (rate limited - 30/minute).
+        Users with MFA enabled get `{"mfa_required": true}` and an
+        `mfa_challenge` cookie instead of a session, as with Twitch sign-in.
       operationId: testLogin
       security: []
       requestBody:
@@ -737,7 +761,12 @@ paths:
     post:
       tags: [MFA]
       summary: Verify MFA login
-      description: Verifies MFA code during login (rate limited - 10/minute)
+      description: >-
+        Completes a sign-in that stopped for an MFA code (rate limited -
+        10/minute). The pending sign-in is identified by the HttpOnly
+        `mfa_challenge` cookie set by the OAuth callback; it expires after
+        5 minutes and allows 5 wrong codes. On success the challenge is
+        consumed and the access and refresh token cookies are set.
       operationId: verifyMFALogin
       security: []
       requestBody:
@@ -746,28 +775,49 @@ paths:
           application/json:
             schema:
               type: object
-              required: [session_id, code]
+              required: [code]
               properties:
-                session_id:
-                  type: string
                 code:
                   type: string
-                  description: 6-digit TOTP code or backup code
+                  description: 6-digit TOTP code or 8-character backup code
                 trust_device:
                   type: boolean
+                  description: Skip MFA on this browser for 30 days
       responses:
         '200':
-          description: MFA verification successful
+          description: MFA verification successful; session cookies are set
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required: [message, user]
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid request body or incorrect code (`MFA_CODE_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: >-
+            No pending sign-in (`MFA_CHALLENGE_MISSING`) or it expired
+            (`MFA_CHALLENGE_EXPIRED`); sign in again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '429':
-          $ref: '#/components/responses/TooManyRequests'
+          description: >-
+            Too many wrong codes for this sign-in (`MFA_CHALLENGE_EXHAUSTED`)
+            or for the account (`MFA_LOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ========================================
   # Clips

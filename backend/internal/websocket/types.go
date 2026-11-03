@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,6 +42,39 @@ type ChatClient struct {
 	Send      chan []byte
 	RateLimit *rate.Limiter
 	ReadOnly  bool
+
+	// sendMu guards sendClosed so that writers (hub broadcasts, history
+	// goroutines, error replies) never send on a channel that the hub has
+	// already closed during unregister or shutdown.
+	sendMu     sync.Mutex
+	sendClosed bool
+}
+
+// trySend queues data for the client without blocking. It returns false when
+// the client's send channel is closed or its buffer is full.
+func (c *ChatClient) trySend(data []byte) bool {
+	c.sendMu.Lock()
+	defer c.sendMu.Unlock()
+	if c.sendClosed {
+		return false
+	}
+	select {
+	case c.Send <- data:
+		return true
+	default:
+		return false
+	}
+}
+
+// closeSend closes the client's send channel exactly once. It is safe to call
+// concurrently with trySend.
+func (c *ChatClient) closeSend() {
+	c.sendMu.Lock()
+	defer c.sendMu.Unlock()
+	if !c.sendClosed {
+		c.sendClosed = true
+		close(c.Send)
+	}
 }
 
 // MessageType constants

@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
 // SimpleRateLimiter provides a simple in-memory rate limiter
@@ -83,13 +83,74 @@ type WatchPartyHub struct {
 
 // WatchPartyClient represents a connected client
 type WatchPartyClient struct {
-	Hub       *WatchPartyHub
-	Conn      *websocket.Conn
-	UserID    uuid.UUID
-	Role      string
-	Send      chan []byte
-	User      *models.User
-	closeOnce sync.Once
+	Hub    *WatchPartyHub
+	Conn   *websocket.Conn
+	UserID uuid.UUID
+	Role   string
+	Send   chan []byte
+	User   *models.User
+
+	// sendMu guards sendClosed so no goroutine sends on a closed Send channel.
+	sendMu     sync.Mutex
+	sendClosed bool
+	// connCloseOnce is separate from the Send lifecycle: closing Send must not
+	// prevent the connection from being closed, and vice versa.
+	connCloseOnce sync.Once
+}
+
+// trySend queues data without blocking. It returns false if the client's send
+// channel is closed or full.
+func (c *WatchPartyClient) trySend(data []byte) bool {
+	c.sendMu.Lock()
+	defer c.sendMu.Unlock()
+	if c.sendClosed {
+		return false
+	}
+	select {
+	case c.Send <- data:
+		return true
+	default:
+		return false
+	}
+}
+
+// closeSend closes the Send channel exactly once.
+func (c *WatchPartyClient) closeSend() {
+	c.sendMu.Lock()
+	defer c.sendMu.Unlock()
+	if !c.sendClosed {
+		c.sendClosed = true
+		close(c.Send)
+	}
+}
+
+// closeConn closes the WebSocket connection exactly once.
+func (c *WatchPartyClient) closeConn() {
+	c.connCloseOnce.Do(func() {
+		if c.Conn != nil {
+			c.Conn.Close()
+		}
+	})
+}
+
+// RegisterClient hands the client to the hub. It returns false if the hub has
+// stopped, in which case the caller must close the connection itself.
+func (h *WatchPartyHub) RegisterClient(client *WatchPartyClient) bool {
+	select {
+	case h.Register <- client:
+		return true
+	case <-h.stopChan:
+		return false
+	}
+}
+
+// leaveHub asks the hub to unregister the client without blocking forever if
+// the hub has stopped (its shutdown already closed every client).
+func (c *WatchPartyClient) leaveHub() {
+	select {
+	case c.Hub.Unregister <- c:
+	case <-c.Hub.stopChan:
+	}
 }
 
 // WatchPartyHubManager manages multiple watch party hubs
@@ -162,9 +223,7 @@ func (h *WatchPartyHub) Run() {
 		// Clean up all clients when hub stops
 		h.mutex.Lock()
 		for _, client := range h.Clients {
-			client.closeOnce.Do(func() {
-				close(client.Send)
-			})
+			client.closeSend()
 		}
 		h.mutex.Unlock()
 	}()
@@ -172,40 +231,63 @@ func (h *WatchPartyHub) Run() {
 	for {
 		select {
 		case client := <-h.Register:
-			h.mutex.Lock()
-			h.Clients[client.UserID] = client
-			h.mutex.Unlock()
-
-			// Send participant-joined event to all other clients
-			h.broadcastParticipantEvent("participant-joined", client.UserID, client.User, client.Role)
+			h.handleRegister(client)
 
 		case client := <-h.Unregister:
-			h.mutex.Lock()
-			if _, ok := h.Clients[client.UserID]; ok {
-				delete(h.Clients, client.UserID)
-				client.closeOnce.Do(func() {
-					close(client.Send)
-				})
-			}
-			h.mutex.Unlock()
-
-			// Send participant-left event to remaining clients
-			h.broadcastParticipantEvent("participant-left", client.UserID, client.User, client.Role)
+			h.handleUnregister(client)
 
 		case event := <-h.Broadcast:
-			h.mutex.RLock()
-			for _, client := range h.Clients {
-				select {
-				case client.Send <- mustMarshalJSON(event):
-				default:
-					// Client's send channel is full, skip this message
-					log.Printf("Failed to send to client %s, channel full", client.UserID)
-				}
-			}
-			h.mutex.RUnlock()
+			h.fanOut(event)
 
 		case <-h.stopChan:
 			return
+		}
+	}
+}
+
+// handleRegister stores the client. Clients are keyed by user, so a second
+// connection from the same user (e.g. a new tab) displaces the earlier one,
+// whose Send channel is closed so its pumps shut down.
+func (h *WatchPartyHub) handleRegister(client *WatchPartyClient) {
+	h.mutex.Lock()
+	if previous, ok := h.Clients[client.UserID]; ok && previous != client {
+		previous.closeSend()
+	}
+	h.Clients[client.UserID] = client
+	h.mutex.Unlock()
+
+	// Send participant-joined event to all other clients
+	h.broadcastParticipantEvent("participant-joined", client.UserID, client.User, client.Role)
+}
+
+// handleUnregister removes the client only if it is still the registered
+// connection for its user; a displaced connection must not remove its
+// replacement.
+func (h *WatchPartyHub) handleUnregister(client *WatchPartyClient) {
+	h.mutex.Lock()
+	current, ok := h.Clients[client.UserID]
+	isCurrent := ok && current == client
+	if isCurrent {
+		delete(h.Clients, client.UserID)
+	}
+	h.mutex.Unlock()
+	client.closeSend()
+
+	if isCurrent {
+		// Send participant-left event to remaining clients
+		h.broadcastParticipantEvent("participant-left", client.UserID, client.User, client.Role)
+	}
+}
+
+// fanOut delivers an event to every connected client without blocking.
+func (h *WatchPartyHub) fanOut(event *models.WatchPartySyncEvent) {
+	data := mustMarshalJSON(event)
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	for _, client := range h.Clients {
+		if !client.trySend(data) {
+			// Client's send channel is full or closed, skip this message
+			log.Printf("Failed to send to client %s, channel full", client.UserID)
 		}
 	}
 }
@@ -228,16 +310,16 @@ func (h *WatchPartyHub) broadcastParticipantEvent(eventType string, userID uuid.
 		},
 	}
 
-	h.Broadcast <- event
+	// Called from the Run goroutine, which is the only reader of h.Broadcast;
+	// fan out inline to avoid deadlocking on a full buffer.
+	h.fanOut(event)
 }
 
 // ReadPump reads messages from the WebSocket connection
 func (c *WatchPartyClient) ReadPump(ctx context.Context) {
 	defer func() {
-		c.Hub.Unregister <- c
-		c.closeOnce.Do(func() {
-			c.Conn.Close()
-		})
+		c.leaveHub()
+		c.closeConn()
 	}()
 
 	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -276,11 +358,17 @@ func (c *WatchPartyClient) ReadPump(ctx context.Context) {
 
 // handleCommand processes a command from a client
 func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchPartyCommand) {
-	partyID, err := uuid.Parse(cmd.PartyID)
-	if err != nil {
-		log.Printf("Invalid party ID: %v", err)
-		return
+	// The connection was authorized for this hub's party only. Never act on a
+	// client-supplied party ID that differs from it.
+	partyID := c.Hub.PartyID
+	if cmd.PartyID != "" {
+		requested, err := uuid.Parse(cmd.PartyID)
+		if err != nil || requested != partyID {
+			log.Printf("Rejected command for party %q on connection for party %s", cmd.PartyID, partyID)
+			return
+		}
 	}
+	partyIDStr := partyID.String()
 
 	var event *models.WatchPartySyncEvent
 
@@ -302,7 +390,7 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "play",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			Position:        party.CurrentPositionSeconds,
 			IsPlaying:       true,
 			ServerTimestamp: time.Now().Unix(),
@@ -323,7 +411,7 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "pause",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			Position:        party.CurrentPositionSeconds,
 			IsPlaying:       false,
 			ServerTimestamp: time.Now().Unix(),
@@ -348,7 +436,7 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "seek",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			Position:        *cmd.Position,
 			IsPlaying:       false,
 			ServerTimestamp: time.Now().Unix(),
@@ -367,7 +455,7 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "skip",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			ClipID:          cmd.ClipID,
 			Position:        0,
 			IsPlaying:       true,
@@ -384,15 +472,15 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "sync",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			ClipID:          party.CurrentClipID,
 			Position:        party.CurrentPositionSeconds,
 			IsPlaying:       party.IsPlaying,
 			ServerTimestamp: time.Now().Unix(),
 		}
 
-		// Send only to requesting client
-		c.Send <- mustMarshalJSON(event)
+		// Send only to requesting client; never block the read loop.
+		c.trySend(mustMarshalJSON(event))
 		return
 
 	case "chat":
@@ -430,14 +518,17 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 			return
 		}
 
-		// Add user info for broadcast
-		msg.Username = c.User.Username
-		msg.DisplayName = c.User.DisplayName
-		msg.AvatarURL = c.User.AvatarURL
+		// Add user info for broadcast (User may be nil: the participant
+		// lookup used for the connection does not load the user record).
+		if c.User != nil {
+			msg.Username = c.User.Username
+			msg.DisplayName = c.User.DisplayName
+			msg.AvatarURL = c.User.AvatarURL
+		}
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "chat_message",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			ServerTimestamp: time.Now().Unix(),
 			ChatMessage:     msg,
 		}
@@ -478,12 +569,14 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 			return
 		}
 
-		// Add username for broadcast
-		reaction.Username = c.User.Username
+		// Add username for broadcast (User may be nil, see chat above)
+		if c.User != nil {
+			reaction.Username = c.User.Username
+		}
 
 		event = &models.WatchPartySyncEvent{
 			Type:            "reaction",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			ServerTimestamp: time.Now().Unix(),
 			Reaction:        reaction,
 		}
@@ -492,7 +585,7 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 		// Broadcast typing indicator (no rate limit, no persistence)
 		event = &models.WatchPartySyncEvent{
 			Type:            "typing",
-			PartyID:         cmd.PartyID,
+			PartyID:         partyIDStr,
 			UserID:          &c.UserID,
 			IsTyping:        cmd.IsTyping,
 			ServerTimestamp: time.Now().Unix(),
@@ -500,7 +593,10 @@ func (c *WatchPartyClient) handleCommand(ctx context.Context, cmd *models.WatchP
 	}
 
 	if event != nil {
-		c.Hub.Broadcast <- event
+		select {
+		case c.Hub.Broadcast <- event:
+		case <-c.Hub.stopChan:
+		}
 	}
 }
 
@@ -509,9 +605,7 @@ func (c *WatchPartyClient) WritePump() {
 	ticker := time.NewTicker(54 * time.Second)
 	defer func() {
 		ticker.Stop()
-		c.closeOnce.Do(func() {
-			c.Conn.Close()
-		})
+		c.closeConn()
 	}()
 
 	for {

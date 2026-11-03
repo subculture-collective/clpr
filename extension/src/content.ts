@@ -21,11 +21,9 @@ function notifyBackground(): void {
 // Notify on initial load.
 notifyBackground();
 
-// Twitch is a SPA; watch for URL changes via History API patches.
-const _pushState = history.pushState.bind(history);
-history.pushState = function (...args) {
-  _pushState(...args);
-  notifyBackground();
-};
-
+// Twitch is a SPA. Patching history.pushState here would only affect this
+// isolated world, not the page's own calls, so pushState navigations are
+// tracked by the background via chrome.tabs.onUpdated (changeInfo.url).
+// popstate is dispatched to all worlds and still gives an immediate update
+// for back/forward navigation.
 window.addEventListener('popstate', notifyBackground);

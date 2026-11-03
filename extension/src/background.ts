@@ -7,13 +7,19 @@
  *  - Track the clip URL detected on the active tab so the popup can read it.
  */
 
-import { isTwitchClipUrl, extractTwitchClipInfo } from './lib/twitch';
+import { extractTwitchClipInfo } from './lib/twitch';
 import type { TwitchClipInfo } from './types';
 
 const MENU_ITEM_ID = 'share-to-clpr';
 
 /** Stores the most recently detected clip per tab. */
 const tabClips = new Map<number, TwitchClipInfo>();
+
+/**
+ * Clip chosen explicitly via the context menu (possibly a link to a different
+ * clip than the page). Consumed by the next GET_CURRENT_CLIP for that tab.
+ */
+const menuClips = new Map<number, TwitchClipInfo>();
 
 // ─── Context Menu ────────────────────────────────────────────────────────────
 
@@ -37,7 +43,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   const clipInfo = extractTwitchClipInfo(targetUrl);
 
   if (clipInfo && tab?.id != null) {
-    tabClips.set(tab.id, clipInfo);
+    menuClips.set(tab.id, clipInfo);
   }
 
   // Open the extension popup by focusing the browser action.
@@ -57,7 +63,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       });
     } else if (chrome.tabs && typeof chrome.tabs.create === 'function') {
       // Last-resort fallback: open the extension page in a new tab.
-      const url = chrome.runtime.getURL('popup.html');
+      const url = chrome.runtime.getURL('popup/popup.html');
       chrome.tabs.create({ url });
     }
   }
@@ -65,14 +71,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // ─── Tab Tracking ─────────────────────────────────────────────────────────────
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status !== 'complete' || !tab.url) return;
-
-  if (isTwitchClipUrl(tab.url)) {
-    const clipInfo = extractTwitchClipInfo(tab.url);
-    if (clipInfo) {
-      tabClips.set(tabId, clipInfo);
-    }
+function updateTabClip(tabId: number, url: string): void {
+  const clipInfo = extractTwitchClipInfo(url);
+  if (clipInfo) {
+    tabClips.set(tabId, clipInfo);
     // Enable the action badge to signal that a clip is available.
     chrome.action.setBadgeText({ text: '▶', tabId });
     chrome.action.setBadgeBackgroundColor({ color: '#9146FF', tabId });
@@ -80,10 +82,21 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     tabClips.delete(tabId);
     chrome.action.setBadgeText({ text: '', tabId });
   }
+}
+
+// `changeInfo.url` is also reported for same-document (History API)
+// navigations, which covers Twitch's SPA routing without page-world hooks.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  const url = changeInfo.url ?? (changeInfo.status === 'complete' ? tab.url : undefined);
+  if (!url) return;
+  // A pending context-menu choice belongs to the page it was made on.
+  if (changeInfo.url) menuClips.delete(tabId);
+  updateTabClip(tabId, url);
 });
 
 chrome.tabs.onRemoved.addListener(tabId => {
   tabClips.delete(tabId);
+  menuClips.delete(tabId);
 });
 
 // ─── Message Passing ──────────────────────────────────────────────────────────
@@ -112,15 +125,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ clipInfo: null });
         return;
       }
-      const clipInfo = tabClips.get(tab.id) ?? null;
-
-      // Also check the tab URL directly if not already cached.
-      if (!clipInfo && tab.url && isTwitchClipUrl(tab.url)) {
-        const fresh = extractTwitchClipInfo(tab.url);
-        if (fresh) tabClips.set(tab.id, fresh);
+      const chosen = menuClips.get(tab.id);
+      if (chosen) {
+        menuClips.delete(tab.id);
+        sendResponse({ clipInfo: chosen });
+        return;
+      }
+      // The live tab URL is authoritative; the cache can be stale after SPA
+      // navigation or lost when the service worker is suspended.
+      const fresh = tab.url ? extractTwitchClipInfo(tab.url) : null;
+      if (fresh) {
+        tabClips.set(tab.id, fresh);
         sendResponse({ clipInfo: fresh });
       } else {
-        sendResponse({ clipInfo });
+        sendResponse({ clipInfo: tabClips.get(tab.id) ?? null });
       }
     });
     return true; // keep message channel open for async response

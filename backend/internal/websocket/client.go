@@ -53,7 +53,7 @@ func NewChatClient(hub *ChannelHub, conn *websocket.Conn, userID uuid.UUID, user
 // ReadPump pumps messages from the WebSocket connection to the hub
 func (c *ChatClient) ReadPump() {
 	defer func() {
-		c.Hub.Unregister <- c
+		c.leaveHub()
 		c.Conn.Close()
 	}()
 
@@ -87,6 +87,15 @@ func (c *ChatClient) ReadPump() {
 		}
 
 		c.handleMessage(&msg)
+	}
+}
+
+// leaveHub asks the hub to unregister the client. If the hub has already
+// stopped, its shutdown has closed every client, so there is nothing to wait for.
+func (c *ChatClient) leaveHub() {
+	select {
+	case c.Hub.Unregister <- c:
+	case <-c.Hub.Stop:
 	}
 }
 
@@ -138,6 +147,23 @@ func (c *ChatClient) handleMessage(msg *ClientMessage) {
 func (c *ChatClient) handleChatMessage(msg *ClientMessage) {
 	start := time.Now()
 
+	// The connection was authorized (access and ban checks) for the hub's
+	// channel only, so never accept a client-supplied channel that differs.
+	channelUUID, err := uuid.Parse(c.Hub.ID)
+	if err != nil {
+		RecordError(c.Hub.ID, "invalid_channel_id")
+		c.sendError("Invalid channel ID")
+		return
+	}
+	if msg.ChannelID != "" {
+		requested, err := uuid.Parse(msg.ChannelID)
+		if err != nil || requested != channelUUID {
+			RecordError(c.Hub.ID, "channel_mismatch")
+			c.sendError("Channel ID does not match this connection")
+			return
+		}
+	}
+
 	// Check if DB is available (skip if in test mode)
 	if c.Hub.DB == nil {
 		c.sendError("Database not available")
@@ -172,13 +198,6 @@ func (c *ChatClient) handleChatMessage(msg *ClientMessage) {
 		if err == nil {
 			messageID = parsedID
 		}
-	}
-
-	channelUUID, err := uuid.Parse(msg.ChannelID)
-	if err != nil {
-		RecordError(c.Hub.ID, "invalid_channel_id")
-		c.sendError("Invalid channel ID")
-		return
 	}
 
 	// Save message to database
@@ -224,7 +243,7 @@ func (c *ChatClient) handleChatMessage(msg *ClientMessage) {
 
 	serverMsg := ServerMessage{
 		Type:        MessageTypeMessage,
-		ChannelID:   msg.ChannelID,
+		ChannelID:   c.Hub.ID,
 		UserID:      &userIDStr,
 		Username:    &c.Username,
 		DisplayName: &displayName,
@@ -241,7 +260,11 @@ func (c *ChatClient) handleChatMessage(msg *ClientMessage) {
 		return
 	}
 
-	c.Hub.Broadcast <- data
+	select {
+	case c.Hub.Broadcast <- data:
+	case <-c.Hub.Stop:
+		return
+	}
 
 	// Record metrics
 	RecordMessage(c.Hub.ID, MessageTypeMessage)
@@ -264,7 +287,7 @@ func (c *ChatClient) handleTypingIndicator(msg *ClientMessage) {
 	userIDStr := c.UserID.String()
 	serverMsg := ServerMessage{
 		Type:      MessageTypeTyping,
-		ChannelID: msg.ChannelID,
+		ChannelID: c.Hub.ID,
 		UserID:    &userIDStr,
 		Username:  &c.Username,
 		Timestamp: timePtr(time.Now()),
@@ -298,9 +321,6 @@ func (c *ChatClient) sendError(errorMsg string) {
 		return
 	}
 
-	select {
-	case c.Send <- data:
-	default:
-		// Send channel is full, client might be slow
-	}
+	// Drop the error if the send channel is full or already closed.
+	c.trySend(data)
 }

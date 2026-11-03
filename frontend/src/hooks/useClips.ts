@@ -178,46 +178,54 @@ export const useClipVote = () => {
     });
 };
 
+// Variables for useClipFavorite. `is_favorited` is the clip's state as shown
+// to the user when they clicked, which decides between add and remove. The
+// optimistic update below changes the cache before mutationFn runs, so the
+// cache cannot be used to make that decision.
+export type FavoriteToggleVariables = FavoritePayload & {
+    is_favorited: boolean;
+};
+
 // Hook for favoriting clips
 export const useClipFavorite = () => {
     const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: async (payload: FavoritePayload) => {
-            // Check cache to determine if we should add or remove
-            // First, try to get the single-clip cache entry
-            let isCurrentlyFavorited: boolean | undefined;
-            const singleClip = queryClient.getQueryData<Clip>([
-                'clip',
-                payload.clip_id,
-            ]);
-            if (singleClip) {
-                isCurrentlyFavorited = singleClip.is_favorited;
-            } else {
-                // Fallback: iterate cached clips in paginated queries
-                const cachedClip = queryClient
-                    .getQueriesData({ queryKey: ['clips'] })
-                    .flatMap(([, data]) => {
-                        const queryData = data as {
-                            pages?: ClipFeedResponse[];
-                        };
-                        return (
-                            queryData?.pages?.flatMap(page => page.clips) || []
-                        );
-                    })
-                    .find(clip => clip.id === payload.clip_id);
-                isCurrentlyFavorited = cachedClip?.is_favorited;
-            }
-            if (isCurrentlyFavorited) {
-                return await clipApi.removeFavorite(payload);
-            } else {
-                return await clipApi.addFavorite(payload);
-            }
+    type FavoriteContext = {
+        previousClipsData: ReturnType<typeof queryClient.getQueriesData>;
+        previousFavoritesData: ReturnType<typeof queryClient.getQueriesData>;
+        previousClip?: Clip;
+    };
+
+    const applyFavoriteState = (clip: Clip, isFavorited: boolean): Clip => {
+        if (Boolean(clip.is_favorited) === isFavorited) return clip;
+        return {
+            ...clip,
+            is_favorited: isFavorited,
+            favorite_count: Math.max(
+                0,
+                (clip.favorite_count ?? 0) + (isFavorited ? 1 : -1),
+            ),
+        };
+    };
+
+    return useMutation<
+        Awaited<ReturnType<typeof clipApi.addFavorite>>,
+        Error,
+        FavoriteToggleVariables,
+        FavoriteContext
+    >({
+        mutationFn: async ({ clip_id, is_favorited }) => {
+            const payload: FavoritePayload = { clip_id };
+            return is_favorited ?
+                    await clipApi.removeFavorite(payload)
+                :   await clipApi.addFavorite(payload);
         },
-        onMutate: async payload => {
-            // Optimistic update for clips queries
+        onMutate: async ({ clip_id, is_favorited }) => {
+            const nextFavorited = !is_favorited;
+
             await queryClient.cancelQueries({ queryKey: ['clips'] });
             await queryClient.cancelQueries({ queryKey: ['favorites'] });
+            await queryClient.cancelQueries({ queryKey: ['clip', clip_id] });
 
             const previousClipsData = queryClient.getQueriesData({
                 queryKey: ['clips'],
@@ -225,8 +233,12 @@ export const useClipFavorite = () => {
             const previousFavoritesData = queryClient.getQueriesData({
                 queryKey: ['favorites'],
             });
+            const previousClip = queryClient.getQueryData<Clip>([
+                'clip',
+                clip_id,
+            ]);
 
-            // Update clips feed
+            // Update clips feeds
             queryClient.setQueriesData(
                 { queryKey: ['clips'] },
                 (old: unknown) => {
@@ -237,61 +249,63 @@ export const useClipFavorite = () => {
                         ...oldData,
                         pages: oldData.pages.map(page => ({
                             ...page,
-                            clips: page.clips.map((clip: Clip) => {
-                                if (clip.id === payload.clip_id) {
-                                    const isFavorited = !clip.is_favorited;
-                                    return {
-                                        ...clip,
-                                        is_favorited: isFavorited,
-                                        favorite_count:
-                                            clip.favorite_count +
-                                            (isFavorited ? 1 : -1),
-                                    };
-                                }
-                                return clip;
-                            }),
-                        })),
-                    };
-                },
-            );
-
-            // Update favorites feed (remove unfavorited clips)
-            queryClient.setQueriesData(
-                { queryKey: ['favorites'] },
-                (old: unknown) => {
-                    const oldData = old as { pages?: { clips: Clip[] }[] } | null | undefined;
-                    if (!oldData?.pages) return oldData;
-
-                    return {
-                        ...oldData,
-                        pages: oldData.pages.map(page => ({
-                            ...page,
-                            clips: page.clips.filter(
-                                (clip: Clip) => clip.id !== payload.clip_id,
+                            clips: page.clips.map((clip: Clip) =>
+                                clip.id === clip_id ?
+                                    applyFavoriteState(clip, nextFavorited)
+                                :   clip,
                             ),
                         })),
                     };
                 },
             );
 
-            return { previousClipsData, previousFavoritesData };
+            // Update the clip detail cache
+            if (previousClip) {
+                queryClient.setQueryData<Clip>(
+                    ['clip', clip_id],
+                    applyFavoriteState(previousClip, nextFavorited),
+                );
+            }
+
+            // Remove unfavorited clips from the favorites feed
+            if (!nextFavorited) {
+                queryClient.setQueriesData(
+                    { queryKey: ['favorites'] },
+                    (old: unknown) => {
+                        const oldData = old as { pages?: { clips: Clip[] }[] } | null | undefined;
+                        if (!oldData?.pages) return oldData;
+
+                        return {
+                            ...oldData,
+                            pages: oldData.pages.map(page => ({
+                                ...page,
+                                clips: page.clips.filter(
+                                    (clip: Clip) => clip.id !== clip_id,
+                                ),
+                            })),
+                        };
+                    },
+                );
+            }
+
+            return { previousClipsData, previousFavoritesData, previousClip };
         },
-        onError: (_error, _payload, context) => {
+        onError: (_error, { clip_id }, context) => {
             // Rollback on error
-            if (context?.previousClipsData) {
-                context.previousClipsData.forEach(([queryKey, data]) => {
-                    queryClient.setQueryData(queryKey, data);
-                });
-            }
-            if (context?.previousFavoritesData) {
-                context.previousFavoritesData.forEach(([queryKey, data]) => {
-                    queryClient.setQueryData(queryKey, data);
-                });
+            context?.previousClipsData.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+            context?.previousFavoritesData.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+            if (context?.previousClip) {
+                queryClient.setQueryData(['clip', clip_id], context.previousClip);
             }
         },
-        onSettled: () => {
+        onSettled: (_data, _error, { clip_id }) => {
             // Refetch to ensure consistency
             queryClient.invalidateQueries({ queryKey: ['favorites'] });
+            queryClient.invalidateQueries({ queryKey: ['clip', clip_id] });
         },
     });
 };

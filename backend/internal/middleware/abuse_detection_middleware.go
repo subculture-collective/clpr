@@ -244,7 +244,7 @@ func EnhancedRateLimitMiddleware(redis *redispkg.Client, requests int, window ti
 
 		// Get current rate limit stats before applying limiter
 		ip := c.ClientIP()
-		endpoint := c.Request.URL.Path
+		endpoint := rateLimitEndpoint(c)
 		key := fmt.Sprintf("ratelimit:%s:%s", endpoint, ip)
 
 		ctx := c.Request.Context()

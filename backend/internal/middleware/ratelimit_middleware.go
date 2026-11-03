@@ -17,10 +17,6 @@ import (
 )
 
 var (
-	// Global fallback rate limiters (one per middleware instance)
-	ipFallbackLimiter   *InMemoryRateLimiter
-	userFallbackLimiter *InMemoryRateLimiter
-
 	// IP whitelist for rate limiting bypass (for testing/trusted IPs)
 	// Always includes localhost (127.0.0.1, ::1)
 	// Additional IPs can be configured via RATE_LIMIT_WHITELIST_IPS environment variable
@@ -68,12 +64,27 @@ func getUserRateLimitMultiplier(c *gin.Context) (float64, bool) {
 	return 1, false
 }
 
+// rateLimitEndpoint returns the route template (for example /clips/:id/vote)
+// so that limits apply per route rather than per resource. Requests that did
+// not match a registered route fall back to the raw path.
+func rateLimitEndpoint(c *gin.Context) string {
+	if fullPath := c.FullPath(); fullPath != "" {
+		return fullPath
+	}
+	return c.Request.URL.Path
+}
+
 // RateLimitMiddleware creates rate limiting middleware using sliding window algorithm
 func RateLimitMiddleware(redis *redispkg.Client, requests int, window time.Duration) gin.HandlerFunc {
-	// Initialize fallback limiter on first call
-	if ipFallbackLimiter == nil {
-		ipFallbackLimiter = NewInMemoryRateLimiter(requests, window)
-	}
+	handler, _ := newRateLimitMiddleware(redis, requests, window)
+	return handler
+}
+
+// newRateLimitMiddleware builds the IP rate limiter together with its own
+// in-memory fallback, sized to this route's requests/window, which is used
+// while Redis is unavailable.
+func newRateLimitMiddleware(redis *redispkg.Client, requests int, window time.Duration) (gin.HandlerFunc, *InMemoryRateLimiter) {
+	ipFallbackLimiter := NewInMemoryRateLimiter(requests, window)
 	return func(c *gin.Context) {
 		// Get client IP and endpoint for granular rate limiting
 		ip := c.ClientIP()
@@ -99,7 +110,7 @@ func RateLimitMiddleware(redis *redispkg.Client, requests int, window time.Durat
 			adjustedLimit = requests
 		}
 
-		endpoint := c.Request.URL.Path
+		endpoint := rateLimitEndpoint(c)
 		key := fmt.Sprintf("ratelimit:%s:%s", endpoint, ip)
 
 		ctx := c.Request.Context()
@@ -225,21 +236,27 @@ func RateLimitMiddleware(redis *redispkg.Client, requests int, window time.Durat
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", (currentWindow+1)*int64(window.Seconds())))
 
 		c.Next()
-	}
+	}, ipFallbackLimiter
 }
 
 // RateLimitByUserMiddleware creates rate limiting middleware based on authenticated user
 func RateLimitByUserMiddleware(redis *redispkg.Client, requests int, window time.Duration) gin.HandlerFunc {
-	// Initialize fallback limiter on first call
-	if userFallbackLimiter == nil {
-		userFallbackLimiter = NewInMemoryRateLimiter(requests, window)
-	}
+	handler, _ := newRateLimitByUserMiddleware(redis, requests, window)
+	return handler
+}
+
+// newRateLimitByUserMiddleware builds the per-user limiter with its own
+// in-memory fallback. Anonymous requests use an IP limiter created once here,
+// so its fallback state persists across requests.
+func newRateLimitByUserMiddleware(redis *redispkg.Client, requests int, window time.Duration) (gin.HandlerFunc, *InMemoryRateLimiter) {
+	userFallbackLimiter := NewInMemoryRateLimiter(requests, window)
+	ipLimiter := RateLimitMiddleware(redis, requests, window)
 	return func(c *gin.Context) {
 		// Get user ID from context (set by auth middleware)
 		userID, exists := c.Get("user_id")
 		if !exists {
 			// Fall back to IP-based rate limiting
-			RateLimitMiddleware(redis, requests, window)(c)
+			ipLimiter(c)
 			return
 		}
 
@@ -257,7 +274,7 @@ func RateLimitByUserMiddleware(redis *redispkg.Client, requests int, window time
 			adjustedLimit = requests
 		}
 
-		endpoint := c.Request.URL.Path
+		endpoint := rateLimitEndpoint(c)
 		key := fmt.Sprintf("ratelimit:%s:user:%v", endpoint, userID)
 
 		ctx := c.Request.Context()
@@ -323,5 +340,5 @@ func RateLimitByUserMiddleware(redis *redispkg.Client, requests int, window time
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", resetTime))
 
 		c.Next()
-	}
+	}, userFallbackLimiter
 }

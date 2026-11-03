@@ -244,6 +244,7 @@ func executeRebuild(ctx context.Context, rebuildService *services.IndexRebuildSe
 	}
 
 	var results interface{}
+	succeeded := true
 
 	if indexName == "" || indexName == "all" {
 		result, err := rebuildService.RebuildAllIndices(ctx, config)
@@ -251,6 +252,7 @@ func executeRebuild(ctx context.Context, rebuildService *services.IndexRebuildSe
 			log.Fatalf("Rebuild failed: %v", err)
 		}
 		results = result
+		succeeded = rebuildAllSucceeded(result)
 	} else {
 		var result *services.RebuildResult
 		var err error
@@ -280,9 +282,24 @@ func executeRebuild(ctx context.Context, rebuildService *services.IndexRebuildSe
 			log.Fatalf("Failed to marshal results to JSON: %v", err)
 		}
 		fmt.Println(string(output))
-	} else {
+	} else if succeeded {
 		fmt.Println("Rebuild completed successfully!")
 	}
+
+	if !succeeded {
+		if all, ok := results.(*services.RebuildAllResult); ok {
+			for _, e := range all.Errors {
+				log.Printf("Rebuild error: %s", e)
+			}
+		}
+		log.Println("Rebuild failed for one or more indices")
+		os.Exit(1)
+	}
+}
+
+// rebuildAllSucceeded reports whether every index in a rebuild-all run succeeded.
+func rebuildAllSucceeded(result *services.RebuildAllResult) bool {
+	return result != nil && result.Success
 }
 
 func executeSwap(ctx context.Context, versionService *services.IndexVersionService, indexName string, version int, dryRun, jsonOutput bool) {
@@ -345,15 +362,12 @@ func executeRollback(ctx context.Context, versionService *services.IndexVersionS
 		log.Fatalf("Failed to get index info: %v", err)
 	}
 
-	// If version is 0, rollback to previous version
+	// If version is 0, rollback to the version preceding the active one
 	if version == 0 {
-		// Find the second highest version (previous)
-		if len(info.AllVersions) < 2 {
-			log.Fatal("No previous version available for rollback")
+		version, err = previousVersion(info)
+		if err != nil {
+			log.Fatalf("Rollback failed: %v", err)
 		}
-
-		// AllVersions is sorted descending, so [1] is the previous version
-		version = info.AllVersions[1].Version
 	}
 
 	// Validate target version exists
@@ -452,4 +466,24 @@ func executeCleanup(ctx context.Context, versionService *services.IndexVersionSe
 			fmt.Printf("  %s: deleted %d versions: %s\n", idx, len(deleted), strings.Join(deleted, ", "))
 		}
 	}
+}
+
+// previousVersion returns the highest version lower than the active version.
+// The active alias is not necessarily on the newest version (for example after
+// a rebuild without swap), so the second-newest version is not a safe default.
+func previousVersion(info *services.IndexVersionInfo) (int, error) {
+	if info == nil || info.ActiveVersion == nil {
+		return 0, fmt.Errorf("no active version; specify -version explicitly")
+	}
+	active := info.ActiveVersion.Version
+	best, found := 0, false
+	for _, v := range info.AllVersions {
+		if v.Version < active && (!found || v.Version > best) {
+			best, found = v.Version, true
+		}
+	}
+	if !found {
+		return 0, fmt.Errorf("no version older than active v%d is available for rollback", active)
+	}
+	return best, nil
 }

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
@@ -55,34 +56,62 @@ func main() {
 	}
 	log.Println("Indices initialized successfully")
 
-	log.Println("Backfilling clips...")
-	if err := backfillClips(ctx, db, indexer, *batchSize); err != nil {
-		log.Fatalf("Failed to backfill clips: %v", err)
+	totalFailed := 0
+	steps := []struct {
+		name string
+		run  func(context.Context, *database.DB, *services.SearchIndexerService, int) (int, error)
+	}{
+		{"clips", backfillClips},
+		{"users", backfillUsers},
+		{"tags", backfillTags},
+		{"games", backfillGames},
+	}
+	for _, step := range steps {
+		log.Printf("Backfilling %s...", step.name)
+		failed, err := step.run(ctx, db, indexer, *batchSize)
+		if err != nil {
+			log.Fatalf("Failed to backfill %s: %v", step.name, err)
+		}
+		totalFailed += failed
 	}
 
-	log.Println("Backfilling users...")
-	if err := backfillUsers(ctx, db, indexer, *batchSize); err != nil {
-		log.Fatalf("Failed to backfill users: %v", err)
-	}
-
-	log.Println("Backfilling tags...")
-	if err := backfillTags(ctx, db, indexer, *batchSize); err != nil {
-		log.Fatalf("Failed to backfill tags: %v", err)
-	}
-
-	log.Println("Backfilling games...")
-	if err := backfillGames(ctx, db, indexer, *batchSize); err != nil {
-		log.Fatalf("Failed to backfill games: %v", err)
+	if totalFailed > 0 {
+		log.Printf("Backfill finished with %d record(s) that failed to index", totalFailed)
+		os.Exit(1)
 	}
 
 	log.Println("Backfill completed successfully!")
 }
 
-func backfillClips(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) error {
-	offset := 0
-	totalIndexed := 0
+// pageDelay is the pause between batches; tests set it to zero.
+var pageDelay = 100 * time.Millisecond
 
+// runPaged calls page with increasing offsets until a page returns no rows.
+// Paging stops on rows fetched, not rows indexed, so a batch whose rows all
+// fail to index does not end the backfill early. It returns the number of rows
+// indexed and the number that failed to index.
+func runPaged(batchSize int, page func(offset int) (fetched, indexed int, err error)) (int, int, error) {
+	offset := 0
+	totalIndexed, totalFailed := 0, 0
 	for {
+		fetched, indexed, err := page(offset)
+		if err != nil {
+			return totalIndexed, totalFailed, err
+		}
+		if fetched == 0 {
+			return totalIndexed, totalFailed, nil
+		}
+		totalIndexed += indexed
+		totalFailed += fetched - indexed
+		offset += batchSize
+		if pageDelay > 0 {
+			time.Sleep(pageDelay)
+		}
+	}
+}
+
+func backfillClips(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) (int, error) {
+	totalIndexed, failed, err := runPaged(batchSize, func(offset int) (int, int, error) {
 		query := `
 			SELECT id, twitch_clip_id, twitch_clip_url, embed_url, title, 
 			       creator_name, creator_id, broadcaster_name, broadcaster_id,
@@ -98,7 +127,7 @@ func backfillClips(ctx context.Context, db *database.DB, indexer *services.Searc
 
 		rows, err := db.Pool.Query(ctx, query, batchSize, offset)
 		if err != nil {
-			return fmt.Errorf("failed to fetch clips: %w", err)
+			return 0, 0, fmt.Errorf("failed to fetch clips: %w", err)
 		}
 
 		var clips []models.Clip
@@ -115,36 +144,36 @@ func backfillClips(ctx context.Context, db *database.DB, indexer *services.Searc
 			)
 			if err != nil {
 				rows.Close()
-				return fmt.Errorf("failed to scan clip: %w", err)
+				return 0, 0, fmt.Errorf("failed to scan clip: %w", err)
 			}
 			clips = append(clips, clip)
 		}
 		rows.Close()
+		if err := rows.Err(); err != nil {
+			return 0, 0, fmt.Errorf("failed to iterate clips: %w", err)
+		}
 
 		if len(clips) == 0 {
-			break
+			return 0, 0, nil
 		}
 
 		if err := indexer.BulkIndexClips(ctx, clips); err != nil {
-			return fmt.Errorf("failed to index clips batch: %w", err)
+			return 0, 0, fmt.Errorf("failed to index clips batch: %w", err)
 		}
 
-		totalIndexed += len(clips)
-		log.Printf("Indexed %d clips (total: %d)", len(clips), totalIndexed)
-
-		offset += batchSize
-		time.Sleep(100 * time.Millisecond)
+		log.Printf("Indexed %d clips (offset: %d)", len(clips), offset)
+		return len(clips), len(clips), nil
+	})
+	if err != nil {
+		return failed, err
 	}
 
 	log.Printf("Completed indexing %d clips", totalIndexed)
-	return nil
+	return failed, nil
 }
 
-func backfillUsers(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) error {
-	offset := 0
-	totalIndexed := 0
-
-	for {
+func backfillUsers(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) (int, error) {
+	totalIndexed, failed, err := runPaged(batchSize, func(offset int) (int, int, error) {
 		query := `
 			SELECT id, twitch_id, username, COALESCE(display_name, username), email, avatar_url,
 			       bio, karma_points, role, is_banned, created_at, updated_at, last_login_at
@@ -156,11 +185,12 @@ func backfillUsers(ctx context.Context, db *database.DB, indexer *services.Searc
 
 		rows, err := db.Pool.Query(ctx, query, batchSize, offset)
 		if err != nil {
-			return fmt.Errorf("failed to fetch users: %w", err)
+			return 0, 0, fmt.Errorf("failed to fetch users: %w", err)
 		}
 
-		count := 0
+		fetched, count := 0, 0
 		for rows.Next() {
+			fetched++
 			var user models.User
 			err := rows.Scan(
 				&user.ID, &user.TwitchID, &user.Username, &user.DisplayName,
@@ -170,7 +200,7 @@ func backfillUsers(ctx context.Context, db *database.DB, indexer *services.Searc
 			)
 			if err != nil {
 				rows.Close()
-				return fmt.Errorf("failed to scan user: %w", err)
+				return 0, 0, fmt.Errorf("failed to scan user: %w", err)
 			}
 
 			if err := indexer.IndexUser(ctx, &user); err != nil {
@@ -180,27 +210,25 @@ func backfillUsers(ctx context.Context, db *database.DB, indexer *services.Searc
 			}
 		}
 		rows.Close()
-
-		if count == 0 {
-			break
+		if err := rows.Err(); err != nil {
+			return 0, 0, fmt.Errorf("failed to iterate users: %w", err)
 		}
 
-		totalIndexed += count
-		log.Printf("Indexed %d users (total: %d)", count, totalIndexed)
-
-		offset += batchSize
-		time.Sleep(100 * time.Millisecond)
+		if fetched > 0 {
+			log.Printf("Indexed %d of %d users (offset: %d)", count, fetched, offset)
+		}
+		return fetched, count, nil
+	})
+	if err != nil {
+		return failed, err
 	}
 
-	log.Printf("Completed indexing %d users", totalIndexed)
-	return nil
+	log.Printf("Completed indexing %d users, %d failed", totalIndexed, failed)
+	return failed, nil
 }
 
-func backfillTags(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) error {
-	offset := 0
-	totalIndexed := 0
-
-	for {
+func backfillTags(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) (int, error) {
+	totalIndexed, failed, err := runPaged(batchSize, func(offset int) (int, int, error) {
 		query := `
 			SELECT id, name, slug, description, color, usage_count, created_at
 			FROM tags
@@ -210,11 +238,12 @@ func backfillTags(ctx context.Context, db *database.DB, indexer *services.Search
 
 		rows, err := db.Pool.Query(ctx, query, batchSize, offset)
 		if err != nil {
-			return fmt.Errorf("failed to fetch tags: %w", err)
+			return 0, 0, fmt.Errorf("failed to fetch tags: %w", err)
 		}
 
-		count := 0
+		fetched, count := 0, 0
 		for rows.Next() {
+			fetched++
 			var tag models.Tag
 			err := rows.Scan(
 				&tag.ID, &tag.Name, &tag.Slug, &tag.Description,
@@ -222,7 +251,7 @@ func backfillTags(ctx context.Context, db *database.DB, indexer *services.Search
 			)
 			if err != nil {
 				rows.Close()
-				return fmt.Errorf("failed to scan tag: %w", err)
+				return 0, 0, fmt.Errorf("failed to scan tag: %w", err)
 			}
 
 			if err := indexer.IndexTag(ctx, &tag); err != nil {
@@ -232,27 +261,25 @@ func backfillTags(ctx context.Context, db *database.DB, indexer *services.Search
 			}
 		}
 		rows.Close()
-
-		if count == 0 {
-			break
+		if err := rows.Err(); err != nil {
+			return 0, 0, fmt.Errorf("failed to iterate tags: %w", err)
 		}
 
-		totalIndexed += count
-		log.Printf("Indexed %d tags (total: %d)", count, totalIndexed)
-
-		offset += batchSize
-		time.Sleep(100 * time.Millisecond)
+		if fetched > 0 {
+			log.Printf("Indexed %d of %d tags (offset: %d)", count, fetched, offset)
+		}
+		return fetched, count, nil
+	})
+	if err != nil {
+		return failed, err
 	}
 
-	log.Printf("Completed indexing %d tags", totalIndexed)
-	return nil
+	log.Printf("Completed indexing %d tags, %d failed", totalIndexed, failed)
+	return failed, nil
 }
 
-func backfillGames(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) error {
-	offset := 0
-	totalIndexed := 0
-
-	for {
+func backfillGames(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) (int, error) {
+	totalIndexed, failed, err := runPaged(batchSize, func(offset int) (int, int, error) {
 		query := `
 			SELECT c.game_id, COALESCE(c.game_name,g.name), COUNT(*) as clip_count
 			FROM clips c LEFT JOIN games g ON g.twitch_game_id=c.game_id
@@ -265,16 +292,17 @@ func backfillGames(ctx context.Context, db *database.DB, indexer *services.Searc
 
 		rows, err := db.Pool.Query(ctx, query, batchSize, offset)
 		if err != nil {
-			return fmt.Errorf("failed to fetch games: %w", err)
+			return 0, 0, fmt.Errorf("failed to fetch games: %w", err)
 		}
 
-		count := 0
+		fetched, count := 0, 0
 		for rows.Next() {
+			fetched++
 			var game models.GameSearchResult
 			err := rows.Scan(&game.ID, &game.Name, &game.ClipCount)
 			if err != nil {
 				rows.Close()
-				return fmt.Errorf("failed to scan game: %w", err)
+				return 0, 0, fmt.Errorf("failed to scan game: %w", err)
 			}
 
 			if err := indexer.IndexGameSearchResult(ctx, &game); err != nil {
@@ -284,18 +312,19 @@ func backfillGames(ctx context.Context, db *database.DB, indexer *services.Searc
 			}
 		}
 		rows.Close()
-
-		if count == 0 {
-			break
+		if err := rows.Err(); err != nil {
+			return 0, 0, fmt.Errorf("failed to iterate games: %w", err)
 		}
 
-		totalIndexed += count
-		log.Printf("Indexed %d games (total: %d)", count, totalIndexed)
-
-		offset += batchSize
-		time.Sleep(100 * time.Millisecond)
+		if fetched > 0 {
+			log.Printf("Indexed %d of %d games (offset: %d)", count, fetched, offset)
+		}
+		return fetched, count, nil
+	})
+	if err != nil {
+		return failed, err
 	}
 
-	log.Printf("Completed indexing %d games", totalIndexed)
-	return nil
+	log.Printf("Completed indexing %d games, %d failed", totalIndexed, failed)
+	return failed, nil
 }

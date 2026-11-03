@@ -116,7 +116,10 @@ export function ClipDetailPage() {
             return;
         }
         if (!clip) return;
-        favoriteMutation.mutate({ clip_id: clip.id }, {
+        favoriteMutation.mutate({
+            clip_id: clip.id,
+            is_favorited: Boolean(clip.is_favorited),
+        }, {
             onError: (error) => {
                 const msg = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
                 toast.error(msg || 'Failed to favorite. Please try again.');

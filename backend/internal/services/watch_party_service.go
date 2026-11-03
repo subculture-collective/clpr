@@ -5,9 +5,9 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 )
 
 // WatchPartyService handles business logic for watch parties
@@ -109,17 +109,21 @@ func (s *WatchPartyService) GetWatchParty(ctx context.Context, partyID uuid.UUID
 		return nil, fmt.Errorf("watch party not found")
 	}
 
-	// Check visibility permissions
-	if party.Visibility == "private" {
+	// Check visibility permissions: only public parties are readable by
+	// everyone; private, friends and invite parties are restricted to the host
+	// and active participants (the invite code is the join credential).
+	if WatchPartyRequiresMembership(party.Visibility) {
 		if userID == nil {
-			return nil, fmt.Errorf("unauthorized: party is private")
+			return nil, fmt.Errorf("unauthorized: party is not public")
 		}
-		// Check if user is a participant
-		participant, err := s.watchPartyRepo.GetParticipant(ctx, partyID, *userID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check participant status: %w", err)
+		var participant *models.WatchPartyParticipant
+		if party.HostUserID != *userID {
+			participant, err = s.watchPartyRepo.GetParticipant(ctx, partyID, *userID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to check participant status: %w", err)
+			}
 		}
-		if participant == nil || participant.LeftAt != nil {
+		if !CanViewWatchParty(party, userID, participant) {
 			return nil, fmt.Errorf("unauthorized: not a participant")
 		}
 	}
@@ -132,6 +136,42 @@ func (s *WatchPartyService) GetWatchParty(ctx context.Context, partyID uuid.UUID
 	party.Participants = participants
 
 	return party, nil
+}
+
+// WatchPartyRequiresMembership reports whether a party's details, participants
+// and messages are restricted to its host and active participants. Every
+// visibility other than "public" (private, friends, invite) is restricted.
+func WatchPartyRequiresMembership(visibility string) bool {
+	return visibility != "public"
+}
+
+// CanViewWatchParty applies the read policy for a party. participant is the
+// viewer's participant record (nil if none); it is ignored for the host.
+func CanViewWatchParty(party *models.WatchParty, userID *uuid.UUID, participant *models.WatchPartyParticipant) bool {
+	if party == nil {
+		return false
+	}
+	if !WatchPartyRequiresMembership(party.Visibility) {
+		return true
+	}
+	if userID == nil {
+		return false
+	}
+	if party.HostUserID == *userID {
+		return true
+	}
+	return participant != nil && participant.UserID == *userID && participant.LeftAt == nil
+}
+
+// RedactWatchPartyForViewer removes the invite code, which is sufficient to
+// join, from non-public parties unless the viewer is the host.
+func RedactWatchPartyForViewer(party *models.WatchParty, userID *uuid.UUID) {
+	if party == nil || !WatchPartyRequiresMembership(party.Visibility) {
+		return
+	}
+	if userID == nil || party.HostUserID != *userID {
+		party.InviteCode = ""
+	}
 }
 
 // JoinWatchParty allows a user to join a watch party
