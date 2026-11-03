@@ -89,6 +89,15 @@ jobs:
           set -euo pipefail
           source scripts/configure-hosted-test-ports.sh
           bash scripts/source-convergence.sh --phase browser
+      # The convergence trap also tears down, but a cancelled or killed step
+      # skips it. Remove this run's services and volumes unconditionally.
+      - name: Remove isolated test services
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          source scripts/configure-hosted-test-ports.sh
+          docker compose -f docker-compose.test.yml down -v --remove-orphans
       - name: Upload browser diagnostics
         if: always()
         uses: https://github.com/actions/upload-artifact@v3

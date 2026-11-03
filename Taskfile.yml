@@ -185,10 +185,12 @@ tasks:
         exit 1'
 
   test:teardown:
-    desc: Stop test containers
+    desc: Remove test containers and their volumes
     aliases: [test-teardown]
     cmds:
-      - '{{.TEST_COMPOSE}} down'
+      # Test data is disposable. Remove the OpenSearch volume and any orphaned
+      # containers so repeated runs do not accumulate on the host.
+      - '{{.TEST_COMPOSE}} down -v --remove-orphans'
 
   test:
     desc: Run backend tests; set INTEGRATION=1 and/or E2E=1 for broader suites
@@ -345,16 +347,18 @@ tasks:
     desc: Run all integration-tagged backend packages, each against its own database
     aliases: [test-integration]
     cmds:
-      - task: test:setup
+      # Register teardown first so a failed setup still removes its services.
       - defer: { task: test:teardown }
+      - task: test:setup
       - cd backend && set -a && . ./.env.test && set +a && go test -count=1 -v -tags=integration -race -parallel=4 {{.INTEGRATION_PKGS}}
 
   test:integration:coverage:
     desc: Run integration-tagged backend packages with coverage report
     aliases: [test-integration-coverage]
     cmds:
-      - task: test:setup
+      # Register teardown first so a failed setup still removes its services.
       - defer: { task: test:teardown }
+      - task: test:setup
       - cd backend && set -a && . ./.env.test && set +a && go test -count=1 -v -tags=integration -race -parallel=4 -coverprofile=coverage-integration.out -covermode=atomic {{.INTEGRATION_PKGS}}
       - cd backend && go tool cover -html=coverage-integration.out -o coverage-integration.html
       - |
@@ -365,8 +369,9 @@ tasks:
     cmds:
       - 'test -n "{{.PKG}}" || (echo "Set PKG to one of: {{.INTEGRATION_PKGS}}"; exit 1)'
       - 'case " {{.INTEGRATION_PKGS}} " in *" ./{{trimPrefix "./" .PKG}} "*) ;; *) echo "Not an integration package: {{.PKG}} (choose from: {{.INTEGRATION_PKGS}})"; exit 1;; esac'
-      - task: test:setup
+      # Register teardown first so a failed setup still removes its services.
       - defer: { task: test:teardown }
+      - task: test:setup
       - cd backend && set -a && . ./.env.test && set +a && go test -count=1 -v -tags=integration -race ./{{trimPrefix "./" .PKG}}
 
   migrate:up:

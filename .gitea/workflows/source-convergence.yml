@@ -59,6 +59,15 @@ jobs:
           mkdir -p .tmp/source-convergence
           bash scripts/source-convergence.sh --all 2>&1 \
             | tee .tmp/source-convergence/workflow.log
+      # The convergence trap also tears down, but a cancelled or killed step
+      # skips it. Remove this run's services and volumes unconditionally.
+      - name: Remove isolated test services
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          source scripts/configure-hosted-test-ports.sh
+          docker compose -f docker-compose.test.yml down -v --remove-orphans
       # Artifacts are produced and uploaded within this same run. This workflow
       # intentionally does not rely on GitHub-only cross-run artifact lookup or
       # download-artifact run-id behavior.
