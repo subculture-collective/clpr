@@ -43,6 +43,12 @@ The configurable values are `AUTO_TAG_INTERVAL_SECONDS`,
 `TRENDING_SCORE_BATCH_SIZE`, and the corresponding `*_START_DELAY_SECONDS`
 values documented in `backend/.env.example`.
 
+The trending score refresh rewrites every visible clip each run. Each rewrite
+also re-inserts the clip's embedding into the HNSW index, so a batch costs much
+more than the row count suggests. Each refresh statement runs with a 60 s
+timeout instead of the 15 s request default. Keep `TRENDING_SCORE_BATCH_SIZE` at
+200 or lower; the old default of 1000 timed out in production.
+
 ## Metrics
 
 All background jobs expose the following Prometheus metrics:

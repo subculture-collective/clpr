@@ -594,7 +594,7 @@ func Load() (*Config, error) {
 			AutoTagIntervalSeconds:         getEnvInt("AUTO_TAG_INTERVAL_SECONDS", 30),
 			TagPromotionIntervalMinutes:    getEnvInt("TAG_PROMOTION_INTERVAL_MINUTES", 15),
 			TrendingScoreIntervalMinutes:   getEnvInt("TRENDING_SCORE_INTERVAL_MINUTES", 60),
-			TrendingScoreBatchSize:         getEnvInt("TRENDING_SCORE_BATCH_SIZE", 1000),
+			TrendingScoreBatchSize:         getEnvInt("TRENDING_SCORE_BATCH_SIZE", 200),
 			AutoTagStartDelaySeconds:       getEnvInt("AUTO_TAG_START_DELAY_SECONDS", 15),
 			TagPromotionStartDelaySeconds:  getEnvInt("TAG_PROMOTION_START_DELAY_SECONDS", 90),
 			HotScoreStartDelaySeconds:      getEnvInt("HOT_SCORE_START_DELAY_SECONDS", 120),
