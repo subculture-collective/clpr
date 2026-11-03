@@ -14,6 +14,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestClipRepository_ListWithFilters_Discussed(t *testing.T) {
@@ -841,5 +842,59 @@ func TestClipRepository_ListWithFilters_SubmittedByUserID(t *testing.T) {
 
 	if total != 0 {
 		t.Errorf("Expected 0 clips for non-existent user, got %d", total)
+	}
+}
+
+// The refresh is a background job and must not be bound by the 15 s request
+// statement timeout: on the production table each batch re-inserts embeddings
+// into the HNSW index and took longer than that.
+func TestClipRepository_TrendingRefreshUsesBackgroundStatementBudget(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+	ctx := context.Background()
+
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO clips (id,twitch_clip_id,twitch_clip_url,embed_url,title,creator_name,broadcaster_name,view_count,created_at)
+		SELECT gen_random_uuid(), 'budget-'||g, 'https://clips.twitch.tv/'||g,
+		       'https://clips.twitch.tv/embed?clip='||g, 'Budget clip '||g,
+		       'creator', 'broadcaster', g, NOW() - (g||' hours')::interval
+		FROM generate_series(1,40) g`); err != nil {
+		t.Fatalf("seed clips: %v", err)
+	}
+	// Make each clip rewrite slow, standing in for the HNSW re-insert.
+	if _, err := pool.Exec(ctx, `
+		CREATE OR REPLACE FUNCTION test_slow_clip_update() RETURNS trigger LANGUAGE plpgsql AS $$
+		BEGIN PERFORM pg_sleep(0.01); RETURN NEW; END $$;
+		CREATE TRIGGER test_slow_clip_update BEFORE UPDATE ON clips
+		FOR EACH ROW EXECUTE FUNCTION test_slow_clip_update()`); err != nil {
+		t.Fatalf("install slow trigger: %v", err)
+	}
+	defer pool.Exec(context.Background(), `
+		DROP TRIGGER IF EXISTS test_slow_clip_update ON clips;
+		DROP FUNCTION IF EXISTS test_slow_clip_update()`)
+
+	// A pool whose request timeout is shorter than one batch (40 × 10 ms).
+	cfg := pool.Config().Copy()
+	cfg.ConnConfig.RuntimeParams["statement_timeout"] = "100ms"
+	strict, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatalf("strict pool: %v", err)
+	}
+	defer strict.Close()
+
+	updated, err := NewClipRepository(strict).UpdateTrendingScoresBatched(ctx, 40)
+	if err != nil {
+		t.Fatalf("refresh hit the request statement timeout: %v", err)
+	}
+	if updated != 40 {
+		t.Fatalf("updated %d clips, want 40", updated)
+	}
+	var unscored int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM clips WHERE trending_score IS NULL OR trending_score = 0`).Scan(&unscored); err != nil {
+		t.Fatal(err)
+	}
+	if unscored != 0 {
+		t.Fatalf("%d clips left unscored", unscored)
 	}
 }

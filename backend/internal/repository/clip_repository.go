@@ -2074,10 +2074,35 @@ AND c.submitted_by_user_id NOT IN (SELECT blocked_user_id FROM blocked_users)
 	return clips, total, nil
 }
 
+// DefaultTrendingScoreBatchSize is the number of clips rewritten per
+// transaction. Each rewrite is a non-HOT update (the score columns are
+// indexed), so every clip with an embedding is inserted into the HNSW index
+// again. On the production table a 1000-row batch took 2.7 s warm and 10.5 s
+// cold, and under load it passed the 15 s request statement timeout.
+const DefaultTrendingScoreBatchSize = 200
+
+// trendingRefreshStatementTimeout bounds each refresh statement. The refresh is
+// a background job, so it gets its own budget instead of the 15 s pool default
+// meant for requests.
+const trendingRefreshStatementTimeout = "60s"
+
 // UpdateTrendingScores updates trending_score, hot_score, popularity_index, and engagement_count for all clips
 // This should be called periodically (e.g., hourly) by a scheduler job
 func (r *ClipRepository) UpdateTrendingScores(ctx context.Context) (int64, error) {
-	return r.UpdateTrendingScoresBatched(ctx, 1000)
+	return r.UpdateTrendingScoresBatched(ctx, DefaultTrendingScoreBatchSize)
+}
+
+// beginTrendingRefreshTx starts a transaction with the refresh statement budget.
+func beginTrendingRefreshTx(ctx context.Context, conn *pgxpool.Conn) (pgx.Tx, error) {
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.Exec(ctx, "SET LOCAL statement_timeout = '"+trendingRefreshStatementTimeout+"'"); err != nil {
+		_ = tx.Rollback(ctx)
+		return nil, err
+	}
+	return tx, nil
 }
 
 func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchSize int) (int64, error) {
@@ -2092,7 +2117,7 @@ func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchS
 		return result.RowsAffected(), nil
 	}
 	if batchSize <= 0 {
-		batchSize = 1000
+		batchSize = DefaultTrendingScoreBatchSize
 	}
 	conn, err := r.rawPool.Acquire(ctx)
 	if err != nil {
@@ -2109,17 +2134,26 @@ func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchS
 	defer func() {
 		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:trending_score'))`)
 	}()
+	stageTx, err := beginTrendingRefreshTx(ctx, conn)
+	if err != nil {
+		return 0, fmt.Errorf("beginning trending score snapshot: %w", err)
+	}
 	// pg_dump retains ACCESS SHARE locks; DELETE avoids an exclusive table lock.
-	if _, err := conn.Exec(ctx, `DELETE FROM clip_score_refresh_stage`); err != nil {
+	if _, err := stageTx.Exec(ctx, `DELETE FROM clip_score_refresh_stage`); err != nil {
+		_ = stageTx.Rollback(ctx)
 		return 0, fmt.Errorf("clearing trending score stage: %w", err)
 	}
-	if _, err := conn.Exec(ctx, trendingScoreStageQuery); err != nil {
+	if _, err := stageTx.Exec(ctx, trendingScoreStageQuery); err != nil {
+		_ = stageTx.Rollback(ctx)
 		return 0, fmt.Errorf("calculating trending score snapshot: %w", err)
+	}
+	if err := stageTx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("committing trending score snapshot: %w", err)
 	}
 
 	var total int64
 	for {
-		tx, beginErr := conn.Begin(ctx)
+		tx, beginErr := beginTrendingRefreshTx(ctx, conn)
 		if beginErr != nil {
 			return total, fmt.Errorf("beginning trending score batch: %w", beginErr)
 		}
