@@ -898,3 +898,54 @@ func TestClipRepository_TrendingRefreshUsesBackgroundStatementBudget(t *testing.
 		t.Fatalf("%d clips left unscored", unscored)
 	}
 }
+
+// Rewriting a clip whose score barely moved costs a non-HOT update (and an HNSW
+// re-insert) for no visible change, so the refresh skips those rows. It must
+// still drain the whole stage when some batches write nothing.
+func TestClipRepository_TrendingRefreshSkipsUnchangedScores(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+	ctx := context.Background()
+
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO clips (id,twitch_clip_id,twitch_clip_url,embed_url,title,creator_name,broadcaster_name,view_count,created_at)
+		SELECT gen_random_uuid(), 'skip-'||g, 'https://clips.twitch.tv/'||g,
+		       'https://clips.twitch.tv/embed?clip='||g, 'Skip clip '||g,
+		       'creator', 'broadcaster', g, NOW() - (g||' hours')::interval
+		FROM generate_series(1,20) g`); err != nil {
+		t.Fatalf("seed clips: %v", err)
+	}
+	repo := NewClipRepository(pool)
+	if updated, err := repo.UpdateTrendingScoresBatched(ctx, 5); err != nil || updated != 20 {
+		t.Fatalf("first refresh updated=%d err=%v, want 20", updated, err)
+	}
+
+	// Change only the engagement of the clip in the last batch.
+	var lastID uuid.UUID
+	if err := pool.QueryRow(ctx, `UPDATE clips SET favorite_count = favorite_count + 7
+		WHERE id = (SELECT id FROM clips ORDER BY id DESC LIMIT 1) RETURNING id`).Scan(&lastID); err != nil {
+		t.Fatalf("bump last clip: %v", err)
+	}
+	updated, err := repo.UpdateTrendingScoresBatched(ctx, 5)
+	if err != nil {
+		t.Fatalf("second refresh: %v", err)
+	}
+	if updated != 1 {
+		t.Fatalf("second refresh updated %d clips, want only the changed one", updated)
+	}
+	var engagement, staged int
+	if err := pool.QueryRow(ctx, `SELECT engagement_count FROM clips WHERE id = $1`, lastID).Scan(&engagement); err != nil {
+		t.Fatal(err)
+	}
+	var want int
+	if err := pool.QueryRow(ctx, `SELECT view_count + vote_score*2 + comment_count*3 + favorite_count*2 FROM clips WHERE id = $1`, lastID).Scan(&want); err != nil {
+		t.Fatal(err)
+	}
+	if engagement != want {
+		t.Fatalf("changed clip engagement %d, want %d", engagement, want)
+	}
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM clip_score_refresh_stage`).Scan(&staged); err != nil || staged != 0 {
+		t.Fatalf("stage not drained: count=%d err=%v", staged, err)
+	}
+}

@@ -2157,17 +2157,18 @@ func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchS
 		if beginErr != nil {
 			return total, fmt.Errorf("beginning trending score batch: %w", beginErr)
 		}
-		result, execErr := tx.Exec(ctx, trendingScoreBatchQuery, batchSize)
-		if execErr != nil {
+		// A batch can drain stage rows without writing any clip, so the loop
+		// ends on an empty stage, not on an empty update.
+		var drained, updated int64
+		if execErr := tx.QueryRow(ctx, trendingScoreBatchQuery, batchSize).Scan(&drained, &updated); execErr != nil {
 			_ = tx.Rollback(ctx)
 			return total, fmt.Errorf("applying trending score batch: %w", execErr)
 		}
-		rows := result.RowsAffected()
 		if commitErr := tx.Commit(ctx); commitErr != nil {
 			return total, fmt.Errorf("committing trending score batch: %w", commitErr)
 		}
-		total += rows
-		if rows == 0 {
+		total += updated
+		if drained == 0 {
 			return total, nil
 		}
 	}
@@ -2224,13 +2225,31 @@ WITH selected AS (
     WHERE stage.clip_id = selected.clip_id
     RETURNING stage.clip_id, stage.trending_score, stage.hot_score,
               stage.popularity_index, stage.engagement_count
+), updated AS (
+    UPDATE clips c SET
+        trending_score = batch.trending_score,
+        hot_score = batch.hot_score,
+        popularity_index = batch.popularity_index,
+        engagement_count = batch.engagement_count
+    FROM batch
+    WHERE c.id = batch.clip_id
+      AND (c.trending_score IS NULL OR c.hot_score IS NULL
+           OR ABS(c.trending_score - batch.trending_score) > ` + trendingScoreTolerance + `
+           OR ABS(c.hot_score - batch.hot_score) > ` + trendingScoreTolerance + `
+           OR c.popularity_index IS DISTINCT FROM batch.popularity_index
+           OR c.engagement_count IS DISTINCT FROM batch.engagement_count)
+    RETURNING 1
 )
-UPDATE clips c SET
-    trending_score = batch.trending_score,
-    hot_score = batch.hot_score,
-    popularity_index = batch.popularity_index,
-    engagement_count = batch.engagement_count
-FROM batch WHERE c.id = batch.clip_id`
+SELECT (SELECT COUNT(*) FROM batch), (SELECT COUNT(*) FROM updated)`
+
+// trendingScoreTolerance is the smallest score change worth writing. The
+// freshness term decays continuously, so every score moves a little each hour,
+// but on production only about 5% of clips move by more than this. Each write
+// is a non-HOT update that re-inserts the clip into every index, including the
+// HNSW embedding index, so rewriting the rest costs disk I/O for no visible
+// change in the feed. Comparing against the stored score keeps drift bounded
+// by this value.
+const trendingScoreTolerance = "0.001"
 
 const trendingScoreUpdateQuery = `
 WITH signals AS (
