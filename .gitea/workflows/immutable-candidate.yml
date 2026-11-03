@@ -62,6 +62,15 @@ jobs:
             --phase contract --phase backend --phase frontend \
             --phase api-docs --phase docs --phase secrets \
             --phase browser --phase contracts
+      # The convergence trap also tears down, but a cancelled or killed step
+      # skips it. Remove this run's services and volumes unconditionally.
+      - name: Remove isolated test services
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          source scripts/configure-hosted-test-ports.sh
+          docker compose -f docker-compose.test.yml down -v --remove-orphans
       - name: Authenticate to GHCR
         shell: bash
         run: |

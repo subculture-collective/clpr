@@ -76,7 +76,16 @@ for workflow in \
     || fail "$workflow still relies on unsupported hosted locking"
   grep -Fq 'source scripts/configure-hosted-test-ports.sh' "$workflow" \
     || fail "$workflow does not isolate its browser test services"
+  grep -A2 -F -- '- name: Remove isolated test services' "$workflow" \
+    | grep -Fq 'if: always()' \
+    || fail "$workflow does not always remove its test services"
+  grep -Fq 'docker compose -f docker-compose.test.yml down -v --remove-orphans' "$workflow" \
+    || fail "$workflow teardown does not remove volumes and orphans"
 done
+
+grep -A8 '^  test:teardown:' Taskfile.yml \
+  | grep -Fq "{{.TEST_COMPOSE}} down -v --remove-orphans" \
+  || fail "task test:teardown must remove test volumes and orphans"
 
 grep -A4 '^  image-security:' .gitea/workflows/release-gates.yml \
   | grep -Fq 'needs: browser' \
