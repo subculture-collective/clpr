@@ -315,6 +315,10 @@ func (r *RecommendationRepository) GetContentBasedRecommendations(
 		scores = append(scores, score)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating clip scores: %w", err)
+	}
+
 	return scores, nil
 }
 
@@ -379,6 +383,10 @@ func (r *RecommendationRepository) GetCollaborativeRecommendations(
 		scores = append(scores, score)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating clip scores: %w", err)
+	}
+
 	return scores, nil
 }
 
@@ -418,6 +426,10 @@ func (r *RecommendationRepository) GetTrendingClips(
 			return nil, fmt.Errorf("failed to scan clip score: %w", err)
 		}
 		scores = append(scores, score)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating clip scores: %w", err)
 	}
 
 	return scores, nil
@@ -468,6 +480,10 @@ func (r *RecommendationRepository) GetPopularClips(
 		scores = append(scores, score)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating clip scores: %w", err)
+	}
+
 	return scores, nil
 }
 
@@ -510,6 +526,10 @@ func (r *RecommendationRepository) GetClipsByIDs(ctx context.Context, clipIDs []
 			return nil, fmt.Errorf("failed to scan clip: %w", err)
 		}
 		clips = append(clips, clip)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating clips: %w", err)
 	}
 
 	return clips, nil

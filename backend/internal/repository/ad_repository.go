@@ -325,7 +325,7 @@ func (r *AdRepository) UpsertFrequencyCap(ctx context.Context, adID uuid.UUID, u
 		query = `
 			INSERT INTO ad_frequency_caps (id, ad_id, user_id, window_type, window_start, impression_count)
 			VALUES ($1, $2, $3, $4, $5, 1)
-			ON CONFLICT (ad_id, user_id, window_type)
+			ON CONFLICT (ad_id, user_id, window_type) WHERE user_id IS NOT NULL
 			DO UPDATE SET 
 				impression_count = CASE 
 					WHEN ad_frequency_caps.window_start < $5 THEN 1 
@@ -342,7 +342,7 @@ func (r *AdRepository) UpsertFrequencyCap(ctx context.Context, adID uuid.UUID, u
 		query = `
 			INSERT INTO ad_frequency_caps (id, ad_id, session_id, window_type, window_start, impression_count)
 			VALUES ($1, $2, $3, $4, $5, 1)
-			ON CONFLICT (ad_id, session_id, window_type)
+			ON CONFLICT (ad_id, session_id, window_type) WHERE session_id IS NOT NULL
 			DO UPDATE SET 
 				impression_count = CASE 
 					WHEN ad_frequency_caps.window_start < $5 THEN 1 
@@ -787,7 +787,7 @@ func (r *AdRepository) UpsertCampaignAnalytics(ctx context.Context, adID uuid.UU
 	query := `
 		INSERT INTO ad_campaign_analytics (id, ad_id, date, slot_id, impressions, viewable_impressions, clicks, spend_cents, unique_users)
 		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT (ad_id, date, slot_id)
+		ON CONFLICT (ad_id, date, (COALESCE(slot_id, '')))
 		DO UPDATE SET
 			impressions = ad_campaign_analytics.impressions + EXCLUDED.impressions,
 			viewable_impressions = ad_campaign_analytics.viewable_impressions + EXCLUDED.viewable_impressions,

@@ -274,13 +274,13 @@ func (r *DiscoveryClipRepository) ListWithFilters(ctx context.Context, filters D
 	var orderBy string
 	switch filters.Sort {
 	case "views":
-		orderBy = "ORDER BY d.view_count DESC, d.created_at DESC"
+		orderBy = "ORDER BY d.view_count DESC, d.created_at DESC, d.id DESC"
 	case "trending":
-		orderBy = "ORDER BY d.view_count DESC, d.created_at DESC"
+		orderBy = "ORDER BY d.view_count DESC, d.created_at DESC, d.id DESC"
 	case "new":
-		orderBy = "ORDER BY d.created_at DESC"
+		orderBy = "ORDER BY d.created_at DESC, d.id DESC"
 	default:
-		orderBy = "ORDER BY d.created_at DESC"
+		orderBy = "ORDER BY d.created_at DESC, d.id DESC"
 	}
 
 	// Count

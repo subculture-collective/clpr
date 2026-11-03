@@ -184,3 +184,60 @@ func TestChannelRateLimiter_CleanupInactive(t *testing.T) {
 		t.Errorf("expected channel2 to be recreated with 100 tokens, got %d", available)
 	}
 }
+
+// TestRateLimiter_ConcurrentWaitersRespectCap checks that waiters woken by a
+// refill each consume a token, so no more than maxTokens calls succeed per
+// window no matter how many goroutines were blocked.
+func TestRateLimiter_ConcurrentWaitersRespectCap(t *testing.T) {
+	const (
+		maxTokens = 2
+		waiters   = 8
+		window    = 150 * time.Millisecond
+	)
+	rl := newRateLimiterWithWindow(maxTokens, window)
+	start := time.Now()
+
+	// Drain the initial bucket.
+	for i := 0; i < maxTokens; i++ {
+		if err := rl.Wait(context.Background()); err != nil {
+			t.Fatalf("initial wait: %v", err)
+		}
+	}
+
+	// Only one refill (maxTokens tokens) fits before the deadline, at ~1 window.
+	ctx, cancel := context.WithTimeout(context.Background(), window+window/2)
+	defer cancel()
+
+	results := make(chan error, waiters)
+	for i := 0; i < waiters; i++ {
+		go func() { results <- rl.Wait(ctx) }()
+	}
+
+	succeeded := 0
+	for i := 0; i < waiters; i++ {
+		if err := <-results; err == nil {
+			succeeded++
+		} else if err != context.DeadlineExceeded {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	if succeeded != maxTokens {
+		t.Fatalf("%d waiters succeeded after one refill, want %d", succeeded, maxTokens)
+	}
+	if elapsed := time.Since(start); elapsed < window {
+		t.Fatalf("waiters returned after %v, before the %v refill", elapsed, window)
+	}
+}
+
+func TestRateLimiter_WaitHonorsCancellation(t *testing.T) {
+	rl := newRateLimiterWithWindow(1, time.Hour)
+	if err := rl.Wait(context.Background()); err != nil {
+		t.Fatalf("first wait: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if err := rl.Wait(ctx); err != context.DeadlineExceeded {
+		t.Fatalf("Wait = %v, want deadline exceeded", err)
+	}
+}

@@ -128,8 +128,8 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		feeds.GET("/following", middleware.AuthMiddleware(svcs.Auth), h.Feed.GetFollowingFeed)
 
 		// Feed analytics routes (admin only)
-		feeds.GET("/analytics", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), h.Event.GetFeedMetrics)
-		feeds.GET("/analytics/hourly", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), h.Event.GetHourlyMetrics)
+		feeds.GET("/analytics", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), h.Event.GetFeedMetrics)
+		feeds.GET("/analytics/hourly", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), h.Event.GetHourlyMetrics)
 	}
 
 	// Events tracking endpoint

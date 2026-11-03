@@ -128,7 +128,7 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 	// Profiling endpoints exist only in explicit debug mode and still require an admin session.
 	if cfg.Server.GinMode == gin.DebugMode {
 		debug := r.Group("/debug")
-		debug.Use(middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"))
+		debug.Use(middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), middleware.RequireMFAForAdminMiddleware(svcs.MFA))
 		// Prometheus metrics endpoint
 		debug.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
@@ -178,6 +178,7 @@ func registerPublicRoutes(r *gin.Engine, v1 *gin.RouterGroup, h *Handlers, svcs 
 		logs.GET("/stats",
 			middleware.AuthMiddleware(svcs.Auth),
 			middleware.RequireRole("admin"),
+			middleware.RequireMFAForAdminMiddleware(svcs.MFA),
 			h.ApplicationLog.GetLogStats)
 	}
 }

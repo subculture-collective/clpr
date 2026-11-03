@@ -154,7 +154,7 @@ func (r *MFARepository) ConsumeBackupCode(ctx context.Context, userID uuid.UUID,
 // GetTrustedDevices retrieves all trusted devices for a user
 func (r *MFARepository) GetTrustedDevices(ctx context.Context, userID uuid.UUID) ([]*models.MFATrustedDevice, error) {
 	query := `
-		SELECT id, user_id, device_fingerprint, device_name, ip_address, user_agent,
+		SELECT id, user_id, device_fingerprint, device_name, host(ip_address), user_agent,
 		       trusted_at, expires_at, last_used_at, created_at
 		FROM mfa_trusted_devices
 		WHERE user_id = $1 AND expires_at > NOW()
@@ -194,7 +194,7 @@ func (r *MFARepository) GetTrustedDevices(ctx context.Context, userID uuid.UUID)
 // GetTrustedDeviceByFingerprint retrieves a trusted device by fingerprint
 func (r *MFARepository) GetTrustedDeviceByFingerprint(ctx context.Context, userID uuid.UUID, fingerprint string) (*models.MFATrustedDevice, error) {
 	query := `
-		SELECT id, user_id, device_fingerprint, device_name, ip_address, user_agent,
+		SELECT id, user_id, device_fingerprint, device_name, host(ip_address), user_agent,
 		       trusted_at, expires_at, last_used_at, created_at
 		FROM mfa_trusted_devices
 		WHERE user_id = $1 AND device_fingerprint = $2 AND expires_at > NOW()
@@ -331,7 +331,7 @@ func (r *MFARepository) CreateAuditLog(ctx context.Context, log *models.MFAAudit
 // GetAuditLogs retrieves MFA audit logs for a user
 func (r *MFARepository) GetAuditLogs(ctx context.Context, userID uuid.UUID, limit int) ([]*models.MFAAuditLog, error) {
 	query := `
-		SELECT id, user_id, action, success, ip_address, user_agent, details, created_at
+		SELECT id, user_id, action, success, host(ip_address), user_agent, details, created_at
 		FROM mfa_audit_logs
 		WHERE user_id = $1
 		ORDER BY created_at DESC

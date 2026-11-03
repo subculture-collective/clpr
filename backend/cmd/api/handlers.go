@@ -81,8 +81,8 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	pool := infra.DB.Pool
 	cfg := infra.Config
 
-	authHandler := handlers.NewAuthHandler(svcs.Auth, cfg)
-	mfaHandler := handlers.NewMFAHandler(svcs.MFA, cfg)
+	authHandler := handlers.NewAuthHandler(svcs.Auth, cfg, svcs.MFA, svcs.MFAChallenges)
+	mfaHandler := handlers.NewMFAHandler(svcs.MFA, cfg, svcs.Auth, svcs.MFAChallenges)
 	monitoringHandler := handlers.NewMonitoringHandler(infra.Redis)
 	commentHandler := handlers.NewCommentHandler(svcs.Comment)
 	clipHandler := handlers.NewClipHandler(

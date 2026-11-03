@@ -110,7 +110,9 @@ func NewMFAService(
 }
 
 // StartEnrollment initiates MFA enrollment for a user
-func (s *MFAService) StartEnrollment(ctx context.Context, userID uuid.UUID, email string) (*models.EnrollMFAResponse, error) {
+// accountName labels the entry in the user's authenticator app; when it is
+// empty the user ID is used, because the TOTP library rejects an empty name.
+func (s *MFAService) StartEnrollment(ctx context.Context, userID uuid.UUID, accountName string) (*models.EnrollMFAResponse, error) {
 	// Check if MFA is already enabled
 	existingMFA, err := s.mfaRepo.GetMFAByUserID(ctx, userID)
 	if err != nil {
@@ -124,7 +126,7 @@ func (s *MFAService) StartEnrollment(ctx context.Context, userID uuid.UUID, emai
 	// Generate TOTP secret
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "Clipper",
-		AccountName: email,
+		AccountName: enrollmentAccountName(accountName, userID),
 		Period:      totpPeriod,
 		Digits:      otp.DigitsSix,
 		Algorithm:   totpAlgorithm,
@@ -181,6 +183,13 @@ func (s *MFAService) StartEnrollment(ctx context.Context, userID uuid.UUID, emai
 		QRCodeURL:   qrCodeURL,
 		BackupCodes: backupCodes,
 	}, nil
+}
+
+func enrollmentAccountName(accountName string, userID uuid.UUID) string {
+	if name := strings.TrimSpace(accountName); name != "" {
+		return name
+	}
+	return userID.String()
 }
 
 // VerifyEnrollment verifies the TOTP code and enables MFA

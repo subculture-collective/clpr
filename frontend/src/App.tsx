@@ -124,6 +124,11 @@ const AuthCallbackPage = lazy(() =>
         default: m.AuthCallbackPage,
     })),
 );
+const MFAChallengePage = lazy(() =>
+    import('./pages/MFAChallengePage').then(m => ({
+        default: m.MFAChallengePage,
+    })),
+);
 const FavoritesPage = lazy(() =>
     import('./pages/FavoritesPage').then(m => ({ default: m.FavoritesPage })),
 );
@@ -394,6 +399,11 @@ const WebhookSubscriptionsPage = lazy(() =>
         default: m.WebhookSubscriptionsPage,
     })),
 );
+const SecuritySettingsPage = lazy(() =>
+    import('./pages/SecuritySettingsPage').then(m => ({
+        default: m.SecuritySettingsPage,
+    })),
+);
 // Loading fallback component
 function LoadingFallback() {
     return (
@@ -593,6 +603,10 @@ function App() {
                                             path='/auth/success'
                                             element={<AuthCallbackPage />}
                                         />
+                                        <Route
+                                            path='/auth/mfa'
+                                            element={<MFAChallengePage />}
+                                        />
                                         <Route path='/onboarding' element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
 
                                         {accountRoutes({
@@ -613,6 +627,7 @@ function App() {
                                             settings: SettingsPage,
                                             cookieSettings: CookieSettingsPage,
                                             webhookSubscriptions: WebhookSubscriptionsPage,
+                                            securitySettings: SecuritySettingsPage,
                                             submitClip: SubmitClipPage,
                                             submissions: UserSubmissionsPage,
                                             notifications: NotificationsPage,

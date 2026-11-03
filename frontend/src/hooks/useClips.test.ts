@@ -360,6 +360,30 @@ describe('useClips', () => {
     });
 
     describe('useClipFavorite hook', () => {
+        const createClientAndWrapper = () => {
+            const queryClient = new QueryClient({
+                defaultOptions: {
+                    queries: { retry: false },
+                    mutations: { retry: false },
+                },
+            });
+            const wrapper = ({ children }: { children: ReactNode }) =>
+                createElement(
+                    QueryClientProvider,
+                    { client: queryClient },
+                    children,
+                );
+            return { queryClient, wrapper };
+        };
+
+        const feedPage = (clips: Clip[]): ClipFeedResponse => ({
+            clips,
+            total: clips.length,
+            page: 1,
+            limit: 10,
+            has_more: false,
+        });
+
         it('should add favorite successfully', async () => {
             const favoriteResponse = {
                 message: 'Clip added to favorites',
@@ -371,40 +395,127 @@ describe('useClips', () => {
                 wrapper: createWrapper(),
             });
 
-            const payload: FavoritePayload = {
-                clip_id: 'clip-1',
-            };
-
-            result.current.mutate(payload);
+            result.current.mutate({ clip_id: 'clip-1', is_favorited: false });
 
             await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
             expect(result.current.data).toEqual(favoriteResponse);
-            expect(clipApi.addFavorite).toHaveBeenCalledWith(payload);
+            const expectedPayload: FavoritePayload = { clip_id: 'clip-1' };
+            expect(clipApi.addFavorite).toHaveBeenCalledWith(expectedPayload);
+            expect(clipApi.removeFavorite).not.toHaveBeenCalled();
         });
 
-        it('should toggle favorite based on cache state', async () => {
-            // Test adding a favorite when not currently favorited
-            vi.clearAllMocks();
-
-            const addResponse = {
+        it('adds a favorite for an unfavorited clip that is only in a feed cache', async () => {
+            // Regression: the optimistic update used to flip the feed cache
+            // before mutationFn read it, so this sent DELETE instead of POST.
+            vi.mocked(clipApi.addFavorite).mockResolvedValue({
                 message: 'Clip added to favorites',
                 is_favorited: true,
-            };
-            vi.mocked(clipApi.addFavorite).mockResolvedValue(addResponse);
-
-            const { result: addResult } = renderHook(() => useClipFavorite(), {
-                wrapper: createWrapper(),
+            });
+            const { queryClient, wrapper } = createClientAndWrapper();
+            const clip = { ...mockClip, is_favorited: false, favorite_count: 5 };
+            queryClient.setQueryData(['clips', 'feed'], {
+                pages: [feedPage([clip])],
+                pageParams: [1],
             });
 
-            addResult.current.mutate({ clip_id: 'clip-1' });
+            const { result } = renderHook(() => useClipFavorite(), { wrapper });
+            result.current.mutate({ clip_id: clip.id, is_favorited: false });
 
-            await waitFor(() => expect(addResult.current.isSuccess).toBe(true));
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-            expect(addResult.current.data).toEqual(addResponse);
-            expect(clipApi.addFavorite).toHaveBeenCalledWith({
-                clip_id: 'clip-1',
+            expect(clipApi.addFavorite).toHaveBeenCalledWith({ clip_id: clip.id });
+            expect(clipApi.removeFavorite).not.toHaveBeenCalled();
+            const feed = queryClient.getQueryData<{ pages: ClipFeedResponse[] }>(
+                ['clips', 'feed'],
+            );
+            expect(feed?.pages[0].clips[0]).toMatchObject({
+                is_favorited: true,
+                favorite_count: 6,
             });
+        });
+
+        it('removes a favorite for a favorited clip that is only in a feed cache', async () => {
+            vi.mocked(clipApi.removeFavorite).mockResolvedValue({
+                message: 'Clip removed from favorites',
+                is_favorited: false,
+            });
+            const { queryClient, wrapper } = createClientAndWrapper();
+            const clip = { ...mockClip, is_favorited: true, favorite_count: 5 };
+            queryClient.setQueryData(['clips', 'feed'], {
+                pages: [feedPage([clip])],
+                pageParams: [1],
+            });
+
+            const { result } = renderHook(() => useClipFavorite(), { wrapper });
+            result.current.mutate({ clip_id: clip.id, is_favorited: true });
+
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+            expect(clipApi.removeFavorite).toHaveBeenCalledWith({ clip_id: clip.id });
+            expect(clipApi.addFavorite).not.toHaveBeenCalled();
+        });
+
+        it('updates the clip detail cache optimistically', async () => {
+            let resolveAdd: (value: { message: string; is_favorited: boolean }) => void = () => {};
+            vi.mocked(clipApi.addFavorite).mockImplementation(
+                () => new Promise(resolve => { resolveAdd = resolve; }),
+            );
+            const { queryClient, wrapper } = createClientAndWrapper();
+            const clip = { ...mockClip, is_favorited: false, favorite_count: 5 };
+            queryClient.setQueryData(['clip', clip.id], clip);
+
+            const { result } = renderHook(() => useClipFavorite(), { wrapper });
+            result.current.mutate({ clip_id: clip.id, is_favorited: false });
+
+            await waitFor(() =>
+                expect(
+                    queryClient.getQueryData<Clip>(['clip', clip.id]),
+                ).toMatchObject({ is_favorited: true, favorite_count: 6 }),
+            );
+
+            resolveAdd({ message: 'ok', is_favorited: true });
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+            expect(
+                queryClient.getQueryState(['clip', clip.id])?.isInvalidated,
+            ).toBe(true);
+        });
+
+        it('rolls back the clip detail cache on error', async () => {
+            vi.mocked(clipApi.addFavorite).mockRejectedValue(new Error('nope'));
+            const { queryClient, wrapper } = createClientAndWrapper();
+            const clip = { ...mockClip, is_favorited: false, favorite_count: 5 };
+            queryClient.setQueryData(['clip', clip.id], clip);
+
+            const { result } = renderHook(() => useClipFavorite(), { wrapper });
+            result.current.mutate({ clip_id: clip.id, is_favorited: false });
+
+            await waitFor(() => expect(result.current.isError).toBe(true));
+            expect(
+                queryClient.getQueryData<Clip>(['clip', clip.id]),
+            ).toMatchObject({ is_favorited: false, favorite_count: 5 });
+        });
+
+        it('keeps favorites feed entries when adding a favorite', async () => {
+            vi.mocked(clipApi.addFavorite).mockResolvedValue({
+                message: 'ok',
+                is_favorited: true,
+            });
+            const { queryClient, wrapper } = createClientAndWrapper();
+            const other = { ...mockClip, id: 'clip-2', is_favorited: true };
+            queryClient.setQueryData(['favorites', 'newest'], {
+                pages: [feedPage([other])],
+                pageParams: [1],
+            });
+
+            const { result } = renderHook(() => useClipFavorite(), { wrapper });
+            result.current.mutate({ clip_id: other.id, is_favorited: false });
+
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+            const favorites = queryClient.getQueryData<{ pages: ClipFeedResponse[] }>(
+                ['favorites', 'newest'],
+            );
+            expect(favorites?.pages[0].clips).toHaveLength(1);
         });
 
         it('should handle favorite error', async () => {
@@ -415,7 +526,7 @@ describe('useClips', () => {
                 wrapper: createWrapper(),
             });
 
-            result.current.mutate({ clip_id: 'clip-1' });
+            result.current.mutate({ clip_id: 'clip-1', is_favorited: false });
 
             await waitFor(() => expect(result.current.isError).toBe(true));
 

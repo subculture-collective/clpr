@@ -481,3 +481,25 @@ func TestMaybeAutoTagNilReturnsImmediately(t *testing.T) {
 		t.Fatal("maybeAutoTag blocked unexpectedly")
 	}
 }
+
+func TestGenerateUnclaimedUsernameShortTwitchID(t *testing.T) {
+	tests := []struct {
+		name        string
+		displayName string
+		twitchID    string
+		want        string
+	}{
+		{name: "normal name", displayName: "Cool_Streamer", twitchID: "123456789", want: "cool_streamer"},
+		{name: "non-latin name, long id", displayName: "日本語", twitchID: "123456789012", want: "user_12345678"},
+		{name: "non-latin name, short id", displayName: "日本語", twitchID: "42", want: "user_42"},
+		{name: "empty name, empty id", displayName: "", twitchID: "", want: "user_"},
+		{name: "two-letter name, exactly 8 digit id", displayName: "ab", twitchID: "87654321", want: "user_87654321"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := generateUnclaimedUsername(tt.displayName, tt.twitchID); got != tt.want {
+				t.Fatalf("generateUnclaimedUsername(%q, %q) = %q, want %q", tt.displayName, tt.twitchID, got, tt.want)
+			}
+		})
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
@@ -18,14 +19,28 @@ import (
 type AuthHandler struct {
 	authService *services.AuthService
 	cfg         *config.Config
+	session     *loginSession
 }
 
-// NewAuthHandler creates a new auth handler
-func NewAuthHandler(authService *services.AuthService, cfg *config.Config) *AuthHandler {
+// NewAuthHandler creates a new auth handler. mfaGate and challenges enforce
+// the second sign-in step for users with MFA enabled; every sign-in path
+// issues its session through them.
+func NewAuthHandler(authService *services.AuthService, cfg *config.Config, mfaGate loginMFAGate, challenges mfaChallengeStore) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		cfg:         cfg,
+		session:     newLoginSession(cfg, authService, mfaGate, challenges),
 	}
+}
+
+// frontendURL returns the first allowed CORS origin, used for redirects.
+func (h *AuthHandler) frontendURL() string {
+	frontendURL := "http://localhost:3000"
+	origins := strings.Split(h.cfg.CORS.AllowedOrigins, ",")
+	if len(origins) > 0 && strings.TrimSpace(origins[0]) != "" {
+		frontendURL = strings.TrimSpace(origins[0])
+	}
+	return frontendURL
 }
 
 // InitiateOAuth handles GET /auth/twitch
@@ -78,19 +93,13 @@ func (h *AuthHandler) HandleCallback(c *gin.Context) {
 	if strings.Contains(stateValue, ":") {
 		// PKCE flow: return code and state to frontend to complete exchange
 		// Frontend will POST to /auth/twitch/callback with code_verifier
-		frontendURL := "http://localhost:3000"
-		origins := strings.Split(h.cfg.CORS.AllowedOrigins, ",")
-		if len(origins) > 0 {
-			frontendURL = origins[0]
-		}
-
 		// Redirect to frontend callback route to complete PKCE exchange
-		c.Redirect(http.StatusTemporaryRedirect, frontendURL+"/auth/success?code="+code+"&state="+state)
+		c.Redirect(http.StatusTemporaryRedirect, h.frontendURL()+"/auth/success?code="+url.QueryEscape(code)+"&state="+url.QueryEscape(state))
 		return
 	}
 
 	// Non-PKCE flow: complete authentication directly
-	_, accessToken, refreshToken, err := h.authService.HandleCallback(c.Request.Context(), code, state, "")
+	user, err := h.authService.AuthenticateCallback(c.Request.Context(), code, state, "")
 	if err != nil {
 		if err == services.ErrInvalidState {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -112,18 +121,29 @@ func (h *AuthHandler) HandleCallback(c *gin.Context) {
 		return
 	}
 
-	// Set HTTP-only secure cookies
-	h.setAuthCookies(c, accessToken, refreshToken)
-
-	// Get frontend URL from allowed origins (first one)
-	frontendURL := "http://localhost:3000"
-	origins := strings.Split(h.cfg.CORS.AllowedOrigins, ",")
-	if len(origins) > 0 {
-		frontendURL = origins[0]
+	outcome, _, err := h.session.begin(c, user)
+	if err != nil {
+		h.writeSessionError(c, err)
+		return
+	}
+	if outcome == loginMFARequired {
+		c.Redirect(http.StatusTemporaryRedirect, h.frontendURL()+"/auth/success?mfa_required=true")
+		return
 	}
 
 	// Redirect to frontend with success
-	c.Redirect(http.StatusTemporaryRedirect, frontendURL+"/auth/success?success=true")
+	c.Redirect(http.StatusTemporaryRedirect, h.frontendURL()+"/auth/success?success=true")
+}
+
+// writeSessionError maps a failure to start a session to a response. MFA
+// status lookups that fail must not issue a session.
+func (h *AuthHandler) writeSessionError(c *gin.Context, err error) {
+	if errors.Is(err, services.ErrUserBanned) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Your account has been banned"})
+		return
+	}
+	c.Error(err)
+	c.JSON(http.StatusInternalServerError, gin.H{"error": "Authentication failed"})
 }
 
 // HandlePKCECallback handles POST /auth/twitch/callback
@@ -143,7 +163,7 @@ func (h *AuthHandler) HandlePKCECallback(c *gin.Context) {
 	}
 
 	// Handle OAuth callback with PKCE
-	_, accessToken, refreshToken, err := h.authService.HandleCallback(c.Request.Context(), body.Code, body.State, body.CodeVerifier)
+	user, err := h.authService.AuthenticateCallback(c.Request.Context(), body.Code, body.State, body.CodeVerifier)
 	if err != nil {
 		if err == services.ErrInvalidState {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -169,11 +189,22 @@ func (h *AuthHandler) HandlePKCECallback(c *gin.Context) {
 		return
 	}
 
-	// Set HTTP-only secure cookies
-	h.setAuthCookies(c, accessToken, refreshToken)
+	outcome, _, err := h.session.begin(c, user)
+	if err != nil {
+		h.writeSessionError(c, err)
+		return
+	}
+	if outcome == loginMFARequired {
+		c.JSON(http.StatusOK, gin.H{
+			"message":      "MFA verification required",
+			"mfa_required": true,
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Authentication successful",
+		"message":      "Authentication successful",
+		"mfa_required": false,
 	})
 }
 
@@ -220,7 +251,8 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.authService.GenerateTokensForUser(ctx, user)
+	// Test logins follow the same MFA rule as Twitch sign-ins.
+	outcome, tokens, err := h.session.begin(c, user)
 	if err != nil {
 		if errors.Is(err, services.ErrUserBanned) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "User is banned"})
@@ -229,8 +261,11 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
 		return
 	}
-
-	h.setAuthCookies(c, accessToken, refreshToken)
+	if outcome == loginMFARequired {
+		c.JSON(http.StatusOK, gin.H{"mfa_required": true})
+		return
+	}
+	accessToken, refreshToken := tokens.access, tokens.refresh
 
 	c.JSON(http.StatusOK, gin.H{
 		"user":          user,
@@ -266,7 +301,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	// Set new cookies
-	h.setAuthCookies(c, newAccessToken, newRefreshToken)
+	setSessionCookies(c, h.cfg, newAccessToken, newRefreshToken)
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  newAccessToken,
@@ -292,8 +327,9 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		_ = h.authService.Logout(c.Request.Context(), refreshToken)
 	}
 
-	// Clear cookies
-	h.clearAuthCookies(c)
+	// Clear cookies, including any pending MFA sign-in
+	clearSessionCookies(c)
+	clearChallengeCookie(c)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged out successfully",
@@ -338,37 +374,4 @@ func (h *AuthHandler) ReauthorizeTwitch(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"auth_url": authURL,
 	})
-}
-
-// setAuthCookies sets authentication cookies
-func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
-	isProduction := h.cfg.Server.GinMode == "release"
-
-	// Access token cookie (15 minutes)
-	c.SetCookie(
-		"access_token",
-		accessToken,
-		900, // 15 minutes
-		"/",
-		"",
-		isProduction, // Secure only in production
-		true,         // HttpOnly
-	)
-
-	// Refresh token cookie (7 days)
-	c.SetCookie(
-		"refresh_token",
-		refreshToken,
-		604800, // 7 days
-		"/",
-		"",
-		isProduction, // Secure only in production
-		true,         // HttpOnly
-	)
-}
-
-// clearAuthCookies clears authentication cookies
-func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
-	c.SetCookie("access_token", "", -1, "/", "", false, true)
-	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 }

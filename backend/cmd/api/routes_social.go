@@ -53,7 +53,7 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 
 		// Health check endpoint for WebSocket server
 		chat.GET("/health", h.WebSocket.GetHealthCheck)
-		chat.GET("/stats", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), h.WebSocket.GetChannelStats)
+		chat.GET("/stats", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), h.WebSocket.GetChannelStats)
 	}
 
 	// Community routes

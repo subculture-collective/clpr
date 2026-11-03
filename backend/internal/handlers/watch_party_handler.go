@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -326,10 +326,58 @@ func (h *WatchPartyHandler) GetWatchParty(c *gin.Context) {
 		return
 	}
 
+	// The invite code is enough to join, so only the host sees it for
+	// non-public parties.
+	services.RedactWatchPartyForViewer(party, userID)
+
 	c.JSON(http.StatusOK, StandardResponse{
 		Success: true,
 		Data:    party,
 	})
+}
+
+// authorizeWatchPartyRead enforces the watch party read policy and writes the
+// error response when access is denied.
+func (h *WatchPartyHandler) authorizeWatchPartyRead(c *gin.Context, party *models.WatchParty, userID *uuid.UUID) bool {
+	if !services.WatchPartyRequiresMembership(party.Visibility) {
+		return true
+	}
+	if userID == nil {
+		c.JSON(http.StatusForbidden, StandardResponse{
+			Success: false,
+			Error: &ErrorInfo{
+				Code:    "FORBIDDEN",
+				Message: "Authentication required for this watch party",
+			},
+		})
+		return false
+	}
+	var participant *models.WatchPartyParticipant
+	if party.HostUserID != *userID {
+		var err error
+		participant, err = h.watchPartyRepo.GetParticipant(c.Request.Context(), party.ID, *userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, StandardResponse{
+				Success: false,
+				Error: &ErrorInfo{
+					Code:    "INTERNAL_ERROR",
+					Message: "Failed to verify participant status",
+				},
+			})
+			return false
+		}
+	}
+	if !services.CanViewWatchParty(party, userID, participant) {
+		c.JSON(http.StatusForbidden, StandardResponse{
+			Success: false,
+			Error: &ErrorInfo{
+				Code:    "FORBIDDEN",
+				Message: "Not a participant of this watch party",
+			},
+		})
+		return false
+	}
+	return true
 }
 
 // GetParticipants handles GET /api/v1/watch-parties/:id/participants
@@ -380,40 +428,10 @@ func (h *WatchPartyHandler) GetParticipants(c *gin.Context) {
 		return
 	}
 
-	// Check visibility permissions for private parties
-	if party.Visibility == "private" {
-		if userID == nil {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "Cannot view participants of private party without authentication",
-				},
-			})
-			return
-		}
-		// Check if user is a participant
-		participant, err := h.watchPartyRepo.GetParticipant(c.Request.Context(), partyID, *userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "INTERNAL_ERROR",
-					Message: "Failed to verify participant status",
-				},
-			})
-			return
-		}
-		if participant == nil || participant.LeftAt != nil {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "Not a participant of this private party",
-				},
-			})
-			return
-		}
+	// Only public parties are readable by everyone; private, friends and
+	// invite parties are restricted to the host and active participants.
+	if !h.authorizeWatchPartyRead(c, party, userID) {
+		return
 	}
 
 	// Get participants
@@ -672,8 +690,11 @@ func (h *WatchPartyHandler) WatchPartyWebSocket(c *gin.Context) {
 		User:   participant.User,
 	}
 
-	// Register client with hub
-	hub.Register <- client
+	// Register client with hub; a stopped hub never reads again.
+	if !hub.RegisterClient(client) {
+		conn.Close()
+		return
+	}
 
 	// Start client pumps with WebSocket context
 	go client.WritePump()
@@ -837,40 +858,10 @@ func (h *WatchPartyHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
-	// Check visibility permissions for private parties
-	if party.Visibility == "private" {
-		if userID == nil {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "Cannot view messages of private party without authentication",
-				},
-			})
-			return
-		}
-		// Check if user is a participant
-		participant, err := h.watchPartyRepo.GetParticipant(c.Request.Context(), partyID, *userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "INTERNAL_ERROR",
-					Message: "Failed to verify participant status",
-				},
-			})
-			return
-		}
-		if participant == nil || participant.LeftAt != nil {
-			c.JSON(http.StatusForbidden, StandardResponse{
-				Success: false,
-				Error: &ErrorInfo{
-					Code:    "FORBIDDEN",
-					Message: "Not a participant of this private party",
-				},
-			})
-			return
-		}
+	// Only public parties are readable by everyone; private, friends and
+	// invite parties are restricted to the host and active participants.
+	if !h.authorizeWatchPartyRead(c, party, userID) {
+		return
 	}
 
 	// Get messages (last 100)

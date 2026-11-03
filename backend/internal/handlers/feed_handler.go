@@ -632,6 +632,19 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		}
 	}
 
+	// Hot and rising cursors carry a snapshot. For rising it is the time the
+	// score is evaluated at, fixed on the first page so later pages share the
+	// same ordering; for hot it marks the cursor as score-based.
+	var sortSnapshot time.Time
+	if sort == "hot" || sort == "rising" {
+		sortSnapshot = time.Now().UTC().Truncate(time.Microsecond)
+		if cursor != "" {
+			if decodedCursor, decodeErr := utils.DecodeCursor(cursor); decodeErr == nil && decodedCursor != nil && decodedCursor.Snapshot != 0 {
+				sortSnapshot = utils.CursorTime(decodedCursor.Snapshot)
+			}
+		}
+	}
+
 	// Validate date filters to prevent SQL injection
 	var validatedDateFrom, validatedDateTo string
 	var err error
@@ -663,6 +676,9 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 		Sort:                sort,
 		UserSubmittedOnly:   false, // Automated and user-submitted clips share the main feed.
 		TrendingShuffleSeed: &shuffleSeed,
+	}
+	if sort == "rising" {
+		filters.SortSnapshot = &sortSnapshot
 	}
 
 	period := c.DefaultQuery("timeframe", "day")
@@ -752,39 +768,7 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 	var nextCursor *string
 	if hasMore && len(clips) > 0 {
 		lastClip := clips[len(clips)-1]
-		var sortValue float64
-		switch sort {
-		case "trending":
-			// Use coalesced value to match query behavior
-			if lastClip.TrendingScore != 0 {
-				sortValue = lastClip.TrendingScore
-			} else {
-				// Fallback: estimate trending score if not calculated
-				// This matches the COALESCE behavior in the query
-				sortValue = float64(lastClip.CreatedAt.Unix())
-			}
-		case "popular":
-			// Use coalesced value to match query behavior
-			if lastClip.PopularityIndex != 0 {
-				sortValue = float64(lastClip.PopularityIndex)
-			} else if lastClip.EngagementCount != 0 {
-				sortValue = float64(lastClip.EngagementCount)
-			} else {
-				// Fallback calculation matching COALESCE
-				sortValue = float64(lastClip.ViewCount + lastClip.VoteScore*2 + lastClip.CommentCount*3 + lastClip.FavoriteCount*2)
-			}
-		case "new":
-			sortValue = float64(lastClip.CreatedAt.Unix())
-		case "top":
-			sortValue = float64(lastClip.VoteScore)
-		case "discussed":
-			sortValue = float64(lastClip.CommentCount)
-		case "hot", "rising":
-			sortValue = float64(lastClip.CreatedAt.Unix())
-		default:
-			sortValue = float64(lastClip.CreatedAt.Unix())
-		}
-		encodedCursor := utils.EncodeCursorWithShuffleSeed(sort, sortValue, lastClip.ID, lastClip.CreatedAt.Unix(), shuffleSeed)
+		encodedCursor := utils.EncodeFullCursor(feedCursorFor(sort, &lastClip.Clip, shuffleSeed, sortSnapshot))
 		if engagement != nil {
 			encodedCursor = encodeEngagementCursor(engagement.Generation, lastClip.ID, lastClip.TrendingScore, c.Request.URL.Query())
 		}
@@ -827,4 +811,37 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 			"sort":              sort,
 		},
 	})
+}
+
+// feedCursorFor builds the next-page cursor for the last clip of a page. Each
+// sort value must equal what the repository's ORDER BY computes for that clip
+// (see ClipRepository.ListWithFilters), or pages skip or repeat clips.
+func feedCursorFor(sort string, clip *models.Clip, shuffleSeed string, sortSnapshot time.Time) utils.Cursor {
+	cursor := utils.Cursor{
+		SortKey:     sort,
+		ClipID:      clip.ID.String(),
+		CreatedAt:   utils.CursorTimeValue(clip.CreatedAt),
+		ShuffleSeed: shuffleSeed,
+	}
+	switch sort {
+	case "trending":
+		// The query returns the ranked trending expression as trending_score.
+		cursor.SortValue = clip.TrendingScore
+	case "popular":
+		// popularity_index is never NULL here, so COALESCE always selects it.
+		cursor.SortValue = float64(clip.PopularityIndex)
+	case "new":
+		cursor.SortValue = repository.NewSortCursorValue(clip)
+	case "top":
+		cursor.SortValue = float64(clip.VoteScore)
+	case "discussed":
+		cursor.SortValue = float64(clip.CommentCount)
+	case "hot":
+		cursor.SortValue = float64(clip.VoteScore)
+		cursor.Snapshot = utils.CursorTimeValue(sortSnapshot)
+	case "rising":
+		cursor.SortValue = repository.RisingCursorBase(clip)
+		cursor.Snapshot = utils.CursorTimeValue(sortSnapshot)
+	}
+	return cursor
 }

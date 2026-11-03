@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
+	"unicode"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
@@ -213,6 +215,10 @@ func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req 
 		clips = append(clips, clip)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating clips: %w", err)
+	}
+
 	return clips, totalCount, nil
 }
 
@@ -278,6 +284,10 @@ func (r *SearchRepository) searchCreators(ctx context.Context, tsQuery string, r
 		users = append(users, user)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating creators: %w", err)
+	}
+
 	return users, totalCount, nil
 }
 
@@ -336,6 +346,10 @@ func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req 
 			return nil, 0, err
 		}
 		games = append(games, game)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating games: %w", err)
 	}
 
 	return games, totalCount, nil
@@ -397,6 +411,10 @@ func (r *SearchRepository) searchTags(ctx context.Context, tsQuery string, req *
 		tags = append(tags, tag)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating tags: %w", err)
+	}
+
 	return tags, totalCount, nil
 }
 
@@ -408,48 +426,41 @@ func (r *SearchRepository) GetSuggestions(ctx context.Context, query string, lim
 
 	suggestions := []models.SearchSuggestion{}
 
-	// Search for matching games
+	pattern := "%" + query + "%"
+
+	// Search for matching games, most-clipped first. GROUP BY is required:
+	// SELECT DISTINCT cannot be ordered by an expression outside its select list.
 	gameQuery := `
-		SELECT DISTINCT game_name
+		SELECT game_name
 		FROM clips
 		WHERE game_name ILIKE $1 AND game_name IS NOT NULL AND is_removed = false AND submitted_by_user_id IS NOT NULL
-		ORDER BY COUNT(*) OVER (PARTITION BY game_name) DESC
+		GROUP BY game_name
+		ORDER BY COUNT(*) DESC, game_name
 		LIMIT $2
 	`
-	rows, err := r.db.Query(ctx, gameQuery, "%"+query+"%", limit/2)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var gameName string
-			if err := rows.Scan(&gameName); err == nil {
-				suggestions = append(suggestions, models.SearchSuggestion{
-					Text: gameName,
-					Type: "game",
-				})
-			}
-		}
+	games, err := r.collectSuggestionNames(ctx, gameQuery, pattern, limit/2)
+	if err != nil {
+		log.Printf("search suggestions: game lookup failed: %v", err)
+	}
+	for _, name := range games {
+		suggestions = append(suggestions, models.SearchSuggestion{Text: name, Type: "game"})
 	}
 
-	// Search for matching creators
+	// Search for matching creators, most-clipped first
 	creatorQuery := `
-		SELECT DISTINCT creator_name
+		SELECT creator_name
 		FROM clips
-		WHERE creator_name ILIKE $1 AND is_removed = false AND submitted_by_user_id IS NOT NULL
-		ORDER BY COUNT(*) OVER (PARTITION BY creator_name) DESC
+		WHERE creator_name ILIKE $1 AND creator_name IS NOT NULL AND is_removed = false AND submitted_by_user_id IS NOT NULL
+		GROUP BY creator_name
+		ORDER BY COUNT(*) DESC, creator_name
 		LIMIT $2
 	`
-	rows2, err := r.db.Query(ctx, creatorQuery, "%"+query+"%", limit/2)
-	if err == nil {
-		defer rows2.Close()
-		for rows2.Next() {
-			var creatorName string
-			if err := rows2.Scan(&creatorName); err == nil {
-				suggestions = append(suggestions, models.SearchSuggestion{
-					Text: creatorName,
-					Type: "creator",
-				})
-			}
-		}
+	creators, err := r.collectSuggestionNames(ctx, creatorQuery, pattern, limit/2)
+	if err != nil {
+		log.Printf("search suggestions: creator lookup failed: %v", err)
+	}
+	for _, name := range creators {
+		suggestions = append(suggestions, models.SearchSuggestion{Text: name, Type: "creator"})
 	}
 
 	// Search for matching tags
@@ -462,21 +473,36 @@ func (r *SearchRepository) GetSuggestions(ctx context.Context, query string, lim
 		ORDER BY usage_count DESC
 		LIMIT $2
 	`
-	rows3, err := r.db.Query(ctx, tagQuery, "%"+query+"%", limit/3)
-	if err == nil {
-		defer rows3.Close()
-		for rows3.Next() {
-			var tagName string
-			if err := rows3.Scan(&tagName); err == nil {
-				suggestions = append(suggestions, models.SearchSuggestion{
-					Text: tagName,
-					Type: "tag",
-				})
-			}
-		}
+	tags, err := r.collectSuggestionNames(ctx, tagQuery, pattern, limit/3)
+	if err != nil {
+		log.Printf("search suggestions: tag lookup failed: %v", err)
+	}
+	for _, name := range tags {
+		suggestions = append(suggestions, models.SearchSuggestion{Text: name, Type: "tag"})
 	}
 
 	return suggestions, nil
+}
+
+// collectSuggestionNames runs a single-text-column suggestion query and
+// returns the names. Suggestions are best effort, so callers log the error and
+// keep whatever other suggestion types succeeded.
+func (r *SearchRepository) collectSuggestionNames(ctx context.Context, query, pattern string, limit int) ([]string, error) {
+	rows, err := r.db.Query(ctx, query, pattern, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return names, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
 }
 
 // TrackSearch records a search query for analytics
@@ -526,6 +552,10 @@ func (r *SearchRepository) GetTrendingSearches(ctx context.Context, days int, li
 		searches = append(searches, search)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating search rows: %w", err)
+	}
+
 	return searches, nil
 }
 
@@ -567,6 +597,10 @@ func (r *SearchRepository) GetFailedSearches(ctx context.Context, days int, limi
 		searches = append(searches, search)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating search rows: %w", err)
+	}
+
 	return searches, nil
 }
 
@@ -600,6 +634,10 @@ func (r *SearchRepository) GetUserSearchHistory(ctx context.Context, userID uuid
 			return nil, fmt.Errorf("failed to scan search history item: %w", err)
 		}
 		history = append(history, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating search history: %w", err)
 	}
 
 	return history, nil
@@ -640,28 +678,22 @@ func (r *SearchRepository) GetSearchAnalyticsSummary(ctx context.Context, days i
 	return &summary, nil
 }
 
-// parseQueryToTSQuery converts a search query to PostgreSQL tsquery format
+// parseQueryToTSQuery converts a search query to PostgreSQL tsquery format.
+//
+// Only letters, digits and underscores survive; every other rune (tsquery
+// operators such as & | ! ( ) : * <-> and quotes) acts as a word separator,
+// so arbitrary user input can never make to_tsquery fail. Each remaining word
+// becomes a prefix match and words are combined with AND. Input with no usable
+// words returns "", which callers treat as "no full-text condition".
 func parseQueryToTSQuery(query string) string {
-	if query == "" {
-		return ""
-	}
+	words := strings.FieldsFunc(query, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_'
+	})
 
-	// Simple parsing: split by spaces and join with & (AND)
-	words := strings.Fields(query)
-
-	// Remove special characters and empty strings
-	var cleanWords []string
+	cleanWords := make([]string, 0, len(words))
 	for _, word := range words {
-		// Basic sanitization
-		cleaned := strings.TrimSpace(word)
-		if cleaned != "" && len(cleaned) > 0 {
-			// Add prefix matching for partial words
-			cleanWords = append(cleanWords, cleaned+":*")
-		}
-	}
-
-	if len(cleanWords) == 0 {
-		return ""
+		// Add prefix matching for partial words
+		cleanWords = append(cleanWords, word+":*")
 	}
 
 	return strings.Join(cleanWords, " & ")

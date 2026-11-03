@@ -17,6 +17,7 @@ interface UseStreamerClipRoomWebSocketReturn {
 }
 
 const streamerClipRoomQueryKey = ['streamer-clip-room'] as const;
+const MAX_RECONNECT_ATTEMPTS = 10;
 
 export function useStreamerClipRoomWebSocket({
     roomId,
@@ -28,13 +29,7 @@ export function useStreamerClipRoomWebSocket({
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lastEvent, setLastEvent] = useState<StreamerClipRoomEvent | null>(null);
-    const wsRef = useRef<WebSocket | null>(null);
-    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const reconnectAttemptsRef = useRef(0);
-    const maxReconnectAttempts = 10;
-    const connectRef = useRef<(() => void) | null>(null);
     const onEventRef = useRef(onEvent);
-    const isActiveRef = useRef(true);
 
     useEffect(() => {
         onEventRef.current = onEvent;
@@ -50,31 +45,54 @@ export function useStreamerClipRoomWebSocket({
         }
     }, [channel, queryClient, roomId]);
 
-    const connect = useCallback(async () => {
+    useEffect(() => {
         if (!enabled || !roomId) return;
 
-        try {
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsHost = import.meta.env.VITE_WS_HOST || window.location.host;
-            const token = await getSecureItem('token');
+        // Every value below is owned by this effect run, so a socket or timer
+        // from a previous room/mount can never reconnect into the current one.
+        let cancelled = false;
+        let socket: WebSocket | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+        let reconnectAttempts = 0;
 
-            if (!token) {
-                setError('Authentication required');
+        const connect = async () => {
+            if (cancelled) return;
+            let token: string | null = null;
+            try {
+                token = await getSecureItem('token');
+            } catch (err) {
+                console.error('Streamer clip room token lookup failed:', err);
+            }
+            // The effect may have been cleaned up while awaiting storage.
+            if (cancelled) return;
+
+            let ws: WebSocket;
+            try {
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsHost = import.meta.env.VITE_WS_HOST || window.location.host;
+                const wsUrl = `${wsProtocol}//${wsHost}/api/v1/streamer-clip-rooms/${encodeURIComponent(roomId)}/ws`;
+                // Web sessions authenticate with the HttpOnly access_token cookie;
+                // a stored bearer token (if any) is passed as a subprotocol, which
+                // the backend echoes back.
+                ws = token
+                    ? new WebSocket(wsUrl, [`auth.bearer.${btoa(token)}`])
+                    : new WebSocket(wsUrl);
+            } catch (err) {
+                setError('Failed to connect to streamer clip room');
+                console.error('Streamer clip room websocket connection error:', err);
                 return;
             }
-
-            const wsUrl = `${wsProtocol}//${wsHost}/api/v1/streamer-clip-rooms/${encodeURIComponent(roomId)}/ws`;
-            const authProtocol = `auth.bearer.${btoa(token)}`;
-            const ws = new WebSocket(wsUrl, [authProtocol]);
-            wsRef.current = ws;
+            socket = ws;
 
             ws.onopen = () => {
+                if (cancelled) return;
                 setIsConnected(true);
                 setError(null);
-                reconnectAttemptsRef.current = 0;
+                reconnectAttempts = 0;
             };
 
             ws.onmessage = event => {
+                if (cancelled) return;
                 try {
                     const parsed = JSON.parse(event.data) as StreamerClipRoomEvent;
                     setLastEvent(parsed);
@@ -86,56 +104,47 @@ export function useStreamerClipRoomWebSocket({
             };
 
             ws.onerror = event => {
+                if (cancelled) return;
                 console.error('Streamer clip room websocket error:', event);
                 setError('Connection error');
             };
 
             ws.onclose = () => {
+                if (cancelled || socket !== ws) return;
+                socket = null;
                 setIsConnected(false);
 
-                if (!isActiveRef.current) {
-                    return;
-                }
-
-                if (reconnectAttemptsRef.current < maxReconnectAttempts && enabled) {
-                    const backoffDelay = Math.min(
-                        1000 * Math.pow(2, reconnectAttemptsRef.current),
-                        30000,
-                    );
-                    reconnectAttemptsRef.current += 1;
-
-                    reconnectTimeoutRef.current = window.setTimeout(() => {
-                        connectRef.current?.();
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                    reconnectAttempts += 1;
+                    reconnectTimer = setTimeout(() => {
+                        void connect();
                     }, backoffDelay);
-                } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+                } else {
                     setError('Connection lost. Unable to reconnect after multiple attempts.');
                 }
             };
-        } catch (err) {
-            setError('Failed to connect to streamer clip room');
-            console.error('Streamer clip room websocket connection error:', err);
-        }
-    }, [enabled, invalidateRoomQueries, roomId]);
-
-    useEffect(() => {
-        isActiveRef.current = true;
-        connectRef.current = connect;
+        };
 
         queueMicrotask(() => {
             void connect();
         });
 
         return () => {
-            isActiveRef.current = false;
-            if (reconnectTimeoutRef.current) {
-                clearTimeout(reconnectTimeoutRef.current);
+            cancelled = true;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            if (socket) {
+                const ws = socket;
+                socket = null;
+                ws.onopen = null;
+                ws.onmessage = null;
+                ws.onerror = null;
+                ws.onclose = null;
+                ws.close();
             }
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
-            }
+            setIsConnected(false);
         };
-    }, [connect]);
+    }, [enabled, invalidateRoomQueries, roomId]);
 
     return {
         isConnected,

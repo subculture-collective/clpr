@@ -21,7 +21,7 @@ Submits the Twitch clip you are watching to [clpr](https://clpr.tv). It fills in
 | Browser | Minimum version |
 |---------|----------------|
 | Chrome / Chromium | 99+ |
-| Firefox | 109+ |
+| Firefox | 121+ |
 | Edge | 99+ |
 
 ## Development

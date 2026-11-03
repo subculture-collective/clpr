@@ -72,6 +72,11 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 	return c.client.Get(ctx, key).Result()
 }
 
+// GetDel atomically retrieves a value and deletes its key
+func (c *Client) GetDel(ctx context.Context, key string) (string, error) {
+	return c.client.GetDel(ctx, key).Result()
+}
+
 // SetJSON stores a JSON-serialized value with expiration
 func (c *Client) SetJSON(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	data, err := json.Marshal(value)

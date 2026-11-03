@@ -25,9 +25,9 @@ func NewEngagementHandler(engagementService *services.EngagementService, authSer
 }
 
 // GetUserEngagementScore returns engagement score for a user
-// GET /api/v1/users/:userId/engagement
+// GET /api/v1/users/:id/engagement (":id" may be "me")
 func (h *EngagementHandler) GetUserEngagementScore(c *gin.Context) {
-	userIDStr := c.Param("userId")
+	userIDStr := c.Param("id")
 
 	// Allow users to use "me" to get their own score
 	var userID uuid.UUID

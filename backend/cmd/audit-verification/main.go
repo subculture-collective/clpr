@@ -5,12 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	"github.com/google/uuid"
 )
 
 // AuditStats tracks statistics for the audit operation
@@ -19,6 +21,7 @@ type AuditStats struct {
 	PassedAudits      int
 	FlaggedAudits     int
 	RevokedAudits     int
+	ErrorCount        int
 	StartTime         time.Time
 	EndTime           time.Time
 	LastError         error
@@ -64,18 +67,31 @@ func main() {
 	log.Printf("  - Passed: %d", stats.PassedAudits)
 	log.Printf("  - Flagged: %d", stats.FlaggedAudits)
 	log.Printf("  - Revoked: %d", stats.RevokedAudits)
+	log.Printf("Errors: %d", stats.ErrorCount)
 	log.Printf("Duration: %v", duration)
 
 	if stats.LastError != nil {
 		log.Printf("Last error: %v", stats.LastError)
 	}
 
+	if stats.ErrorCount > 0 {
+		log.Printf("Audit finished with %d error(s)", stats.ErrorCount)
+		os.Exit(1)
+	}
+
 	log.Println("\n✓ Audit completed successfully!")
+}
+
+// auditRepository is the subset of VerificationRepository used by the audit.
+type auditRepository interface {
+	GetVerifiedUsersForAudit(ctx context.Context, lastAuditedDaysAgo int, limit int) ([]*models.User, error)
+	RevokeUserVerification(ctx context.Context, userID uuid.UUID) error
+	CreateAuditLog(ctx context.Context, log *models.VerificationAuditLog) error
 }
 
 func runVerificationAudit(
 	ctx context.Context,
-	repo *repository.VerificationRepository,
+	repo auditRepository,
 	dryRun bool,
 	limit int,
 	auditPeriodDays int,
@@ -106,9 +122,23 @@ func runVerificationAudit(
 		log.Printf("\n[%d/%d] Auditing user: %s (ID: %s)", i+1, len(users), user.Username, user.ID)
 
 		// Perform audit checks
-		auditResult := performUserAudit(ctx, repo, user)
+		auditResult := performUserAudit(user)
 
 		stats.TotalUsersAudited++
+
+		// Revoke first so the audit log records what actually happened.
+		if auditResult.Status == models.AuditStatusRevoked {
+			if dryRun {
+				log.Printf("  [DRY RUN] Would revoke verification status")
+			} else if err := repo.RevokeUserVerification(ctx, user.ID); err != nil {
+				log.Printf("  ERROR: Failed to revoke verification: %v", err)
+				stats.LastError = err
+				stats.ErrorCount++
+				markRevocationFailed(auditResult, err)
+			} else {
+				log.Printf("  ✓ Verification status revoked in database")
+			}
+		}
 
 		switch auditResult.Status {
 		case models.AuditStatusPassed:
@@ -120,19 +150,6 @@ func runVerificationAudit(
 		case models.AuditStatusRevoked:
 			stats.RevokedAudits++
 			log.Printf("  ✗ Verification revoked: %s", *auditResult.Notes)
-
-			// Actually revoke the user's verification status
-			if !dryRun {
-				if err := repo.RevokeUserVerification(ctx, user.ID); err != nil {
-					log.Printf("  ERROR: Failed to revoke verification: %v", err)
-					stats.LastError = err
-					// Continue to save audit log even if revocation fails
-				} else {
-					log.Printf("  ✓ Verification status revoked in database")
-				}
-			} else {
-				log.Printf("  [DRY RUN] Would revoke verification status")
-			}
 		}
 
 		// Save audit log (unless dry run)
@@ -141,6 +158,7 @@ func runVerificationAudit(
 			if err != nil {
 				log.Printf("  ERROR: Failed to save audit log: %v", err)
 				stats.LastError = err
+				stats.ErrorCount++
 				continue
 			}
 			log.Printf("  Audit log saved (ID: %s)", auditResult.ID)
@@ -153,8 +171,28 @@ func runVerificationAudit(
 	return stats, nil
 }
 
+// markRevocationFailed rewrites a revoked audit result whose revocation could
+// not be applied, so the log does not claim the user was revoked. The user is
+// left flagged for further review with the failure recorded in the findings.
+func markRevocationFailed(result *models.VerificationAuditLog, revokeErr error) {
+	reason := ""
+	if result.Notes != nil {
+		reason = *result.Notes
+	}
+	notes := fmt.Sprintf("Revocation required (%s) but failed: %v", reason, revokeErr)
+	action := models.AuditActionFurtherReviewRequired
+	result.Status = models.AuditStatusFlagged
+	result.ActionTaken = &action
+	result.Notes = &notes
+	if result.Findings == nil {
+		result.Findings = map[string]interface{}{}
+	}
+	result.Findings["revocation_failed"] = true
+	result.Findings["revocation_error"] = revokeErr.Error()
+}
+
 // performUserAudit performs audit checks on a verified user
-func performUserAudit(ctx context.Context, repo *repository.VerificationRepository, user *models.User) *models.VerificationAuditLog {
+func performUserAudit(user *models.User) *models.VerificationAuditLog {
 	findings := make(map[string]interface{})
 	status := models.AuditStatusPassed
 	actionTaken := models.AuditActionNone

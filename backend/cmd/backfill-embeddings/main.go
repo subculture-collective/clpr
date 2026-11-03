@@ -5,14 +5,16 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
-	pgvector "github.com/pgvector/pgvector-go"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	"git.subcult.tv/subculture-collective/clpr/pkg/redis"
+	"github.com/google/uuid"
+	pgvector "github.com/pgvector/pgvector-go"
 )
 
 type BackfillStats struct {
@@ -101,7 +103,45 @@ func main() {
 		log.Printf("Last error: %v", stats.LastError)
 	}
 
+	if stats.FailedClips > 0 {
+		log.Printf("Backfill finished with %d failed clip(s)", stats.FailedClips)
+		os.Exit(1)
+	}
+
 	log.Println("\n✓ Backfill completed successfully!")
+}
+
+// embeddingGenerator is the subset of EmbeddingService used by the backfill.
+type embeddingGenerator interface {
+	GenerateClipEmbedding(ctx context.Context, clip *models.Clip) ([]float32, error)
+	GetModel() string
+}
+
+// saveEmbeddingFunc persists a generated embedding for a clip.
+type saveEmbeddingFunc func(ctx context.Context, clip *models.Clip, embedding []float32, model string) error
+
+// backfillBatchQuery returns the batch query. Pages are selected by keyset on
+// id rather than OFFSET: clips leave the "embedding IS NULL" filter as they are
+// updated, so OFFSET paging would skip rows. Keyset paging is stable whether or
+// not rows leave the filter.
+func backfillBatchQuery(forceUpdate, hasCursor bool) string {
+	query := `
+			SELECT id, twitch_clip_id, title, creator_name, broadcaster_name,
+			       game_id, game_name, embedding, embedding_generated_at, embedding_model
+			FROM clips
+			WHERE is_removed = false
+		`
+	if !forceUpdate {
+		query += ` AND embedding IS NULL`
+	}
+	if hasCursor {
+		query += ` AND id > $2`
+	}
+	query += `
+			ORDER BY id ASC
+			LIMIT $1
+		`
+	return query
 }
 
 func backfillEmbeddings(
@@ -133,28 +173,29 @@ func backfillEmbeddings(
 		return stats, nil
 	}
 
-	offset := 0
+	save := func(ctx context.Context, clip *models.Clip, embedding []float32, model string) error {
+		updateQuery := `
+				UPDATE clips
+				SET embedding = $1,
+				    embedding_generated_at = $2,
+				    embedding_model = $3
+				WHERE id = $4
+			`
+		_, err := db.Pool.Exec(ctx, updateQuery, pgvector.NewVector(embedding), time.Now(), model, clip.ID)
+		return err
+	}
+
+	var cursor *uuid.UUID
 	for {
 		// Fetch batch of clips
-		query := `
-			SELECT id, twitch_clip_id, title, creator_name, broadcaster_name,
-			       game_id, game_name, embedding, embedding_generated_at, embedding_model
-			FROM clips
-			WHERE is_removed = false
-		`
-		if !forceUpdate {
-			query += ` AND embedding IS NULL`
+		args := []interface{}{batchSize}
+		if cursor != nil {
+			args = append(args, *cursor)
 		}
-		query += `
-			ORDER BY created_at DESC
-			LIMIT $1 OFFSET $2
-		`
-
-		rows, err := db.Pool.Query(ctx, query, batchSize, offset)
+		rows, err := db.Pool.Query(ctx, backfillBatchQuery(forceUpdate, cursor != nil), args...)
 		if err != nil {
 			return stats, fmt.Errorf("failed to fetch clips: %w", err)
 		}
-		defer rows.Close()
 
 		var clips []models.Clip
 		for rows.Next() {
@@ -172,9 +213,14 @@ func backfillEmbeddings(
 				&clip.EmbeddingModel,
 			)
 			if err != nil {
+				rows.Close()
 				return stats, fmt.Errorf("failed to scan clip: %w", err)
 			}
 			clips = append(clips, clip)
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return stats, fmt.Errorf("failed to iterate clips: %w", err)
 		}
 
 		if len(clips) == 0 {
@@ -182,69 +228,13 @@ func backfillEmbeddings(
 		}
 
 		// Process batch
-		log.Printf("Processing batch of %d clips (offset: %d, progress: %.1f%%)",
-			len(clips), offset, float64(stats.ProcessedClips+stats.SkippedClips+stats.FailedClips)/float64(stats.TotalClips)*100)
+		log.Printf("Processing batch of %d clips (progress: %.1f%%)",
+			len(clips), float64(stats.ProcessedClips+stats.SkippedClips+stats.FailedClips)/float64(stats.TotalClips)*100)
 
-		for i := range clips {
-			clip := &clips[i]
+		processBatch(ctx, clips, embeddingService, save, forceUpdate, dryRun, stats)
 
-			// Skip if already has embedding and not forcing update
-			if !forceUpdate && len(clip.Embedding) > 0 {
-				stats.SkippedClips++
-				continue
-			}
-
-			// Generate embedding
-			embedding, err := embeddingService.GenerateClipEmbedding(ctx, clip)
-			if err != nil {
-				log.Printf("WARNING: Failed to generate embedding for clip %s: %v", clip.ID, err)
-				stats.FailedClips++
-				stats.LastError = err
-				continue
-			}
-
-			if dryRun {
-				log.Printf("DRY RUN: Would update clip %s with embedding (length: %d)", clip.ID, len(embedding))
-				stats.ProcessedClips++
-				continue
-			}
-
-			// Save embedding to database
-			now := time.Now()
-			model := embeddingService.GetModel()
-			updateQuery := `
-				UPDATE clips
-				SET embedding = $1,
-				    embedding_generated_at = $2,
-				    embedding_model = $3
-				WHERE id = $4
-			`
-
-			_, err = db.Pool.Exec(ctx, updateQuery, pgvector.NewVector(embedding), now, model, clip.ID)
-			if err != nil {
-				log.Printf("WARNING: Failed to save embedding for clip %s: %v", clip.ID, err)
-				stats.FailedClips++
-				stats.LastError = err
-				continue
-			}
-
-			stats.ProcessedClips++
-
-			// Log progress every 10 clips
-			if stats.ProcessedClips%10 == 0 {
-				progress := float64(stats.ProcessedClips+stats.SkippedClips+stats.FailedClips) / float64(stats.TotalClips) * 100
-				log.Printf("Progress: %d/%d (%.1f%%) - processed: %d, skipped: %d, failed: %d",
-					stats.ProcessedClips+stats.SkippedClips+stats.FailedClips,
-					stats.TotalClips,
-					progress,
-					stats.ProcessedClips,
-					stats.SkippedClips,
-					stats.FailedClips,
-				)
-			}
-		}
-
-		offset += batchSize
+		lastID := clips[len(clips)-1].ID
+		cursor = &lastID
 
 		// Small delay between batches to avoid overwhelming the API
 		time.Sleep(100 * time.Millisecond)
@@ -252,4 +242,64 @@ func backfillEmbeddings(
 
 	stats.EndTime = time.Now()
 	return stats, nil
+}
+
+// processBatch generates and saves embeddings for one batch, updating stats.
+// Dry runs report what would be processed without calling the embedding API.
+func processBatch(
+	ctx context.Context,
+	clips []models.Clip,
+	generator embeddingGenerator,
+	save saveEmbeddingFunc,
+	forceUpdate bool,
+	dryRun bool,
+	stats *BackfillStats,
+) {
+	for i := range clips {
+		clip := &clips[i]
+
+		// Skip if already has embedding and not forcing update
+		if !forceUpdate && len(clip.Embedding) > 0 {
+			stats.SkippedClips++
+			continue
+		}
+
+		if dryRun {
+			log.Printf("DRY RUN: Would generate and save embedding for clip %s", clip.ID)
+			stats.ProcessedClips++
+			continue
+		}
+
+		// Generate embedding
+		embedding, err := generator.GenerateClipEmbedding(ctx, clip)
+		if err != nil {
+			log.Printf("WARNING: Failed to generate embedding for clip %s: %v", clip.ID, err)
+			stats.FailedClips++
+			stats.LastError = err
+			continue
+		}
+
+		// Save embedding to database
+		if err := save(ctx, clip, embedding, generator.GetModel()); err != nil {
+			log.Printf("WARNING: Failed to save embedding for clip %s: %v", clip.ID, err)
+			stats.FailedClips++
+			stats.LastError = err
+			continue
+		}
+
+		stats.ProcessedClips++
+
+		// Log progress every 10 clips
+		if stats.ProcessedClips%10 == 0 && stats.TotalClips > 0 {
+			progress := float64(stats.ProcessedClips+stats.SkippedClips+stats.FailedClips) / float64(stats.TotalClips) * 100
+			log.Printf("Progress: %d/%d (%.1f%%) - processed: %d, skipped: %d, failed: %d",
+				stats.ProcessedClips+stats.SkippedClips+stats.FailedClips,
+				stats.TotalClips,
+				progress,
+				stats.ProcessedClips,
+				stats.SkippedClips,
+				stats.FailedClips,
+			)
+		}
+	}
 }

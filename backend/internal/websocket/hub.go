@@ -114,9 +114,11 @@ func (h *ChannelHub) handleRegister(client *ChatClient) {
 		Timestamp:    timePtr(time.Now()),
 	}
 
+	// Fan out inline: Run is the only reader of h.Broadcast, so sending to it
+	// from here would deadlock the hub once the buffer is full.
 	data, err := json.Marshal(presence)
 	if err == nil {
-		h.Broadcast <- data
+		h.handleBroadcast(data)
 	}
 
 	// Send message history to new client, unless the hub is shutting down
@@ -133,7 +135,7 @@ func (h *ChannelHub) handleUnregister(client *ChatClient) {
 	h.Mutex.Lock()
 	if _, ok := h.Clients[client]; ok {
 		delete(h.Clients, client)
-		close(client.Send)
+		client.closeSend()
 	}
 	totalClients := len(h.Clients)
 	h.Mutex.Unlock()
@@ -156,9 +158,10 @@ func (h *ChannelHub) handleUnregister(client *ChatClient) {
 		Timestamp:    timePtr(time.Now()),
 	}
 
+	// Fan out inline (see handleRegister).
 	data, err := json.Marshal(presence)
 	if err == nil {
-		h.Broadcast <- data
+		h.handleBroadcast(data)
 	}
 }
 
@@ -196,10 +199,8 @@ func (h *ChannelHub) broadcastToClients(message []byte) {
 	defer h.Mutex.RUnlock()
 
 	for client := range h.Clients {
-		select {
-		case client.Send <- message:
-		default:
-			// Client's send channel is full, skip
+		if !client.trySend(message) {
+			// Client's send channel is full or closed, skip
 			log.Printf("Client send buffer full, skipping message for user_id=%s", client.UserID)
 		}
 	}
@@ -280,9 +281,7 @@ func (h *ChannelHub) sendMessageHistory(client *ChatClient) {
 		if err != nil {
 			continue
 		}
-		select {
-		case client.Send <- data:
-		default:
+		if !client.trySend(data) {
 			// Client disconnected or buffer full
 			return
 		}
@@ -298,7 +297,7 @@ func (h *ChannelHub) shutdown() {
 
 	// Close all client connections
 	for client := range h.Clients {
-		close(client.Send)
+		client.closeSend()
 		if client.Conn != nil {
 			client.Conn.Close()
 		}

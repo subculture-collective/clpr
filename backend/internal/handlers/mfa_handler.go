@@ -1,28 +1,59 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+// mfaLoginVerifier is the part of MFAService used to finish a sign-in.
+type mfaLoginVerifier interface {
+	VerifyTOTP(ctx context.Context, userID uuid.UUID, code string, ipAddress, userAgent *string) error
+	VerifyBackupCode(ctx context.Context, userID uuid.UUID, code string) error
+	CreateTrustedDevice(ctx context.Context, userID uuid.UUID, fingerprint, deviceName string, ipAddress, userAgent *string) error
+}
+
+// mfaLoginUsers loads the user a pending MFA sign-in belongs to.
+type mfaLoginUsers interface {
+	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+}
 
 // MFAHandler handles MFA-related endpoints
 type MFAHandler struct {
 	mfaService *services.MFAService
 	cfg        *config.Config
+
+	loginVerifier mfaLoginVerifier
+	users         mfaLoginUsers
+	challenges    mfaChallengeStore
+	session       *loginSession
 }
 
-// NewMFAHandler creates a new MFA handler
-func NewMFAHandler(mfaService *services.MFAService, cfg *config.Config) *MFAHandler {
-	return &MFAHandler{
+// NewMFAHandler creates a new MFA handler. authService and challenges finish
+// sign-ins that AuthHandler paused for an MFA code.
+func NewMFAHandler(mfaService *services.MFAService, cfg *config.Config, authService *services.AuthService, challenges mfaChallengeStore) *MFAHandler {
+	h := &MFAHandler{
 		mfaService: mfaService,
 		cfg:        cfg,
+		challenges: challenges,
 	}
+	if mfaService != nil {
+		h.loginVerifier = mfaService
+	}
+	if authService != nil {
+		h.users = authService
+		// The code was just verified, so this session issuer has no MFA gate.
+		h.session = newLoginSession(cfg, authService, nil, challenges)
+	}
+	return h
 }
 
 // StartEnrollment handles POST /api/v1/auth/mfa/enroll
@@ -45,16 +76,16 @@ func (h *MFAHandler) StartEnrollment(c *gin.Context) {
 		return
 	}
 
-	// Get user email from context (set by auth middleware)
-	email, exists := c.Get("user_email")
-	if !exists {
-		email = ""
+	// The authenticator app shows this account name next to the issuer.
+	accountName := ""
+	if userValue, ok := c.Get("user"); ok {
+		if user, ok := userValue.(*models.User); ok && user != nil {
+			accountName = user.Username
+		}
 	}
 
-	emailStr, _ := email.(string)
-
 	// Start enrollment
-	response, err := h.mfaService.StartEnrollment(c.Request.Context(), userIDUUID, emailStr)
+	response, err := h.mfaService.StartEnrollment(c.Request.Context(), userIDUUID, accountName)
 	if err != nil {
 		if err == services.ErrMFAAlreadyEnabled {
 			c.JSON(http.StatusConflict, gin.H{
@@ -63,6 +94,7 @@ func (h *MFAHandler) StartEnrollment(c *gin.Context) {
 			return
 		}
 
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to start MFA enrollment",
 		})
@@ -121,22 +153,36 @@ func (h *MFAHandler) VerifyEnrollment(c *gin.Context) {
 }
 
 // VerifyLogin handles POST /api/v1/auth/mfa/verify-login
-// Verifies MFA code during login
+// Completes a sign-in that AuthHandler paused for an MFA code. The pending
+// sign-in is identified by the mfa_challenge cookie; on success the challenge
+// is consumed and session cookies are issued.
 func (h *MFAHandler) VerifyLogin(c *gin.Context) {
-	// This endpoint is called during login flow, user_id comes from session
-	userID, exists := c.Get("pending_user_id")
-	if !exists {
+	if h.challenges == nil || h.session == nil || h.loginVerifier == nil || h.users == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MFA sign-in is unavailable"})
+		return
+	}
+	ctx := c.Request.Context()
+
+	token, cookieErr := c.Cookie(mfaChallengeCookie)
+	if cookieErr != nil || token == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "No pending MFA verification",
+			"code":  "MFA_CHALLENGE_MISSING",
 		})
 		return
 	}
 
-	userIDUUID, ok := userID.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID format",
-		})
+	userID, err := h.challenges.Resolve(ctx, token)
+	if err != nil {
+		if errors.Is(err, services.ErrMFAChallengeNotFound) {
+			clearChallengeCookie(c)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Your sign-in expired. Please sign in again.",
+				"code":  "MFA_CHALLENGE_EXPIRED",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify MFA code"})
 		return
 	}
 
@@ -152,47 +198,99 @@ func (h *MFAHandler) VerifyLogin(c *gin.Context) {
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	// Check if this is a backup code (8 characters) or TOTP (6 digits)
-	var err error
-	if len(req.Code) == 8 {
-		err = h.mfaService.VerifyBackupCode(c.Request.Context(), userIDUUID, req.Code)
+	// Backup codes are 8 characters; authenticator codes are 6 digits.
+	code := normalizeMFALoginCode(req.Code)
+	if len(code) == 8 {
+		err = h.loginVerifier.VerifyBackupCode(ctx, userID, code)
 	} else {
-		err = h.mfaService.VerifyTOTP(c.Request.Context(), userIDUUID, req.Code, &ipAddress, &userAgent)
+		err = h.loginVerifier.VerifyTOTP(ctx, userID, code, &ipAddress, &userAgent)
 	}
 
 	if err != nil {
-		if err == services.ErrInvalidMFACode {
+		switch {
+		case errors.Is(err, services.ErrInvalidMFACode), errors.Is(err, services.ErrNoBackupCodesRemaining):
+			exhausted, recordErr := h.challenges.RecordFailure(ctx, token)
+			if recordErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify MFA code"})
+				return
+			}
+			if exhausted {
+				clearChallengeCookie(c)
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": "Too many incorrect codes. Please sign in again.",
+					"code":  "MFA_CHALLENGE_EXHAUSTED",
+				})
+				return
+			}
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid MFA code",
+				"code":  "MFA_CODE_INVALID",
 			})
-			return
-		}
-
-		if err == services.ErrTooManyFailedAttempts {
+		case errors.Is(err, services.ErrTooManyFailedAttempts):
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "Too many failed attempts. Account temporarily locked.",
+				"code":  "MFA_LOCKED",
 			})
+		case errors.Is(err, services.ErrMFANotEnabled):
+			// MFA was turned off after this sign-in started; starting over
+			// signs the user in without a code.
+			_, _ = h.challenges.Consume(ctx, token)
+			clearChallengeCookie(c)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Your sign-in expired. Please sign in again.",
+				"code":  "MFA_CHALLENGE_EXPIRED",
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to verify MFA code",
+			})
+		}
+		return
+	}
+
+	// Consume atomically: a challenge completes at most one sign-in.
+	consumedID, err := h.challenges.Consume(ctx, token)
+	if err != nil || consumedID != userID {
+		clearChallengeCookie(c)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Your sign-in expired. Please sign in again.",
+			"code":  "MFA_CHALLENGE_EXPIRED",
+		})
+		return
+	}
+	clearChallengeCookie(c)
+
+	user, err := h.users.GetUserByID(ctx, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to complete sign-in"})
+		return
+	}
+	if _, _, err := h.session.issueTokens(c, user); err != nil {
+		if errors.Is(err, services.ErrUserBanned) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Your account has been banned"})
 			return
 		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to verify MFA code",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to complete sign-in"})
 		return
 	}
 
 	// If trust device was requested, create trusted device entry
 	if req.TrustDevice != nil && *req.TrustDevice {
-		deviceName := c.GetHeader("User-Agent")
-		fingerprint := services.GenerateDeviceFingerprint(userAgent, ipAddress)
-		_ = h.mfaService.CreateTrustedDevice(c.Request.Context(), userIDUUID, fingerprint, deviceName, &ipAddress, &userAgent)
+		fingerprint := requestDeviceFingerprint(c)
+		_ = h.loginVerifier.CreateTrustedDevice(ctx, userID, fingerprint, userAgent, &ipAddress, &userAgent)
 	}
 
-	// MFA verification successful - auth middleware will handle session creation
 	c.JSON(http.StatusOK, gin.H{
 		"message": "MFA verification successful",
-		"user_id": userIDUUID,
+		"user":    user,
 	})
+}
+
+// normalizeMFALoginCode removes the spaces and dashes people type when
+// copying a code and upper-cases backup codes.
+func normalizeMFALoginCode(code string) string {
+	code = strings.NewReplacer(" ", "", "-", "", "\t", "").Replace(strings.TrimSpace(code))
+	return strings.ToUpper(code)
 }
 
 // RegenerateBackupCodes handles POST /api/v1/auth/mfa/regenerate-backup-codes

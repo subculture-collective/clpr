@@ -271,15 +271,20 @@ func (s *RecommendationService) getColdStartRecommendations(
 	if len(scores) < limit {
 		RecordColdStartFallback("trending", "popularity")
 
+		trendingIDs := make([]uuid.UUID, 0, len(scores))
+		for _, score := range scores {
+			trendingIDs = append(trendingIDs, score.ClipID)
+		}
+
 		popularScores, err := s.repo.GetPopularClips(
 			ctx,
-			nil,
+			trendingIDs,
 			s.popularityWindowDays,
 			s.popularityMinViews,
 			limit-len(scores),
 		)
 		if err == nil && len(popularScores) > 0 {
-			scores = append(scores, popularScores...)
+			scores = appendUniqueClipScores(scores, popularScores)
 			// Update algorithm to reflect mixed strategy based on composition
 			if originalTrendingCount == 0 {
 				algorithm = "popularity"
@@ -290,6 +295,23 @@ func (s *RecommendationService) getColdStartRecommendations(
 	}
 
 	return s.buildRecommendations(ctx, scores, algorithm, limit)
+}
+
+// appendUniqueClipScores appends extra scores whose ClipID is not already in
+// base (or earlier in extra), so a fallback source cannot repeat a clip.
+func appendUniqueClipScores(base, extra []models.ClipScore) []models.ClipScore {
+	seen := make(map[uuid.UUID]struct{}, len(base)+len(extra))
+	for _, score := range base {
+		seen[score.ClipID] = struct{}{}
+	}
+	for _, score := range extra {
+		if _, dup := seen[score.ClipID]; dup {
+			continue
+		}
+		seen[score.ClipID] = struct{}{}
+		base = append(base, score)
+	}
+	return base
 }
 
 // getHybridRecommendations generates hybrid recommendations combining multiple signals

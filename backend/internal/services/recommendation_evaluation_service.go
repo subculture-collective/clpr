@@ -276,6 +276,12 @@ func (s *RecommendationEvaluationService) EvaluateScenario(
 		}
 	}
 
+	// Ground-truth relevances (one per judged clip) for the nDCG ideal ranking
+	judgedRelevances := make([]int, 0, len(relevanceMap))
+	for _, rel := range relevanceMap {
+		judgedRelevances = append(judgedRelevances, rel)
+	}
+
 	// Get relevances for recommended items
 	relevances := make([]int, len(recommendedIDs))
 	gameIDs := make([]string, len(recommendedIDs))
@@ -321,8 +327,8 @@ func (s *RecommendationEvaluationService) EvaluateScenario(
 		Recall5:     CalculateRecallAtK(relevances, 5, totalRelevant, RelevanceThreshold),
 		Recall10:    CalculateRecallAtK(relevances, 10, totalRelevant, RelevanceThreshold),
 		// Note: CalculateNDCG is implemented in search_evaluation_service.go (same package).
-		NDCG5:              CalculateNDCG(relevances, 5),
-		NDCG10:             CalculateNDCG(relevances, 10),
+		NDCG5:              CalculateNDCG(relevances, judgedRelevances, 5),
+		NDCG10:             CalculateNDCG(relevances, judgedRelevances, 10),
 		Diversity5:         CalculateDiversity(gameIDs, 5),
 		Diversity10:        CalculateDiversity(gameIDs, 10),
 		SerendipityScore:   CalculateSerendipity(relevances, gameIDs, scenario.UserProfile.FavoriteGames, RelevanceThreshold),

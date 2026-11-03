@@ -23,6 +23,7 @@ export interface AccountRoutePages {
     settings: Page;
     cookieSettings: Page;
     webhookSubscriptions: Page;
+    securitySettings: Page;
     submitClip: Page;
     submissions: Page;
     notifications: Page;
@@ -78,6 +79,10 @@ export function accountRoutes(pages: AccountRoutePages) {
             <Route
                 path='/settings/webhooks'
                 element={protectedPage(pages.webhookSubscriptions, 'Webhook Subscriptions')}
+            />
+            <Route
+                path='/settings/security'
+                element={protectedPage(pages.securitySettings, 'Security')}
             />
             <Route path='/submit' element={protectedPage(pages.submitClip, 'Submit a Clip')} />
             <Route path='/submissions' element={protectedPage(pages.submissions, 'My Submissions')} />

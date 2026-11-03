@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"sync"
 
+	"git.subcult.tv/subculture-collective/clpr/config"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
-	"git.subcult.tv/subculture-collective/clpr/config"
 )
 
 // Server represents the WebSocket server
@@ -93,8 +93,13 @@ func (s *Server) HandleWebSocket(w http.ResponseWriter, r *http.Request, userID 
 	// Create client
 	client := NewChatClient(hub, conn, userID, username)
 
-	// Register client with hub
-	hub.Register <- client
+	// Register client with hub; a hub that is shutting down never reads again.
+	select {
+	case hub.Register <- client:
+	case <-hub.Stop:
+		conn.Close()
+		return nil
+	}
 
 	// Start read and write pumps
 	go client.WritePump()

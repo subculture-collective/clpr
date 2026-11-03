@@ -361,6 +361,19 @@ export function SettingsPage() {
                         </CardBody>
                     </Card>
 
+                    {/* Security */}
+                    <Card className='mb-6' data-testid='security-section'>
+                        <CardHeader>
+                            <h2 className='text-xl font-semibold'>Two-factor authentication</h2>
+                        </CardHeader>
+                        <CardBody>
+                            <p className='text-muted-foreground mb-4'>
+                                Require a code from an authenticator app when you sign in on a new browser.
+                            </p>
+                            <Button asChild variant='outline'><Link to='/settings/security'>Manage two-factor authentication</Link></Button>
+                        </CardBody>
+                    </Card>
+
                     {/* Account Access */}
                     <Card className='mb-6' data-testid='account-access-section'>
                         <CardHeader>

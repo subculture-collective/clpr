@@ -15,12 +15,9 @@ import (
 func TestRateLimitMiddleware_FallbackInitialization(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// Reset global fallback limiters for test isolation
-	ipFallbackLimiter = nil
-
 	// Create the middleware with a low limit for testing
 	// This should initialize the fallback limiter even if Redis is nil
-	_ = RateLimitMiddleware((*redispkg.Client)(nil), 3, time.Second)
+	_, ipFallbackLimiter := newRateLimitMiddleware((*redispkg.Client)(nil), 3, time.Second)
 
 	// Verify that the fallback limiter was initialized
 	if ipFallbackLimiter == nil {
@@ -51,8 +48,7 @@ func TestRateLimitMiddleware_FallbackInitialization(t *testing.T) {
 func TestRateLimitMiddleware_FallbackHeaders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// Reset global fallback limiters
-	ipFallbackLimiter = NewInMemoryRateLimiter(5, time.Second)
+	ipFallbackLimiter := NewInMemoryRateLimiter(5, time.Second)
 
 	router := gin.New()
 	// We'll create a middleware that always uses fallback by simulating Redis failure
@@ -109,11 +105,8 @@ func TestRateLimitMiddleware_FallbackHeaders(t *testing.T) {
 func TestRateLimitByUserMiddleware_FallbackInitialization(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// Reset global fallback limiters
-	userFallbackLimiter = nil
-
 	// Create the middleware
-	_ = RateLimitByUserMiddleware((*redispkg.Client)(nil), 2, time.Second)
+	_, userFallbackLimiter := newRateLimitByUserMiddleware((*redispkg.Client)(nil), 2, time.Second)
 
 	// Verify fallback limiter is created
 	if userFallbackLimiter == nil {
@@ -252,8 +245,7 @@ func TestRateLimitMiddleware_AdminBypass(t *testing.T) {
 func TestRateLimitMiddleware_BasicUserLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// Reset global fallback limiters
-	userFallbackLimiter = NewInMemoryRateLimiter(3, time.Second)
+	userFallbackLimiter := NewInMemoryRateLimiter(3, time.Second)
 
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
@@ -454,5 +446,60 @@ func TestInitRateLimitWhitelist(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRateLimitMiddleware_FallbackLimiterIsPerInstance(t *testing.T) {
+	_, strict := newRateLimitMiddleware((*redispkg.Client)(nil), 1, time.Minute)
+	_, generous := newRateLimitMiddleware((*redispkg.Client)(nil), 5, time.Minute)
+	if strict == generous {
+		t.Fatal("each middleware instance must own its fallback limiter")
+	}
+	if strict.limit != 1 || generous.limit != 5 {
+		t.Fatalf("fallback limits = %d and %d, want 1 and 5", strict.limit, generous.limit)
+	}
+
+	key := "ratelimit:/shared:1.2.3.4"
+	if allowed, _ := strict.Allow(key); !allowed {
+		t.Fatal("first strict request should be allowed")
+	}
+	if allowed, _ := strict.Allow(key); allowed {
+		t.Fatal("second strict request should be blocked")
+	}
+	for i := 0; i < 5; i++ {
+		if allowed, _ := generous.Allow(key); !allowed {
+			t.Fatalf("generous request %d should be allowed; limiter state leaked across routes", i+1)
+		}
+	}
+
+	_, userA := newRateLimitByUserMiddleware((*redispkg.Client)(nil), 2, time.Minute)
+	_, userB := newRateLimitByUserMiddleware((*redispkg.Client)(nil), 7, time.Minute)
+	if userA == userB || userA.limit != 2 || userB.limit != 7 {
+		t.Fatal("each user middleware instance must own a correctly sized fallback limiter")
+	}
+}
+
+func TestRateLimitEndpoint_UsesRouteTemplate(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	var seen []string
+	record := func(c *gin.Context) { seen = append(seen, rateLimitEndpoint(c)) }
+	router.POST("/clips/:id/vote", record)
+	router.NoRoute(record)
+
+	for _, path := range []string{"/clips/aaa/vote", "/clips/bbb/vote", "/unmatched/path"} {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodPost, path, nil)
+		router.ServeHTTP(w, req)
+	}
+
+	want := []string{"/clips/:id/vote", "/clips/:id/vote", "/unmatched/path"}
+	if len(seen) != len(want) {
+		t.Fatalf("got %v, want %v", seen, want)
+	}
+	for i := range want {
+		if seen[i] != want[i] {
+			t.Errorf("endpoint %d = %q, want %q", i, seen[i], want[i])
+		}
 	}
 }

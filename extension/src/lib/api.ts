@@ -60,6 +60,27 @@ export async function fetchTags(
 }
 
 /**
+ * Builds an error message from a failed response. Accepts `{ error: string }`,
+ * `{ error: { message } }` and `{ message }` JSON bodies; anything else
+ * (HTML error pages, empty bodies) falls back to the HTTP status.
+ */
+async function readErrorMessage(res: Response, prefix: string): Promise<string> {
+  const fallback = `${prefix}: ${res.status}${res.statusText ? ` ${res.statusText}` : ''}`;
+  try {
+    const body = (await res.json()) as {
+      error?: string | { message?: string };
+      message?: string;
+    };
+    if (typeof body?.error === 'string' && body.error) return body.error;
+    if (typeof body?.error === 'object' && body.error?.message) return body.error.message;
+    if (typeof body?.message === 'string' && body.message) return body.message;
+  } catch {
+    // Non-JSON error body.
+  }
+  return fallback;
+}
+
+/**
  * Submits a clip to clpr.
  */
 export async function submitClip(
@@ -75,9 +96,8 @@ export async function submitClip(
     },
     body: JSON.stringify(request),
   });
-  const body = await res.json() as SubmissionResponse;
   if (!res.ok) {
-    throw new Error((body as unknown as { error?: string }).error ?? `Submission failed: ${res.status}`);
+    throw new Error(await readErrorMessage(res, 'Submission failed'));
   }
-  return body;
+  return await res.json() as SubmissionResponse;
 }
