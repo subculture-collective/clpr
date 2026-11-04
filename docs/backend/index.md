@@ -111,8 +111,6 @@ SORT title ASC
 ### Infrastructure
 
 - [[APPLICATION_LOGS|Application Logs]] - Logging infrastructure
-- [[cdn-integration|CDN Integration]] - CDN setup and configuration
-- [[mirror-hosting|Mirror Hosting]] - Video mirror hosting
 
 ---
 

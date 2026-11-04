@@ -43,7 +43,6 @@ func TestValidateProfiles(t *testing.T) {
 		{name: "OpenSearch TLS disabled", mutate: func(c *Config) { c.OpenSearch.URL = "http://search.internal.example" }, wantErr: "OPENSEARCH_URL must use https"},
 		{name: "OpenSearch verification disabled", mutate: func(c *Config) { c.OpenSearch.InsecureSkipVerify = true }, wantErr: "OPENSEARCH_INSECURE_SKIP_VERIFY"},
 		{name: "local clip storage", mutate: func(c *Config) { c.Clip.StorageProvider = "local" }, wantErr: "durable and non-local"},
-		{name: "CDN enabled", mutate: func(c *Config) { c.CDN.Enabled = true }, wantErr: "CDN and mirroring"},
 		{name: "insecure telemetry", mutate: func(c *Config) { c.Telemetry.Enabled = true; c.Telemetry.Insecure = true }, wantErr: "TELEMETRY_INSECURE"},
 	}
 

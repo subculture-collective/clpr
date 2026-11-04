@@ -217,7 +217,7 @@ counts that included planned or missing artifacts.
 - **Backend**: `/api/v1/scraped-clips`, clip sync service
 - **Frontend**: `ScrapedClipsPage.tsx`
 - **Scripts**: `backend/scripts/scrape_clips.go`
-- **Services**: `clip_sync_service.go`, `clip_mirror_service.go`
+- **Services**: `clip_sync_service.go`
 - **Scheduler**: `clip_sync_scheduler.go`
 - **Tests**: ⚠️ broken (scheduler tests have known issues)
 - **Typing**: ✅ Complete
@@ -229,7 +229,6 @@ counts that included planned or missing artifacts.
 - Broadcaster-targeted scraping
 - Scheduled sync jobs (every 15 minutes)
 - Clip claiming by creators
-- CDN mirroring design (disabled; provider implementations are incomplete)
 - Metadata enrichment
 - Auto-tagging
 

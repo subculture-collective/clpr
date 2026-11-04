@@ -294,7 +294,6 @@ Service metrics back to normal. Monitoring for 30 minutes before closing.
 - **Search Incidents:** [docs/operations/playbooks/search-incidents.md](playbooks/search-incidents.md)
 - **Background Jobs:** [docs/operations/runbooks/background-jobs.md](runbooks/background-jobs.md)
 - **HPA Scaling:** [docs/operations/runbooks/hpa-scaling.md](runbooks/hpa-scaling.md)
-- **CDN Failover:** [docs/operations/CDN_FAILOVER_RUNBOOK.md](CDN_FAILOVER_RUNBOOK.md)
 - **Quick Reference:** [docs/operations/on-call-quick-reference.md](on-call-quick-reference.md)
 
 ## Emergency Contacts

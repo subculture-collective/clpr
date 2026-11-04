@@ -29,8 +29,6 @@ This runbook provides operational procedures for managing global redundancy, fai
 
 - **Primary Database**: PostgreSQL (read/write)
 - **Read Replicas**: Regional PostgreSQL instances (read-only)
-- **Clip Mirrors**: Regional storage for popular clips
-- **CDN**: Content delivery network (Cloudflare/Bunny/AWS)
 - **Health Checks**: Regional health monitoring
 
 ### Regions
@@ -53,8 +51,6 @@ This runbook provides operational procedures for managing global redundancy, fai
     │                 │          │                  │
     │ - API Server    │          │ - API Server     │
     │ - Primary DB    │◄────────►│ - Read Replica   │
-    │ - Mirrors       │          │ - Mirrors        │
-    │ - CDN Edge      │          │ - CDN Edge       │
     └─────────────────┘          └──────────────────┘
 ```
 
@@ -80,19 +76,7 @@ curl https://ap-southeast-1.api.clpr.gg/health
    pg_replication_lag_seconds > 5
    ```
 
-2. **Mirror Hit Rate**
-   ```promql
-   # Alert if < 60%
-   mirror_hit_rate < 60
-   ```
-
-3. **CDN Performance**
-   ```promql
-   # Alert if cache hit rate < 70%
-   cdn_cache_hit_rate < 70
-   ```
-
-4. **Region Health**
+2. **Region Health**
    ```promql
    # Alert if region unhealthy
    region_health_status{status="unhealthy"} == 1
@@ -102,8 +86,6 @@ curl https://ap-southeast-1.api.clpr.gg/health
 
 - **Global Overview**: [Grafana Dashboard](http://grafana.clpr.gg/d/global-overview)
 - **Region Health**: [Grafana Dashboard](http://grafana.clpr.gg/d/region-health)
-- **Mirror Status**: [Grafana Dashboard](http://grafana.clpr.gg/d/mirror-status)
-- **CDN Performance**: [Grafana Dashboard](http://grafana.clpr.gg/d/cdn-performance)
 
 ## Common Scenarios
 
@@ -128,8 +110,6 @@ curl https://api.clpr.gg/v1/health/regions
 # Check replication status
 psql -h replica.eu-west-1 -c "SELECT * FROM pg_stat_replication;"
 
-# Check mirror availability
-curl https://api.clpr.gg/v1/mirrors/stats
 ```
 
 ### Scenario 2: Primary Database Failure
@@ -167,58 +147,6 @@ systemctl restart clpr-api
 # Verify new primary
 psql -h eu-west-1.db.clpr.gg -c "SELECT pg_is_in_recovery();"
 # Should return: f (false = not in recovery = primary)
-```
-
-### Scenario 3: CDN Provider Outage
-
-**Symptoms:**
-- CDN requests failing
-- High latency from CDN
-- Cache miss rate 100%
-
-**Actions:**
-1. Verify CDN provider status
-2. Enable fallback to direct serving
-3. Switch to backup CDN if available
-4. Monitor costs (direct serving is expensive)
-
-**Commands:**
-```bash
-# Disable CDN temporarily
-export CDN_ENABLED=false
-systemctl restart clpr-api
-
-# Switch to backup CDN provider
-export CDN_PROVIDER=bunny  # or aws-cloudfront
-systemctl restart clpr-api
-
-# Monitor direct serving costs
-curl https://api.clpr.gg/v1/metrics/bandwidth
-```
-
-### Scenario 4: Mirror Storage Failure
-
-**Symptoms:**
-- Mirror requests returning errors
-- Increased load on primary storage
-- Failover to other regions working
-
-**Actions:**
-1. Identify affected region
-2. Verify failover working
-3. Investigate storage issue
-4. Restore mirrors when storage recovered
-
-**Commands:**
-```bash
-# Check mirror status by region
-curl https://api.clpr.gg/v1/mirrors?region=us-east-1
-
-# Force mirror failover test
-curl -X POST https://api.clpr.gg/v1/mirrors/test-failover
-
-# Trigger mirror re-sync after recovery
-curl -X POST https://api.clpr.gg/v1/mirrors/sync
 ```
 
 ## Incident Response
@@ -360,41 +288,6 @@ systemctl restart clpr-api
 # ... reverse the process
 ```
 
-### CDN Maintenance
-
-#### Provider Rotation
-
-```bash
-# Test new CDN provider
-export CDN_PROVIDER=new-provider
-export CDN_ENABLED=true
-
-# Run validation tests
-./scripts/test-cdn.sh
-
-# Gradual rollout
-# - 10% traffic for 1 hour
-# - 50% traffic for 2 hours  
-# - 100% if no issues
-
-# Monitor costs and performance
-```
-
-### Mirror Maintenance
-
-#### Mirror Re-sync
-
-```bash
-# Full re-sync of all mirrors
-curl -X POST https://api.clpr.gg/v1/admin/mirrors/resync
-
-# Re-sync specific region
-curl -X POST https://api.clpr.gg/v1/admin/mirrors/resync?region=us-east-1
-
-# Force expire old mirrors
-curl -X POST https://api.clpr.gg/v1/admin/mirrors/cleanup
-```
-
 ## Troubleshooting
 
 ### Database Replication Issues
@@ -433,55 +326,6 @@ psql -h primary -c "SELECT pg_create_physical_replication_slot('replica_slot');"
 pg_ctl -D /var/lib/postgresql/replica restart
 ```
 
-### CDN Issues
-
-**Problem:** High cache miss rate
-
-```bash
-# Check cache statistics
-curl https://api.clpr.gg/v1/cdn/stats
-
-# Verify cache headers
-curl -I https://cdn.clpr.gg/clips/example.mp4
-
-# Solutions:
-# - Increase Cache-Control max-age
-# - Pre-warm cache for popular content
-# - Review purge frequency
-```
-
-**Problem:** High costs
-
-```bash
-# Get cost breakdown
-curl https://api.clpr.gg/v1/cdn/costs
-
-# Analyze by region
-curl https://api.clpr.gg/v1/cdn/costs?breakdown=region
-
-# Solutions:
-# - Optimize cache TTL
-# - Implement smarter caching
-# - Consider provider switch
-```
-
-### Mirror Issues
-
-**Problem:** Low hit rate
-
-```bash
-# Check mirror statistics
-curl https://api.clpr.gg/v1/mirrors/stats
-
-# Analyze by region
-curl https://api.clpr.gg/v1/mirrors/stats?region=all
-
-# Solutions:
-# - Lower replication threshold
-# - Add more regions
-# - Improve geo-routing logic
-```
-
 ## Contacts
 
 ### On-Call Schedule
@@ -499,13 +343,10 @@ curl https://api.clpr.gg/v1/mirrors/stats?region=all
 
 ### External Contacts
 
-- **CDN Provider Support**: [Contact info]
 - **Database Support**: [Contact info]
 - **Infrastructure Provider**: [Contact info]
 
 ## Related Documentation
 
-- Mirror Hosting Guide
-- CDN Integration Guide
 - Database Operations
 - Deployment Guide

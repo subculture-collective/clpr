@@ -110,9 +110,6 @@ func (c *Config) validateEnabledFeatures(releaseProfile bool) error {
 			return fmt.Errorf("VISION_CREATED_AFTER is required when vision enrichment is enabled")
 		}
 	}
-	if releaseProfile && (c.CDN.Enabled || c.Mirror.Enabled) {
-		return fmt.Errorf("CDN and mirroring must remain disabled until provider verification is production-ready")
-	}
 	return nil
 }
 

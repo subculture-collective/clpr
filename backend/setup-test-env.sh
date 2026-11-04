@@ -81,12 +81,6 @@ if [ -z "$SESSION_SECRET" ]; then
     echo -e "${GREEN}✓ Generated SESSION_SECRET${NC}"
 fi
 
-# CDN Configuration for failover testing
-export CDN_ENABLED="${CDN_ENABLED:-true}"
-export CDN_FAILOVER_MODE="${CDN_FAILOVER_MODE:-true}"
-export CDN_PRIMARY_URL="${CDN_PRIMARY_URL:-http://cdn-test.local:8081}"
-export CDN_FALLBACK_URL="${CDN_FALLBACK_URL:-http://origin-test.local:8082}"
-echo -e "${GREEN}✓ Set CDN failover configuration${NC}"
 
 # Create .env.test file for persistence
 cat > .env.test <<EOF
@@ -122,11 +116,6 @@ SESSION_SECRET=${SESSION_SECRET}
 TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
 TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
 
-# CDN Configuration for testing
-CDN_ENABLED=${CDN_ENABLED}
-CDN_FAILOVER_MODE=${CDN_FAILOVER_MODE}
-CDN_PRIMARY_URL=${CDN_PRIMARY_URL}
-CDN_FALLBACK_URL=${CDN_FALLBACK_URL}
 EOF
 
 echo -e "${GREEN}✓ Created .env.test file${NC}"
