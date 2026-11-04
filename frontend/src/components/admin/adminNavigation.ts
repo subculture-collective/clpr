@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import { Activity, BadgeCheck, Ban, BarChart3, BookOpen, Bot, ClipboardList, FileWarning, Film, Gauge, LayoutDashboard, ListVideo, Megaphone, MessageSquare, Radio, ScrollText, Shield, Tags, Users, Webhook } from 'lucide-react';
+import { Activity, BadgeCheck, BarChart3, BookOpen, Bot, ClipboardList, FileWarning, Film, Gauge, LayoutDashboard, ListVideo, Megaphone, MessageSquare, Radio, ScrollText, Shield, Tags, Users, Webhook } from 'lucide-react';
 
 export type AdminNavItem = { label: string; href: string; description: string; icon: ElementType };
 export type AdminNavGroup = { label: string; items: AdminNavItem[] };
@@ -16,7 +16,6 @@ export const adminNavGroups: AdminNavGroup[] = [
         { label: 'Comments', href: '/admin/comments', description: 'Review community replies', icon: MessageSquare },
         { label: 'Submissions', href: '/admin/submissions', description: 'Approve community submissions', icon: ClipboardList },
         { label: 'Verification', href: '/admin/verification', description: 'Creator verification requests', icon: BadgeCheck },
-        { label: 'Bans', href: '/admin/bans', description: 'Restrictions and appeals', icon: Ban },
         { label: 'Moderators', href: '/admin/moderators', description: 'Roles and permissions', icon: Users },
         { label: 'User moderation', href: '/moderation/users', description: 'User sanctions and history', icon: Shield },
         { label: 'Moderation analytics', href: '/admin/moderation/analytics', description: 'Workload and outcomes', icon: Gauge },

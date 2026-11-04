@@ -52,10 +52,8 @@ type Handlers struct {
 	Game                *handlers.GameHandler
 	AccountType         *handlers.AccountTypeHandler
 	Verification        *handlers.VerificationHandler
-	Chat                *handlers.ChatHandler
 	ApplicationLog      *handlers.ApplicationLogHandler
 	BanReasonTemplate   *handlers.BanReasonTemplateHandler
-	WebSocket           *handlers.WebSocketHandler
 	Recommendation      *handlers.RecommendationHandler
 	Playlist            *handlers.PlaylistHandler
 	PlaylistScript      *handlers.PlaylistScriptHandler
@@ -68,8 +66,6 @@ type Handlers struct {
 	Moderation          *handlers.ModerationHandler  // may be nil
 	LiveStatus          *handlers.LiveStatusHandler  // may be nil
 	TwitchOAuth         *handlers.TwitchOAuthHandler // may be nil
-	Forum               *handlers.ForumHandler
-	ForumModeration     *handlers.ForumModerationHandler
 	NSFW                *handlers.NSFWHandler
 }
 
@@ -135,12 +131,10 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	gameHandler := handlers.NewGameHandler(repos.Game, repos.Clip, svcs.Auth)
 	accountTypeHandler := handlers.NewAccountTypeHandler(svcs.AccountType, svcs.Auth)
 	verificationHandler := handlers.NewVerificationHandler(repos.Verification, svcs.Notification, pool)
-	chatHandler := handlers.NewChatHandler(pool)
 	applicationLogHandler := handlers.NewApplicationLogHandler(repos.ApplicationLog)
 	banReasonTemplateHandler := handlers.NewBanReasonTemplateHandler(svcs.BanReasonTemplate, svcs.Logger)
 
 	// Initialize WebSocket handler
-	websocketHandler := handlers.NewWebSocketHandler(pool, svcs.WSServer)
 
 	recommendationHandler := handlers.NewRecommendationHandler(svcs.Recommendation, svcs.Auth)
 	playlistHandler := handlers.NewPlaylistHandler(svcs.Playlist)
@@ -192,10 +186,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		}
 	}
 
-	// Initialize forum handlers
-	forumHandler := handlers.NewForumHandler(pool)
-	forumModerationHandler := handlers.NewForumModerationHandler(pool)
-
 	// Initialize NSFW handler
 	nsfwHandler := handlers.NewNSFWHandler(svcs.NSFWDetector)
 
@@ -242,10 +232,8 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Game:                gameHandler,
 		AccountType:         accountTypeHandler,
 		Verification:        verificationHandler,
-		Chat:                chatHandler,
 		ApplicationLog:      applicationLogHandler,
 		BanReasonTemplate:   banReasonTemplateHandler,
-		WebSocket:           websocketHandler,
 		Recommendation:      recommendationHandler,
 		Playlist:            playlistHandler,
 		PlaylistScript:      playlistScriptHandler,
@@ -258,8 +246,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Moderation:          moderationHandler,
 		LiveStatus:          liveStatusHandler,
 		TwitchOAuth:         twitchOAuthHandler,
-		Forum:               forumHandler,
-		ForumModeration:     forumModerationHandler,
 		NSFW:                nsfwHandler,
 	}
 }

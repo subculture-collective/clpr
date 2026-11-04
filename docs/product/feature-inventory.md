@@ -573,10 +573,7 @@ counts that included planned or missing artifacts.
 
 #### 6.3 Chat Moderation
 
-- **Status**: ✅ complete | **Backend**: `/api/v1/chat/channels/:id/ban`, etc.
-- **Handlers**: `chat_moderation.go` (auto-moderation logic)
-- **Features**: Ban, mute, timeout, message deletion, moderation log, spam detection, profanity filtering, rate limiting
-- **Gaps**: Machine learning-based classification, user appeals process
+- **Status**: removed in November 2026 together with site chat; no channel had ever been active.
 
 #### 6.4 DMCA Management
 
@@ -649,10 +646,7 @@ anomaly-scoring analytics implementation has been removed. See
 
 #### 10.1 Forum System
 
-- **Status**: 🟡 partial | **Backend**: `/api/v1/forum/*` | **Frontend**: forum pages and components
-- **Launch limitation**: Forum-scoped user bans are unavailable. The previous administrative route changed the platform-wide account ban flag while the separate forum-ban records were not enforced, so it is excluded from release routing until scoped enforcement and unban lifecycle tests exist. Platform account bans remain available through administrator-only user management.
-- **Features**: Threads, replies, voting, search, analytics, moderation
-- **Gaps**: Categories, thread subscriptions
+- **Status**: removed in November 2026. The only thread was the seeded welcome post. Community discussion happens in Discord; platform account bans remain in administrator-only user management.
 
 #### 10.2 Communities
 

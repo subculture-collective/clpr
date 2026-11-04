@@ -473,11 +473,8 @@ The RBAC test suite currently covers:
 
 The following test cases exist as placeholders but currently return 404 because the routes are not registered in the test router. These will be activated as additional endpoints are integrated:
 
-- Watch Party Admin Actions (kick, end)
-- Chat Moderation (ban, mute, timeout, unban)
 - Webhook DLQ Admin (get queue, replay, delete)
 - Discovery Lists Admin (create, update, delete, add/remove clips)
-- Forum Moderation (lock, pin, delete threads, ban users)
 
 > **Note**: The test framework is designed to be easily extensible. As new protected endpoints are added to the application, corresponding test cases can be activated by registering the routes in `setupRBACTestRouter()` and updating the expected status codes.
 

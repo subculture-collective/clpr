@@ -28,8 +28,6 @@ export interface AccountRoutePages {
     notifications: Page;
     notificationPreferences: Page;
     personalStats: Page;
-    chat: Page;
-    channelSettings: Page;
     creatorDashboard: Page;
 }
 
@@ -87,11 +85,6 @@ export function accountRoutes(pages: AccountRoutePages) {
                 element={protectedPage(pages.notificationPreferences, 'Notification Preferences')}
             />
             <Route path='/profile/stats' element={protectedPage(pages.personalStats, 'Personal Stats')} />
-            <Route path='/chat' element={protectedPage(pages.chat, 'Chat')} />
-            <Route
-                path='/chat/channels/:id/settings'
-                element={protectedPage(pages.channelSettings, 'Channel Settings')}
-            />
             <Route
                 path='/creator/:creatorId/dashboard'
                 element={protectedPage(pages.creatorDashboard, 'Creator Dashboard')}

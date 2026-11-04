@@ -25,10 +25,8 @@ export * from './user';
 // Re-export other component modules (with index.ts barrels)
 export * from './analytics';
 export * from './broadcaster';
-export * from './chat';
 export * from './consent';
 export * from './discovery';
-export * from './forum';
 export * from './guards';
 export * from './moderation';
 export * from './playlist';

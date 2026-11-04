@@ -208,11 +208,6 @@ const AdminModeratorsPage = lazy(() =>
         default: m.AdminModeratorsPage,
     })),
 );
-const AdminBansPage = lazy(() =>
-    import('./pages/admin/AdminBansPage').then(m => ({
-        default: m.AdminBansPage,
-    })),
-);
 const AdminAuditLogsPage = lazy(() =>
     import('./pages/admin/AdminAuditLogsPage').then(m => ({
         default: m.AdminAuditLogsPage,
@@ -339,50 +334,9 @@ const StreamerClipRoomPage = lazy(() =>
         default: m.StreamerClipRoomPage,
     })),
 );
-const ForumModerationPage = lazy(() =>
-    import('./pages/admin/ForumModerationPage').then(m => ({
-        default: m.ForumModerationPage,
-    })),
-);
-const ModerationLogPage = lazy(() =>
-    import('./pages/admin/ModerationLogPage').then(m => ({
-        default: m.ModerationLogPage,
-    })),
-);
 const ModerationUsersPage = lazy(() =>
     import('./pages/ModerationUsersPage').then(m => ({
         default: m.ModerationUsersPage,
-    })),
-);
-const ChatPage = lazy(() =>
-    import('./pages/ChatPage').then(m => ({ default: m.ChatPage })),
-);
-const ChannelSettingsPage = lazy(() =>
-    import('./pages/ChannelSettingsPage').then(m => ({
-        default: m.ChannelSettingsPage,
-    })),
-);
-const ForumIndex = lazy(() =>
-    import('./pages/forum/ForumIndex').then(m => ({ default: m.ForumIndex })),
-);
-const ThreadDetail = lazy(() =>
-    import('./pages/forum/ThreadDetail').then(m => ({
-        default: m.ThreadDetail,
-    })),
-);
-const CreateThread = lazy(() =>
-    import('./pages/forum/CreateThread').then(m => ({
-        default: m.CreateThread,
-    })),
-);
-const ForumSearchPage = lazy(() =>
-    import('./pages/forum/ForumSearchPage').then(m => ({
-        default: m.ForumSearchPage,
-    })),
-);
-const ForumAnalyticsPage = lazy(() =>
-    import('./pages/forum/ForumAnalyticsPage').then(m => ({
-        default: m.ForumAnalyticsPage,
     })),
 );
 const WebhookSubscriptionsPage = lazy(() =>
@@ -526,31 +480,6 @@ function App() {
                                         <Route path='/subscription/success' element={<Navigate to='/support' replace />} />
                                         <Route path='/subscription/cancel' element={<Navigate to='/support' replace />} />
 
-                                        {/* Forum Routes */}
-                                        <Route
-                                            path='/forum'
-                                            element={<ForumIndex />}
-                                        />
-                                        <Route
-                                            path='/forum/search'
-                                            element={<ForumSearchPage />}
-                                        />
-                                        <Route
-                                            path='/forum/analytics'
-                                            element={<ForumAnalyticsPage />}
-                                        />
-                                        <Route
-                                            path='/forum/threads/:threadId'
-                                            element={<ThreadDetail />}
-                                        />
-                                        <Route
-                                            path='/forum/new'
-                                            element={
-                                                <ProtectedRoute>
-                                                    <CreateThread />
-                                                </ProtectedRoute>
-                                            }
-                                        />
 
                                         {import.meta.env.DEV && (
                                             <>
@@ -609,8 +538,6 @@ function App() {
                                             notifications: NotificationsPage,
                                             notificationPreferences: NotificationPreferencesPage,
                                             personalStats: PersonalStatsPage,
-                                            chat: ChatPage,
-                                            channelSettings: ChannelSettingsPage,
                                             creatorDashboard: CreatorDashboardPage,
                                         })}
 
@@ -628,7 +555,6 @@ function App() {
                                                 moderation: AdminModerationQueuePage,
                                                 moderationAnalytics: AdminModerationAnalyticsPage,
                                                 moderators: AdminModeratorsPage,
-                                                bans: AdminBansPage,
                                                 auditLogs: AdminAuditLogsPage,
                                                 verification: AdminVerificationQueuePage,
                                                 discoveryLists: AdminDiscoveryListsPage,
@@ -638,8 +564,6 @@ function App() {
                                                 topics: AdminTopicsPage,
                                                 tagPromotion: AdminTagPromotionPage,
                                                 apiDocs: AdminAPIDocsPage,
-                                                forumModeration: ForumModerationPage,
-                                                forumModerationLog: ModerationLogPage,
                                                 moderationUsers: ModerationUsersPage,
                                             })}
 
