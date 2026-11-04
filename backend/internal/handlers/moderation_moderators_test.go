@@ -13,7 +13,7 @@ import (
 func TestListModerators_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -32,7 +32,7 @@ func TestListModerators_MissingChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -51,7 +51,7 @@ func TestListModerators_InvalidChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -69,7 +69,7 @@ func TestListModerators_InvalidChannelID(t *testing.T) {
 func TestAddModerator_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -87,7 +87,7 @@ func TestAddModerator_Unauthorized(t *testing.T) {
 func TestRemoveModerator_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -106,7 +106,7 @@ func TestRemoveModerator_InvalidID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -125,7 +125,7 @@ func TestRemoveModerator_InvalidID(t *testing.T) {
 func TestUpdateModeratorPermissions_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -144,7 +144,7 @@ func TestUpdateModeratorPermissions_InvalidID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -165,7 +165,7 @@ func TestModeratorPermissions_Structure(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	// Create handler to verify it has the required methods
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	if handler == nil {
 		t.Fatal("Handler should not be nil")

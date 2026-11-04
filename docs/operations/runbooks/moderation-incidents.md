@@ -33,7 +33,6 @@ This runbook provides incident response procedures and solutions to common moder
 - [Common Issues and Solutions](#common-issues-and-solutions)
   - [User Can't Submit Content](#user-cant-submit-content)
   - [Moderator Can't Ban User](#moderator-cant-ban-user)
-  - [Ban Not Syncing to Twitch](#ban-not-syncing-to-twitch)
   - [Audit Logs Not Appearing](#audit-logs-not-appearing)
   - [Performance Degradation](#performance-degradation)
 - [Contact Procedures](#contact-procedures)
@@ -427,46 +426,6 @@ curl -X POST -H "Authorization: Bearer $API_TOKEN" \
 
 ---
 
-### Ban Not Syncing to Twitch
-
-#### Symptoms
-
-- User banned on Clipper but not on Twitch
-- "Sync failed" error message
-- Twitch shows user as not banned
-
-#### Diagnosis
-
-See [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) runbook for detailed procedures.
-
-Quick check:
-```bash
-# Check sync status
-BROADCASTER_ID="123456789"
-curl -s -H "Authorization: Bearer $API_TOKEN" \
-  "https://clpr.tv/api/v1/moderation/audit-logs?action=sync_bans&channel_id=$BROADCASTER_ID&limit=5" | \
-  jq '.logs[] | {time: .created_at, status: .details.status, error: .details.error}'
-```
-
-#### Quick Fixes
-
-**OAuth scope issue:**
-```bash
-# User must re-authenticate with correct scopes
-echo "Direct user to: https://clpr.tv/api/v1/auth/twitch?scope=moderator:manage:banned_users"
-```
-
-**Rate limit:**
-```bash
-# Wait and retry
-sleep 60
-curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-  "https://clpr.tv/api/v1/moderation/sync-bans" \
-  -d '{"broadcaster_id": "'$BROADCASTER_ID'"}'
-```
-
----
-
 ### Audit Logs Not Appearing
 
 #### Symptoms
@@ -694,7 +653,6 @@ Within 1 month:
 ## Related Runbooks
 
 - [Moderation Operations](./moderation-operations.md) - Operational procedures
-- [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) - Sync-specific issues
 - [Permission Escalation](./permission-escalation.md) - Access control
 - [Moderation Rollback](./moderation-rollback.md) - Emergency procedures
 - [Moderation Monitoring](./moderation-monitoring.md) - Monitoring and alerts

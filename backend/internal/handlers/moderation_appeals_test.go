@@ -16,7 +16,7 @@ import (
 func TestCreateAppeal_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	requestBody := models.CreateAppealRequest{
 		ModerationActionID: uuid.New().String(),
@@ -42,7 +42,7 @@ func TestCreateAppeal_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -62,7 +62,7 @@ func TestCreateAppeal_InvalidModerationActionID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	requestBody := models.CreateAppealRequest{
 		ModerationActionID: "invalid-uuid",
@@ -89,7 +89,7 @@ func TestGetAppeals_InvalidStatus(t *testing.T) {
 
 	testUserID := uuid.New()
 	// Pass nil for db pool since we're testing validation before DB access
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -107,7 +107,7 @@ func TestGetAppeals_InvalidStatus(t *testing.T) {
 func TestResolveAppeal_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	requestBody := models.ResolveAppealRequest{
 		Decision: "approve",
@@ -133,7 +133,7 @@ func TestResolveAppeal_InvalidAppealID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	requestBody := models.ResolveAppealRequest{
 		Decision: "approve",
@@ -159,7 +159,7 @@ func TestResolveAppeal_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testUserID := uuid.New()
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -179,7 +179,7 @@ func TestResolveAppeal_InvalidJSON(t *testing.T) {
 func TestGetUserAppeals_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

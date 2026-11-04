@@ -171,7 +171,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 
 				// Audit logs and analytics
 				moderation.GET("/audit", h.Moderation.GetModerationAuditLogs)
-				moderation.GET("/analytics", h.Moderation.GetModerationAnalytics)
 
 				// Toxicity classification metrics
 				moderation.GET("/toxicity/metrics", h.Moderation.GetToxicityMetrics)

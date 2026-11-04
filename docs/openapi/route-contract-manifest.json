@@ -204,13 +204,6 @@
   },
   {
     "method": "GET",
-    "path": "/api/v1/admin/moderation/analytics",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetModerationAnalytics-fm",
-    "operation_id": "getApiV1AdminModerationAnalytics",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
     "path": "/api/v1/admin/moderation/appeals",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).GetAppeals-fm",
     "operation_id": "getApiV1AdminModerationAppeals",
@@ -1628,27 +1621,6 @@
     "path": "/api/v1/moderation/moderators/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).UpdateModeratorPermissions-fm",
     "operation_id": "updateModeratorPermissions",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/moderation/sync-bans",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).SyncBans-fm",
-    "operation_id": "syncBans",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "DELETE",
-    "path": "/api/v1/moderation/twitch/ban",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).TwitchUnbanUser-fm",
-    "operation_id": "twitchUnbanUser",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/moderation/twitch/ban",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ModerationHandler).TwitchBanUser-fm",
-    "operation_id": "twitchBanUser",
     "contract_level": "route-specific"
   },
   {

@@ -513,13 +513,6 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
     "$API_BASE/audit-logs?limit=10" | jq '.logs[0].created_at'
   ```
 
-- [ ] Check for failed ban sync operations
-  ```bash
-  # See ban-sync-troubleshooting.md
-  curl -s -H "Authorization: Bearer $API_TOKEN" \
-    "$API_BASE/audit-logs?action=sync_bans&status=failed&limit=10" | jq
-  ```
-
 - [ ] Review error rate (should be < 1%)
   ```bash
   # Check metrics endpoint (if available)
@@ -549,7 +542,6 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 ## Related Runbooks
 
 - [Audit Log Operations](./audit-log-operations.md) - Review and export audit logs
-- [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) - Twitch sync issues
 - [Permission Escalation](./permission-escalation.md) - Grant emergency access
 - [Moderation Rollback](./moderation-rollback.md) - Rollback procedures
 - [Moderation Monitoring](./moderation-monitoring.md) - Metrics and alerts

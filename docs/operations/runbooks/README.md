@@ -82,29 +82,6 @@ Procedures for reviewing, exporting, and analyzing audit logs.
 
 ---
 
-#### [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md)
-**Status**: ✅ Complete | **Reviewed**: 2026-02-03
-
-Troubleshooting guide for Twitch ban synchronization issues.
-
-**Covers:**
-- OAuth scope issues
-- Twitch API rate limits
-- Invalid broadcaster ID
-- Authentication failures
-- Network timeouts
-- Manual sync retry procedures
-- Rate limit management
-
-**When to use:**
-- Ban sync fails
-- Twitch integration errors
-- Rate limit exceeded
-- OAuth permission errors
-- Sync performance issues
-
----
-
 ### Access Control & Security
 
 #### [Permission Escalation](./permission-escalation.md)
@@ -341,7 +318,6 @@ All contributions should:
 |---------|--------|---------|---------------|
 | [Moderation Operations](./moderation-operations.md) | ✅ Complete | Emergency procedures, manual operations | 2026-02-03 |
 | [Audit Log Operations](./audit-log-operations.md) | ✅ Complete | Log review, export, compliance | 2026-02-03 |
-| [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) | ✅ Complete | Twitch sync issues | 2026-02-03 |
 | [Permission Escalation](./permission-escalation.md) | ✅ Complete | Access control, permissions | 2026-02-03 |
 | [Moderation Rollback](./moderation-rollback.md) | ✅ Complete | Rollback procedures | 2026-02-03 |
 | [Moderation Monitoring](./moderation-monitoring.md) | ✅ Complete | Metrics, alerts, dashboards | 2026-02-03 |

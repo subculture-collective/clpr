@@ -10,7 +10,6 @@ Complete documentation for the Clipper moderation API endpoints, including authe
 - [Rate Limiting](#rate-limiting)
 - [Error Handling](#error-handling)
 - [Endpoints](#endpoints)
-  - [Sync Bans](#sync-bans)
   - [List Bans](#list-bans)
   - [Create Ban](#create-ban)
   - [Get Ban Details](#get-ban-details)
@@ -114,7 +113,6 @@ X-RateLimit-Reset: 1738540800
 
 | Endpoint | Rate Limit | Window |
 |----------|------------|--------|
-| POST /sync-bans | 5 requests | 1 hour |
 | GET /bans | 60 requests | 1 minute |
 | POST /ban | 10 requests | 1 hour |
 | DELETE /ban/:id | 10 requests | 1 hour |
@@ -207,91 +205,6 @@ X-RateLimit-Reset: 1738540800
 ---
 
 ## Endpoints
-
-### Sync Bans
-
-Synchronizes ban status from Twitch for a specific channel.
-
-**Endpoint**: `POST /api/v1/moderation/sync-bans`
-
-**Authentication**: Required
-
-**Rate Limit**: 5 requests per hour
-
-#### Request
-
-**Headers**:
-```http
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Body**:
-```json
-{
-  "channel_id": "123e4567-e89b-12d3-a456-426614174000"
-}
-```
-
-**Parameters**:
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| channel_id | string (UUID) | Yes | Channel ID to sync bans for |
-
-#### Response
-
-**Success (200 OK)**:
-```json
-{
-  "status": "syncing",
-  "job_id": "987fcdeb-51a2-43c1-b789-123456789abc",
-  "message": "Ban sync started for channel 123e4567-e89b-12d3-a456-426614174000"
-}
-```
-
-**Response Fields**:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| status | string | Sync status: "syncing" |
-| job_id | string (UUID) | Unique identifier for the sync job |
-| message | string | Human-readable status message |
-
-#### Errors
-
-**400 Bad Request** - Invalid or missing channel_id:
-```json
-{
-  "error": "channel_id is required and must be a valid UUID",
-  "code": "INVALID_REQUEST"
-}
-```
-
-**401 Unauthorized** - Missing or invalid token:
-```json
-{
-  "error": "Authorization token required",
-  "code": "UNAUTHORIZED"
-}
-```
-
-**503 Service Unavailable** - Twitch sync service unavailable:
-```json
-{
-  "error": "Twitch ban sync service is currently unavailable",
-  "code": "SERVICE_UNAVAILABLE"
-}
-```
-
-#### Notes
-
-- Sync operation runs asynchronously with a 5-minute timeout
-- Returns immediately; ban data is updated in the background
-- Requires Twitch moderator OAuth scopes for the channel
-- Only channel owners, moderators, or admins can sync bans
-
----
 
 ### List Bans
 
@@ -1295,17 +1208,6 @@ GET /api/v1/moderation/audit-logs/log-uuid-here
 
 ### cURL Examples
 
-#### Sync Bans
-
-```bash
-curl -X POST https://clpr.tv/api/v1/moderation/sync-bans \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "channel_id": "123e4567-e89b-12d3-a456-426614174000"
-  }'
-```
-
 #### List Bans
 
 ```bash
@@ -1383,14 +1285,6 @@ async function apiCall(endpoint, options = {}) {
   return response.json();
 }
 
-// Sync bans
-async function syncBans(channelId) {
-  return apiCall('/sync-bans', {
-    method: 'POST',
-    body: JSON.stringify({ channel_id: channelId }),
-  });
-}
-
 // List bans
 async function listBans(channelId, limit = 20, offset = 0) {
   const params = new URLSearchParams({ channelId, limit, offset });
@@ -1428,10 +1322,6 @@ async function listAuditLogs(filters = {}) {
 
 // Usage examples
 try {
-  // Sync bans
-  const syncResult = await syncBans('123e4567-e89b-12d3-a456-426614174000');
-  console.log('Sync started:', syncResult.job_id);
-
   // List bans
   const bans = await listBans('123e4567-e89b-12d3-a456-426614174000', 20, 0);
   console.log('Total bans:', bans.total);
@@ -1461,14 +1351,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Sync bans
-async function syncBans(channelId) {
-  const { data } = await api.post('/sync-bans', {
-    channel_id: channelId,
-  });
-  return data;
-}
 
 // List bans with pagination
 async function listBans(channelId, limit = 20, offset = 0) {
@@ -1560,39 +1442,6 @@ func (c *ModerationClient) do(method, endpoint string, body interface{}) (*http.
 	req.Header.Set("Content-Type", "application/json")
 
 	return c.Client.Do(req)
-}
-
-// SyncBansRequest represents the sync bans request
-type SyncBansRequest struct {
-	ChannelID string `json:"channel_id"`
-}
-
-// SyncBansResponse represents the sync bans response
-type SyncBansResponse struct {
-	Status  string `json:"status"`
-	JobID   string `json:"job_id"`
-	Message string `json:"message"`
-}
-
-// SyncBans synchronizes bans from Twitch
-func (c *ModerationClient) SyncBans(channelID string) (*SyncBansResponse, error) {
-	req := SyncBansRequest{ChannelID: channelID}
-	resp, err := c.do("POST", "/sync-bans", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("sync failed: status %d", resp.StatusCode)
-	}
-
-	var result SyncBansResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
 }
 
 // Ban represents a ban
@@ -1743,14 +1592,6 @@ func (c *ModerationClient) AddModerator(userID, channelID, reason string) (*AddM
 func main() {
 	client := NewClient("YOUR_TOKEN")
 
-	// Sync bans
-	syncResult, err := client.SyncBans("123e4567-e89b-12d3-a456-426614174000")
-	if err != nil {
-		fmt.Printf("Error syncing bans: %v\n", err)
-		return
-	}
-	fmt.Printf("Sync started with job ID: %s\n", syncResult.JobID)
-
 	// List bans
 	bans, err := client.ListBans("123e4567-e89b-12d3-a456-426614174000", 20, 0)
 	if err != nil {
@@ -1826,7 +1667,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/clpr
 # Redis (for rate limiting)
 REDIS_URL=redis://localhost:6379
 
-# Twitch API (for ban sync)
+# Twitch API
 TWITCH_CLIENT_ID=your_client_id
 TWITCH_CLIENT_SECRET=your_client_secret
 
@@ -1897,13 +1738,7 @@ type RateLimitConfig struct {
 
 2. **Twitch OAuth Scopes**
 
-Required Twitch OAuth scopes for ban sync:
-
-- `moderator:read:banned_users`
-- `moderator:manage:banned_users`
-- `channel:moderate`
-
-Configure in Twitch Developer Console.
+The moderation API no longer calls Twitch, so ban management needs no Twitch OAuth scope.
 
 3. **Audit Log Retention**
 
@@ -2072,23 +1907,6 @@ RATE_LIMIT_WHITELIST_IPS=10.0.0.0/8,172.16.0.0/12
 ```
 
 ### Troubleshooting
-
-#### Ban Sync Not Working
-
-1. Verify Twitch OAuth scopes
-2. Check Twitch API credentials
-3. Verify moderator permissions on Twitch
-4. Check audit logs for errors
-
-```bash
-# Check logs
-docker logs clpr-backend | grep "ban_sync"
-
-# Test Twitch API connection
-curl -X POST http://localhost:8080/api/v1/moderation/sync-bans \
-  -H "Authorization: Bearer TOKEN" \
-  -d '{"channel_id": "uuid"}'
-```
 
 #### Rate Limiting Issues
 

@@ -16,7 +16,6 @@ export interface AdminRoutePages {
     analytics: Page;
     submissions: Page;
     moderation: Page;
-    moderationAnalytics: Page;
     moderators: Page;
     auditLogs: Page;
     discoveryLists: Page;
@@ -25,7 +24,6 @@ export interface AdminRoutePages {
     tags: Page;
     topics: Page;
     apiDocs: Page;
-    moderationUsers: Page;
     tagPromotion: Page;
 }
 
@@ -51,10 +49,6 @@ export function adminRoutes(pages: AdminRoutePages) {
             <Route path='/admin/analytics' element={protectedPage(pages.analytics)} />
             <Route path='/admin/submissions' element={protectedPage(pages.submissions)} />
             <Route path='/admin/moderation' element={protectedPage(pages.moderation)} />
-            <Route
-                path='/admin/moderation/analytics'
-                element={protectedPage(pages.moderationAnalytics)}
-            />
             <Route path='/admin/moderators' element={protectedPage(pages.moderators)} />
             <Route path='/admin/audit-logs' element={protectedPage(pages.auditLogs)} />
             <Route
@@ -80,7 +74,6 @@ export function adminRoutes(pages: AdminRoutePages) {
                 element={protectedPage(pages.tagPromotion)}
             />
             <Route path='/admin/api-docs' element={protectedPage(pages.apiDocs)} />
-            <Route path='/moderation/users' element={protectedPage(pages.moderationUsers)} />
         </>
     );
 }

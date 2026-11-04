@@ -60,8 +60,6 @@ This runbook provides guidance on monitoring the moderation system, configuring 
 | `moderation_bans_total` | Total active bans | N/A | N/A (trending) |
 | `moderation_bans_created_rate` | Bans created per minute | < 10/min | > 100/min (spike) |
 | `moderation_unbans_rate` | Unbans per minute | < 5/min | > 50/min (spike) |
-| `moderation_sync_success_rate` | Ban sync success rate | > 95% | < 80% |
-| `moderation_sync_duration` | Ban sync average duration | < 5s | > 30s |
 | `moderation_moderator_count` | Total active moderators | N/A | N/A (trending) |
 
 ### Audit and Compliance Metrics
@@ -199,21 +197,6 @@ rate(moderation_sync_success_total[5m]) / rate(moderation_sync_attempts_total[5m
           }
         ],
         "type": "stat"
-      },
-      {
-        "title": "Ban Sync Success Rate",
-        "targets": [
-          {
-            "expr": "rate(moderation_sync_success_total[5m]) / rate(moderation_sync_attempts_total[5m]) * 100",
-            "legendFormat": "Success Rate %"
-          }
-        ],
-        "type": "gauge",
-        "thresholds": [
-          {"value": 80, "color": "red"},
-          {"value": 95, "color": "yellow"},
-          {"value": 99, "color": "green"}
-        ]
       },
       {
         "title": "Audit Log Write Rate",
@@ -372,23 +355,6 @@ groups:
           action: "Check Redis memory usage and eviction policy"
 ```
 
-#### Ban Sync Failures
-
-```yaml
-      - alert: BanSyncHighFailureRate
-        expr: |
-          rate(moderation_sync_failures_total[10m]) / 
-          rate(moderation_sync_attempts_total[10m]) * 100 > 20
-        for: 15m
-        labels:
-          severity: warning
-          component: ban-sync
-        annotations:
-          summary: "Ban sync failure rate is {{ $value }}%"
-          description: "More than 20% of syncs failing"
-          runbook: "https://docs.clpr.tv/operations/runbooks/ban-sync-troubleshooting"
-```
-
 ---
 
 ### Info Alerts
@@ -470,7 +436,6 @@ groups:
 
 - **Main Dashboard**: https://grafana.clpr.tv/d/moderation-ops
 - **Error Dashboard**: https://grafana.clpr.tv/d/moderation-errors
-- **Sync Dashboard**: https://grafana.clpr.tv/d/ban-sync
 - **Audit Log Dashboard**: https://grafana.clpr.tv/d/audit-logs
 
 ### Key Panels
@@ -605,7 +570,6 @@ Weekly:
 
 - [Moderation Operations](./moderation-operations.md) - Operational procedures
 - [Moderation Incidents](./moderation-incidents.md) - Incident response
-- [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) - Sync issues
 - [Moderation Rollback](./moderation-rollback.md) - Rollback procedures
 
 ---

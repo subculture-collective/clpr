@@ -65,7 +65,6 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		// Email logs for current user (authenticated)
 		users.GET("/me/email-logs", middleware.AuthMiddleware(svcs.Auth), h.EmailMetrics.GetUserEmailLogs)
 
-
 		// Discovery list follows for current user (authenticated)
 		users.GET("/me/discovery-list-follows", middleware.AuthMiddleware(svcs.Auth), h.DiscoveryList.GetUserFollowedLists)
 

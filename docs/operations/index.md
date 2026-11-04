@@ -50,7 +50,6 @@ For deployment procedures, see the **[[../deployment/index|Deployment Hub]]**:
 - [[blue-green-deployment|Blue-Green Deployment]] - Zero-downtime deployments
 - [[blue-green-rollback|Blue-Green Rollback]] - Rolling back deployments
 - [[blue-green-quick-reference|Blue-Green Quick Reference]] - Quick reference guide
-- [[twitch-moderation-rollout-plan|Twitch Moderation Rollout Plan]] - Feature rollout planning
 
 ## Security & Compliance
 
@@ -76,7 +75,6 @@ Comprehensive operational runbooks for managing the moderation system in product
 
 - [[runbooks/moderation-operations|Moderation Operations]] - Emergency procedures, manual ban/unban, moderator management
 - [[runbooks/audit-log-operations|Audit Log Operations]] - Review and export audit logs, compliance procedures
-- [[runbooks/ban-sync-troubleshooting|Ban Sync Troubleshooting]] - Twitch ban synchronization issues and solutions
 - [[runbooks/permission-escalation|Permission Escalation]] - Grant/revoke permissions, emergency access procedures
 - [[runbooks/moderation-rollback|Moderation Rollback]] - Feature flag rollback, database rollback, emergency disable
 - [[runbooks/moderation-monitoring|Moderation Monitoring]] - Key metrics, alert configuration, dashboard setup

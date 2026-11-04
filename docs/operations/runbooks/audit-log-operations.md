@@ -624,7 +624,6 @@ echo "Archived logs up to $CUTOFF_DATE to S3 Glacier"
 ## Related Runbooks
 
 - [Moderation Operations](./moderation-operations.md) - Emergency ban/unban procedures
-- [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) - Twitch sync issues
 - [Moderation Incidents](./moderation-incidents.md) - Incident response
 - [Permission Escalation](./permission-escalation.md) - Grant emergency access
 

@@ -61,7 +61,6 @@ curl -X GET "https://clpr.tv/api/v1/moderation/audit-logs?action=ban_user&limit=
 
 | Method | Endpoint | Description | Rate Limit |
 |--------|----------|-------------|------------|
-| POST | `/api/v1/moderation/sync-bans` | Sync bans from Twitch | 5/hour |
 | GET | `/api/v1/moderation/bans` | List channel bans | 60/min |
 | POST | `/api/v1/moderation/ban` | Create a new ban | 10/hour |
 | GET | `/api/v1/moderation/ban/:id` | Get ban details | 60/min |
@@ -269,7 +268,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/clpr
 # Redis (for rate limiting)
 REDIS_URL=redis://localhost:6379
 
-# Twitch API (for ban sync)
+# Twitch API
 TWITCH_CLIENT_ID=your_client_id
 TWITCH_CLIENT_SECRET=your_client_secret
 
