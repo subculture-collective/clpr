@@ -52,7 +52,14 @@ func (s *TagPromotionService) CheckPromotionCandidates(ctx context.Context) ([]s
 	defer func() {
 		_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:tag_promotion'))`)
 	}()
-	candidates, err := s.queryCandidates(ctx)
+	// The candidates view walks every user-submitted clip's tags. Run it on the
+	// locked connection with the background budget, not the request default.
+	var candidates []models.TagPromotionCandidate
+	err = repository.RunWithBackgroundBudget(ctx, conn, func(tx pgx.Tx) error {
+		var queryErr error
+		candidates, queryErr = queryPromotionCandidates(ctx, tx)
+		return queryErr
+	})
 	if err != nil {
 		return nil, fmt.Errorf("querying promotion candidates: %w", err)
 	}
@@ -79,10 +86,14 @@ func (s *TagPromotionService) CheckPromotionCandidates(ctx context.Context) ([]s
 	return queued, nil
 }
 
-// queryCandidates reads all rows from the tag_promotion_candidates view.
-func (s *TagPromotionService) queryCandidates(ctx context.Context) ([]models.TagPromotionCandidate, error) {
+type candidateQuerier interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+}
+
+// queryPromotionCandidates reads all rows from the tag_promotion_candidates view.
+func queryPromotionCandidates(ctx context.Context, db candidateQuerier) ([]models.TagPromotionCandidate, error) {
 	query := `SELECT slug, name, clip_count, unique_users, parent_slug FROM tag_promotion_candidates`
-	rows, err := s.pool.Query(ctx, query)
+	rows, err := db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
