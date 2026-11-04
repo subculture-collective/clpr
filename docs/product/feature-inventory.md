@@ -389,7 +389,7 @@ counts that included planned or missing artifacts.
 - Leaderboards (karma, badges, contributions)
 - Reputation levels
 - Trust score integration
-- Scheduled reputation updates (every 6 hours)
+- Scheduled reputation updates (every 6 hours, only for users active in the last 90 days)
 
 **Gaps**:
 - Badge artwork/assets

@@ -949,3 +949,81 @@ func TestClipRepository_TrendingRefreshSkipsUnchangedScores(t *testing.T) {
 		t.Fatalf("stage not drained: count=%d err=%v", staged, err)
 	}
 }
+
+func TestClipRepository_TrendingRefreshOnlyRewritesClipsInWindow(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+	ctx := context.Background()
+
+	// Ten clips inside the refresh window and ten created, imported and last
+	// observed sixty days ago.
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO clips (id,twitch_clip_id,twitch_clip_url,embed_url,title,creator_name,broadcaster_name,view_count,created_at,imported_at,view_count_observed_at)
+		SELECT gen_random_uuid(), 'window-'||g, 'https://clips.twitch.tv/'||g,
+		       'https://clips.twitch.tv/embed?clip='||g, 'Window clip '||g,
+		       'creator', 'broadcaster', g * 10,
+		       CASE WHEN g <= 10 THEN NOW() - (g||' hours')::interval ELSE NOW() - interval '60 days' - (g||' hours')::interval END,
+		       CASE WHEN g <= 10 THEN NOW() - (g||' hours')::interval ELSE NOW() - interval '60 days' - (g||' hours')::interval END,
+		       CASE WHEN g <= 10 THEN NOW() - (g||' hours')::interval ELSE NOW() - interval '60 days' - (g||' hours')::interval END
+		FROM generate_series(1,20) g`); err != nil {
+		t.Fatalf("seed clips: %v", err)
+	}
+	repo := NewClipRepository(pool)
+
+	// An unbounded refresh is the baseline every clip would get.
+	if updated, err := repo.updateTrendingScoresBatched(ctx, 5, 0); err != nil || updated != 20 {
+		t.Fatalf("unbounded refresh updated=%d err=%v, want 20", updated, err)
+	}
+	windowedOrder := func() []uuid.UUID {
+		rows, err := pool.Query(ctx, `SELECT id FROM clips WHERE created_at >= NOW() - interval '14 days' ORDER BY trending_score DESC, id`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		var ids []uuid.UUID
+		for rows.Next() {
+			var id uuid.UUID
+			if err := rows.Scan(&id); err != nil {
+				t.Fatal(err)
+			}
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	baseline := windowedOrder()
+	if len(baseline) != 10 {
+		t.Fatalf("windowed clips = %d, want 10", len(baseline))
+	}
+
+	// Make every clip's engagement change so an unbounded refresh would rewrite
+	// all twenty, and poison the stored scores of the old clips.
+	if _, err := pool.Exec(ctx, `UPDATE clips SET favorite_count = favorite_count + 3`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE clips SET trending_score = 99 WHERE created_at < NOW() - interval '14 days'`); err != nil {
+		t.Fatal(err)
+	}
+
+	updated, err := repo.UpdateTrendingScoresBatched(ctx, 5)
+	if err != nil {
+		t.Fatalf("windowed refresh: %v", err)
+	}
+	if updated != 10 {
+		t.Fatalf("windowed refresh updated %d clips, want only the 10 inside the window", updated)
+	}
+	var untouched int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM clips WHERE trending_score = 99`).Scan(&untouched); err != nil || untouched != 10 {
+		t.Fatalf("old clips rewritten: untouched=%d err=%v, want 10", untouched, err)
+	}
+	after := windowedOrder()
+	for i := range baseline {
+		if after[i] != baseline[i] {
+			t.Fatalf("windowed trending order changed at %d: %s != %s", i, after[i], baseline[i])
+		}
+	}
+	var staged int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM clip_score_refresh_stage`).Scan(&staged); err != nil || staged != 0 {
+		t.Fatalf("stage not drained: count=%d err=%v", staged, err)
+	}
+}

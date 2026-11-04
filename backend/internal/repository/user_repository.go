@@ -412,15 +412,25 @@ func (r *RefreshTokenRepository) RevokeAllForUser(ctx context.Context, userID uu
 	return err
 }
 
-// GetAllActiveUserIDs retrieves all user IDs that are not banned
-func (r *UserRepository) GetAllActiveUserIDs(ctx context.Context) ([]uuid.UUID, error) {
+// GetUserIDsActiveSince returns the IDs of users who are not banned and have
+// signed in, voted, commented, submitted a clip or recorded an activity since
+// the given time. Scheduled reputation recalculations use it so that idle
+// accounts, whose scores cannot have changed, are left alone.
+func (r *UserRepository) GetUserIDsActiveSince(ctx context.Context, since time.Time) ([]uuid.UUID, error) {
 	query := `
-		SELECT id FROM users
-		WHERE is_banned = false
-		ORDER BY created_at ASC
+		SELECT u.id FROM users u
+		WHERE u.is_banned = false
+		  AND (
+			u.last_login_at >= $1
+			OR EXISTS (SELECT 1 FROM votes v WHERE v.user_id = u.id AND v.created_at >= $1)
+			OR EXISTS (SELECT 1 FROM comments c WHERE c.user_id = u.id AND c.created_at >= $1)
+			OR EXISTS (SELECT 1 FROM clip_submissions s WHERE s.user_id = u.id AND s.created_at >= $1)
+			OR EXISTS (SELECT 1 FROM user_activity a WHERE a.user_id = u.id AND a.created_at >= $1)
+		  )
+		ORDER BY u.created_at ASC
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, since)
 	if err != nil {
 		return nil, err
 	}
