@@ -43,7 +43,6 @@ type Services struct {
 	Community                *services.CommunityService
 	Moderation               *services.ModerationService
 	BanReasonTemplate        *services.BanReasonTemplateService
-	AccountType              *services.AccountTypeService
 	Recommendation           *services.RecommendationService
 	Playlist                 *services.PlaylistService
 	PlaylistScript           *services.PlaylistScriptService
@@ -162,9 +161,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 
 	// Initialize ban reason template service
 	banReasonTemplateService := services.NewBanReasonTemplateService(repos.BanReasonTemplate, repos.Community, logger)
-
-	// Initialize account type service
-	accountTypeService := services.NewAccountTypeService(repos.User, repos.AccountTypeConversion, repos.AuditLog, mfaService)
 
 	// Initialize recommendation service
 	recommendationService := services.NewRecommendationService(repos.Recommendation)
@@ -353,7 +349,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Community:                communityService,
 		Moderation:               moderationService,
 		BanReasonTemplate:        banReasonTemplateService,
-		AccountType:              accountTypeService,
 		Recommendation:           recommendationService,
 		Playlist:                 playlistService,
 		PlaylistScript:           playlistScriptService,

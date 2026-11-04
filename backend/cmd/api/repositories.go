@@ -40,8 +40,6 @@ type Repositories struct {
 	Category              *repository.CategoryRepository
 	Game                  *repository.GameRepository
 	Community             *repository.CommunityRepository
-	AccountTypeConversion *repository.AccountTypeConversionRepository
-	Verification          *repository.VerificationRepository
 	Recommendation        *repository.RecommendationRepository
 	Playlist              *repository.PlaylistRepository
 	PlaylistScript        *repository.PlaylistScriptRepository
@@ -93,8 +91,6 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		Category:              repository.NewCategoryRepository(pool),
 		Game:                  repository.NewGameRepository(pool),
 		Community:             repository.NewCommunityRepository(pool),
-		AccountTypeConversion: repository.NewAccountTypeConversionRepository(pool),
-		Verification:          repository.NewVerificationRepository(pool),
 		Recommendation:        repository.NewRecommendationRepository(pool),
 		Playlist:              repository.NewPlaylistRepository(pool),
 		PlaylistScript:        repository.NewPlaylistScriptRepository(pool),

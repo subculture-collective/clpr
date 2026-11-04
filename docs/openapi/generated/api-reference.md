@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-11-04T06:26:56.435Z
+generated: 2026-11-04T06:37:30.165Z
 ---
 
 # Clipper API
@@ -76,7 +76,6 @@ The API uses standard HTTP status codes:
 - [Games](#games)
 - [Feeds](#feeds)
 - [Recommendations](#recommendations)
-- [Verification](#verification)
 - [Webhooks](#webhooks)
 - [Documentation](#documentation)
 - [Communities](#communities)
@@ -19316,346 +19315,6 @@ func main() {
 
 ---
 
-### Convert the current account to broadcaster
-
-`POST /api/v1/users/me/convert-to-broadcaster`
-
-Converts the authenticated member account to broadcaster. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Users
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Account converted to broadcaster
-
-**400** - Success
-
-**401** - Success
-
-**429** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/users/me/convert-to-broadcaster" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/users/me/convert-to-broadcaster', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/users/me/convert-to-broadcaster',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/users/me/convert-to-broadcaster", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get a user's account type
-
-`GET /api/v1/users/{id}/account-type`
-
-Returns the account type, permissions, and any included conversion history for the requested user.
-
-**Tags:** Users
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Account-type information
-
-**400** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/users/{id}/account-type"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/users/{id}/account-type', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/users/{id}/account-type'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/users/{id}/account-type", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List a user's account-type conversion history
-
-`GET /api/v1/users/{id}/account-type/history`
-
-Returns account-type conversions for the requested user, ordered from newest to oldest.
-
-**Tags:** Users
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-| limit | query | integer |  |  |
-| offset | query | integer |  |  |
-
-#### Responses
-
-**200** - Conversion history
-
-**400** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/users/{id}/account-type/history"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/users/{id}/account-type/history', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/users/{id}/account-type/history'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/users/{id}/account-type/history", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
 ### Get the current user's watch history
 
 `GET /api/v1/watch-history`
@@ -21402,32 +21061,23 @@ func main() {
 
 ---
 
-## Admin
+## Webhooks
 
-Administrative operations
+Webhook management
 
-### List recent account-type conversions
+### List webhook subscriptions
 
-`GET /api/v1/admin/account-types/conversions`
+`GET /api/v1/webhooks`
 
-Requires an administrator session with MFA. Results are ordered from newest to oldest.
+Lists outbound webhook subscriptions owned by the authenticated user.
 
-**Tags:** Admin
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| limit | query | integer |  |  |
-| offset | query | integer |  |  |
+**Tags:** Webhooks
 
 #### Responses
 
-**200** - Recent conversions
+**200** - Webhook subscriptions
 
 **401** - Success
-
-**403** - Success
 
 **500** - Success
 
@@ -21436,7 +21086,7 @@ Requires an administrator session with MFA. Results are ordered from newest to o
 ##### cURL
 
 ```bash
-curl -X GET "https://clpr.tv/api/v1/admin/account-types/conversions"
+curl -X GET "https://clpr.tv/api/v1/webhooks"
 ```
 
 ##### JavaScript
@@ -21444,7 +21094,7 @@ curl -X GET "https://clpr.tv/api/v1/admin/account-types/conversions"
 ```javascript
 // Using fetch API
 try {
-  const response = await fetch('/api/v1/admin/account-types/conversions', {
+  const response = await fetch('/api/v1/webhooks', {
     method: 'GET',
   });
 
@@ -21466,7 +21116,7 @@ import requests
 
 try:
     response = requests.get(
-        '/api/v1/admin/account-types/conversions'
+        '/api/v1/webhooks'
     )
     response.raise_for_status()  # Raise error for bad status
     data = response.json()
@@ -21486,7 +21136,7 @@ import (
 )
 
 func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/account-types/conversions", nil)
+    req, err := http.NewRequest("GET", "/api/v1/webhooks", nil)
     if err != nil {
         // Handle error
         return
@@ -21511,117 +21161,18 @@ func main() {
 
 ---
 
-### Get account-type totals
+### Create a webhook subscription
 
-`GET /api/v1/admin/account-types/stats`
+`POST /api/v1/webhooks`
 
-Requires an administrator session with MFA.
+Creates an outbound webhook subscription. The signing secret is returned only by this response. Cookie-authenticated requests must also send the CSRF token.
 
-**Tags:** Admin
-
-#### Responses
-
-**200** - Counts for every supported account type
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/account-types/stats"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/account-types/stats', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/account-types/stats'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/account-types/stats", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Convert a user to a moderator account
-
-`POST /api/v1/admin/account-types/users/{id}/convert-to-moderator`
-
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Admin
+**Tags:** Webhooks
 
 #### Parameters
 
 | Name | In | Type | Required | Description |
 |------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
 |  |  | string |  |  |
 
 #### Request Body
@@ -21630,15 +21181,11 @@ Content-Type: `application/json`
 
 #### Responses
 
-**200** - User converted to moderator
+**201** - Subscription created and signing secret issued
 
 **400** - Success
 
 **401** - Success
-
-**403** - Success
-
-**404** - Success
 
 **500** - Success
 
@@ -21647,7 +21194,7 @@ Content-Type: `application/json`
 ##### cURL
 
 ```bash
-curl -X POST "https://clpr.tv/api/v1/admin/account-types/users/{id}/convert-to-moderator" \
+curl -X POST "https://clpr.tv/api/v1/webhooks" \
   -H "Content-Type: application/json" \
   -d '{"example": "data"}'
 ```
@@ -21657,7 +21204,7 @@ curl -X POST "https://clpr.tv/api/v1/admin/account-types/users/{id}/convert-to-m
 ```javascript
 // Using fetch API
 try {
-  const response = await fetch('/api/v1/admin/account-types/users/{id}/convert-to-moderator', {
+  const response = await fetch('/api/v1/webhooks', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -21685,7 +21232,7 @@ import requests
 
 try:
     response = requests.post(
-        '/api/v1/admin/account-types/users/{id}/convert-to-moderator',
+        '/api/v1/webhooks',
         json={}  # Your request data
     )
     response.raise_for_status()  # Raise error for bad status
@@ -21718,7 +21265,7 @@ func main() {
         return
     }
 
-    req, err := http.NewRequest("POST", "/api/v1/admin/account-types/users/{id}/convert-to-moderator", bytes.NewBuffer(jsonBody))
+    req, err := http.NewRequest("POST", "/api/v1/webhooks", bytes.NewBuffer(jsonBody))
     if err != nil {
         // Handle error
         return
@@ -21743,6 +21290,1588 @@ func main() {
 ```
 
 ---
+
+### List supported webhook events
+
+`GET /api/v1/webhooks/events`
+
+**Tags:** Webhooks
+
+#### Responses
+
+**200** - Supported event identifiers
+
+**429** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/api/v1/webhooks/events"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/events', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks/events'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks/events", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Get a webhook subscription
+
+`GET /api/v1/webhooks/{id}`
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+
+#### Responses
+
+**200** - Webhook subscription
+
+**400** - Success
+
+**401** - Success
+
+**404** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/api/v1/webhooks/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Update a webhook subscription
+
+`PATCH /api/v1/webhooks/{id}`
+
+Updates mutable subscription settings. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Subscription updated
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X PATCH "https://clpr.tv/api/v1/webhooks/{id}" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.patch(
+        '/api/v1/webhooks/{id}',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PATCH", "/api/v1/webhooks/{id}", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Delete a webhook subscription
+
+`DELETE /api/v1/webhooks/{id}`
+
+Permanently deletes the subscription. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Subscription deleted
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X DELETE "https://clpr.tv/api/v1/webhooks/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}', {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.delete(
+        '/api/v1/webhooks/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("DELETE", "/api/v1/webhooks/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List webhook delivery attempts
+
+`GET /api/v1/webhooks/{id}/deliveries`
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+
+#### Responses
+
+**200** - Paginated delivery attempts
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/api/v1/webhooks/{id}/deliveries"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}/deliveries', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/webhooks/{id}/deliveries'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}/deliveries", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Regenerate a webhook signing secret
+
+`POST /api/v1/webhooks/{id}/regenerate-secret`
+
+Invalidates the previous secret and returns its replacement once. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Replacement signing secret
+
+**400** - Success
+
+**401** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "https://clpr.tv/api/v1/webhooks/{id}/regenerate-secret"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/{id}/regenerate-secret', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/webhooks/{id}/regenerate-secret'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("POST", "/api/v1/webhooks/{id}/regenerate-secret", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List outbound webhook dead-letter items
+
+`GET /api/v1/admin/webhooks/dlq`
+
+Requires an administrator session with MFA.
+
+**Tags:** Admin, Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+
+#### Responses
+
+**200** - Paginated dead-letter items
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/api/v1/admin/webhooks/dlq"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/webhooks/dlq', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/webhooks/dlq'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/webhooks/dlq", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Permanently delete a dead-letter item
+
+`DELETE /api/v1/admin/webhooks/dlq/{id}`
+
+Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Admin, Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Item deleted
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**500** - Success
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X DELETE "https://clpr.tv/api/v1/admin/webhooks/dlq/{id}"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/webhooks/dlq/{id}', {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.delete(
+        '/api/v1/admin/webhooks/dlq/{id}'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("DELETE", "/api/v1/admin/webhooks/dlq/{id}", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Replay a dead-lettered webhook
+
+`POST /api/v1/admin/webhooks/dlq/{id}/replay`
+
+Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Admin, Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Responses
+
+**200** - Replay delivered successfully
+
+**400** - Success
+
+**401** - Success
+
+**403** - Success
+
+**404** - Success
+
+**409** - Item is currently replaying or was already replayed successfully
+
+**502** - Downstream replay failed
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "https://clpr.tv/api/v1/admin/webhooks/dlq/{id}/replay"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/webhooks/dlq/{id}/replay', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/admin/webhooks/dlq/{id}/replay'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("POST", "/api/v1/admin/webhooks/dlq/{id}/replay", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Get webhook delivery and retry health
+
+`GET /internal/operations/webhooks`
+
+Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
+
+**Tags:** Operations, Webhooks
+
+🔒 **Authentication Required**
+
+#### Responses
+
+**200** - Complete webhook operational statistics
+
+**401** - Success
+
+**500** - Retry queue statistics unavailable
+
+**503** - Delivery statistics unavailable; partial retry statistics returned
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/internal/operations/webhooks" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/internal/operations/webhooks', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+try:
+    response = requests.get(
+        '/internal/operations/webhooks',
+        headers=headers
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/internal/operations/webhooks", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Ingest signed SendGrid event notifications
+
+`POST /api/v1/webhooks/sendgrid`
+
+Verifies SendGrid's ECDSA signature and five-minute timestamp window before processing 1–1000 events. Payloads are limited to 1 MiB. A 500 response requests provider retry when any event could not be persisted.
+
+**Tags:** Webhooks
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| X-Twilio-Email-Event-Webhook-Signature | header | string | ✓ |  |
+| X-Twilio-Email-Event-Webhook-Timestamp | header | string | ✓ |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Every event processed
+
+**400** - Invalid JSON, batch bounds, or required event fields
+
+**401** - Missing, stale, future, or invalid SendGrid signature
+
+**413** - Payload exceeds 1 MiB
+
+**500** - One or more verified events could not be persisted
+
+**503** - Signature verification key is unavailable
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "https://clpr.tv/api/v1/webhooks/sendgrid" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/webhooks/sendgrid', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/webhooks/sendgrid',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/webhooks/sendgrid", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+## Support
+
+### Submit a contact message
+
+`POST /api/v1/contact`
+
+Submits a rate-limited support request. Authentication is optional; authenticated requests associate the message with the current user.
+
+**Tags:** Support
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**201** - Contact message accepted
+
+**400** - Invalid contact message
+
+**429** - Success
+
+**500** - Contact message could not be stored
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X POST "https://clpr.tv/api/v1/contact" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/contact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.post(
+        '/api/v1/contact',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("POST", "/api/v1/contact", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### List contact messages
+
+`GET /api/v1/admin/contact`
+
+Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.
+
+**Tags:** Admin, Support
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| page | query | integer |  |  |
+| limit | query | integer |  |  |
+| category | query | string |  |  |
+| status | query | string |  |  |
+
+#### Responses
+
+**200** - Paginated contact messages
+
+**400** - Invalid filter or pagination value
+
+**401** - Success
+
+**403** - Success
+
+**500** - Contact messages could not be retrieved
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X GET "https://clpr.tv/api/v1/admin/contact"
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/contact', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.get(
+        '/api/v1/admin/contact'
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+)
+
+func main() {
+    req, err := http.NewRequest("GET", "/api/v1/admin/contact", nil)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+### Update a contact message status
+
+`PUT /api/v1/admin/contact/{id}/status`
+
+Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+
+**Tags:** Admin, Support
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| id | path | string | ✓ |  |
+|  |  | string |  |  |
+
+#### Request Body
+
+Content-Type: `application/json`
+
+#### Responses
+
+**200** - Status updated
+
+**400** - Invalid message ID or status
+
+**401** - Success
+
+**403** - Success
+
+**404** - Contact message not found
+
+**500** - Status could not be updated
+
+#### Code Examples
+
+##### cURL
+
+```bash
+curl -X PUT "https://clpr.tv/api/v1/admin/contact/{id}/status" \
+  -H "Content-Type: application/json" \
+  -d '{"example": "data"}'
+```
+
+##### JavaScript
+
+```javascript
+// Using fetch API
+try {
+  const response = await fetch('/api/v1/admin/contact/{id}/status', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      // Your request data
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+  // Process data
+} catch (error) {
+  console.error('Error:', error);
+}
+```
+
+##### Python
+
+```python
+import requests
+
+try:
+    response = requests.put(
+        '/api/v1/admin/contact/{id}/status',
+        json={}  # Your request data
+    )
+    response.raise_for_status()  # Raise error for bad status
+    data = response.json()
+    # Process data
+except requests.exceptions.RequestException as e:
+    print(f"Error: {e}")
+```
+
+##### Go
+
+```go
+package main
+
+import (
+    "net/http"
+    "io"
+    "bytes"
+    "encoding/json"
+)
+
+func main() {
+    // Create request body
+    data := map[string]interface{}{
+        // Your request data
+    }
+    jsonBody, err := json.Marshal(data)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    req, err := http.NewRequest("PUT", "/api/v1/admin/contact/{id}/status", bytes.NewBuffer(jsonBody))
+    if err != nil {
+        // Handle error
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        // Handle error
+        return
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        // Handle error
+        return
+    }
+    // Process body
+    _ = body
+}
+```
+
+---
+
+## Admin
+
+Administrative operations
 
 ### List contact messages
 
@@ -32156,2482 +33285,6 @@ func main() {
 
 ---
 
-### List creator verification applications
-
-`GET /api/v1/admin/verification/applications`
-
-Returns a bounded application queue to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| status | query | string |  |  |
-| limit | query | integer |  |  |
-| page | query | integer |  |  |
-
-#### Responses
-
-**200** - Verification applications
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/applications"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/applications', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/applications'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/applications", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get a creator verification application
-
-`GET /api/v1/admin/verification/applications/{id}`
-
-Returns one application and its applicant details to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Verification application
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/applications/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/applications/{id}', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/applications/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/applications/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Review a creator verification application
-
-`POST /api/v1/admin/verification/applications/{id}/review`
-
-Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Application reviewed
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**404** - Success
-
-**409** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/admin/verification/applications/{id}/review" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/applications/{id}/review', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/admin/verification/applications/{id}/review',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/admin/verification/applications/{id}/review", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List verification audit logs
-
-`GET /api/v1/admin/verification/audit-logs`
-
-Returns a bounded flagged or user-specific audit page to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| user_id | query | string |  |  |
-| only_flagged | query | boolean |  |  |
-| limit | query | integer |  |  |
-| page | query | integer |  |  |
-
-#### Responses
-
-**200** - Verification audit logs
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/audit-logs"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/audit-logs', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/audit-logs'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/audit-logs", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get creator verification statistics
-
-`GET /api/v1/admin/verification/stats`
-
-Returns aggregate verification status counts to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Responses
-
-**200** - Verification statistics
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/stats"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/stats', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/stats'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/stats", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List a user's verification audit history
-
-`GET /api/v1/admin/verification/users/{user_id}/audit-logs`
-
-Returns one user's bounded verification audit page to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| user_id | path | string | ✓ |  |
-| limit | query | integer |  |  |
-| page | query | integer |  |  |
-
-#### Responses
-
-**200** - User verification audit logs
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/users/{user_id}/audit-logs"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/users/{user_id}/audit-logs', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/users/{user_id}/audit-logs'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/users/{user_id}/audit-logs", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-## Webhooks
-
-Webhook management
-
-### List webhook subscriptions
-
-`GET /api/v1/webhooks`
-
-Lists outbound webhook subscriptions owned by the authenticated user.
-
-**Tags:** Webhooks
-
-#### Responses
-
-**200** - Webhook subscriptions
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/webhooks"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Create a webhook subscription
-
-`POST /api/v1/webhooks`
-
-Creates an outbound webhook subscription. The signing secret is returned only by this response. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**201** - Subscription created and signing secret issued
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/webhooks" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/webhooks',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/webhooks", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List supported webhook events
-
-`GET /api/v1/webhooks/events`
-
-**Tags:** Webhooks
-
-#### Responses
-
-**200** - Supported event identifiers
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/webhooks/events"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/events', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks/events'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks/events", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get a webhook subscription
-
-`GET /api/v1/webhooks/{id}`
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Webhook subscription
-
-**400** - Success
-
-**401** - Success
-
-**404** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/webhooks/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Update a webhook subscription
-
-`PATCH /api/v1/webhooks/{id}`
-
-Updates mutable subscription settings. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Subscription updated
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X PATCH "https://clpr.tv/api/v1/webhooks/{id}" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}', {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.patch(
-        '/api/v1/webhooks/{id}',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("PATCH", "/api/v1/webhooks/{id}", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Delete a webhook subscription
-
-`DELETE /api/v1/webhooks/{id}`
-
-Permanently deletes the subscription. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Subscription deleted
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X DELETE "https://clpr.tv/api/v1/webhooks/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}', {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.delete(
-        '/api/v1/webhooks/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/webhooks/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List webhook delivery attempts
-
-`GET /api/v1/webhooks/{id}/deliveries`
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-| page | query | integer |  |  |
-| limit | query | integer |  |  |
-
-#### Responses
-
-**200** - Paginated delivery attempts
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/webhooks/{id}/deliveries"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}/deliveries', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/webhooks/{id}/deliveries'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/webhooks/{id}/deliveries", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Regenerate a webhook signing secret
-
-`POST /api/v1/webhooks/{id}/regenerate-secret`
-
-Invalidates the previous secret and returns its replacement once. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Replacement signing secret
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/webhooks/{id}/regenerate-secret"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/{id}/regenerate-secret', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/webhooks/{id}/regenerate-secret'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/webhooks/{id}/regenerate-secret", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List outbound webhook dead-letter items
-
-`GET /api/v1/admin/webhooks/dlq`
-
-Requires an administrator session with MFA.
-
-**Tags:** Admin, Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| page | query | integer |  |  |
-| limit | query | integer |  |  |
-
-#### Responses
-
-**200** - Paginated dead-letter items
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/webhooks/dlq"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/webhooks/dlq', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/webhooks/dlq'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/webhooks/dlq", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Permanently delete a dead-letter item
-
-`DELETE /api/v1/admin/webhooks/dlq/{id}`
-
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Admin, Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Item deleted
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X DELETE "https://clpr.tv/api/v1/admin/webhooks/dlq/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/webhooks/dlq/{id}', {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.delete(
-        '/api/v1/admin/webhooks/dlq/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/admin/webhooks/dlq/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Replay a dead-lettered webhook
-
-`POST /api/v1/admin/webhooks/dlq/{id}/replay`
-
-Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Admin, Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Replay delivered successfully
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**404** - Success
-
-**409** - Item is currently replaying or was already replayed successfully
-
-**502** - Downstream replay failed
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/admin/webhooks/dlq/{id}/replay"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/webhooks/dlq/{id}/replay', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/admin/webhooks/dlq/{id}/replay'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/admin/webhooks/dlq/{id}/replay", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get webhook delivery and retry health
-
-`GET /internal/operations/webhooks`
-
-Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
-
-**Tags:** Operations, Webhooks
-
-🔒 **Authentication Required**
-
-#### Responses
-
-**200** - Complete webhook operational statistics
-
-**401** - Success
-
-**500** - Retry queue statistics unavailable
-
-**503** - Delivery statistics unavailable; partial retry statistics returned
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/internal/operations/webhooks" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/internal/operations/webhooks', {
-    method: 'GET',
-    headers: {
-      'Authorization': 'Bearer YOUR_TOKEN',
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-headers = {'Authorization': 'Bearer YOUR_TOKEN'}
-try:
-    response = requests.get(
-        '/internal/operations/webhooks',
-        headers=headers
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/internal/operations/webhooks", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Authorization", "Bearer YOUR_TOKEN")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Ingest signed SendGrid event notifications
-
-`POST /api/v1/webhooks/sendgrid`
-
-Verifies SendGrid's ECDSA signature and five-minute timestamp window before processing 1–1000 events. Payloads are limited to 1 MiB. A 500 response requests provider retry when any event could not be persisted.
-
-**Tags:** Webhooks
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| X-Twilio-Email-Event-Webhook-Signature | header | string | ✓ |  |
-| X-Twilio-Email-Event-Webhook-Timestamp | header | string | ✓ |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Every event processed
-
-**400** - Invalid JSON, batch bounds, or required event fields
-
-**401** - Missing, stale, future, or invalid SendGrid signature
-
-**413** - Payload exceeds 1 MiB
-
-**500** - One or more verified events could not be persisted
-
-**503** - Signature verification key is unavailable
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/webhooks/sendgrid" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/webhooks/sendgrid', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/webhooks/sendgrid',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/webhooks/sendgrid", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-## Support
-
-### Submit a contact message
-
-`POST /api/v1/contact`
-
-Submits a rate-limited support request. Authentication is optional; authenticated requests associate the message with the current user.
-
-**Tags:** Support
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**201** - Contact message accepted
-
-**400** - Invalid contact message
-
-**429** - Success
-
-**500** - Contact message could not be stored
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/contact" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/contact', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/contact',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/contact", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List contact messages
-
-`GET /api/v1/admin/contact`
-
-Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.
-
-**Tags:** Admin, Support
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| page | query | integer |  |  |
-| limit | query | integer |  |  |
-| category | query | string |  |  |
-| status | query | string |  |  |
-
-#### Responses
-
-**200** - Paginated contact messages
-
-**400** - Invalid filter or pagination value
-
-**401** - Success
-
-**403** - Success
-
-**500** - Contact messages could not be retrieved
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/contact"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/contact', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/contact'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/contact", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Update a contact message status
-
-`PUT /api/v1/admin/contact/{id}/status`
-
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
-
-**Tags:** Admin, Support
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Status updated
-
-**400** - Invalid message ID or status
-
-**401** - Success
-
-**403** - Success
-
-**404** - Contact message not found
-
-**500** - Status could not be updated
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X PUT "https://clpr.tv/api/v1/admin/contact/{id}/status" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/contact/{id}/status', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.put(
-        '/api/v1/admin/contact/{id}/status',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("PUT", "/api/v1/admin/contact/{id}/status", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
 ## Analytics
 
 ### Queue one or more analytics events
@@ -43481,900 +42134,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("POST", "/api/v1/playlist-scripts/{id}/generate", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-## Verification
-
-Creator verification
-
-### List creator verification applications
-
-`GET /api/v1/admin/verification/applications`
-
-Returns a bounded application queue to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| status | query | string |  |  |
-| limit | query | integer |  |  |
-| page | query | integer |  |  |
-
-#### Responses
-
-**200** - Verification applications
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/applications"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/applications', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/applications'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/applications", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get a creator verification application
-
-`GET /api/v1/admin/verification/applications/{id}`
-
-Returns one application and its applicant details to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Verification application
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/applications/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/applications/{id}', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/applications/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/applications/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Review a creator verification application
-
-`POST /api/v1/admin/verification/applications/{id}/review`
-
-Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Application reviewed
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**404** - Success
-
-**409** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/admin/verification/applications/{id}/review" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/applications/{id}/review', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/admin/verification/applications/{id}/review',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/admin/verification/applications/{id}/review", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List verification audit logs
-
-`GET /api/v1/admin/verification/audit-logs`
-
-Returns a bounded flagged or user-specific audit page to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| user_id | query | string |  |  |
-| only_flagged | query | boolean |  |  |
-| limit | query | integer |  |  |
-| page | query | integer |  |  |
-
-#### Responses
-
-**200** - Verification audit logs
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/audit-logs"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/audit-logs', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/audit-logs'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/audit-logs", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get creator verification statistics
-
-`GET /api/v1/admin/verification/stats`
-
-Returns aggregate verification status counts to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Responses
-
-**200** - Verification statistics
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/stats"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/stats', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/stats'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/stats", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### List a user's verification audit history
-
-`GET /api/v1/admin/verification/users/{user_id}/audit-logs`
-
-Returns one user's bounded verification audit page to administrators with MFA.
-
-**Tags:** Admin, Verification
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| user_id | path | string | ✓ |  |
-| limit | query | integer |  |  |
-| page | query | integer |  |  |
-
-#### Responses
-
-**200** - User verification audit logs
-
-**400** - Success
-
-**401** - Success
-
-**403** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/admin/verification/users/{user_id}/audit-logs"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/admin/verification/users/{user_id}/audit-logs', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/admin/verification/users/{user_id}/audit-logs'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/admin/verification/users/{user_id}/audit-logs", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Submit a creator verification application
-
-`POST /api/v1/verification/applications`
-
-**Tags:** Verification
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**201** - Application created
-
-**400** - Success
-
-**401** - Success
-
-**409** - Success
-
-**429** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/verification/applications" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/verification/applications', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/verification/applications',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/verification/applications", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get the current user's latest verification application
-
-`GET /api/v1/verification/applications/me`
-
-**Tags:** Verification
-
-#### Responses
-
-**200** - Application returned
-
-**401** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/verification/applications/me"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/verification/applications/me', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/verification/applications/me'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/verification/applications/me", nil)
     if err != nil {
         // Handle error
         return

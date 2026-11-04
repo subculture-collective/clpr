@@ -65,10 +65,6 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		// Email logs for current user (authenticated)
 		users.GET("/me/email-logs", middleware.AuthMiddleware(svcs.Auth), h.EmailMetrics.GetUserEmailLogs)
 
-		// Account type endpoints
-		users.GET("/:id/account-type", middleware.OptionalAuthMiddleware(svcs.Auth), h.AccountType.GetAccountType)
-		users.GET("/:id/account-type/history", middleware.OptionalAuthMiddleware(svcs.Auth), h.AccountType.GetConversionHistory)
-		users.POST("/me/convert-to-broadcaster", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 3, 24*time.Hour), h.AccountType.ConvertToBroadcaster)
 
 		// Discovery list follows for current user (authenticated)
 		users.GET("/me/discovery-list-follows", middleware.AuthMiddleware(svcs.Auth), h.DiscoveryList.GetUserFollowedLists)

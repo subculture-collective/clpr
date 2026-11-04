@@ -19,7 +19,6 @@ export interface AdminRoutePages {
     moderationAnalytics: Page;
     moderators: Page;
     auditLogs: Page;
-    verification: Page;
     discoveryLists: Page;
     discoveryListForm: Page;
     playlistScripts: Page;
@@ -58,7 +57,6 @@ export function adminRoutes(pages: AdminRoutePages) {
             />
             <Route path='/admin/moderators' element={protectedPage(pages.moderators)} />
             <Route path='/admin/audit-logs' element={protectedPage(pages.auditLogs)} />
-            <Route path='/admin/verification' element={protectedPage(pages.verification)} />
             <Route
                 path='/admin/discovery-lists'
                 element={protectedPage(pages.discoveryLists)}

@@ -1,6 +1,5 @@
 import { TagList } from '@/components/tag/TagList';
 import { Badge } from '@/components/ui';
-import { VerifiedBadge } from '@/components/user';
 import { useClipFavorite, useClipVote } from '@/hooks/useClips';
 import { useIsAuthenticated, useMediaQuery, useToast } from '@/hooks';
 import { cn, formatCompactNumber, formatDuration, formatTimestamp } from '@/lib/utils';
@@ -216,9 +215,6 @@ export function ClipCard({
                                 >
                                     {clip.submitted_by.display_name}
                                 </Link>
-                                {clip.submitted_by.is_verified && (
-                                    <VerifiedBadge size='sm' />
-                                )}
                             </span>
                         : (
                             clip.creator_id &&

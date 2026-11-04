@@ -61,12 +61,3 @@
 # - Avoid running multiple instances simultaneously
 # - Test with --dry-run first: ./bin/scrape_clips --dry-run
 
-# ----------------------------------------------------------------------------
-# CREATOR VERIFICATION AUDIT
-# ----------------------------------------------------------------------------
-# Daily verification audit at 2 AM (checks verified users for eligibility)
-# 0 2 * * * cd /opt/clpr/backend && ./bin/audit-verification --limit=100 >> /var/log/clpr/audit-verification.log 2>&1
-
-# Weekly comprehensive audit on Sunday at 3 AM (broader audit window)
-# 0 3 * * 0 cd /opt/clpr/backend && ./bin/audit-verification --limit=1000 --audit-period=30 >> /var/log/clpr/audit-verification-weekly.log 2>&1
-

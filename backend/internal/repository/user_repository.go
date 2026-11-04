@@ -1016,48 +1016,6 @@ func (r *UserRepository) CreateUserActivity(ctx context.Context, activity *model
 	return err
 }
 
-// UpdateAccountType updates a user's account type
-func (r *UserRepository) UpdateAccountType(ctx context.Context, userID uuid.UUID, accountType string) error {
-	query := `
-		UPDATE users
-		SET account_type = $2,
-		    account_type_updated_at = NOW(),
-		    updated_at = NOW()
-		WHERE id = $1
-	`
-
-	result, err := r.db.Exec(ctx, query, userID, accountType)
-	if err != nil {
-		return err
-	}
-
-	if result.RowsAffected() == 0 {
-		return ErrUserNotFound
-	}
-
-	return nil
-}
-
-// GetAccountType retrieves a user's current account type
-func (r *UserRepository) GetAccountType(ctx context.Context, userID uuid.UUID) (string, error) {
-	query := `
-		SELECT account_type
-		FROM users
-		WHERE id = $1
-	`
-
-	var accountType string
-	err := r.db.QueryRow(ctx, query, userID).Scan(&accountType)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", ErrUserNotFound
-		}
-		return "", err
-	}
-
-	return accountType, nil
-}
-
 // BlockUser creates a block relationship between two users
 func (r *UserRepository) BlockUser(ctx context.Context, userID, blockedUserID uuid.UUID) error {
 	query := `

@@ -23,7 +23,6 @@
     "/admin/tags",
     "/admin/topics",
     "/admin/users",
-    "/admin/verification",
     "/admin/webhooks/dlq",
     "/auth/mfa",
     "/auth/success",
@@ -85,7 +84,6 @@
     "/topics/:categorySlug",
     "/twitch-category/:gameId",
     "/user/:username",
-    "/verification/apply",
     "/watch-history"
   ]
 }

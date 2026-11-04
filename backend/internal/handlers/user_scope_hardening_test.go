@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -29,26 +28,3 @@ func TestGetFollowedGamesUsesRegisteredIDParamAndStrictPagination(t *testing.T) 
 	}
 }
 
-func TestVerificationApplicationRejectsNonTwitchURLBeforeRepository(t *testing.T) {
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/verification/applications", bytes.NewBufferString(`{"twitch_channel_url":"https://example.com/channel"}`))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set("user_id", uuid.New())
-	(&VerificationHandler{}).CreateApplication(c)
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Code)
-	}
-}
-
-func TestVerificationApplicationRejectsMalformedIdentityWithoutPanic(t *testing.T) {
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/verification/applications", bytes.NewBufferString(`{"twitch_channel_url":"https://twitch.tv/channel"}`))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set("user_id", "invalid")
-	(&VerificationHandler{}).CreateApplication(c)
-	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("expected 500, got %d", w.Code)
-	}
-}

@@ -14,7 +14,6 @@ import {
     EmptyStateWithAction,
     UserRoleBadge,
 } from '../components';
-import { VerifiedBadge } from '../components/user';
 import { ClipCard } from '../components/clip/ClipCard';
 import { ClipCardSkeleton } from '../components/clip/ClipCardSkeleton';
 import { Avatar, CommentSkeleton } from '../components/ui';
@@ -239,21 +238,10 @@ export function ProfilePage() {
                                             <h1 className='text-2xl xs:text-3xl font-bold'>
                                                 {user.display_name}
                                             </h1>
-                                            {user.is_verified && (
-                                                <VerifiedBadge size='lg' />
-                                            )}
                                         </div>
                                         <p className='text-sm xs:text-base text-muted-foreground mb-2'>
                                             @{user.username}
                                         </p>
-                                        {!user.is_verified && (
-                                            <Link
-                                                to='/verification/apply'
-                                                className='inline-block text-xs xs:text-sm text-link hover:underline'
-                                            >
-                                                Apply for verification →
-                                            </Link>
-                                        )}
                                     </div>
                                     <Button
                                         onClick={handleReauthorize}

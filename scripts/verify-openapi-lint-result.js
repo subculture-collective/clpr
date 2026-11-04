@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 
-const EXPECTED_AMBIGUOUS_ROUTE_EXCEPTIONS = 25;
+const EXPECTED_AMBIGUOUS_ROUTE_EXCEPTIONS = 24;
 
 function validateLintResult(result) {
   const failures = [];
