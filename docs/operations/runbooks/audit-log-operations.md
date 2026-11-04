@@ -362,7 +362,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
 1. Review user account for compromise
 2. Check if account credentials leaked
 3. Consider temporary account suspension
-4. Enable MFA if not already enabled
+4. Revoke the account's Twitch authorization and sessions
 5. Reset password
 
 ---

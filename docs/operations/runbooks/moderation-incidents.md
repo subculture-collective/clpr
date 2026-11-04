@@ -145,12 +145,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    done
    ```
 
-3. **Enable MFA for all moderators**
-   ```bash
-   curl -X POST -H "Authorization: Bearer $API_TOKEN" \
-     "https://api.clpr.tv/api/v1/admin/security/require-mfa" \
-     -d '{"role": "moderator", "grace_period_hours": 24}'
-   ```
+3. **Revoke the affected moderator roles** from the admin users page until the accounts are verified
 
 4. **Notify security team**
    ```bash
@@ -273,7 +268,7 @@ curl -s -H "Authorization: Bearer $API_TOKEN" \
    - Verify identity through out-of-band channel
    - Confirm they didn't perform suspicious actions
    - Guide through password reset
-   - Enable MFA on account
+   - Ask them to review their Twitch two-factor settings
 
 4. **Revert unauthorized actions**
    ```bash

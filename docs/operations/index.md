@@ -103,7 +103,6 @@ Comprehensive operational runbooks for managing the moderation system in product
 - [[deployment-live-development|Live Development Deployment]] - Development deployment
 - [[documentation-hosting|Documentation Hosting]] - Hosting documentation site
 - [[admin-system-configuration-ui|Admin System Configuration]] - Admin configuration UI
-- [[mfa-admin-guide|MFA Admin Guide]] - Multi-factor authentication setup
 - [[query-limits|Query Limits]] - API query limits and throttling
 - [[global-redundancy-runbook|Global Redundancy]] - Multi-region redundancy
 

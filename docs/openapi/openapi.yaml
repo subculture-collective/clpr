@@ -56,8 +56,6 @@ tags:
     description: Health check and monitoring endpoints
   - name: Authentication
     description: User authentication and OAuth
-  - name: MFA
-    description: Multi-factor authentication
   - name: Clips
     description: Clip management and discovery
   - name: Comments
@@ -647,223 +645,6 @@ paths:
                 properties:
                   authorization_url:
                     type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  # ========================================
-  # MFA (Multi-Factor Authentication)
-  # ========================================
-  /api/v1/auth/mfa/enroll:
-    post:
-      tags: [MFA]
-      summary: Start MFA enrollment
-      description: Initiates MFA enrollment process (rate limited - 3/hour)
-      operationId: startMFAEnrollment
-      responses:
-        '200':
-          description: MFA enrollment started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  qr_code:
-                    type: string
-                    description: Base64 encoded QR code
-                  secret:
-                    type: string
-                  backup_codes:
-                    type: array
-                    items:
-                      type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /api/v1/auth/mfa/verify-enrollment:
-    post:
-      tags: [MFA]
-      summary: Verify MFA enrollment
-      description: Completes MFA enrollment by verifying TOTP code (rate limited - 10/minute)
-      operationId: verifyMFAEnrollment
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [code]
-              properties:
-                code:
-                  type: string
-                  description: 6-digit TOTP code
-      responses:
-        '200':
-          description: MFA enrollment verified
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  enabled:
-                    type: boolean
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /api/v1/auth/mfa/status:
-    get:
-      tags: [MFA]
-      summary: Get MFA status
-      description: Returns MFA enrollment status for current user
-      operationId: getMFAStatus
-      responses:
-        '200':
-          description: MFA status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  enabled:
-                    type: boolean
-                  enrolled_at:
-                    type: string
-                    format: date-time
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/v1/auth/mfa/regenerate-backup-codes:
-    post:
-      tags: [MFA]
-      summary: Regenerate backup codes
-      description: Generates new backup codes (rate limited - 5/hour)
-      operationId: regenerateBackupCodes
-      responses:
-        '200':
-          description: New backup codes generated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  backup_codes:
-                    type: array
-                    items:
-                      type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /api/v1/auth/mfa/disable:
-    post:
-      tags: [MFA]
-      summary: Disable MFA
-      description: Disables MFA for current user (rate limited - 3/hour)
-      operationId: disableMFA
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [code]
-              properties:
-                code:
-                  type: string
-                  description: 6-digit TOTP code or backup code
-      responses:
-        '200':
-          description: MFA disabled
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  disabled:
-                    type: boolean
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /api/v1/auth/mfa/trusted-devices:
-    get:
-      tags: [MFA]
-      summary: Get trusted devices
-      description: Returns list of trusted devices for MFA
-      operationId: getTrustedDevices
-      responses:
-        '200':
-          description: List of trusted devices
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  devices:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TrustedDevice'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/v1/auth/mfa/trusted-devices/{id}:
-    delete:
-      tags: [MFA]
-      summary: Revoke trusted device
-      description: Removes a device from trusted devices list
-      operationId: revokeTrustedDevice
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Trusted device revoked
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/v1/auth/mfa/verify-login:
-    post:
-      tags: [MFA]
-      summary: Verify MFA login
-      description: Verifies MFA code during login (rate limited - 10/minute)
-      operationId: verifyMFALogin
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [session_id, code]
-              properties:
-                session_id:
-                  type: string
-                code:
-                  type: string
-                  description: 6-digit TOTP code or backup code
-                trust_device:
-                  type: boolean
-      responses:
-        '200':
-          description: MFA verification successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -4192,7 +3973,7 @@ paths:
     get:
       tags: [Admin]
       summary: List recent account-type conversions
-      description: Requires an administrator session with MFA. Results are ordered from newest to oldest.
+      description: Requires an administrator session. Results are ordered from newest to oldest.
       operationId: getApiV1AdminAccountTypesConversions
       parameters:
         - name: limit
@@ -4218,7 +3999,7 @@ paths:
     get:
       tags: [Admin]
       summary: Get account-type totals
-      description: Requires an administrator session with MFA.
+      description: Requires an administrator session.
       operationId: getApiV1AdminAccountTypesStats
       responses:
         '200':
@@ -4237,7 +4018,7 @@ paths:
     post:
       tags: [Admin]
       summary: Convert a user to a moderator account
-      description: Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+      description: Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
       operationId: postApiV1AdminAccountTypesUsersIdConvertToModerator
       parameters:
         - name: id
@@ -4612,7 +4393,7 @@ paths:
     get:
       tags: [Admin, Support]
       summary: List contact messages
-      description: Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.
+      description: Requires an administrator session. Responses contain private submitter and abuse-prevention data.
       operationId: getApiV1AdminContact
       parameters:
         - name: page
@@ -4650,7 +4431,7 @@ paths:
     put:
       tags: [Admin, Support]
       summary: Update a contact message status
-      description: Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+      description: Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
       operationId: putApiV1AdminContactIdStatus
       parameters:
         - name: id
@@ -4691,7 +4472,7 @@ paths:
     get:
       tags: [Admin, Reports]
       summary: List content reports
-      description: Requires an administrator session with MFA.
+      description: Requires an administrator session.
       operationId: getApiV1AdminReports
       parameters:
         - name: status
@@ -4721,7 +4502,7 @@ paths:
     get:
       tags: [Admin, Reports]
       summary: Get a content report
-      description: Requires an administrator session with MFA. Includes reporter information and reports for the same target.
+      description: Requires an administrator session. Includes reporter information and reports for the same target.
       operationId: getApiV1AdminReportsId
       parameters:
         - name: id
@@ -4741,7 +4522,7 @@ paths:
     put:
       tags: [Admin, Reports]
       summary: Resolve a content report
-      description: Requires an administrator session with MFA. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
+      description: Requires an administrator session. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
       operationId: putApiV1AdminReportsId
       parameters:
         - name: id
@@ -4874,7 +4655,7 @@ paths:
     get:
       tags: [Admin, Webhooks]
       summary: List outbound webhook dead-letter items
-      description: Requires an administrator session with MFA.
+      description: Requires an administrator session.
       operationId: getApiV1AdminWebhooksDlq
       parameters:
         - name: page
@@ -4898,7 +4679,7 @@ paths:
     delete:
       tags: [Admin, Webhooks]
       summary: Permanently delete a dead-letter item
-      description: Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+      description: Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
       operationId: deleteApiV1AdminWebhooksDlqId
       parameters:
         - name: id
@@ -4922,7 +4703,7 @@ paths:
     post:
       tags: [Admin, Webhooks]
       summary: Replay a dead-lettered webhook
-      description: Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token.
+      description: Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires an administrator session; cookie-authenticated requests must also send the CSRF token.
       operationId: postApiV1AdminWebhooksDlqIdReplay
       parameters:
         - name: id
@@ -5081,7 +4862,7 @@ paths:
     post:
       tags: [Admin, Clips]
       summary: Run a clip synchronization
-      description: Runs a bounded synchronous Twitch clip import. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.
+      description: Runs a bounded synchronous Twitch clip import. Requires an administrator session; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.
       operationId: postApiV1AdminSyncClips
       parameters:
         - $ref: '#/components/parameters/CSRFToken'
@@ -5110,7 +4891,7 @@ paths:
     get:
       tags: [Admin, Clips]
       summary: Get persisted clip synchronization status
-      description: Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires administrator MFA.
+      description: Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires an administrator session.
       operationId: getApiV1AdminSyncStatus
       responses:
         '200':
@@ -5168,7 +4949,7 @@ paths:
     get:
       tags: [Admin, Audit]
       summary: List immutable moderation audit events
-      description: Requires an administrator session with MFA. Results may include IP address, user-agent, and event metadata.
+      description: Requires an administrator session. Results may include IP address, user-agent, and event metadata.
       operationId: getApiV1AdminAuditLogs
       parameters:
         - name: page
@@ -5216,7 +4997,7 @@ paths:
     get:
       tags: [Admin, Audit]
       summary: Export filtered audit events as CSV
-      description: Requires administrator MFA. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.
+      description: Requires an administrator session. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.
       operationId: getApiV1AdminAuditLogsExport
       parameters:
         - name: moderator_id
@@ -6156,7 +5937,7 @@ paths:
     get:
       tags: [Admin, Analytics]
       summary: List engagement alerts
-      description: Evaluates current engagement thresholds for administrators with MFA.
+      description: Evaluates current engagement thresholds for administrators.
       operationId: getApiV1AdminAnalyticsAlerts
       responses:
         '200': {description: Current alerts, content: {application/json: {schema: {type: object, required: [alerts, count], properties: {alerts: {type: array, items: {type: object, additionalProperties: true}}, count: {type: integer, minimum: 0}}}}}}
@@ -6168,7 +5949,7 @@ paths:
     get:
       tags: [Admin, Analytics]
       summary: Get platform content metrics
-      description: Returns aggregate content metrics for administrators with MFA.
+      description: Returns aggregate content metrics for administrators.
       operationId: getApiV1AdminAnalyticsContent
       responses:
         '200': {description: Content metrics, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
@@ -6180,7 +5961,7 @@ paths:
     get:
       tags: [Admin, Analytics]
       summary: Get platform engagement health
-      description: Returns aggregate engagement health for administrators with MFA.
+      description: Returns aggregate engagement health for administrators.
       operationId: getApiV1AdminAnalyticsHealth
       responses:
         '200': {description: Platform engagement health, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
@@ -6192,7 +5973,7 @@ paths:
     get:
       tags: [Admin, Analytics]
       summary: Get platform analytics overview
-      description: Returns platform KPIs for administrators with MFA.
+      description: Returns platform KPIs for administrators.
       operationId: getApiV1AdminAnalyticsOverview
       responses:
         '200': {description: Platform overview, content: {application/json: {schema: {type: object, additionalProperties: true}}}}
@@ -6204,7 +5985,7 @@ paths:
     get:
       tags: [Admin, Analytics]
       summary: Get trending engagement metrics
-      description: Returns a bounded engagement trend for administrators with MFA.
+      description: Returns a bounded engagement trend for administrators.
       operationId: getApiV1AdminAnalyticsTrending
       parameters:
         - {name: metric, in: query, schema: {type: string, enum: [dau, clips, votes, comments], default: dau}}
@@ -6220,7 +6001,7 @@ paths:
     get:
       tags: [Admin, Analytics]
       summary: Get platform metric trends
-      description: Returns a bounded platform trend for administrators with MFA.
+      description: Returns a bounded platform trend for administrators.
       operationId: getApiV1AdminAnalyticsTrends
       parameters:
         - {name: metric, in: query, schema: {type: string, enum: [users, clips, views, votes, comments], default: users}}
@@ -6236,7 +6017,7 @@ paths:
     get:
       tags: [Admin, Email]
       summary: List unresolved email alerts
-      description: Returns a bounded list of unresolved delivery alerts for administrators with MFA.
+      description: Returns a bounded list of unresolved delivery alerts for administrators.
       operationId: getApiV1AdminEmailAlerts
       parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}]
       responses:
@@ -6250,7 +6031,7 @@ paths:
     post:
       tags: [Admin, Email]
       summary: Acknowledge an email alert
-      description: Acknowledges one unresolved alert. Administrator MFA and CSRF protection are required.
+      description: Acknowledges one unresolved alert. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminEmailAlertsIdAcknowledge
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -6267,7 +6048,7 @@ paths:
     post:
       tags: [Admin, Email]
       summary: Resolve an email alert
-      description: Resolves one unresolved alert. Administrator MFA and CSRF protection are required.
+      description: Resolves one unresolved alert. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminEmailAlertsIdResolve
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -6284,7 +6065,7 @@ paths:
     get:
       tags: [Admin, Email]
       summary: Search email delivery logs
-      description: Searches sensitive delivery logs for administrators with MFA; date ranges are capped at 366 days.
+      description: Searches sensitive delivery logs for administrators; date ranges are capped at 366 days.
       operationId: getApiV1AdminEmailLogs
       parameters:
         - {name: status, in: query, schema: {type: string, enum: [sent, delivered, bounce, dropped, open, click, spam_report, unsubscribe, deferred, processed]}}
@@ -6305,7 +6086,7 @@ paths:
     get:
       tags: [Admin, Email]
       summary: Get aggregate email metrics
-      description: Returns metrics for an ordered range of at most 366 days to administrators with MFA.
+      description: Returns metrics for an ordered range of at most 366 days to administrators.
       operationId: getApiV1AdminEmailMetrics
       parameters:
         - {name: start_date, in: query, schema: {type: string, format: date-time}}
@@ -6322,7 +6103,7 @@ paths:
     get:
       tags: [Admin, Email]
       summary: Get the email operations dashboard
-      description: Returns a complete dashboard snapshot for administrators with MFA; dependency failures fail the request.
+      description: Returns a complete dashboard snapshot for administrators; dependency failures fail the request.
       operationId: getApiV1AdminEmailMetricsDashboard
       parameters: [{name: days, in: query, schema: {type: integer, minimum: 1, maximum: 30, default: 7}}]
       responses:
@@ -6348,7 +6129,7 @@ paths:
     get:
       tags: [Admin, Email]
       summary: Get email metrics by template
-      description: Returns bounded template metrics for an ordered range of at most 366 days to administrators with MFA.
+      description: Returns bounded template metrics for an ordered range of at most 366 days to administrators.
       operationId: getApiV1AdminEmailMetricsTemplates
       parameters:
         - {name: start_date, in: query, schema: {type: string, format: date-time}}
@@ -6365,7 +6146,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: Get abuse statistics for a user
-      description: Requires moderator or administrator MFA.
+      description: Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationAbuseUserid
       parameters:
         - name: userId
@@ -6389,7 +6170,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: Get moderation analytics
-      description: Returns analytics for an ordered date range of at most 366 days. Requires moderator or administrator MFA.
+      description: Returns analytics for an ordered date range of at most 366 days. Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationAnalytics
       parameters: [{$ref: '#/components/parameters/StartDate'}, {$ref: '#/components/parameters/EndDate'}]
       responses:
@@ -6407,7 +6188,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: List moderation appeals
-      description: Administrator MFA is required.
+      description: An administrator session is required.
       operationId: getApiV1AdminModerationAppeals
       parameters:
         - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected], default: pending}}
@@ -6428,7 +6209,7 @@ paths:
     post:
       tags: [Admin, Moderation]
       summary: Resolve a moderation appeal
-      description: Atomically resolves one pending appeal and writes its audit record. Administrator MFA and CSRF protection are required.
+      description: Atomically resolves one pending appeal and writes its audit record. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminModerationAppealsIdResolve
       parameters:
         - name: id
@@ -6461,7 +6242,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: List moderation decisions
-      description: Filters decisions with strict dates and bounded offset pagination. Requires moderator or administrator MFA.
+      description: Filters decisions with strict dates and bounded offset pagination. Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationAudit
       parameters:
         - {name: moderator_id, in: query, schema: {type: string, format: uuid}}
@@ -6485,7 +6266,7 @@ paths:
     post:
       tags: [Admin, Moderation]
       summary: Moderate multiple queue items
-      description: Applies one decision to 1–100 unique pending items atomically. Requires moderator or administrator MFA and CSRF protection.
+      description: Applies one decision to 1–100 unique pending items atomically. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminModerationBulk
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody:
@@ -6508,7 +6289,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: List pending moderation events
-      description: Requires moderator or administrator MFA.
+      description: Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationEvents
       parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}]
       responses:
@@ -6526,7 +6307,7 @@ paths:
     post:
       tags: [Admin, Moderation]
       summary: Process a moderation event
-      description: Records one bounded action for an event. Requires moderator or administrator MFA and CSRF protection.
+      description: Records one bounded action for an event. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminModerationEventsIdProcess
       parameters:
         - name: id
@@ -6554,7 +6335,7 @@ paths:
     post:
       tags: [Admin, Moderation]
       summary: Mark a moderation event reviewed
-      description: Requires moderator or administrator MFA and CSRF protection.
+      description: Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminModerationEventsIdReview
       parameters:
         - name: id
@@ -6579,7 +6360,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: List moderation events by type
-      description: Rejects unknown event types. Requires moderator or administrator MFA.
+      description: Rejects unknown event types. Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationEventsType
       parameters:
         - name: type
@@ -6604,7 +6385,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: List moderation queue items
-      description: Requires moderator or administrator MFA.
+      description: Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationQueue
       parameters:
         - {name: type, in: query, schema: {type: string, enum: [comment, clip, user, submission]}}
@@ -6625,7 +6406,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: Get moderation queue statistics
-      description: Requires moderator or administrator MFA.
+      description: Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationQueueStats
       responses:
         '200':
@@ -6642,7 +6423,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: Get moderation event statistics
-      description: Requires moderator or administrator MFA.
+      description: Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationStats
       responses:
         '200':
@@ -6659,7 +6440,7 @@ paths:
     get:
       tags: [Admin, Moderation]
       summary: Get toxicity-classification metrics
-      description: Returns an ordered date range of at most 366 days. Requires moderator or administrator MFA.
+      description: Returns an ordered date range of at most 366 days. Requires moderator or an administrator session.
       operationId: getApiV1AdminModerationToxicityMetrics
       parameters: [{$ref: '#/components/parameters/StartDate'}, {$ref: '#/components/parameters/EndDate'}]
       responses:
@@ -6677,7 +6458,7 @@ paths:
     post:
       tags: [Admin, Moderation]
       summary: Approve a pending moderation item
-      description: Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
+      description: Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminModerationIdApprove
       parameters:
         - name: id
@@ -6703,7 +6484,7 @@ paths:
     post:
       tags: [Admin, Moderation]
       summary: Reject a pending moderation item
-      description: Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
+      description: Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminModerationIdReject
       parameters:
         - name: id
@@ -6732,7 +6513,7 @@ paths:
     post:
       tags: [Admin, NSFW]
       summary: Detect NSFW content in an image batch
-      description: Runs provider-backed detection for up to 50 public HTTPS image URLs. Administrator MFA and CSRF protection are required.
+      description: Runs provider-backed detection for up to 50 public HTTPS image URLs. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminNsfwBatchDetect
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminNSFWBatchRequest'}}}}
@@ -6748,7 +6529,7 @@ paths:
     get:
       tags: [Admin, NSFW]
       summary: Get NSFW detector availability
-      description: Returns only non-sensitive feature and provider availability to administrators with MFA.
+      description: Returns only non-sensitive feature and provider availability to administrators.
       operationId: getApiV1AdminNsfwConfig
       responses:
         '200': {description: Detector availability, content: {application/json: {schema: {type: object, required: [success, data], properties: {success: {type: boolean, const: true}, data: {type: object, required: [enabled, operational], properties: {enabled: {type: boolean}, operational: {type: boolean}}}}}}}}
@@ -6759,7 +6540,7 @@ paths:
     post:
       tags: [Admin, NSFW]
       summary: Detect NSFW content in one image
-      description: Runs provider-backed detection for one public HTTPS image URL. Administrator MFA and CSRF protection are required.
+      description: Runs provider-backed detection for one public HTTPS image URL. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminNsfwDetect
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminNSFWDetectionRequest'}}}}
@@ -6778,7 +6559,7 @@ paths:
     get:
       tags: [Admin, NSFW]
       summary: Check NSFW detector readiness
-      description: Checks configured provider-backed readiness without exposing secrets. Administrator MFA is required.
+      description: Checks configured provider-backed readiness without exposing secrets. An administrator session is required.
       operationId: getApiV1AdminNsfwHealth
       responses:
         '200': {description: Detector ready, content: {application/json: {schema: {type: object, required: [success, status, latency_ms], properties: {success: {type: boolean}, status: {type: string, enum: [healthy, unhealthy]}, latency_ms: {type: integer, minimum: 0}}}}}}
@@ -6790,7 +6571,7 @@ paths:
     get:
       tags: [Admin, NSFW]
       summary: Get NSFW detection metrics
-      description: Returns an ordered metrics range of at most 366 days to administrators with MFA.
+      description: Returns an ordered metrics range of at most 366 days to administrators.
       operationId: getApiV1AdminNsfwMetrics
       parameters:
         - {$ref: '#/components/parameters/StartDate'}
@@ -6807,7 +6588,7 @@ paths:
     get:
       tags: [Admin, Playlist Scripts]
       summary: List playlist automation scripts
-      description: Returns a bounded list of scripts to administrators with MFA.
+      description: Returns a bounded list of scripts to administrators.
       operationId: getApiV1AdminPlaylistScripts
       parameters: [{name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}]
       responses:
@@ -6819,7 +6600,7 @@ paths:
     post:
       tags: [Admin, Playlist Scripts]
       summary: Create a playlist automation script
-      description: Creates a validated script. Administrator MFA and CSRF protection are required.
+      description: Creates a validated script. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminPlaylistScripts
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminCreatePlaylistScriptRequest'}}}}
@@ -6834,7 +6615,7 @@ paths:
     delete:
       tags: [Admin, Playlist Scripts]
       summary: Delete a playlist automation script
-      description: Deletes one script. Administrator MFA and CSRF protection are required.
+      description: Deletes one script. An administrator session and CSRF protection are required.
       operationId: deleteApiV1AdminPlaylistScriptsId
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -6849,7 +6630,7 @@ paths:
     put:
       tags: [Admin, Playlist Scripts]
       summary: Update a playlist automation script
-      description: Updates at least one field while preserving strategy requirements. Administrator MFA and CSRF protection are required.
+      description: Updates at least one field while preserving strategy requirements. An administrator session and CSRF protection are required.
       operationId: putApiV1AdminPlaylistScriptsId
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -6867,7 +6648,7 @@ paths:
     post:
       tags: [Admin, Playlist Scripts]
       summary: Generate a playlist from a script
-      description: Atomically creates the replacement playlist and retires the previous generation. Administrator MFA and CSRF protection are required.
+      description: Atomically creates the replacement playlist and retires the previous generation. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminPlaylistScriptsIdGenerate
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -6894,7 +6675,7 @@ paths:
     get:
       tags: [Admin, Submissions]
       summary: List pending clip submissions
-      description: Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or administrator MFA.
+      description: Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or an administrator session.
       operationId: getApiV1AdminSubmissions
       parameters:
         - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
@@ -6920,7 +6701,7 @@ paths:
     post:
       tags: [Admin, Submissions]
       summary: Approve multiple submissions
-      description: Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
+      description: Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminSubmissionsBulkApprove
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BulkSubmissionRequest'}}}}
@@ -6941,7 +6722,7 @@ paths:
     post:
       tags: [Admin, Submissions]
       summary: Reject multiple submissions
-      description: Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
+      description: Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminSubmissionsBulkReject
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BulkRejectSubmissionRequest'}}}}
@@ -6962,7 +6743,7 @@ paths:
     get:
       tags: [Admin, Submissions]
       summary: List rejection-reason templates
-      description: Requires moderator or administrator MFA.
+      description: Requires moderator or an administrator session.
       operationId: getApiV1AdminSubmissionsRejectionReasons
       responses:
         '200':
@@ -6979,7 +6760,7 @@ paths:
     post:
       tags: [Admin, Submissions]
       summary: Approve a pending submission
-      description: Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
+      description: Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminSubmissionsIdApprove
       parameters:
         - name: id
@@ -7006,7 +6787,7 @@ paths:
     post:
       tags: [Admin, Submissions]
       summary: Reject a pending submission
-      description: Atomically commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
+      description: Atomically commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.
       operationId: postApiV1AdminSubmissionsIdReject
       parameters:
         - name: id
@@ -7043,7 +6824,7 @@ paths:
     post:
       tags: [Admin, Tags]
       summary: Create a tag
-      description: Creates a canonical, non-blacklisted tag. Administrator MFA and CSRF protection are required.
+      description: Creates a canonical, non-blacklisted tag. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminTags
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminTagRequest'}}}}
@@ -7064,7 +6845,7 @@ paths:
     put:
       tags: [Admin, Topics]
       summary: Replace a clip's topic assignments
-      description: Replaces automated assignments with moderator-selected topics. Moderator MFA and CSRF protection are required.
+      description: Replaces automated assignments with moderator-selected topics. A moderator session and CSRF protection are required.
       operationId: replaceAdminClipTopics
       parameters:
         - $ref: '#/components/parameters/ClipId'
@@ -7087,7 +6868,7 @@ paths:
     post:
       tags: [Admin, Topics]
       summary: Merge one topic into another
-      description: Moves assignments to the target and deactivates the source. Moderator MFA and CSRF protection are required.
+      description: Moves assignments to the target and deactivates the source. A moderator session and CSRF protection are required.
       operationId: mergeAdminTopic
       parameters:
         - name: id
@@ -7111,7 +6892,7 @@ paths:
     post:
       tags: [Admin, Topics]
       summary: Split selected clips into a new topic
-      description: Creates a topic and moves only clips assigned to the source. Moderator MFA and CSRF protection are required.
+      description: Creates a topic and moves only clips assigned to the source. A moderator session and CSRF protection are required.
       operationId: splitAdminTopic
       parameters:
         - name: id
@@ -7137,7 +6918,7 @@ paths:
     get:
       tags: [Admin, Tags]
       summary: List blacklisted tag slugs
-      description: Administrator MFA is required.
+      description: An administrator session is required.
       operationId: getApiV1AdminTagsBlacklist
       responses:
         '200':
@@ -7153,7 +6934,7 @@ paths:
     post:
       tags: [Admin, Tags]
       summary: Blacklist a tag slug
-      description: Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. Administrator MFA and CSRF protection are required.
+      description: Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminTagsBlacklist
       parameters: [{$ref: '#/components/parameters/CSRFToken'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/BlacklistedTagRequest'}}}}
@@ -7174,7 +6955,7 @@ paths:
     delete:
       tags: [Admin, Tags]
       summary: Remove a blacklisted tag slug
-      description: Administrator MFA and CSRF protection are required.
+      description: An administrator session and CSRF protection are required.
       operationId: deleteApiV1AdminTagsBlacklistId
       parameters:
         - name: id
@@ -7201,7 +6982,7 @@ paths:
     get:
       tags: [Admin, Tags]
       summary: List tag promotion candidates
-      description: Returns a paginated moderation queue. Administrator MFA is required.
+      description: Returns a paginated moderation queue. An administrator session is required.
       operationId: getApiV1AdminTagsPromotionQueue
       parameters:
         - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected], default: pending}}
@@ -7262,7 +7043,7 @@ paths:
     delete:
       tags: [Admin, Tags]
       summary: Delete a tag
-      description: Atomically deletes the tag and its clip associations. Administrator MFA and CSRF protection are required.
+      description: Atomically deletes the tag and its clip associations. An administrator session and CSRF protection are required.
       operationId: deleteApiV1AdminTagsId
       parameters:
         - name: id
@@ -7287,7 +7068,7 @@ paths:
     put:
       tags: [Admin, Tags]
       summary: Replace a tag
-      description: Replaces tag fields with canonical, non-blacklisted values. Administrator MFA and CSRF protection are required.
+      description: Replaces tag fields with canonical, non-blacklisted values. An administrator session and CSRF protection are required.
       operationId: putApiV1AdminTagsId
       parameters:
         - name: id
@@ -7347,7 +7128,7 @@ paths:
     get:
       tags: [Admin, Users]
       summary: Search users for administration
-      description: Strictly filters and paginates administrative user records. Administrator MFA is required.
+      description: Strictly filters and paginates administrative user records. An administrator session is required.
       operationId: getApiV1AdminUsers
       parameters:
         - {name: search, in: query, schema: {type: string, maxLength: 200}}
@@ -7442,7 +7223,7 @@ paths:
     post:
       tags: [Admin, Users]
       summary: Award a badge to a user
-      description: Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
+      description: Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminUsersIdBadges
       parameters:
         - name: id
@@ -7473,7 +7254,7 @@ paths:
     delete:
       tags: [Admin, Users]
       summary: Remove a badge from a user
-      description: Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
+      description: Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.
       operationId: deleteApiV1AdminUsersIdBadgesBadgeid
       parameters:
         - name: id
@@ -7507,7 +7288,7 @@ paths:
     post:
       tags: [Admin, Users]
       summary: Ban a user
-      description: Atomically bans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically bans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminUsersIdBan
       parameters:
         - name: id
@@ -7537,7 +7318,7 @@ paths:
     get:
       tags: [Admin, Users]
       summary: Get comment-suspension history
-      description: Administrator MFA is required.
+      description: An administrator session is required.
       operationId: getApiV1AdminUsersIdCommentSuspensionHistory
       parameters:
         - name: id
@@ -7564,7 +7345,7 @@ paths:
     patch:
       tags: [Admin, Users]
       summary: Set user karma
-      description: Atomically sets bounded karma and records the audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically sets bounded karma and records the audit event. An administrator session and CSRF protection are required.
       operationId: patchApiV1AdminUsersIdKarma
       parameters:
         - name: id
@@ -7594,7 +7375,7 @@ paths:
     post:
       tags: [Admin, Users]
       summary: Lift a comment suspension
-      description: Atomically lifts active suspensions and records the audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically lifts active suspensions and records the audit event. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminUsersIdLiftCommentSuspension
       parameters:
         - name: id
@@ -7624,7 +7405,7 @@ paths:
     patch:
       tags: [Admin, Users]
       summary: Change a user role
-      description: Atomically changes a non-administrator target role and records the audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically changes a non-administrator target role and records the audit event. An administrator session and CSRF protection are required.
       operationId: patchApiV1AdminUsersIdRole
       parameters:
         - name: id
@@ -7654,7 +7435,7 @@ paths:
     post:
       tags: [Admin, Users]
       summary: Suspend comment privileges
-      description: Atomically records a warning or suspension with its audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically records a warning or suspension with its audit event. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminUsersIdSuspendComments
       parameters:
         - name: id
@@ -7684,7 +7465,7 @@ paths:
     post:
       tags: [Admin, Users]
       summary: Set comment-review requirement
-      description: Atomically changes the review requirement and records the audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically changes the review requirement and records the audit event. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminUsersIdToggleCommentReview
       parameters:
         - name: id
@@ -7714,7 +7495,7 @@ paths:
     post:
       tags: [Admin, Users]
       summary: Unban a user
-      description: Atomically unbans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
+      description: Atomically unbans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminUsersIdUnban
       parameters:
         - name: id
@@ -7744,7 +7525,7 @@ paths:
     get:
       tags: [Admin, Verification]
       summary: List creator verification applications
-      description: Returns a bounded application queue to administrators with MFA.
+      description: Returns a bounded application queue to administrators.
       operationId: getApiV1AdminVerificationApplications
       parameters:
         - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected], default: pending}}
@@ -7761,7 +7542,7 @@ paths:
     get:
       tags: [Admin, Verification]
       summary: Get a creator verification application
-      description: Returns one application and its applicant details to administrators with MFA.
+      description: Returns one application and its applicant details to administrators.
       operationId: getApiV1AdminVerificationApplicationsId
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -7777,7 +7558,7 @@ paths:
     post:
       tags: [Admin, Verification]
       summary: Review a creator verification application
-      description: Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.
+      description: Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. An administrator session and CSRF protection are required.
       operationId: postApiV1AdminVerificationApplicationsIdReview
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -7796,7 +7577,7 @@ paths:
     get:
       tags: [Admin, Verification]
       summary: List verification audit logs
-      description: Returns a bounded flagged or user-specific audit page to administrators with MFA.
+      description: Returns a bounded flagged or user-specific audit page to administrators.
       operationId: getApiV1AdminVerificationAuditLogs
       parameters:
         - {name: user_id, in: query, schema: {type: string, format: uuid}}
@@ -7814,7 +7595,7 @@ paths:
     get:
       tags: [Admin, Verification]
       summary: Get creator verification statistics
-      description: Returns aggregate verification status counts to administrators with MFA.
+      description: Returns aggregate verification status counts to administrators.
       operationId: getApiV1AdminVerificationStats
       responses:
         '200': {description: Verification statistics, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationStatsResponse'}}}}
@@ -7826,7 +7607,7 @@ paths:
     get:
       tags: [Admin, Verification]
       summary: List a user's verification audit history
-      description: Returns one user's bounded verification audit page to administrators with MFA.
+      description: Returns one user's bounded verification audit page to administrators.
       operationId: getApiV1AdminVerificationUsersUserIdAuditLogs
       parameters:
         - {name: user_id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -14134,28 +13915,6 @@ components:
           type: string
           format: date-time
 
-    TrustedDevice:
-      type: object
-      required:
-        - id
-        - device_name
-        - device_fingerprint
-        - created_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        device_name:
-          type: string
-        device_fingerprint:
-          type: string
-        last_used_at:
-          type: string
-          format: date-time
-        created_at:
-          type: string
-          format: date-time
-
     ClipAnalytics:
       type: object
       properties:
@@ -14189,7 +13948,7 @@ components:
   # This OpenAPI specification documents the complete Clipper API with 474 endpoints.
   # The sections above provide detailed documentation for:
   # - Health & Monitoring (10 endpoints)
-  # - Authentication & MFA (15 endpoints)  
+  # - Authentication  
   # - Clips & Content (25 endpoints)
   # - Comments & Engagement (10 endpoints)
   # - Tags & Search (15 endpoints)
@@ -14399,16 +14158,16 @@ components:
   # - POST /incidents - Create incident (admin only)
   # - POST /incidents/:id/updates - Update incident (admin only)
   #
-  # ADMIN - SYNC (/api/v1/admin/sync/* - admin/moderator + MFA)
+  # ADMIN - SYNC (/api/v1/admin/sync/* - admin/moderator)
   # - POST /clips - Trigger clip sync
   # - GET /status - Get sync status
   #
-  # ADMIN - TAGS (/api/v1/admin/tags/* - admin/moderator + MFA)
+  # ADMIN - TAGS (/api/v1/admin/tags/* - admin/moderator)
   # - POST / - Create tag
   # - PUT /:id - Update tag
   # - DELETE /:id - Delete tag
   #
-  # ADMIN - SUBMISSIONS (/api/v1/admin/submissions/* - admin/moderator + MFA)
+  # ADMIN - SUBMISSIONS (/api/v1/admin/submissions/* - admin/moderator)
   # - GET / - List pending submissions
   # - GET /rejection-reasons - Get rejection reason templates
   # - POST /:id/approve - Approve submission
@@ -14416,16 +14175,16 @@ components:
   # - POST /bulk-approve - Bulk approve
   # - POST /bulk-reject - Bulk reject
   #
-  # ADMIN - AUDIT LOGS (/api/v1/admin/audit-logs/* - admin/moderator + MFA)
+  # ADMIN - AUDIT LOGS (/api/v1/admin/audit-logs/* - admin/moderator)
   # - GET / - List audit logs
   # - GET /export - Export audit logs
   #
-  # ADMIN - REPORTS (/api/v1/admin/reports/* - admin/moderator + MFA)
+  # ADMIN - REPORTS (/api/v1/admin/reports/* - admin/moderator)
   # - GET / - List reports
   # - GET /:id - Get report
   # - PUT /:id - Update report
   #
-  # ADMIN - USERS (/api/v1/admin/users/* - admin/moderator + MFA)
+  # ADMIN - USERS (/api/v1/admin/users/* - admin/moderator)
   # - GET / - List users (requires PermissionManageUsers)
   # - POST /:id/ban - Ban user (requires PermissionManageUsers)
   # - POST /:id/unban - Unban user (requires PermissionManageUsers)
@@ -14438,12 +14197,12 @@ components:
   # - GET /:id/comment-suspension-history - Get suspension history
   # - POST /:id/toggle-comment-review - Toggle comment review requirement
   #
-  # ADMIN - ACCOUNT TYPES (/api/v1/admin/account-types/* - admin + MFA)
+  # ADMIN - ACCOUNT TYPES (/api/v1/admin/account-types/* - admin)
   # - GET /stats - Get account type statistics
   # - GET /conversions - Get recent conversions
   # - POST /users/:id/convert-to-moderator - Convert to moderator
   #
-  # ADMIN - ANALYTICS (/api/v1/admin/analytics/* - admin/moderator + MFA)
+  # ADMIN - ANALYTICS (/api/v1/admin/analytics/* - admin/moderator)
   # - GET /overview - Platform overview
   # - GET /content - Content metrics
   # - GET /trends - Platform trends
@@ -14452,14 +14211,14 @@ components:
   # - GET /alerts - Check alerts
   # - GET /export - Export engagement data
   #
-  # ADMIN - REVENUE (/api/v1/admin/revenue - admin/moderator + MFA)
+  # ADMIN - REVENUE (/api/v1/admin/revenue - admin/moderator)
   # - GET / - Get revenue metrics
   #
-  # ADMIN - CONTACT (/api/v1/admin/contact/* - admin/moderator + MFA)
+  # ADMIN - CONTACT (/api/v1/admin/contact/* - admin/moderator)
   # - GET / - Get contact messages
   # - PUT /:id/status - Update message status
   #
-  # ADMIN - EMAIL (/api/v1/admin/email/* - admin/moderator + MFA)
+  # ADMIN - EMAIL (/api/v1/admin/email/* - admin/moderator)
   # - GET /metrics/dashboard - Dashboard metrics
   # - GET /metrics - Get metrics
   # - GET /metrics/templates - Template metrics
@@ -14468,7 +14227,7 @@ components:
   # - POST /alerts/:id/acknowledge - Acknowledge alert
   # - POST /alerts/:id/resolve - Resolve alert
   #
-  # ADMIN - MODERATION (/api/v1/admin/moderation/* - admin/moderator + MFA)
+  # ADMIN - MODERATION (/api/v1/admin/moderation/* - admin/moderator)
   # - GET /events - Get pending events
   # - GET /events/:type - Get events by type
   # - POST /events/:id/review - Mark reviewed
@@ -14486,7 +14245,7 @@ components:
   # - GET /analytics - Moderation analytics
   # - GET /toxicity/metrics - Toxicity metrics
   #
-  # ADMIN - NSFW (/api/v1/admin/nsfw/* - admin/moderator + MFA)
+  # ADMIN - NSFW (/api/v1/admin/nsfw/* - admin/moderator)
   # - POST /detect - Detect NSFW content
   # - POST /batch-detect - Batch detect
   # - GET /metrics - Get NSFW metrics
@@ -14494,7 +14253,7 @@ components:
   # - GET /config - Get configuration
   # - POST /scan-clips - Scan clip thumbnails
   #
-  # ADMIN - VERIFICATION (/api/v1/admin/verification/* - admin/moderator + MFA)
+  # ADMIN - VERIFICATION (/api/v1/admin/verification/* - admin/moderator)
   # - GET /applications - List applications
   # - GET /applications/:id - Get application
   # - POST /applications/:id/review - Review application
@@ -14502,7 +14261,7 @@ components:
   # - GET /audit-logs - Verification audit logs
   # - GET /users/:user_id/audit-logs - User audit history
   #
-  # ADMIN - DISCOVERY LISTS (/api/v1/admin/discovery-lists/* - admin/moderator + MFA)
+  # ADMIN - DISCOVERY LISTS (/api/v1/admin/discovery-lists/* - admin/moderator)
   # - GET / - List discovery lists
   # - POST / - Create discovery list
   # - GET /:id - Get discovery list
@@ -14513,7 +14272,7 @@ components:
   # - DELETE /:id/clips/:clipId - Remove clip
   # - PUT /:id/clips/reorder - Reorder clips
   #
-  # ADMIN - WEBHOOKS DLQ (/api/v1/admin/webhooks/* - admin/moderator + MFA)
+  # ADMIN - WEBHOOKS DLQ (/api/v1/admin/webhooks/* - admin/moderator)
   # - GET /dlq - Get dead letter queue
   # - POST /dlq/:id/replay - Replay DLQ item
   # - DELETE /dlq/:id - Delete DLQ item

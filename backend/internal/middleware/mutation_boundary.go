@@ -22,7 +22,6 @@ var PublicMutationPaths = map[string]string{
 	"POST /api/v1/auth/test-login":           "non-release test profile only",
 	"POST /api/v1/auth/refresh":              "signed refresh token",
 	"POST /api/v1/auth/logout":               "idempotent credential clearing",
-	"POST /api/v1/auth/mfa/verify-login":     "pending MFA challenge",
 	"POST /api/v1/clips/batch-media":         "read-only batch lookup",
 	"POST /api/v1/clips/:id/track-view":      "rate-limited aggregate telemetry",
 	"POST /api/v1/events":                    "rate-limited aggregate telemetry",

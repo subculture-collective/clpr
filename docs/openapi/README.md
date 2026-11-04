@@ -31,7 +31,7 @@ Complete OpenAPI 3.1 specification documenting all 474+ API endpoints for the Cl
 
 **Major API Groups:**
 - Health & Monitoring (10 endpoints)
-- Authentication & MFA (15 endpoints)
+- Authentication
 - Clips & Content Management (40+ endpoints)
 - Comments & Engagement
 - Users & Profiles (40+ fully documented)

@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-11-04T05:17:31.260Z
+generated: 2026-11-04T05:26:36.748Z
 ---
 
 # Clipper API
@@ -54,7 +54,6 @@ The API uses standard HTTP status codes:
 - [Debug](#debug)
 - [Health](#health)
 - [Authentication](#authentication)
-- [MFA](#mfa)
 - [Clips](#clips)
 - [Comments](#comments)
 - [Tags](#tags)
@@ -2389,864 +2388,6 @@ func main() {
 
 ---
 
-## MFA
-
-Multi-factor authentication
-
-### Start MFA enrollment
-
-`POST /api/v1/auth/mfa/enroll`
-
-Initiates MFA enrollment process (rate limited - 3/hour)
-
-**Tags:** MFA
-
-#### Responses
-
-**200** - MFA enrollment started
-
-**401** - Success
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://staging.clpr.tv/api/v1/auth/mfa/enroll"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/enroll', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/auth/mfa/enroll'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/enroll", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Verify MFA enrollment
-
-`POST /api/v1/auth/mfa/verify-enrollment`
-
-Completes MFA enrollment by verifying TOTP code (rate limited - 10/minute)
-
-**Tags:** MFA
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - MFA enrollment verified
-
-**400** - Success
-
-**401** - Success
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://staging.clpr.tv/api/v1/auth/mfa/verify-enrollment" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/verify-enrollment', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/auth/mfa/verify-enrollment',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/verify-enrollment", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get MFA status
-
-`GET /api/v1/auth/mfa/status`
-
-Returns MFA enrollment status for current user
-
-**Tags:** MFA
-
-#### Responses
-
-**200** - MFA status
-
-**401** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://staging.clpr.tv/api/v1/auth/mfa/status"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/status', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/auth/mfa/status'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/auth/mfa/status", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Regenerate backup codes
-
-`POST /api/v1/auth/mfa/regenerate-backup-codes`
-
-Generates new backup codes (rate limited - 5/hour)
-
-**Tags:** MFA
-
-#### Responses
-
-**200** - New backup codes generated
-
-**401** - Success
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://staging.clpr.tv/api/v1/auth/mfa/regenerate-backup-codes"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/regenerate-backup-codes', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/auth/mfa/regenerate-backup-codes'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/regenerate-backup-codes", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Disable MFA
-
-`POST /api/v1/auth/mfa/disable`
-
-Disables MFA for current user (rate limited - 3/hour)
-
-**Tags:** MFA
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - MFA disabled
-
-**400** - Success
-
-**401** - Success
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://staging.clpr.tv/api/v1/auth/mfa/disable" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/disable', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/auth/mfa/disable',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/disable", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get trusted devices
-
-`GET /api/v1/auth/mfa/trusted-devices`
-
-Returns list of trusted devices for MFA
-
-**Tags:** MFA
-
-#### Responses
-
-**200** - List of trusted devices
-
-**401** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://staging.clpr.tv/api/v1/auth/mfa/trusted-devices"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/trusted-devices', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/auth/mfa/trusted-devices'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/auth/mfa/trusted-devices", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Revoke trusted device
-
-`DELETE /api/v1/auth/mfa/trusted-devices/{id}`
-
-Removes a device from trusted devices list
-
-**Tags:** MFA
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Responses
-
-**204** - Trusted device revoked
-
-**401** - Success
-
-**404** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X DELETE "https://staging.clpr.tv/api/v1/auth/mfa/trusted-devices/{id}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/trusted-devices/{id}', {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.delete(
-        '/api/v1/auth/mfa/trusted-devices/{id}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/auth/mfa/trusted-devices/{id}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Verify MFA login
-
-`POST /api/v1/auth/mfa/verify-login`
-
-Verifies MFA code during login (rate limited - 10/minute)
-
-**Tags:** MFA
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - MFA verification successful
-
-**400** - Success
-
-**401** - Success
-
-**429** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://staging.clpr.tv/api/v1/auth/mfa/verify-login" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/auth/mfa/verify-login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/auth/mfa/verify-login',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/auth/mfa/verify-login", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
 ## Clips
 
 Clip management and discovery
@@ -5178,7 +4319,7 @@ func main() {
 
 `POST /api/v1/admin/sync/clips`
 
-Runs a bounded synchronous Twitch clip import. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.
+Runs a bounded synchronous Twitch clip import. Requires an administrator session; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.
 
 **Tags:** Admin, Clips
 
@@ -5312,7 +4453,7 @@ func main() {
 
 `GET /api/v1/admin/sync/status`
 
-Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires administrator MFA.
+Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires an administrator session.
 
 **Tags:** Admin, Clips
 
@@ -6683,7 +5824,7 @@ func main() {
 
 `POST /api/v1/admin/tags`
 
-Creates a canonical, non-blacklisted tag. Administrator MFA and CSRF protection are required.
+Creates a canonical, non-blacklisted tag. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -6817,7 +5958,7 @@ func main() {
 
 `GET /api/v1/admin/tags/blacklist`
 
-Administrator MFA is required.
+An administrator session is required.
 
 **Tags:** Admin, Tags
 
@@ -6917,7 +6058,7 @@ func main() {
 
 `POST /api/v1/admin/tags/blacklist`
 
-Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. Administrator MFA and CSRF protection are required.
+Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -7051,7 +6192,7 @@ func main() {
 
 `DELETE /api/v1/admin/tags/blacklist/{id}`
 
-Administrator MFA and CSRF protection are required.
+An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -7160,7 +6301,7 @@ func main() {
 
 `GET /api/v1/admin/tags/promotion-queue`
 
-Returns a paginated moderation queue. Administrator MFA is required.
+Returns a paginated moderation queue. An administrator session is required.
 
 **Tags:** Admin, Tags
 
@@ -7482,7 +6623,7 @@ func main() {
 
 `PUT /api/v1/admin/tags/{id}`
 
-Replaces tag fields with canonical, non-blacklisted values. Administrator MFA and CSRF protection are required.
+Replaces tag fields with canonical, non-blacklisted values. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -7619,7 +6760,7 @@ func main() {
 
 `DELETE /api/v1/admin/tags/{id}`
 
-Atomically deletes the tag and its clip associations. Administrator MFA and CSRF protection are required.
+Atomically deletes the tag and its clip associations. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -8066,7 +7207,7 @@ func main() {
 
 `PUT /api/v1/admin/clips/{id}/topics`
 
-Replaces automated assignments with moderator-selected topics. Moderator MFA and CSRF protection are required.
+Replaces automated assignments with moderator-selected topics. A moderator session and CSRF protection are required.
 
 **Tags:** Admin, Topics
 
@@ -8199,7 +7340,7 @@ func main() {
 
 `POST /api/v1/admin/topics/{id}/merge`
 
-Moves assignments to the target and deactivates the source. Moderator MFA and CSRF protection are required.
+Moves assignments to the target and deactivates the source. A moderator session and CSRF protection are required.
 
 **Tags:** Admin, Topics
 
@@ -8332,7 +7473,7 @@ func main() {
 
 `POST /api/v1/admin/topics/{id}/split`
 
-Creates a topic and moves only clips assigned to the source. Moderator MFA and CSRF protection are required.
+Creates a topic and moves only clips assigned to the source. A moderator session and CSRF protection are required.
 
 **Tags:** Admin, Topics
 
@@ -10649,7 +9790,7 @@ func main() {
 
 `GET /api/v1/admin/submissions`
 
-Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or administrator MFA.
+Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or an administrator session.
 
 **Tags:** Admin, Submissions
 
@@ -10760,7 +9901,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/bulk-approve`
 
-Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
+Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -10894,7 +10035,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/bulk-reject`
 
-Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
+Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -11028,7 +10169,7 @@ func main() {
 
 `GET /api/v1/admin/submissions/rejection-reasons`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Submissions
 
@@ -11126,7 +10267,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/{id}/approve`
 
-Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
+Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -11235,7 +10376,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/{id}/reject`
 
-Atomically commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
+Atomically commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -11510,7 +10651,7 @@ func main() {
 
 `GET /api/v1/admin/reports`
 
-Requires an administrator session with MFA.
+Requires an administrator session.
 
 **Tags:** Admin, Reports
 
@@ -11619,7 +10760,7 @@ func main() {
 
 `GET /api/v1/admin/reports/{id}`
 
-Requires an administrator session with MFA. Includes reporter information and reports for the same target.
+Requires an administrator session. Includes reporter information and reports for the same target.
 
 **Tags:** Admin, Reports
 
@@ -11725,7 +10866,7 @@ func main() {
 
 `PUT /api/v1/admin/reports/{id}`
 
-Requires an administrator session with MFA. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Reports
 
@@ -14567,7 +13708,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/abuse/{userId}`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -14671,7 +13812,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/analytics`
 
-Returns analytics for an ordered date range of at most 366 days. Requires moderator or administrator MFA.
+Returns analytics for an ordered date range of at most 366 days. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -14776,7 +13917,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/appeals`
 
-Administrator MFA is required.
+An administrator session is required.
 
 **Tags:** Admin, Moderation
 
@@ -14883,7 +14024,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/appeals/{id}/resolve`
 
-Atomically resolves one pending appeal and writes its audit record. Administrator MFA and CSRF protection are required.
+Atomically resolves one pending appeal and writes its audit record. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Moderation
 
@@ -15020,7 +14161,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/audit`
 
-Filters decisions with strict dates and bounded offset pagination. Requires moderator or administrator MFA.
+Filters decisions with strict dates and bounded offset pagination. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -15129,7 +14270,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/bulk`
 
-Applies one decision to 1–100 unique pending items atomically. Requires moderator or administrator MFA and CSRF protection.
+Applies one decision to 1–100 unique pending items atomically. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -15263,7 +14404,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/events`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -15367,7 +14508,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/events/{id}/process`
 
-Records one bounded action for an event. Requires moderator or administrator MFA and CSRF protection.
+Records one bounded action for an event. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -15498,7 +14639,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/events/{id}/review`
 
-Requires moderator or administrator MFA and CSRF protection.
+Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -15603,7 +14744,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/events/{type}`
 
-Rejects unknown event types. Requires moderator or administrator MFA.
+Rejects unknown event types. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -15708,7 +14849,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/queue`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -15814,7 +14955,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/queue/stats`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -15912,7 +15053,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/stats`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -16010,7 +15151,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/toxicity/metrics`
 
-Returns an ordered date range of at most 366 days. Requires moderator or administrator MFA.
+Returns an ordered date range of at most 366 days. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -16115,7 +15256,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/{id}/approve`
 
-Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
+Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -16222,7 +15363,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/{id}/reject`
 
-Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
+Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -20558,7 +19699,7 @@ func main() {
 
 `GET /api/v1/admin/users`
 
-Strictly filters and paginates administrative user records. Administrator MFA is required.
+Strictly filters and paginates administrative user records. An administrator session is required.
 
 **Tags:** Admin, Users
 
@@ -20668,7 +19809,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/badges`
 
-Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
+Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -20805,7 +19946,7 @@ func main() {
 
 `DELETE /api/v1/admin/users/{id}/badges/{badgeId}`
 
-Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
+Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -20915,7 +20056,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/ban`
 
-Atomically bans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically bans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21050,7 +20191,7 @@ func main() {
 
 `GET /api/v1/admin/users/{id}/comment-suspension-history`
 
-Administrator MFA is required.
+An administrator session is required.
 
 **Tags:** Admin, Users
 
@@ -21159,7 +20300,7 @@ func main() {
 
 `PATCH /api/v1/admin/users/{id}/karma`
 
-Atomically sets bounded karma and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically sets bounded karma and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21294,7 +20435,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/lift-comment-suspension`
 
-Atomically lifts active suspensions and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically lifts active suspensions and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21429,7 +20570,7 @@ func main() {
 
 `PATCH /api/v1/admin/users/{id}/role`
 
-Atomically changes a non-administrator target role and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically changes a non-administrator target role and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21564,7 +20705,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/suspend-comments`
 
-Atomically records a warning or suspension with its audit event. Administrator MFA and CSRF protection are required.
+Atomically records a warning or suspension with its audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21699,7 +20840,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/toggle-comment-review`
 
-Atomically changes the review requirement and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically changes the review requirement and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21834,7 +20975,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/unban`
 
-Atomically unbans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically unbans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -21973,7 +21114,7 @@ Administrative operations
 
 `GET /api/v1/admin/account-types/conversions`
 
-Requires an administrator session with MFA. Results are ordered from newest to oldest.
+Requires an administrator session. Results are ordered from newest to oldest.
 
 **Tags:** Admin
 
@@ -22078,7 +21219,7 @@ func main() {
 
 `GET /api/v1/admin/account-types/stats`
 
-Requires an administrator session with MFA.
+Requires an administrator session.
 
 **Tags:** Admin
 
@@ -22176,7 +21317,7 @@ func main() {
 
 `POST /api/v1/admin/account-types/users/{id}/convert-to-moderator`
 
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin
 
@@ -22311,7 +21452,7 @@ func main() {
 
 `GET /api/v1/admin/contact`
 
-Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.
+Requires an administrator session. Responses contain private submitter and abuse-prevention data.
 
 **Tags:** Admin, Support
 
@@ -22420,7 +21561,7 @@ func main() {
 
 `PUT /api/v1/admin/contact/{id}/status`
 
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Support
 
@@ -22555,7 +21696,7 @@ func main() {
 
 `GET /api/v1/admin/reports`
 
-Requires an administrator session with MFA.
+Requires an administrator session.
 
 **Tags:** Admin, Reports
 
@@ -22664,7 +21805,7 @@ func main() {
 
 `GET /api/v1/admin/reports/{id}`
 
-Requires an administrator session with MFA. Includes reporter information and reports for the same target.
+Requires an administrator session. Includes reporter information and reports for the same target.
 
 **Tags:** Admin, Reports
 
@@ -22770,7 +21911,7 @@ func main() {
 
 `PUT /api/v1/admin/reports/{id}`
 
-Requires an administrator session with MFA. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Reports
 
@@ -23118,7 +22259,7 @@ func main() {
 
 `GET /api/v1/admin/webhooks/dlq`
 
-Requires an administrator session with MFA.
+Requires an administrator session.
 
 **Tags:** Admin, Webhooks
 
@@ -23225,7 +22366,7 @@ func main() {
 
 `DELETE /api/v1/admin/webhooks/dlq/{id}`
 
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Webhooks
 
@@ -23334,7 +22475,7 @@ func main() {
 
 `POST /api/v1/admin/webhooks/dlq/{id}/replay`
 
-Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token.
+Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires an administrator session; cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Webhooks
 
@@ -23445,7 +22586,7 @@ func main() {
 
 `POST /api/v1/admin/sync/clips`
 
-Runs a bounded synchronous Twitch clip import. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.
+Runs a bounded synchronous Twitch clip import. Requires an administrator session; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.
 
 **Tags:** Admin, Clips
 
@@ -23579,7 +22720,7 @@ func main() {
 
 `GET /api/v1/admin/sync/status`
 
-Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires administrator MFA.
+Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires an administrator session.
 
 **Tags:** Admin, Clips
 
@@ -23677,7 +22818,7 @@ func main() {
 
 `GET /api/v1/admin/audit-logs`
 
-Requires an administrator session with MFA. Results may include IP address, user-agent, and event metadata.
+Requires an administrator session. Results may include IP address, user-agent, and event metadata.
 
 **Tags:** Admin, Audit
 
@@ -23792,7 +22933,7 @@ func main() {
 
 `GET /api/v1/admin/audit-logs/export`
 
-Requires administrator MFA. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.
+Requires an administrator session. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.
 
 **Tags:** Admin, Audit
 
@@ -23907,7 +23048,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/alerts`
 
-Evaluates current engagement thresholds for administrators with MFA.
+Evaluates current engagement thresholds for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -24005,7 +23146,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/content`
 
-Returns aggregate content metrics for administrators with MFA.
+Returns aggregate content metrics for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -24103,7 +23244,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/health`
 
-Returns aggregate engagement health for administrators with MFA.
+Returns aggregate engagement health for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -24201,7 +23342,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/overview`
 
-Returns platform KPIs for administrators with MFA.
+Returns platform KPIs for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -24299,7 +23440,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/trending`
 
-Returns a bounded engagement trend for administrators with MFA.
+Returns a bounded engagement trend for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -24406,7 +23547,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/trends`
 
-Returns a bounded platform trend for administrators with MFA.
+Returns a bounded platform trend for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -24513,7 +23654,7 @@ func main() {
 
 `GET /api/v1/admin/email/alerts`
 
-Returns a bounded list of unresolved delivery alerts for administrators with MFA.
+Returns a bounded list of unresolved delivery alerts for administrators.
 
 **Tags:** Admin, Email
 
@@ -24619,7 +23760,7 @@ func main() {
 
 `POST /api/v1/admin/email/alerts/{id}/acknowledge`
 
-Acknowledges one unresolved alert. Administrator MFA and CSRF protection are required.
+Acknowledges one unresolved alert. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Email
 
@@ -24728,7 +23869,7 @@ func main() {
 
 `POST /api/v1/admin/email/alerts/{id}/resolve`
 
-Resolves one unresolved alert. Administrator MFA and CSRF protection are required.
+Resolves one unresolved alert. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Email
 
@@ -24837,7 +23978,7 @@ func main() {
 
 `GET /api/v1/admin/email/logs`
 
-Searches sensitive delivery logs for administrators with MFA; date ranges are capped at 366 days.
+Searches sensitive delivery logs for administrators; date ranges are capped at 366 days.
 
 **Tags:** Admin, Email
 
@@ -24949,7 +24090,7 @@ func main() {
 
 `GET /api/v1/admin/email/metrics`
 
-Returns metrics for an ordered range of at most 366 days to administrators with MFA.
+Returns metrics for an ordered range of at most 366 days to administrators.
 
 **Tags:** Admin, Email
 
@@ -25057,7 +24198,7 @@ func main() {
 
 `GET /api/v1/admin/email/metrics/dashboard`
 
-Returns a complete dashboard snapshot for administrators with MFA; dependency failures fail the request.
+Returns a complete dashboard snapshot for administrators; dependency failures fail the request.
 
 **Tags:** Admin, Email
 
@@ -25163,7 +24304,7 @@ func main() {
 
 `GET /api/v1/admin/email/metrics/templates`
 
-Returns bounded template metrics for an ordered range of at most 366 days to administrators with MFA.
+Returns bounded template metrics for an ordered range of at most 366 days to administrators.
 
 **Tags:** Admin, Email
 
@@ -25271,7 +24412,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/abuse/{userId}`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -25375,7 +24516,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/analytics`
 
-Returns analytics for an ordered date range of at most 366 days. Requires moderator or administrator MFA.
+Returns analytics for an ordered date range of at most 366 days. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -25480,7 +24621,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/appeals`
 
-Administrator MFA is required.
+An administrator session is required.
 
 **Tags:** Admin, Moderation
 
@@ -25587,7 +24728,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/appeals/{id}/resolve`
 
-Atomically resolves one pending appeal and writes its audit record. Administrator MFA and CSRF protection are required.
+Atomically resolves one pending appeal and writes its audit record. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Moderation
 
@@ -25724,7 +24865,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/audit`
 
-Filters decisions with strict dates and bounded offset pagination. Requires moderator or administrator MFA.
+Filters decisions with strict dates and bounded offset pagination. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -25833,7 +24974,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/bulk`
 
-Applies one decision to 1–100 unique pending items atomically. Requires moderator or administrator MFA and CSRF protection.
+Applies one decision to 1–100 unique pending items atomically. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -25967,7 +25108,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/events`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -26071,7 +25212,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/events/{id}/process`
 
-Records one bounded action for an event. Requires moderator or administrator MFA and CSRF protection.
+Records one bounded action for an event. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -26202,7 +25343,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/events/{id}/review`
 
-Requires moderator or administrator MFA and CSRF protection.
+Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -26307,7 +25448,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/events/{type}`
 
-Rejects unknown event types. Requires moderator or administrator MFA.
+Rejects unknown event types. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -26412,7 +25553,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/queue`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -26518,7 +25659,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/queue/stats`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -26616,7 +25757,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/stats`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -26714,7 +25855,7 @@ func main() {
 
 `GET /api/v1/admin/moderation/toxicity/metrics`
 
-Returns an ordered date range of at most 366 days. Requires moderator or administrator MFA.
+Returns an ordered date range of at most 366 days. Requires moderator or an administrator session.
 
 **Tags:** Admin, Moderation
 
@@ -26819,7 +25960,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/{id}/approve`
 
-Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
+Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -26926,7 +26067,7 @@ func main() {
 
 `POST /api/v1/admin/moderation/{id}/reject`
 
-Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.
+Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Moderation
 
@@ -27059,7 +26200,7 @@ func main() {
 
 `POST /api/v1/admin/nsfw/batch-detect`
 
-Runs provider-backed detection for up to 50 public HTTPS image URLs. Administrator MFA and CSRF protection are required.
+Runs provider-backed detection for up to 50 public HTTPS image URLs. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, NSFW
 
@@ -27193,7 +26334,7 @@ func main() {
 
 `GET /api/v1/admin/nsfw/config`
 
-Returns only non-sensitive feature and provider availability to administrators with MFA.
+Returns only non-sensitive feature and provider availability to administrators.
 
 **Tags:** Admin, NSFW
 
@@ -27289,7 +26430,7 @@ func main() {
 
 `POST /api/v1/admin/nsfw/detect`
 
-Runs provider-backed detection for one public HTTPS image URL. Administrator MFA and CSRF protection are required.
+Runs provider-backed detection for one public HTTPS image URL. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, NSFW
 
@@ -27425,7 +26566,7 @@ func main() {
 
 `GET /api/v1/admin/nsfw/health`
 
-Checks configured provider-backed readiness without exposing secrets. Administrator MFA is required.
+Checks configured provider-backed readiness without exposing secrets. An administrator session is required.
 
 **Tags:** Admin, NSFW
 
@@ -27523,7 +26664,7 @@ func main() {
 
 `GET /api/v1/admin/nsfw/metrics`
 
-Returns an ordered metrics range of at most 366 days to administrators with MFA.
+Returns an ordered metrics range of at most 366 days to administrators.
 
 **Tags:** Admin, NSFW
 
@@ -27632,7 +26773,7 @@ func main() {
 
 `GET /api/v1/admin/playlist-scripts`
 
-Returns a bounded list of scripts to administrators with MFA.
+Returns a bounded list of scripts to administrators.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -27738,7 +26879,7 @@ func main() {
 
 `POST /api/v1/admin/playlist-scripts`
 
-Creates a validated script. Administrator MFA and CSRF protection are required.
+Creates a validated script. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -27870,7 +27011,7 @@ func main() {
 
 `PUT /api/v1/admin/playlist-scripts/{id}`
 
-Updates at least one field while preserving strategy requirements. Administrator MFA and CSRF protection are required.
+Updates at least one field while preserving strategy requirements. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -28005,7 +27146,7 @@ func main() {
 
 `DELETE /api/v1/admin/playlist-scripts/{id}`
 
-Deletes one script. Administrator MFA and CSRF protection are required.
+Deletes one script. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -28114,7 +27255,7 @@ func main() {
 
 `POST /api/v1/admin/playlist-scripts/{id}/generate`
 
-Atomically creates the replacement playlist and retires the previous generation. Administrator MFA and CSRF protection are required.
+Atomically creates the replacement playlist and retires the previous generation. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -28225,7 +27366,7 @@ func main() {
 
 `GET /api/v1/admin/submissions`
 
-Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or administrator MFA.
+Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or an administrator session.
 
 **Tags:** Admin, Submissions
 
@@ -28336,7 +27477,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/bulk-approve`
 
-Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
+Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -28470,7 +27611,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/bulk-reject`
 
-Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.
+Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -28604,7 +27745,7 @@ func main() {
 
 `GET /api/v1/admin/submissions/rejection-reasons`
 
-Requires moderator or administrator MFA.
+Requires moderator or an administrator session.
 
 **Tags:** Admin, Submissions
 
@@ -28702,7 +27843,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/{id}/approve`
 
-Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
+Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -28811,7 +27952,7 @@ func main() {
 
 `POST /api/v1/admin/submissions/{id}/reject`
 
-Atomically commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.
+Atomically commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.
 
 **Tags:** Admin, Submissions
 
@@ -29042,7 +28183,7 @@ func main() {
 
 `POST /api/v1/admin/tags`
 
-Creates a canonical, non-blacklisted tag. Administrator MFA and CSRF protection are required.
+Creates a canonical, non-blacklisted tag. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -29176,7 +28317,7 @@ func main() {
 
 `PUT /api/v1/admin/clips/{id}/topics`
 
-Replaces automated assignments with moderator-selected topics. Moderator MFA and CSRF protection are required.
+Replaces automated assignments with moderator-selected topics. A moderator session and CSRF protection are required.
 
 **Tags:** Admin, Topics
 
@@ -29309,7 +28450,7 @@ func main() {
 
 `POST /api/v1/admin/topics/{id}/merge`
 
-Moves assignments to the target and deactivates the source. Moderator MFA and CSRF protection are required.
+Moves assignments to the target and deactivates the source. A moderator session and CSRF protection are required.
 
 **Tags:** Admin, Topics
 
@@ -29442,7 +28583,7 @@ func main() {
 
 `POST /api/v1/admin/topics/{id}/split`
 
-Creates a topic and moves only clips assigned to the source. Moderator MFA and CSRF protection are required.
+Creates a topic and moves only clips assigned to the source. A moderator session and CSRF protection are required.
 
 **Tags:** Admin, Topics
 
@@ -29575,7 +28716,7 @@ func main() {
 
 `GET /api/v1/admin/tags/blacklist`
 
-Administrator MFA is required.
+An administrator session is required.
 
 **Tags:** Admin, Tags
 
@@ -29675,7 +28816,7 @@ func main() {
 
 `POST /api/v1/admin/tags/blacklist`
 
-Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. Administrator MFA and CSRF protection are required.
+Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -29809,7 +28950,7 @@ func main() {
 
 `DELETE /api/v1/admin/tags/blacklist/{id}`
 
-Administrator MFA and CSRF protection are required.
+An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -29918,7 +29059,7 @@ func main() {
 
 `GET /api/v1/admin/tags/promotion-queue`
 
-Returns a paginated moderation queue. Administrator MFA is required.
+Returns a paginated moderation queue. An administrator session is required.
 
 **Tags:** Admin, Tags
 
@@ -30240,7 +29381,7 @@ func main() {
 
 `PUT /api/v1/admin/tags/{id}`
 
-Replaces tag fields with canonical, non-blacklisted values. Administrator MFA and CSRF protection are required.
+Replaces tag fields with canonical, non-blacklisted values. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -30377,7 +29518,7 @@ func main() {
 
 `DELETE /api/v1/admin/tags/{id}`
 
-Atomically deletes the tag and its clip associations. Administrator MFA and CSRF protection are required.
+Atomically deletes the tag and its clip associations. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Tags
 
@@ -30722,7 +29863,7 @@ func main() {
 
 `GET /api/v1/admin/users`
 
-Strictly filters and paginates administrative user records. Administrator MFA is required.
+Strictly filters and paginates administrative user records. An administrator session is required.
 
 **Tags:** Admin, Users
 
@@ -31422,7 +30563,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/badges`
 
-Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
+Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -31559,7 +30700,7 @@ func main() {
 
 `DELETE /api/v1/admin/users/{id}/badges/{badgeId}`
 
-Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.
+Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -31669,7 +30810,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/ban`
 
-Atomically bans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically bans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -31804,7 +30945,7 @@ func main() {
 
 `GET /api/v1/admin/users/{id}/comment-suspension-history`
 
-Administrator MFA is required.
+An administrator session is required.
 
 **Tags:** Admin, Users
 
@@ -31913,7 +31054,7 @@ func main() {
 
 `PATCH /api/v1/admin/users/{id}/karma`
 
-Atomically sets bounded karma and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically sets bounded karma and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -32048,7 +31189,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/lift-comment-suspension`
 
-Atomically lifts active suspensions and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically lifts active suspensions and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -32183,7 +31324,7 @@ func main() {
 
 `PATCH /api/v1/admin/users/{id}/role`
 
-Atomically changes a non-administrator target role and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically changes a non-administrator target role and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -32318,7 +31459,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/suspend-comments`
 
-Atomically records a warning or suspension with its audit event. Administrator MFA and CSRF protection are required.
+Atomically records a warning or suspension with its audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -32453,7 +31594,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/toggle-comment-review`
 
-Atomically changes the review requirement and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically changes the review requirement and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -32588,7 +31729,7 @@ func main() {
 
 `POST /api/v1/admin/users/{id}/unban`
 
-Atomically unbans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.
+Atomically unbans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Users
 
@@ -32723,7 +31864,7 @@ func main() {
 
 `GET /api/v1/admin/verification/applications`
 
-Returns a bounded application queue to administrators with MFA.
+Returns a bounded application queue to administrators.
 
 **Tags:** Admin, Verification
 
@@ -32831,7 +31972,7 @@ func main() {
 
 `GET /api/v1/admin/verification/applications/{id}`
 
-Returns one application and its applicant details to administrators with MFA.
+Returns one application and its applicant details to administrators.
 
 **Tags:** Admin, Verification
 
@@ -32939,7 +32080,7 @@ func main() {
 
 `POST /api/v1/admin/verification/applications/{id}/review`
 
-Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.
+Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Verification
 
@@ -33076,7 +32217,7 @@ func main() {
 
 `GET /api/v1/admin/verification/audit-logs`
 
-Returns a bounded flagged or user-specific audit page to administrators with MFA.
+Returns a bounded flagged or user-specific audit page to administrators.
 
 **Tags:** Admin, Verification
 
@@ -33185,7 +32326,7 @@ func main() {
 
 `GET /api/v1/admin/verification/stats`
 
-Returns aggregate verification status counts to administrators with MFA.
+Returns aggregate verification status counts to administrators.
 
 **Tags:** Admin, Verification
 
@@ -33283,7 +32424,7 @@ func main() {
 
 `GET /api/v1/admin/verification/users/{user_id}/audit-logs`
 
-Returns one user's bounded verification audit page to administrators with MFA.
+Returns one user's bounded verification audit page to administrators.
 
 **Tags:** Admin, Verification
 
@@ -34260,7 +33401,7 @@ func main() {
 
 `GET /api/v1/admin/webhooks/dlq`
 
-Requires an administrator session with MFA.
+Requires an administrator session.
 
 **Tags:** Admin, Webhooks
 
@@ -34367,7 +33508,7 @@ func main() {
 
 `DELETE /api/v1/admin/webhooks/dlq/{id}`
 
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Webhooks
 
@@ -34476,7 +33617,7 @@ func main() {
 
 `POST /api/v1/admin/webhooks/dlq/{id}/replay`
 
-Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token.
+Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires an administrator session; cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Webhooks
 
@@ -34955,7 +34096,7 @@ func main() {
 
 `GET /api/v1/admin/contact`
 
-Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.
+Requires an administrator session. Responses contain private submitter and abuse-prevention data.
 
 **Tags:** Admin, Support
 
@@ -35064,7 +34205,7 @@ func main() {
 
 `PUT /api/v1/admin/contact/{id}/status`
 
-Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
+Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.
 
 **Tags:** Admin, Support
 
@@ -35550,7 +34691,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/alerts`
 
-Evaluates current engagement thresholds for administrators with MFA.
+Evaluates current engagement thresholds for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -35648,7 +34789,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/content`
 
-Returns aggregate content metrics for administrators with MFA.
+Returns aggregate content metrics for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -35746,7 +34887,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/health`
 
-Returns aggregate engagement health for administrators with MFA.
+Returns aggregate engagement health for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -35844,7 +34985,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/overview`
 
-Returns platform KPIs for administrators with MFA.
+Returns platform KPIs for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -35942,7 +35083,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/trending`
 
-Returns a bounded engagement trend for administrators with MFA.
+Returns a bounded engagement trend for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -36049,7 +35190,7 @@ func main() {
 
 `GET /api/v1/admin/analytics/trends`
 
-Returns a bounded platform trend for administrators with MFA.
+Returns a bounded platform trend for administrators.
 
 **Tags:** Admin, Analytics
 
@@ -37400,7 +36541,7 @@ func main() {
 
 `GET /api/v1/admin/audit-logs`
 
-Requires an administrator session with MFA. Results may include IP address, user-agent, and event metadata.
+Requires an administrator session. Results may include IP address, user-agent, and event metadata.
 
 **Tags:** Admin, Audit
 
@@ -37515,7 +36656,7 @@ func main() {
 
 `GET /api/v1/admin/audit-logs/export`
 
-Requires administrator MFA. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.
+Requires an administrator session. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.
 
 **Tags:** Admin, Audit
 
@@ -41467,7 +40608,7 @@ func main() {
 
 `GET /api/v1/admin/email/alerts`
 
-Returns a bounded list of unresolved delivery alerts for administrators with MFA.
+Returns a bounded list of unresolved delivery alerts for administrators.
 
 **Tags:** Admin, Email
 
@@ -41573,7 +40714,7 @@ func main() {
 
 `POST /api/v1/admin/email/alerts/{id}/acknowledge`
 
-Acknowledges one unresolved alert. Administrator MFA and CSRF protection are required.
+Acknowledges one unresolved alert. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Email
 
@@ -41682,7 +40823,7 @@ func main() {
 
 `POST /api/v1/admin/email/alerts/{id}/resolve`
 
-Resolves one unresolved alert. Administrator MFA and CSRF protection are required.
+Resolves one unresolved alert. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Email
 
@@ -41791,7 +40932,7 @@ func main() {
 
 `GET /api/v1/admin/email/logs`
 
-Searches sensitive delivery logs for administrators with MFA; date ranges are capped at 366 days.
+Searches sensitive delivery logs for administrators; date ranges are capped at 366 days.
 
 **Tags:** Admin, Email
 
@@ -41903,7 +41044,7 @@ func main() {
 
 `GET /api/v1/admin/email/metrics`
 
-Returns metrics for an ordered range of at most 366 days to administrators with MFA.
+Returns metrics for an ordered range of at most 366 days to administrators.
 
 **Tags:** Admin, Email
 
@@ -42011,7 +41152,7 @@ func main() {
 
 `GET /api/v1/admin/email/metrics/dashboard`
 
-Returns a complete dashboard snapshot for administrators with MFA; dependency failures fail the request.
+Returns a complete dashboard snapshot for administrators; dependency failures fail the request.
 
 **Tags:** Admin, Email
 
@@ -42117,7 +41258,7 @@ func main() {
 
 `GET /api/v1/admin/email/metrics/templates`
 
-Returns bounded template metrics for an ordered range of at most 366 days to administrators with MFA.
+Returns bounded template metrics for an ordered range of at most 366 days to administrators.
 
 **Tags:** Admin, Email
 
@@ -42227,7 +41368,7 @@ func main() {
 
 `POST /api/v1/admin/nsfw/batch-detect`
 
-Runs provider-backed detection for up to 50 public HTTPS image URLs. Administrator MFA and CSRF protection are required.
+Runs provider-backed detection for up to 50 public HTTPS image URLs. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, NSFW
 
@@ -42361,7 +41502,7 @@ func main() {
 
 `GET /api/v1/admin/nsfw/config`
 
-Returns only non-sensitive feature and provider availability to administrators with MFA.
+Returns only non-sensitive feature and provider availability to administrators.
 
 **Tags:** Admin, NSFW
 
@@ -42457,7 +41598,7 @@ func main() {
 
 `POST /api/v1/admin/nsfw/detect`
 
-Runs provider-backed detection for one public HTTPS image URL. Administrator MFA and CSRF protection are required.
+Runs provider-backed detection for one public HTTPS image URL. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, NSFW
 
@@ -42593,7 +41734,7 @@ func main() {
 
 `GET /api/v1/admin/nsfw/health`
 
-Checks configured provider-backed readiness without exposing secrets. Administrator MFA is required.
+Checks configured provider-backed readiness without exposing secrets. An administrator session is required.
 
 **Tags:** Admin, NSFW
 
@@ -42691,7 +41832,7 @@ func main() {
 
 `GET /api/v1/admin/nsfw/metrics`
 
-Returns an ordered metrics range of at most 366 days to administrators with MFA.
+Returns an ordered metrics range of at most 366 days to administrators.
 
 **Tags:** Admin, NSFW
 
@@ -42804,7 +41945,7 @@ Automated owned playlist definitions and generation
 
 `GET /api/v1/admin/playlist-scripts`
 
-Returns a bounded list of scripts to administrators with MFA.
+Returns a bounded list of scripts to administrators.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -42910,7 +42051,7 @@ func main() {
 
 `POST /api/v1/admin/playlist-scripts`
 
-Creates a validated script. Administrator MFA and CSRF protection are required.
+Creates a validated script. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -43042,7 +42183,7 @@ func main() {
 
 `PUT /api/v1/admin/playlist-scripts/{id}`
 
-Updates at least one field while preserving strategy requirements. Administrator MFA and CSRF protection are required.
+Updates at least one field while preserving strategy requirements. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -43177,7 +42318,7 @@ func main() {
 
 `DELETE /api/v1/admin/playlist-scripts/{id}`
 
-Deletes one script. Administrator MFA and CSRF protection are required.
+Deletes one script. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -43286,7 +42427,7 @@ func main() {
 
 `POST /api/v1/admin/playlist-scripts/{id}/generate`
 
-Atomically creates the replacement playlist and retires the previous generation. Administrator MFA and CSRF protection are required.
+Atomically creates the replacement playlist and retires the previous generation. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Playlist Scripts
 
@@ -43972,7 +43113,7 @@ Creator verification
 
 `GET /api/v1/admin/verification/applications`
 
-Returns a bounded application queue to administrators with MFA.
+Returns a bounded application queue to administrators.
 
 **Tags:** Admin, Verification
 
@@ -44080,7 +43221,7 @@ func main() {
 
 `GET /api/v1/admin/verification/applications/{id}`
 
-Returns one application and its applicant details to administrators with MFA.
+Returns one application and its applicant details to administrators.
 
 **Tags:** Admin, Verification
 
@@ -44188,7 +43329,7 @@ func main() {
 
 `POST /api/v1/admin/verification/applications/{id}/review`
 
-Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.
+Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. An administrator session and CSRF protection are required.
 
 **Tags:** Admin, Verification
 
@@ -44325,7 +43466,7 @@ func main() {
 
 `GET /api/v1/admin/verification/audit-logs`
 
-Returns a bounded flagged or user-specific audit page to administrators with MFA.
+Returns a bounded flagged or user-specific audit page to administrators.
 
 **Tags:** Admin, Verification
 
@@ -44434,7 +43575,7 @@ func main() {
 
 `GET /api/v1/admin/verification/stats`
 
-Returns aggregate verification status counts to administrators with MFA.
+Returns aggregate verification status counts to administrators.
 
 **Tags:** Admin, Verification
 
@@ -44532,7 +43673,7 @@ func main() {
 
 `GET /api/v1/admin/verification/users/{user_id}/audit-logs`
 
-Returns one user's bounded verification audit page to administrators with MFA.
+Returns one user's bounded verification audit page to administrators.
 
 **Tags:** Admin, Verification
 

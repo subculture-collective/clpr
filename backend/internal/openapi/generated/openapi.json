@@ -50,10 +50,6 @@
       "description": "User authentication and OAuth"
     },
     {
-      "name": "MFA",
-      "description": "Multi-factor authentication"
-    },
-    {
       "name": "Clips",
       "description": "Clip management and discovery"
     },
@@ -976,346 +972,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/enroll": {
-      "post": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Start MFA enrollment",
-        "description": "Initiates MFA enrollment process (rate limited - 3/hour)",
-        "operationId": "startMFAEnrollment",
-        "responses": {
-          "200": {
-            "description": "MFA enrollment started",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "qr_code": {
-                      "type": "string",
-                      "description": "Base64 encoded QR code"
-                    },
-                    "secret": {
-                      "type": "string"
-                    },
-                    "backup_codes": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/verify-enrollment": {
-      "post": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Verify MFA enrollment",
-        "description": "Completes MFA enrollment by verifying TOTP code (rate limited - 10/minute)",
-        "operationId": "verifyMFAEnrollment",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "code"
-                ],
-                "properties": {
-                  "code": {
-                    "type": "string",
-                    "description": "6-digit TOTP code"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "MFA enrollment verified",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/status": {
-      "get": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Get MFA status",
-        "description": "Returns MFA enrollment status for current user",
-        "operationId": "getMFAStatus",
-        "responses": {
-          "200": {
-            "description": "MFA status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean"
-                    },
-                    "enrolled_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/regenerate-backup-codes": {
-      "post": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Regenerate backup codes",
-        "description": "Generates new backup codes (rate limited - 5/hour)",
-        "operationId": "regenerateBackupCodes",
-        "responses": {
-          "200": {
-            "description": "New backup codes generated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "backup_codes": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/disable": {
-      "post": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Disable MFA",
-        "description": "Disables MFA for current user (rate limited - 3/hour)",
-        "operationId": "disableMFA",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "code"
-                ],
-                "properties": {
-                  "code": {
-                    "type": "string",
-                    "description": "6-digit TOTP code or backup code"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "MFA disabled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "disabled": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/trusted-devices": {
-      "get": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Get trusted devices",
-        "description": "Returns list of trusted devices for MFA",
-        "operationId": "getTrustedDevices",
-        "responses": {
-          "200": {
-            "description": "List of trusted devices",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "devices": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/TrustedDevice"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/trusted-devices/{id}": {
-      "delete": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Revoke trusted device",
-        "description": "Removes a device from trusted devices list",
-        "operationId": "revokeTrustedDevice",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdPath"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Trusted device revoked"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          }
-        }
-      }
-    },
-    "/api/v1/auth/mfa/verify-login": {
-      "post": {
-        "tags": [
-          "MFA"
-        ],
-        "summary": "Verify MFA login",
-        "description": "Verifies MFA code during login (rate limited - 10/minute)",
-        "operationId": "verifyMFALogin",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "session_id",
-                  "code"
-                ],
-                "properties": {
-                  "session_id": {
-                    "type": "string"
-                  },
-                  "code": {
-                    "type": "string",
-                    "description": "6-digit TOTP code or backup code"
-                  },
-                  "trust_device": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "MFA verification successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -6659,7 +6315,7 @@
           "Admin"
         ],
         "summary": "List recent account-type conversions",
-        "description": "Requires an administrator session with MFA. Results are ordered from newest to oldest.",
+        "description": "Requires an administrator session. Results are ordered from newest to oldest.",
         "operationId": "getApiV1AdminAccountTypesConversions",
         "parameters": [
           {
@@ -6711,7 +6367,7 @@
           "Admin"
         ],
         "summary": "Get account-type totals",
-        "description": "Requires an administrator session with MFA.",
+        "description": "Requires an administrator session.",
         "operationId": "getApiV1AdminAccountTypesStats",
         "responses": {
           "200": {
@@ -6742,7 +6398,7 @@
           "Admin"
         ],
         "summary": "Convert a user to a moderator account",
-        "description": "Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.",
+        "description": "Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.",
         "operationId": "postApiV1AdminAccountTypesUsersIdConvertToModerator",
         "parameters": [
           {
@@ -7494,7 +7150,7 @@
           "Support"
         ],
         "summary": "List contact messages",
-        "description": "Requires an administrator session with MFA. Responses contain private submitter and abuse-prevention data.",
+        "description": "Requires an administrator session. Responses contain private submitter and abuse-prevention data.",
         "operationId": "getApiV1AdminContact",
         "parameters": [
           {
@@ -7589,7 +7245,7 @@
           "Support"
         ],
         "summary": "Update a contact message status",
-        "description": "Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.",
+        "description": "Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.",
         "operationId": "putApiV1AdminContactIdStatus",
         "parameters": [
           {
@@ -7672,7 +7328,7 @@
           "Reports"
         ],
         "summary": "List content reports",
-        "description": "Requires an administrator session with MFA.",
+        "description": "Requires an administrator session.",
         "operationId": "getApiV1AdminReports",
         "parameters": [
           {
@@ -7753,7 +7409,7 @@
           "Reports"
         ],
         "summary": "Get a content report",
-        "description": "Requires an administrator session with MFA. Includes reporter information and reports for the same target.",
+        "description": "Requires an administrator session. Includes reporter information and reports for the same target.",
         "operationId": "getApiV1AdminReportsId",
         "parameters": [
           {
@@ -7797,7 +7453,7 @@
           "Reports"
         ],
         "summary": "Resolve a content report",
-        "description": "Requires an administrator session with MFA. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.",
+        "description": "Requires an administrator session. Unsupported or incompatible moderation actions fail closed. Cookie-authenticated requests must also send the CSRF token.",
         "operationId": "putApiV1AdminReportsId",
         "parameters": [
           {
@@ -8080,7 +7736,7 @@
           "Webhooks"
         ],
         "summary": "List outbound webhook dead-letter items",
-        "description": "Requires an administrator session with MFA.",
+        "description": "Requires an administrator session.",
         "operationId": "getApiV1AdminWebhooksDlq",
         "parameters": [
           {
@@ -8136,7 +7792,7 @@
           "Webhooks"
         ],
         "summary": "Permanently delete a dead-letter item",
-        "description": "Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.",
+        "description": "Requires an administrator session. Cookie-authenticated requests must also send the CSRF token.",
         "operationId": "deleteApiV1AdminWebhooksDlqId",
         "parameters": [
           {
@@ -8188,7 +7844,7 @@
           "Webhooks"
         ],
         "summary": "Replay a dead-lettered webhook",
-        "description": "Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token.",
+        "description": "Atomically claims and redelivers an item once. Concurrent or already-successful replay attempts fail with 409. Requires an administrator session; cookie-authenticated requests must also send the CSRF token.",
         "operationId": "postApiV1AdminWebhooksDlqIdReplay",
         "parameters": [
           {
@@ -8505,7 +8161,7 @@
           "Clips"
         ],
         "summary": "Run a clip synchronization",
-        "description": "Runs a bounded synchronous Twitch clip import. Requires administrator MFA; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.",
+        "description": "Runs a bounded synchronous Twitch clip import. Requires an administrator session; cookie-authenticated requests must also send the CSRF token. Item-level failures produce 207 rather than full success.",
         "operationId": "postApiV1AdminSyncClips",
         "parameters": [
           {
@@ -8565,7 +8221,7 @@
           "Clips"
         ],
         "summary": "Get persisted clip synchronization status",
-        "description": "Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires administrator MFA.",
+        "description": "Returns the most recent persisted clip import time rather than a synthetic service-ready placeholder. Requires an administrator session.",
         "operationId": "getApiV1AdminSyncStatus",
         "responses": {
           "200": {
@@ -8677,7 +8333,7 @@
           "Audit"
         ],
         "summary": "List immutable moderation audit events",
-        "description": "Requires an administrator session with MFA. Results may include IP address, user-agent, and event metadata.",
+        "description": "Requires an administrator session. Results may include IP address, user-agent, and event metadata.",
         "operationId": "getApiV1AdminAuditLogs",
         "parameters": [
           {
@@ -8795,7 +8451,7 @@
           "Audit"
         ],
         "summary": "Export filtered audit events as CSV",
-        "description": "Requires administrator MFA. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.",
+        "description": "Requires an administrator session. Uses the same filters as the list route and refuses results over 10,000 rows; narrow the filters and retry.",
         "operationId": "getApiV1AdminAuditLogsExport",
         "parameters": [
           {
@@ -10820,7 +10476,7 @@
           "Analytics"
         ],
         "summary": "List engagement alerts",
-        "description": "Evaluates current engagement thresholds for administrators with MFA.",
+        "description": "Evaluates current engagement thresholds for administrators.",
         "operationId": "getApiV1AdminAnalyticsAlerts",
         "responses": {
           "200": {
@@ -10869,7 +10525,7 @@
           "Analytics"
         ],
         "summary": "Get platform content metrics",
-        "description": "Returns aggregate content metrics for administrators with MFA.",
+        "description": "Returns aggregate content metrics for administrators.",
         "operationId": "getApiV1AdminAnalyticsContent",
         "responses": {
           "200": {
@@ -10902,7 +10558,7 @@
           "Analytics"
         ],
         "summary": "Get platform engagement health",
-        "description": "Returns aggregate engagement health for administrators with MFA.",
+        "description": "Returns aggregate engagement health for administrators.",
         "operationId": "getApiV1AdminAnalyticsHealth",
         "responses": {
           "200": {
@@ -10935,7 +10591,7 @@
           "Analytics"
         ],
         "summary": "Get platform analytics overview",
-        "description": "Returns platform KPIs for administrators with MFA.",
+        "description": "Returns platform KPIs for administrators.",
         "operationId": "getApiV1AdminAnalyticsOverview",
         "responses": {
           "200": {
@@ -10968,7 +10624,7 @@
           "Analytics"
         ],
         "summary": "Get trending engagement metrics",
-        "description": "Returns a bounded engagement trend for administrators with MFA.",
+        "description": "Returns a bounded engagement trend for administrators.",
         "operationId": "getApiV1AdminAnalyticsTrending",
         "parameters": [
           {
@@ -11030,7 +10686,7 @@
           "Analytics"
         ],
         "summary": "Get platform metric trends",
-        "description": "Returns a bounded platform trend for administrators with MFA.",
+        "description": "Returns a bounded platform trend for administrators.",
         "operationId": "getApiV1AdminAnalyticsTrends",
         "parameters": [
           {
@@ -11112,7 +10768,7 @@
           "Email"
         ],
         "summary": "List unresolved email alerts",
-        "description": "Returns a bounded list of unresolved delivery alerts for administrators with MFA.",
+        "description": "Returns a bounded list of unresolved delivery alerts for administrators.",
         "operationId": "getApiV1AdminEmailAlerts",
         "parameters": [
           {
@@ -11164,7 +10820,7 @@
           "Email"
         ],
         "summary": "Acknowledge an email alert",
-        "description": "Acknowledges one unresolved alert. Administrator MFA and CSRF protection are required.",
+        "description": "Acknowledges one unresolved alert. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminEmailAlertsIdAcknowledge",
         "parameters": [
           {
@@ -11224,7 +10880,7 @@
           "Email"
         ],
         "summary": "Resolve an email alert",
-        "description": "Resolves one unresolved alert. Administrator MFA and CSRF protection are required.",
+        "description": "Resolves one unresolved alert. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminEmailAlertsIdResolve",
         "parameters": [
           {
@@ -11284,7 +10940,7 @@
           "Email"
         ],
         "summary": "Search email delivery logs",
-        "description": "Searches sensitive delivery logs for administrators with MFA; date ranges are capped at 366 days.",
+        "description": "Searches sensitive delivery logs for administrators; date ranges are capped at 366 days.",
         "operationId": "getApiV1AdminEmailLogs",
         "parameters": [
           {
@@ -11397,7 +11053,7 @@
           "Email"
         ],
         "summary": "Get aggregate email metrics",
-        "description": "Returns metrics for an ordered range of at most 366 days to administrators with MFA.",
+        "description": "Returns metrics for an ordered range of at most 366 days to administrators.",
         "operationId": "getApiV1AdminEmailMetrics",
         "parameters": [
           {
@@ -11459,7 +11115,7 @@
           "Email"
         ],
         "summary": "Get the email operations dashboard",
-        "description": "Returns a complete dashboard snapshot for administrators with MFA; dependency failures fail the request.",
+        "description": "Returns a complete dashboard snapshot for administrators; dependency failures fail the request.",
         "operationId": "getApiV1AdminEmailMetricsDashboard",
         "parameters": [
           {
@@ -11550,7 +11206,7 @@
           "Email"
         ],
         "summary": "Get email metrics by template",
-        "description": "Returns bounded template metrics for an ordered range of at most 366 days to administrators with MFA.",
+        "description": "Returns bounded template metrics for an ordered range of at most 366 days to administrators.",
         "operationId": "getApiV1AdminEmailMetricsTemplates",
         "parameters": [
           {
@@ -11618,7 +11274,7 @@
           "Moderation"
         ],
         "summary": "Get abuse statistics for a user",
-        "description": "Requires moderator or administrator MFA.",
+        "description": "Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationAbuseUserid",
         "parameters": [
           {
@@ -11661,7 +11317,7 @@
           "Moderation"
         ],
         "summary": "Get moderation analytics",
-        "description": "Returns analytics for an ordered date range of at most 366 days. Requires moderator or administrator MFA.",
+        "description": "Returns analytics for an ordered date range of at most 366 days. Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationAnalytics",
         "parameters": [
           {
@@ -11701,7 +11357,7 @@
           "Moderation"
         ],
         "summary": "List moderation appeals",
-        "description": "Administrator MFA is required.",
+        "description": "An administrator session is required.",
         "operationId": "getApiV1AdminModerationAppeals",
         "parameters": [
           {
@@ -11761,7 +11417,7 @@
           "Moderation"
         ],
         "summary": "Resolve a moderation appeal",
-        "description": "Atomically resolves one pending appeal and writes its audit record. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically resolves one pending appeal and writes its audit record. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminModerationAppealsIdResolve",
         "parameters": [
           {
@@ -11826,7 +11482,7 @@
           "Moderation"
         ],
         "summary": "List moderation decisions",
-        "description": "Filters decisions with strict dates and bounded offset pagination. Requires moderator or administrator MFA.",
+        "description": "Filters decisions with strict dates and bounded offset pagination. Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationAudit",
         "parameters": [
           {
@@ -11907,7 +11563,7 @@
           "Moderation"
         ],
         "summary": "Moderate multiple queue items",
-        "description": "Applies one decision to 1–100 unique pending items atomically. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Applies one decision to 1–100 unique pending items atomically. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminModerationBulk",
         "parameters": [
           {
@@ -11960,7 +11616,7 @@
           "Moderation"
         ],
         "summary": "List pending moderation events",
-        "description": "Requires moderator or administrator MFA.",
+        "description": "Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationEvents",
         "parameters": [
           {
@@ -12004,7 +11660,7 @@
           "Moderation"
         ],
         "summary": "Process a moderation event",
-        "description": "Records one bounded action for an event. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Records one bounded action for an event. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminModerationEventsIdProcess",
         "parameters": [
           {
@@ -12060,7 +11716,7 @@
           "Moderation"
         ],
         "summary": "Mark a moderation event reviewed",
-        "description": "Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminModerationEventsIdReview",
         "parameters": [
           {
@@ -12106,7 +11762,7 @@
           "Moderation"
         ],
         "summary": "List moderation events by type",
-        "description": "Rejects unknown event types. Requires moderator or administrator MFA.",
+        "description": "Rejects unknown event types. Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationEventsType",
         "parameters": [
           {
@@ -12171,7 +11827,7 @@
           "Moderation"
         ],
         "summary": "List moderation queue items",
-        "description": "Requires moderator or administrator MFA.",
+        "description": "Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationQueue",
         "parameters": [
           {
@@ -12242,7 +11898,7 @@
           "Moderation"
         ],
         "summary": "Get moderation queue statistics",
-        "description": "Requires moderator or administrator MFA.",
+        "description": "Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationQueueStats",
         "responses": {
           "200": {
@@ -12274,7 +11930,7 @@
           "Moderation"
         ],
         "summary": "Get moderation event statistics",
-        "description": "Requires moderator or administrator MFA.",
+        "description": "Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationStats",
         "responses": {
           "200": {
@@ -12306,7 +11962,7 @@
           "Moderation"
         ],
         "summary": "Get toxicity-classification metrics",
-        "description": "Returns an ordered date range of at most 366 days. Requires moderator or administrator MFA.",
+        "description": "Returns an ordered date range of at most 366 days. Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminModerationToxicityMetrics",
         "parameters": [
           {
@@ -12346,7 +12002,7 @@
           "Moderation"
         ],
         "summary": "Approve a pending moderation item",
-        "description": "Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminModerationIdApprove",
         "parameters": [
           {
@@ -12395,7 +12051,7 @@
           "Moderation"
         ],
         "summary": "Reject a pending moderation item",
-        "description": "Atomically updates the pending item and records its decision. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Atomically updates the pending item and records its decision. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminModerationIdReject",
         "parameters": [
           {
@@ -12454,7 +12110,7 @@
           "NSFW"
         ],
         "summary": "Detect NSFW content in an image batch",
-        "description": "Runs provider-backed detection for up to 50 public HTTPS image URLs. Administrator MFA and CSRF protection are required.",
+        "description": "Runs provider-backed detection for up to 50 public HTTPS image URLs. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminNsfwBatchDetect",
         "parameters": [
           {
@@ -12530,7 +12186,7 @@
           "NSFW"
         ],
         "summary": "Get NSFW detector availability",
-        "description": "Returns only non-sensitive feature and provider availability to administrators with MFA.",
+        "description": "Returns only non-sensitive feature and provider availability to administrators.",
         "operationId": "getApiV1AdminNsfwConfig",
         "responses": {
           "200": {
@@ -12584,7 +12240,7 @@
           "NSFW"
         ],
         "summary": "Detect NSFW content in one image",
-        "description": "Runs provider-backed detection for one public HTTPS image URL. Administrator MFA and CSRF protection are required.",
+        "description": "Runs provider-backed detection for one public HTTPS image URL. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminNsfwDetect",
         "parameters": [
           {
@@ -12661,7 +12317,7 @@
           "NSFW"
         ],
         "summary": "Check NSFW detector readiness",
-        "description": "Checks configured provider-backed readiness without exposing secrets. Administrator MFA is required.",
+        "description": "Checks configured provider-backed readiness without exposing secrets. An administrator session is required.",
         "operationId": "getApiV1AdminNsfwHealth",
         "responses": {
           "200": {
@@ -12714,7 +12370,7 @@
           "NSFW"
         ],
         "summary": "Get NSFW detection metrics",
-        "description": "Returns an ordered metrics range of at most 366 days to administrators with MFA.",
+        "description": "Returns an ordered metrics range of at most 366 days to administrators.",
         "operationId": "getApiV1AdminNsfwMetrics",
         "parameters": [
           {
@@ -12774,7 +12430,7 @@
           "Playlist Scripts"
         ],
         "summary": "List playlist automation scripts",
-        "description": "Returns a bounded list of scripts to administrators with MFA.",
+        "description": "Returns a bounded list of scripts to administrators.",
         "operationId": "getApiV1AdminPlaylistScripts",
         "parameters": [
           {
@@ -12819,7 +12475,7 @@
           "Playlist Scripts"
         ],
         "summary": "Create a playlist automation script",
-        "description": "Creates a validated script. Administrator MFA and CSRF protection are required.",
+        "description": "Creates a validated script. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminPlaylistScripts",
         "parameters": [
           {
@@ -12869,7 +12525,7 @@
           "Playlist Scripts"
         ],
         "summary": "Delete a playlist automation script",
-        "description": "Deletes one script. Administrator MFA and CSRF protection are required.",
+        "description": "Deletes one script. An administrator session and CSRF protection are required.",
         "operationId": "deleteApiV1AdminPlaylistScriptsId",
         "parameters": [
           {
@@ -12919,7 +12575,7 @@
           "Playlist Scripts"
         ],
         "summary": "Update a playlist automation script",
-        "description": "Updates at least one field while preserving strategy requirements. Administrator MFA and CSRF protection are required.",
+        "description": "Updates at least one field while preserving strategy requirements. An administrator session and CSRF protection are required.",
         "operationId": "putApiV1AdminPlaylistScriptsId",
         "parameters": [
           {
@@ -12981,7 +12637,7 @@
           "Playlist Scripts"
         ],
         "summary": "Generate a playlist from a script",
-        "description": "Atomically creates the replacement playlist and retires the previous generation. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically creates the replacement playlist and retires the previous generation. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminPlaylistScriptsIdGenerate",
         "parameters": [
           {
@@ -13049,7 +12705,7 @@
           "Submissions"
         ],
         "summary": "List pending clip submissions",
-        "description": "Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or administrator MFA.",
+        "description": "Strictly filters pending submissions with bounded pagination and date ranges. Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminSubmissions",
         "parameters": [
           {
@@ -13149,7 +12805,7 @@
           "Submissions"
         ],
         "summary": "Approve multiple submissions",
-        "description": "Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Atomically creates clips and commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminSubmissionsBulkApprove",
         "parameters": [
           {
@@ -13202,7 +12858,7 @@
           "Submissions"
         ],
         "summary": "Reject multiple submissions",
-        "description": "Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Atomically commits submission, karma, and audit changes for 1–100 unique pending submissions. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminSubmissionsBulkReject",
         "parameters": [
           {
@@ -13255,7 +12911,7 @@
           "Submissions"
         ],
         "summary": "List rejection-reason templates",
-        "description": "Requires moderator or administrator MFA.",
+        "description": "Requires moderator or an administrator session.",
         "operationId": "getApiV1AdminSubmissionsRejectionReasons",
         "responses": {
           "200": {
@@ -13287,7 +12943,7 @@
           "Submissions"
         ],
         "summary": "Approve a pending submission",
-        "description": "Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Atomically creates the clip and commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminSubmissionsIdApprove",
         "parameters": [
           {
@@ -13339,7 +12995,7 @@
           "Submissions"
         ],
         "summary": "Reject a pending submission",
-        "description": "Atomically commits submission, karma, and audit changes. Requires moderator or administrator MFA and CSRF protection.",
+        "description": "Atomically commits submission, karma, and audit changes. Requires moderator or an administrator session and CSRF protection.",
         "operationId": "postApiV1AdminSubmissionsIdReject",
         "parameters": [
           {
@@ -13431,7 +13087,7 @@
           "Tags"
         ],
         "summary": "Create a tag",
-        "description": "Creates a canonical, non-blacklisted tag. Administrator MFA and CSRF protection are required.",
+        "description": "Creates a canonical, non-blacklisted tag. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminTags",
         "parameters": [
           {
@@ -13484,7 +13140,7 @@
           "Topics"
         ],
         "summary": "Replace a clip's topic assignments",
-        "description": "Replaces automated assignments with moderator-selected topics. Moderator MFA and CSRF protection are required.",
+        "description": "Replaces automated assignments with moderator-selected topics. A moderator session and CSRF protection are required.",
         "operationId": "replaceAdminClipTopics",
         "parameters": [
           {
@@ -13537,7 +13193,7 @@
           "Topics"
         ],
         "summary": "Merge one topic into another",
-        "description": "Moves assignments to the target and deactivates the source. Moderator MFA and CSRF protection are required.",
+        "description": "Moves assignments to the target and deactivates the source. A moderator session and CSRF protection are required.",
         "operationId": "mergeAdminTopic",
         "parameters": [
           {
@@ -13596,7 +13252,7 @@
           "Topics"
         ],
         "summary": "Split selected clips into a new topic",
-        "description": "Creates a topic and moves only clips assigned to the source. Moderator MFA and CSRF protection are required.",
+        "description": "Creates a topic and moves only clips assigned to the source. A moderator session and CSRF protection are required.",
         "operationId": "splitAdminTopic",
         "parameters": [
           {
@@ -13655,7 +13311,7 @@
           "Tags"
         ],
         "summary": "List blacklisted tag slugs",
-        "description": "Administrator MFA is required.",
+        "description": "An administrator session is required.",
         "operationId": "getApiV1AdminTagsBlacklist",
         "responses": {
           "200": {
@@ -13688,7 +13344,7 @@
           "Tags"
         ],
         "summary": "Blacklist a tag slug",
-        "description": "Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. Administrator MFA and CSRF protection are required.",
+        "description": "Adds a case-insensitive safe glob to the tag blacklist. `*` matches zero or more characters and `?` matches exactly one; SQL wildcard characters are literal. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminTagsBlacklist",
         "parameters": [
           {
@@ -13741,7 +13397,7 @@
           "Tags"
         ],
         "summary": "Remove a blacklisted tag slug",
-        "description": "Administrator MFA and CSRF protection are required.",
+        "description": "An administrator session and CSRF protection are required.",
         "operationId": "deleteApiV1AdminTagsBlacklistId",
         "parameters": [
           {
@@ -13793,7 +13449,7 @@
           "Tags"
         ],
         "summary": "List tag promotion candidates",
-        "description": "Returns a paginated moderation queue. Administrator MFA is required.",
+        "description": "Returns a paginated moderation queue. An administrator session is required.",
         "operationId": "getApiV1AdminTagsPromotionQueue",
         "parameters": [
           {
@@ -13996,7 +13652,7 @@
           "Tags"
         ],
         "summary": "Delete a tag",
-        "description": "Atomically deletes the tag and its clip associations. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically deletes the tag and its clip associations. An administrator session and CSRF protection are required.",
         "operationId": "deleteApiV1AdminTagsId",
         "parameters": [
           {
@@ -14046,7 +13702,7 @@
           "Tags"
         ],
         "summary": "Replace a tag",
-        "description": "Replaces tag fields with canonical, non-blacklisted values. Administrator MFA and CSRF protection are required.",
+        "description": "Replaces tag fields with canonical, non-blacklisted values. An administrator session and CSRF protection are required.",
         "operationId": "putApiV1AdminTagsId",
         "parameters": [
           {
@@ -14225,7 +13881,7 @@
           "Users"
         ],
         "summary": "Search users for administration",
-        "description": "Strictly filters and paginates administrative user records. Administrator MFA is required.",
+        "description": "Strictly filters and paginates administrative user records. An administrator session is required.",
         "operationId": "getApiV1AdminUsers",
         "parameters": [
           {
@@ -14555,7 +14211,7 @@
           "Users"
         ],
         "summary": "Award a badge to a user",
-        "description": "Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically awards a valid badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminUsersIdBadges",
         "parameters": [
           {
@@ -14620,7 +14276,7 @@
           "Users"
         ],
         "summary": "Remove a badge from a user",
-        "description": "Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically removes an awarded badge and records the audit event. Self and administrator targets are protected. An administrator session and CSRF protection are required.",
         "operationId": "deleteApiV1AdminUsersIdBadgesBadgeid",
         "parameters": [
           {
@@ -14682,7 +14338,7 @@
           "Users"
         ],
         "summary": "Ban a user",
-        "description": "Atomically bans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically bans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminUsersIdBan",
         "parameters": [
           {
@@ -14744,7 +14400,7 @@
           "Users"
         ],
         "summary": "Get comment-suspension history",
-        "description": "Administrator MFA is required.",
+        "description": "An administrator session is required.",
         "operationId": "getApiV1AdminUsersIdCommentSuspensionHistory",
         "parameters": [
           {
@@ -14803,7 +14459,7 @@
           "Users"
         ],
         "summary": "Set user karma",
-        "description": "Atomically sets bounded karma and records the audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically sets bounded karma and records the audit event. An administrator session and CSRF protection are required.",
         "operationId": "patchApiV1AdminUsersIdKarma",
         "parameters": [
           {
@@ -14865,7 +14521,7 @@
           "Users"
         ],
         "summary": "Lift a comment suspension",
-        "description": "Atomically lifts active suspensions and records the audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically lifts active suspensions and records the audit event. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminUsersIdLiftCommentSuspension",
         "parameters": [
           {
@@ -14927,7 +14583,7 @@
           "Users"
         ],
         "summary": "Change a user role",
-        "description": "Atomically changes a non-administrator target role and records the audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically changes a non-administrator target role and records the audit event. An administrator session and CSRF protection are required.",
         "operationId": "patchApiV1AdminUsersIdRole",
         "parameters": [
           {
@@ -14989,7 +14645,7 @@
           "Users"
         ],
         "summary": "Suspend comment privileges",
-        "description": "Atomically records a warning or suspension with its audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically records a warning or suspension with its audit event. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminUsersIdSuspendComments",
         "parameters": [
           {
@@ -15051,7 +14707,7 @@
           "Users"
         ],
         "summary": "Set comment-review requirement",
-        "description": "Atomically changes the review requirement and records the audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically changes the review requirement and records the audit event. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminUsersIdToggleCommentReview",
         "parameters": [
           {
@@ -15113,7 +14769,7 @@
           "Users"
         ],
         "summary": "Unban a user",
-        "description": "Atomically unbans a non-administrator target and records the audit event. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically unbans a non-administrator target and records the audit event. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminUsersIdUnban",
         "parameters": [
           {
@@ -15175,7 +14831,7 @@
           "Verification"
         ],
         "summary": "List creator verification applications",
-        "description": "Returns a bounded application queue to administrators with MFA.",
+        "description": "Returns a bounded application queue to administrators.",
         "operationId": "getApiV1AdminVerificationApplications",
         "parameters": [
           {
@@ -15245,7 +14901,7 @@
           "Verification"
         ],
         "summary": "Get a creator verification application",
-        "description": "Returns one application and its applicant details to administrators with MFA.",
+        "description": "Returns one application and its applicant details to administrators.",
         "operationId": "getApiV1AdminVerificationApplicationsId",
         "parameters": [
           {
@@ -15294,7 +14950,7 @@
           "Verification"
         ],
         "summary": "Review a creator verification application",
-        "description": "Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.",
+        "description": "Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. An administrator session and CSRF protection are required.",
         "operationId": "postApiV1AdminVerificationApplicationsIdReview",
         "parameters": [
           {
@@ -15359,7 +15015,7 @@
           "Verification"
         ],
         "summary": "List verification audit logs",
-        "description": "Returns a bounded flagged or user-specific audit page to administrators with MFA.",
+        "description": "Returns a bounded flagged or user-specific audit page to administrators.",
         "operationId": "getApiV1AdminVerificationAuditLogs",
         "parameters": [
           {
@@ -15432,7 +15088,7 @@
           "Verification"
         ],
         "summary": "Get creator verification statistics",
-        "description": "Returns aggregate verification status counts to administrators with MFA.",
+        "description": "Returns aggregate verification status counts to administrators.",
         "operationId": "getApiV1AdminVerificationStats",
         "responses": {
           "200": {
@@ -15464,7 +15120,7 @@
           "Verification"
         ],
         "summary": "List a user's verification audit history",
-        "description": "Returns one user's bounded verification audit page to administrators with MFA.",
+        "description": "Returns one user's bounded verification audit page to administrators.",
         "operationId": "getApiV1AdminVerificationUsersUserIdAuditLogs",
         "parameters": [
           {
@@ -31374,35 +31030,6 @@
             "format": "date-time"
           },
           "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "TrustedDevice": {
-        "type": "object",
-        "required": [
-          "id",
-          "device_name",
-          "device_fingerprint",
-          "created_at"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "device_name": {
-            "type": "string"
-          },
-          "device_fingerprint": {
-            "type": "string"
-          },
-          "last_used_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "created_at": {
             "type": "string",
             "format": "date-time"
           }

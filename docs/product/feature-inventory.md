@@ -109,25 +109,7 @@ counts that included planned or missing artifacts.
 
 #### 1.2 Multi-Factor Authentication (MFA)
 
-- **Status**: ✅ complete
-- **Backend**: `/api/v1/auth/mfa/*`
-- **Frontend**: MFA settings components
-- **Handlers**: `mfa_handler.go`
-- **Services**: `mfa_service.go`, `email_mfa.go`
-- **Tests**: ✅ Comprehensive unit tests
-- **Typing**: ✅ Full TypeScript coverage
-- **Docs**: MFA Admin Guide
-- **Issue**: TBD
-
-**Features**:
-- TOTP-based 2FA
-- Email-based OTP fallback
-- Backup codes generation
-- Trusted device management
-- Required for admin actions
-
-**Gaps**:
-- Mobile MFA UI needs implementation
+- **Status**: removed in November 2026. Login is Twitch OAuth, which carries Twitch's own two-factor protection; the app-level TOTP layer had no frontend and gated nothing a user could reach.
 
 ---
 
@@ -730,7 +712,7 @@ anomaly-scoring analytics implementation has been removed. See
 #### 13.4 Security
 
 - **Status**: ✅ complete | **Middleware**: Security, CSRF, abuse detection
-- **Features**: HTTPS, headers, CSRF, rate limiting, trust score, validation, MFA
+- **Features**: HTTPS, headers, CSRF, rate limiting, trust score, validation
 - **Gaps**: WAF, DDoS mitigation
 
 #### 13.5 Database Management

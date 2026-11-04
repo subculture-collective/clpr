@@ -42,7 +42,6 @@ services:
             - GIN_MODE=release
             - BASE_URL=${BASE_URL:-https://clpr.tv}
             - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY is required}
-            - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY is required}
             - OPERATIONAL_AUTH_TOKEN=${OPERATIONAL_AUTH_TOKEN:?OPERATIONAL_AUTH_TOKEN is required}
             - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
             - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}
@@ -152,7 +151,6 @@ services:
             - GIN_MODE=release
             - BASE_URL=${BASE_URL:-https://clpr.tv}
             - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY is required}
-            - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY is required}
             - OPERATIONAL_AUTH_TOKEN=${OPERATIONAL_AUTH_TOKEN:?OPERATIONAL_AUTH_TOKEN is required}
             - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID}
             - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET}

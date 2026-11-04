@@ -764,62 +764,6 @@
   },
   {
     "method": "POST",
-    "path": "/api/v1/auth/mfa/disable",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).DisableMFA-fm",
-    "operation_id": "disableMFA",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/auth/mfa/enroll",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).StartEnrollment-fm",
-    "operation_id": "startMFAEnrollment",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/auth/mfa/regenerate-backup-codes",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).RegenerateBackupCodes-fm",
-    "operation_id": "regenerateBackupCodes",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/auth/mfa/status",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).GetStatus-fm",
-    "operation_id": "getMFAStatus",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/auth/mfa/trusted-devices",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).GetTrustedDevices-fm",
-    "operation_id": "getTrustedDevices",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "DELETE",
-    "path": "/api/v1/auth/mfa/trusted-devices/{id}",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).RevokeTrustedDevice-fm",
-    "operation_id": "revokeTrustedDevice",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/auth/mfa/verify-enrollment",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).VerifyEnrollment-fm",
-    "operation_id": "verifyMFAEnrollment",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/auth/mfa/verify-login",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*MFAHandler).VerifyLogin-fm",
-    "operation_id": "verifyMFALogin",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
     "path": "/api/v1/auth/refresh",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AuthHandler).RefreshToken-fm",
     "operation_id": "refreshToken",

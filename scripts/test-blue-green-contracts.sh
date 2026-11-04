@@ -162,7 +162,6 @@ FRONTEND_GREEN_DIGEST=$digest
 CRAWLER_DIGEST=$digest
 POSTGRES_PASSWORD=contract-postgres
 JWT_PRIVATE_KEY=contract-jwt
-MFA_ENCRYPTION_KEY=contract-mfa
 OPERATIONAL_AUTH_TOKEN=contract-operations
 TWITCH_CLIENT_ID=contract-twitch
 TWITCH_CLIENT_SECRET=contract-twitch-secret

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/base64"
 	"strings"
 	"testing"
 )
@@ -17,7 +16,6 @@ func validReleaseConfig() *Config {
 		WebSocket:  WebSocketConfig{AllowedOrigins: []string{"https://clpr.example"}},
 		OpenSearch: OpenSearchConfig{URL: "https://search.internal.example", InsecureSkipVerify: false},
 		Security: SecurityConfig{
-			MFAEncryptionKey: base64.StdEncoding.EncodeToString(make([]byte, 32)),
 			OperationalToken: strings.Repeat("o", 32),
 		},
 	}
@@ -36,7 +34,6 @@ func TestValidateProfiles(t *testing.T) {
 		{name: "http base URL", mutate: func(c *Config) { c.Server.BaseURL = "http://clpr.example" }, wantErr: "BASE_URL must use https"},
 		{name: "wildcard CORS", mutate: func(c *Config) { c.CORS.AllowedOrigins = "*" }, wantErr: "wildcard"},
 		{name: "missing JWT key", mutate: func(c *Config) { c.JWT.PrivateKey = "" }, wantErr: "JWT_PRIVATE_KEY"},
-		{name: "invalid MFA key", mutate: func(c *Config) { c.Security.MFAEncryptionKey = "short" }, wantErr: "MFA_ENCRYPTION_KEY"},
 		{name: "missing operational token", mutate: func(c *Config) { c.Security.OperationalToken = "" }, wantErr: "OPERATIONAL_AUTH_TOKEN"},
 		{name: "default DB password", mutate: func(c *Config) { c.Database.Password = "CHANGEME_SECURE_PASSWORD_HERE" }, wantErr: "DB_PASSWORD"},
 		{name: "database TLS disabled", mutate: func(c *Config) { c.Database.SSLMode = "disable" }, wantErr: "DB_SSLMODE"},

@@ -11,7 +11,6 @@ import (
 // Handlers holds all HTTP handler instances.
 type Handlers struct {
 	Auth                *handlers.AuthHandler
-	MFA                 *handlers.MFAHandler
 	Monitoring          *handlers.MonitoringHandler
 	WebhookMonitoring   *handlers.WebhookMonitoringHandler
 	Comment             *handlers.CommentHandler
@@ -73,7 +72,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	cfg := infra.Config
 
 	authHandler := handlers.NewAuthHandler(svcs.Auth, cfg)
-	mfaHandler := handlers.NewMFAHandler(svcs.MFA, cfg)
 	monitoringHandler := handlers.NewMonitoringHandler(infra.Redis)
 	commentHandler := handlers.NewCommentHandler(svcs.Comment)
 	clipHandler := handlers.NewClipHandler(
@@ -189,7 +187,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 
 	return &Handlers{
 		Auth:                authHandler,
-		MFA:                 mfaHandler,
 		Monitoring:          monitoringHandler,
 		WebhookMonitoring:   webhookMonitoringHandler,
 		Comment:             commentHandler,

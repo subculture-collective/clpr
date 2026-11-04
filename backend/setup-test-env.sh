@@ -12,14 +12,6 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Setting up test environment...${NC}"
 
-# Generate a 32-byte key for MFA encryption (required for MFA tests)
-if [ -z "$MFA_ENCRYPTION_KEY" ]; then
-    export MFA_ENCRYPTION_KEY=$(openssl rand -base64 32)
-    echo -e "${GREEN}✓ Generated MFA_ENCRYPTION_KEY${NC}"
-else
-    echo -e "${GREEN}✓ Using existing MFA_ENCRYPTION_KEY${NC}"
-fi
-
 # OpenSearch/Elasticsearch configuration for semantic search
 if [ -z "${OPENSEARCH_URL:-}" ]; then
     export OPENSEARCH_URL="${TEST_OPENSEARCH_URL:-http://${TEST_SERVICE_HOST:-localhost}:9201}"
@@ -92,9 +84,6 @@ echo -e "${GREEN}✓ Set CDN failover configuration${NC}"
 cat > .env.test <<EOF
 # Auto-generated test environment configuration
 # Generated on $(date)
-
-# MFA Configuration
-MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}
 
 # OpenSearch Configuration
 OPENSEARCH_URL=${OPENSEARCH_URL}

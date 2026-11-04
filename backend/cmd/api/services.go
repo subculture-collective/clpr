@@ -19,7 +19,6 @@ import (
 type Services struct {
 	Auth                     *services.AuthService
 	Email                    *services.EmailService
-	MFA                      *services.MFAService
 	Notification             *services.NotificationService
 	ToxicityClassifier       *services.ToxicityClassifier
 	NSFWDetector             *services.NSFWDetector
@@ -84,12 +83,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		SandboxMode:      cfg.Email.SandboxMode,
 		MaxEmailsPerHour: cfg.Email.MaxEmailsPerHour,
 	}, repos.EmailNotification, repos.Notification)
-
-	// Initialize MFA service
-	mfaService, mfaErr := services.NewMFAService(cfg, repos.MFA, repos.User, emailService)
-	if mfaErr != nil {
-		log.Fatalf("Failed to initialize MFA service: %v", mfaErr)
-	}
 
 	notificationService := services.NewNotificationService(repos.Notification, repos.User, repos.Comment, repos.Clip, repos.Favorite, emailService)
 
@@ -163,7 +156,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	banReasonTemplateService := services.NewBanReasonTemplateService(repos.BanReasonTemplate, repos.Community, logger)
 
 	// Initialize account type service
-	accountTypeService := services.NewAccountTypeService(repos.User, repos.AccountTypeConversion, repos.AuditLog, mfaService)
+	accountTypeService := services.NewAccountTypeService(repos.User, repos.AccountTypeConversion, repos.AuditLog)
 
 	// Initialize recommendation service
 	recommendationService := services.NewRecommendationServiceWithConfig(
@@ -340,7 +333,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	return &Services{
 		Auth:                     authService,
 		Email:                    emailService,
-		MFA:                      mfaService,
 		Notification:             notificationService,
 		ToxicityClassifier:       toxicityClassifier,
 		NSFWDetector:             nsfwDetector,

@@ -11,7 +11,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 	admin := v1.Group("/admin")
 	admin.Use(middleware.AuthMiddleware(svcs.Auth))
 	admin.Use(middleware.RequireRole("admin", "moderator"))
-	admin.Use(middleware.RequireMFAForAdminMiddleware(svcs.MFA)) // Enforce MFA for admin/moderator actions
 	{
 		admin.GET("/openapi.json", middleware.RequireRole("admin"), h.AdminOpenAPI.Get)
 

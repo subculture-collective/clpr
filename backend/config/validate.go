@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strings"
@@ -44,9 +43,6 @@ func (c *Config) Validate() error {
 	}
 	if strings.TrimSpace(c.JWT.PrivateKey) == "" {
 		return fmt.Errorf("JWT_PRIVATE_KEY is required in %s", environment)
-	}
-	if !validMFAKey(c.Security.MFAEncryptionKey) {
-		return fmt.Errorf("MFA_ENCRYPTION_KEY must decode to at least 32 bytes in %s", environment)
 	}
 	if len(strings.TrimSpace(c.Security.OperationalToken)) < 32 {
 		return fmt.Errorf("OPERATIONAL_AUTH_TOKEN must contain at least 32 characters in %s", environment)
@@ -144,11 +140,6 @@ func validateOrigins(name, raw string, requireHTTPS bool) error {
 		}
 	}
 	return nil
-}
-
-func validMFAKey(raw string) bool {
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(raw))
-	return err == nil && len(decoded) >= 32
 }
 
 // AllowsTestLogin restricts deterministic authentication to disposable development profiles.

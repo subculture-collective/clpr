@@ -214,7 +214,6 @@ type RateLimitConfig struct {
 
 // SecurityConfig holds security-related configuration
 type SecurityConfig struct {
-	MFAEncryptionKey string // 32-byte key for AES-256 encryption of MFA secrets
 	OperationalToken string // bearer token for metrics and detailed health endpoints
 }
 
@@ -578,7 +577,6 @@ func Load() (*Config, error) {
 			WhitelistIPs: getEnv("RATE_LIMIT_WHITELIST_IPS", ""),
 		},
 		Security: SecurityConfig{
-			MFAEncryptionKey: getEnv("MFA_ENCRYPTION_KEY", ""),
 			OperationalToken: getEnv("OPERATIONAL_AUTH_TOKEN", ""),
 		},
 		QueryLimits: QueryLimitsConfig{
