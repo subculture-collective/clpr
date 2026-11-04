@@ -31,7 +31,6 @@ type Repositories struct {
 	Subscription          *repository.SubscriptionRepository
 	OutboundWebhook       *repository.OutboundWebhookRepository
 	Contact               *repository.ContactRepository
-	Ad                    *repository.AdRepository
 	Export                *repository.ExportRepository
 	Broadcaster           *repository.BroadcasterRepository
 	EmailLog              *repository.EmailLogRepository
@@ -85,7 +84,6 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		AuditLog:              repository.NewAuditLogRepository(pool),
 		OutboundWebhook:       repository.NewOutboundWebhookRepository(pool),
 		Contact:               repository.NewContactRepository(pool),
-		Ad:                    repository.NewAdRepository(pool),
 		Export:                repository.NewExportRepository(pool),
 		Broadcaster:           repository.NewBroadcasterRepository(pool),
 		EmailLog:              repository.NewEmailLogRepository(pool),

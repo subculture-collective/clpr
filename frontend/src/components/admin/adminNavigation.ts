@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import { Activity, BadgeCheck, BarChart3, BookOpen, Bot, ClipboardList, FileWarning, Film, Gauge, LayoutDashboard, ListVideo, Megaphone, MessageSquare, Radio, ScrollText, Shield, Tags, Users, Webhook } from 'lucide-react';
+import { Activity, BadgeCheck, BarChart3, BookOpen, Bot, ClipboardList, FileWarning, Film, Gauge, LayoutDashboard, ListVideo, MessageSquare, Radio, ScrollText, Shield, Tags, Users, Webhook } from 'lucide-react';
 
 export type AdminNavItem = { label: string; href: string; description: string; icon: ElementType };
 export type AdminNavGroup = { label: string; items: AdminNavItem[] };
@@ -31,7 +31,6 @@ export const adminNavGroups: AdminNavGroup[] = [
     { label: 'Operations', items: [
         { label: 'Sync controls', href: '/admin/sync', description: 'Twitch ingestion controls', icon: Radio },
         { label: 'Webhook failures', href: '/admin/webhooks/dlq', description: 'Replay failed deliveries', icon: Webhook },
-        { label: 'Campaigns', href: '/admin/campaigns', description: 'Promotional campaigns', icon: Megaphone },
         { label: 'Identity Records', href: '/admin/users', description: 'Signed-in users, imported creators, and staff identities', icon: Users },
         { label: 'API reference', href: '/admin/api-docs', description: 'Administrative API docs', icon: BookOpen },
     ] },

@@ -35,7 +35,6 @@ type Handlers struct {
 	SEO                 *handlers.SEOHandler
 	Pages               *handlers.PagesHandler
 	Docs                *handlers.DocsHandler
-	Ad                  *handlers.AdHandler
 	Export              *handlers.ExportHandler
 	WebhookSubscription *handlers.WebhookSubscriptionHandler
 	WebhookDLQ          *handlers.WebhookDLQHandler
@@ -110,7 +109,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
 	docsHandler := handlers.NewDocsHandler(cfg.Server.DocsPath, "subculture-collective", "clpr", "main")
-	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
 	webhookMonitoringHandler := handlers.NewWebhookMonitoringHandler(svcs.OutboundWebhook)
 	webhookSubscriptionHandler := handlers.NewWebhookSubscriptionHandler(svcs.OutboundWebhook)
@@ -215,7 +213,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		SEO:                 seoHandler,
 		Pages:               pagesHandler,
 		Docs:                docsHandler,
-		Ad:                  adHandler,
 		Export:              exportHandler,
 		WebhookSubscription: webhookSubscriptionHandler,
 		WebhookDLQ:          webhookDLQHandler,
