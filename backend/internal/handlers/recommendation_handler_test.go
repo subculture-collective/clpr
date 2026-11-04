@@ -28,25 +28,6 @@ func TestUpdatePreferencesRejectsEmptyPatch(t *testing.T) {
 	}
 }
 
-func TestSubmitFeedbackRejectsInvalidContext(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	c, w := recommendationTestContext(http.MethodPost, "/api/v1/recommendations/feedback", `{"clip_id":"`+uuid.NewString()+`","feedback_type":"positive","algorithm":"unknown"}`)
-	(&RecommendationHandler{}).SubmitFeedback(c)
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Code)
-	}
-}
-
-func TestTrackViewRejectsInvalidDwellTime(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	c, w := recommendationTestContext(http.MethodPost, "/api/v1/recommendations/track-view/"+uuid.NewString(), `{"dwell_time":-1}`)
-	c.Params = gin.Params{{Key: "id", Value: uuid.NewString()}}
-	(&RecommendationHandler{}).TrackView(c)
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Code)
-	}
-}
-
 func TestOnboardingRejectsOversizedPreferenceValue(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	value := string(bytes.Repeat([]byte("x"), 101))

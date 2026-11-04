@@ -3186,77 +3186,6 @@ func (p *UserPreference) SyncCreatorFirstAliases() {
 	p.PreferredTopics = p.PreferredCategories
 }
 
-// UserClipInteraction represents a user's interaction with a clip
-type UserClipInteraction struct {
-	ID              uuid.UUID `json:"id" db:"id"`
-	UserID          uuid.UUID `json:"user_id" db:"user_id"`
-	ClipID          uuid.UUID `json:"clip_id" db:"clip_id"`
-	InteractionType string    `json:"interaction_type" db:"interaction_type"` // 'view', 'like', 'share', 'dwell'
-	DwellTime       *int      `json:"dwell_time,omitempty" db:"dwell_time"`
-	Timestamp       time.Time `json:"timestamp" db:"timestamp"`
-}
-
-// ClipRecommendation represents a recommended clip with score and reason
-type ClipRecommendation struct {
-	Clip
-	Score     float64 `json:"score" db:"score"`
-	Reason    string  `json:"reason" db:"reason"`
-	Algorithm string  `json:"algorithm" db:"algorithm"`
-}
-
-func (c ClipRecommendation) MarshalJSON() ([]byte, error) {
-	wire := clipWireValue(c.Clip)
-	return json.Marshal(struct {
-		clipAlias
-		TwitchCategoryID   *string `json:"twitch_category_id,omitempty"`
-		TwitchCategoryName *string `json:"twitch_category_name,omitempty"`
-		Score              float64 `json:"score"`
-		Reason             string  `json:"reason"`
-		Algorithm          string  `json:"algorithm"`
-	}{wire.clipAlias, wire.TwitchCategoryID, wire.TwitchCategoryName, c.Score, c.Reason, c.Algorithm})
-}
-
-// RecommendationRequest represents a request for clip recommendations
-type RecommendationRequest struct {
-	UserID    uuid.UUID `json:"user_id" form:"user_id"`
-	Limit     int       `json:"limit" form:"limit" binding:"omitempty,min=1,max=100"`
-	Algorithm string    `json:"algorithm" form:"algorithm" binding:"omitempty,oneof=content collaborative hybrid trending"`
-}
-
-// RecommendationResponse represents the response with recommended clips
-type RecommendationResponse struct {
-	Recommendations []ClipRecommendation   `json:"recommendations"`
-	Metadata        RecommendationMetadata `json:"metadata"`
-}
-
-// RecommendationMetadata contains metadata about the recommendation process
-type RecommendationMetadata struct {
-	AlgorithmUsed    string `json:"algorithm_used"`
-	DiversityApplied bool   `json:"diversity_applied"`
-	ColdStart        bool   `json:"cold_start"`
-	CacheHit         bool   `json:"cache_hit"`
-	ProcessingTimeMs int64  `json:"processing_time_ms"`
-}
-
-// RecommendationFeedback represents user feedback on a recommendation
-type RecommendationFeedback struct {
-	ID           uuid.UUID `json:"id" db:"id"`
-	UserID       uuid.UUID `json:"user_id" db:"user_id"`
-	ClipID       uuid.UUID `json:"clip_id" db:"clip_id"`
-	FeedbackType string    `json:"feedback_type" db:"feedback_type"` // 'positive', 'negative'
-	Algorithm    *string   `json:"algorithm,omitempty" db:"algorithm"`
-	Score        *float64  `json:"score,omitempty" db:"score"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-}
-
-// SubmitFeedbackRequest represents a request to submit feedback on a recommendation
-type SubmitFeedbackRequest struct {
-	ClipID       uuid.UUID `json:"clip_id" binding:"required"`
-	FeedbackType string    `json:"feedback_type" binding:"required,oneof=positive negative"`
-	Algorithm    *string   `json:"algorithm,omitempty" binding:"omitempty,oneof=content collaborative hybrid trending"`
-	Score        *float64  `json:"score,omitempty" binding:"omitempty,min=0,max=1"`
-}
-
 // UpdatePreferencesRequest represents a request to update user preferences
 type UpdatePreferencesRequest struct {
 	FavoriteGames       *[]string    `json:"favorite_games,omitempty" binding:"omitempty,max=10,dive,required,max=100"`
@@ -3274,10 +3203,6 @@ func (r *UpdatePreferencesRequest) Validate() error {
 		return fmt.Errorf("at least one preference field must be provided")
 	}
 	return nil
-}
-
-type TrackRecommendationViewRequest struct {
-	DwellTime *int `json:"dwell_time,omitempty" binding:"omitempty,min=0,max=86400"`
 }
 
 // OnboardingPreferencesRequest represents initial onboarding preferences
@@ -3301,23 +3226,6 @@ func (r *OnboardingPreferencesRequest) Validate() error {
 	}
 	return nil
 }
-
-// Interaction type constants
-const (
-	InteractionTypeView    = "view"
-	InteractionTypeLike    = "like"
-	InteractionTypeShare   = "share"
-	InteractionTypeDwell   = "dwell"
-	InteractionTypeDislike = "dislike"
-)
-
-// Recommendation algorithm constants
-const (
-	AlgorithmContent       = "content"
-	AlgorithmCollaborative = "collaborative"
-	AlgorithmHybrid        = "hybrid"
-	AlgorithmTrending      = "trending"
-)
 
 // ============================================================================
 // Feed Events System Models (Analytics & Performance Monitoring)

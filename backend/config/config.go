@@ -12,34 +12,33 @@ import (
 
 // Config holds all application configuration
 type Config struct {
-	Server          ServerConfig
-	Database        DatabaseConfig
-	Redis           RedisConfig
-	JWT             JWTConfig
-	Twitch          TwitchConfig
-	Clip            ClipConfig
-	CORS            CORSConfig
-	WebSocket       WebSocketConfig
-	OpenSearch      OpenSearchConfig
-	Sentry          SentryConfig
-	Email           EmailConfig
-	Embedding       EmbeddingConfig
-	FeatureFlags    FeatureFlagsConfig
-	Karma           KarmaConfig
-	Jobs            JobsConfig
-	RateLimit       RateLimitConfig
-	Security        SecurityConfig
-	QueryLimits     QueryLimitsConfig
-	SearchLimits    SearchLimitsConfig
-	HybridSearch    HybridSearchConfig
-	Recommendations RecommendationsConfig
-	Toxicity        ToxicityConfig
-	NSFW            NSFWConfig
-	Vision          VisionConfig
-	Whisper         WhisperConfig
-	Telemetry       TelemetryConfig
-	ClipSource      ClipSourceConfig
-	ClipStorage     ClipStorageConfig
+	Server       ServerConfig
+	Database     DatabaseConfig
+	Redis        RedisConfig
+	JWT          JWTConfig
+	Twitch       TwitchConfig
+	Clip         ClipConfig
+	CORS         CORSConfig
+	WebSocket    WebSocketConfig
+	OpenSearch   OpenSearchConfig
+	Sentry       SentryConfig
+	Email        EmailConfig
+	Embedding    EmbeddingConfig
+	FeatureFlags FeatureFlagsConfig
+	Karma        KarmaConfig
+	Jobs         JobsConfig
+	RateLimit    RateLimitConfig
+	Security     SecurityConfig
+	QueryLimits  QueryLimitsConfig
+	SearchLimits SearchLimitsConfig
+	HybridSearch HybridSearchConfig
+	Toxicity     ToxicityConfig
+	NSFW         NSFWConfig
+	Vision       VisionConfig
+	Whisper      WhisperConfig
+	Telemetry    TelemetryConfig
+	ClipSource   ClipSourceConfig
+	ClipStorage  ClipStorageConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -295,30 +294,6 @@ type SearchLimitsConfig struct {
 	MaxQueryClauses    int // Maximum query clauses (default: 20)
 	MaxSearchTimeSec   int // Maximum search timeout in seconds (default: 5)
 	MaxOffset          int // Maximum search pagination offset (default: 1000)
-}
-
-// RecommendationsConfig holds recommendation algorithm configuration
-type RecommendationsConfig struct {
-	// Hybrid algorithm weights (should sum to ~1.0)
-	ContentWeight       float64 // Weight for content-based filtering (default: 0.5)
-	CollaborativeWeight float64 // Weight for collaborative filtering (default: 0.3)
-	TrendingWeight      float64 // Weight for trending signal (default: 0.2)
-
-	// Collaborative filtering parameters
-	CFFactors        int     // Number of latent factors for matrix factorization (default: 50)
-	CFRegularization float64 // L2 regularization parameter (default: 0.01)
-	CFLearningRate   float64 // Learning rate for SGD (default: 0.01)
-	CFIterations     int     // Number of training iterations (default: 20)
-
-	// Cold start and trending parameters
-	TrendingWindowDays   int     // Number of days to look back for trending clips (default: 7)
-	TrendingMinScore     float64 // Minimum trending score threshold (default: 0.0)
-	PopularityWindowDays int     // Number of days for popularity calculation (default: 30)
-	PopularityMinViews   int     // Minimum views for popularity ranking (default: 100)
-
-	// General settings
-	EnableHybrid  bool // Enable hybrid recommendations (default: true)
-	CacheTTLHours int  // Cache TTL in hours (default: 24)
 }
 
 // HybridSearchConfig holds hybrid search weight configuration
@@ -628,28 +603,6 @@ func Load() (*Config, error) {
 			MaxQueryClauses:    getEnvInt("SEARCH_MAX_QUERY_CLAUSES", 20),
 			MaxSearchTimeSec:   getEnvInt("SEARCH_MAX_TIME_SEC", 5),
 			MaxOffset:          getEnvInt("SEARCH_MAX_OFFSET", 1000),
-		},
-		Recommendations: RecommendationsConfig{
-			// Hybrid algorithm weights
-			ContentWeight:       getEnvFloat("REC_CONTENT_WEIGHT", 0.5),
-			CollaborativeWeight: getEnvFloat("REC_COLLABORATIVE_WEIGHT", 0.3),
-			TrendingWeight:      getEnvFloat("REC_TRENDING_WEIGHT", 0.2),
-
-			// Collaborative filtering parameters
-			CFFactors:        getEnvInt("REC_CF_FACTORS", 50),
-			CFRegularization: getEnvFloat("REC_CF_REGULARIZATION", 0.01),
-			CFLearningRate:   getEnvFloat("REC_CF_LEARNING_RATE", 0.01),
-			CFIterations:     getEnvInt("REC_CF_ITERATIONS", 20),
-
-			// Cold start and trending parameters
-			TrendingWindowDays:   getEnvInt("REC_TRENDING_WINDOW_DAYS", 7),
-			TrendingMinScore:     getEnvFloat("REC_TRENDING_MIN_SCORE", 0.0),
-			PopularityWindowDays: getEnvInt("REC_POPULARITY_WINDOW_DAYS", 30),
-			PopularityMinViews:   getEnvInt("REC_POPULARITY_MIN_VIEWS", 100),
-
-			// General settings
-			EnableHybrid:  getEnvBool("REC_ENABLE_HYBRID", true),
-			CacheTTLHours: getEnvInt("REC_CACHE_TTL_HOURS", 24),
 		},
 		HybridSearch: HybridSearchConfig{
 			// Ranking algorithm weights

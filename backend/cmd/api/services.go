@@ -167,19 +167,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	accountTypeService := services.NewAccountTypeService(repos.User, repos.AccountTypeConversion, repos.AuditLog, mfaService)
 
 	// Initialize recommendation service
-	recommendationService := services.NewRecommendationServiceWithConfig(
-		repos.Recommendation,
-		infra.Redis.GetClient(),
-		cfg.Recommendations.ContentWeight,
-		cfg.Recommendations.CollaborativeWeight,
-		cfg.Recommendations.TrendingWeight,
-		cfg.Recommendations.EnableHybrid,
-		cfg.Recommendations.CacheTTLHours,
-		cfg.Recommendations.TrendingWindowDays,
-		cfg.Recommendations.TrendingMinScore,
-		cfg.Recommendations.PopularityWindowDays,
-		cfg.Recommendations.PopularityMinViews,
-	)
+	recommendationService := services.NewRecommendationService(repos.Recommendation)
 
 	// Initialize playlist service
 	playlistService := services.NewPlaylistService(repos.Playlist, repos.Clip, cfg.Server.BaseURL)

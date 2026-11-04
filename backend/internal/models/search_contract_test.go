@@ -83,10 +83,9 @@ func TestEmbeddedClipResponseRetainsOuterFieldsAndCategoryAliases(t *testing.T) 
 func TestAllEmbeddedClipResponsesRetainCompatibilityAliases(t *testing.T) {
 	categoryID := "509658"
 	for name, value := range map[string]any{
-		"hot score":      ClipWithHotScore{Clip: Clip{GameID: &categoryID}, HotScore: 3},
-		"creator top":    CreatorTopClip{Clip: Clip{GameID: &categoryID}, Views: 4},
-		"recommendation": ClipRecommendation{Clip: Clip{GameID: &categoryID}, Score: .8},
-		"playlist ref":   PlaylistClipRef{Clip: Clip{GameID: &categoryID}, OrderIndex: 2},
+		"hot score":    ClipWithHotScore{Clip: Clip{GameID: &categoryID}, HotScore: 3},
+		"creator top":  CreatorTopClip{Clip: Clip{GameID: &categoryID}, Views: 4},
+		"playlist ref": PlaylistClipRef{Clip: Clip{GameID: &categoryID}, OrderIndex: 2},
 	} {
 		t.Run(name, func(t *testing.T) {
 			payload, err := json.Marshal(value)
