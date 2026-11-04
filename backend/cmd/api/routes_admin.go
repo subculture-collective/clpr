@@ -259,17 +259,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminPlaylistScripts.POST("/:id/generate", h.PlaylistScript.GeneratePlaylist)
 		}
 
-		// Forum moderation management (admin/moderator only)
-		adminForum := admin.Group("/forum")
-		{
-			adminForum.GET("/flagged", h.ForumModeration.GetFlaggedContent)
-			adminForum.POST("/threads/:id/lock", h.ForumModeration.LockThread)
-			adminForum.POST("/threads/:id/pin", h.ForumModeration.PinThread)
-			adminForum.POST("/threads/:id/delete", h.ForumModeration.DeleteThread)
-			adminForum.GET("/moderation-log", h.ForumModeration.GetModerationLog)
-			adminForum.GET("/bans", h.ForumModeration.GetUserBans)
-		}
-
 		// Broadcaster ranking management (admin only)
 		adminBroadcasters := admin.Group("/broadcasters")
 		{

@@ -63,7 +63,6 @@ test.describe('deployed candidate accessibility', () => {
             path: '/support',
             heading: /clpr is free/i,
         },
-        { name: 'forum', path: '/forum', heading: /forum discussions/i },
     ];
 
     for (const viewport of [

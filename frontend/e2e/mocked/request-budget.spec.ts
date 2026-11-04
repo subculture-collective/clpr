@@ -38,21 +38,6 @@ const topic = (slug: string, name: string) => ({
     updated_at: '2026-08-14T17:42:40Z',
 });
 
-const welcomeThread = {
-    id: 'bb68d38d-d6e1-4d6f-928d-0fc5e1a67f0a',
-    user_id: 'eb60a942-3541-4471-b906-251c0663c13c',
-    username: 'migration-system-admin',
-    title: 'Welcome to the clpr Forum!',
-    content: 'This is your space to discuss clips.',
-    tags: ['meta'],
-    view_count: 2,
-    reply_count: 0,
-    locked: false,
-    pinned: true,
-    created_at: '2026-08-10T19:45:00Z',
-    updated_at: '2026-08-10T19:45:00Z',
-};
-
 const error404 = (message: string) => ({ status: 404, body: { error: message } });
 
 /** Serves the API from fixtures and records every API request path+query. */
@@ -86,18 +71,6 @@ async function mockApi(page: Page) {
             body = { data: null, meta: { limit: 5, offset: 0, total: 0 }, success: true };
         } else if (path === '/playlists/featured') {
             body = { data: [], meta: { page: 1, limit: Number(url.searchParams.get('limit')), total: 0 }, success: true };
-        } else if (path === '/forum/threads') {
-            // The released backend rejects every sort name except these three.
-            const sort = url.searchParams.get('sort');
-            if (sort && !['recent', 'popular', 'replies'].includes(sort)) {
-                status = 400;
-                body = { error: 'sort must be recent, popular, or replies' };
-            } else if (url.searchParams.has('game_id')) {
-                status = 400;
-                body = { error: 'unknown parameter game_id' };
-            } else {
-                body = { success: true, data: [welcomeThread], meta: { page: 1, limit: 20, count: 1 } };
-            }
         } else if (path.startsWith('/twitch-categories/999999999')) {
             ({ status, body } = error404('Game not found'));
         } else if (path === '/creators/Twitch/analytics/overview') {
@@ -134,21 +107,6 @@ test('the home page requests each shared resource once', async ({ page }) => {
     const tagRequests = requests.filter(request => /^\/clips\/[^/]+\/tags$/.test(request));
     expect(tagRequests.length).toBeGreaterThan(0);
     expect(new Set(tagRequests).size, 'one tag request per clip').toBe(tagRequests.length);
-});
-
-test('the forum lists threads using the backend sort names', async ({ page }) => {
-    const requests = await mockApi(page);
-    await page.goto('/forum?sort=trending');
-
-    await expect(page.getByText('Welcome to the clpr Forum!')).toBeVisible();
-    await expect(page.getByText('Failed to load threads')).toHaveCount(0);
-    expect(requests.filter(request => request.startsWith('/forum/threads'))).toEqual([
-        '/forum/threads?page=1&limit=20&sort=popular',
-    ]);
-
-    await page.getByRole('combobox', { name: 'Sort discussions' }).selectOption('most-replied');
-    await expect.poll(() => requests.at(-1)).toBe('/forum/threads?page=1&limit=20&sort=replies');
-    await expect(page.getByText('Welcome to the clpr Forum!')).toBeVisible();
 });
 
 test('an unknown Twitch category shows a not-found state', async ({ page }) => {

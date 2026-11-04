@@ -8,54 +8,6 @@ import (
 )
 
 func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
-	// Chat routes
-	chat := v1.Group("/chat")
-	{
-		// Chat channel routes
-		channels := chat.Group("/channels")
-		channels.Use(middleware.AuthMiddleware(svcs.Auth))
-		{
-			// Channel CRUD operations
-			channels.POST("", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Chat.CreateChannel)
-			channels.GET("", h.Chat.ListChannels)
-			channels.GET("/:id", h.Chat.GetChannel)
-			channels.PATCH("/:id", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Chat.UpdateChannel)
-			channels.DELETE("/:id", middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Chat.DeleteChannel)
-
-			// Channel member management
-			channels.GET("/:id/members", h.Chat.ListChannelMembers)
-			channels.POST("/:id/members", middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Chat.AddChannelMember)
-			channels.DELETE("/:id/members/:user_id", middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Chat.RemoveChannelMember)
-			channels.PATCH("/:id/members/:user_id", middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Chat.UpdateChannelMemberRole)
-			channels.GET("/:id/role", h.Chat.GetCurrentUserRole)
-
-			// WebSocket connection endpoint
-			channels.GET("/:id/ws", h.WebSocket.HandleConnection)
-
-			// Message history endpoint
-			channels.GET("/:id/messages", h.WebSocket.GetMessageHistory)
-
-			// Moderation endpoints enforce owner/admin/moderator membership in the handler.
-			channels.POST("/:id/ban", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.BanUser)
-			channels.DELETE("/:id/ban/:user_id", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.UnbanUser)
-			channels.POST("/:id/mute", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.MuteUser)
-			channels.POST("/:id/timeout", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.TimeoutUser)
-			channels.GET("/:id/moderation-log", h.Chat.GetModerationLog)
-			channels.GET("/:id/check-ban", h.Chat.CheckUserBan)
-		}
-
-		// Chat message routes
-		messages := chat.Group("/messages")
-		messages.Use(middleware.AuthMiddleware(svcs.Auth))
-		{
-			messages.DELETE("/:id", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Chat.DeleteMessage)
-		}
-
-		// Health check endpoint for WebSocket server
-		chat.GET("/health", h.WebSocket.GetHealthCheck)
-		chat.GET("/stats", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin"), middleware.RequireMFAForAdminMiddleware(svcs.MFA), h.WebSocket.GetChannelStats)
-	}
-
 	// Community routes
 	communities := v1.Group("/communities")
 	{
@@ -140,28 +92,6 @@ func registerSocialRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infr
 		playlistScripts.PUT("/:id", h.PlaylistScript.UpdateMyScript)
 		playlistScripts.DELETE("/:id", h.PlaylistScript.DeleteMyScript)
 		playlistScripts.POST("/:id/generate", middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.PlaylistScript.GenerateMyPlaylist)
-	}
-
-	// Forum routes
-	forum := v1.Group("/forum")
-	{
-		// Public forum endpoints
-		forum.GET("/threads", h.Forum.ListThreads)
-		forum.GET("/threads/:id", h.Forum.GetThread)
-		forum.GET("/search", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.SearchThreads)
-		forum.GET("/replies/:id/votes", middleware.OptionalAuthMiddleware(svcs.Auth), h.Forum.GetReplyVotes)
-		forum.GET("/users/:id/reputation", h.Forum.GetUserReputation)
-		forum.GET("/analytics", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.GetForumAnalytics)
-		forum.GET("/popular", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.GetPopularDiscussions)
-		forum.GET("/helpful-replies", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.GetMostHelpfulReplies)
-
-		// Protected forum endpoints (require authentication)
-		forum.POST("/threads", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Forum.CreateThread)
-		forum.POST("/threads/:id/replies", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Forum.CreateReply)
-		forum.PATCH("/replies/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Forum.UpdateReply)
-		forum.DELETE("/replies/:id", middleware.AuthMiddleware(svcs.Auth), h.Forum.DeleteReply)
-		forum.POST("/replies/:id/vote", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 50, time.Minute), h.Forum.VoteOnReply)
-		forum.POST("/flag", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.ForumModeration.FlagContent)
 	}
 
 }

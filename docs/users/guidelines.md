@@ -496,7 +496,6 @@ If you believe a moderation action was unfair:
 
 - **Modmail**: For guideline questions
 - **GitHub Issues**: For bugs and features
-- **Community Forum**: For discussions
 - **Email**: For sensitive matters
 
 ---

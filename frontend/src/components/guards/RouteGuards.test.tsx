@@ -65,7 +65,7 @@ describe('route access decisions', () => {
         expect(screen.getByRole('heading', { name: 'Private content' })).toBeInTheDocument();
     });
 
-    it.each(['/admin/moderators', '/admin/moderators/', '/admin/bans', '/moderation/users'])('denies a moderator direct access to %s', path => {
+    it.each(['/admin/moderators', '/admin/moderators/', '/moderation/users'])('denies a moderator direct access to %s', path => {
         Object.assign(auth, { isAuthenticated: true, isModeratorOrAdmin: true });
         renderGuard(AdminRoute, path);
         expect(screen.getByRole('heading', { name: /403/ })).toBeInTheDocument();
