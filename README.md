@@ -9,9 +9,8 @@
 
 > **1.0 scope:** CLPR ships a responsive web client and
 > Go API. Native mobile clients are design/planning work only; there is no
-> buildable `mobile/` workspace in this tree. Stream clip extraction, CDN
-> mirroring, live feed, and watch parties remain disabled while their production
-> acceptance gates are completed. See the
+> buildable `mobile/` workspace in this tree. CDN mirroring remains disabled while
+> its production acceptance gates are completed. See the
 > [launch feature contract](docs/LAUNCH_FEATURE_INVENTORY.md).
 
 ## What it demonstrates

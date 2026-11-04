@@ -395,8 +395,3 @@ func markStaleLiveStatus(status *models.BroadcasterLiveStatus, now time.Time) {
 func (s *LiveStatusService) ListLiveBroadcasters(ctx context.Context, limit, offset int) ([]models.BroadcasterLiveStatus, int, error) {
 	return s.broadcasterRepo.ListLiveBroadcasters(ctx, limit, offset)
 }
-
-// GetFollowedLiveBroadcasters retrieves live broadcasters that a user follows
-func (s *LiveStatusService) GetFollowedLiveBroadcasters(ctx context.Context, userID uuid.UUID) ([]models.BroadcasterLiveStatus, error) {
-	return s.broadcasterRepo.GetFollowedLiveBroadcasters(ctx, userID)
-}

@@ -16,7 +16,6 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		clips.GET("/:id/media", h.Clip.GetClipMedia)
 		clips.GET("/:id", h.Clip.GetClip)
 		clips.GET("/:id/related", h.Clip.GetRelatedClips)
-		clips.GET("/:id/processing-status", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Clip.GetClipProcessingStatus)
 
 		// Batch endpoint for media URLs (public, rate limited)
 		clips.POST("/batch-media", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Clip.BatchGetClipMedia)
@@ -45,7 +44,6 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		clips.POST("/:id/vote", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Clip.VoteOnClip)
 		clips.POST("/:id/favorite", middleware.AuthMiddleware(svcs.Auth), h.Clip.AddFavorite)
 		clips.DELETE("/:id/favorite", middleware.AuthMiddleware(svcs.Auth), h.Clip.RemoveFavorite)
-		clips.POST("/:id/backfill", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Clip.RequestClipBackfill)
 
 		// Tag management for clips (authenticated, rate limited)
 		clips.POST("/:id/tags", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Tag.AddTagsToClip)

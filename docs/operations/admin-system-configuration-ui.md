@@ -27,7 +27,7 @@ Build system configuration UI allowing admins to toggle feature flags, edit rate
 ### Frontend Requirements
 
 - Configuration panel with tabs:
-  - **Feature Flags**: toggles for experimental features (e.g., theatre_mode, watch_parties, webhooks)
+  - **Feature Flags**: toggles for experimental features (e.g., theatre_mode, discovery_lists, webhooks)
   - **Rate Limits**: input fields for submission rate limit (per user), API rate limit (per IP), search rate limit
   - **Email Templates**: editor for notification emails (account verification, password reset, moderation notice) with variables ({{user_name}}, {{reason}})
   - **Premium Tiers**: editor for tier definitions (free, pro, premium) with features, pricing, storage limits

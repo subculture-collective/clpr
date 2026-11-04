@@ -161,9 +161,6 @@ type FeatureFlagsConfig struct {
 	Analytics          bool
 	Moderation         bool
 	DiscoveryLists     bool
-	StreamClipCreation bool
-	LiveFeed           bool
-	WatchParties       bool
 }
 
 // KarmaConfig holds karma system configuration
@@ -535,9 +532,6 @@ func Load() (*Config, error) {
 			Analytics:          getEnv("FEATURE_ANALYTICS", "true") == "true",
 			Moderation:         getEnv("FEATURE_MODERATION", "true") == "true",
 			DiscoveryLists:     getEnv("FEATURE_DISCOVERY_LISTS", "false") == "true",
-			StreamClipCreation: getEnvBool("FEATURE_STREAM_CLIP_CREATION", false),
-			LiveFeed:           getEnvBool("FEATURE_LIVE_FEED", false),
-			WatchParties:       getEnvBool("FEATURE_WATCH_PARTIES", false),
 		},
 		Karma: KarmaConfig{
 			InitialKarmaPoints:        getEnvInt("KARMA_INITIAL_POINTS", 100),

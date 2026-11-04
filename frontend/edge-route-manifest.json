@@ -80,7 +80,6 @@
     "/settings",
     "/settings/cookies",
     "/settings/webhooks",
-    "/stream/:streamer",
     "/streamer-tools/:channel/clips",
     "/submissions",
     "/submit",

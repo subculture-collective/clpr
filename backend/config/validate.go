@@ -110,9 +110,6 @@ func (c *Config) validateEnabledFeatures(releaseProfile bool) error {
 			return fmt.Errorf("VISION_CREATED_AFTER is required when vision enrichment is enabled")
 		}
 	}
-	if releaseProfile && (c.FeatureFlags.StreamClipCreation || c.FeatureFlags.LiveFeed || c.FeatureFlags.WatchParties) {
-		return fmt.Errorf("incomplete stream clip, live feed, and watch party features must remain disabled in release profiles")
-	}
 	if releaseProfile && (c.CDN.Enabled || c.Mirror.Enabled) {
 		return fmt.Errorf("CDN and mirroring must remain disabled until provider verification is production-ready")
 	}

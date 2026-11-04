@@ -48,8 +48,6 @@ SORT title ASC
 - [[clip-api|Clip API]] - Clip CRUD operations
 - [[comment-api|Comment API]] - Comment system with markdown
 - [[api-playlist-sharing|Playlist Sharing API]] - Playlist sharing endpoints
-- [[watch-parties-api|Watch Parties API]] - Watch party features
-- [[watch-parties-api-features|Watch Parties API Features]] - Feature documentation
 
 ### Data & Storage
 
@@ -114,7 +112,6 @@ SORT title ASC
 ### Infrastructure
 
 - [[APPLICATION_LOGS|Application Logs]] - Logging infrastructure
-- [[FFMPEG_JOB_QUEUE|FFmpeg Job Queue]] - Video processing queue
 - [[cdn-integration|CDN Integration]] - CDN setup and configuration
 - [[mirror-hosting|Mirror Hosting]] - Video mirror hosting
 

@@ -17,9 +17,7 @@ In-depth documentation for major platform features and functionality.
 ## Core Features
 
 - [[comments|Comment System]] - Reddit-style nested threading with markdown support
-- [[live-streams|Live Streams]] - Watch Twitch streams with integrated chat and clip creation
 - [[UNCLAIMED_ACCOUNTS|Unclaimed Accounts]] - Account claiming system
-- [[watch-parties-settings-integration|Watch Parties Settings]] - Watch party configuration
 
 ## Feed & Discovery
 
