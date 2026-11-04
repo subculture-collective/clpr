@@ -25,7 +25,7 @@ func (h *TopicHandler) ListClipTopics(c *gin.Context) {
 	}
 	topics, err := h.repo.ListForClip(c.Request.Context(), clipID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list clip topics"})
+		writeReadError(c, err, "failed to list clip topics")
 		return
 	}
 	if topics == nil {

@@ -159,15 +159,22 @@ func (r *TagRepository) List(ctx context.Context, sort, lane string, limit, offs
 	var query string
 	switch sort {
 	case "trending":
+		// Aggregate the seven-day window per tag first, then look up and
+		// filter only the tags that appear in it. Joining tags before
+		// grouping evaluated the blacklist function once per assignment.
 		query = `
+		WITH recent AS (
+			SELECT ct.tag_id, COUNT(*)::int AS usage_count
+			FROM clip_tags ct JOIN clips c ON c.id = ct.clip_id
+			WHERE ct.created_at >= NOW() - INTERVAL '7 days'
+			  AND c.is_removed = FALSE AND c.is_hidden = FALSE
+			GROUP BY ct.tag_id
+		)
 		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color,
-		       COUNT(ct.clip_id)::int AS usage_count, t.created_at
-		FROM tags t JOIN clip_tags ct ON ct.tag_id = t.id
-		JOIN clips c ON c.id = ct.clip_id
-		WHERE ct.created_at >= NOW() - INTERVAL '7 days'
-		  AND c.is_removed = FALSE AND c.is_hidden = FALSE
-		  AND ` + visible + ` AND ` + laneClause + `
-		GROUP BY t.id ORDER BY usage_count DESC, t.name ASC LIMIT $1 OFFSET $2`
+		       recent.usage_count, t.created_at
+		FROM recent JOIN tags t ON t.id = recent.tag_id
+		WHERE ` + visible + ` AND ` + laneClause + `
+		ORDER BY recent.usage_count DESC, t.name ASC LIMIT $1 OFFSET $2`
 	case "alphabetical":
 		query = `
 		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at

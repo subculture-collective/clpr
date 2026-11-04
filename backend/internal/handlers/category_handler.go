@@ -73,9 +73,7 @@ func (h *CategoryHandler) ListCategories(c *gin.Context) {
 
 	categories, err := h.categoryRepo.List(c.Request.Context(), categoryType, featured, public)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch categories",
-		})
+		writeReadError(c, err, "Failed to fetch categories")
 		return
 	}
 
@@ -135,9 +133,7 @@ func (h *CategoryHandler) ListCategoryGames(c *gin.Context) {
 	// Get games in category
 	games, err := h.categoryRepo.GetGamesInCategory(c.Request.Context(), category.ID, userID, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch games",
-		})
+		writeReadError(c, err, "Failed to fetch games")
 		return
 	}
 
@@ -187,8 +183,7 @@ func (h *CategoryHandler) ListCategoryClips(c *gin.Context) {
 	filters := repository.ClipFilters{CategoryID: &category.ID, Sort: sort, Timeframe: &timeframe}
 	clips, total, err := h.clipRepo.ListWithFilters(c.Request.Context(), filters, limit, offset)
 	if err != nil {
-		utils.GetLogger().Error("Failed to list category clips", err, map[string]interface{}{"category": slug, "sort": sort})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch clips"})
+		writeReadError(c, err, "Failed to fetch clips")
 		return
 	}
 

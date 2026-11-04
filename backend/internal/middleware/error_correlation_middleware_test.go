@@ -19,6 +19,7 @@ func TestErrorCorrelationMiddlewareAddsStableHeaders(t *testing.T) {
 		{http.StatusUnauthorized, "UNAUTHORIZED"},
 		{http.StatusNotFound, "NOT_FOUND"},
 		{http.StatusTooManyRequests, "RATE_LIMITED"},
+		{499, "CLIENT_CLOSED_REQUEST"},
 		{http.StatusInternalServerError, "INTERNAL_ERROR"},
 		{http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE"},
 	} {
