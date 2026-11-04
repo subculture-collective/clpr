@@ -115,22 +115,6 @@ if err != nil {
 log.Printf("User unbanned successfully")
 ```
 
-## Integration with TwitchModerationService
-
-The `TwitchModerationService` in `internal/services` provides a higher-level interface with scope validation:
-
-```go
-service := services.NewTwitchModerationService(twitchClient, twitchAuthRepo, userRepo)
-
-// The service handles:
-// - OAuth token validation
-// - Scope checking
-// - Permission verification
-// - Wrapping the lower-level client calls
-
-err := service.BanUserOnTwitch(ctx, moderatorUserID, broadcasterID, targetUserID, &reason, &duration)
-```
-
 ## Required Scopes
 
 Users must have one of these scopes:

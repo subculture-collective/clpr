@@ -186,11 +186,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		abuseDetector := svcs.Submission.GetAbuseDetector()
 		moderationEventService := svcs.Submission.GetModerationEventService()
 		if abuseDetector != nil && moderationEventService != nil {
-			moderationHandler = handlers.NewModerationHandler(moderationEventService, svcs.Moderation, abuseDetector, svcs.ToxicityClassifier, svcs.TwitchBanSync, repos.Community, repos.AuditLog, pool)
-			// Set Twitch moderation service if available
-			if svcs.TwitchModeration != nil {
-				moderationHandler.SetTwitchModerationService(svcs.TwitchModeration)
-			}
+			moderationHandler = handlers.NewModerationHandler(moderationEventService, svcs.Moderation, abuseDetector, svcs.ToxicityClassifier, repos.Community, repos.AuditLog, pool)
 		}
 	}
 

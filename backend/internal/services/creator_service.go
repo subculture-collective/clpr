@@ -201,7 +201,7 @@ func (s *CreatorService) LinkPlatformAccount(ctx context.Context, creatorID uuid
 	if err != nil {
 		return nil, err
 	}
-	defaultCapabilities := DefaultPlatformModerationCapabilities(platform)
+	platformSupported := platformSupportsCreatorChecks(platform)
 
 	account := &models.CreatorPlatformAccount{
 		ID:                    uuid.New(),
@@ -210,11 +210,11 @@ func (s *CreatorService) LinkPlatformAccount(ctx context.Context, creatorID uuid
 		PlatformUserID:        platformUserID,
 		PlatformDisplayName:   platformDisplayName,
 		ProfileURL:            normalizeProfileURL(req.ProfileURL),
-		CanImportBans:         boolPtrValue(req.CanImportBans, defaultCapabilities.CanImportBans),
-		CanSyncBansOutbound:   boolPtrValue(req.CanSyncBansOutbound, defaultCapabilities.CanSyncBansOutbound),
-		CanImportModerators:   boolPtrValue(req.CanImportModerators, defaultCapabilities.CanImportModerators),
-		CanVerifyOwnership:    boolPtrValue(req.CanVerifyOwnership, defaultCapabilities.CanVerifyOwnership),
-		CanFetchMetadata:      boolPtrValue(req.CanFetchMetadata, defaultCapabilities.CanFetchMetadata),
+		CanImportBans:         boolPtrValue(req.CanImportBans, false),
+		CanSyncBansOutbound:   boolPtrValue(req.CanSyncBansOutbound, false),
+		CanImportModerators:   boolPtrValue(req.CanImportModerators, false),
+		CanVerifyOwnership:    boolPtrValue(req.CanVerifyOwnership, platformSupported),
+		CanFetchMetadata:      boolPtrValue(req.CanFetchMetadata, platformSupported),
 		AccessTokenEncrypted:  req.AccessTokenEncrypted,
 		RefreshTokenEncrypted: req.RefreshTokenEncrypted,
 		TokenExpiresAt:        req.TokenExpiresAt,
@@ -252,4 +252,15 @@ func (s *CreatorService) ListCreatorPlatformAccounts(ctx context.Context, creato
 		return nil, fmt.Errorf("creator repository is not configured")
 	}
 	return s.creatorRepo.ListCreatorPlatformAccounts(ctx, creatorID)
+}
+
+// platformSupportsCreatorChecks reports whether creator accounts on the platform can verify ownership and fetch metadata by default.
+// Ban import and outbound ban sync were removed with the Twitch moderation integration, so they default to false everywhere.
+func platformSupportsCreatorChecks(platform string) bool {
+	switch strings.ToLower(strings.TrimSpace(platform)) {
+	case "twitch", "kick", "youtube", "tiktok":
+		return true
+	default:
+		return false
+	}
 }

@@ -72,18 +72,11 @@ func registerContentRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, inf
 		{
 			moderationAppeals.POST("/appeals", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 5, time.Hour), h.Moderation.CreateAppeal)
 			moderationAppeals.GET("/appeals", middleware.AuthMiddleware(svcs.Auth), h.Moderation.GetUserAppeals)
-			// Twitch ban sync endpoint with rate limiting
-			moderationAppeals.POST("/sync-bans", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 5, time.Hour), h.Moderation.SyncBans)
-
 			// Ban management endpoints
 			moderationAppeals.GET("/bans", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Moderation.GetBans)
 			moderationAppeals.POST("/ban", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Moderation.CreateBan)
 			moderationAppeals.GET("/ban/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Moderation.GetBanDetails)
 			moderationAppeals.DELETE("/ban/:id", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Moderation.RevokeBan)
-
-			// Twitch ban management endpoints (enforces Twitch-specific scope requirements)
-			moderationAppeals.POST("/twitch/ban", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Moderation.TwitchBanUser)
-			moderationAppeals.DELETE("/twitch/ban", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Moderation.TwitchUnbanUser)
 
 			// Moderator management endpoints
 			moderationAppeals.GET("/moderators", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Moderation.ListModerators)

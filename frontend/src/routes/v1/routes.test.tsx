@@ -37,7 +37,7 @@ const accountPages = new Proxy({}, { get: () => Page }) as AccountRoutePages;
 describe('versioned route boundaries', () => {
     it('wraps administration paths in the admin boundary', () => {
         render(
-            <MemoryRouter initialEntries={['/admin/moderation/analytics']}>
+            <MemoryRouter initialEntries={['/admin/moderators']}>
                 <Routes>{adminRoutes(adminPages)}</Routes>
             </MemoryRouter>,
         );

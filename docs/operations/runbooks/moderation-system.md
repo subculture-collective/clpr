@@ -4,14 +4,13 @@
 
 ## Overview
 
-This runbook provides operational guidance for monitoring and troubleshooting the moderation system, including ban operations, sync operations, permission checks, and audit logs.
+This runbook provides operational guidance for monitoring and troubleshooting the moderation system, including ban operations, permission checks, and audit logs.
 
 ## Quick Links
 
 - **Dashboard:** [Moderation System Monitoring](http://localhost:3000/d/moderation-system)
 - **Prometheus:** [Moderation Metrics](http://localhost:9090/graph?g0.expr=moderation_ban_operations_total)
 - **Related Runbooks:**
-  - [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md)
   - [Moderation Operations](./moderation-operations.md)
   - [Moderation Incidents](./moderation-incidents.md)
   - [Permission Escalation](./permission-escalation.md)
@@ -31,19 +30,6 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 - **Success Rate:** > 90% (warning < 90%, critical < 50%)
 - **P95 Latency:** < 2s (warning > 2s, critical > 5s)
 - **P99 Latency:** < 5s
-
-### Sync Operations
-
-| Metric | Description | Type | Labels |
-|--------|-------------|------|--------|
-| `moderation_sync_operations_total` | Total sync operations | Counter | `status`, `error_type` |
-| `moderation_sync_operation_duration_seconds` | Sync operation latency | Histogram | `sync_type` |
-| `moderation_sync_bans_processed_total` | Bans processed during sync | Counter | `status` |
-
-**Key Thresholds:**
-- **Success Rate:** > 90% (warning < 90%, critical < 50%)
-- **P95 Latency:** < 30s (warning > 30s)
-- **Sync Interval:** Every 15 minutes (configurable)
 
 ### Permission Checks
 
@@ -182,85 +168,6 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 - Scale backend pods if resource exhaustion
 - Clear any stuck database locks
 - Verify external dependencies (Twitch API, etc.)
-
----
-
-### Sync Operation Failures
-
-#### ModerationSyncFailures
-
-**Severity:** Warning  
-**Threshold:** > 0.1 failures/sec for 10 minutes
-
-**Investigation Steps:**
-
-1. Check sync failure reasons:
-   ```promql
-   sum(rate(moderation_sync_operations_total{status="failed"}[5m])) by (error_type)
-   ```
-
-2. Verify Twitch API connectivity:
-   ```bash
-   curl -H "Client-ID: $TWITCH_CLIENT_ID" https://api.twitch.tv/helix/users
-   ```
-
-3. Check authentication tokens:
-   ```bash
-   kubectl exec -it deployment/clpr-backend -- \
-     psql -U clpr -d clpr -c \
-     "SELECT user_id, expires_at FROM twitch_auth WHERE expires_at < NOW() LIMIT 5"
-   ```
-
-4. Review sync job logs:
-   ```bash
-   kubectl logs -l app=clpr-backend --tail=200 | grep -i "sync"
-   ```
-
-**Common Issues:**
-
-| Error Type | Resolution |
-|------------|------------|
-| `api_error` | Check Twitch API status page |
-| `auth_error` | Refresh OAuth tokens |
-| `rate_limit` | Implement backoff, reduce frequency |
-| `timeout` | Increase timeout values |
-
-**Related:** See [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md) for detailed guidance
-
----
-
-#### ModerationSyncCriticalFailureRate
-
-**Severity:** Critical  
-**Threshold:** > 50% failure rate
-
-**Impact:** Ban data severely out of sync with Twitch
-
-**Immediate Actions:**
-
-1. Disable automatic sync temporarily:
-   ```bash
-   kubectl set env deployment/clpr-backend SYNC_ENABLED=false
-   ```
-
-2. Check Twitch API status:
-   - Visit: https://devstatus.twitch.tv/
-
-3. Verify OAuth configuration:
-   ```bash
-   kubectl get secret twitch-oauth -o jsonpath='{.data.client_id}' | base64 -d
-   ```
-
-4. Manual sync attempt:
-   ```bash
-   kubectl exec -it deployment/clpr-backend -- \
-     curl -X POST http://localhost:8080/api/v1/moderation/sync
-   ```
-
-**Recovery:**
-- Wait for Twitch API recovery if external issue
-- Re-authenticate users if auth issues
-- Consider manual import as last resort
 
 ---
 
@@ -578,19 +485,16 @@ This runbook provides operational guidance for monitoring and troubleshooting th
 **Key Panels:**
 1. **Ban Operations Rate** - Monitor ban/unban throughput
 2. **Ban Operation Failure Rate** - Gauge of system health
-3. **Sync Failure Rate** - Sync operation success
-4. **Ban Operation Latency** - P50/P95/P99 latencies
-5. **Sync Operation Latency** - Sync performance
-6. **Bans Processed During Sync** - Sync effectiveness
-7. **Permission Checks Rate** - Permission system load
-8. **Permission Denials by Reason** - Permission issues
-9. **Permission Check Latency** - Permission check performance
-10. **Audit Log Operations Rate** - Audit system health
-11. **Audit Log Operation Latency** - Audit performance
-12. **API Error Rate by Endpoint** - Endpoint health
-13. **Slow Queries Rate** - Database performance
-14. **Database Query Latency** - Query performance
-15. **Active Bans by Type** - Current ban counts
+3. **Ban Operation Latency** - P50/P95/P99 latencies
+4. **Permission Checks Rate** - Permission system load
+5. **Permission Denials by Reason** - Permission issues
+6. **Permission Check Latency** - Permission check performance
+7. **Audit Log Operations Rate** - Audit system health
+8. **Audit Log Operation Latency** - Audit performance
+9. **API Error Rate by Endpoint** - Endpoint health
+10. **Slow Queries Rate** - Database performance
+11. **Database Query Latency** - Query performance
+12. **Active Bans by Type** - Current ban counts
 
 **Recommended Views:**
 - **Last 1 hour:** Real-time monitoring
@@ -681,7 +585,6 @@ avg_over_time(rate(moderation_database_query_duration_seconds_count[1h])[30d:1h]
 ## References
 
 - [Moderation Operations Runbook](./moderation-operations.md)
-- [Ban Sync Troubleshooting](./ban-sync-troubleshooting.md)
 - [Permission Escalation](./permission-escalation.md)
 - [Audit Log Operations](./audit-log-operations.md)
 - [Moderation Incidents](./moderation-incidents.md)
@@ -699,7 +602,6 @@ avg_over_time(rate(moderation_database_query_duration_seconds_count[1h])[30d:1h]
 
 **P2 (High - < 1 hour response):**
 - 10-50% failure rate
-- Sync completely failing
 - High API error rates
 
 **P3 (Medium - < 4 hours response):**

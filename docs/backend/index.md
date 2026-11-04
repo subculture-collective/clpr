@@ -78,7 +78,6 @@ SORT title ASC
 ### Integrations
 
 - [[twitch-integration|Twitch Integration]] - Twitch API integration
-- [[twitch-moderation-api|Twitch Moderation API]] - Twitch moderation integration
 - [[email-service|Email Service]] - Email notifications
 - [[email-templates|Email Templates]] - Email template documentation
 - [[broadcaster-live-sync-implementation|Broadcaster Live Sync]] - Live status tracking

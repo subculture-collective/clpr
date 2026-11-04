@@ -2728,42 +2728,6 @@ type ModerationDecisionWithDetails struct {
 	CreatedAt     time.Time `json:"created_at" db:"created_at"`
 }
 
-// TimeSeriesPoint represents a point in time series data
-type TimeSeriesPoint struct {
-	Date  string `json:"date"`
-	Count int    `json:"count"`
-}
-
-// BannedUserStat represents statistics for a banned user
-type BannedUserStat struct {
-	UserID    string `json:"user_id"`
-	Username  string `json:"username"`
-	BanCount  int    `json:"ban_count"`
-	LastBanAt string `json:"last_ban_at"`
-}
-
-// AppealStats represents appeal and reversal statistics
-type AppealStats struct {
-	TotalAppeals      int      `json:"total_appeals"`
-	PendingAppeals    int      `json:"pending_appeals"`
-	ApprovedAppeals   int      `json:"approved_appeals"`
-	RejectedAppeals   int      `json:"rejected_appeals"`
-	FalsePositiveRate *float64 `json:"false_positive_rate,omitempty"` // Percentage of approved appeals
-}
-
-// ModerationAnalytics represents analytics data for moderation actions
-type ModerationAnalytics struct {
-	TotalActions         int               `json:"total_actions"`
-	ActionsByType        map[string]int    `json:"actions_by_type"`
-	ActionsByModerator   map[string]int    `json:"actions_by_moderator"`
-	ActionsOverTime      []TimeSeriesPoint `json:"actions_over_time"`
-	ContentTypeBreakdown map[string]int    `json:"content_type_breakdown"`
-	AverageResponseTime  *float64          `json:"average_response_time_minutes,omitempty"`
-	BanReasons           map[string]int    `json:"ban_reasons"`
-	MostBannedUsers      []BannedUserStat  `json:"most_banned_users"`
-	Appeals              *AppealStats      `json:"appeals,omitempty"`
-}
-
 // BanReasonTemplate represents a reusable ban reason template
 type BanReasonTemplate struct {
 	ID              uuid.UUID  `json:"id" db:"id"`

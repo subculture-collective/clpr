@@ -201,9 +201,6 @@ const AdminModerationQueuePage = lazy(() =>
         default: m.AdminModerationQueuePage,
     })),
 );
-const AdminModerationAnalyticsPage = lazy(
-    () => import('./pages/admin/AdminModerationAnalyticsPage'),
-);
 const AdminModeratorsPage = lazy(() =>
     import('./pages/admin/AdminModeratorsPage').then(m => ({
         default: m.AdminModeratorsPage,
@@ -320,11 +317,6 @@ const QueueTheatrePage = lazy(() =>
 const StreamerClipRoomPage = lazy(() =>
     import('./pages/StreamerClipRoomPage').then(m => ({
         default: m.StreamerClipRoomPage,
-    })),
-);
-const ModerationUsersPage = lazy(() =>
-    import('./pages/ModerationUsersPage').then(m => ({
-        default: m.ModerationUsersPage,
     })),
 );
 const WebhookSubscriptionsPage = lazy(() =>
@@ -544,7 +536,6 @@ function App() {
                                                 analytics: AdminAnalyticsPage,
                                                 submissions: ModerationQueuePage,
                                                 moderation: AdminModerationQueuePage,
-                                                moderationAnalytics: AdminModerationAnalyticsPage,
                                                 moderators: AdminModeratorsPage,
                                                 auditLogs: AdminAuditLogsPage,
                                                 discoveryLists: AdminDiscoveryListsPage,
@@ -554,7 +545,6 @@ function App() {
                                                 topics: AdminTopicsPage,
                                                 tagPromotion: AdminTagPromotionPage,
                                                 apiDocs: AdminAPIDocsPage,
-                                                moderationUsers: ModerationUsersPage,
                                             })}
 
                                         {/* 404 Not Found */}

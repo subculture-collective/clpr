@@ -58,7 +58,7 @@ describe('authenticated route regressions', () => {
         const paths = getAdminNavGroups(false).flatMap(group => group.items.map(item => item.href));
         expect(paths).toContain('/admin/moderation');
         expect(paths).toContain('/admin/submissions');
-        for (const path of ['/admin/moderators', '/moderation/users']) {
+        for (const path of ['/admin/moderators']) {
             expect(paths).not.toContain(path);
             expect(getAdminNavGroups(true).flatMap(group => group.items.map(item => item.href))).toContain(path);
         }

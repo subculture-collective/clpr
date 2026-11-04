@@ -40,9 +40,6 @@ where it is called from.
 | `GET /streams` | `GetStreams`, `GetStreamStatusByUsername` | App | `internal/services/live_status_service.go`, `internal/handlers/stream_handler.go` | Live status for broadcasters and the stream page |
 | `GET /users` | `GetUsers`, `GetStreamStatusByUsername` | App | `internal/handlers/broadcaster_handler.go`, `internal/handlers/stream_handler.go` | Broadcaster display name, avatar, and description; resolve a login to a user ID |
 | `GET /channels` | `GetChannels` | App | `internal/services/clip_sync_service.go` | Channel tags applied to imported clips |
-| `GET /moderation/banned` | `GetBannedUsers` | Broadcaster | `internal/services/twitch_ban_sync_service.go` | Sync a broadcaster's Twitch bans into clpr (`POST /api/v1/moderation/sync-bans`) |
-| `POST /moderation/bans` | `BanUser` | Broadcaster | `internal/services/twitch_moderation_service.go` | Ban a user on the broadcaster's channel (`POST /api/v1/moderation/twitch/ban`) |
-| `DELETE /moderation/bans` | `UnbanUser` | Broadcaster | `internal/services/twitch_moderation_service.go` | Unban a user (`DELETE /api/v1/moderation/twitch/ban`) |
 | `GET /clips/downloads` | `GetDownloadURL` (`backend/internal/services/twitch_clip_download_service.go`) | Broadcaster | `internal/services/clip_transcription_service.go` | Optional clip transcription, described below |
 | `GET /users` | `fetchTwitchUser` (`backend/internal/services/auth_service.go`) and `TwitchOAuthCallback` (`backend/internal/handlers/twitch_oauth_handler.go`) | User | Sign-in and channel connection | Identify the Twitch account that just authorized clpr |
 
@@ -75,8 +72,8 @@ The `state` value is signed and bound to the clpr user. This flow requests:
 | --- | --- | --- |
 | `channel:bot` | Let the clpr bot account join and read this broadcaster's chat | Streamer clip room, below |
 | `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room |
-| `moderator:manage:banned_users` | Moderators banning and unbanning users | Requested; ban actions are currently limited to broadcasters |
-| `channel:manage:banned_users` | Broadcasters banning and unbanning users | Ban sync, ban, and unban |
+| `moderator:manage:banned_users` | Moderators banning and unbanning users | Still requested when a broadcaster connects a channel; no code path uses it since the Twitch ban actions were removed in November 2026 |
+| `channel:manage:banned_users` | Broadcasters banning and unbanning users | Still requested when a broadcaster connects a channel; no code path uses it since ban sync and the Twitch ban actions were removed in November 2026 |
 
 The callback exchanges the code, reads the account from `GET /users`, and
 stores the access token, refresh token, granted scopes, and expiry in the

@@ -2458,102 +2458,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/v1/moderation/sync-bans:
-    post:
-      tags: [Moderation]
-      summary: Sync bans from Twitch
-      description: |
-        Synchronizes ban status from Twitch for a specific channel. This endpoint triggers an asynchronous 
-        background job that syncs ban data from Twitch. The operation has a 5-minute timeout.
-        
-        **Required Permissions**: Channel owner, moderator, or admin
-        
-        **Rate Limit**: 5 requests per hour
-        
-        **Requirements**:
-        - Valid Twitch moderator OAuth scopes
-        - Moderator permissions on the target channel
-      operationId: syncBans
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - channel_id
-              properties:
-                channel_id:
-                  type: string
-                  format: uuid
-                  description: Channel ID to sync bans for
-                  example: "123e4567-e89b-12d3-a456-426614174000"
-            examples:
-              syncChannel:
-                summary: Sync bans for a channel
-                value:
-                  channel_id: "123e4567-e89b-12d3-a456-426614174000"
-      responses:
-        '200':
-          description: Ban sync started successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - job_id
-                  - message
-                properties:
-                  status:
-                    type: string
-                    enum: [syncing]
-                    description: Current sync status
-                  job_id:
-                    type: string
-                    format: uuid
-                    description: Unique identifier for the sync job
-                  message:
-                    type: string
-                    description: Human-readable status message
-              examples:
-                success:
-                  summary: Sync started
-                  value:
-                    status: "syncing"
-                    job_id: "987fcdeb-51a2-43c1-b789-123456789abc"
-                    message: "Ban sync started for channel 123e4567-e89b-12d3-a456-426614174000"
-        '400':
-          description: Bad request - Invalid or missing channel_id
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                invalidChannelId:
-                  summary: Invalid channel ID
-                  value:
-                    error: "channel_id is required and must be a valid UUID"
-                    code: "INVALID_REQUEST"
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '503':
-          description: Service unavailable - Twitch ban sync service is unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                serviceUnavailable:
-                  summary: Service unavailable
-                  value:
-                    error: "Twitch ban sync service is currently unavailable"
-                    code: "SERVICE_UNAVAILABLE"
-
   /api/v1/moderation/bans:
     get:
       tags: [Moderation]
@@ -2850,64 +2754,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-
-  /api/v1/moderation/twitch/ban:
-    post:
-      tags: [Moderation]
-      summary: Ban user on Twitch
-      description: Bans a user on Twitch (requires Twitch moderator scopes, rate limited - 10/hour)
-      operationId: twitchBanUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [user_id, reason]
-              properties:
-                user_id:
-                  type: string
-                reason:
-                  type: string
-                duration:
-                  type: integer
-      responses:
-        '200':
-          description: User banned on Twitch
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TwitchModerationResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-    delete:
-      tags: [Moderation]
-      summary: Unban user on Twitch
-      description: Unbans a user on Twitch (requires Twitch moderator scopes, rate limited - 10/hour)
-      operationId: twitchUnbanUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [user_id]
-              properties:
-                user_id:
-                  type: string
-      responses:
-        '200':
-          description: User unbanned on Twitch
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TwitchModerationResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -6219,24 +6065,6 @@ paths:
       responses:
         '200':
           description: Abuse statistics
-          content: {application/json: {schema: {$ref: '#/components/schemas/ModerationDataResponse'}}}
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/moderation/analytics:
-    get:
-      tags: [Admin, Moderation]
-      summary: Get moderation analytics
-      description: Returns analytics for an ordered date range of at most 366 days. Requires moderator or administrator MFA.
-      operationId: getApiV1AdminModerationAnalytics
-      parameters: [{$ref: '#/components/parameters/StartDate'}, {$ref: '#/components/parameters/EndDate'}]
-      responses:
-        '200':
-          description: Moderation analytics
           content: {application/json: {schema: {$ref: '#/components/schemas/ModerationDataResponse'}}}
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -11195,20 +11023,6 @@ components:
       properties:
         error: {type: string}
 
-    TwitchModerationResult:
-      type: object
-      required: [success, message, broadcasterID, userID]
-      properties:
-        success:
-          type: boolean
-          const: true
-        message:
-          type: string
-        broadcasterID:
-          type: string
-        userID:
-          type: string
-
     RouterDerivedPayload:
       description: Transitional schema for router-derived operations; replace with a route-specific schema before treating the operation as a stable public contract
       oneOf:
@@ -13893,7 +13707,6 @@ components:
   # - GET /appeals - Get appeals (admin)
   # - POST /appeals/:id/resolve - Resolve appeal (admin)
   # - GET /audit - Audit logs
-  # - GET /analytics - Moderation analytics
   # - GET /toxicity/metrics - Toxicity metrics
   #
   # ADMIN - NSFW (/api/v1/admin/nsfw/* - admin/moderator + MFA)

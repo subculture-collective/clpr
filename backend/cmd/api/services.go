@@ -59,8 +59,6 @@ type Services struct {
 	Submission               *services.SubmissionService    // may be nil
 	LiveStatus               *services.LiveStatusService    // may be nil
 	OutboundWebhook          *services.OutboundWebhookService
-	TwitchBanSync            *services.TwitchBanSyncService     // may be nil
-	TwitchModeration         *services.TwitchModerationService  // may be nil
 	Whisper                  *services.WhisperService           // may be nil
 	ClipTranscription        *services.ClipTranscriptionService // may be nil
 	Thumbnail                *services.ThumbnailService         // may be nil
@@ -254,14 +252,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		streamerClipRoomService.SetClipImporter(clipSyncService)
 	}
 
-	// Initialize Twitch-related services
-	var twitchBanSyncService *services.TwitchBanSyncService
-	var twitchModerationService *services.TwitchModerationService
-	if infra.TwitchClient != nil {
-		twitchBanSyncService = services.NewTwitchBanSyncService(infra.TwitchClient, repos.TwitchAuth, repos.TwitchBan, repos.User)
-		twitchModerationService = services.NewTwitchModerationService(infra.TwitchClient, repos.TwitchAuth, repos.User, repos.AuditLog)
-	}
-
 	// Initialize Whisper service (speech-to-text transcription)
 	var whisperService *services.WhisperService
 	if cfg.Whisper.Enabled {
@@ -365,8 +355,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Submission:               submissionService,
 		LiveStatus:               liveStatusService,
 		OutboundWebhook:          outboundWebhookService,
-		TwitchBanSync:            twitchBanSyncService,
-		TwitchModeration:         twitchModerationService,
 		Whisper:                  whisperService,
 		ClipTranscription:        clipTranscriptionService,
 		Thumbnail:                thumbnailService,

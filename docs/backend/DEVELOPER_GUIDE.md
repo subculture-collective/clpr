@@ -3224,7 +3224,7 @@ LOG_FORMAT=json
 # Redis (caching)
 REDIS_URL=redis://localhost:6379
 
-# Twitch (for ban sync)
+# Twitch
 TWITCH_CLIENT_ID=your_client_id
 TWITCH_CLIENT_SECRET=your_client_secret
 ```

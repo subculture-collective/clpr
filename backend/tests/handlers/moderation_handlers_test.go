@@ -14,114 +14,14 @@ import (
 )
 
 // TestSyncBans_Unauthorized tests that syncing bans requires authentication
-func TestSyncBans_Unauthorized(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
-
-	requestBody := map[string]string{
-		"channel_id": "123456",
-	}
-	jsonBody, _ := json.Marshal(requestBody)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/sync-bans", bytes.NewReader(jsonBody))
-	c.Request.Header.Set("Content-Type", "application/json")
-	// Not setting user_id to test authorization
-
-	handler.SyncBans(c)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-}
-
 // TestSyncBans_InvalidJSON tests sync-bans with invalid JSON
-func TestSyncBans_InvalidJSON(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
-
-	testUserID := uuid.New()
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/sync-bans", bytes.NewReader([]byte("invalid json")))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set("user_id", testUserID)
-
-	handler.SyncBans(c)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
 // TestSyncBans_MissingChannelID tests sync-bans with missing channelId
-func TestSyncBans_MissingChannelID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
-
-	testUserID := uuid.New()
-	requestBody := map[string]string{}
-	jsonBody, _ := json.Marshal(requestBody)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/sync-bans", bytes.NewReader(jsonBody))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set("user_id", testUserID)
-
-	handler.SyncBans(c)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
 // TestSyncBans_EmptyChannelID tests sync-bans with empty channelId
-func TestSyncBans_EmptyChannelID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
-
-	testUserID := uuid.New()
-	requestBody := map[string]string{
-		"channel_id": "",
-	}
-	jsonBody, _ := json.Marshal(requestBody)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/sync-bans", bytes.NewReader(jsonBody))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set("user_id", testUserID)
-
-	handler.SyncBans(c)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
 // TestSyncBans_ServiceUnavailable tests sync-bans when service is not available
-func TestSyncBans_ServiceUnavailable(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	testUserID := uuid.New()
-	// Create handler without TwitchBanSyncService (nil)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
-
-	requestBody := map[string]string{
-		"channel_id": "123456",
-	}
-	jsonBody, _ := json.Marshal(requestBody)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/moderation/sync-bans", bytes.NewReader(jsonBody))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Set("user_id", testUserID)
-
-	handler.SyncBans(c)
-
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-}
-
 // TestGetBans_Unauthorized tests that getting bans requires authentication
 func TestGetBans_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -137,7 +37,7 @@ func TestGetBans_Unauthorized(t *testing.T) {
 // Note: Missing channelId is now allowed (lists all bans for admins), but service must be available
 func TestGetBans_MissingChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -156,7 +56,7 @@ func TestGetBans_MissingChannelID(t *testing.T) {
 // Note: Invalid channelId validation happens after service availability check
 func TestGetBans_InvalidChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -174,7 +74,7 @@ func TestGetBans_InvalidChannelID(t *testing.T) {
 // TestGetBans_ServiceUnavailable tests getting bans when service is unavailable
 func TestGetBans_ServiceUnavailable(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	channelID := uuid.New()
@@ -192,7 +92,7 @@ func TestGetBans_ServiceUnavailable(t *testing.T) {
 // TestGetBans_PaginationValidation tests pagination parameter validation
 func TestGetBans_PaginationValidation(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	channelID := uuid.New()
@@ -236,7 +136,7 @@ func TestGetBans_PaginationValidation(t *testing.T) {
 // TestCreateBan_Unauthorized tests that creating a ban requires authentication
 func TestCreateBan_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	requestBody := map[string]interface{}{
 		"channelId": uuid.New().String(),
@@ -259,7 +159,7 @@ func TestCreateBan_Unauthorized(t *testing.T) {
 // TestCreateBan_InvalidJSON tests that creating a ban validates JSON
 func TestCreateBan_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -277,7 +177,7 @@ func TestCreateBan_InvalidJSON(t *testing.T) {
 // TestCreateBan_MissingRequiredFields tests creating a ban with missing required fields
 func TestCreateBan_MissingRequiredFields(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	requestBody := map[string]interface{}{
@@ -300,7 +200,7 @@ func TestCreateBan_MissingRequiredFields(t *testing.T) {
 // TestCreateBan_InvalidChannelID tests creating a ban with invalid channelId
 func TestCreateBan_InvalidChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	requestBody := map[string]interface{}{
@@ -323,7 +223,7 @@ func TestCreateBan_InvalidChannelID(t *testing.T) {
 // TestCreateBan_ServiceUnavailable tests creating a ban when service is unavailable
 func TestCreateBan_ServiceUnavailable(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	requestBody := map[string]interface{}{
@@ -346,7 +246,7 @@ func TestCreateBan_ServiceUnavailable(t *testing.T) {
 // TestListModerators_Unauthorized tests that listing moderators requires authentication
 func TestListModerators_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -361,7 +261,7 @@ func TestListModerators_Unauthorized(t *testing.T) {
 // TestListModerators_MissingChannelID tests that listing moderators requires channelId
 func TestListModerators_MissingChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -378,7 +278,7 @@ func TestListModerators_MissingChannelID(t *testing.T) {
 // TestListModerators_InvalidChannelID tests that listing moderators validates channelId format
 func TestListModerators_InvalidChannelID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -395,7 +295,7 @@ func TestListModerators_InvalidChannelID(t *testing.T) {
 // TestAddModerator_Unauthorized tests that adding moderators requires authentication
 func TestAddModerator_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -410,7 +310,7 @@ func TestAddModerator_Unauthorized(t *testing.T) {
 // TestRemoveModerator_Unauthorized tests that removing moderators requires authentication
 func TestRemoveModerator_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -425,7 +325,7 @@ func TestRemoveModerator_Unauthorized(t *testing.T) {
 // TestUpdateModeratorPermissions_Unauthorized tests that updating moderator permissions requires authentication
 func TestUpdateModeratorPermissions_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -440,7 +340,7 @@ func TestUpdateModeratorPermissions_Unauthorized(t *testing.T) {
 // TestGetModerationAuditLogs_InvalidModeratorID tests audit logs with invalid moderator ID
 func TestGetModerationAuditLogs_InvalidModeratorID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -457,7 +357,7 @@ func TestGetModerationAuditLogs_InvalidModeratorID(t *testing.T) {
 // TestGetModerationAuditLogs_InvalidAction tests audit logs with invalid action type
 func TestGetModerationAuditLogs_InvalidAction(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -472,26 +372,10 @@ func TestGetModerationAuditLogs_InvalidAction(t *testing.T) {
 }
 
 // TestGetModerationAnalytics_ServiceUnavailable tests analytics when database is unavailable
-func TestGetModerationAnalytics_ServiceUnavailable(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
-
-	testUserID := uuid.New()
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = httptest.NewRequest(http.MethodGet, "/admin/moderation/analytics", nil)
-	c.Set("user_id", testUserID)
-
-	handler.GetModerationAnalytics(c)
-
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-}
-
 // TestRevokeBan_Unauthorized tests that revoking bans requires authentication
 func TestRevokeBan_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -507,7 +391,7 @@ func TestRevokeBan_Unauthorized(t *testing.T) {
 // TestRevokeBan_InvalidBanID tests revoking a ban with invalid ID
 func TestRevokeBan_InvalidBanID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -525,7 +409,7 @@ func TestRevokeBan_InvalidBanID(t *testing.T) {
 // TestRevokeBan_ServiceUnavailable tests revoking a ban when service is unavailable
 func TestRevokeBan_ServiceUnavailable(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	banID := uuid.New()
@@ -544,7 +428,7 @@ func TestRevokeBan_ServiceUnavailable(t *testing.T) {
 // TestGetBanDetails_Unauthorized tests that getting ban details requires authentication
 func TestGetBanDetails_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -560,7 +444,7 @@ func TestGetBanDetails_Unauthorized(t *testing.T) {
 // TestGetBanDetails_InvalidBanID tests getting ban details with invalid ID
 func TestGetBanDetails_InvalidBanID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -578,7 +462,7 @@ func TestGetBanDetails_InvalidBanID(t *testing.T) {
 // TestGetBanDetails_ServiceUnavailable tests getting ban details when service is unavailable
 func TestGetBanDetails_ServiceUnavailable(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	banID := uuid.New()
@@ -601,7 +485,7 @@ func TestGetBanDetails_ServiceUnavailable(t *testing.T) {
 // TestGetModerationQueue_InvalidStatus tests queue endpoint with invalid status
 func TestGetModerationQueue_InvalidStatus(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -618,7 +502,7 @@ func TestGetModerationQueue_InvalidStatus(t *testing.T) {
 // TestGetModerationQueue_InvalidContentType tests queue endpoint with invalid content type
 func TestGetModerationQueue_InvalidContentType(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -635,7 +519,7 @@ func TestGetModerationQueue_InvalidContentType(t *testing.T) {
 // TestApproveContent_Unauthorized tests that approving content requires authentication
 func TestApproveContent_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -651,7 +535,7 @@ func TestApproveContent_Unauthorized(t *testing.T) {
 // TestApproveContent_InvalidItemID tests approving content with invalid ID
 func TestApproveContent_InvalidItemID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -669,7 +553,7 @@ func TestApproveContent_InvalidItemID(t *testing.T) {
 // TestRejectContent_Unauthorized tests that rejecting content requires authentication
 func TestRejectContent_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -685,7 +569,7 @@ func TestRejectContent_Unauthorized(t *testing.T) {
 // TestRejectContent_InvalidItemID tests rejecting content with invalid ID
 func TestRejectContent_InvalidItemID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -703,7 +587,7 @@ func TestRejectContent_InvalidItemID(t *testing.T) {
 // TestBulkModerate_Unauthorized tests that bulk moderation requires authentication
 func TestBulkModerate_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	// Send valid JSON with item IDs since body is checked first
 	requestBody := map[string]interface{}{
@@ -726,7 +610,7 @@ func TestBulkModerate_Unauthorized(t *testing.T) {
 // TestBulkModerate_InvalidJSON tests bulk moderation with invalid JSON
 func TestBulkModerate_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -748,7 +632,7 @@ func TestBulkModerate_InvalidJSON(t *testing.T) {
 // TestMarkEventReviewed_Unauthorized tests that marking event as reviewed requires authentication
 func TestMarkEventReviewed_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -764,7 +648,7 @@ func TestMarkEventReviewed_Unauthorized(t *testing.T) {
 // TestMarkEventReviewed_InvalidEventID tests marking event as reviewed with invalid ID
 func TestMarkEventReviewed_InvalidEventID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -782,7 +666,7 @@ func TestMarkEventReviewed_InvalidEventID(t *testing.T) {
 // TestProcessEvent_Unauthorized tests that processing an event requires authentication
 func TestProcessEvent_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -798,7 +682,7 @@ func TestProcessEvent_Unauthorized(t *testing.T) {
 // TestProcessEvent_InvalidEventID tests processing an event with invalid ID
 func TestProcessEvent_InvalidEventID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -817,7 +701,7 @@ func TestProcessEvent_InvalidEventID(t *testing.T) {
 // TestProcessEvent_MissingAction tests processing an event without action
 func TestProcessEvent_MissingAction(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 	eventID := uuid.New()
@@ -839,7 +723,7 @@ func TestProcessEvent_MissingAction(t *testing.T) {
 // TestGetUserAbuseStats_InvalidUserID tests abuse stats with invalid user ID
 func TestGetUserAbuseStats_InvalidUserID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -861,7 +745,7 @@ func TestGetUserAbuseStats_InvalidUserID(t *testing.T) {
 // TestCreateAppeal_Unauthorized tests that creating an appeal requires authentication
 func TestCreateAppeal_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -876,7 +760,7 @@ func TestCreateAppeal_Unauthorized(t *testing.T) {
 // TestCreateAppeal_InvalidJSON tests creating an appeal with invalid JSON
 func TestCreateAppeal_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -894,7 +778,7 @@ func TestCreateAppeal_InvalidJSON(t *testing.T) {
 // TestGetAppeals_InvalidStatus tests getting appeals with invalid status
 func TestGetAppeals_InvalidStatus(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -911,7 +795,7 @@ func TestGetAppeals_InvalidStatus(t *testing.T) {
 // TestResolveAppeal_Unauthorized tests that resolving an appeal requires authentication
 func TestResolveAppeal_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -927,7 +811,7 @@ func TestResolveAppeal_Unauthorized(t *testing.T) {
 // TestResolveAppeal_InvalidAppealID tests resolving an appeal with invalid ID
 func TestResolveAppeal_InvalidAppealID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -945,7 +829,7 @@ func TestResolveAppeal_InvalidAppealID(t *testing.T) {
 // TestGetUserAppeals_Unauthorized tests that getting user's appeals requires authentication
 func TestGetUserAppeals_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -964,7 +848,7 @@ func TestGetUserAppeals_Unauthorized(t *testing.T) {
 // TestGetToxicityMetrics_InvalidDateFormat tests toxicity metrics with invalid date format
 func TestGetToxicityMetrics_InvalidDateFormat(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 
@@ -981,7 +865,7 @@ func TestGetToxicityMetrics_InvalidDateFormat(t *testing.T) {
 // TestGetToxicityMetrics_ServiceUnavailable tests toxicity metrics when classifier is unavailable
 func TestGetToxicityMetrics_ServiceUnavailable(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil, nil)
+	handler := handlers.NewModerationHandler(nil, nil, nil, nil, nil, nil, nil)
 
 	testUserID := uuid.New()
 

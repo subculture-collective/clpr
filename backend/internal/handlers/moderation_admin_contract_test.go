@@ -95,7 +95,6 @@ func TestModerationDateRangesFailClosed(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, path := range []string{
 		"/api/v1/admin/moderation/audit?start_date=2026-02-30",
-		"/api/v1/admin/moderation/analytics?start_date=2026-07-10&end_date=2026-07-01",
 		"/api/v1/admin/moderation/toxicity/metrics?start_date=2020-01-01&end_date=2026-01-01",
 	} {
 		recorder := httptest.NewRecorder()
@@ -105,8 +104,6 @@ func TestModerationDateRangesFailClosed(t *testing.T) {
 		switch {
 		case strings.Contains(path, "/audit"):
 			handler.GetModerationAuditLogs(ctx)
-		case strings.Contains(path, "/analytics"):
-			handler.GetModerationAnalytics(ctx)
 		default:
 			handler.GetToxicityMetrics(ctx)
 		}

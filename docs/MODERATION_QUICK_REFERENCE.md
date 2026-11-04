@@ -56,7 +56,6 @@ Three comprehensive documents have been created in `.github/` to guide implement
 - Service unit tests (4-6h)
 
 **EPIC 4: API Endpoints** (5 issues) - 32-40h
-- Ban sync endpoint (6-8h)
 - Ban management endpoints (8-10h)
 - Moderator management endpoints (8-10h)
 - Audit log endpoints (6-8h)
@@ -176,7 +175,6 @@ MEMBER (regular user)
 - Cross-browser testing
 
 **Load Tests** (Phase 4)
-- Ban sync with 1000+ items
 - Concurrent moderator operations
 - Audit log query performance
 

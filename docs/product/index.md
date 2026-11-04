@@ -56,7 +56,6 @@ SORT title ASC
 - [[reputation-system|Reputation System]] - Karma and trust scores
 - [[trust-system|Trust System]] - User trust and moderation
 - [[tagging-system|Tagging System]] - Clip categorization
-- [[twitch-moderation-actions|Twitch Moderation Actions]] - Moderation tools
 
 ### Analytics
 - [[analytics|Analytics]] - User engagement tracking
