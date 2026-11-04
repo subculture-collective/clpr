@@ -55,8 +55,6 @@ async function mockPublicApi(page: Page) {
                 clips: [clip],
                 pagination: { total: 1, offset: 0, limit: 10, total_pages: 1, has_more: false },
             };
-        } else if (url.pathname.includes('/forum/threads')) {
-            body = { threads: [], total: 0 };
         } else if (url.pathname.includes('/suggestions')) {
             body = { suggestions: [] };
         } else if (
@@ -123,7 +121,6 @@ const criticalJourneys = [
         path: '/support',
         heading: /clpr is free/i,
     },
-    { name: 'forum', path: '/forum', heading: /forum discussions/i },
 ];
 
 for (const viewport of [

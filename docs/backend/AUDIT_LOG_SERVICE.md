@@ -289,6 +289,4 @@ The database schema changes for audit log context fields were added in migration
 - `clip` - Video clips
 - `comment` - User comments
 - `clip_submission` - Pending clip submissions
-- `channel` - Chat channels
-- `message` - Chat messages
 - Custom entity types as needed

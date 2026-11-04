@@ -19,7 +19,6 @@ export interface AdminRoutePages {
     moderation: Page;
     moderationAnalytics: Page;
     moderators: Page;
-    bans: Page;
     auditLogs: Page;
     verification: Page;
     discoveryLists: Page;
@@ -28,8 +27,6 @@ export interface AdminRoutePages {
     tags: Page;
     topics: Page;
     apiDocs: Page;
-    forumModeration: Page;
-    forumModerationLog: Page;
     moderationUsers: Page;
     tagPromotion: Page;
 }
@@ -62,7 +59,6 @@ export function adminRoutes(pages: AdminRoutePages) {
                 element={protectedPage(pages.moderationAnalytics)}
             />
             <Route path='/admin/moderators' element={protectedPage(pages.moderators)} />
-            <Route path='/admin/bans' element={protectedPage(pages.bans)} />
             <Route path='/admin/audit-logs' element={protectedPage(pages.auditLogs)} />
             <Route path='/admin/verification' element={protectedPage(pages.verification)} />
             <Route
@@ -88,14 +84,6 @@ export function adminRoutes(pages: AdminRoutePages) {
                 element={protectedPage(pages.tagPromotion)}
             />
             <Route path='/admin/api-docs' element={protectedPage(pages.apiDocs)} />
-            <Route
-                path='/admin/forum/moderation'
-                element={protectedPage(pages.forumModeration)}
-            />
-            <Route
-                path='/admin/forum/moderation-log'
-                element={protectedPage(pages.forumModerationLog)}
-            />
             <Route path='/moderation/users' element={protectedPage(pages.moderationUsers)} />
         </>
     );

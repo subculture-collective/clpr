@@ -3221,65 +3221,6 @@ const (
 	AuditActionFurtherReviewRequired = "further_review_required"
 )
 
-// ChatChannel represents a chat channel
-type ChatChannel struct {
-	ID              uuid.UUID `json:"id" db:"id"`
-	Name            string    `json:"name" db:"name"`
-	Description     *string   `json:"description,omitempty" db:"description"`
-	CreatorID       uuid.UUID `json:"creator_id" db:"creator_id"`
-	ChannelType     string    `json:"channel_type" db:"channel_type"`
-	IsActive        bool      `json:"is_active" db:"is_active"`
-	MaxParticipants *int      `json:"max_participants,omitempty" db:"max_participants"`
-	CreatedAt       time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
-}
-
-// ChatMessage represents a message in a chat channel
-type ChatMessage struct {
-	ID        uuid.UUID  `json:"id" db:"id"`
-	ChannelID uuid.UUID  `json:"channel_id" db:"channel_id"`
-	UserID    uuid.UUID  `json:"user_id" db:"user_id"`
-	Content   string     `json:"content" db:"content"`
-	IsDeleted bool       `json:"is_deleted" db:"is_deleted"`
-	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
-	DeletedBy *uuid.UUID `json:"deleted_by,omitempty" db:"deleted_by"`
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at" db:"updated_at"`
-	// Populated fields
-	Username    string  `json:"username,omitempty" db:"username"`
-	DisplayName string  `json:"display_name,omitempty" db:"display_name"`
-	AvatarURL   *string `json:"avatar_url,omitempty" db:"avatar_url"`
-}
-
-// ChatBan represents a ban or mute for a user in a channel
-type ChatBan struct {
-	ID        uuid.UUID  `json:"id" db:"id"`
-	ChannelID uuid.UUID  `json:"channel_id" db:"channel_id"`
-	UserID    uuid.UUID  `json:"user_id" db:"user_id"`
-	BannedBy  uuid.UUID  `json:"banned_by" db:"banned_by"`
-	Reason    *string    `json:"reason,omitempty" db:"reason"`
-	ExpiresAt *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
-	// Populated fields
-	BannedByUsername string `json:"banned_by_username,omitempty" db:"banned_by_username"`
-	TargetUsername   string `json:"target_username,omitempty" db:"target_username"`
-}
-
-// ChatModerationLog represents a log entry for moderation actions
-type ChatModerationLog struct {
-	ID           uuid.UUID  `json:"id" db:"id"`
-	ChannelID    uuid.UUID  `json:"channel_id" db:"channel_id"`
-	ModeratorID  uuid.UUID  `json:"moderator_id" db:"moderator_id"`
-	TargetUserID *uuid.UUID `json:"target_user_id,omitempty" db:"target_user_id"`
-	Action       string     `json:"action" db:"action"`
-	Reason       *string    `json:"reason,omitempty" db:"reason"`
-	Metadata     *string    `json:"metadata,omitempty" db:"metadata"` // JSONB stored as string
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	// Populated fields
-	ModeratorUsername string  `json:"moderator_username,omitempty" db:"moderator_username"`
-	TargetUsername    *string `json:"target_username,omitempty" db:"target_username"`
-}
-
 // BanReasonTemplate represents a reusable ban reason template
 type BanReasonTemplate struct {
 	ID              uuid.UUID  `json:"id" db:"id"`
@@ -3377,16 +3318,6 @@ type AddChannelMemberRequest struct {
 type UpdateChannelMemberRequest struct {
 	Role string `json:"role" binding:"required,oneof=member moderator admin"`
 }
-
-// Chat moderation action constants
-const (
-	ChatActionBan     = "ban"
-	ChatActionUnban   = "unban"
-	ChatActionMute    = "mute"
-	ChatActionUnmute  = "unmute"
-	ChatActionTimeout = "timeout"
-	ChatActionDelete  = "delete_message"
-)
 
 // UserFilterPreset represents a saved feed filter configuration
 type UserFilterPreset struct {
