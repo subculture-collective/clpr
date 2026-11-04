@@ -72,8 +72,6 @@ The `state` value is signed and bound to the clpr user. This flow requests:
 | --- | --- | --- |
 | `channel:bot` | Let the clpr bot account join and read this broadcaster's chat | Streamer clip room, below |
 | `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room |
-| `moderator:manage:banned_users` | Moderators banning and unbanning users | Still requested when a broadcaster connects a channel; no code path uses it since the Twitch ban actions were removed in November 2026 |
-| `channel:manage:banned_users` | Broadcasters banning and unbanning users | Still requested when a broadcaster connects a channel; no code path uses it since ban sync and the Twitch ban actions were removed in November 2026 |
 
 The callback exchanges the code, reads the account from `GET /users`, and
 stores the access token, refresh token, granted scopes, and expiry in the

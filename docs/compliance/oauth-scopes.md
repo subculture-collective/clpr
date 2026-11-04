@@ -11,7 +11,7 @@ last_reviewed: 2026-01-29
 
 # Twitch OAuth Scopes Compliance Documentation
 
-**Last Updated:** 2025-12-29  
+**Last Updated:** 2026-11-04  
 **Status:** Active  
 **Owner:** Backend Team, Security
 
@@ -70,7 +70,7 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 **Grant Type:** Authorization Code  
 **Implementation:** `backend/internal/handlers/twitch_oauth_handler.go`
 
-**Purpose:** Enable user-authorized features like Twitch chat integration
+**Purpose:** Let a broadcaster connect their channel so the Clpr bot can read its chat for the streamer clip room and so Clpr can fetch official clip download URLs
 
 **OAuth Flow:**
 1. User clicks "Connect Twitch" in Clipper
@@ -80,7 +80,9 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 5. Backend exchanges code for access token + refresh token
 6. Tokens stored encrypted in database
 
-**Current Scopes Requested:** `chat:read chat:edit channel:bot channel:manage:clips moderator:manage:banned_users channel:manage:banned_users`
+**Current Scopes Requested:** `channel:bot channel:manage:clips`
+
+Sign-in is a separate flow (`backend/internal/services/auth_service.go`) that requests only `user:read:email` to identify the account; its access token is not stored.
 
 ---
 
@@ -124,148 +126,6 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 - ✅ The bot cannot be started in an unrelated channel
 - ✅ The broadcaster can stop the listener or disconnect Twitch
 
-### Scope 1: `chat:read`
-
-**Purpose:** Read Twitch chat messages  
-**Implementation:** Twitch Chat IRC integration  
-**Feature:** Allow users to view chat while watching streams on Clipper
-
-**Why Necessary:**
-- Enables chat display alongside live streams
-- Provides full streaming experience on Clipper
-- Allows users to see community interaction
-- Required for chat-based features (badges, emotes, etc.)
-
-**Data Accessed:**
-- Chat messages from public channels
-- Usernames of chat participants
-- Chat emotes and badges
-- Timestamps of messages
-
-**Data NOT Accessed:**
-- Private messages (whispers)
-- Moderator-only messages
-- Deleted messages (unless cached before deletion)
-- User's personal chat history across Twitch
-
-**User Benefit:**
-- Watch stream and chat in one place
-- Better user experience
-- No need to switch between Twitch and Clipper
-
-**Compliance:**
-- ✅ User explicitly consents via OAuth
-- ✅ Only public chat data read
-- ✅ No access to private conversations
-- ✅ Clear purpose communicated to user
-
----
-
-### Scope 2: `chat:edit`
-
-**Purpose:** Send chat messages to Twitch channels  
-**Implementation:** Twitch Chat IRC integration  
-**Feature:** Allow users to participate in chat while watching on Clipper
-
-**Why Necessary:**
-- Enables users to send chat messages
-- Allows participation in community
-- Full-featured chat experience on Clipper
-- Required to interact in Twitch chat
-
-**Actions Enabled:**
-- Send text messages to chat
-- Use channel emotes
-- React with emotes
-- Participate in polls (if supported)
-
-**Actions NOT Enabled:**
-- Moderator actions (ban, timeout, delete)
-- Whisper (private message) sending
-- Channel point redemptions (different scope)
-- Subscription management
-
-**User Benefit:**
-- Fully interact with community while on Clipper
-- No need to open Twitch separately
-- Seamless experience
-
-**Compliance:**
-- ✅ User explicitly consents via OAuth
-- ✅ User's own messages only (no impersonation)
-- ✅ Respects Twitch chat rules and moderation
-- ✅ No spam or automation (ToS violation)
-
----
-
-### Scope 3: `moderator:manage:banned_users`
-
-**Purpose:** Manage banned users in channels where user is a moderator  
-**Implementation:** Twitch ban sync and moderation features  
-**Feature:** Allow moderators to ban/unban users on Twitch from Clipper
-
-**Why Necessary:**
-- Enables moderators to manage bans from Clipper interface
-- Syncs ban lists from Twitch to Clipper
-- Provides unified moderation experience
-- Required to call Twitch ban/unban APIs as a moderator
-
-**Data Accessed:**
-- List of banned users in channels where user is a moderator
-- Ban reasons and expiration times
-- Moderator information for bans
-
-**Data NOT Accessed:**
-- Bans in channels where user is not a moderator
-- Private moderator notes (if separate from ban reasons)
-- Moderator actions unrelated to bans
-
-**User Benefit:**
-- Moderate Twitch channels directly from Clipper
-- Keep ban lists synchronized
-- Streamlined moderation workflow
-
-**Compliance:**
-- ✅ User explicitly consents via OAuth
-- ✅ Only channels where user has moderator privileges
-- ✅ All actions traceable to specific moderator
-- ✅ Respects Twitch's moderation policies
-
----
-
-### Scope 4: `channel:manage:banned_users`
-
-**Purpose:** Manage banned users in user's own channel  
-**Implementation:** Twitch ban sync and channel management features  
-**Feature:** Allow broadcasters to ban/unban users on Twitch from Clipper
-
-**Why Necessary:**
-- Enables broadcasters to manage bans in their own channels
-- Syncs ban lists from Twitch to Clipper
-- Provides unified channel management experience
-- Required to call Twitch ban/unban APIs as a broadcaster
-
-**Data Accessed:**
-- List of banned users in user's channel
-- Ban reasons and expiration times
-- Information about who created each ban
-
-**Data NOT Accessed:**
-- Bans in other channels
-- Channel settings unrelated to bans
-- Private channel information
-
-**User Benefit:**
-- Manage channel bans directly from Clipper
-- Keep ban lists synchronized across platforms
-- Better channel moderation tools
-
-**Compliance:**
-- ✅ User explicitly consents via OAuth
-- ✅ Only user's own channel
-- ✅ All actions logged and auditable
-- ✅ Respects Twitch's channel management policies
-
 ---
 
 ## Scopes NOT Requested (and Why)
@@ -274,7 +134,6 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 
 | Scope | Purpose (if we used it) | Why We Don't Request It |
 |-------|-------------------------|-------------------------|
-| `user:read:email` | Read user's email address | Not needed - users provide email separately during Clipper registration |
 | `user:read:subscriptions` | Check if user is subscribed to channels | Not needed for current features |
 | `user:read:follows` | Read user's followed channels | Not needed yet - may add for personalization later |
 | `channel:read:subscriptions` | Read channel subscribers | Requires broadcaster permission, not applicable |
@@ -282,6 +141,8 @@ Clipper's OAuth implementation complies with Twitch's guidelines:
 | `bits:read` | Read bits/cheers | Not needed - we don't process payments |
 | `channel_editor` | Edit channel | Dangerous and unnecessary |
 | `user:edit:follows` | Modify user's follows | Dangerous and unnecessary |
+| `moderator:manage:banned_users`, `channel:manage:banned_users` | Ban and unban users on Twitch | Removed in November 2026 with ban sync and the Twitch ban actions; nothing uses them |
+| `chat:read`, `chat:edit` | Read and send chat as the broadcaster | The Clpr bot reads chat with its own account under `channel:bot` |
 
 **Principle:** Request ONLY what we actively use. Adding "nice to have" scopes violates user trust and Twitch guidelines.
 
@@ -463,8 +324,8 @@ When authorizing Clipper to connect to Twitch:
 Clipper wants to access your Twitch account
 
 This application will be able to:
-✓ View Twitch chat messages (chat:read)
-✓ Send messages in Twitch chat (chat:edit)
+✓ Join your channel's chat as a bot (channel:bot)
+✓ Manage clips on your channel (channel:manage:clips)
 
 [Authorize] [Cancel]
 ```
@@ -482,10 +343,9 @@ This application will be able to:
 **Before OAuth:**
 
 ```
-Connect your Twitch account to use chat features:
-- View chat while watching streams on Clipper
-- Send messages to participate in the community
-- Full Twitch chat experience without leaving Clipper
+Connect your Twitch channel to run a streamer clip room:
+- The Clpr bot joins your chat and queues the clip links viewers post
+- Clpr can fetch official download URLs for your channel's clips
 
 Your Twitch password is never shared with Clipper.
 You can disconnect anytime in Account Settings.
@@ -499,8 +359,8 @@ You can disconnect anytime in Account Settings.
 ✓ Twitch connected as: [username]
 
 You can now:
-- Use chat on live streams
-- Participate in Twitch communities
+- Start a streamer clip room
+- Let Clpr process your channel's clips
 
 [Disconnect Twitch]
 ```
@@ -521,7 +381,7 @@ Redirect to: https://id.twitch.tv/oauth2/authorize?
   client_id={CLIENT_ID}
   &redirect_uri={REDIRECT_URI}
   &response_type=code
-  &scope=chat:read+chat:edit
+  &scope=channel:bot+channel:manage:clips
 ```
 
 **Step 2: User Authorizes**
@@ -546,7 +406,7 @@ Response:
   "access_token": "...",
   "refresh_token": "...",
   "expires_in": 3600,
-  "scope": ["chat:read", "chat:edit"]
+  "scope": ["channel:bot", "channel:manage:clips"]
 }
 ↓
 Store encrypted tokens in database
@@ -597,6 +457,8 @@ Redirect user to success page
 |------|--------|---------------|-------------|
 | 2025-12-29 | Initial scopes: `chat:read`, `chat:edit` | Enable Twitch chat integration | Engineering Lead, Legal |
 | 2026-01-11 | Added scopes: `moderator:manage:banned_users`, `channel:manage:banned_users` | Enable ban management and sync from Clipper | Engineering Lead |
+| 2026-08-11 | Replaced `chat:read`, `chat:edit` with `channel:bot`; added `channel:manage:clips` | The bot reads chat with its own account; official clip downloads for the clip room | Engineering Lead |
+| 2026-11-04 | Removed `moderator:manage:banned_users`, `channel:manage:banned_users` | Ban sync and the Twitch ban actions were removed; no code path uses them | Engineering Lead |
 
 **Future Scope Additions:**
 

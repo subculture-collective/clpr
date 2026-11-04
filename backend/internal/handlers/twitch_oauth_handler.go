@@ -182,9 +182,8 @@ func (h *TwitchOAuthHandler) InitiateTwitchOAuth(c *gin.Context) {
 	// Clpr bot's own token, so the broadcaster grants channel:bot, not chat scopes.
 	// - channel:bot: let the Clpr cloud bot join and read this broadcaster's chat
 	// - channel:manage:clips: obtain official temporary download URLs for this broadcaster's clips
-	// - moderator:manage:banned_users: for moderators to ban/unban users
-	// - channel:manage:banned_users: for broadcasters to ban/unban users
-	scopes := "channel:bot channel:manage:clips moderator:manage:banned_users channel:manage:banned_users"
+	// Ban scopes are no longer requested: ban sync and the Twitch ban actions were removed.
+	scopes := "channel:bot channel:manage:clips"
 
 	params := url.Values{"client_id": {clientID}, "redirect_uri": {redirectURI}, "response_type": {"code"}, "scope": {scopes}, "state": {state}}
 	authURL := "https://id.twitch.tv/oauth2/authorize?" + params.Encode()

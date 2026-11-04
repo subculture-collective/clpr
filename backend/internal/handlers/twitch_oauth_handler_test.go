@@ -265,11 +265,8 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	if !strings.Contains(scope, "channel:manage:clips") {
 		t.Error("Expected channel:manage:clips scope in redirect URL")
 	}
-	if !strings.Contains(scope, "moderator:manage:banned_users") {
-		t.Error("Expected moderator:manage:banned_users scope in redirect URL")
-	}
-	if !strings.Contains(scope, "channel:manage:banned_users") {
-		t.Error("Expected channel:manage:banned_users scope in redirect URL")
+	if strings.Contains(scope, "banned_users") {
+		t.Error("Ban scopes are unused by the server and must not be requested")
 	}
 
 	// Verify client_id and redirect_uri are present and non-empty
