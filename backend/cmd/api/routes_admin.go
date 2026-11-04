@@ -105,14 +105,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			platformModerators.DELETE("/:id", h.AdminUser.RevokePlatformModerator)
 		}
 
-		// Account type management (admin only)
-		adminAccountTypes := admin.Group("/account-types")
-		{
-			adminAccountTypes.GET("/stats", middleware.RequirePermission(models.PermissionManageUsers), h.AccountType.GetAccountTypeStats)
-			adminAccountTypes.GET("/conversions", middleware.RequirePermission(models.PermissionManageUsers), h.AccountType.GetRecentConversions)
-			adminAccountTypes.POST("/users/:id/convert-to-moderator", middleware.RequirePermission(models.PermissionManageUsers), h.AccountType.ConvertToModerator)
-		}
-
 		// Analytics routes (admin only)
 		analytics := admin.Group("/analytics")
 		analytics.Use(middleware.RequireRole("admin"))
@@ -195,18 +187,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			nsfw.GET("/metrics", h.NSFW.GetMetrics)
 			nsfw.GET("/health", h.NSFW.GetHealthCheck)
 			nsfw.GET("/config", h.NSFW.GetConfig)
-		}
-
-		// Creator verification management (admin only)
-		adminVerification := admin.Group("/verification")
-		adminVerification.Use(middleware.RequireRole("admin"))
-		{
-			adminVerification.GET("/applications", h.Verification.ListApplications)
-			adminVerification.GET("/applications/:id", h.Verification.GetApplicationByID)
-			adminVerification.POST("/applications/:id/review", h.Verification.ReviewApplication)
-			adminVerification.GET("/stats", h.Verification.GetApplicationStats)
-			adminVerification.GET("/audit-logs", h.Verification.GetAuditLogs)
-			adminVerification.GET("/users/:user_id/audit-logs", h.Verification.GetUserAuditHistory)
 		}
 
 		// Discovery list management (admin/moderator only)

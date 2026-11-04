@@ -3441,7 +3441,6 @@ paths:
   # - Feeds (personalized content feeds)
   # - Recommendations (ML-powered clip recommendations)
   # - Notifications (in-app and push notifications)
-  # - Verification (creator verification system)
   # - Webhooks (outbound webhook subscriptions)
   # - Contact forms
   # - Chat (real-time chat channels with WebSocket)
@@ -4157,177 +4156,6 @@ paths:
 
 # Component Schemas
 # ========================================
-  /api/v1/admin/account-types/conversions:
-    get:
-      tags: [Admin]
-      summary: List recent account-type conversions
-      description: Requires an administrator session with MFA. Results are ordered from newest to oldest.
-      operationId: getApiV1AdminAccountTypesConversions
-      parameters:
-        - name: limit
-          in: query
-          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
-        - name: offset
-          in: query
-          schema: {type: integer, minimum: 0, default: 0}
-      responses:
-        '200':
-          description: Recent conversions
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/AccountTypeConversionsResponse'}
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/account-types/stats:
-    get:
-      tags: [Admin]
-      summary: Get account-type totals
-      description: Requires an administrator session with MFA.
-      operationId: getApiV1AdminAccountTypesStats
-      responses:
-        '200':
-          description: Counts for every supported account type
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/AccountTypeStatsResponse'}
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/admin/account-types/users/{id}/convert-to-moderator:
-    post:
-      tags: [Admin]
-      summary: Convert a user to a moderator account
-      description: Requires an administrator session with MFA. Cookie-authenticated requests must also send the CSRF token.
-      operationId: postApiV1AdminAccountTypesUsersIdConvertToModerator
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - $ref: '#/components/parameters/CSRFToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                reason:
-                  type: [string, 'null']
-                  maxLength: 500
-      responses:
-        '200':
-          description: User converted to moderator
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/AccountTypeConversionResult'}
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/users/me/convert-to-broadcaster:
-    post:
-      tags: [Users]
-      summary: Convert the current account to broadcaster
-      description: Converts the authenticated member account to broadcaster. Cookie-authenticated requests must also send the CSRF token.
-      operationId: postApiV1UsersMeConvertToBroadcaster
-      parameters:
-        - $ref: '#/components/parameters/CSRFToken'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                reason:
-                  type: [string, 'null']
-                  maxLength: 500
-      responses:
-        '200':
-          description: Account converted to broadcaster
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/AccountTypeConversionResult'}
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/users/{id}/account-type:
-    get:
-      tags: [Users]
-      summary: Get a user's account type
-      description: Returns the account type, permissions, and any included conversion history for the requested user.
-      operationId: getApiV1UsersIdAccountType
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: {type: string, format: uuid}
-      responses:
-        '200':
-          description: Account-type information
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/AccountTypeInfoResponse'}
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/users/{id}/account-type/history:
-    get:
-      tags: [Users]
-      summary: List a user's account-type conversion history
-      description: Returns account-type conversions for the requested user, ordered from newest to oldest.
-      operationId: getApiV1UsersIdAccountTypeHistory
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: {type: string, format: uuid}
-        - name: limit
-          in: query
-          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
-        - name: offset
-          in: query
-          schema: {type: integer, minimum: 0, default: 0}
-      responses:
-        '200':
-          description: Conversion history
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/AccountTypeConversionsResponse'}
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/webhooks:
     get:
       tags: [Webhooks]
@@ -7754,105 +7582,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/admin/verification/applications:
-    get:
-      tags: [Admin, Verification]
-      summary: List creator verification applications
-      description: Returns a bounded application queue to administrators with MFA.
-      operationId: getApiV1AdminVerificationApplications
-      parameters:
-        - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected], default: pending}}
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 10000, default: 1}}
-      responses:
-        '200': {description: Verification applications, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationListResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/admin/verification/applications/{id}:
-    get:
-      tags: [Admin, Verification]
-      summary: Get a creator verification application
-      description: Returns one application and its applicant details to administrators with MFA.
-      operationId: getApiV1AdminVerificationApplicationsId
-      parameters:
-        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
-      responses:
-        '200': {description: Verification application, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationApplicationResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/admin/verification/applications/{id}/review:
-    post:
-      tags: [Admin, Verification]
-      summary: Review a creator verification application
-      description: Atomically transitions one pending application, updates badge state through the database trigger, and records the decision audit row. Administrator MFA and CSRF protection are required.
-      operationId: postApiV1AdminVerificationApplicationsIdReview
-      parameters:
-        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
-        - {$ref: '#/components/parameters/CSRFToken'}
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationReviewRequest'}}}}
-      responses:
-        '200': {description: Application reviewed, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationReviewResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '409': {$ref: '#/components/responses/Conflict'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/admin/verification/audit-logs:
-    get:
-      tags: [Admin, Verification]
-      summary: List verification audit logs
-      description: Returns a bounded flagged or user-specific audit page to administrators with MFA.
-      operationId: getApiV1AdminVerificationAuditLogs
-      parameters:
-        - {name: user_id, in: query, schema: {type: string, format: uuid}}
-        - {name: only_flagged, in: query, schema: {type: boolean, default: false}}
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 10000, default: 1}}
-      responses:
-        '200': {description: Verification audit logs, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationAuditListResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/admin/verification/stats:
-    get:
-      tags: [Admin, Verification]
-      summary: Get creator verification statistics
-      description: Returns aggregate verification status counts to administrators with MFA.
-      operationId: getApiV1AdminVerificationStats
-      responses:
-        '200': {description: Verification statistics, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationStatsResponse'}}}}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/admin/verification/users/{user_id}/audit-logs:
-    get:
-      tags: [Admin, Verification]
-      summary: List a user's verification audit history
-      description: Returns one user's bounded verification audit page to administrators with MFA.
-      operationId: getApiV1AdminVerificationUsersUserIdAuditLogs
-      parameters:
-        - {name: user_id, in: path, required: true, schema: {type: string, format: uuid}}
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 10000, default: 1}}
-      responses:
-        '200': {description: User verification audit logs, content: {application/json: {schema: {$ref: '#/components/schemas/AdminVerificationAuditListResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
   /api/v1/broadcasters/discover:
     get:
       tags: [Broadcasters]
@@ -10222,31 +9951,6 @@ paths:
         '400': {$ref: '#/components/responses/BadRequest'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
-  /api/v1/verification/applications:
-    post:
-      tags: [Verification]
-      summary: Submit a creator verification application
-      operationId: postApiV1VerificationApplications
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateVerificationApplicationRequest'}}}}
-      responses:
-        '201': {description: Application created, content: {application/json: {schema: {$ref: '#/components/schemas/VerificationApplicationResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '409': {$ref: '#/components/responses/Conflict'}
-        '429': {$ref: '#/components/responses/TooManyRequests'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/verification/applications/me:
-    get:
-      tags: [Verification]
-      summary: Get the current user's latest verification application
-      operationId: getApiV1VerificationApplicationsMe
-      responses:
-        '200': {description: Application returned, content: {application/json: {schema: {$ref: '#/components/schemas/VerificationApplicationGetResponse'}}}}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
   /clips/best/{path}:
     get:
       tags: [SEO]
@@ -10756,86 +10460,6 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
-    AdminVerificationApplication:
-      allOf:
-        - $ref: '#/components/schemas/VerificationApplication'
-        - type: object
-          properties:
-            user: {type: object, additionalProperties: true}
-            reviewed_by_user: {type: object, additionalProperties: true}
-
-    AdminVerificationApplicationResponse:
-      type: object
-      required: [success, data]
-      properties:
-        success: {type: boolean, const: true}
-        data: {$ref: '#/components/schemas/AdminVerificationApplication'}
-
-    AdminVerificationListResponse:
-      type: object
-      required: [success, data, meta]
-      properties:
-        success: {type: boolean, const: true}
-        data: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/VerificationApplication'}}
-        meta: {type: object, additionalProperties: true}
-
-    AdminVerificationReviewRequest:
-      type: object
-      required: [decision]
-      additionalProperties: false
-      properties:
-        decision: {type: string, enum: [approved, rejected]}
-        notes: {type: string, maxLength: 2000}
-
-    AdminVerificationReviewResponse:
-      type: object
-      required: [success, message, data]
-      properties:
-        success: {type: boolean, const: true}
-        message: {type: string}
-        data:
-          type: object
-          required: [id, decision]
-          properties:
-            id: {type: string, format: uuid}
-            decision: {type: string, enum: [approved, rejected]}
-
-    VerificationAuditLog:
-      type: object
-      required: [id, user_id, audit_type, status, created_at]
-      properties:
-        id: {type: string, format: uuid}
-        user_id: {type: string, format: uuid}
-        audit_type: {type: string, enum: [periodic_check, manual_review, abuse_detection]}
-        status: {type: string, enum: [passed, flagged, revoked]}
-        findings: {type: object, additionalProperties: true}
-        notes: {type: string}
-        audited_by: {type: string, format: uuid}
-        action_taken: {type: string}
-        created_at: {type: string, format: date-time}
-
-    AdminVerificationAuditListResponse:
-      type: object
-      required: [success, data, meta]
-      properties:
-        success: {type: boolean, const: true}
-        data: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/VerificationAuditLog'}}
-        meta: {type: object, additionalProperties: true}
-
-    AdminVerificationStatsResponse:
-      type: object
-      required: [success, data]
-      properties:
-        success: {type: boolean, const: true}
-        data:
-          type: object
-          required: [total_pending, total_approved, total_rejected, total_verified]
-          properties:
-            total_pending: {type: integer, minimum: 0}
-            total_approved: {type: integer, minimum: 0}
-            total_rejected: {type: integer, minimum: 0}
-            total_verified: {type: integer, minimum: 0}
-
     AdminNSFWDetectionRequest:
       type: object
       required: [image_url, content_type]
@@ -11321,78 +10945,6 @@ components:
       properties:
         success: {type: boolean, const: true}
         data: {type: array, items: {$ref: '#/components/schemas/BlacklistedTag'}}
-
-    AccountTypeConversion:
-      type: object
-      required: [id, user_id, old_type, new_type, converted_at, created_at]
-      properties:
-        id: {type: string, format: uuid}
-        user_id: {type: string, format: uuid}
-        old_type: {type: string, enum: [member, broadcaster, moderator, admin]}
-        new_type: {type: string, enum: [member, broadcaster, moderator, admin]}
-        reason: {type: [string, 'null']}
-        converted_by: {type: [string, 'null'], format: uuid}
-        converted_at: {type: string, format: date-time}
-        metadata: {type: object, additionalProperties: true}
-        created_at: {type: string, format: date-time}
-
-    AccountTypeInfo:
-      type: object
-      required: [account_type, permissions]
-      properties:
-        account_type: {type: string, enum: [member, broadcaster, moderator, admin]}
-        updated_at: {type: string, format: date-time}
-        permissions:
-          type: array
-          items: {type: string}
-        conversion_history:
-          type: array
-          items: {$ref: '#/components/schemas/AccountTypeConversion'}
-
-    AccountTypeStatsResponse:
-      type: object
-      required: [success, data]
-      properties:
-        success: {type: boolean, const: true}
-        data:
-          type: object
-          required: [member, broadcaster, moderator, admin]
-          properties:
-            member: {type: integer, minimum: 0}
-            broadcaster: {type: integer, minimum: 0}
-            moderator: {type: integer, minimum: 0}
-            admin: {type: integer, minimum: 0}
-
-    AccountTypeInfoResponse:
-      type: object
-      required: [success, data]
-      properties:
-        success: {type: boolean, const: true}
-        data: {$ref: '#/components/schemas/AccountTypeInfo'}
-
-    AccountTypeConversionsResponse:
-      type: object
-      required: [success, data]
-      properties:
-        success: {type: boolean, const: true}
-        data:
-          type: object
-          required: [conversions, total, limit, offset]
-          properties:
-            conversions:
-              type: array
-              items: {$ref: '#/components/schemas/AccountTypeConversion'}
-            total: {type: integer, minimum: 0}
-            limit: {type: integer, minimum: 1, maximum: 100}
-            offset: {type: integer, minimum: 0}
-
-    AccountTypeConversionResult:
-      type: object
-      required: [success, message]
-      properties:
-        success: {type: boolean, const: true}
-        message: {type: string}
-        data: {$ref: '#/components/schemas/AccountTypeInfo'}
 
     WebhookSubscription:
       type: object
@@ -13554,53 +13106,6 @@ components:
         limit: {type: integer, minimum: 1, maximum: 100}
         has_more: {type: boolean}
 
-    VerificationApplication:
-      type: object
-      required: [id, user_id, twitch_channel_url, status, priority, created_at, updated_at]
-      properties:
-        id: {type: string, format: uuid}
-        user_id: {type: string, format: uuid}
-        twitch_channel_url: {type: string, format: uri, maxLength: 500}
-        follower_count: {type: integer, minimum: 0, maximum: 1000000000}
-        subscriber_count: {type: integer, minimum: 0, maximum: 1000000000}
-        avg_viewers: {type: integer, minimum: 0, maximum: 1000000000}
-        content_description: {type: string, maxLength: 2000}
-        social_media_links: {type: object, maxProperties: 10, additionalProperties: {type: string, format: uri, maxLength: 500}}
-        status: {type: string, enum: [pending, approved, rejected]}
-        priority: {type: integer}
-        reviewed_by: {type: string, format: uuid}
-        reviewed_at: {type: string, format: date-time}
-        reviewer_notes: {type: string, maxLength: 2000}
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
-
-    CreateVerificationApplicationRequest:
-      type: object
-      additionalProperties: false
-      required: [twitch_channel_url]
-      properties:
-        twitch_channel_url: {type: string, format: uri, pattern: '^https://(www\.)?twitch\.tv/[^/]+/?$', maxLength: 500}
-        follower_count: {type: integer, minimum: 0, maximum: 1000000000}
-        subscriber_count: {type: integer, minimum: 0, maximum: 1000000000}
-        avg_viewers: {type: integer, minimum: 0, maximum: 1000000000}
-        content_description: {type: string, maxLength: 2000}
-        social_media_links: {type: object, maxProperties: 10, additionalProperties: {type: string, format: uri, maxLength: 500}}
-
-    VerificationApplicationResponse:
-      type: object
-      required: [success, data, message]
-      properties:
-        success: {type: boolean, const: true}
-        data: {$ref: '#/components/schemas/VerificationApplication'}
-        message: {type: string}
-
-    VerificationApplicationGetResponse:
-      type: object
-      required: [success, data]
-      properties:
-        success: {type: boolean, const: true}
-        data: {$ref: '#/components/schemas/VerificationApplication'}
-
     PlaylistListItem:
       allOf:
         - $ref: '#/components/schemas/Playlist'
@@ -14218,10 +13723,6 @@ components:
   # - POST /register - Register device token (auth)
   # - DELETE /unregister - Unregister device (auth)
   #
-  # VERIFICATION (/api/v1/verification/*)
-  # - POST /applications - Apply for verification (auth, rate limited - 1/h)
-  # - GET /applications/me - Get application status (auth)
-  #
   # WEBHOOKS (/api/v1/webhooks/*)
   # - POST /sendgrid - SendGrid webhook handler (no auth, signature verified)
   # - GET /events - Get supported events (rate limited - 60/min)
@@ -14352,11 +13853,6 @@ components:
   # - GET /:id/comment-suspension-history - Get suspension history
   # - POST /:id/toggle-comment-review - Toggle comment review requirement
   #
-  # ADMIN - ACCOUNT TYPES (/api/v1/admin/account-types/* - admin + MFA)
-  # - GET /stats - Get account type statistics
-  # - GET /conversions - Get recent conversions
-  # - POST /users/:id/convert-to-moderator - Convert to moderator
-  #
   # ADMIN - ANALYTICS (/api/v1/admin/analytics/* - admin/moderator + MFA)
   # - GET /overview - Platform overview
   # - GET /content - Content metrics
@@ -14407,14 +13903,6 @@ components:
   # - GET /health - Health check
   # - GET /config - Get configuration
   # - POST /scan-clips - Scan clip thumbnails
-  #
-  # ADMIN - VERIFICATION (/api/v1/admin/verification/* - admin/moderator + MFA)
-  # - GET /applications - List applications
-  # - GET /applications/:id - Get application
-  # - POST /applications/:id/review - Review application
-  # - GET /stats - Application statistics
-  # - GET /audit-logs - Verification audit logs
-  # - GET /users/:user_id/audit-logs - User audit history
   #
   # ADMIN - DISCOVERY LISTS (/api/v1/admin/discovery-lists/* - admin/moderator + MFA)
   # - GET / - List discovery lists

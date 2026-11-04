@@ -309,7 +309,6 @@ counts that included planned or missing artifacts.
 - Social links management
 - Avatar/banner images (Twitch)
 - Bio and display name
-- Verification badge display
 - Activity streams
 - Karma display
 
@@ -361,7 +360,6 @@ counts that included planned or missing artifacts.
 **Features**:
 - Account deletion (soft delete with grace period)
 - Data export (GDPR compliance)
-- Account type conversion (user → creator → broadcaster)
 - Consent management
 - Session management
 - Email change (via settings)
@@ -771,7 +769,7 @@ anomaly-scoring analytics implementation has been removed. See
 - **Configuration Management**: Feature flags (✅ complete)
 - **Notification System**: In-app, email, push (✅ complete)
 - **Filter Presets**: Save feed filters (✅ complete)
-- **Creator Verification**: Application and review (✅ complete)
+- **Creator Verification**: removed in November 2026 (no applications were ever reviewed)
 - **Theatre Mode & UI**: Responsive, accessible (✅ complete)
 
 ---

@@ -1,5 +1,5 @@
 # Only Gin route-precedence cases may be suppressed. The executable contract in
-# backend/cmd/api/openapi_route_precedence_test.go owns this exact 25-entry list.
+# backend/cmd/api/openapi_route_precedence_test.go owns this exact 24-entry list.
 docs/openapi/openapi.yaml:
   no-ambiguous-paths:
     - '#/paths/~1api~1v1~1users~1{id}~1reputation'
@@ -15,7 +15,6 @@ docs/openapi/openapi.yaml:
     - '#/paths/~1api~1v1~1users~1{id}~1follow'
     - '#/paths/~1api~1v1~1users~1{id}~1block'
     - '#/paths/~1api~1v1~1users~1{id}~1engagement'
-    - '#/paths/~1api~1v1~1users~1{id}~1account-type'
     - '#/paths/~1api~1v1~1admin~1moderation~1{id}~1approve'
     - '#/paths/~1api~1v1~1admin~1moderation~1{id}~1reject'
     - '#/paths/~1api~1v1~1playlists~1{id}~1bookmark'

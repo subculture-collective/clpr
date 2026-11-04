@@ -19,7 +19,6 @@ export interface AccountRoutePages {
     playlistDetail: Page;
     playlistTheatre: Page;
     profile: Page;
-    verificationApplication: Page;
     settings: Page;
     cookieSettings: Page;
     webhookSubscriptions: Page;
@@ -68,10 +67,6 @@ export function accountRoutes(pages: AccountRoutePages) {
             <Route path='/playlists/:id' element={publicPage(pages.playlistDetail)} />
             <Route path='/playlists/:id/theatre' element={publicPage(pages.playlistTheatre)} />
             <Route path='/profile' element={protectedPage(pages.profile, 'Profile')} />
-            <Route
-                path='/verification/apply'
-                element={protectedPage(pages.verificationApplication, 'Creator Verification')}
-            />
             <Route path='/settings' element={protectedPage(pages.settings, 'Settings')} />
             <Route path='/settings/cookies' element={publicPage(pages.cookieSettings)} />
             <Route

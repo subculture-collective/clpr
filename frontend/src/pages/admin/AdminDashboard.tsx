@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { adminNavGroups } from '../../components/admin/adminNavigation';
 import { SEO } from '../../components';
 
 const priorityActions = [
     { label: 'Review moderation queue', href: '/admin/moderation', description: 'Work through the highest-priority reports and flagged content.', icon: ShieldCheck },
-    { label: 'Review creator verification', href: '/admin/verification', description: 'Approve or reject pending creator applications.', icon: CheckCircle2 },
     { label: 'Check collection automation', href: '/admin/playlist-scripts', description: 'Inspect generated playlists and scheduling rules.', icon: Sparkles },
 ];
 

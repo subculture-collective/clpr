@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -2395,44 +2394,6 @@ const (
 	CommunityRoleMember = "member"
 )
 
-// AccountTypeConversion represents a conversion from one account type to another
-type AccountTypeConversion struct {
-	ID          uuid.UUID              `json:"id" db:"id"`
-	UserID      uuid.UUID              `json:"user_id" db:"user_id"`
-	OldType     string                 `json:"old_type" db:"old_type"`
-	NewType     string                 `json:"new_type" db:"new_type"`
-	Reason      *string                `json:"reason,omitempty" db:"reason"`
-	ConvertedBy *uuid.UUID             `json:"converted_by,omitempty" db:"converted_by"`
-	ConvertedAt time.Time              `json:"converted_at" db:"converted_at"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
-	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
-}
-
-// AccountTypeConversionWithUser includes user and converter information
-type AccountTypeConversionWithUser struct {
-	AccountTypeConversion
-	User        *User `json:"user,omitempty"`
-	ConvertedBy *User `json:"converted_by_user,omitempty"`
-}
-
-// ConvertToBroadcasterRequest represents the request to convert to broadcaster account type
-type ConvertToBroadcasterRequest struct {
-	Reason *string `json:"reason,omitempty" binding:"omitempty,max=500"`
-}
-
-// ConvertToModeratorRequest represents the request to convert to moderator account type
-type ConvertToModeratorRequest struct {
-	Reason *string `json:"reason,omitempty" binding:"omitempty,max=500"`
-}
-
-// AccountTypeResponse represents the response for account type queries
-type AccountTypeResponse struct {
-	AccountType       string                  `json:"account_type"`
-	UpdatedAt         *time.Time              `json:"updated_at,omitempty"`
-	Permissions       []string                `json:"permissions"`
-	ConversionHistory []AccountTypeConversion `json:"conversion_history,omitempty"`
-}
-
 // UserMFA represents multi-factor authentication configuration for a user
 type UserMFA struct {
 	ID                     int        `json:"id" db:"id"`
@@ -2802,147 +2763,6 @@ type ModerationAnalytics struct {
 	MostBannedUsers      []BannedUserStat  `json:"most_banned_users"`
 	Appeals              *AppealStats      `json:"appeals,omitempty"`
 }
-
-// ============================================================================
-// Creator Verification System Models
-// ============================================================================
-
-// CreatorVerificationApplication represents a creator's verification application
-type CreatorVerificationApplication struct {
-	ID                 uuid.UUID              `json:"id" db:"id"`
-	UserID             uuid.UUID              `json:"user_id" db:"user_id"`
-	TwitchChannelURL   string                 `json:"twitch_channel_url" db:"twitch_channel_url"`
-	FollowerCount      *int                   `json:"follower_count,omitempty" db:"follower_count"`
-	SubscriberCount    *int                   `json:"subscriber_count,omitempty" db:"subscriber_count"`
-	AvgViewers         *int                   `json:"avg_viewers,omitempty" db:"avg_viewers"`
-	ContentDescription *string                `json:"content_description,omitempty" db:"content_description"`
-	SocialMediaLinks   map[string]interface{} `json:"social_media_links,omitempty" db:"social_media_links"`
-	Status             string                 `json:"status" db:"status"` // pending, approved, rejected
-	Priority           int                    `json:"priority" db:"priority"`
-	ReviewedBy         *uuid.UUID             `json:"reviewed_by,omitempty" db:"reviewed_by"`
-	ReviewedAt         *time.Time             `json:"reviewed_at,omitempty" db:"reviewed_at"`
-	ReviewerNotes      *string                `json:"reviewer_notes,omitempty" db:"reviewer_notes"`
-	CreatedAt          time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt          time.Time              `json:"updated_at" db:"updated_at"`
-}
-
-// CreatorVerificationApplicationWithUser includes user information
-type CreatorVerificationApplicationWithUser struct {
-	CreatorVerificationApplication
-	User       *User `json:"user,omitempty"`
-	ReviewedBy *User `json:"reviewed_by_user,omitempty"`
-}
-
-// CreatorVerificationDecision represents a verification decision audit entry
-type CreatorVerificationDecision struct {
-	ID            uuid.UUID              `json:"id" db:"id"`
-	ApplicationID uuid.UUID              `json:"application_id" db:"application_id"`
-	ReviewerID    uuid.UUID              `json:"reviewer_id" db:"reviewer_id"`
-	Decision      string                 `json:"decision" db:"decision"` // approved, rejected
-	Notes         *string                `json:"notes,omitempty" db:"notes"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
-	CreatedAt     time.Time              `json:"created_at" db:"created_at"`
-}
-
-// VerificationApplicationStats represents statistics about verification applications
-type VerificationApplicationStats struct {
-	TotalPending  int `json:"total_pending"`
-	TotalApproved int `json:"total_approved"`
-	TotalRejected int `json:"total_rejected"`
-	TotalVerified int `json:"total_verified"` // Total verified users
-}
-
-// CreateVerificationApplicationRequest represents the request to apply for verification
-type CreateVerificationApplicationRequest struct {
-	TwitchChannelURL   string            `json:"twitch_channel_url" binding:"required,url,max=500"`
-	FollowerCount      *int              `json:"follower_count,omitempty" binding:"omitempty,min=0"`
-	SubscriberCount    *int              `json:"subscriber_count,omitempty" binding:"omitempty,min=0"`
-	AvgViewers         *int              `json:"avg_viewers,omitempty" binding:"omitempty,min=0"`
-	ContentDescription *string           `json:"content_description,omitempty" binding:"omitempty,max=2000"`
-	SocialMediaLinks   map[string]string `json:"social_media_links,omitempty"`
-}
-
-func (r *CreateVerificationApplicationRequest) Validate() error {
-	parsed, err := url.Parse(r.TwitchChannelURL)
-	if err != nil || parsed.Scheme != "https" || (strings.ToLower(parsed.Hostname()) != "twitch.tv" && strings.ToLower(parsed.Hostname()) != "www.twitch.tv") {
-		return fmt.Errorf("twitch_channel_url must be an HTTPS Twitch channel URL")
-	}
-	if strings.Trim(parsed.Path, "/") == "" || strings.Contains(strings.Trim(parsed.Path, "/"), "/") {
-		return fmt.Errorf("twitch_channel_url must identify one channel")
-	}
-	for _, value := range []*int{r.FollowerCount, r.SubscriberCount, r.AvgViewers} {
-		if value != nil && *value > 1_000_000_000 {
-			return fmt.Errorf("audience metrics are too large")
-		}
-	}
-	if len(r.SocialMediaLinks) > 10 {
-		return fmt.Errorf("social_media_links cannot contain more than 10 entries")
-	}
-	for key, value := range r.SocialMediaLinks {
-		if len(key) < 1 || len(key) > 50 || len(value) > 500 {
-			return fmt.Errorf("invalid social media link")
-		}
-		parsed, err := url.Parse(value)
-		if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
-			return fmt.Errorf("social media links must use HTTPS")
-		}
-	}
-	return nil
-}
-
-// ReviewVerificationApplicationRequest represents admin request to review an application
-type ReviewVerificationApplicationRequest struct {
-	Decision string  `json:"decision" binding:"required,oneof=approved rejected"`
-	Notes    *string `json:"notes,omitempty" binding:"omitempty,max=2000"`
-}
-
-// Verification status constants
-const (
-	VerificationStatusPending  = "pending"
-	VerificationStatusApproved = "approved"
-	VerificationStatusRejected = "rejected"
-)
-
-// Verification decision constants
-const (
-	VerificationDecisionApproved = "approved"
-	VerificationDecisionRejected = "rejected"
-)
-
-// VerificationAuditLog represents an audit log entry for verified users
-type VerificationAuditLog struct {
-	ID          uuid.UUID              `json:"id" db:"id"`
-	UserID      uuid.UUID              `json:"user_id" db:"user_id"`
-	AuditType   string                 `json:"audit_type" db:"audit_type"` // periodic_check, manual_review, abuse_detection
-	Status      string                 `json:"status" db:"status"`         // passed, flagged, revoked
-	Findings    map[string]interface{} `json:"findings,omitempty" db:"findings"`
-	Notes       *string                `json:"notes,omitempty" db:"notes"`
-	AuditedBy   *uuid.UUID             `json:"audited_by,omitempty" db:"audited_by"`
-	ActionTaken *string                `json:"action_taken,omitempty" db:"action_taken"` // none, warning_sent, verification_revoked, further_review_required
-	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
-}
-
-// Audit type constants
-const (
-	AuditTypePeriodicCheck  = "periodic_check"
-	AuditTypeManualReview   = "manual_review"
-	AuditTypeAbuseDetection = "abuse_detection"
-)
-
-// Audit status constants
-const (
-	AuditStatusPassed  = "passed"
-	AuditStatusFlagged = "flagged"
-	AuditStatusRevoked = "revoked"
-)
-
-// Audit action constants
-const (
-	AuditActionNone                  = "none"
-	AuditActionWarningSent           = "warning_sent"
-	AuditActionVerificationRevoked   = "verification_revoked"
-	AuditActionFurtherReviewRequired = "further_review_required"
-)
 
 // BanReasonTemplate represents a reusable ban reason template
 type BanReasonTemplate struct {

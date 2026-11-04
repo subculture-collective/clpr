@@ -51,8 +51,6 @@ type Handlers struct {
 	Category            *handlers.CategoryHandler
 	Topic               *handlers.TopicHandler
 	Game                *handlers.GameHandler
-	AccountType         *handlers.AccountTypeHandler
-	Verification        *handlers.VerificationHandler
 	ApplicationLog      *handlers.ApplicationLogHandler
 	BanReasonTemplate   *handlers.BanReasonTemplateHandler
 	Recommendation      *handlers.RecommendationHandler
@@ -141,8 +139,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	categoryHandler := handlers.NewCategoryHandler(repos.Category, repos.Clip)
 	topicHandler := handlers.NewTopicHandler(repos.ClipTopic)
 	gameHandler := handlers.NewGameHandler(repos.Game, repos.Clip, svcs.Auth)
-	accountTypeHandler := handlers.NewAccountTypeHandler(svcs.AccountType, svcs.Auth)
-	verificationHandler := handlers.NewVerificationHandler(repos.Verification, svcs.Notification, pool)
 	applicationLogHandler := handlers.NewApplicationLogHandler(repos.ApplicationLog)
 	banReasonTemplateHandler := handlers.NewBanReasonTemplateHandler(svcs.BanReasonTemplate, svcs.Logger)
 
@@ -242,8 +238,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Category:            categoryHandler,
 		Topic:               topicHandler,
 		Game:                gameHandler,
-		AccountType:         accountTypeHandler,
-		Verification:        verificationHandler,
 		ApplicationLog:      applicationLogHandler,
 		BanReasonTemplate:   banReasonTemplateHandler,
 		Recommendation:      recommendationHandler,

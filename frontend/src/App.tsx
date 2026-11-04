@@ -201,11 +201,6 @@ const AdminModerationQueuePage = lazy(() =>
         default: m.AdminModerationQueuePage,
     })),
 );
-const AdminVerificationQueuePage = lazy(() =>
-    import('./pages/admin/AdminVerificationQueuePage').then(m => ({
-        default: m.AdminVerificationQueuePage,
-    })),
-);
 const AdminModerationAnalyticsPage = lazy(
     () => import('./pages/admin/AdminModerationAnalyticsPage'),
 );
@@ -274,16 +269,6 @@ const SupportPage = lazy(() => import('./pages/SupportPage'));
 const RoleBadgeTestPage = lazy(() =>
     import('./pages/RoleBadgeTestPage').then(m => ({
         default: m.RoleBadgeTestPage,
-    })),
-);
-const VerifiedBadgeTestPage = lazy(() =>
-    import('./pages/VerifiedBadgeTestPage').then(m => ({
-        default: m.VerifiedBadgeTestPage,
-    })),
-);
-const VerificationApplicationPage = lazy(() =>
-    import('./pages/VerificationApplicationPage').then(m => ({
-        default: m.VerificationApplicationPage,
     })),
 );
 const PlaylistsPage = lazy(() =>
@@ -498,12 +483,6 @@ function App() {
                                                         <RoleBadgeTestPage />
                                                     }
                                                 />
-                                                <Route
-                                                    path='/test/verified-badge'
-                                                    element={
-                                                        <VerifiedBadgeTestPage />
-                                                    }
-                                                />
                                             </>
                                         )}
 
@@ -542,7 +521,6 @@ function App() {
                                             playlistDetail: PlaylistDetailPage,
                                             playlistTheatre: PlaylistTheatrePage,
                                             profile: ProfilePage,
-                                            verificationApplication: VerificationApplicationPage,
                                             settings: SettingsPage,
                                             cookieSettings: CookieSettingsPage,
                                             webhookSubscriptions: WebhookSubscriptionsPage,
@@ -569,7 +547,6 @@ function App() {
                                                 moderationAnalytics: AdminModerationAnalyticsPage,
                                                 moderators: AdminModeratorsPage,
                                                 auditLogs: AdminAuditLogsPage,
-                                                verification: AdminVerificationQueuePage,
                                                 discoveryLists: AdminDiscoveryListsPage,
                                                 discoveryListForm: AdminDiscoveryListFormPage,
                                                 playlistScripts: AdminPlaylistScriptsPage,

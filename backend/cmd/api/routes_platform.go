@@ -163,15 +163,6 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		notifications.DELETE("/unregister", h.Notification.UnregisterDeviceToken)
 	}
 
-	// Creator verification routes
-	verification := v1.Group("/verification")
-	{
-		// Protected endpoints (require authentication)
-		verification.Use(middleware.AuthMiddleware(svcs.Auth))
-		verification.POST("/applications", middleware.RateLimitMiddleware(infra.Redis, 1, time.Hour), h.Verification.CreateApplication)
-		verification.GET("/applications/me", h.Verification.GetApplication)
-	}
-
 	// SendGrid verifies its provider signature internally.
 	v1.POST("/webhooks/sendgrid", h.SendGridWebhook.HandleWebhook)
 

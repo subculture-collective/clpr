@@ -1,27 +1,6 @@
 [
   {
     "method": "GET",
-    "path": "/api/v1/admin/account-types/conversions",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetRecentConversions-fm",
-    "operation_id": "getApiV1AdminAccountTypesConversions",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/account-types/stats",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetAccountTypeStats-fm",
-    "operation_id": "getApiV1AdminAccountTypesStats",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/account-types/users/{id}/convert-to-moderator",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).ConvertToModerator-fm",
-    "operation_id": "postApiV1AdminAccountTypesUsersIdConvertToModerator",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
     "path": "/api/v1/admin/analytics/alerts",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*EngagementHandler).CheckAlerts-fm",
     "operation_id": "getApiV1AdminAnalyticsAlerts",
@@ -683,48 +662,6 @@
     "path": "/api/v1/admin/users/{id}/unban",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AdminUserHandler).UnbanUser-fm",
     "operation_id": "postApiV1AdminUsersIdUnban",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/verification/applications",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).ListApplications-fm",
-    "operation_id": "getApiV1AdminVerificationApplications",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/verification/applications/{id}",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplicationByID-fm",
-    "operation_id": "getApiV1AdminVerificationApplicationsId",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/verification/applications/{id}/review",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).ReviewApplication-fm",
-    "operation_id": "postApiV1AdminVerificationApplicationsIdReview",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/verification/audit-logs",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetAuditLogs-fm",
-    "operation_id": "getApiV1AdminVerificationAuditLogs",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/verification/stats",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplicationStats-fm",
-    "operation_id": "getApiV1AdminVerificationStats",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/verification/users/{user_id}/audit-logs",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetUserAuditHistory-fm",
-    "operation_id": "getApiV1AdminVerificationUsersUserIdAuditLogs",
     "contract_level": "route-specific"
   },
   {
@@ -2394,13 +2331,6 @@
     "contract_level": "route-specific"
   },
   {
-    "method": "POST",
-    "path": "/api/v1/users/me/convert-to-broadcaster",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).ConvertToBroadcaster-fm",
-    "operation_id": "postApiV1UsersMeConvertToBroadcaster",
-    "contract_level": "route-specific"
-  },
-  {
     "method": "GET",
     "path": "/api/v1/users/me/discovery-list-follows",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetUserFollowedLists-fm",
@@ -2454,20 +2384,6 @@
     "path": "/api/v1/users/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserProfile-fm",
     "operation_id": "getUserProfile",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/users/{id}/account-type",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetAccountType-fm",
-    "operation_id": "getApiV1UsersIdAccountType",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/users/{id}/account-type/history",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*AccountTypeHandler).GetConversionHistory-fm",
-    "operation_id": "getApiV1UsersIdAccountTypeHistory",
     "contract_level": "route-specific"
   },
   {
@@ -2706,20 +2622,6 @@
     "path": "/api/v1/users/{id}/upvoted",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*UserHandler).GetUserUpvotedClips-fm",
     "operation_id": "getUserUpvotedClips",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/verification/applications",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).CreateApplication-fm",
-    "operation_id": "postApiV1VerificationApplications",
-    "contract_level": "route-specific"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/verification/applications/me",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*VerificationHandler).GetApplication-fm",
-    "operation_id": "getApiV1VerificationApplicationsMe",
     "contract_level": "route-specific"
   },
   {
