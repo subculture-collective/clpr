@@ -1443,7 +1443,12 @@ func (r *ClipRepository) RefreshHotScores(ctx context.Context) error {
 		defer func() {
 			_, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock(hashtext('clpr:hot_score'))`)
 		}()
-		_, err = conn.Exec(ctx, fmt.Sprintf("REFRESH MATERIALIZED VIEW CONCURRENTLY %s", HotClipsMaterializedView))
+		// The refresh rebuilds the whole view, so it gets the background
+		// budget instead of the request pool default.
+		err = RunWithBackgroundBudget(ctx, conn, func(tx pgx.Tx) error {
+			_, execErr := tx.Exec(ctx, fmt.Sprintf("REFRESH MATERIALIZED VIEW CONCURRENTLY %s", HotClipsMaterializedView))
+			return execErr
+		})
 		if err != nil {
 			return fmt.Errorf("failed to refresh hot scores: %w", err)
 		}
