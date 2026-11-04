@@ -35,7 +35,6 @@ Production operations, monitoring, security, and maintenance procedures.
 - [[waf-protection|WAF Protection]] - Application-level WAF and rate limiting
 - [[ddos-protection|DDoS Protection]] - DDoS mitigation and traffic analytics
 - [[observability|Observability]] - Distributed tracing
-- [[CDN_FAILOVER_RUNBOOK|CDN Failover Runbook]] - CDN failover procedures
 - [[DEPLOYMENT_AUTOMATION|Deployment Automation]] - Automated deployment processes
 - [[TWITCH_BAN_UNBAN_TESTING_ROLLOUT_DOCS|Twitch Moderation Rollout]] - Twitch moderation feature rollout
 

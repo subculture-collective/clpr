@@ -199,7 +199,6 @@ type ClipHandler struct {
 	clipService        *services.ClipService
 	creatorClipService creatorClipService
 	authService        *services.AuthService
-	cdnProvider        services.CDNProvider
 	clipConfig         *config.ClipConfig
 }
 
@@ -226,13 +225,6 @@ func NewClipHandler(clipService *services.ClipService, authService *services.Aut
 
 // ClipHandlerOption configures optional ClipHandler behavior.
 type ClipHandlerOption func(*ClipHandler)
-
-// WithCDNProvider enables CDN-aware responses with retry/backoff and failover headers.
-func WithCDNProvider(provider services.CDNProvider) ClipHandlerOption {
-	return func(h *ClipHandler) {
-		h.cdnProvider = provider
-	}
-}
 
 // WithClipConfig enables app-owned media URLs for direct clip media.
 func WithClipConfig(cfg *config.ClipConfig) ClipHandlerOption {
@@ -440,20 +432,6 @@ func (h *ClipHandler) GetClip(c *gin.Context) {
 		return
 	}
 
-	// Attempt to generate CDN URL with retry/backoff and fall back to origin on failure
-	if h.cdnProvider != nil {
-		cdnURL, cdnErr := h.getCDNURLWithRetry(&clip.Clip)
-		if cdnErr != nil {
-			h.applyFailoverHeaders(c, cdnErr)
-			h.applyOriginFallbackCacheHeaders(c)
-			if clip.VideoURL != nil {
-				clip.PrimaryCDNURL = clip.VideoURL
-			}
-		} else if cdnURL != "" {
-			clip.PrimaryCDNURL = &cdnURL
-			h.applyCDNCacheHeaders(c)
-		}
-	}
 	h.applyAppMediaURL(clip)
 
 	c.JSON(http.StatusOK, StandardResponse{
@@ -613,18 +591,7 @@ func (h *ClipHandler) GetHLSMasterPlaylist(c *gin.Context) {
 	}
 
 	var playlistURL string
-	if h.cdnProvider != nil {
-		cdnURL, cdnErr := h.getCDNURLWithRetry(&clip.Clip)
-		if cdnErr != nil {
-			h.applyFailoverHeaders(c, cdnErr)
-			h.applyOriginFallbackCacheHeaders(c)
-		} else if cdnURL != "" {
-			playlistURL = cdnURL
-			h.applyCDNCacheHeaders(c)
-		}
-	}
-
-	if playlistURL == "" && clip.VideoURL != nil {
+	if clip.VideoURL != nil {
 		playlistURL = *clip.VideoURL
 	}
 
@@ -646,63 +613,6 @@ func (h *ClipHandler) GetHLSMasterPlaylist(c *gin.Context) {
 
 	c.Header("Content-Type", "application/vnd.apple.mpegurl; charset=utf-8")
 	c.String(http.StatusOK, "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-STREAM-INF:BANDWIDTH=1500000\n%s\n", playlistURL)
-}
-
-// getCDNURLWithRetry attempts to generate a CDN URL with simple exponential backoff.
-func (h *ClipHandler) getCDNURLWithRetry(clip *models.Clip) (string, error) {
-	if h.cdnProvider == nil {
-		return "", nil
-	}
-
-	backoff := 50 * time.Millisecond
-	var lastErr error
-	for attempt := 1; attempt <= 3; attempt++ {
-		cdnURL, err := h.cdnProvider.GenerateURL(clip)
-		if err == nil && cdnURL != "" {
-			return cdnURL, nil
-		}
-
-		lastErr = err
-		if attempt < 3 {
-			time.Sleep(backoff)
-			backoff *= 2
-		}
-	}
-
-	if lastErr == nil {
-		lastErr = errors.New("failed to generate CDN URL")
-	}
-
-	return "", lastErr
-}
-
-// applyFailoverHeaders annotates the response with CDN failover metadata.
-func (h *ClipHandler) applyFailoverHeaders(c *gin.Context, err error) {
-	reason := "error"
-	if errors.Is(err, context.DeadlineExceeded) {
-		reason = "timeout"
-	}
-
-	c.Header("X-CDN-Failover", "true")
-	c.Header("X-CDN-Failover-Reason", reason)
-	c.Header("X-CDN-Failover-Service", "origin")
-}
-
-// applyOriginFallbackCacheHeaders sets conservative cache headers for origin fallback responses.
-func (h *ClipHandler) applyOriginFallbackCacheHeaders(c *gin.Context) {
-	c.Header("Cache-Control", "public, max-age=120, stale-while-revalidate=60")
-	c.Header("X-CDN-Failover-Service", "origin")
-}
-
-// applyCDNCacheHeaders uses provider-specific cache headers when available.
-func (h *ClipHandler) applyCDNCacheHeaders(c *gin.Context) {
-	if h.cdnProvider == nil {
-		return
-	}
-
-	for key, val := range h.cdnProvider.GetCacheHeaders() {
-		c.Header(key, val)
-	}
 }
 
 // BatchGetClipMedia handles POST /clips/batch-media

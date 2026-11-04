@@ -32,8 +32,6 @@ type Config struct {
 	QueryLimits     QueryLimitsConfig
 	SearchLimits    SearchLimitsConfig
 	HybridSearch    HybridSearchConfig
-	CDN             CDNConfig
-	Mirror          MirrorConfig
 	Recommendations RecommendationsConfig
 	Toxicity        ToxicityConfig
 	NSFW            NSFWConfig
@@ -297,33 +295,6 @@ type SearchLimitsConfig struct {
 	MaxQueryClauses    int // Maximum query clauses (default: 20)
 	MaxSearchTimeSec   int // Maximum search timeout in seconds (default: 5)
 	MaxOffset          int // Maximum search pagination offset (default: 1000)
-}
-
-// CDNConfig holds CDN provider configuration
-type CDNConfig struct {
-	Enabled          bool
-	Provider         string // cloudflare, bunny, aws-cloudfront
-	CloudflareZoneID string
-	CloudflareAPIKey string
-	BunnyAPIKey      string
-	BunnyStorageZone string
-	AWSAccessKeyID   string
-	AWSSecretKey     string
-	AWSRegion        string
-	CacheTTL         int     // Cache TTL in seconds (default: 3600)
-	MaxCostPerGB     float64 // Maximum cost per GB in USD (default: 0.10)
-}
-
-// MirrorConfig holds mirror hosting configuration
-type MirrorConfig struct {
-	Enabled                bool
-	Regions                []string // List of regions to mirror clips to (e.g., us-east-1, eu-west-1)
-	ReplicationThreshold   int      // Minimum view count to trigger mirroring (default: 1000)
-	TTLDays                int      // Mirror TTL in days (default: 7)
-	MaxMirrorsPerClip      int      // Maximum mirrors per clip (default: 3)
-	SyncIntervalMinutes    int      // Interval to check for popular clips (default: 60)
-	CleanupIntervalMinutes int      // Interval to cleanup expired mirrors (default: 1440, 24 hours)
-	MinMirrorHitRate       float64  // Minimum mirror hit rate percentage (default: 60.0)
 }
 
 // RecommendationsConfig holds recommendation algorithm configuration
@@ -657,29 +628,6 @@ func Load() (*Config, error) {
 			MaxQueryClauses:    getEnvInt("SEARCH_MAX_QUERY_CLAUSES", 20),
 			MaxSearchTimeSec:   getEnvInt("SEARCH_MAX_TIME_SEC", 5),
 			MaxOffset:          getEnvInt("SEARCH_MAX_OFFSET", 1000),
-		},
-		CDN: CDNConfig{
-			Enabled:          getEnvBool("CDN_ENABLED", false),
-			Provider:         getEnv("CDN_PROVIDER", "cloudflare"),
-			CloudflareZoneID: getEnv("CDN_CLOUDFLARE_ZONE_ID", ""),
-			CloudflareAPIKey: getEnv("CDN_CLOUDFLARE_API_KEY", ""),
-			BunnyAPIKey:      getEnv("CDN_BUNNY_API_KEY", ""),
-			BunnyStorageZone: getEnv("CDN_BUNNY_STORAGE_ZONE", ""),
-			AWSAccessKeyID:   getEnv("CDN_AWS_ACCESS_KEY_ID", ""),
-			AWSSecretKey:     getEnv("CDN_AWS_SECRET_KEY", ""),
-			AWSRegion:        getEnv("CDN_AWS_REGION", "us-east-1"),
-			CacheTTL:         getEnvInt("CDN_CACHE_TTL", 3600),
-			MaxCostPerGB:     getEnvFloat("CDN_MAX_COST_PER_GB", 0.10),
-		},
-		Mirror: MirrorConfig{
-			Enabled:                getEnvBool("MIRROR_ENABLED", false),
-			Regions:                parseCommaSeparatedList(getEnv("MIRROR_REGIONS", "us-east-1,eu-west-1,ap-southeast-1")),
-			ReplicationThreshold:   getEnvInt("MIRROR_REPLICATION_THRESHOLD", 1000),
-			TTLDays:                getEnvInt("MIRROR_TTL_DAYS", 7),
-			MaxMirrorsPerClip:      getEnvInt("MIRROR_MAX_PER_CLIP", 3),
-			SyncIntervalMinutes:    getEnvInt("MIRROR_SYNC_INTERVAL_MINUTES", 60),
-			CleanupIntervalMinutes: getEnvInt("MIRROR_CLEANUP_INTERVAL_MINUTES", 1440),
-			MinMirrorHitRate:       getEnvFloat("MIRROR_MIN_HIT_RATE", 60.0),
 		},
 		Recommendations: RecommendationsConfig{
 			// Hybrid algorithm weights

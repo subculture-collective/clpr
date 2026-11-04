@@ -183,9 +183,6 @@ type Clip struct {
 	EndTime      *float64   `json:"end_time,omitempty" db:"end_time"`
 	// CDN and mirror fields
 	PrimaryCDNURL    *string    `json:"primary_cdn_url,omitempty" db:"primary_cdn_url"`
-	CDNProvider      *string    `json:"cdn_provider,omitempty" db:"cdn_provider"`
-	IsMirrored       bool       `json:"is_mirrored" db:"is_mirrored"`
-	MirrorCount      int        `json:"mirror_count" db:"mirror_count"`
 	LastMirrorSyncAt *time.Time `json:"last_mirror_sync_at,omitempty" db:"last_mirror_sync_at"`
 	// Watch progress (populated from watch history, not in database)
 	WatchProgress *WatchProgressInfo `json:"watch_progress,omitempty" db:"-"`
@@ -3776,94 +3773,6 @@ type TwitchAuthStatusResponse struct {
 	TwitchUsername         *string    `json:"twitch_username,omitempty"`
 	ExpiresAt              *time.Time `json:"expires_at,omitempty"`
 }
-
-// ============================================================================
-// CDN and Mirror Models
-// ============================================================================
-
-// ClipMirror represents a mirrored clip in a specific region
-type ClipMirror struct {
-	ID              uuid.UUID  `json:"id" db:"id"`
-	ClipID          uuid.UUID  `json:"clip_id" db:"clip_id"`
-	Region          string     `json:"region" db:"region"`
-	MirrorURL       string     `json:"mirror_url" db:"mirror_url"`
-	Status          string     `json:"status" db:"status"` // pending, active, failed, expired
-	StorageProvider string     `json:"storage_provider" db:"storage_provider"`
-	SizeBytes       *int64     `json:"size_bytes,omitempty" db:"size_bytes"`
-	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
-	LastAccessedAt  *time.Time `json:"last_accessed_at,omitempty" db:"last_accessed_at"`
-	AccessCount     int        `json:"access_count" db:"access_count"`
-	ExpiresAt       *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	FailureReason   *string    `json:"failure_reason,omitempty" db:"failure_reason"`
-}
-
-// MirrorMetrics represents metrics for mirror performance
-type MirrorMetrics struct {
-	ID          uuid.UUID              `json:"id" db:"id"`
-	ClipID      uuid.UUID              `json:"clip_id" db:"clip_id"`
-	Region      string                 `json:"region" db:"region"`
-	MetricType  string                 `json:"metric_type" db:"metric_type"` // access, failover, bandwidth, cost
-	MetricValue float64                `json:"metric_value" db:"metric_value"`
-	RecordedAt  time.Time              `json:"recorded_at" db:"recorded_at"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
-}
-
-// CDNConfiguration represents CDN provider configuration
-type CDNConfiguration struct {
-	ID        uuid.UUID              `json:"id" db:"id"`
-	Provider  string                 `json:"provider" db:"provider"` // cloudflare, bunny, aws-cloudfront
-	Region    *string                `json:"region,omitempty" db:"region"`
-	IsActive  bool                   `json:"is_active" db:"is_active"`
-	Priority  int                    `json:"priority" db:"priority"`
-	Config    map[string]interface{} `json:"config" db:"config"`
-	CreatedAt time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time              `json:"updated_at" db:"updated_at"`
-}
-
-// CDNMetrics represents CDN performance and cost metrics
-type CDNMetrics struct {
-	ID          uuid.UUID              `json:"id" db:"id"`
-	Provider    string                 `json:"provider" db:"provider"`
-	Region      *string                `json:"region,omitempty" db:"region"`
-	MetricType  string                 `json:"metric_type" db:"metric_type"` // latency, bandwidth, cost, cache_hit_rate, requests
-	MetricValue float64                `json:"metric_value" db:"metric_value"`
-	RecordedAt  time.Time              `json:"recorded_at" db:"recorded_at"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
-}
-
-// MirrorStatus constants
-const (
-	MirrorStatusPending = "pending"
-	MirrorStatusActive  = "active"
-	MirrorStatusFailed  = "failed"
-	MirrorStatusExpired = "expired"
-)
-
-// CDN Provider constants
-// Note: These constants use CamelCase (matching Go conventions), but their string values
-// use lowercase-with-hyphens (matching configuration and documentation conventions)
-const (
-	CDNProviderCloudflare    = "cloudflare"     // Cloudflare CDN
-	CDNProviderBunny         = "bunny"          // Bunny.net CDN
-	CDNProviderAWSCloudFront = "aws-cloudfront" // AWS CloudFront CDN
-)
-
-// Mirror metric types
-const (
-	MirrorMetricTypeAccess    = "access"
-	MirrorMetricTypeFailover  = "failover"
-	MirrorMetricTypeBandwidth = "bandwidth"
-	MirrorMetricTypeCost      = "cost"
-)
-
-// CDN metric types
-const (
-	CDNMetricTypeLatency      = "latency"
-	CDNMetricTypeBandwidth    = "bandwidth"
-	CDNMetricTypeCost         = "cost"
-	CDNMetricTypeCacheHitRate = "cache_hit_rate"
-	CDNMetricTypeRequests     = "requests"
-)
 
 // ServiceStatus represents the current status of a service
 type ServiceStatus struct {
