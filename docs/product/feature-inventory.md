@@ -550,9 +550,9 @@ counts that included planned or missing artifacts.
 
 #### 5.4 Recommendations
 
-- **Status**: 🟡 partial | **Backend**: `/api/v1/recommendations/*`
-- **Features**: Personalized recommendations, feedback system, preferences
-- **Gaps**: Algorithm tuning, cold start handling, A/B testing
+- **Status**: reduced in November 2026 | **Backend**: `/api/v1/recommendations/preferences`, `/api/v1/recommendations/onboarding`
+- **Features**: Creator-first onboarding preferences
+- **Removed**: the personalised engine (content-based, collaborative, cold start, hybrid), feedback, view tracking and the offline evaluation and grid-search tools; the feed ranks by Twitch view velocity instead
 
 ---
 

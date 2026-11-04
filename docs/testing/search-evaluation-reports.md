@@ -19,7 +19,6 @@ The search evaluation framework consists of:
 
 1. **Labeled Evaluation Dataset** - 510+ queries with graded relevance judgments
 2. **Evaluation Metrics** - nDCG, MRR, Precision, and Recall at various cutoffs
-3. **A/B Testing Harness** - Compare different ranking configurations
 4. **CI Automation** - Automated nightly evaluation and PR integration
 
 ## Quick Start
@@ -36,22 +35,6 @@ go run ./cmd/evaluate-search -verbose
 
 # Save results to JSON file
 go run ./cmd/evaluate-search -output results.json
-```
-
-### Running A/B Tests
-
-```bash
-# List available configurations
-go run ./cmd/search-ab-test -list-configs
-
-# Compare two configurations
-go run ./cmd/search-ab-test -config-a baseline -config-b semantic-heavy
-
-# Save comparison results
-go run ./cmd/search-ab-test \
-  -config-a baseline \
-  -config-b engagement-focused \
-  -output comparison.json
 ```
 
 ## Evaluation Dataset
@@ -117,65 +100,6 @@ python3 generate_search_dataset.py
 - ⚠️ **Warning**: Metric below target but above critical threshold
 - ❌ **Critical**: Metric below critical threshold (CI fails)
 
-## A/B Testing
-
-### Available Configurations
-
-The framework provides 8 pre-defined search configurations:
-
-1. **baseline** - Current production configuration
-   - Balanced BM25/semantic weights
-   - Standard field boosts
-
-2. **semantic-heavy** - Emphasize semantic understanding
-   - Higher weight on vector search (0.6 vs 0.3)
-   - Better for conceptual/semantic queries
-
-3. **text-heavy** - Emphasize exact text matching
-   - Higher weight on BM25 (0.8 vs 0.2)
-   - Better for precise term matching
-
-4. **engagement-focused** - Prioritize popular content
-   - Higher engagement boost (0.3 vs 0.1)
-   - Surfaces viral/popular clips
-
-5. **recency-focused** - Prioritize recent content
-   - Higher recency boost (0.8 vs 0.5)
-   - Surfaces fresh content
-
-6. **balanced** - Equal BM25/semantic weights
-   - 50/50 split between approaches
-   - Moderate engagement/recency boosts
-
-7. **title-priority** - Heavily prioritize title matches
-   - Higher title boost (5.0 vs 3.0)
-   - Better for title-specific queries
-
-8. **creator-priority** - Prioritize creator name matches
-   - Higher creator boost (4.0 vs 2.0)
-   - Better for creator-focused queries
-
-### Interpreting A/B Results
-
-The A/B test tool provides:
-
-1. **Metrics Comparison** - Side-by-side metric values with percentage changes
-2. **Recommendation** - Suggested action based on improvements:
-   - **Significant improvement** (>5% avg, 3+ metrics up): Switch to Config B
-   - **Moderate improvement** (>2% avg, 2+ metrics up): A/B test with live traffic
-   - **Similar performance** (±2%): Stay with Config A
-   - **Degradation** (<-2% avg): Stay with Config A
-
-3. **Statistical Summary** - Count of significant changes (>5%)
-
-### Best Practices
-
-1. **Always test before deploying** - Use A/B harness to compare changes
-2. **Monitor multiple metrics** - Don't optimize for a single metric
-3. **Consider query diversity** - Ensure improvements across query types
-4. **Validate with live traffic** - Simulated results may differ from production
-5. **Document changes** - Track configuration changes and their impact
-
 ## CI Integration
 
 The GitHub Actions workflow (`.github/workflows/search-evaluation.yml`) runs:
@@ -218,8 +142,6 @@ make evaluate-search
 # Run evaluation with JSON output
 make evaluate-search-json
 
-# Run A/B test
-make search-ab-test  # (if target added to Makefile)
 ```
 
 ## Architecture
@@ -230,10 +152,8 @@ make search-ab-test  # (if target added to Makefile)
 backend/
 ├── cmd/
 │   ├── evaluate-search/      # CLI tool for running evaluations
-│   └── search-ab-test/        # CLI tool for A/B testing
 ├── internal/services/
 │   ├── search_evaluation_service.go    # Core evaluation logic
-│   └── search_ab_testing.go            # A/B testing harness
 ├── testdata/
 │   └── search_evaluation_dataset.yaml  # Labeled queries
 └── scripts/
@@ -249,15 +169,6 @@ backend/
 5. Aggregate across all queries
 6. Compare against targets
 7. Generate report
-
-### A/B Testing Flow
-
-1. Define two configurations (A and B)
-2. Run evaluation for Config A
-3. Run evaluation for Config B
-4. Calculate percentage improvements
-5. Generate recommendation based on changes
-6. Provide statistical summary
 
 ## Future Enhancements
 

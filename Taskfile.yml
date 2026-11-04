@@ -454,31 +454,6 @@ tasks:
       - mkdir -p {{.BACKEND_BIN_DIR}}
       - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-search ./cmd/evaluate-search
       - ./{{.BACKEND_BIN_DIR}}/evaluate-search -output backend/evaluation-results.json
-  evaluate:recommendations:
-    desc: Run recommendation quality evaluation
-    aliases: [evaluate-recommendations]
-    cmds:
-      - mkdir -p {{.BACKEND_BIN_DIR}}
-      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-recommendations ./cmd/evaluate-recommendations
-      - ./{{.BACKEND_BIN_DIR}}/evaluate-recommendations -verbose
-  evaluate-recommendations-json:
-    desc: Run recommendation evaluation and output JSON
-    cmds:
-      - mkdir -p {{.BACKEND_BIN_DIR}}
-      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/evaluate-recommendations ./cmd/evaluate-recommendations
-      - ./{{.BACKEND_BIN_DIR}}/evaluate-recommendations -output backend/recommendation-evaluation-results.json
-  grid-search-recommendations:
-    desc: Run quick recommendation parameter grid search
-    cmds:
-      - mkdir -p {{.BACKEND_BIN_DIR}}
-      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/grid-search-recommendations ./cmd/grid-search-recommendations
-      - ./{{.BACKEND_BIN_DIR}}/grid-search-recommendations -quick -verbose
-  grid-search-recommendations-full:
-    desc: Run full recommendation parameter grid search
-    cmds:
-      - mkdir -p {{.BACKEND_BIN_DIR}}
-      - cd backend && go build -o ../{{.BACKEND_BIN_DIR}}/grid-search-recommendations ./cmd/grid-search-recommendations
-      - ./{{.BACKEND_BIN_DIR}}/grid-search-recommendations -output backend/grid-search-results.json
 
   openapi:validate:
     desc: Validate OpenAPI specification

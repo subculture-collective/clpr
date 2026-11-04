@@ -119,12 +119,6 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		// All recommendation endpoints require authentication
 		recommendations.Use(middleware.AuthMiddleware(svcs.Auth))
 
-		// Get personalized clip recommendations
-		recommendations.GET("/clips", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Recommendation.GetRecommendations)
-
-		// Submit feedback on recommendations
-		recommendations.POST("/feedback", middleware.RateLimitMiddleware(infra.Redis, 100, time.Minute), h.Recommendation.SubmitFeedback)
-
 		// Get user preferences
 		recommendations.GET("/preferences", h.Recommendation.GetPreferences)
 
@@ -133,9 +127,6 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 
 		// Complete onboarding flow
 		recommendations.POST("/onboarding", middleware.RateLimitMiddleware(infra.Redis, 5, time.Minute), h.Recommendation.CompleteOnboarding)
-
-		// Track view for recommendation engine
-		recommendations.POST("/track-view/:id", middleware.RateLimitMiddleware(infra.Redis, 200, time.Minute), h.Recommendation.TrackView)
 	}
 
 	// Notification routes

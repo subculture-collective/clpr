@@ -96,7 +96,6 @@ SORT title ASC
 - [[testing-performance|Performance Testing]] - Load testing strategies
 - [[profiling|Profiling]] - Performance profiling guide
 - [[optimization-analysis|Optimization Analysis]] - Performance optimization
-- [[CF-OPTIMIZATION-RESULTS|Cloudflare Optimization Results]] - CDN optimization
 
 ### Content Moderation
 
