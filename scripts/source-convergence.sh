@@ -141,7 +141,10 @@ require_selected_tools() {
 require_clean_checkout() {
     local changes
     changes="$(git status --porcelain=v1 --untracked-files=all)"
-    [[ -z "$changes" ]] || fail "checkout is not clean; convergence evidence requires one immutable source tree"
+    [[ -z "$changes" ]] || {
+        printf 'dirty paths after %s:\n%s\n' "$current_phase" "$changes" >&2
+        fail "checkout is not clean; convergence evidence requires one immutable source tree"
+    }
     if [[ -n "$candidate_sha" ]]; then
         [[ "$(git rev-parse HEAD)" == "$candidate_sha" ]] \
             || fail "HEAD changed after source convergence began"
