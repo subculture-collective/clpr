@@ -72,11 +72,7 @@ func (h *CommentHandler) ListComments(c *gin.Context) {
 	// List comments with optional nested replies
 	comments, err := h.commentService.ListCommentsWithReplies(c.Request.Context(), clipID, sortBy, limit, offset, userID, includeReplies)
 	if err != nil {
-		// Log the actual error for debugging
-		_ = c.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to retrieve comments",
-		})
+		writeReadError(c, err, "Failed to retrieve comments")
 		return
 	}
 

@@ -24,7 +24,12 @@ type BroadcasterHandler struct {
 	clipRepo             *repository.ClipRepository
 	twitchClient         *twitch.Client
 	authService          *services.AuthService
+	// popularCache memoizes the popular list per limit. The query groups
+	// every clip on each request and the ranking moves slowly.
+	popularCache *ttlCache[int, []models.PopularBroadcaster]
 }
+
+const popularBroadcastersCacheTTL = 5 * time.Minute
 
 type broadcasterRankingRefresher interface {
 	RefreshRankings(context.Context) error
@@ -48,6 +53,7 @@ func NewBroadcasterHandler(
 		clipRepo:             clipRepo,
 		twitchClient:         twitchClient,
 		authService:          authService,
+		popularCache:         newTTLCache[int, []models.PopularBroadcaster](popularBroadcastersCacheTTL),
 	}
 }
 
@@ -221,10 +227,19 @@ func (h *BroadcasterHandler) ListPopularBroadcasters(c *gin.Context) {
 		limit = parsed
 	}
 
-	broadcasters, err := h.broadcasterRepo.ListPopularBroadcasters(c.Request.Context(), limit)
+	ctx := c.Request.Context()
+	listPopular := func() ([]models.PopularBroadcaster, error) {
+		return h.broadcasterRepo.ListPopularBroadcasters(ctx, limit)
+	}
+	var broadcasters []models.PopularBroadcaster
+	var err error
+	if h.popularCache != nil {
+		broadcasters, err = h.popularCache.get(limit, listPopular)
+	} else {
+		broadcasters, err = listPopular()
+	}
 	if err != nil {
-		utils.GetLogger().Error("Failed to list popular broadcasters", err, nil)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list popular broadcasters"})
+		writeReadError(c, err, "failed to list popular broadcasters")
 		return
 	}
 

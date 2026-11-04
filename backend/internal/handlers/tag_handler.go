@@ -244,20 +244,14 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 	// Get tags from repository
 	tags, err := h.tagRepo.List(c.Request.Context(), sort, lane, limit, offset)
 	if err != nil {
-		utils.GetLogger().Error("Failed to list tags", err, map[string]interface{}{"sort": sort, "lane": lane})
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch tags",
-		})
+		writeReadError(c, err, "Failed to fetch tags")
 		return
 	}
 
 	// Get total count
 	total, err := h.tagRepo.Count(c.Request.Context(), lane)
 	if err != nil {
-		utils.GetLogger().Error("Failed to count tags", err, map[string]interface{}{"lane": lane})
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to count tags",
-		})
+		writeReadError(c, err, "Failed to count tags")
 		return
 	}
 
@@ -818,9 +812,7 @@ func (h *TagHandler) GetClipTags(c *gin.Context) {
 
 	tags, err := h.tagRepo.GetClipTags(c.Request.Context(), clipID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch tags",
-		})
+		writeReadError(c, err, "Failed to fetch tags")
 		return
 	}
 

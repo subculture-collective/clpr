@@ -38,6 +38,8 @@ func defaultHTTPErrorCode(statusCode int) string {
 		return "UNPROCESSABLE_ENTITY"
 	case http.StatusTooManyRequests:
 		return "RATE_LIMITED"
+	case 499:
+		return "CLIENT_CLOSED_REQUEST"
 	case http.StatusInternalServerError:
 		return "INTERNAL_ERROR"
 	case http.StatusBadGateway:
