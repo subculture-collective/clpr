@@ -637,18 +637,18 @@ type ClipFilters struct {
 	TagsLogic           string   // "and" | "or", default "and"
 	ExcludeTags         []string // Exclude clips with any of these tag slugs
 	Search              *string
-	Language            *string // Language code (e.g., en, es, fr)
-	Timeframe           *string // hour, day, week, month, year, all
-	DateFrom            *string // ISO 8601 date string for custom date range start
-	DateTo              *string // ISO 8601 date string for custom date range end
-	Sort                string  // hot, new, top, rising, discussed, trending
-	Top10kStreamers     bool    // Filter clips to only top 10k streamers
-	ShowHidden          bool    // If true, include hidden clips (for owners/admins)
-	CreatorID           *string // Filter by creator ID (for creator dashboard)
-	SubmittedByUserID   *string // Filter by submitted_by_user_id (for user profile submissions)
-	UserSubmittedOnly   bool    // If true, only show clips with submitted_by_user_id IS NOT NULL
-	Cursor              *string // Cursor for cursor-based pagination (base64 encoded)
-	TrendingShuffleSeed *string // Stateless per-session seed; applied only to automated clips in trending feeds
+	Language            *string    // Language code (e.g., en, es, fr)
+	Timeframe           *string    // hour, day, week, month, year, all
+	DateFrom            *string    // ISO 8601 date string for custom date range start
+	DateTo              *string    // ISO 8601 date string for custom date range end
+	Sort                string     // hot, new, top, rising, discussed, trending
+	Top10kStreamers     bool       // Filter clips to only top 10k streamers
+	ShowHidden          bool       // If true, include hidden clips (for owners/admins)
+	CreatorID           *string    // Filter by creator ID (for creator dashboard)
+	SubmittedByUserID   *string    // Filter by submitted_by_user_id (for user profile submissions)
+	UserSubmittedOnly   bool       // If true, only show clips with submitted_by_user_id IS NOT NULL
+	Cursor              *string    // Cursor for cursor-based pagination (base64 encoded)
+	TrendingShuffleSeed *string    // Stateless per-session seed; applied only to automated clips in trending feeds
 	SortSnapshot        *time.Time // Evaluation time for the "rising" sort; carried in cursors so pages share one ordering
 }
 
@@ -2086,6 +2086,14 @@ const DefaultTrendingScoreBatchSize = 200
 // meant for requests.
 const trendingRefreshStatementTimeout = "60s"
 
+// TrendingRefreshWindow bounds which clips a refresh writes back. Every
+// refresh still ranks all visible clips so percentiles stay comparable, but
+// only clips created, imported or view-observed inside the window are
+// rewritten; older clips keep their last stored score. On production the
+// global percentiles drift a little whenever new clips arrive, which rewrote
+// all 78k visible clips about three times a day for no visible change.
+const TrendingRefreshWindow = 14 * 24 * time.Hour
+
 // UpdateTrendingScores updates trending_score, hot_score, popularity_index, and engagement_count for all clips
 // This should be called periodically (e.g., hourly) by a scheduler job
 func (r *ClipRepository) UpdateTrendingScores(ctx context.Context) (int64, error) {
@@ -2106,11 +2114,17 @@ func beginTrendingRefreshTx(ctx context.Context, conn *pgxpool.Conn) (pgx.Tx, er
 }
 
 func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchSize int) (int64, error) {
+	return r.updateTrendingScoresBatched(ctx, batchSize, TrendingRefreshWindow)
+}
+
+// updateTrendingScoresBatched rewrites the clips inside window; window <= 0 rewrites every visible clip.
+func (r *ClipRepository) updateTrendingScoresBatched(ctx context.Context, batchSize int, window time.Duration) (int64, error) {
+	windowArg := trendingRefreshWindowArg(window)
 	// Repository unit tests inject the narrow clipDB interface. Keep the
 	// original single-statement path available there; production repositories
 	// always have rawPool and use the bounded implementation below.
 	if r.rawPool == nil {
-		result, err := r.pool.Exec(ctx, trendingScoreUpdateQuery)
+		result, err := r.pool.Exec(ctx, trendingScoreUpdateQuery, windowArg)
 		if err != nil {
 			return 0, fmt.Errorf("failed to update trending scores: %w", err)
 		}
@@ -2143,7 +2157,7 @@ func (r *ClipRepository) UpdateTrendingScoresBatched(ctx context.Context, batchS
 		_ = stageTx.Rollback(ctx)
 		return 0, fmt.Errorf("clearing trending score stage: %w", err)
 	}
-	if _, err := stageTx.Exec(ctx, trendingScoreStageQuery); err != nil {
+	if _, err := stageTx.Exec(ctx, trendingScoreStageQuery, windowArg); err != nil {
 		_ = stageTx.Rollback(ctx)
 		return 0, fmt.Errorf("calculating trending score snapshot: %w", err)
 	}
@@ -2192,7 +2206,10 @@ WITH signals AS (
 		)) AS velocity_signal,
 		1.0 / (1.0 + GREATEST(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0, 0) / 24.0) AS freshness_signal,
 		CASE WHEN submitted_by_user_id IS NOT NULL THEN 0.35 ELSE 0.0 END AS community_boost,
-		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement
+		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement,
+		(created_at >= NOW() - $1::interval
+			OR imported_at >= NOW() - $1::interval
+			OR view_count_observed_at >= NOW() - $1::interval) AS in_window
 	FROM clips
 	WHERE is_removed = false AND is_hidden = false
 ), ranked AS (
@@ -2202,7 +2219,8 @@ WITH signals AS (
 		PERCENT_RANK() OVER (ORDER BY velocity_signal) AS velocity_percentile,
 		freshness_signal,
 		community_boost,
-		engagement
+		engagement,
+		in_window
 	FROM signals
 ), scores AS (
 	SELECT
@@ -2211,11 +2229,21 @@ WITH signals AS (
 		(velocity_percentile * 0.35) +
 		(freshness_signal * 0.15) +
 		community_boost AS feed_rank,
-		engagement
+		engagement,
+		in_window
 	FROM ranked
 )
-SELECT id, feed_rank, feed_rank, engagement, engagement, NOW() FROM scores
+SELECT id, feed_rank, feed_rank, engagement, engagement, NOW() FROM scores WHERE in_window
 `
+
+// trendingRefreshWindowArg renders the refresh window for the $1::interval
+// parameter; a non-positive window means every visible clip.
+func trendingRefreshWindowArg(window time.Duration) string {
+	if window <= 0 {
+		return "1000 years"
+	}
+	return fmt.Sprintf("%d hours", int64(window.Hours()))
+}
 
 const trendingScoreBatchQuery = `
 WITH selected AS (
@@ -2260,19 +2288,21 @@ WITH signals AS (
 			ELSE view_velocity END, 0)) AS velocity_signal,
 		1.0 / (1.0 + GREATEST(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0, 0) / 24.0) AS freshness_signal,
 		CASE WHEN submitted_by_user_id IS NOT NULL THEN 0.35 ELSE 0.0 END AS community_boost,
-		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement
+		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement,
+		(created_at >= NOW() - $1::interval OR imported_at >= NOW() - $1::interval
+			OR view_count_observed_at >= NOW() - $1::interval) AS in_window
 	FROM clips WHERE is_removed=false AND is_hidden=false
 ), ranked AS (
 	SELECT id, PERCENT_RANK() OVER (ORDER BY view_signal) AS view_percentile,
 		PERCENT_RANK() OVER (ORDER BY velocity_signal) AS velocity_percentile,
-		freshness_signal, community_boost, engagement FROM signals
+		freshness_signal, community_boost, engagement, in_window FROM signals
 ), scores AS (
 	SELECT id, (view_percentile*0.30)+(velocity_percentile*0.35)+
-		(freshness_signal*0.15)+community_boost AS feed_rank, engagement FROM ranked
+		(freshness_signal*0.15)+community_boost AS feed_rank, engagement, in_window FROM ranked
 )
 UPDATE clips c SET engagement_count=scores.engagement, trending_score=scores.feed_rank,
 hot_score=scores.feed_rank, popularity_index=scores.engagement
-FROM scores WHERE c.id=scores.id`
+FROM scores WHERE c.id=scores.id AND scores.in_window`
 
 // UpdateTrendingScoresForTimeWindow preserves the legacy interface. Mixed-feed
 // percentiles require the complete candidate population, so every refresh ranks

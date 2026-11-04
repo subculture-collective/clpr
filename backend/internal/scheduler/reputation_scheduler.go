@@ -5,14 +5,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/google/uuid"
 )
 
 const (
 	reputationSchedulerName = "reputation"
 	reputationJobName       = "reputation_tasks"
+	// reputationActivityWindow bounds which users a scheduled run recalculates.
+	// Idle accounts cannot change except by account age, which is recomputed
+	// when they return. Production had 51,904 accounts and 5 with any
+	// activity in 90 days, and every run recalculated all of them.
+	reputationActivityWindow = 90 * 24 * time.Hour
 )
 
 // ReputationServiceInterface defines the interface required by the scheduler
@@ -32,7 +37,7 @@ type ReputationScheduler struct {
 
 // UserRepositoryInterface defines the interface for getting users
 type UserRepositoryInterface interface {
-	GetAllActiveUserIDs(ctx context.Context) ([]uuid.UUID, error)
+	GetUserIDsActiveSince(ctx context.Context, since time.Time) ([]uuid.UUID, error)
 }
 
 // NewReputationScheduler creates a new reputation scheduler
@@ -89,14 +94,16 @@ func (s *ReputationScheduler) Stop() {
 
 // runTasks executes reputation maintenance tasks
 func (s *ReputationScheduler) runTasks(ctx context.Context) {
-	utils.Info("Starting scheduled reputation tasks", map[string]interface{}{
-		"scheduler": reputationSchedulerName,
-		"job":       reputationJobName,
-	})
 	startTime := time.Now()
+	since := startTime.Add(-reputationActivityWindow)
+	utils.Info("Starting scheduled reputation tasks", map[string]interface{}{
+		"scheduler":    reputationSchedulerName,
+		"job":          reputationJobName,
+		"active_since": since.Format(time.RFC3339),
+	})
 
-	// Get all active user IDs
-	userIDs, err := s.userRepo.GetAllActiveUserIDs(ctx)
+	// Only users with recent activity can have a changed score
+	userIDs, err := s.userRepo.GetUserIDsActiveSince(ctx, since)
 	if err != nil {
 		utils.Error("Failed to get active users", err, map[string]interface{}{
 			"scheduler": reputationSchedulerName,
