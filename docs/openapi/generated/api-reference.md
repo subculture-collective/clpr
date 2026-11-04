@@ -5,7 +5,7 @@ tags: ["api", "reference", "openapi"]
 area: "openapi"
 status: "stable"
 version: "1.0.0"
-generated: 2026-09-25T14:20:23.097Z
+generated: 2026-11-04T05:51:56.847Z
 ---
 
 # Clipper API
@@ -73,7 +73,6 @@ The API uses standard HTTP status codes:
 - [Users](#users)
 - [Broadcasters](#broadcasters)
 - [Categories](#categories)
-- [Streams](#streams)
 - [Games](#games)
 - [Feeds](#feeds)
 - [Recommendations](#recommendations)
@@ -1178,7 +1177,7 @@ func main() {
 
 `GET /api/v1/auth/twitch/callback`
 
-Handles OAuth callback from Twitch (rate limited - 50/minute)
+Handles OAuth callback from Twitch (rate limited - 50/minute). PKCE sign-ins are redirected to the frontend to finish the exchange. Other sign-ins redirect to `/auth/success?success=true`, or to `/auth/success?mfa_required=true` with an HttpOnly `mfa_challenge` cookie when the user has MFA enabled on an untrusted device; the session is then issued by `POST /api/v1/auth/mfa/verify-login`.
 
 **Tags:** Authentication
 
@@ -1281,7 +1280,7 @@ func main() {
 
 `POST /api/v1/auth/twitch/callback`
 
-Handles PKCE OAuth callback (rate limited - 50/minute)
+Handles PKCE OAuth callback (rate limited - 50/minute). When the user has MFA enabled on an untrusted device, no session cookies are set: the response has `mfa_required: true` and an HttpOnly `mfa_challenge` cookie, and the session is issued by `POST /api/v1/auth/mfa/verify-login`.
 
 **Tags:** Authentication
 
@@ -1291,7 +1290,7 @@ Content-Type: `application/json`
 
 #### Responses
 
-**200** - Authentication successful
+**200** - Sign-in step completed. `mfa_required` is true when an MFA code must still be submitted to `/api/v1/auth/mfa/verify-login`.
 
 **400** - Success
 
@@ -1403,7 +1402,7 @@ func main() {
 
 `POST /api/v1/auth/test-login`
 
-Creates test user session for development (rate limited - 30/minute)
+Creates test user session for development (rate limited - 30/minute). Users with MFA enabled get `{"mfa_required": true}` and an `mfa_challenge` cookie instead of a session, as with Twitch sign-in.
 
 **Tags:** Authentication
 
@@ -2667,7 +2666,7 @@ func main() {
 
 `POST /api/v1/auth/mfa/verify-login`
 
-Verifies MFA code during login (rate limited - 10/minute)
+Completes a sign-in that stopped for an MFA code (rate limited - 10/minute). The pending sign-in is identified by the HttpOnly `mfa_challenge` cookie set by the OAuth callback; it expires after 5 minutes and allows 5 wrong codes. On success the challenge is consumed and the access and refresh token cookies are set.
 
 **Tags:** MFA
 
@@ -2677,13 +2676,13 @@ Content-Type: `application/json`
 
 #### Responses
 
-**200** - MFA verification successful
+**200** - MFA verification successful; session cookies are set
 
-**400** - Success
+**400** - Invalid request body or incorrect code (`MFA_CODE_INVALID`)
 
-**401** - Success
+**401** - No pending sign-in (`MFA_CHALLENGE_MISSING`) or it expired (`MFA_CHALLENGE_EXPIRED`); sign in again
 
-**429** - Success
+**429** - Too many wrong codes for this sign-in (`MFA_CHALLENGE_EXHAUSTED`) or for the account (`MFA_LOCKED`)
 
 #### Code Examples
 
@@ -5059,110 +5058,6 @@ func main() {
 
 ---
 
-### Request clip media backfill
-
-`POST /api/v1/clips/{id}/backfill`
-
-Returns ready/processing state or queues a bounded visible clip for configured media processing.
-
-**Tags:** Clips
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/clips/{id}/backfill"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/clips/{id}/backfill', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/clips/{id}/backfill'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("POST", "/api/v1/clips/{id}/backfill", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
 ### Resolve direct clip media
 
 `GET /api/v1/clips/{id}/media`
@@ -5243,110 +5138,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("GET", "/api/v1/clips/{id}/media", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get clip processing status
-
-`GET /api/v1/clips/{id}/processing-status`
-
-Returns a minimal status without internal job payloads and reports dependency failure as 503.
-
-**Tags:** Clips
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| id | path | string | ✓ |  |
-
-#### Responses
-
-**200** - Success
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/clips/{id}/processing-status"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/clips/{id}/processing-status', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/clips/{id}/processing-status'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/clips/{id}/processing-status", nil)
     if err != nil {
         // Handle error
         return
@@ -59833,6 +59624,7 @@ func main() {
 |------|-------|------|----------|-------------|
 | page | query | integer |  |  |
 | limit | query | integer |  |  |
+| source | query | string |  | Use `community` to leave out script-generated collections. |
 
 #### Responses
 
@@ -64688,549 +64480,6 @@ import (
 
 func main() {
     req, err := http.NewRequest("GET", "/api/v1/streamer-clip-rooms/{channel}/ws", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-## Streams
-
-Live stream integration
-
-### List followed streamers
-
-`GET /api/v1/streams/following`
-
-**Tags:** Streams
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-| limit | query | integer |  |  |
-| offset | query | integer |  |  |
-
-#### Responses
-
-**200** - Follows returned
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/streams/following"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/streams/following', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/streams/following'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/streams/following", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get a streamer's live status
-
-`GET /api/v1/streams/{streamer}`
-
-**Tags:** Streams
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Stream status returned
-
-**400** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/streams/{streamer}"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/streams/{streamer}', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/streams/{streamer}'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/streams/{streamer}", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Follow a streamer
-
-`POST /api/v1/streams/{streamer}/follow`
-
-**Tags:** Streams
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Request Body
-
-Content-Type: `application/json`
-
-#### Responses
-
-**200** - Streamer followed
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X POST "https://clpr.tv/api/v1/streams/{streamer}/follow" \
-  -H "Content-Type: application/json" \
-  -d '{"example": "data"}'
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/streams/{streamer}/follow', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      // Your request data
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.post(
-        '/api/v1/streams/{streamer}/follow',
-        json={}  # Your request data
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-    "bytes"
-    "encoding/json"
-)
-
-func main() {
-    // Create request body
-    data := map[string]interface{}{
-        // Your request data
-    }
-    jsonBody, err := json.Marshal(data)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    req, err := http.NewRequest("POST", "/api/v1/streams/{streamer}/follow", bytes.NewBuffer(jsonBody))
-    if err != nil {
-        // Handle error
-        return
-    }
-    req.Header.Set("Content-Type", "application/json")
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Unfollow a streamer
-
-`DELETE /api/v1/streams/{streamer}/follow`
-
-**Tags:** Streams
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Streamer unfollowed
-
-**400** - Success
-
-**401** - Success
-
-**404** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X DELETE "https://clpr.tv/api/v1/streams/{streamer}/follow"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/streams/{streamer}/follow', {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.delete(
-        '/api/v1/streams/{streamer}/follow'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("DELETE", "/api/v1/streams/{streamer}/follow", nil)
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        // Handle error
-        return
-    }
-    defer resp.Body.Close()
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        // Handle error
-        return
-    }
-    // Process body
-    _ = body
-}
-```
-
----
-
-### Get stream follow status
-
-`GET /api/v1/streams/{streamer}/follow-status`
-
-**Tags:** Streams
-
-#### Parameters
-
-| Name | In | Type | Required | Description |
-|------|-------|------|----------|-------------|
-|  |  | string |  |  |
-
-#### Responses
-
-**200** - Follow status returned
-
-**400** - Success
-
-**401** - Success
-
-**500** - Success
-
-#### Code Examples
-
-##### cURL
-
-```bash
-curl -X GET "https://clpr.tv/api/v1/streams/{streamer}/follow-status"
-```
-
-##### JavaScript
-
-```javascript
-// Using fetch API
-try {
-  const response = await fetch('/api/v1/streams/{streamer}/follow-status', {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
-  const data = await response.json();
-  // Process data
-} catch (error) {
-  console.error('Error:', error);
-}
-```
-
-##### Python
-
-```python
-import requests
-
-try:
-    response = requests.get(
-        '/api/v1/streams/{streamer}/follow-status'
-    )
-    response.raise_for_status()  # Raise error for bad status
-    data = response.json()
-    # Process data
-except requests.exceptions.RequestException as e:
-    print(f"Error: {e}")
-```
-
-##### Go
-
-```go
-package main
-
-import (
-    "net/http"
-    "io"
-)
-
-func main() {
-    req, err := http.NewRequest("GET", "/api/v1/streams/{streamer}/follow-status", nil)
     if err != nil {
         // Handle error
         return

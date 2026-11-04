@@ -49,11 +49,8 @@ type Services struct {
 	Playlist                 *services.PlaylistService
 	PlaylistScript           *services.PlaylistScriptService
 	Queue                    *services.QueueService
-	ClipExtractionJob        *services.ClipExtractionJobService
 	StreamerClipRoom         *services.StreamerClipRoomService
 	StreamerClipRoomListener *services.TwitchChatListenerManager
-	WatchParty               *services.WatchPartyService
-	WatchPartyHubManager     *services.WatchPartyHubManager
 	EventTracker             *services.EventTracker
 	Export                   *services.ExportService
 	SearchIndexer            *services.SearchIndexerService // may be nil
@@ -196,20 +193,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	queueService := services.NewQueueService(repos.Queue, repos.Clip, playlistService)
 	streamerClipRoomService := services.NewStreamerClipRoomService(repos.StreamerClipRoom, repos.Clip)
 	streamerClipRoomChat := services.NewTwitchChatListenerManager(streamerClipRoomService)
-
-	// Initialize clip extraction job service for FFmpeg processing
-	clipExtractionJobService := services.NewClipExtractionJobService(infra.Redis)
-
-	// Initialize watch party service and hub manager
-	watchPartyService := services.NewWatchPartyService(repos.WatchParty, repos.Playlist, repos.Clip, cfg.Server.BaseURL)
-
-	// Initialize rate limiters for watch party (distributed via Redis)
-	// 10 messages per minute per user
-	chatRateLimiter := services.NewDistributedRateLimiter(infra.Redis, 10, time.Minute)
-	// 30 reactions per minute per user
-	reactRateLimiter := services.NewDistributedRateLimiter(infra.Redis, 30, time.Minute)
-
-	watchPartyHubManager := services.NewWatchPartyHubManager(repos.WatchParty, chatRateLimiter, reactRateLimiter)
 
 	// Initialize event tracker for feed analytics
 	eventTracker := services.NewEventTracker(pool, 100, 5*time.Second)
@@ -390,11 +373,8 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Playlist:                 playlistService,
 		PlaylistScript:           playlistScriptService,
 		Queue:                    queueService,
-		ClipExtractionJob:        clipExtractionJobService,
 		StreamerClipRoom:         streamerClipRoomService,
 		StreamerClipRoomListener: streamerClipRoomChat,
-		WatchParty:               watchPartyService,
-		WatchPartyHubManager:     watchPartyHubManager,
 		EventTracker:             eventTracker,
 		Export:                   exportService,
 		SearchIndexer:            searchIndexerService,

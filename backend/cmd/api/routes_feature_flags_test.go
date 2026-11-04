@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
-	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,26 +21,6 @@ func TestReleaseRouterRejectsTestLoginEvenWithDevelopmentEnvironment(t *testing.
 	}
 }
 
-func TestIncompleteFeatureRoutesDefaultAbsent(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	v1 := router.Group("/api/v1")
-	cfg := &config.Config{}
-	infra := &Infrastructure{Config: cfg}
-	h := &Handlers{
-		Stream:     &handlers.StreamHandler{},
-		LiveStatus: &handlers.LiveStatusHandler{},
-	}
-
-	registerPlatformRoutes(v1, h, &Services{}, infra)
-	registerSocialRoutes(v1, &Handlers{}, &Services{}, infra)
-
-	assertRouteAbsent(t, router, "POST", "/api/v1/streams/:streamer/clips")
-	assertRouteAbsent(t, router, "GET", "/api/v1/feed/live")
-	assertRouteAbsent(t, router, "POST", "/api/v1/watch-parties")
-	assertRouteAbsent(t, router, "GET", "/api/v1/users/:id/watch-party-stats")
-}
-
 func TestAccountDeletionRoutesRemainAbsentUntilErasureWorkerExists(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -52,30 +31,6 @@ func TestAccountDeletionRoutesRemainAbsentUntilErasureWorkerExists(t *testing.T)
 	assertRouteAbsent(t, router, "POST", "/api/v1/users/me/delete/cancel")
 	assertRouteAbsent(t, router, "GET", "/api/v1/users/me/delete/status")
 	assertRouteAbsent(t, router, "GET", "/api/v1/users/me/export")
-}
-
-func TestIncompleteFeatureRoutesRequireExplicitFlags(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	v1 := router.Group("/api/v1")
-	cfg := &config.Config{FeatureFlags: config.FeatureFlagsConfig{
-		StreamClipCreation: true,
-		LiveFeed:           true,
-		WatchParties:       true,
-	}}
-	infra := &Infrastructure{Config: cfg}
-	h := &Handlers{
-		Stream:     &handlers.StreamHandler{},
-		LiveStatus: &handlers.LiveStatusHandler{},
-	}
-
-	registerPlatformRoutes(v1, h, &Services{}, infra)
-	registerSocialRoutes(v1, &Handlers{}, &Services{}, infra)
-
-	assertRoutePresent(t, router, "POST", "/api/v1/streams/:streamer/clips")
-	assertRoutePresent(t, router, "GET", "/api/v1/feed/live")
-	assertRoutePresent(t, router, "POST", "/api/v1/watch-parties")
-	assertRoutePresent(t, router, "GET", "/api/v1/users/:id/watch-party-stats")
 }
 
 func TestProfilingRoutesAreDebugOnly(t *testing.T) {

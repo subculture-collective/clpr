@@ -35,7 +35,7 @@ last_reviewed: 2026-09-08
   - [6. Content Moderation](#6-content-moderation)
   - [7. Free accounts and legacy billing](#7-free-accounts-and-legacy-billing)
   - [8. Analytics & Metrics](#8-analytics--metrics)
-  - [9. Live Streams & Watch Parties](#9-live-streams--watch-parties)
+  - [9. Live Status](#9-live-status)
   - [10. Community & Forums](#10-community--forums)
   - [11. Webhooks & Integrations](#11-webhooks--integrations)
   - [12. Admin & Moderation Tools](#12-admin--moderation-tools)
@@ -635,19 +635,13 @@ anomaly-scoring analytics implementation has been removed. See
 
 ---
 
-### 9. Live Streams & Watch Parties
+### 9. Live Status
 
-#### 9.1 Live Stream Integration
+#### 9.1 Broadcaster Live Status
 
-- **Status**: 🟡 partial | **Backend**: `/api/v1/streams/*`, `/api/v1/broadcasters/:id/live-status`
-- **Features**: Status tracking, follow, notifications, scheduled updates
-- **Gaps**: Live-feed UI is hidden. Stream clip creation is disabled by default pending real VOD resolution and durable job-state acceptance tests.
-
-#### 9.2 Watch Parties
-
-- **Status**: 🟡 partial/disabled | **Backend**: `/api/v1/watch-parties/*` when `FEATURE_WATCH_PARTIES=true`
-- **Features**: Create parties, real-time sync, chat, reactions, analytics, discovery
-- **Gaps**: Routes and navigation are disabled for launch; browser, privacy, authorization, and WebSocket resilience gates are incomplete.
+- **Status**: 🟡 partial | **Backend**: `/api/v1/broadcasters/live`, `/api/v1/broadcasters/:id/live-status` | **Frontend**: live badge on the broadcaster page
+- **Features**: Scheduled Twitch live-status refresh for followed and popular broadcasters
+- **Removed in November 2026**: the stream viewer page, stream clip creation and its FFmpeg extraction queue, the followed live feed, and watch parties. None had passed its promotion gate and none had users.
 
 ---
 

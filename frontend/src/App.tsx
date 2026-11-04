@@ -345,9 +345,6 @@ const StreamerClipRoomPage = lazy(() =>
         default: m.StreamerClipRoomPage,
     })),
 );
-const StreamPage = lazy(() =>
-    import('./pages/StreamPage').then(m => ({ default: m.StreamPage })),
-);
 const ForumModerationPage = lazy(() =>
     import('./pages/admin/ForumModerationPage').then(m => ({
         default: m.ForumModerationPage,
@@ -481,10 +478,6 @@ function App() {
                                         <Route
                                             path='/creator/:creatorId'
                                             element={<CreatorPage />}
-                                        />
-                                        <Route
-                                            path='/stream/:streamer'
-                                            element={<StreamPage />}
                                         />
                                         <Route
                                             path='/creator/:creatorName/analytics'

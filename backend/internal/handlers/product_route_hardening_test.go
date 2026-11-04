@@ -52,14 +52,3 @@ func TestAdTrackingDoesNotRequireDuplicatedBodyID(t *testing.T) {
 		t.Fatalf("tracking body should not duplicate the path impression ID: %v", err)
 	}
 }
-
-func TestClipStatusRoutesBoundIdentifiers(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	h := &ClipHandler{}
-	c, w := productRouteContext(http.MethodGet, "/clips/id/processing-status", "")
-	c.Params = gin.Params{{Key: "id", Value: strings.Repeat("x", 129)}}
-	h.GetClipProcessingStatus(c)
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected %d, got %d", http.StatusBadRequest, w.Code)
-	}
-}

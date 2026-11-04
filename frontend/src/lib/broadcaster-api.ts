@@ -176,14 +176,6 @@ export interface LiveBroadcastersResponse {
 }
 
 /**
- * Followed live broadcasters response interface
- */
-export interface FollowedLiveBroadcastersResponse {
-    success: boolean;
-    data: BroadcasterLiveStatus[];
-}
-
-/**
  * Fetch live status for a specific broadcaster
  */
 export async function fetchBroadcasterLiveStatus(
@@ -206,14 +198,5 @@ export async function fetchLiveBroadcasters(
         `/broadcasters/live`,
         { params: { page, limit } },
     );
-    return response.data;
-}
-
-/**
- * Fetch live broadcasters that the authenticated user follows
- */
-export async function fetchFollowedLiveBroadcasters(): Promise<FollowedLiveBroadcastersResponse> {
-    const response =
-        await apiClient.get<FollowedLiveBroadcastersResponse>(`/feed/live`);
     return response.data;
 }

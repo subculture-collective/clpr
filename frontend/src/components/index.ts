@@ -35,7 +35,5 @@ export * from './playlist';
 export * from './queue';
 export * from './reputation';
 export * from './search';
-export * from './stream';
-export * from './watch-party';
 
 // Re-export shared components (no barrel)

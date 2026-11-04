@@ -708,7 +708,7 @@ export function StreamerClipRoomPage() {
                         currentItemId={currentItemId}
                         onItemClick={handleItemClick}
                         onReorder={handleReorder}
-                        onClose={() => navigate(`/stream/${channel}`)}
+                        onClose={() => navigate('/')}
                         pendingLabel='Approved clips'
                         commentsLabel='Discussion'
                         extraSidebarTab={{

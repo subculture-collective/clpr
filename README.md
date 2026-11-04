@@ -23,9 +23,9 @@ missed the stream.
 ## Available today
 
 clpr is available as a responsive web application at [clpr.tv](https://clpr.tv).
-Native mobile apps are planned. Stream clip extraction, live feeds, watch parties,
-and media mirroring remain outside the current release. The
-[launch feature inventory](docs/LAUNCH_FEATURE_INVENTORY.md) records the supported scope.
+Native mobile apps are planned. Media mirroring remains outside the current
+release. The [launch feature inventory](docs/LAUNCH_FEATURE_INVENTORY.md) records
+the supported scope.
 
 ## Build with us
 

@@ -10,7 +10,6 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type liveStatusServiceStub struct {
@@ -25,9 +24,6 @@ func (s *liveStatusServiceStub) GetLiveStatus(context.Context, string) (*models.
 }
 func (s *liveStatusServiceStub) ListLiveBroadcasters(context.Context, int, int) ([]models.BroadcasterLiveStatus, int, error) {
 	return s.broadcasters, s.total, s.err
-}
-func (s *liveStatusServiceStub) GetFollowedLiveBroadcasters(context.Context, uuid.UUID) ([]models.BroadcasterLiveStatus, error) {
-	return s.broadcasters, s.err
 }
 
 func TestLiveStatusHandlerResponseContracts(t *testing.T) {

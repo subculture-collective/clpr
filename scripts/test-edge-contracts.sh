@@ -52,7 +52,7 @@ if grep -Eq "script-src[^;]*(unsafe-inline|unsafe-eval)" \
   fail "executable inline scripts or eval are allowed by an edge CSP"
 fi
 
-# The live stream page frames chat from https://www.twitch.tv/embed/<channel>/chat.
+# Twitch clips, the player and chat embeds are framed from these origins.
 for csp_file in Caddyfile deploy/Caddyfile.blue-green.template frontend/nginx.conf; do
   for frame_origin in https://clips.twitch.tv https://player.twitch.tv https://embed.twitch.tv https://www.twitch.tv; do
     grep -Eq "frame-src [^;]*${frame_origin//./\\.}[ ;]" "$csp_file" ||
@@ -131,7 +131,6 @@ spa = [
     "/tag/content%2Fenglish",
     "/tags",
     "/user/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC",
-    "/stream/some%20channel",
     "/category/a%2Fb",
     "/game/just%20chatting",
     "/clip/abc%2Fdef",
@@ -402,7 +401,6 @@ for path in \
   /tags/two%20words \
   /tag/content%2Fenglish \
   /user/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC \
-  /stream/some%20channel \
   /clip/abc%2Fdef; do
   assert_status 200 "http://127.0.0.1:$edge_port$path"
   grep -Fq '<div id="root"></div>' "$tmp_dir/body" || fail "$path did not return the SPA shell"
