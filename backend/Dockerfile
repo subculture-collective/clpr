@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Go backend
 
 # Build stage
-FROM golang:1.26.6-alpine@sha256:af8d6740070b8906d12eae1c3e3ea0957fb63f492051ea05e354c38ef9fe88df AS builder
+FROM golang:1.26.10-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e6ee4338db547050308 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git make
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflag
 
 # Final stage includes the local faster-whisper runtime and ffmpeg. Video is
 # streamed from Twitch; only a short-lived normalized WAV is written.
-FROM python:3.12-slim-bookworm@sha256:392307d22300de8b5986851a12d9176dfc0fc073e65bf6523ebd7dcbeb23564e
+FROM python:3.12-slim-bookworm@sha256:e697c81897302a4c4333bade000d98038fbb21eb064f8ee1fd42d02ebcd9d337
 
 ARG OCI_REVISION=unknown
 ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
