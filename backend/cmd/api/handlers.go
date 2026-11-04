@@ -37,7 +37,6 @@ type Handlers struct {
 	Pages               *handlers.PagesHandler
 	Share               *handlers.ShareHandler
 	Docs                *handlers.DocsHandler
-	Ad                  *handlers.AdHandler
 	Export              *handlers.ExportHandler
 	WebhookSubscription *handlers.WebhookSubscriptionHandler
 	WebhookDLQ          *handlers.WebhookDLQHandler
@@ -124,7 +123,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	}
 	log.Printf("Serving %d public documents from %s source", len(publicDocs), docsSource)
 	docsHandler := handlers.NewDocsHandlerFS(docsFS, publicDocs, "subculture-collective", "clpr", "main")
-	adHandler := handlers.NewAdHandler(svcs.Ad)
 	exportHandler := handlers.NewExportHandler(svcs.Export, repos.User)
 	webhookMonitoringHandler := handlers.NewWebhookMonitoringHandler(svcs.OutboundWebhook)
 	webhookSubscriptionHandler := handlers.NewWebhookSubscriptionHandler(svcs.OutboundWebhook)
@@ -230,7 +228,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Pages:               pagesHandler,
 		Share:               shareHandler,
 		Docs:                docsHandler,
-		Ad:                  adHandler,
 		Export:              exportHandler,
 		WebhookSubscription: webhookSubscriptionHandler,
 		WebhookDLQ:          webhookDLQHandler,

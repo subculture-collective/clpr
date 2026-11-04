@@ -134,31 +134,6 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminContact.PUT("/:id/status", h.Contact.UpdateContactMessageStatus)
 		}
 
-		// Ad Campaign management (admin only)
-		adminAds := admin.Group("/ads")
-		adminAds.Use(middleware.RequireRole("admin"))
-		{
-			// Campaign CRUD
-			adminAds.GET("/campaigns", h.Ad.ListCampaigns)
-			adminAds.GET("/campaigns/:id", h.Ad.GetCampaign)
-			adminAds.POST("/campaigns", h.Ad.CreateCampaign)
-			adminAds.PUT("/campaigns/:id", h.Ad.UpdateCampaign)
-			adminAds.DELETE("/campaigns/:id", h.Ad.DeleteCampaign)
-
-			// Creative validation
-			adminAds.POST("/validate-creative", h.Ad.ValidateCreative)
-
-			// Campaign reports
-			adminAds.GET("/reports/by-date", h.Ad.GetCampaignReportByDate)
-			adminAds.GET("/reports/by-placement", h.Ad.GetCampaignReportByPlacement)
-			adminAds.GET("/reports/by-campaign", h.Ad.GetCTRReportByCampaign)
-			adminAds.GET("/reports/by-slot", h.Ad.GetCTRReportBySlot)
-
-			// Experiments
-			adminAds.GET("/experiments", h.Ad.ListExperiments)
-			adminAds.GET("/experiments/:id/report", h.Ad.GetExperimentReport)
-		}
-
 		// Email monitoring and metrics (admin only)
 		adminEmail := admin.Group("/email")
 		adminEmail.Use(middleware.RequireRole("admin"))

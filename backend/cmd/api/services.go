@@ -36,7 +36,6 @@ type Services struct {
 	AuditLog                 *services.AuditLogService
 	AccountMerge             *services.AccountMergeService
 	UserSettings             *services.UserSettingsService
-	Ad                       *services.AdService
 	EmailMetrics             *services.EmailMetricsService
 	Cache                    *services.CacheService
 	Feed                     *services.FeedService
@@ -142,7 +141,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	)
 
 	userSettingsService := services.NewUserSettingsService(repos.User, repos.UserSettings, repos.AccountDeletion, repos.Clip, repos.Vote, repos.Favorite, repos.Comment, repos.Submission, repos.Subscription, repos.Consent, auditLogService)
-	adService := services.NewAdService(repos.Ad, infra.Redis)
 
 	// Initialize email monitoring and metrics service
 	emailMetricsService := services.NewEmailMetricsService(repos.EmailLog)
@@ -360,7 +358,6 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		AuditLog:                 auditLogService,
 		AccountMerge:             accountMergeService,
 		UserSettings:             userSettingsService,
-		Ad:                       adService,
 		EmailMetrics:             emailMetricsService,
 		Cache:                    cacheService,
 		Feed:                     feedService,
