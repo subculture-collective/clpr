@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,14 +40,5 @@ func TestProductListRoutesRejectMalformedPaginationAndFilters(t *testing.T) {
 				t.Fatalf("expected %d, got %d", http.StatusBadRequest, w.Code)
 			}
 		})
-	}
-}
-
-func TestAdTrackingDoesNotRequireDuplicatedBodyID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	c, _ := productRouteContext(http.MethodPost, "/ads/track/id", `{"viewability_time_ms":1000,"is_viewable":true}`)
-	var request models.AdTrackingRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		t.Fatalf("tracking body should not duplicate the path impression ID: %v", err)
 	}
 }

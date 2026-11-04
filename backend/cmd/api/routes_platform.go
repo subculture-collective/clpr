@@ -214,17 +214,6 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 		contact.POST("", middleware.RateLimitMiddleware(infra.Redis, 3, time.Hour), h.Contact.SubmitContactMessage)
 	}
 
-	// Ad routes
-	ads := v1.Group("/ads")
-	{
-		// Ad selection endpoint - rate limited to prevent abuse
-		ads.GET("/select", middleware.OptionalAuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Ad.SelectAd)
-		// Ad tracking endpoint - higher rate limit for tracking callbacks
-		ads.POST("/track/:id", middleware.RateLimitMiddleware(infra.Redis, 120, time.Minute), h.Ad.TrackImpression)
-		// Get ad by ID (public)
-		ads.GET("/:id", h.Ad.GetAd)
-	}
-
 	// Documentation routes (public access)
 	docs := v1.Group("/docs")
 	{

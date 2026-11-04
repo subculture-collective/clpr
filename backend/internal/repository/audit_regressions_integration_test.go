@@ -15,19 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func insertAuditTestAd(t *testing.T, pool *pgxpool.Pool) uuid.UUID {
-	t.Helper()
-	adID := uuid.New()
-	_, err := pool.Exec(context.Background(), `
-		INSERT INTO ads (id, name, advertiser_name, ad_type, content_url, width, height)
-		VALUES ($1, 'audit ad', 'audit advertiser', 'banner', 'https://example.test/ad.png', 300, 250)
-	`, adID)
-	if err != nil {
-		t.Fatalf("create ad: %v", err)
-	}
-	return adID
-}
-
 func insertAuditTestUser(t *testing.T, pool *pgxpool.Pool) uuid.UUID {
 	t.Helper()
 	id := uuid.New()
@@ -57,54 +44,6 @@ func createAuditTestClip(t *testing.T, repo *ClipRepository, title, game, creato
 		t.Fatalf("create clip %q: %v", title, err)
 	}
 	return clip
-}
-
-// Bug 1: the frequency-cap unique indexes are partial, so ON CONFLICT must
-// name their predicates; the campaign index is on COALESCE(slot_id, ”).
-func TestAdRepositoryUpsertsMatchPartialAndExpressionIndexes(t *testing.T) {
-	pool := testutil.SetupTestDB(t)
-	testutil.TruncateTables(t, pool, "ads", "users")
-	ctx := context.Background()
-	repo := NewAdRepository(pool)
-	adID := insertAuditTestAd(t, pool)
-	userID := insertAuditTestUser(t, pool)
-	sessionID := "audit-session"
-	windowStart := time.Now().UTC().Truncate(time.Hour)
-
-	for i := 0; i < 2; i++ {
-		if err := repo.UpsertFrequencyCap(ctx, adID, &userID, nil, models.FrequencyWindowDaily, windowStart); err != nil {
-			t.Fatalf("user upsert %d: %v", i, err)
-		}
-		if err := repo.UpsertFrequencyCap(ctx, adID, nil, &sessionID, models.FrequencyWindowDaily, windowStart); err != nil {
-			t.Fatalf("session upsert %d: %v", i, err)
-		}
-	}
-	userCap, err := repo.GetFrequencyCap(ctx, adID, &userID, nil, models.FrequencyWindowDaily)
-	if err != nil || userCap.ImpressionCount != 2 {
-		t.Fatalf("user cap = %+v, err=%v; want 2 impressions", userCap, err)
-	}
-	sessionCap, err := repo.GetFrequencyCap(ctx, adID, nil, &sessionID, models.FrequencyWindowDaily)
-	if err != nil || sessionCap.ImpressionCount != 2 {
-		t.Fatalf("session cap = %+v, err=%v; want 2 impressions", sessionCap, err)
-	}
-
-	day := time.Now().UTC().Truncate(24 * time.Hour)
-	slot := "sidebar"
-	for i := 0; i < 2; i++ {
-		if err := repo.UpsertCampaignAnalytics(ctx, adID, day, nil, 1, 1, 1, 10, 1); err != nil {
-			t.Fatalf("nil-slot analytics upsert %d: %v", i, err)
-		}
-		if err := repo.UpsertCampaignAnalytics(ctx, adID, day, &slot, 1, 0, 0, 5, 1); err != nil {
-			t.Fatalf("slot analytics upsert %d: %v", i, err)
-		}
-	}
-	var rows, impressions int
-	if err := pool.QueryRow(ctx, `SELECT COUNT(*), SUM(impressions) FROM ad_campaign_analytics WHERE ad_id = $1`, adID).Scan(&rows, &impressions); err != nil {
-		t.Fatalf("read analytics: %v", err)
-	}
-	if rows != 2 || impressions != 4 {
-		t.Fatalf("analytics rows=%d impressions=%d; want 2 rows, 4 impressions", rows, impressions)
-	}
 }
 
 // Bug 2: the "new" sort orders by COALESCE(submitted_at, created_at); the

@@ -761,7 +761,7 @@ anomaly-scoring analytics implementation has been removed. See
 
 - **Queue System**: Personal playback queue (✅ complete)
 - **Watch History**: Track/resume playback (✅ complete)
-- **Ad System**: Campaigns, targeting, tracking (✅ complete)
+- **Ad System**: removed in November 2026 (no audience to serve)
 - **Chat System**: removed in November 2026 (no active channels)
 - **WebSocket Infrastructure**: Connection mgmt, scaling (✅ complete)
 - **Data Export**: GDPR compliance (✅ complete)
