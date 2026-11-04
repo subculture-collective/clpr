@@ -50,9 +50,7 @@ type Repositories struct {
 	Queue                 *repository.QueueRepository
 	WatchHistory          *repository.WatchHistoryRepository
 	StreamerClipRoom      *repository.StreamerClipRoomRepository
-	Stream                *repository.StreamRepository
 	StreamFollow          *repository.StreamFollowRepository
-	WatchParty            *repository.WatchPartyRepository
 	TwitchAuth            *repository.TwitchAuthRepository
 	TwitchBan             *repository.TwitchBanRepository
 	ApplicationLog        *repository.ApplicationLogRepository
@@ -106,9 +104,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		Queue:                 repository.NewQueueRepository(pool),
 		WatchHistory:          repository.NewWatchHistoryRepository(pool),
 		StreamerClipRoom:      repository.NewStreamerClipRoomRepository(pool),
-		Stream:                repository.NewStreamRepository(pool),
 		StreamFollow:          repository.NewStreamFollowRepository(pool),
-		WatchParty:            repository.NewWatchPartyRepository(pool),
 		TwitchAuth:            repository.NewTwitchAuthRepository(pool),
 		TwitchBan:             repository.NewTwitchBanRepository(pool),
 		ApplicationLog:        repository.NewApplicationLogRepository(pool),

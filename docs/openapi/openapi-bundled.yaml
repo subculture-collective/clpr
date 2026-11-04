@@ -4,6 +4,14 @@ info:
   description: |
     Complete API documentation for the Clipper platform - a social platform for Twitch clip curation and sharing.
 
+    ## Base URL
+    Production serves the API at `https://clpr.tv`; every path below includes
+    its `/api/v1` prefix, for example `https://clpr.tv/api/v1/clips`. Of the
+    unversioned routes, only `/health` and `/health/ready` are reachable
+    through the public edge. Operations marked `x-clpr-internal-only` are
+    served by the backend container on the private network, and operations
+    marked `x-clpr-development-only` exist only in debug builds.
+
     ## Authentication
     Most endpoints require authentication via JWT Bearer token:
     ```
@@ -40,10 +48,8 @@ info:
     name: MIT
     url: https://git.subcult.tv/subculture-collective/clpr/blob/main/LICENSE
 servers:
-  - url: https://staging.clpr.tv
-    description: Staging environment
-  - url: https://api.clpr.tv
-    description: Production API server
+  - url: https://clpr.tv
+    description: Production. Paths include their /api/v1 prefix.
 security:
   - BearerAuth: []
   - CookieAuth: []
@@ -208,8 +214,9 @@ paths:
       tags:
         - Health
       summary: Liveness check
-      description: Returns 200 if service is alive
+      description: 'Returns 200 if the process is alive. Internal only: the public edge does not route this path; container orchestration calls the backend directly.'
       operationId: getHealthLive
+      x-clpr-internal-only: true
       security: []
       responses:
         '200':
@@ -221,118 +228,9 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: ok
+                    example: alive
         '429':
           $ref: '#/components/responses/TooManyRequests'
-  /health/stats:
-    get:
-      tags:
-        - Health
-      summary: Health statistics
-      description: Returns database connection stats and other health metrics
-      operationId: getHealthStats
-      security: []
-      responses:
-        '200':
-          description: Health statistics
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  database:
-                    type: object
-                    properties:
-                      max_connections:
-                        type: integer
-                      open_connections:
-                        type: integer
-                      in_use:
-                        type: integer
-                      idle:
-                        type: integer
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-  /health/cache:
-    get:
-      tags:
-        - Health
-      summary: Cache statistics
-      description: Returns Redis cache statistics
-      operationId: getCacheStats
-      security: []
-      responses:
-        '200':
-          description: Cache statistics
-          content:
-            application/json:
-              schema:
-                type: object
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-  /health/cache/check:
-    get:
-      tags:
-        - Health
-      summary: Cache health check
-      description: Verifies Redis cache connectivity
-      operationId: getCacheHealth
-      security: []
-      responses:
-        '200':
-          description: Cache is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - cache
-                properties:
-                  status:
-                    type: string
-                    const: healthy
-                  cache:
-                    type: string
-                    const: ok
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-  /health/webhooks:
-    get:
-      tags:
-        - Health
-      summary: Webhook retry statistics
-      description: Returns webhook delivery retry statistics
-      operationId: getWebhookRetryStats
-      security: []
-      responses:
-        '200':
-          description: Webhook statistics
-          content:
-            application/json:
-              schema:
-                type: object
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-  /debug/metrics:
-    get:
-      tags:
-        - Health
-      summary: Prometheus metrics
-      description: Returns Prometheus metrics (debug mode only)
-      operationId: getMetrics
-      security: []
-      responses:
-        '200':
-          description: Prometheus metrics
-          content:
-            text/plain:
-              schema:
-                type: string
-        '404':
-          $ref: '#/components/responses/NotFound'
   /api/v1/health:
     get:
       tags:
@@ -468,7 +366,7 @@ paths:
       tags:
         - Authentication
       summary: Twitch OAuth callback
-      description: Handles OAuth callback from Twitch (rate limited - 50/minute)
+      description: Handles OAuth callback from Twitch (rate limited - 50/minute). PKCE sign-ins are redirected to the frontend to finish the exchange. Other sign-ins redirect to `/auth/success?success=true`, or to `/auth/success?mfa_required=true` with an HttpOnly `mfa_challenge` cookie when the user has MFA enabled on an untrusted device; the session is then issued by `POST /api/v1/auth/mfa/verify-login`.
       operationId: handleTwitchCallback
       security: []
       parameters:
@@ -497,7 +395,7 @@ paths:
       tags:
         - Authentication
       summary: PKCE OAuth callback
-      description: Handles PKCE OAuth callback (rate limited - 50/minute)
+      description: 'Handles PKCE OAuth callback (rate limited - 50/minute). When the user has MFA enabled on an untrusted device, no session cookies are set: the response has `mfa_required: true` and an HttpOnly `mfa_challenge` cookie, and the session is issued by `POST /api/v1/auth/mfa/verify-login`.'
       operationId: handlePKCECallback
       security: []
       requestBody:
@@ -508,19 +406,30 @@ paths:
               type: object
               required:
                 - code
+                - state
                 - code_verifier
               properties:
                 code:
+                  type: string
+                state:
                   type: string
                 code_verifier:
                   type: string
       responses:
         '200':
-          description: Authentication successful
+          description: Sign-in step completed. `mfa_required` is true when an MFA code must still be submitted to `/api/v1/auth/mfa/verify-login`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required:
+                  - message
+                  - mfa_required
+                properties:
+                  message:
+                    type: string
+                  mfa_required:
+                    type: boolean
         '400':
           $ref: '#/components/responses/BadRequest'
         '429':
@@ -530,7 +439,7 @@ paths:
       tags:
         - Authentication
       summary: Test login (development only)
-      description: Creates test user session for development (rate limited - 30/minute)
+      description: 'Creates test user session for development (rate limited - 30/minute). Users with MFA enabled get `{"mfa_required": true}` and an `mfa_challenge` cookie instead of a session, as with Twitch sign-in.'
       operationId: testLogin
       security: []
       requestBody:
@@ -829,7 +738,7 @@ paths:
       tags:
         - MFA
       summary: Verify MFA login
-      description: Verifies MFA code during login (rate limited - 10/minute)
+      description: Completes a sign-in that stopped for an MFA code (rate limited - 10/minute). The pending sign-in is identified by the HttpOnly `mfa_challenge` cookie set by the OAuth callback; it expires after 5 minutes and allows 5 wrong codes. On success the challenge is consumed and the access and refresh token cookies are set.
       operationId: verifyMFALogin
       security: []
       requestBody:
@@ -839,29 +748,47 @@ paths:
             schema:
               type: object
               required:
-                - session_id
                 - code
               properties:
-                session_id:
-                  type: string
                 code:
                   type: string
-                  description: 6-digit TOTP code or backup code
+                  description: 6-digit TOTP code or 8-character backup code
                 trust_device:
                   type: boolean
+                  description: Skip MFA on this browser for 30 days
       responses:
         '200':
-          description: MFA verification successful
+          description: MFA verification successful; session cookies are set
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required:
+                  - message
+                  - user
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Invalid request body or incorrect code (`MFA_CODE_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: No pending sign-in (`MFA_CHALLENGE_MISSING`) or it expired (`MFA_CHALLENGE_EXPIRED`); sign in again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '429':
-          $ref: '#/components/responses/TooManyRequests'
+          description: Too many wrong codes for this sign-in (`MFA_CHALLENGE_EXHAUSTED`) or for the account (`MFA_LOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/v1/clips:
     get:
       tags:
@@ -1739,12 +1666,29 @@ paths:
       tags:
         - Tags
       summary: List tags
-      description: Returns list of all tags
+      description: Lists visible tags. `lane` limits the list to tags from one origin (see the `TagLane` schema). The `curated` sort is kept for older clients and is equivalent to `lane=detected&sort=popularity`. Unknown `sort` values fall back to `popularity` and unknown `lane` values list every lane. Responses are cached for up to one minute, so `usage_count` and `total` can lag recent tagging.
       operationId: listTags
       security: []
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - popularity
+              - trending
+              - alphabetical
+              - recent
+              - curated
+            default: popularity
+        - name: lane
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TagLane'
       responses:
         '200':
           description: List of tags
@@ -1752,13 +1696,25 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - tags
+                  - total
+                  - page
+                  - limit
+                  - has_more
                 properties:
                   tags:
                     type: array
                     items:
                       $ref: '#/components/schemas/Tag'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  has_more:
+                    type: boolean
         '429':
           $ref: '#/components/responses/TooManyRequests'
   /api/v1/tags/search:
@@ -1802,9 +1758,14 @@ paths:
         With a nonempty root slug, returns that tag and its descendants, nested
         to at most ten levels below the root. An unknown root returns an empty
         tags array with status 200. Without a root, or with an empty root,
-        returns all root tags with their immediate children attached. In this
-        latter mode a failed child lookup leaves that parent's children omitted;
-        failure to load the root tags or the requested subtree returns 500.
+        returns the top-level tags that have at least one visible child (the
+        taxonomy namespaces such as `content`, `game`, and `streamer`), each
+        with its immediate children. Top-level tags without children are
+        ordinary flat tags; list them with `GET /api/v1/tags`.
+
+        Each parent includes at most `limit` children, highest `usage_count`
+        first; `child_count` reports the full number of visible children.
+        Responses are cached for up to five minutes.
       operationId: getTagTree
       security: []
       parameters:
@@ -1814,6 +1775,15 @@ paths:
           schema:
             type: string
           description: Root tag slug to anchor the subtree
+        - name: limit
+          in: query
+          required: false
+          description: Maximum children returned under each parent. Values outside 1-500 use the default.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
       responses:
         '200':
           description: Tag hierarchy tree
@@ -1843,7 +1813,6 @@ paths:
                     type: string
                     enum:
                       - failed to fetch tag tree
-                      - failed to fetch root tags
   /api/v1/tags/{slug}:
     get:
       tags:
@@ -1860,7 +1829,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tag'
+                type: object
+                required:
+                  - tag
+                  - clip_count
+                properties:
+                  tag:
+                    $ref: '#/components/schemas/Tag'
+                  clip_count:
+                    type: integer
         '404':
           $ref: '#/components/responses/NotFound'
   /api/v1/tags/{slug}/clips:
@@ -5252,6 +5229,7 @@ paths:
       summary: Get webhook delivery and retry health
       description: Requires the dedicated operational bearer token. Returns 503 rather than reporting healthy when delivery statistics are incomplete.
       operationId: getInternalOperationsWebhooks
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -5466,6 +5444,7 @@ paths:
       summary: Get typed Redis operational statistics
       description: Requires the dedicated operational bearer token. Missing or malformed required Redis counters return degraded 503 instead of a healthy response.
       operationId: getInternalOperationsCache
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -5490,6 +5469,7 @@ paths:
       summary: Check Redis connectivity
       description: Requires the dedicated operational bearer token.
       operationId: getInternalOperationsCacheCheck
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -5654,6 +5634,39 @@ paths:
                 $ref: '#/components/schemas/ContactErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/share/clips/{id}:
+    get:
+      tags:
+        - Pages
+      summary: Render a clip link preview
+      description: Small HTML document with OpenGraph and Twitter card tags for one clip, used by the frontend edge for link-preview crawlers on /clip/{id}. Accepts a clip UUID or Twitch clip slug. Unknown, removed, or hidden clips return 404 with the site-wide default tags. Responses are cacheable for five minutes; repository failures return a non-cacheable 503.
+      operationId: getApiV1ShareClipsId
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: ^[A-Za-z0-9_-]+$
+      responses:
+        '200':
+          $ref: '#/components/responses/PageHTML'
+        '404':
+          $ref: '#/components/responses/PageNotFound'
+        '503':
+          description: Clip data is temporarily unavailable; the document carries default tags and Cache-Control no-store
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            text/html:
+              schema:
+                type: string
   /clips/game/{gameSlug}:
     get:
       tags:
@@ -5735,7 +5748,7 @@ paths:
       tags:
         - Documentation
       summary: List available Markdown documentation
-      description: Returns a tree of regular Markdown files, excluding hidden, archive, vault, and symlink entries.
+      description: Returns a tree of the published Markdown documents listed in `docs/public-docs.json`; other files in the documentation source are never listed. Each file carries the title of its own first heading or front matter. Release images serve the copy embedded at build time. If no documentation source is available the tree is empty rather than an error.
       operationId: getApiV1Docs
       security: []
       responses:
@@ -5758,7 +5771,7 @@ paths:
       tags:
         - Documentation
       summary: Search documentation text
-      description: Searches bounded regular Markdown files and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
+      description: Searches the published Markdown documents and returns at most 100 results ordered by relevance. Rate limited to 60 requests per minute.
       operationId: getApiV1DocsSearch
       security: []
       parameters:
@@ -5791,6 +5804,7 @@ paths:
       tags:
         - Documentation
       summary: Get a top-level Markdown document
+      description: Returns a published document. An encoded slash (`%2F`) selects a nested document; prefer `/api/v1/docs/content/{path}` for those. Documents not listed in `docs/public-docs.json` return 404 even when the file exists.
       operationId: getApiV1DocsPath
       security: []
       parameters:
@@ -5814,7 +5828,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '413':
-          description: Document exceeds 1 MiB
+          description: Document exceeds 2 MiB
           content:
             application/json:
               schema:
@@ -5828,7 +5842,7 @@ paths:
       tags:
         - Documentation
       summary: Get a nested Markdown document
-      description: Resolves the real path and rejects symlinks that escape the configured documentation root.
+      description: Returns a published document such as `compliance/twitch-embeds`. Documents not listed in `docs/public-docs.json` return 404, and symlinks on the path are rejected.
       operationId: getApiV1DocsContentPath
       security: []
       parameters:
@@ -5852,7 +5866,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '413':
-          description: Document exceeds 1 MiB
+          description: Document exceeds 2 MiB
           content:
             application/json:
               schema:
@@ -11270,28 +11284,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /api/v1/clips/{id}/backfill:
-    post:
-      tags:
-        - Clips
-      summary: Request clip media backfill
-      description: Returns ready/processing state or queues a bounded visible clip for configured media processing.
-      operationId: postApiV1ClipsIdBackfill
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /api/v1/clips/{id}/media:
     get:
       tags:
@@ -11309,29 +11301,6 @@ paths:
       responses:
         '307':
           description: Redirect to direct media
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/clips/{id}/processing-status:
-    get:
-      tags:
-        - Clips
-      summary: Get clip processing status
-      description: Returns a minimal status without internal job payloads and reports dependency failure as 503.
-      operationId: getApiV1ClipsIdProcessingStatus
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -12207,9 +12176,67 @@ paths:
       tags:
         - Forum
       summary: List visible forum threads
-      description: Lists non-deleted threads with strict pagination, sorting, game filtering, and bounded search.
+      description: Lists non-deleted threads with strict pagination, sorting, game and tag filtering, and bounded search. Pinned threads come first in every ordering.
       operationId: getApiV1ForumThreads
       security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          description: Thread ordering. `newest` (alias `recent`) orders by last activity; `most-replied` (alias `replies`) by reply count; `popular` by view count; `hot` (alias `trending`) by replies and views decayed by thread age.
+          schema:
+            type: string
+            enum:
+              - newest
+              - recent
+              - most-replied
+              - replies
+              - popular
+              - hot
+              - trending
+            default: recent
+        - name: game_id
+          in: query
+          description: Internal game UUID or numeric Twitch game ID.
+          schema:
+            type: string
+            maxLength: 36
+        - name: game_filter
+          in: query
+          deprecated: true
+          description: Former name of `game_id`; used only when `game_id` is absent.
+          schema:
+            type: string
+            maxLength: 36
+        - name: tags
+          in: query
+          description: Return threads carrying every listed tag. Repeat the parameter or separate values with commas; at most 10 tags of 50 characters each.
+          style: form
+          explode: true
+          schema:
+            type: array
+            maxItems: 10
+            items:
+              type: string
+              maxLength: 50
+        - name: search
+          in: query
+          description: Full-text search over thread titles and content.
+          schema:
+            type: string
+            maxLength: 200
       responses:
         '200':
           $ref: '#/components/responses/RouterDerivedSuccess'
@@ -13082,6 +13109,13 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
+        - name: source
+          in: query
+          description: Use `community` to leave out script-generated collections.
+          schema:
+            type: string
+            enum:
+              - community
       responses:
         '200':
           description: Public playlists
@@ -13152,6 +13186,7 @@ paths:
       tags:
         - Playlists
       summary: Get the most recently generated active daily public playlist
+      description: Returns the newest public, non-deleted playlist generated by an active daily playlist script, with up to four preview clips. Returns 404 with code `NOT_FOUND` when no such playlist exists yet.
       operationId: getPlaylistOfTheDay
       security: []
       responses:
@@ -14368,131 +14403,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /api/v1/streams/following:
-    get:
-      tags:
-        - Streams
-      summary: List followed streamers
-      operationId: getApiV1StreamsFollowing
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 50
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            minimum: 0
-            maximum: 100000
-            default: 0
-      responses:
-        '200':
-          description: Follows returned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StreamFollowListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/streams/{streamer}:
-    get:
-      tags:
-        - Streams
-      summary: Get a streamer's live status
-      operationId: getApiV1StreamsStreamer
-      parameters:
-        - $ref: '#/components/parameters/StreamerUsername'
-      responses:
-        '200':
-          description: Stream status returned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StreamInfo'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/streams/{streamer}/follow:
-    delete:
-      tags:
-        - Streams
-      summary: Unfollow a streamer
-      operationId: deleteApiV1StreamsStreamerFollow
-      parameters:
-        - $ref: '#/components/parameters/StreamerUsername'
-      responses:
-        '200':
-          description: Streamer unfollowed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StreamFollowMutationResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      tags:
-        - Streams
-      summary: Follow a streamer
-      operationId: postApiV1StreamsStreamerFollow
-      parameters:
-        - $ref: '#/components/parameters/StreamerUsername'
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StreamFollowRequest'
-      responses:
-        '200':
-          description: Streamer followed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StreamFollowMutationResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /api/v1/streams/{streamer}/follow-status:
-    get:
-      tags:
-        - Streams
-      summary: Get stream follow status
-      operationId: getApiV1StreamsStreamerFollowStatus
-      parameters:
-        - $ref: '#/components/parameters/StreamerUsername'
-      responses:
-        '200':
-          description: Follow status returned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StreamFollowStatusResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /api/v1/twitch/auth:
     delete:
       tags:
@@ -15370,6 +15280,7 @@ paths:
       summary: Get database pool statistics
       description: Returns connection-pool counters only to callers with the operational bearer token.
       operationId: getInternalOperationsDatabase
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -15388,6 +15299,7 @@ paths:
       summary: Scrape operational metrics
       description: Returns Prometheus metrics only to callers with the operational bearer token.
       operationId: getInternalOperationsMetrics
+      x-clpr-internal-only: true
       security:
         - OperationalAuth: []
       responses:
@@ -15503,7 +15415,7 @@ components:
       required: true
       schema:
         type: string
-      description: Tag slug
+      description: Tag slug. Namespaced slugs travel as one percent-encoded path segment, for example `content%2Ffunny` for `content/funny`.
     TwitchChannel:
       name: channel
       in: path
@@ -15526,13 +15438,6 @@ components:
       schema:
         type: string
         format: uuid
-    StreamerUsername:
-      name: streamer
-      in: path
-      required: true
-      schema:
-        type: string
-        pattern: ^[A-Za-z0-9_]{4,25}$
     FeedOwnerID:
       name: id
       in: path
@@ -18283,6 +18188,31 @@ components:
         created_at:
           type: string
           format: date-time
+        lane:
+          $ref: '#/components/schemas/TagLane'
+        display_name:
+          type: string
+          description: Human-readable name with stored namespace prefixes removed.
+        evidence:
+          $ref: '#/components/schemas/TagEvidence'
+    TagLane:
+      type: string
+      description: 'Which process produced the tag. `category`: the clip''s Twitch category (game/*). `detected`: a catalog content tag chosen by the vision tagger or title rules. `streamer`: the broadcaster''s own Twitch channel tags. `community`: unnamespaced or community/ tags, including tags clpr users add and older tags created before namespaces. `duration` and `language`: structural metadata. `root`: a namespace root.'
+      enum:
+        - category
+        - detected
+        - streamer
+        - community
+        - duration
+        - language
+        - root
+    TagEvidence:
+      type: string
+      description: Present only on `detected` tags. The evidence the tag definition requires before the vision tagger may assign it; not a verdict about a particular clip.
+      enum:
+        - visible
+        - contextual
+        - strong
     TagTreeNode:
       type: object
       required:
@@ -18317,6 +18247,17 @@ components:
         created_at:
           type: string
           format: date-time
+        lane:
+          $ref: '#/components/schemas/TagLane'
+        display_name:
+          type: string
+          description: Human-readable name with stored namespace prefixes removed.
+        evidence:
+          $ref: '#/components/schemas/TagEvidence'
+        child_count:
+          type: integer
+          minimum: 1
+          description: Number of visible children, including any omitted by the `limit` parameter. Absent when the tag has no children or they were not loaded.
         children:
           type: array
           items:
@@ -19364,6 +19305,9 @@ components:
           enum:
             - file
             - directory
+        title:
+          type: string
+          description: Title of a file node, from its first level-one heading or front matter
         children:
           type: array
           items:
@@ -19381,10 +19325,13 @@ components:
       type: object
       required:
         - path
+        - title
         - content
         - github_url
       properties:
         path:
+          type: string
+        title:
           type: string
         content:
           type: string
@@ -19396,12 +19343,15 @@ components:
       required:
         - path
         - name
+        - title
         - matches
         - score
       properties:
         path:
           type: string
         name:
+          type: string
+        title:
           type: string
         matches:
           type: array
@@ -21166,119 +21116,6 @@ components:
           properties:
             message:
               type: string
-    StreamInfo:
-      type: object
-      required:
-        - streamer_username
-        - is_live
-        - viewer_count
-      properties:
-        streamer_username:
-          type: string
-          pattern: ^[a-z0-9_]{4,25}$
-        is_live:
-          type: boolean
-        title:
-          type: string
-        game_name:
-          type: string
-        viewer_count:
-          type: integer
-          minimum: 0
-        thumbnail_url:
-          type: string
-          format: uri
-        started_at:
-          type: string
-          format: date-time
-        last_went_offline:
-          type: string
-          format: date-time
-    StreamFollow:
-      type: object
-      required:
-        - id
-        - user_id
-        - streamer_username
-        - notifications_enabled
-        - created_at
-        - updated_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        user_id:
-          type: string
-          format: uuid
-        streamer_username:
-          type: string
-          pattern: ^[a-z0-9_]{4,25}$
-        notifications_enabled:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-    StreamFollowRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        notifications_enabled:
-          type: boolean
-          default: true
-    StreamFollowListResponse:
-      type: object
-      required:
-        - follows
-        - count
-        - total
-        - limit
-        - offset
-      properties:
-        follows:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/StreamFollow'
-        count:
-          type: integer
-          minimum: 0
-          maximum: 100
-        total:
-          type: integer
-          minimum: 0
-        limit:
-          type: integer
-          minimum: 1
-          maximum: 100
-        offset:
-          type: integer
-          minimum: 0
-          maximum: 100000
-    StreamFollowMutationResponse:
-      type: object
-      required:
-        - following
-        - message
-      properties:
-        following:
-          type: boolean
-        notifications_enabled:
-          type: boolean
-        message:
-          type: string
-    StreamFollowStatusResponse:
-      type: object
-      required:
-        - following
-        - notifications_enabled
-      properties:
-        following:
-          type: boolean
-        notifications_enabled:
-          type: boolean
     TwitchAuthStatus:
       type: object
       required:

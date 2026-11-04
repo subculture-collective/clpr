@@ -64,13 +64,11 @@ type Handlers struct {
 	Queue               *handlers.QueueHandler
 	StreamerClipRoom    *handlers.StreamerClipRoomHandler
 	WatchHistory        *handlers.WatchHistoryHandler
-	WatchParty          *handlers.WatchPartyHandler
 	Event               *handlers.EventHandler
 	ClipSync            *handlers.ClipSyncHandler    // may be nil
 	Submission          *handlers.SubmissionHandler  // may be nil
 	Moderation          *handlers.ModerationHandler  // may be nil
 	LiveStatus          *handlers.LiveStatusHandler  // may be nil
-	Stream              *handlers.StreamHandler      // may be nil
 	TwitchOAuth         *handlers.TwitchOAuthHandler // may be nil
 	Forum               *handlers.ForumHandler
 	ForumModeration     *handlers.ForumModerationHandler
@@ -88,7 +86,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	clipHandler := handlers.NewClipHandler(
 		svcs.Clip,
 		svcs.Auth,
-		handlers.WithClipExtractionJobService(svcs.ClipExtractionJob),
 		handlers.WithClipConfig(&cfg.Clip),
 	)
 	favoriteHandler := handlers.NewFavoriteHandler(repos.Favorite, repos.Vote, svcs.Clip)
@@ -165,14 +162,12 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	queueHandler := handlers.NewQueueHandler(svcs.Queue)
 	streamerClipRoomHandler := handlers.NewStreamerClipRoomHandler(svcs.StreamerClipRoom, svcs.StreamerClipRoomListener, repos.TwitchAuth, svcs.WSServer)
 	watchHistoryHandler := handlers.NewWatchHistoryHandler(repos.WatchHistory)
-	watchPartyHandler := handlers.NewWatchPartyHandler(svcs.WatchParty, svcs.WatchPartyHubManager, repos.WatchParty, repos.Analytics, cfg)
 	eventHandler := handlers.NewEventHandler(svcs.EventTracker)
 
 	var clipSyncHandler *handlers.ClipSyncHandler
 	var submissionHandler *handlers.SubmissionHandler
 	var moderationHandler *handlers.ModerationHandler
 	var liveStatusHandler *handlers.LiveStatusHandler
-	var streamHandler *handlers.StreamHandler
 	var twitchOAuthHandler *handlers.TwitchOAuthHandler
 	var clipStorage storage.ClipStorage
 	uploadValidator := services.NewUploadValidator(cfg.ClipSource, nil)
@@ -193,7 +188,6 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 
 	// Initialize Twitch-related handlers
 	if infra.TwitchClient != nil {
-		streamHandler = handlers.NewStreamHandler(infra.TwitchClient, repos.Stream, repos.Clip, repos.StreamFollow, svcs.ClipExtractionJob)
 		twitchOAuthHandler = handlers.NewTwitchOAuthHandler(repos.TwitchAuth)
 	}
 
@@ -273,13 +267,11 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Queue:               queueHandler,
 		StreamerClipRoom:    streamerClipRoomHandler,
 		WatchHistory:        watchHistoryHandler,
-		WatchParty:          watchPartyHandler,
 		Event:               eventHandler,
 		ClipSync:            clipSyncHandler,
 		Submission:          submissionHandler,
 		Moderation:          moderationHandler,
 		LiveStatus:          liveStatusHandler,
-		Stream:              streamHandler,
 		TwitchOAuth:         twitchOAuthHandler,
 		Forum:               forumHandler,
 		ForumModeration:     forumModerationHandler,

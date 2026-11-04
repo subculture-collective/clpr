@@ -10,13 +10,11 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type liveStatusService interface {
 	GetLiveStatus(context.Context, string) (*models.BroadcasterLiveStatus, error)
 	ListLiveBroadcasters(context.Context, int, int) ([]models.BroadcasterLiveStatus, int, error)
-	GetFollowedLiveBroadcasters(context.Context, uuid.UUID) ([]models.BroadcasterLiveStatus, error)
 }
 
 // LiveStatusHandler handles live status HTTP requests
@@ -97,35 +95,5 @@ func (h *LiveStatusHandler) ListLiveBroadcasters(c *gin.Context) {
 			"total_items": total,
 			"total_pages": totalPages,
 		},
-	})
-}
-
-// GetFollowedLiveBroadcasters returns live broadcasters that the authenticated user follows
-// GET /api/v1/feed/live
-func (h *LiveStatusHandler) GetFollowedLiveBroadcasters(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
-		return
-	}
-
-	userID, ok := userIDInterface.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID"})
-		return
-	}
-
-	ctx := c.Request.Context()
-
-	broadcasters, err := h.liveStatusService.GetFollowedLiveBroadcasters(ctx, userID)
-	if err != nil {
-		utils.GetLogger().Error("Failed to get followed live broadcasters", err, map[string]interface{}{"user_id": userID})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get followed live broadcasters"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    broadcasters,
 	})
 }

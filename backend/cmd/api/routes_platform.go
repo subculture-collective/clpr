@@ -8,28 +8,6 @@ import (
 )
 
 func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra *Infrastructure) {
-	// Stream routes
-	if h.Stream != nil {
-		streams := v1.Group("/streams")
-		{
-			// Get followed streamers (authenticated) - must be before /:streamer
-			streams.GET("/following", middleware.AuthMiddleware(svcs.Auth), h.Stream.GetFollowedStreamers)
-
-			// Public stream status endpoint
-			streams.GET("/:streamer", h.Stream.GetStreamStatus)
-
-			// Protected stream follow endpoints (authenticated, rate limited)
-			streams.POST("/:streamer/follow", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Minute), h.Stream.FollowStreamer)
-			streams.DELETE("/:streamer/follow", middleware.AuthMiddleware(svcs.Auth), h.Stream.UnfollowStreamer)
-			streams.GET("/:streamer/follow-status", middleware.AuthMiddleware(svcs.Auth), h.Stream.GetStreamFollowStatus)
-
-			// Stream clipping is incomplete and remains absent unless explicitly enabled.
-			if infra.Config.FeatureFlags.StreamClipCreation {
-				streams.POST("/:streamer/clips", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Stream.CreateClipFromStream)
-			}
-		}
-	}
-
 	// Twitch OAuth routes for chat integration
 	if h.TwitchOAuth != nil {
 		twitch := v1.Group("/twitch")
@@ -134,11 +112,6 @@ func registerPlatformRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, in
 
 	// Events tracking endpoint
 	v1.POST("/events", middleware.RateLimitMiddleware(infra.Redis, 100, time.Minute), h.Event.TrackEvent)
-
-	// Live feed (authenticated)
-	if h.LiveStatus != nil && infra.Config.FeatureFlags.LiveFeed {
-		v1.GET("/feed/live", middleware.AuthMiddleware(svcs.Auth), h.LiveStatus.GetFollowedLiveBroadcasters)
-	}
 
 	// Recommendation routes
 	recommendations := v1.Group("/recommendations")

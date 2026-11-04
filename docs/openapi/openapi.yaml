@@ -8914,28 +8914,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/clips/{id}/backfill:
-    post:
-      tags: [Clips]
-      summary: Request clip media backfill
-      description: Returns ready/processing state or queues a bounded visible clip for configured media processing.
-      operationId: postApiV1ClipsIdBackfill
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /api/v1/clips/{id}/media:
     get:
       tags: [Clips]
@@ -8952,29 +8930,6 @@ paths:
       responses:
         '307':
           description: Redirect to direct media
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/clips/{id}/processing-status:
-    get:
-      tags: [Clips]
-      summary: Get clip processing status
-      description: Returns a minimal status without internal job payloads and reports dependency failure as 503.
-      operationId: getApiV1ClipsIdProcessingStatus
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -11179,72 +11134,6 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
-  /api/v1/streams/following:
-    get:
-      tags: [Streams]
-      summary: List followed streamers
-      operationId: getApiV1StreamsFollowing
-      parameters:
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
-        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
-      responses:
-        '200': {description: Follows returned, content: {application/json: {schema: {$ref: '#/components/schemas/StreamFollowListResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/streams/{streamer}:
-    get:
-      tags: [Streams]
-      summary: Get a streamer's live status
-      operationId: getApiV1StreamsStreamer
-      parameters:
-        - {$ref: '#/components/parameters/StreamerUsername'}
-      responses:
-        '200': {description: Stream status returned, content: {application/json: {schema: {$ref: '#/components/schemas/StreamInfo'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/streams/{streamer}/follow:
-    delete:
-      tags: [Streams]
-      summary: Unfollow a streamer
-      operationId: deleteApiV1StreamsStreamerFollow
-      parameters:
-        - {$ref: '#/components/parameters/StreamerUsername'}
-      responses:
-        '200': {description: Streamer unfollowed, content: {application/json: {schema: {$ref: '#/components/schemas/StreamFollowMutationResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-    post:
-      tags: [Streams]
-      summary: Follow a streamer
-      operationId: postApiV1StreamsStreamerFollow
-      parameters:
-        - {$ref: '#/components/parameters/StreamerUsername'}
-      requestBody: {required: false, content: {application/json: {schema: {$ref: '#/components/schemas/StreamFollowRequest'}}}}
-      responses:
-        '200': {description: Streamer followed, content: {application/json: {schema: {$ref: '#/components/schemas/StreamFollowMutationResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
-  /api/v1/streams/{streamer}/follow-status:
-    get:
-      tags: [Streams]
-      summary: Get stream follow status
-      operationId: getApiV1StreamsStreamerFollowStatus
-      parameters:
-        - {$ref: '#/components/parameters/StreamerUsername'}
-      responses:
-        '200': {description: Follow status returned, content: {application/json: {schema: {$ref: '#/components/schemas/StreamFollowStatusResponse'}}}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '500': {$ref: '#/components/responses/InternalServerError'}
-
   /api/v1/twitch/auth:
     delete:
       tags: [Twitch OAuth]
@@ -11947,12 +11836,6 @@ components:
       in: path
       required: true
       schema: {type: string, format: uuid}
-
-    StreamerUsername:
-      name: streamer
-      in: path
-      required: true
-      schema: {type: string, pattern: '^[A-Za-z0-9_]{1,25}$'}
 
     FeedOwnerID:
       name: id
@@ -14891,61 +14774,6 @@ components:
           required: [message]
           properties: {message: {type: string}}
 
-    StreamInfo:
-      type: object
-      required: [streamer_username, is_live, viewer_count]
-      properties:
-        streamer_username: {type: string, pattern: '^[a-z0-9_]{1,25}$'}
-        is_live: {type: boolean}
-        title: {type: string}
-        game_name: {type: string}
-        viewer_count: {type: integer, minimum: 0}
-        thumbnail_url: {type: string, format: uri}
-        started_at: {type: string, format: date-time}
-        last_went_offline: {type: string, format: date-time}
-
-    StreamFollow:
-      type: object
-      required: [id, user_id, streamer_username, notifications_enabled, created_at, updated_at]
-      properties:
-        id: {type: string, format: uuid}
-        user_id: {type: string, format: uuid}
-        streamer_username: {type: string, pattern: '^[a-z0-9_]{1,25}$'}
-        notifications_enabled: {type: boolean}
-        created_at: {type: string, format: date-time}
-        updated_at: {type: string, format: date-time}
-
-    StreamFollowRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        notifications_enabled: {type: boolean, default: true}
-
-    StreamFollowListResponse:
-      type: object
-      required: [follows, count, total, limit, offset]
-      properties:
-        follows: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/StreamFollow'}}
-        count: {type: integer, minimum: 0, maximum: 100}
-        total: {type: integer, minimum: 0}
-        limit: {type: integer, minimum: 1, maximum: 100}
-        offset: {type: integer, minimum: 0, maximum: 100000}
-
-    StreamFollowMutationResponse:
-      type: object
-      required: [following, message]
-      properties:
-        following: {type: boolean}
-        notifications_enabled: {type: boolean}
-        message: {type: string}
-
-    StreamFollowStatusResponse:
-      type: object
-      required: [following, notifications_enabled]
-      properties:
-        following: {type: boolean}
-        notifications_enabled: {type: boolean}
-
     TwitchAuthStatus:
       type: object
       required: [authenticated, connected, bot_authorized, clip_download_authorized]
@@ -15751,14 +15579,6 @@ components:
   # - GET /:slug/games - Games in category
   # - GET /:slug/clips - Clips in category
   #
-  # STREAMS (/api/v1/streams/*)
-  # - GET /following - Get followed streamers (auth)
-  # - GET /:streamer - Get stream status
-  # - POST /:streamer/follow - Follow streamer (auth, rate limited - 20/min)
-  # - DELETE /:streamer/follow - Unfollow streamer (auth)
-  # - GET /:streamer/follow-status - Check follow status (auth)
-  # - POST /:streamer/clips - Create clip from stream (auth, rate limited - 10/h)
-  #
   # TWITCH INTEGRATION (/api/v1/twitch/*)
   # - GET /oauth/authorize - Initiate Twitch OAuth (auth, rate limited - 20/min)
   # - GET /oauth/callback - Handle OAuth callback (auth, rate limited - 20/min)
@@ -15817,9 +15637,6 @@ components:
   #
   # EVENTS (/api/v1/events)
   # - POST / - Track event (rate limited - 100/min)
-  #
-  # LIVE FEED (/api/v1/feed/live)
-  # - GET / - Get live broadcasters feed (auth)
   #
   # RECOMMENDATIONS (/api/v1/recommendations/*)
   # - GET /clips - Get personalized clips (auth, rate limited - 60/min)
@@ -15963,27 +15780,6 @@ components:
   # - POST / - Record watch progress (auth, rate limited - 120/min)
   # - GET / - Get watch history (auth)
   # - DELETE / - Clear watch history (auth)
-  #
-  # WATCH PARTIES (/api/v1/watch-parties/*)
-  # - GET /history - Get watch party history (auth)
-  # - GET /public - Get public watch parties (optional auth)
-  # - GET /trending - Get trending watch parties (optional auth)
-  # - POST / - Create watch party (auth, rate limited - 10/h)
-  # - POST /:id/join - Join watch party (auth, rate limited - 30/h)
-  # - GET /:id - Get watch party (optional auth)
-  # - PATCH /:id/settings - Update settings (auth, host only, rate limited - 20/h)
-  # - GET /:id/participants - Get participants (optional auth)
-  # - POST /:id/messages - Send message (auth, rate limited - 10/min)
-  # - GET /:id/messages - Get messages (optional auth)
-  # - POST /:id/react - Send reaction (auth, rate limited - 30/min)
-  # - POST /:id/kick - Kick participant (auth, host only, rate limited - 20/h)
-  # - DELETE /:id/leave - Leave watch party (auth)
-  # - POST /:id/end - End watch party (auth, host only)
-  # - GET /:id/analytics - Get analytics (auth, rate limited - 20/h)
-  # - GET /:id/ws - WebSocket connection (auth)
-  #
-  # USER WATCH PARTY STATS (/api/v1/users/:id/watch-party-stats)
-  # - GET / - Get user watch party stats (auth, rate limited - 20/h)
   #
   # SERVICE STATUS (/api/v1/status/*)
   # - GET /services - Get all service statuses
