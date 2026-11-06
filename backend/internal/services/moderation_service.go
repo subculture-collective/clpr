@@ -48,6 +48,7 @@ type ModerationAuditRepo interface {
 
 type ModerationBanUnitOfWork interface {
 	CreateBanWithAudit(context.Context, *models.CommunityBan, *models.ModerationAuditLog) error
+	UnbanWithAudit(ctx context.Context, communityID, userID uuid.UUID, audit *models.ModerationAuditLog) error
 }
 
 // ModerationService handles core moderation operations including banning, unbanning, and managing bans
@@ -245,11 +246,6 @@ func (s *ModerationService) UnbanUser(ctx context.Context, communityID, moderato
 		return err
 	}
 
-	// Remove ban
-	if err = s.communityRepo.UnbanMember(ctx, communityID, targetUserID); err != nil {
-		return fmt.Errorf("failed to remove ban: %w", err)
-	}
-
 	// Log audit entry
 	auditStart := time.Now()
 	metadata := map[string]interface{}{
@@ -266,10 +262,28 @@ func (s *ModerationService) UnbanUser(ctx context.Context, communityID, moderato
 		Metadata:    metadata,
 	}
 
-	if auditErr := s.auditLogRepo.Create(ctx, auditLog); auditErr != nil {
-		metrics.ModerationAuditLogOperationsTotal.WithLabelValues("create", "failed").Inc()
-		metrics.ModerationAuditLogOperationDuration.WithLabelValues("create").Observe(time.Since(auditStart).Seconds())
-		return fmt.Errorf("failed to create audit log: %w", auditErr)
+	if s.banWriter != nil {
+		// Remove the ban and record its audit entry in one transaction.
+		if err = s.banWriter.UnbanWithAudit(ctx, communityID, targetUserID, auditLog); err != nil {
+			if errors.Is(err, repository.ErrCommunityBanNotFound) {
+				err = ErrModerationNotBanned
+				return err
+			}
+			metrics.ModerationAuditLogOperationsTotal.WithLabelValues("create", "failed").Inc()
+			metrics.ModerationAuditLogOperationDuration.WithLabelValues("create").Observe(time.Since(auditStart).Seconds())
+			err = fmt.Errorf("failed to remove ban and create audit log: %w", err)
+			return err
+		}
+	} else {
+		// Unit-test fallback for services constructed directly inside this package.
+		if err = s.communityRepo.UnbanMember(ctx, communityID, targetUserID); err != nil {
+			return fmt.Errorf("failed to remove ban: %w", err)
+		}
+		if auditErr := s.auditLogRepo.Create(ctx, auditLog); auditErr != nil {
+			metrics.ModerationAuditLogOperationsTotal.WithLabelValues("create", "failed").Inc()
+			metrics.ModerationAuditLogOperationDuration.WithLabelValues("create").Observe(time.Since(auditStart).Seconds())
+			return fmt.Errorf("failed to create audit log: %w", auditErr)
+		}
 	}
 	metrics.ModerationAuditLogOperationsTotal.WithLabelValues("create", "success").Inc()
 	metrics.ModerationAuditLogOperationDuration.WithLabelValues("create").Observe(time.Since(auditStart).Seconds())

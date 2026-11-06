@@ -150,9 +150,10 @@ func (s *TagPromotionService) ApprovePromotion(ctx context.Context, tagSlug stri
 	}
 	defer tx.Rollback(ctx)
 
-	// Update the tag's parent_slug from community to content
+	// Move the tag from community (or no parent) to content, matching the
+	// tag_promotion_candidates view, which admits both.
 	tagResult, err := tx.Exec(ctx,
-		`UPDATE tags SET parent_slug = 'content' WHERE slug = $1 AND parent_slug = 'community'`,
+		`UPDATE tags SET parent_slug = 'content' WHERE slug = $1 AND (parent_slug IS NULL OR parent_slug = 'community')`,
 		tagSlug,
 	)
 	if err != nil {

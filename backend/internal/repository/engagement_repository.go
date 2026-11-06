@@ -108,7 +108,7 @@ func (r *EngagementRepository) Publish(ctx context.Context) error {
 	err = tx.QueryRow(ctx, `INSERT INTO engagement_generations(published_at,tracking_started_at,coverage_started_at,oldest_observation_at,stale_clips,eligible_clips)
  SELECT now(),(SELECT started_at FROM engagement_tracking),
  COALESCE(max(s.first_observed_at) FILTER(WHERE c.twitch_clip_id IS NOT NULL),(SELECT started_at FROM engagement_tracking)),min(s.observed_at),
- count(*) FILTER(WHERE c.twitch_clip_id IS NOT NULL AND (s.observed_at IS NULL OR s.observed_at<now()-interval '25 hours' OR (s.active_until>now() AND s.observed_at<now()-interval '30 minutes') OR s.next_poll_at<now()-interval '15 minutes' OR s.last_poll_error_at IS NOT NULL)),count(*)
+ count(*) FILTER(WHERE `+engagementStaleClip+`),count(*)
  FROM clips c LEFT JOIN clip_engagement_state s ON s.clip_id=c.id
  WHERE NOT c.is_hidden AND NOT c.is_removed
  RETURNING id`).Scan(&id)
@@ -212,7 +212,32 @@ func (r *EngagementRepository) Observe(ctx context.Context, id uuid.UUID, count 
 	_, err := r.pool.Exec(ctx, `SELECT record_twitch_observation($1,$2,$3)`, id, count, at)
 	return err
 }
+
+// PollFailed records a failed provider request or persistence error. The clip
+// is retried in 15 minutes and counts as stale until an observation succeeds.
 func (r *EngagementRepository) PollFailed(ctx context.Context, id uuid.UUID) error {
 	_, err := r.pool.Exec(ctx, `UPDATE clip_engagement_state SET last_poll_error_at=now(),next_poll_at=now()+interval '15 minutes' WHERE clip_id=$1`, id)
 	return err
 }
+
+// PollMissing records that a successful provider response omitted the clip,
+// usually because it was deleted on Twitch. Retries back off with the time
+// since the last successful observation, from 15 minutes up to one day, so a
+// deleted clip is not polled every 15 minutes forever.
+func (r *EngagementRepository) PollMissing(ctx context.Context, id uuid.UUID) error {
+	_, err := r.pool.Exec(ctx, `UPDATE clip_engagement_state SET last_poll_error_at=now(),
+ next_poll_at=now()+LEAST(interval '1 day',GREATEST(interval '15 minutes',now()-COALESCE(observed_at,tracking_started_at)))
+ WHERE clip_id=$1`, id)
+	return err
+}
+
+// engagementStaleClip is the Publish predicate (over clips c LEFT JOIN
+// clip_engagement_state s) for a Twitch clip whose views are not current.
+// PollFailed always retries 15 minutes after the error, while PollMissing's
+// retry grows with the time since the last observation. A retry scheduled more
+// than an hour after the last error therefore marks a clip that Twitch has
+// stopped returning for over an hour; it has no views left to observe, so it
+// is not a coverage gap. Recently missing clips and failed requests stay stale.
+const engagementStaleClip = `c.twitch_clip_id IS NOT NULL
+ AND NOT (s.last_poll_error_at IS NOT NULL AND s.next_poll_at>s.last_poll_error_at+interval '1 hour')
+ AND (s.observed_at IS NULL OR s.observed_at<now()-interval '25 hours' OR (s.active_until>now() AND s.observed_at<now()-interval '30 minutes') OR s.next_poll_at<now()-interval '15 minutes' OR s.last_poll_error_at IS NOT NULL)`

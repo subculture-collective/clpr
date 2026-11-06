@@ -16,6 +16,7 @@ type EngagementStore interface {
 	ClaimDue(context.Context, int) ([]repository.EngagementPollClip, error)
 	Observe(context.Context, uuid.UUID, int, time.Time) error
 	PollFailed(context.Context, uuid.UUID) error
+	PollMissing(context.Context, uuid.UUID) error
 }
 
 type EngagementProvider interface {
@@ -132,7 +133,9 @@ func (s *EngagementScheduler) poll(ctx context.Context) error {
 		for i, c := range clips {
 			count, ok := counts[c.TwitchID]
 			if !ok {
-				if err = s.store.PollFailed(ctx, c.ID); err != nil {
+				// Absent from a successful response (usually deleted on
+				// Twitch): back off instead of retrying like a failed request.
+				if err = s.store.PollMissing(ctx, c.ID); err != nil {
 					return s.recordFailedBatch(ctx, clips[i:], err)
 				}
 				continue

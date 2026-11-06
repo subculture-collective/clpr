@@ -1733,10 +1733,12 @@ func (r *ClipRepository) GetClipsNeedingVision(ctx context.Context, limit int, c
 }
 
 // GetClipsNeedingTranscription returns only clips whose broadcaster has an
-// unexpired OAuth grant for Twitch's official clip download endpoint.
+// unexpired OAuth grant for Twitch's official clip download endpoint. As with
+// vision, three failed attempts exhaust automatic retries.
 func (r *ClipRepository) GetClipsNeedingTranscription(ctx context.Context, limit int) ([]models.Clip, error) {
 	return r.getClipsForProcessing(ctx, `
 		transcription_processed_at IS NULL
+		AND transcription_attempt_count < 3
 		AND broadcaster_id IS NOT NULL
 		AND (transcription_attempted_at IS NULL OR transcription_attempted_at < NOW() - INTERVAL '15 minutes')
 		AND EXISTS (
@@ -2093,9 +2095,9 @@ const trendingRefreshStatementTimeout = "60s"
 
 // TrendingRefreshWindow bounds which clips a refresh writes back. Every
 // refresh still ranks all visible clips so percentiles stay comparable, but
-// only clips created, imported or view-observed inside the window are
-// rewritten; older clips keep their last stored score. On production the
-// global percentiles drift a little whenever new clips arrive, which rewrote
+// only clips created, imported, view-observed or locally engaged with inside
+// the window are rewritten; older clips keep their last stored score. On
+// production the global percentiles drift a little whenever new clips arrive, which rewrote
 // all 78k visible clips about three times a day for no visible change.
 const TrendingRefreshWindow = 14 * 24 * time.Hour
 
@@ -2193,6 +2195,13 @@ func (r *ClipRepository) updateTrendingScoresBatched(ctx context.Context, batchS
 	}
 }
 
+// recentLocalEngagementClips lists clips with local votes, comments or
+// favorites inside the refresh window, so an older clip's engagement-based
+// popularity_index is rewritten when it gains local engagement. The
+// clip_local_engagement_window (occurred_at, clip_id) index serves it as an
+// index-only range scan, and the planner hashes it once per refresh.
+const recentLocalEngagementClips = `SELECT le.clip_id FROM clip_local_engagement le WHERE le.occurred_at >= NOW() - $1::interval`
+
 const trendingScoreStageQuery = `
 INSERT INTO clip_score_refresh_stage
     (clip_id, trending_score, hot_score, popularity_index, engagement_count, calculated_at)
@@ -2214,7 +2223,8 @@ WITH signals AS (
 		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement,
 		(created_at >= NOW() - $1::interval
 			OR imported_at >= NOW() - $1::interval
-			OR view_count_observed_at >= NOW() - $1::interval) AS in_window
+			OR view_count_observed_at >= NOW() - $1::interval
+			OR id IN (` + recentLocalEngagementClips + `)) AS in_window
 	FROM clips
 	WHERE is_removed = false AND is_hidden = false
 ), ranked AS (
@@ -2295,7 +2305,8 @@ WITH signals AS (
 		CASE WHEN submitted_by_user_id IS NOT NULL THEN 0.35 ELSE 0.0 END AS community_boost,
 		view_count + (vote_score * 2) + (comment_count * 3) + (favorite_count * 2) AS engagement,
 		(created_at >= NOW() - $1::interval OR imported_at >= NOW() - $1::interval
-			OR view_count_observed_at >= NOW() - $1::interval) AS in_window
+			OR view_count_observed_at >= NOW() - $1::interval
+			OR id IN (` + recentLocalEngagementClips + `)) AS in_window
 	FROM clips WHERE is_removed=false AND is_hidden=false
 ), ranked AS (
 	SELECT id, PERCENT_RANK() OVER (ORDER BY view_signal) AS view_percentile,

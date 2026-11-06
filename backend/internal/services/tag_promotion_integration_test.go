@@ -80,3 +80,42 @@ func TestPromotionDetectionUpdatesCountsAndHonorsModeration(t *testing.T) {
 		t.Fatalf("pending after rejection=%d err=%v", pending, err)
 	}
 }
+
+func TestApprovePromotionAcceptsTagWithNullParent(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	ctx := context.Background()
+
+	slug := "nullparent-" + uuid.NewString()[:12]
+	reviewer := uuid.New()
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM tag_promotion_queue WHERE tag_slug=$1`, slug)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM tags WHERE slug=$1`, slug)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id=$1`, reviewer)
+	})
+	if _, err := pool.Exec(ctx, `INSERT INTO users(id,twitch_id,username) VALUES($1,$2,$3)`, reviewer, "np-"+reviewer.String()[:20], "np-"+reviewer.String()[:20]); err != nil {
+		t.Fatal(err)
+	}
+	// GetOrCreateTag creates tags with a NULL parent, which the candidates view admits.
+	if _, err := pool.Exec(ctx, `INSERT INTO tags(id,name,slug,parent_slug) VALUES(gen_random_uuid(),$1,$1,NULL)`, slug); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO tag_promotion_queue(tag_slug,usage_count,unique_users,status) VALUES($1,5,3,'pending')`, slug); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := NewTagPromotionService(pool).ApprovePromotion(ctx, slug, reviewer); err != nil {
+		t.Fatalf("ApprovePromotion: %v", err)
+	}
+	var parent *string
+	var status string
+	if err := pool.QueryRow(ctx, `SELECT parent_slug FROM tags WHERE slug=$1`, slug).Scan(&parent); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT status FROM tag_promotion_queue WHERE tag_slug=$1`, slug).Scan(&status); err != nil {
+		t.Fatal(err)
+	}
+	if parent == nil || *parent != "content" || status != "approved" {
+		t.Fatalf("parent=%v status=%q", parent, status)
+	}
+}
