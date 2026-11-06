@@ -165,6 +165,7 @@ PY
 
 phase_contract() {
     task contract
+    python3 -B -m unittest discover -s scripts/ci -p 'test_*.py'
 }
 
 phase_backend() {

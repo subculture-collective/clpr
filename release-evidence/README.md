@@ -13,8 +13,52 @@ internal page restrictions and uncached `/build-info.json` source marker. The
 required pull-request image gate runs the same checks. The HTTP result is retained
 with the candidate evidence as `frontend-http.json`.
 
-Candidate publication establishes an artifact for deployment. Production
-activation and its live checks remain a separate step.
+After publication, main pushes can deliver only the frontend to the reviewed
+Almaz native release through the guarded lane described below. Native service
+and schema promotion retain their separate operator evidence requirements.
+
+## Automatic frontend delivery on Almaz
+
+The candidate job signs an additional `frontend-delivery.json` receipt and
+Sigstore bundle with the existing production signing key. The receipt binds
+the candidate manifest, frontend scan/SBOM/HTTP evidence hashes and the saved
+image configuration digest. That digest remains stable when the restricted
+receiver converts Docker's OCI archive into a classic import. The receiver
+verifies the bundle offline with host-pinned Cosign and public-key hashes,
+then compares the imported image with the signed configuration before activation.
+A retry retains the first accepted receipt and image content for that revision;
+different configuration bytes require a new revision.
+
+Only main-push delivery uses `HOMELAB_WEB_DEPLOY_KEY` and
+`HOMELAB_WEB_KNOWN_HOSTS`. The forced SSH command selects the host-owned
+`clpr-web` profile and the existing `clpr-frontend` Compose service. It accepts
+bounded attestation/image transfers, deployment, status and native verification.
+It cannot select a different profile or start the API, crawler or data services.
+Manual candidate dispatch continues to build and sign without deploying.
+
+The host contract pins the reviewed backend tree, native release pointer/file,
+five API/crawler/data-container identities and images, environment hashes,
+mounts, applied migration ledger and schema structure. It also pins the
+read-only analytics file and frontend startup, healthcheck, tmpfs and runtime
+isolation. The pre-deployment check requires the other four main release gates
+and the candidate's completed source, image/signing and receipt steps. Changed
+backend source or native state requires a compatibility review before updating
+that host contract. The frontend lane runs no migration and creates no passing
+operator evidence for native promotion.
+
+The first activation retains root/metadata/favicon checks that also work with
+the original markerless image, so automatic image rollback can verify it.
+CI separately checks the live source marker with three uncached query variants
+and confirms native container start times are unchanged. After independent
+first-deployment proof, add the marker as the first image-backed host readiness
+check; retain the original readiness profile for recovery to the old image.
+
+Host configuration is `~/.config/fleet-deploy/clpr-web.json`; frontend image and
+rollback receipts are under `~/.local/state/fleet-deploy/clpr-web/releases/`.
+The native `current` release pointer stays unchanged. Consult the frontend
+receipt when assembling a later native release, rather than recreating an older
+frontend from the native manifest. Keep native credentials in their existing
+private files and deployment diagnostics in the private host state directory.
 
 ## Candidate manifest contract
 

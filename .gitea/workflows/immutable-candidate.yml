@@ -159,6 +159,22 @@ jobs:
           PY
           test "$(git rev-parse HEAD)" = "$candidate_sha"
           test "$(git status --porcelain=v1 --untracked-files=all)" = ''
+      - name: Sign frontend delivery receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate_sha="$(git rev-parse HEAD)"
+          evidence_dir="$PWD/.tmp/release-candidate"
+          image="$REGISTRY_ROOT/frontend:candidate-$candidate_sha"
+          python3 scripts/ci/web-delivery.py prepare \
+            --evidence "$evidence_dir" --image "$image" --revision "$candidate_sha" \
+            >"$evidence_dir/frontend-delivery.json"
+          cosign sign-blob --yes --key env://COSIGN_PRIVATE_KEY \
+            --bundle "$evidence_dir/frontend-delivery.sigstore.json" \
+            "$evidence_dir/frontend-delivery.json"
+          cosign verify-blob --offline --key env://COSIGN_PUBLIC_KEY \
+            --bundle "$evidence_dir/frontend-delivery.sigstore.json" \
+            "$evidence_dir/frontend-delivery.json"
       - name: Upload immutable candidate manifest and supply-chain records
         uses: https://github.com/actions/upload-artifact@v3
         with:
@@ -167,3 +183,67 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
+      - name: Deploy qualified frontend
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.server_url == 'https://git.subcult.tv'
+        shell: bash
+        env:
+          DEPLOY_KEY: ${{ secrets.HOMELAB_WEB_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOMELAB_WEB_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          revision="$(git rev-parse HEAD)"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]]
+          deploy_dir="$(mktemp -d)"
+          trap 'rm -rf "$deploy_dir"' EXIT
+          chmod 700 "$deploy_dir"
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          printf '%s\n' "$DEPLOY_KEY" > "$deploy_dir/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$deploy_dir/known_hosts"
+          chmod 600 "$deploy_dir/key" "$deploy_dir/known_hosts"
+          ssh_args=(-i "$deploy_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$deploy_dir/known_hosts"
+            -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3)
+          clpr_remote() {
+            # Fixed protocol commands deliberately contain the validated client-side revision.
+            # shellcheck disable=SC2029
+            ssh "${ssh_args[@]}" onnwee@10.0.0.200 "$1"
+          }
+          python3 - .tmp/release-candidate <<'PY' | clpr_remote "attest $revision"
+          import base64, json, pathlib, sys
+          folder = pathlib.Path(sys.argv[1])
+          print(json.dumps({name: base64.b64encode((folder / filename).read_bytes()).decode()
+                            for name, filename in [('statement', 'frontend-delivery.json'),
+                                                   ('bundle', 'frontend-delivery.sigstore.json')]}))
+          PY
+          accepted="$(clpr_remote "artifact $revision clpr-frontend")"
+          if python3 -c 'import json,sys;sys.exit(0 if json.loads(sys.argv[1])["available"] else 1)' "$accepted"; then
+            echo "Reusing the first accepted signed frontend for this revision."
+          else
+            transport="fleet-deploy/clpr-web/clpr-frontend:$revision"
+            docker tag "$REGISTRY_ROOT/frontend:candidate-$revision" "$transport"
+            docker save "$transport" | clpr_remote "receive $revision clpr-frontend"
+          fi
+          clpr_remote "deploy $revision"
+          clpr_remote "verify-native $revision"
+          python3 - "$revision" <<'PY'
+          import json, sys, time, urllib.error, urllib.request
+          revision = sys.argv[1]
+          for query in ['', '?v=' + revision, '?v=stale']:
+              request = urllib.request.Request('https://clpr.tv/build-info.json' + query,
+                                              headers={'User-Agent': 'SUBCULT-deploy/1', 'Cache-Control': 'no-cache'})
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(request, timeout=20) as response:
+                          assert response.status == 200
+                          assert json.load(response) == {'source_commit': revision, 'repository': 'subculture-collective/clpr'}
+                          assert response.headers.get('Cache-Control') == 'no-store'
+                      break
+                  except urllib.error.HTTPError as error:
+                      if error.code < 500 or attempt == 2:
+                          raise
+                  except urllib.error.URLError:
+                      if attempt == 2:
+                          raise
+                  time.sleep(1)
+          print(json.dumps({'source_commit': revision, 'public_marker': 'PASS', 'uncached_queries': 3}))
+          PY
