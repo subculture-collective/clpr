@@ -103,13 +103,17 @@ func sanitizeOAuthReturnTo(value string) string {
 	return value
 }
 
+// twitchOAuthDefaultReturnTo is where the callback sends users when the
+// signed state carries no return path (or cannot be trusted).
+const twitchOAuthDefaultReturnTo = "/settings"
+
 func appendOAuthResult(returnTo, key, value string) string {
 	if returnTo == "" {
-		returnTo = "/streams"
+		returnTo = twitchOAuthDefaultReturnTo
 	}
 	parsed, err := url.Parse(returnTo)
 	if err != nil {
-		return "/streams"
+		parsed = &url.URL{Path: twitchOAuthDefaultReturnTo}
 	}
 	query := parsed.Query()
 	query.Set(key, value)
@@ -124,6 +128,19 @@ func hasTwitchScope(scopes, required string) bool {
 		}
 	}
 	return false
+}
+
+// verifiedTwitchOAuthReturnTo returns the signed return path from the callback
+// state when it verifies for the signed-in user, and "" otherwise.
+func verifiedTwitchOAuthReturnTo(c *gin.Context) string {
+	value := c.Query("state")
+	userIDVal, exists := c.Get("user_id")
+	userID, ok := userIDVal.(uuid.UUID)
+	if !exists || !ok || len(value) > 4096 || !verifyTwitchOAuthState(value, userID, os.Getenv("TWITCH_CLIENT_SECRET"), time.Now()) {
+		return ""
+	}
+	state, _ := decodeTwitchOAuthState(value)
+	return sanitizeOAuthReturnTo(state.ReturnTo)
 }
 
 func verifyTwitchOAuthState(value string, userID uuid.UUID, secret string, now time.Time) bool {
@@ -201,7 +218,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 			"error":             errorParam,
 			"error_description": errorDesc,
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_denied")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(verifiedTwitchOAuthReturnTo(c), "error", "oauth_denied"))
 		return
 	}
 
@@ -226,7 +243,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 	}
 	clientSecret := os.Getenv("TWITCH_CLIENT_SECRET")
 	if !verifyTwitchOAuthState(c.Query("state"), userID, clientSecret, time.Now()) {
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=invalid_oauth_state")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult("", "error", "invalid_oauth_state"))
 		return
 	}
 	state, _ := decodeTwitchOAuthState(c.Query("state"))
@@ -246,7 +263,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Twitch OAuth configuration missing", nil, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_config_error")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_config_error"))
 		return
 	}
 
@@ -267,7 +284,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Failed to exchange code for tokens", err, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 	defer tokenResp.Body.Close()
@@ -277,7 +294,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 			"status_code": tokenResp.StatusCode,
 			"user_id":     userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 
@@ -286,7 +303,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Failed to decode token response", err, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 
@@ -296,7 +313,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Failed to create Twitch API request", err, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
@@ -308,7 +325,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Failed to get Twitch user info", err, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 	defer userResp.Body.Close()
@@ -318,7 +335,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 			"status_code": userResp.StatusCode,
 			"user_id":     userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 
@@ -327,7 +344,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Failed to decode user response", err, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 
@@ -335,7 +352,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("No user data returned from Twitch", nil, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 
@@ -355,7 +372,7 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		utils.GetLogger().Error("Failed to store Twitch OAuth credentials", err, map[string]interface{}{
 			"user_id": userID.String(),
 		})
-		c.Redirect(http.StatusTemporaryRedirect, "/streams?error=oauth_failed")
+		c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
 		return
 	}
 

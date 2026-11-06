@@ -31,6 +31,28 @@ func writeCreatorModerationError(c *gin.Context, err error) bool {
 	return false
 }
 
+// writeCommentError maps comment service failures to status codes. Unexpected
+// errors get a generic message so database details never reach the client.
+func writeCommentError(c *gin.Context, err error, message string) {
+	if writeCreatorModerationError(c, err) {
+		return
+	}
+	var validationErr *services.CommentValidationError
+	var permissionErr *services.CommentPermissionError
+	switch {
+	case errors.Is(err, services.ErrCommentNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "Comment not found"})
+	case errors.Is(err, services.ErrCommentClipNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "Clip not found"})
+	case errors.As(err, &validationErr):
+		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Message})
+	case errors.As(err, &permissionErr):
+		c.JSON(http.StatusForbidden, gin.H{"error": permissionErr.Message})
+	default:
+		writeReadError(c, err, message)
+	}
+}
+
 // ListComments handles GET /clips/:id/comments
 func (h *CommentHandler) ListComments(c *gin.Context) {
 	// Parse clip ID
@@ -128,12 +150,7 @@ func (h *CommentHandler) CreateComment(c *gin.Context) {
 	// Create comment
 	comment, err := h.commentService.CreateComment(c.Request.Context(), &req, clipID, userID)
 	if err != nil {
-		if writeCreatorModerationError(c, err) {
-			return
-		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		writeCommentError(c, err, "Failed to create comment")
 		return
 	}
 
@@ -186,12 +203,7 @@ func (h *CommentHandler) UpdateComment(c *gin.Context) {
 
 	// Update comment
 	if err := h.commentService.UpdateComment(c.Request.Context(), commentID, userID, req.Content, isAdmin); err != nil {
-		if writeCreatorModerationError(c, err) {
-			return
-		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		writeCommentError(c, err, "Failed to update comment")
 		return
 	}
 
@@ -240,9 +252,7 @@ func (h *CommentHandler) DeleteComment(c *gin.Context) {
 
 	// Delete comment
 	if err := h.commentService.DeleteComment(c.Request.Context(), commentID, userID, roleStr, req.Reason); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		writeCommentError(c, err, "Failed to delete comment")
 		return
 	}
 
@@ -293,12 +303,7 @@ func (h *CommentHandler) VoteOnComment(c *gin.Context) {
 
 	// Vote on comment
 	if err := h.commentService.VoteOnComment(c.Request.Context(), commentID, userID, req.Vote); err != nil {
-		if writeCreatorModerationError(c, err) {
-			return
-		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		writeCommentError(c, err, "Failed to record vote")
 		return
 	}
 

@@ -720,9 +720,10 @@ func (h *ClipHandler) VoteOnClip(c *gin.Context) {
 	}
 	userID := userIDVal.(uuid.UUID)
 
-	// Parse request body
+	// Parse request body. Vote is a pointer so that 0 (remove vote) passes the
+	// required check while a missing field still fails it.
 	var req struct {
-		Vote int16 `json:"vote" binding:"required"`
+		Vote *int16 `json:"vote" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -737,7 +738,8 @@ func (h *ClipHandler) VoteOnClip(c *gin.Context) {
 	}
 
 	// Validate vote value
-	if req.Vote != -1 && req.Vote != 0 && req.Vote != 1 {
+	vote := *req.Vote
+	if vote != -1 && vote != 0 && vote != 1 {
 		c.JSON(http.StatusBadRequest, StandardResponse{
 			Success: false,
 			Error: &ErrorInfo{
@@ -749,7 +751,7 @@ func (h *ClipHandler) VoteOnClip(c *gin.Context) {
 	}
 
 	// Process vote
-	err = h.clipService.VoteOnClip(c.Request.Context(), userID, clipID, req.Vote)
+	err = h.clipService.VoteOnClip(c.Request.Context(), userID, clipID, vote)
 	if err != nil {
 		var moderationErr *services.CreatorModerationError
 		if errors.As(err, &moderationErr) {

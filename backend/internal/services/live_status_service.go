@@ -21,7 +21,9 @@ type liveStreamsClient interface {
 
 // LiveStatusService handles live status updates and queries
 type LiveStatusService struct {
-	broadcasterRepo     *repository.BroadcasterRepository
+	broadcasterRepo *repository.BroadcasterRepository
+	// streamFollowRepo is unused since "now live" stream-follow notifications
+	// were removed; it goes with the stream_follows table (#72).
 	streamFollowRepo    *repository.StreamFollowRepository
 	twitchClient        liveStreamsClient
 	notificationService *NotificationService
@@ -169,10 +171,6 @@ func (s *LiveStatusService) UpdateLiveStatusForBroadcasters(ctx context.Context,
 					statusChange = &changeMsg
 					// Notify broadcaster followers
 					s.notifyFollowers(ctx, broadcasterID, stream)
-					// Notify stream followers
-					if stream.UserLogin != "" {
-						s.notifyStreamFollowers(ctx, stream.UserLogin, stream)
-					}
 				}
 			} else {
 				// Broadcaster is offline
@@ -288,96 +286,6 @@ func (s *LiveStatusService) notifyFollowers(ctx context.Context, broadcasterID s
 	wg.Wait()
 
 	log.Printf("Sent live notifications for broadcaster %s (%s) to %d followers", broadcasterID, broadcasterName, len(followerIDs))
-}
-
-// notifyStreamFollowers sends notifications to all stream followers when a streamer goes live
-func (s *LiveStatusService) notifyStreamFollowers(ctx context.Context, streamerUsername string, stream *twitch.Stream) {
-	if s.notificationService == nil {
-		log.Printf("WARNING: Notification service not initialized, cannot send notifications for streamer %s", streamerUsername)
-		return
-	}
-
-	if s.streamFollowRepo == nil {
-		log.Printf("WARNING: Stream follow repository not initialized, cannot send notifications for streamer %s", streamerUsername)
-		return
-	}
-
-	// Get all followers of this streamer
-	followerIDs, err := s.streamFollowRepo.GetFollowersForStreamer(ctx, streamerUsername)
-	if err != nil {
-		log.Printf("Failed to get stream followers for streamer %s: %v", streamerUsername, err)
-		return
-	}
-
-	if len(followerIDs) == 0 {
-		return
-	}
-
-	// Prepare notification content
-	streamerName := stream.UserName
-	if streamerName == "" {
-		streamerName = stream.UserLogin
-	}
-	if streamerName == "" {
-		streamerName = streamerUsername
-	}
-
-	title := fmt.Sprintf("%s is now live!", streamerName)
-	message := stream.Title
-	if message == "" {
-		message = "Streaming now on Twitch"
-	}
-
-	// Add game info if available
-	if stream.GameName != "" {
-		message = fmt.Sprintf("%s - Playing %s", message, stream.GameName)
-	}
-
-	// Create link to stream page
-	var link string
-	if stream.UserLogin != "" {
-		link = fmt.Sprintf("/stream/%s", stream.UserLogin)
-	}
-
-	// Send notification to each follower in parallel using a worker pool
-	followerCh := make(chan uuid.UUID)
-	var wg sync.WaitGroup
-
-	// Start worker pool
-	for i := 0; i < notificationWorkerCount; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for followerID := range followerCh {
-				_, err := s.notificationService.CreateNotification(
-					ctx,
-					followerID,
-					models.NotificationTypeStreamLive,
-					title,
-					message,
-					&link,
-					nil, // no source user
-					nil, // no source content
-					nil, // no source content type
-				)
-				if err != nil {
-					log.Printf("Failed to send stream notification to user %s for streamer %s: %v", followerID, streamerUsername, err)
-				}
-			}
-		}()
-	}
-
-	// Send followers to worker pool
-	go func() {
-		for _, followerID := range followerIDs {
-			followerCh <- followerID
-		}
-		close(followerCh)
-	}()
-
-	wg.Wait()
-
-	log.Printf("Sent stream live notifications for streamer %s (%s) to %d followers", streamerUsername, streamerName, len(followerIDs))
 }
 
 // logSyncEvent logs a sync event to the database

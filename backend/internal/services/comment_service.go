@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -33,6 +35,52 @@ const (
 	// KarmaPerDownvote is karma removed when comment is downvoted
 	KarmaPerDownvote = -1
 )
+
+var (
+	// ErrCommentNotFound is returned when the target comment does not exist.
+	ErrCommentNotFound = errors.New("comment not found")
+	// ErrCommentClipNotFound is returned when the clip being commented on does not exist.
+	ErrCommentClipNotFound = errors.New("clip not found")
+)
+
+// CommentValidationError reports a comment request the caller must correct.
+type CommentValidationError struct {
+	Message string
+}
+
+func (e *CommentValidationError) Error() string { return e.Message }
+
+// CommentPermissionError reports a comment action the user is not allowed to take.
+type CommentPermissionError struct {
+	Message string
+}
+
+func (e *CommentPermissionError) Error() string { return e.Message }
+
+func commentValidationError(format string, args ...any) error {
+	return &CommentValidationError{Message: fmt.Sprintf(format, args...)}
+}
+
+func commentPermissionError(format string, args ...any) error {
+	return &CommentPermissionError{Message: fmt.Sprintf(format, args...)}
+}
+
+// commentLookupError maps a CommentRepository.GetByID failure. The repository
+// reports a missing row as an unwrapped "comment not found" error.
+func commentLookupError(err error) error {
+	if errors.Is(err, pgx.ErrNoRows) || err.Error() == ErrCommentNotFound.Error() {
+		return ErrCommentNotFound
+	}
+	return fmt.Errorf("failed to load comment: %w", err)
+}
+
+// clipLookupError maps a ClipRepository.GetByID failure, which wraps pgx.ErrNoRows.
+func clipLookupError(err error) error {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrCommentClipNotFound
+	}
+	return fmt.Errorf("failed to load clip: %w", err)
+}
 
 const creatorModerationHiddenCommentMessage = "This comment is hidden because your account is restricted from interacting with this creator's content."
 
@@ -113,28 +161,31 @@ func (s *CommentService) ValidateCreateComment(ctx context.Context, req *CreateC
 	// Validate content length
 	content := strings.TrimSpace(req.Content)
 	if len(content) < MinCommentLength {
-		return fmt.Errorf("comment must be at least %d character(s)", MinCommentLength)
+		return commentValidationError("comment must be at least %d character(s)", MinCommentLength)
 	}
 	if len(content) > MaxCommentLength {
-		return fmt.Errorf("comment must not exceed %d characters", MaxCommentLength)
+		return commentValidationError("comment must not exceed %d characters", MaxCommentLength)
 	}
 
 	// Check if clip exists
 	_, err := s.clipRepo.GetByID(ctx, clipID)
 	if err != nil {
-		return fmt.Errorf("clip not found")
+		return clipLookupError(err)
 	}
 
 	// If replying to a parent comment, validate it
 	if req.ParentCommentID != nil {
 		parent, err := s.repo.GetByID(ctx, *req.ParentCommentID, nil)
 		if err != nil {
-			return fmt.Errorf("parent comment not found")
+			if err := commentLookupError(err); !errors.Is(err, ErrCommentNotFound) {
+				return err
+			}
+			return commentValidationError("parent comment not found")
 		}
 
 		// Verify parent belongs to the same clip
 		if parent.ClipID != clipID {
-			return fmt.Errorf("parent comment does not belong to this clip")
+			return commentValidationError("parent comment does not belong to this clip")
 		}
 
 		// Check nesting depth
@@ -144,7 +195,7 @@ func (s *CommentService) ValidateCreateComment(ctx context.Context, req *CreateC
 		}
 
 		if depth >= MaxNestingDepth {
-			return fmt.Errorf("maximum nesting depth of %d reached", MaxNestingDepth)
+			return commentValidationError("maximum nesting depth of %d reached", MaxNestingDepth)
 		}
 	}
 
@@ -161,7 +212,7 @@ func (s *CommentService) creatorInteractionRestrictionForClip(ctx context.Contex
 
 	clip, err := s.clipRepo.GetByID(ctx, clipID)
 	if err != nil {
-		return false, "", err
+		return false, "", clipLookupError(err)
 	}
 	if clip.CreatorAccountID == nil || *clip.CreatorAccountID == uuid.Nil {
 		return true, "", nil
@@ -185,7 +236,7 @@ func (s *CommentService) creatorCommentRestrictionForClip(ctx context.Context, c
 
 	clip, err := s.clipRepo.GetByID(ctx, clipID)
 	if err != nil {
-		return false, "", err
+		return false, "", clipLookupError(err)
 	}
 	if clip.CreatorAccountID == nil || *clip.CreatorAccountID == uuid.Nil {
 		return true, "", nil
@@ -237,11 +288,11 @@ func (s *CommentService) CreateComment(ctx context.Context, req *CreateCommentRe
 		if err == nil && suspendedUntil != nil {
 			// Check if it's a permanent suspension (year 9999)
 			if suspendedUntil.Year() >= 9999 {
-				return nil, fmt.Errorf("your comment privileges have been permanently suspended. Please contact support if you believe this is a mistake")
+				return nil, commentPermissionError("your comment privileges have been permanently suspended. Please contact support if you believe this is a mistake")
 			}
-			return nil, fmt.Errorf("your comment privileges are suspended until %s. Please contact support if you believe this is a mistake", suspendedUntil.Format("2006-01-02 15:04 MST"))
+			return nil, commentPermissionError("your comment privileges are suspended until %s. Please contact support if you believe this is a mistake", suspendedUntil.Format("2006-01-02 15:04 MST"))
 		}
-		return nil, fmt.Errorf("comment privileges are currently suspended. Please try again later or contact support if you believe this is a mistake")
+		return nil, commentPermissionError("comment privileges are currently suspended. Please try again later or contact support if you believe this is a mistake")
 	}
 
 	if s.creatorModeration != nil {
@@ -358,16 +409,16 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID, userID uu
 	// Validate content length
 	content = strings.TrimSpace(content)
 	if len(content) < MinCommentLength {
-		return fmt.Errorf("comment must be at least %d character(s)", MinCommentLength)
+		return commentValidationError("comment must be at least %d character(s)", MinCommentLength)
 	}
 	if len(content) > MaxCommentLength {
-		return fmt.Errorf("comment must not exceed %d characters", MaxCommentLength)
+		return commentValidationError("comment must not exceed %d characters", MaxCommentLength)
 	}
 
 	// Get the comment
 	comment, err := s.repo.GetByID(ctx, commentID, nil)
 	if err != nil {
-		return fmt.Errorf("comment not found")
+		return commentLookupError(err)
 	}
 	if s.creatorModeration != nil {
 		allowed, message, err := s.creatorCommentRestrictionForClip(ctx, comment.ClipID, &userID)
@@ -381,7 +432,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID, userID uu
 
 	// Check if user can edit
 	if !isAdmin && comment.UserID != userID {
-		return fmt.Errorf("you can only edit your own comments")
+		return commentPermissionError("you can only edit your own comments")
 	}
 
 	// Check edit time window (unless admin)
@@ -391,7 +442,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, commentID, userID uu
 			return fmt.Errorf("failed to check edit permission: %w", err)
 		}
 		if !canEdit {
-			return fmt.Errorf("edit window of %d minutes has expired", EditWindowMinutes)
+			return commentPermissionError("edit window of %d minutes has expired", EditWindowMinutes)
 		}
 	}
 
@@ -408,7 +459,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID, userID uu
 	// Get the comment
 	comment, err := s.repo.GetByID(ctx, commentID, nil)
 	if err != nil {
-		return fmt.Errorf("comment not found")
+		return commentLookupError(err)
 	}
 
 	// Determine if this is a moderator/admin action
@@ -416,7 +467,7 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID, userID uu
 	isAuthor := comment.UserID == userID
 
 	if !isMod && !isAuthor {
-		return fmt.Errorf("you can only delete your own comments")
+		return commentPermissionError("you can only delete your own comments")
 	}
 
 	// Delete the comment
@@ -438,13 +489,13 @@ func (s *CommentService) DeleteComment(ctx context.Context, commentID, userID uu
 func (s *CommentService) VoteOnComment(ctx context.Context, commentID, userID uuid.UUID, voteType int16) error {
 	// Validate vote type
 	if voteType != 1 && voteType != -1 && voteType != 0 {
-		return fmt.Errorf("invalid vote type: must be 1 (upvote), -1 (downvote), or 0 (remove vote)")
+		return commentValidationError("invalid vote type: must be 1 (upvote), -1 (downvote), or 0 (remove vote)")
 	}
 
 	// Get the comment
 	comment, err := s.repo.GetByID(ctx, commentID, nil)
 	if err != nil {
-		return fmt.Errorf("comment not found")
+		return commentLookupError(err)
 	}
 	if s.creatorModeration != nil {
 		allowed, message, err := s.creatorInteractionRestrictionForClip(ctx, comment.ClipID, &userID)
