@@ -5,6 +5,17 @@ The release operator supplies six JSON files through a protected HTTPS store.
 The immutable candidate build supplies `candidate-manifest.json`; copy that
 generated manifest unchanged into the same protected store.
 
+The immutable candidate workflow runs automatically on main pushes and remains
+available for manual dispatch. It retains the existing source convergence,
+image scans, SBOMs, registry digest and cosign checks. Before publication, the
+frontend also passes real-container HTTP checks for its served files, metadata,
+internal page restrictions and uncached `/build-info.json` source marker. The
+required pull-request image gate runs the same checks. The HTTP result is retained
+with the candidate evidence as `frontend-http.json`.
+
+Candidate publication establishes an artifact for deployment. Production
+activation and its live checks remain a separate step.
+
 ## Candidate manifest contract
 
 The repository-owned manifest schema is version 1:
