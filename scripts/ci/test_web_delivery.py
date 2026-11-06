@@ -2,10 +2,13 @@ import base64
 import copy
 import importlib.util
 import json
+import io
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('delivery', Path(__file__).with_name('web-delivery.py'))
 delivery = importlib.util.module_from_spec(spec)
@@ -106,6 +109,50 @@ class NativeRuntimeTests(unittest.TestCase):
             mutate(self.current)
             with self.subTest(change=name), self.assertRaises(AssertionError):
                 self.snapshot()
+
+
+class AttestationStorageTests(unittest.TestCase):
+    @staticmethod
+    def packet(item):
+        return io.BytesIO(json.dumps({'statement': base64.b64encode(json.dumps(item).encode()).decode(),
+                                      'bundle': base64.b64encode(b'fixture bundle').decode()}).encode())
+
+    @staticmethod
+    def verified_fixture(profile, folder, revision):
+        # Crypto acceptance/rejection is exercised separately with pinned Cosign.
+        item = delivery.validate_statement(json.loads((folder / 'statement.json').read_text()), revision)
+        (folder / 'verification.log').write_text('Signature fixture accepted\n')
+        return item
+
+    class Receiver:
+        @staticmethod
+        def assert_current_main(profile, revision):
+            assert revision == REVISION
+
+    def test_atomic_first_receipt_and_retry_keep_the_first_candidate(self):
+        with tempfile.TemporaryDirectory() as root, patch.object(delivery, 'verify_bundle', self.verified_fixture):
+            profile = {'state': root}
+            delivery.receive_attestation(profile, self.Receiver, REVISION, self.packet(statement()))
+            folder = Path(root) / 'attestations' / REVISION
+            before = (folder / 'statement.json').read_bytes()
+            second = statement()
+            second['candidate']['built_at'] = '2026-11-06T00:01:00Z'
+            second['candidate']['frontend_digest'] = 'sha256:' + 'f' * 64
+            delivery.receive_attestation(profile, self.Receiver, REVISION, self.packet(second))
+            self.assertEqual((folder / 'statement.json').read_bytes(), before)
+            self.assertEqual([p.name for p in folder.parent.iterdir()], [REVISION])
+
+    def test_different_image_for_the_same_revision_cannot_replace_receipt(self):
+        with tempfile.TemporaryDirectory() as root, patch.object(delivery, 'verify_bundle', self.verified_fixture):
+            profile = {'state': root}
+            delivery.receive_attestation(profile, self.Receiver, REVISION, self.packet(statement()))
+            target = Path(root) / 'attestations' / REVISION / 'statement.json'
+            original = target.read_bytes()
+            changed = statement()
+            changed['config_digest'] = 'sha256:' + 'f' * 64
+            with self.assertRaises(AssertionError):
+                delivery.receive_attestation(profile, self.Receiver, REVISION, self.packet(changed))
+            self.assertEqual(target.read_bytes(), original)
 
 
 if __name__ == '__main__':
