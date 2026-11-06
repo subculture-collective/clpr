@@ -1,9 +1,28 @@
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { Container, SEO } from '../components';
-import { ClipFeed } from '../components/clip';
+import { Button, Container, SEO, Spinner } from '../components';
+import { ClipCard } from '../components/clip/ClipCard';
+import { ClipCardSkeleton } from '../components/clip/ClipCardSkeleton';
+import { fetchCreatorClips } from '../lib/clip-api';
 
 export function CreatorPage() {
   const { creatorId } = useParams<{ creatorId: string }>();
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['creator-clips', creatorId],
+    queryFn: ({ pageParam }) => fetchCreatorClips({ creatorId: creatorId!, pageParam }),
+    getNextPageParam: lastPage => (lastPage.has_more ? lastPage.page + 1 : undefined),
+    initialPageParam: 1,
+    enabled: !!creatorId,
+  });
+  const clips = data?.pages.flatMap(page => page.clips ?? []) ?? [];
 
   if (!creatorId) {
     return (
@@ -28,12 +47,41 @@ export function CreatorPage() {
           <p className="text-muted-foreground">Viewing clips from: {creatorId}</p>
         </div>
         
-        {/* Use ClipFeed with creator_id filter */}
-        <ClipFeed
-          filters={{ creator_id: creatorId }}
-          showSearch={false}
-          useSortTitle={false}
-        />
+        {isLoading && (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ClipCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <div role="alert" className="rounded-lg border border-border p-4">
+            <p>This creator's clips could not be loaded.</p>
+            <Button className="mt-3" variant="outline" onClick={() => void refetch()}>Try again</Button>
+          </div>
+        )}
+
+        {!isLoading && !isError && clips.length === 0 && (
+          <p className="text-center text-muted-foreground py-12">No clips from this creator yet.</p>
+        )}
+
+        {clips.length > 0 && (
+          <div className="space-y-4">
+            {clips.map(clip => (
+              <ClipCard key={clip.id} clip={clip} />
+            ))}
+            {hasNextPage && (
+              <div className="py-8 flex justify-center">
+                {isFetchingNextPage ? (
+                  <Spinner size="lg" />
+                ) : (
+                  <Button onClick={() => void fetchNextPage()}>Load More</Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </Container>
     </>
   );

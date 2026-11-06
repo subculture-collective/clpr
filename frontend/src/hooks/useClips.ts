@@ -2,7 +2,6 @@ import * as clipApi from '@/lib/clip-api';
 import type {
     Clip,
     ClipFeedFilters,
-    ClipFeedResponse,
     FavoritePayload,
     VotePayload,
 } from '@/types/clip';
@@ -11,6 +10,9 @@ import {
     useMutation,
     useQuery,
     useQueryClient,
+    type Query,
+    type QueryClient,
+    type QueryKey,
 } from '@tanstack/react-query';
 
 export { useClipFeed } from './useClipFeed';
@@ -54,42 +56,91 @@ export const useClipById = (clipId: string) => {
     });
 };
 
+// Clips appear in many query shapes: feeds ({ pages: [{ clips }] }),
+// paginated lists ({ clips } or { data }), search results, playlists, queues
+// and single-clip queries. Vote and favorite updates walk every cached query
+// and patch each clip object with the matching id, so the change shows
+// wherever the clip is rendered.
+type ClipCacheSnapshot = Array<[QueryKey, unknown]>;
+
+const isClipRecord = (value: Record<string, unknown>, clipId: string) =>
+    value.id === clipId && typeof value.vote_score === 'number';
+
+const patchClipInData = (
+    data: unknown,
+    clipId: string,
+    updater: (clip: Clip) => Clip,
+): unknown => {
+    if (Array.isArray(data)) {
+        let changed = false;
+        const next = data.map(item => {
+            const patched = patchClipInData(item, clipId, updater);
+            if (patched !== item) changed = true;
+            return patched;
+        });
+        return changed ? next : data;
+    }
+    if (typeof data !== 'object' || data === null) return data;
+
+    const record = data as Record<string, unknown>;
+    if (isClipRecord(record, clipId)) return updater(record as unknown as Clip);
+
+    let changed = false;
+    const next: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(record)) {
+        const patched = patchClipInData(value, clipId, updater);
+        if (patched !== value) changed = true;
+        next[key] = patched;
+    }
+    return changed ? next : data;
+};
+
+const containsClip = (data: unknown, clipId: string): boolean => {
+    if (Array.isArray(data)) return data.some(item => containsClip(item, clipId));
+    if (typeof data !== 'object' || data === null) return false;
+    const record = data as Record<string, unknown>;
+    return (
+        isClipRecord(record, clipId) ||
+        Object.values(record).some(value => containsClip(value, clipId))
+    );
+};
+
+const queriesHoldingClip = (clipId: string) => ({
+    predicate: (query: Query) => containsClip(query.state.data, clipId),
+});
+
+const snapshotClipQueries = async (
+    queryClient: QueryClient,
+    clipId: string,
+): Promise<ClipCacheSnapshot> => {
+    await queryClient.cancelQueries(queriesHoldingClip(clipId));
+    return queryClient.getQueriesData(queriesHoldingClip(clipId));
+};
+
+const updateCachedClip = (
+    queryClient: QueryClient,
+    clipId: string,
+    updater: (clip: Clip) => Clip,
+) => {
+    queryClient.setQueriesData(queriesHoldingClip(clipId), (old: unknown) =>
+        patchClipInData(old, clipId, updater),
+    );
+};
+
+const restoreClipQueries = (
+    queryClient: QueryClient,
+    snapshot: ClipCacheSnapshot | undefined,
+) => {
+    snapshot?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+    });
+};
+
 // Hook for voting on clips
 export const useClipVote = () => {
     const queryClient = useQueryClient();
 
-    type VoteContext = {
-        previousFeedQueries: ReturnType<typeof queryClient.getQueriesData>;
-        previousClip?: Clip;
-    };
-
-    const updateClipCaches = (
-        clipId: string,
-        updater: (clip: Clip) => Clip,
-    ) => {
-        queryClient.setQueriesData({ queryKey: ['clips'] }, (old: unknown) => {
-            const oldData = old as { pages?: ClipFeedResponse[] } | null | undefined;
-            if (!oldData?.pages) return oldData;
-
-            return {
-                ...oldData,
-                pages: oldData.pages.map(page => ({
-                    ...page,
-                    clips: page.clips.map((clip: Clip) =>
-                        clip.id === clipId ? updater(clip) : clip,
-                    ),
-                })),
-            };
-        });
-
-        const singleClip = queryClient.getQueryData<Clip>(['clip', clipId]);
-        if (singleClip) {
-            queryClient.setQueryData<Clip>(
-                ['clip', clipId],
-                updater(singleClip),
-            );
-        }
-    };
+    type VoteContext = { previousQueries: ClipCacheSnapshot };
 
     return useMutation<
         Awaited<ReturnType<typeof clipApi.voteOnClip>>,
@@ -101,21 +152,13 @@ export const useClipVote = () => {
             return await clipApi.voteOnClip(payload);
         },
         onMutate: async payload => {
-            // Optimistic update for feed and single clip caches
-            await queryClient.cancelQueries({ queryKey: ['clips'] });
-            await queryClient.cancelQueries({
-                queryKey: ['clip', payload.clip_id],
-            });
-
-            const previousFeedQueries = queryClient.getQueriesData({
-                queryKey: ['clips'],
-            });
-            const previousClip = queryClient.getQueryData<Clip>([
-                'clip',
+            // Optimistic update for every cached query holding the clip
+            const previousQueries = await snapshotClipQueries(
+                queryClient,
                 payload.clip_id,
-            ]);
+            );
 
-            updateClipCaches(payload.clip_id, clip => {
+            updateCachedClip(queryClient, payload.clip_id, clip => {
                 const previousVote = clip.user_vote ?? 0;
                 const scoreDelta = payload.vote_type - previousVote;
 
@@ -149,25 +192,16 @@ export const useClipVote = () => {
                 };
             });
 
-            return { previousFeedQueries, previousClip };
+            return { previousQueries };
         },
-        onError: (_error, payload, context) => {
-            // Rollback on error
-            context?.previousFeedQueries?.forEach(([queryKey, data]) => {
-                queryClient.setQueryData(queryKey, data);
-            });
-            if (context?.previousClip) {
-                queryClient.setQueryData(
-                    ['clip', payload.clip_id],
-                    context.previousClip,
-                );
-            }
+        onError: (_error, _payload, context) => {
+            restoreClipQueries(queryClient, context?.previousQueries);
         },
         onSuccess: (data, payload) => {
             const normalizedUserVote =
                 data.user_vote === 0 ? null : data.user_vote;
 
-            updateClipCaches(payload.clip_id, clip => ({
+            updateCachedClip(queryClient, payload.clip_id, clip => ({
                 ...clip,
                 user_vote: normalizedUserVote as Clip['user_vote'],
                 vote_score: data.vote_score,
@@ -190,11 +224,7 @@ export type FavoriteToggleVariables = FavoritePayload & {
 export const useClipFavorite = () => {
     const queryClient = useQueryClient();
 
-    type FavoriteContext = {
-        previousClipsData: ReturnType<typeof queryClient.getQueriesData>;
-        previousFavoritesData: ReturnType<typeof queryClient.getQueriesData>;
-        previousClip?: Clip;
-    };
+    type FavoriteContext = { previousQueries: ClipCacheSnapshot };
 
     const applyFavoriteState = (clip: Clip, isFavorited: boolean): Clip => {
         if (Boolean(clip.is_favorited) === isFavorited) return clip;
@@ -223,49 +253,15 @@ export const useClipFavorite = () => {
         onMutate: async ({ clip_id, is_favorited }) => {
             const nextFavorited = !is_favorited;
 
-            await queryClient.cancelQueries({ queryKey: ['clips'] });
             await queryClient.cancelQueries({ queryKey: ['favorites'] });
-            await queryClient.cancelQueries({ queryKey: ['clip', clip_id] });
-
-            const previousClipsData = queryClient.getQueriesData({
-                queryKey: ['clips'],
-            });
-            const previousFavoritesData = queryClient.getQueriesData({
-                queryKey: ['favorites'],
-            });
-            const previousClip = queryClient.getQueryData<Clip>([
-                'clip',
+            const previousQueries = await snapshotClipQueries(
+                queryClient,
                 clip_id,
-            ]);
-
-            // Update clips feeds
-            queryClient.setQueriesData(
-                { queryKey: ['clips'] },
-                (old: unknown) => {
-                    const oldData = old as { pages?: ClipFeedResponse[] } | null | undefined;
-                    if (!oldData?.pages) return oldData;
-
-                    return {
-                        ...oldData,
-                        pages: oldData.pages.map(page => ({
-                            ...page,
-                            clips: page.clips.map((clip: Clip) =>
-                                clip.id === clip_id ?
-                                    applyFavoriteState(clip, nextFavorited)
-                                :   clip,
-                            ),
-                        })),
-                    };
-                },
             );
 
-            // Update the clip detail cache
-            if (previousClip) {
-                queryClient.setQueryData<Clip>(
-                    ['clip', clip_id],
-                    applyFavoriteState(previousClip, nextFavorited),
-                );
-            }
+            updateCachedClip(queryClient, clip_id, clip =>
+                applyFavoriteState(clip, nextFavorited),
+            );
 
             // Remove unfavorited clips from the favorites feed
             if (!nextFavorited) {
@@ -288,19 +284,10 @@ export const useClipFavorite = () => {
                 );
             }
 
-            return { previousClipsData, previousFavoritesData, previousClip };
+            return { previousQueries };
         },
-        onError: (_error, { clip_id }, context) => {
-            // Rollback on error
-            context?.previousClipsData.forEach(([queryKey, data]) => {
-                queryClient.setQueryData(queryKey, data);
-            });
-            context?.previousFavoritesData.forEach(([queryKey, data]) => {
-                queryClient.setQueryData(queryKey, data);
-            });
-            if (context?.previousClip) {
-                queryClient.setQueryData(['clip', clip_id], context.previousClip);
-            }
+        onError: (_error, _variables, context) => {
+            restoreClipQueries(queryClient, context?.previousQueries);
         },
         onSettled: (_data, _error, { clip_id }) => {
             // Refetch to ensure consistency

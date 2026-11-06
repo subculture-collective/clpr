@@ -718,6 +718,10 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 	}
 	// Apply cursor if provided (takes precedence over offset)
 	if cursor != "" {
+		if _, decodeErr := utils.DecodeCursor(cursor); decodeErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cursor"})
+			return
+		}
 		filters.Cursor = &cursor
 		offset = 0 // Ignore offset when using cursor
 	}
@@ -750,12 +754,7 @@ func (h *FeedHandler) GetFilteredClips(c *gin.Context) {
 	clips, total, err := h.feedService.GetFilteredClipsWithUserData(c.Request.Context(), filters, fetchLimit, offset, userID)
 	if err != nil {
 		log.Printf("Error fetching filtered clips: %v", err)
-		// Check if error is cursor-related (client error)
-		if filters.Cursor != nil && *filters.Cursor != "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cursor: " + err.Error()})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve filtered clips"})
-		}
+		writeReadError(c, err, "failed to retrieve filtered clips")
 		return
 	}
 	// Determine if there are more results

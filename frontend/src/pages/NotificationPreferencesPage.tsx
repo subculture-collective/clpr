@@ -375,13 +375,6 @@ export function NotificationPreferencesPage() {
                   checked={formData.notify_broadcaster_live ?? true}
                   onChange={() => handleToggle('notify_broadcaster_live')}
                 />
-
-                <ToggleSwitch
-                  label="Stream Live"
-                  description="When creators you follow go live on Twitch"
-                  checked={formData.notify_stream_live ?? true}
-                  onChange={() => handleToggle('notify_stream_live')}
-                />
               </div>
             </div>
 

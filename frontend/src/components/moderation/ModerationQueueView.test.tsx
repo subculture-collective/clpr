@@ -7,15 +7,22 @@ import { BrowserRouter } from 'react-router-dom';
 
 // Mock the dependencies
 vi.mock('../../lib/moderation-api');
+const authState = vi.hoisted(() => ({
+    isAuthenticated: true,
+    isAdmin: true,
+    isModeratorOrAdmin: true,
+    user: { id: 'user-1', username: 'admin' },
+}));
+const navigate = vi.hoisted(() => vi.fn());
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return { ...actual, useNavigate: () => navigate };
+});
 vi.mock('../../context/AuthContext', async () => {
     const actual = await vi.importActual('../../context/AuthContext');
     return {
         ...actual,
-        useAuth: () => ({
-            isAuthenticated: true,
-            isAdmin: true,
-            user: { id: 'user-1', username: 'admin' },
-        }),
+        useAuth: () => authState,
     };
 });
 
@@ -24,6 +31,29 @@ const renderWithRouter = (component: React.ReactElement) => {
 };
 
 describe('ModerationQueueView', () => {
+    it('lets a moderator who is not an admin use the queue', async () => {
+        Object.assign(authState, { isAdmin: false, isModeratorOrAdmin: true });
+        vi.mocked(moderationApi.getModerationQueue).mockResolvedValue({
+            success: true,
+            data: [],
+            meta: { count: 0, limit: 50, offset: 0, total: 0 },
+        } as unknown as Awaited<ReturnType<typeof moderationApi.getModerationQueue>>);
+        vi.mocked(moderationApi.getModerationStats).mockResolvedValue({
+            success: true,
+            data: {},
+        } as unknown as Awaited<ReturnType<typeof moderationApi.getModerationStats>>);
+        try {
+            renderWithRouter(
+                <ModerationQueueView contentType='clip' title='Clip Moderation' description='Review flagged clips' />,
+            );
+            await waitFor(() => expect(moderationApi.getModerationQueue).toHaveBeenCalled());
+            expect(navigate).not.toHaveBeenCalled();
+            expect(screen.getByText('Clip Moderation')).toBeInTheDocument();
+        } finally {
+            Object.assign(authState, { isAdmin: true, isModeratorOrAdmin: true });
+        }
+    });
+
     const mockItems: moderationApi.ModerationQueueItem[] = [
         {
             id: 'item-1',

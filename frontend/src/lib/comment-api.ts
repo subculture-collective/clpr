@@ -171,8 +171,8 @@ export async function reportComment(
   const response = await apiClient.post<{ message: string }>(
     '/reports',
     {
-      target_type: 'comment',
-      target_id: payload.comment_id,
+      reportable_type: 'comment',
+      reportable_id: payload.comment_id,
       reason: payload.reason,
       description: payload.description,
     }

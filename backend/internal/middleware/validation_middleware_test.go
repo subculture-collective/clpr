@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -69,7 +70,7 @@ func TestInputValidationMiddleware_SQLInjection(t *testing.T) {
 		name  string
 		query string
 	}{
-		{"union select", "?search=test' UNION SELECT * FROM users--"},
+		{"union select", "?id=test' UNION SELECT * FROM users--"},
 		{"drop table with semicolon", "?id=1; DROP TABLE users;"},
 		{"insert statement with quote", "?name=admin'; INSERT INTO users VALUES('hacker')--"},
 	}
@@ -335,6 +336,50 @@ func TestContainsSuspiciousPatterns(t *testing.T) {
 		result := containsSuspiciousPatterns(tt.input)
 		if result != tt.suspicious {
 			t.Errorf("containsSuspiciousPatterns(%s) = %v, want %v", tt.input, result, tt.suspicious)
+		}
+	}
+}
+
+// Search text is passed to parameterized queries, so ordinary searches that
+// look like SQL or shell syntax must not be rejected as malicious.
+func TestInputValidationMiddleware_AllowsOrdinarySearchText(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(InputValidationMiddleware())
+	router.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+	serve := func(rawQuery string) int {
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/test?"+rawQuery, nil))
+		return w.Code
+	}
+
+	for _, tt := range []struct{ key, value string }{
+		{"q", "valorant || csgo"},
+		{"q", "lol; gg"},
+		{"q", "update the settings"},
+		{"q", "select * from chat or 1=1"},
+		{"query", "drop table speedrun"},
+		{"search", "aim && movement"},
+		{"error_description", "The user denied you access; try again"},
+	} {
+		if code := serve(url.Values{tt.key: {tt.value}, "limit": {"20"}}.Encode()); code != http.StatusOK {
+			t.Errorf("%s=%q: status %d, want 200", tt.key, tt.value, code)
+		}
+	}
+	if code := serve("q=valorant||csgo"); code != http.StatusOK {
+		t.Errorf("unencoded q=valorant||csgo: status %d, want 200", code)
+	}
+
+	// Other parameters keep the heuristics, and free text still rejects markup.
+	for _, rawQuery := range []string{
+		url.Values{"id": {"1; DROP TABLE users;"}}.Encode(),
+		url.Values{"tag": {"a || cat"}}.Encode(),
+		"q=ok&tag=a||cat",
+		url.Values{"q": {"<script>alert(1)</script>"}}.Encode(),
+	} {
+		if code := serve(rawQuery); code != http.StatusBadRequest {
+			t.Errorf("%s: status %d, want 400", rawQuery, code)
 		}
 	}
 }

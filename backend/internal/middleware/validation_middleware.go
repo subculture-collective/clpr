@@ -28,6 +28,12 @@ var (
 	// Detect shell command injection attempts (e.g., "; cat /etc/passwd" or "&& rm -rf /")
 	commandInjectionPattern = regexp.MustCompile(`(?i)(;|&&|\|\|)\s*[a-z]{2,}`)
 
+	// freeTextQueryParams hold text people type (search boxes) or providers
+	// write (OAuth error descriptions). Handlers only pass them to
+	// parameterized queries, so the SQL and shell-command heuristics would only
+	// reject ordinary searches such as "valorant || csgo" or "update the settings".
+	freeTextQueryParams = map[string]bool{"q": true, "query": true, "search": true, "error_description": true}
+
 	// Strict sanitizer for user-generated content
 	strictPolicy = bluemonday.StrictPolicy()
 
@@ -67,7 +73,7 @@ func InputValidationMiddleware() gin.HandlerFunc {
 
 		// Quick raw query scan for obvious command injection separators before parsing parameters
 		if raw := c.Request.URL.RawQuery; raw != "" {
-			if commandInjectionPattern.MatchString(raw) {
+			if commandInjectionPattern.MatchString(rawQueryWithoutFreeText(raw)) {
 				c.JSON(http.StatusBadRequest, gin.H{
 					"error": "Potentially malicious input detected",
 				})
@@ -95,8 +101,12 @@ func InputValidationMiddleware() gin.HandlerFunc {
 					return
 				}
 
-				// Check for common injection patterns
-				if containsSuspiciousPatterns(value) {
+				// Check for common injection patterns. Free text is only checked for markup.
+				suspicious := containsSuspiciousPatterns(value)
+				if freeTextQueryParams[key] {
+					suspicious = xssPattern.MatchString(value)
+				}
+				if suspicious {
 					c.JSON(http.StatusBadRequest, gin.H{
 						"error": "Potentially malicious input detected",
 					})
@@ -235,6 +245,19 @@ func containsSuspiciousPatterns(input string) bool {
 	}
 
 	return false
+}
+
+// rawQueryWithoutFreeText drops free-text parameters from a raw query string.
+func rawQueryWithoutFreeText(raw string) string {
+	pairs := strings.Split(raw, "&")
+	kept := pairs[:0]
+	for _, pair := range pairs {
+		key, _, _ := strings.Cut(pair, "=")
+		if !freeTextQueryParams[key] {
+			kept = append(kept, pair)
+		}
+	}
+	return strings.Join(kept, "&")
 }
 
 // isStandardHeader checks if a header is a standard HTTP header

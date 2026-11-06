@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }));
@@ -93,7 +94,7 @@ describe('searchApi.search', () => {
             limit: 10,
         });
 
-        expect(get).toHaveBeenCalledWith('/search', {
+        expect(get).toHaveBeenCalledWith('/search', expect.objectContaining({
             params: expect.objectContaining({
                 q: 'clip',
                 type: 'clips',
@@ -108,7 +109,18 @@ describe('searchApi.search', () => {
                 page: 2,
                 limit: 10,
             }),
-        });
+        }));
+    });
+
+    it('sends tags as repeated plain keys that gin binds to []string', async () => {
+        get.mockResolvedValue({ data: responseBase });
+
+        await searchApi.search({ query: 'clip', tags: ['speedrun', 'funny'] });
+
+        const [url, config] = get.mock.calls[0];
+        const query = new URL(axios.getUri({ ...config, url }), 'http://localhost').searchParams;
+        expect(query.getAll('tags')).toEqual(['speedrun', 'funny']);
+        expect(query.has('tags[]')).toBe(false);
     });
 
     it('propagates search failures', async () => {

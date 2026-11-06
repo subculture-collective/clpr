@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Card, CardHeader, CardBody, Button, Input } from '../../components';
 import { Search, Shield, Ban, TrendingUp, MessageSquare, MessageSquareOff, Eye } from 'lucide-react';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
+import apiClient from '@/lib/api';
 import { Modal } from '@/components/ui/Modal';
 import { useSearchParams } from 'react-router-dom';
 
@@ -259,7 +260,7 @@ export function AdminUsersPage() {
       if (roleFilter !== 'all') params.append('role', roleFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await axios.get(`/api/v1/admin/users?${params.toString()}`);
+      const response = await apiClient.get(`/admin/users?${params.toString()}`);
       return response.data;
     },
   });
@@ -267,7 +268,7 @@ export function AdminUsersPage() {
   // Ban user mutation
   const banMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
-      await axios.post(`/api/v1/admin/users/${userId}/ban`, { reason });
+      await apiClient.post(`/admin/users/${userId}/ban`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -283,7 +284,7 @@ export function AdminUsersPage() {
   // Unban user mutation
   const unbanMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
-      await axios.post(`/api/v1/admin/users/${userId}/unban`, { reason });
+      await apiClient.post(`/admin/users/${userId}/unban`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -299,7 +300,7 @@ export function AdminUsersPage() {
   // Update role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role, reason }: { userId: string; role: string; reason?: string }) => {
-      await axios.patch(`/api/v1/admin/users/${userId}/role`, { role, reason });
+      await apiClient.patch(`/admin/users/${userId}/role`, { role, reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -315,7 +316,7 @@ export function AdminUsersPage() {
   // Update karma mutation
   const updateKarmaMutation = useMutation({
     mutationFn: async ({ userId, karma }: { userId: string; karma: number }) => {
-      await axios.patch(`/api/v1/admin/users/${userId}/karma`, { karma_points: karma });
+      await apiClient.patch(`/admin/users/${userId}/karma`, { karma_points: karma });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -336,7 +337,7 @@ export function AdminUsersPage() {
       reason: string;
       durationHours?: number;
     }) => {
-      await axios.post(`/api/v1/admin/users/${userId}/suspend-comments`, {
+      await apiClient.post(`/admin/users/${userId}/suspend-comments`, {
         suspension_type: suspensionType,
         reason,
         duration_hours: durationHours,
@@ -356,7 +357,7 @@ export function AdminUsersPage() {
   // Lift comment suspension mutation
   const liftSuspensionMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
-      await axios.post(`/api/v1/admin/users/${userId}/lift-comment-suspension`, { reason });
+      await apiClient.post(`/admin/users/${userId}/lift-comment-suspension`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -376,7 +377,7 @@ export function AdminUsersPage() {
       requireReview: boolean;
       reason: string;
     }) => {
-      await axios.post(`/api/v1/admin/users/${userId}/toggle-comment-review`, {
+      await apiClient.post(`/admin/users/${userId}/toggle-comment-review`, {
         require_review: requireReview,
         reason,
       });

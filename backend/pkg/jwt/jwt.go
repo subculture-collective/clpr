@@ -24,12 +24,39 @@ var (
 	ErrInvalidSigningMethod = errors.New("invalid signing method")
 )
 
+// Token types carried in the token_type claim.
+const (
+	TokenTypeAccess  = "access"
+	TokenTypeRefresh = "refresh"
+)
+
+// legacyAccessTokenMaxLifetime classifies tokens issued before the
+// token_type claim existed: access tokens lived 15 minutes and refresh tokens
+// 7 days. Every such token has expired 7 days after deployment.
+const legacyAccessTokenMaxLifetime = time.Hour
+
 // Claims represents the JWT claims
 type Claims struct {
-	UserID uuid.UUID `json:"sub"`
-	Role   string    `json:"role"`
-	JTI    string    `json:"jti"` // JWT ID for revocation
+	UserID    uuid.UUID `json:"sub"`
+	Role      string    `json:"role"`
+	JTI       string    `json:"jti"` // JWT ID for revocation
+	TokenType string    `json:"token_type,omitempty"`
 	jwt.RegisteredClaims
+}
+
+// tokenType returns the claim's token type, inferring it from the token's
+// lifetime when the claim predates the token_type field.
+func (c *Claims) tokenType() string {
+	if c.TokenType != "" {
+		return c.TokenType
+	}
+	if c.IssuedAt == nil || c.ExpiresAt == nil {
+		return ""
+	}
+	if c.ExpiresAt.Sub(c.IssuedAt.Time) <= legacyAccessTokenMaxLifetime {
+		return TokenTypeAccess
+	}
+	return TokenTypeRefresh
 }
 
 // Manager handles JWT token generation and validation
@@ -74,9 +101,10 @@ func NewManager(privateKeyPEM string) (*Manager, error) {
 func (m *Manager) GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
 	now := time.Now()
 	claims := Claims{
-		UserID: userID,
-		Role:   role,
-		JTI:    uuid.New().String(),
+		UserID:    userID,
+		Role:      role,
+		JTI:       uuid.New().String(),
+		TokenType: TokenTypeAccess,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(15 * time.Minute)),
@@ -92,9 +120,10 @@ func (m *Manager) GenerateAccessToken(userID uuid.UUID, role string) (string, er
 func (m *Manager) GenerateRefreshToken(userID uuid.UUID) (string, error) {
 	now := time.Now()
 	claims := Claims{
-		UserID: userID,
-		Role:   "", // Refresh tokens don't need role
-		JTI:    uuid.New().String(),
+		UserID:    userID,
+		Role:      "", // Refresh tokens don't need role
+		JTI:       uuid.New().String(),
+		TokenType: TokenTypeRefresh,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(7 * 24 * time.Hour)),
@@ -132,6 +161,27 @@ func (m *Manager) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, ErrInvalidToken
 	}
 
+	return claims, nil
+}
+
+// ValidateAccessToken validates a token and requires it to be an access token.
+func (m *Manager) ValidateAccessToken(tokenString string) (*Claims, error) {
+	return m.validateTokenType(tokenString, TokenTypeAccess)
+}
+
+// ValidateRefreshToken validates a token and requires it to be a refresh token.
+func (m *Manager) ValidateRefreshToken(tokenString string) (*Claims, error) {
+	return m.validateTokenType(tokenString, TokenTypeRefresh)
+}
+
+func (m *Manager) validateTokenType(tokenString, tokenType string) (*Claims, error) {
+	claims, err := m.ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	if claims.tokenType() != tokenType {
+		return nil, ErrInvalidToken
+	}
 	return claims, nil
 }
 

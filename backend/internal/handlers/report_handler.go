@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -258,6 +259,10 @@ func (h *ReportHandler) UpdateReport(c *gin.Context) {
 			return
 		}
 		if err := h.takeAction(c, report, *req.Action, userID); err != nil {
+			if isAdminUserMutationError(err) {
+				writeAdminUserMutationError(c, err, "Failed to take action")
+				return
+			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to take action: " + err.Error()})
 			return
 		}
@@ -272,6 +277,13 @@ func (h *ReportHandler) UpdateReport(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Report updated successfully",
 	})
+}
+
+func isAdminUserMutationError(err error) bool {
+	return errors.Is(err, repository.ErrUserNotFound) ||
+		errors.Is(err, repository.ErrAdminRequired) ||
+		errors.Is(err, repository.ErrAdminSelfMutation) ||
+		errors.Is(err, repository.ErrProtectedAdminTarget)
 }
 
 func validateReportResolution(status string, action *string) error {
@@ -335,7 +347,7 @@ func (h *ReportHandler) validateReportable(ctx context.Context, reportableType s
 }
 
 // takeAction performs moderation actions based on the report
-func (h *ReportHandler) takeAction(c *gin.Context, report *models.Report, action string, _ uuid.UUID) error {
+func (h *ReportHandler) takeAction(c *gin.Context, report *models.Report, action string, moderatorID uuid.UUID) error {
 	ctx := c.Request.Context()
 
 	switch action {
@@ -366,8 +378,10 @@ func (h *ReportHandler) takeAction(c *gin.Context, report *models.Report, action
 			targetUserID = report.ReportableID
 		}
 
-		// Ban the user
-		return h.userRepo.BanUser(ctx, targetUserID)
+		// Ban through the same guarded, audited path as POST /admin/users/:id/ban:
+		// administrator actor only, no self-bans and no administrator targets.
+		reason := fmt.Sprintf("Report %s: %s", report.ID, report.Reason)
+		return h.userRepo.ApplyAdminUserMutation(ctx, targetUserID, moderatorID, repository.AdminUserActionBan, nil, reason)
 
 	case "mark_false":
 		// Mark report as dismissed (already handled by status update)

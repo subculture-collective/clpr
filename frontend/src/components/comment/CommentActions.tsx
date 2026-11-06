@@ -7,6 +7,7 @@ import {
     useToast,
 } from '@/hooks';
 import { Modal } from '@/components/ui';
+import type { ReportCommentPayload } from '@/types/comment';
 
 interface CommentActionsProps {
     commentId: string;
@@ -85,12 +86,7 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
         reportComment(
             {
                 comment_id: commentId,
-                reason: reportReason as
-                    | 'spam'
-                    | 'harassment'
-                    | 'off-topic'
-                    | 'misinformation'
-                    | 'other',
+                reason: reportReason as ReportCommentPayload['reason'],
                 description: reportDescription || undefined,
             },
             {
@@ -100,6 +96,9 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                     toast.success(
                         'Comment reported. Thank you for helping keep our community safe.',
                     );
+                },
+                onError: () => {
+                    toast.error('The report could not be sent. Please try again.');
                 },
             },
         );
@@ -213,10 +212,9 @@ export const CommentActions: React.FC<CommentActionsProps> = ({
                             >
                                 <option value='spam'>Spam</option>
                                 <option value='harassment'>Harassment</option>
-                                <option value='off-topic'>Off-topic</option>
-                                <option value='misinformation'>
-                                    Misinformation
-                                </option>
+                                <option value='nsfw'>NSFW</option>
+                                <option value='violence'>Violence</option>
+                                <option value='copyright'>Copyright</option>
                                 <option value='other'>Other</option>
                             </select>
                         </div>

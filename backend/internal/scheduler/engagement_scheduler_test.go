@@ -16,6 +16,7 @@ type engagementFake struct {
 	batches   int
 	published int
 	failed    []uuid.UUID
+	missing   []uuid.UUID
 	observed  map[uuid.UUID]int
 	clips     []repository.EngagementPollClip
 	repeat    bool
@@ -41,6 +42,13 @@ func (f *engagementFake) PollFailed(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 	f.failed = append(f.failed, id)
+	return nil
+}
+func (f *engagementFake) PollMissing(ctx context.Context, id uuid.UUID) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	f.missing = append(f.missing, id)
 	return nil
 }
 
@@ -102,7 +110,8 @@ func TestEngagementPollingBudgetAndProviderFailure(t *testing.T) {
 				require.Equal(t, []uuid.UUID{id}, f.failed)
 			case "missing clip":
 				require.NoError(t, err)
-				require.Equal(t, []uuid.UUID{id}, f.failed)
+				require.Equal(t, []uuid.UUID{id}, f.missing, "a clip absent from a successful response backs off")
+				require.Empty(t, f.failed, "absence is not a failed request")
 				require.Empty(t, f.observed)
 			case "bounded sweep":
 				require.NoError(t, err)

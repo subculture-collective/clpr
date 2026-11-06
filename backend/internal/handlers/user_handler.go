@@ -1,15 +1,17 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // UserHandler handles user-related HTTP requests
@@ -76,12 +78,21 @@ func (h *UserHandler) GetUserByUsername(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve user profile"})
 			return
 		}
+		if hideProfileKarma(c) {
+			profile.KarmaPoints = 0
+		}
+		redactPrivateProfileFields(c, profile)
 
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
 			"data":    profile,
 		})
 		return
+	}
+
+	karmaPoints := user.KarmaPoints
+	if hideProfileKarma(c) {
+		karmaPoints = 0
 	}
 
 	// Return only basic public user information
@@ -93,7 +104,7 @@ func (h *UserHandler) GetUserByUsername(c *gin.Context) {
 			"display_name": user.DisplayName,
 			"avatar_url":   user.AvatarURL,
 			"bio":          user.Bio,
-			"karma_points": user.KarmaPoints,
+			"karma_points": karmaPoints,
 			"role":         user.Role,
 			"created_at":   user.CreatedAt,
 		},
@@ -204,8 +215,12 @@ func (h *UserHandler) GetUserComments(c *gin.Context) {
 		UserVote      *int16  `json:"user_vote"`
 	}
 
+	hideKarma := hideProfileKarma(c)
 	responses := make([]CommentResponse, len(comments))
 	for i, comment := range comments {
+		if hideKarma {
+			comment.AuthorKarma = 0
+		}
 		var parentID *string
 		if comment.ParentCommentID != nil {
 			pid := comment.ParentCommentID.String()
@@ -369,6 +384,116 @@ func (h *UserHandler) getUserVotedClips(c *gin.Context, voteType int16) {
 	})
 }
 
+// profileSettingsReader reads a user's privacy settings.
+type profileSettingsReader interface {
+	GetSettings(ctx context.Context, userID uuid.UUID) (*models.UserSettings, error)
+}
+
+// profileHideKarmaKey marks a request whose viewer may not see the profile
+// owner's karma (show_karma_publicly = false).
+const profileHideKarmaKey = "profile_hide_karma"
+
+// ProfilePrivacy enforces the profile owner's profile_visibility and
+// show_karma_publicly settings on public profile routes. It must run after
+// OptionalAuthMiddleware. A profile the viewer may not see gets the same 404 as
+// an unknown user. karmaRoute marks a route that only serves karma data; it
+// also answers 404 when the owner hides karma.
+func (h *UserHandler) ProfilePrivacy(settings profileSettingsReader, karmaRoute bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var targetID uuid.UUID
+		if username := c.Param("username"); username != "" {
+			user, err := h.userRepo.GetByUsername(c.Request.Context(), username)
+			if err != nil {
+				c.Next() // the handler reports the unknown user or lookup failure
+				return
+			}
+			targetID = user.ID
+		} else {
+			id, err := uuid.Parse(c.Param("id"))
+			if err != nil {
+				c.Next() // the handler reports the invalid ID
+				return
+			}
+			targetID = id
+		}
+
+		visible, showKarma, err := h.profileAccess(c, settings, targetID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve user profile"})
+			return
+		}
+		if !visible || (karmaRoute && !showKarma) {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		if !showKarma {
+			c.Set(profileHideKarmaKey, true)
+		}
+		c.Next()
+	}
+}
+
+// profileAccess reports whether the requester may see targetID's profile and
+// karma. The owner sees everything; administrators and moderators see hidden
+// profiles; "followers" profiles are also visible to the owner's followers.
+func (h *UserHandler) profileAccess(c *gin.Context, settings profileSettingsReader, targetID uuid.UUID) (visible, showKarma bool, err error) {
+	ctx := c.Request.Context()
+	userSettings, err := settings.GetSettings(ctx, targetID)
+	if errors.Is(err, repository.ErrUserNotFound) {
+		return true, true, nil // no settings row: public defaults
+	}
+	if err != nil {
+		return false, false, err
+	}
+
+	viewerID, signedIn := c.Get("user_id")
+	viewer, _ := viewerID.(uuid.UUID)
+	signedIn = signedIn && viewer != uuid.Nil
+	if signedIn && viewer == targetID {
+		return true, true, nil
+	}
+	role, _ := c.Get("user_role")
+	staff := role == models.RoleAdmin || role == models.RoleModerator
+
+	switch userSettings.ProfileVisibility {
+	case "public":
+		visible = true
+	case "followers":
+		visible = staff
+		if !visible && signedIn {
+			profile, err := h.userRepo.GetUserProfile(ctx, targetID, &viewer)
+			if err != nil {
+				return false, false, err
+			}
+			visible = profile.IsFollowing
+		}
+	default: // "private", and any unrecognised value fails closed
+		visible = staff
+	}
+	return visible, userSettings.ShowKarmaPublicly, nil
+}
+
+func hideProfileKarma(c *gin.Context) bool {
+	return c.GetBool(profileHideKarmaKey)
+}
+
+// redactPrivateProfileFields clears account details that only the profile
+// owner and staff may see: the email address, trust score and last sign-in.
+func redactPrivateProfileFields(c *gin.Context, profile *models.UserProfile) {
+	viewer, _ := c.Get("user_id")
+	if id, ok := viewer.(uuid.UUID); ok && id != uuid.Nil && id == profile.ID {
+		return
+	}
+	role, _ := c.Get("user_role")
+	if role == models.RoleAdmin || role == models.RoleModerator {
+		return
+	}
+	profile.Email = nil
+	profile.TrustScore = 0
+	profile.TrustScoreUpdatedAt = nil
+	profile.LastLoginAt = nil
+}
+
 // GetUserProfile retrieves a user's complete profile with stats
 // GET /api/v1/users/:id
 func (h *UserHandler) GetUserProfile(c *gin.Context) {
@@ -396,6 +521,10 @@ func (h *UserHandler) GetUserProfile(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve user profile"})
 		return
 	}
+	if hideProfileKarma(c) {
+		profile.KarmaPoints = 0
+	}
+	redactPrivateProfileFields(c, profile)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

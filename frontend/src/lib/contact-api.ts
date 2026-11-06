@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+import { apiClient } from './api';
 
 export interface ContactMessageRequest {
   email: string;
@@ -16,8 +14,6 @@ export interface ContactMessageResponse {
 
 // Submit a contact message
 export const submitContactMessage = async (data: ContactMessageRequest): Promise<ContactMessageResponse> => {
-  const response = await axios.post(`${API_BASE_URL}/contact`, data, {
-    withCredentials: true,
-  });
+  const response = await apiClient.post('/contact', data);
   return response.data;
 };

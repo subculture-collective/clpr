@@ -16,6 +16,9 @@ import (
 var (
 	ErrSubmissionNotFound   = errors.New("submission not found")
 	ErrSubmissionNotPending = errors.New("submission is not pending")
+	// ErrSubmissionClipClaimed means the submitted clip already exists and
+	// belongs to a different submitter.
+	ErrSubmissionClipClaimed = errors.New("submitted clip is already claimed by another user")
 )
 
 // SubmissionRepository handles database operations for clip submissions
@@ -322,7 +325,15 @@ func (r *SubmissionRepository) ModerateAtomically(ctx context.Context, ids []uui
 		if approve {
 			clip := preparedClips[s.ID]
 			clipID = &clip.ID
-			if _, err := tx.Exec(ctx, `
+			// Sync may have imported the same clip since it was submitted; claim
+			// it instead of inserting a duplicate UNIQUE twitch_clip_id.
+			existingID, err := claimImportedClip(ctx, tx, s, clip)
+			if err != nil {
+				return nil, err
+			}
+			if existingID != nil {
+				clipID = existingID
+			} else if _, err := tx.Exec(ctx, `
 				INSERT INTO clips (id, twitch_clip_id, twitch_clip_url, embed_url, title,
 					creator_name, creator_id, creator_account_id, broadcaster_name, broadcaster_id,
 					game_id, game_name, language, thumbnail_url, duration,
@@ -364,6 +375,38 @@ func (r *SubmissionRepository) ModerateAtomically(ctx context.Context, ids []uui
 		return nil, err
 	}
 	return submissions, nil
+}
+
+// claimImportedClip links an approving submission to a clip that already has
+// its twitch_clip_id, claiming it the way ClaimScrapedClip does. It returns
+// nil when no such clip exists, and ErrSubmissionClipClaimed when another
+// user already owns it.
+func claimImportedClip(ctx context.Context, tx pgx.Tx, s *models.ClipSubmission, clip *models.Clip) (*uuid.UUID, error) {
+	var id uuid.UUID
+	var owner *uuid.UUID
+	err := tx.QueryRow(ctx, `SELECT id, submitted_by_user_id FROM clips WHERE twitch_clip_id = $1 FOR UPDATE`,
+		clip.TwitchClipID).Scan(&id, &owner)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if owner != nil && *owner != s.UserID {
+		return nil, fmt.Errorf("%w: submission %s", ErrSubmissionClipClaimed, s.ID)
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE clips
+		SET submitted_by_user_id = $2,
+		    submitted_at = $3,
+		    title = COALESCE($4, title),
+		    is_nsfw = $5,
+		    broadcaster_name = COALESCE($6, broadcaster_name)
+		WHERE id = $1`,
+		id, s.UserID, clip.SubmittedAt, s.CustomTitle, s.IsNSFW, s.BroadcasterNameOverride); err != nil {
+		return nil, err
+	}
+	return &id, nil
 }
 
 // GetByTwitchClipID checks if a submission with the given Twitch clip ID exists

@@ -28,6 +28,8 @@ func writeSubmissionModerationError(c *gin.Context, err error, message string) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found"})
 	case errors.Is(err, repository.ErrSubmissionNotPending):
 		c.JSON(http.StatusConflict, gin.H{"error": "Submission is no longer pending"})
+	case errors.Is(err, repository.ErrSubmissionClipClaimed):
+		c.JSON(http.StatusConflict, gin.H{"error": "This clip already belongs to another user"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
 	}
@@ -199,7 +201,7 @@ func (h *SubmissionHandler) SubmitClip(c *gin.Context) {
 		// Check if it's a rate limit error
 		if rateLimitErr, ok := err.(*services.RateLimitError); ok {
 			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":       rateLimitErr.Error,
+				"error":       rateLimitErr.Message,
 				"limit":       rateLimitErr.Limit,
 				"window":      rateLimitErr.Window,
 				"retry_after": rateLimitErr.RetryAfter,
@@ -384,7 +386,7 @@ func (h *SubmissionHandler) SubmitUpload(c *gin.Context) {
 		}
 		_ = h.clipStorage.DeleteObject(c.Request.Context(), storageResult.Key)
 		if rateLimitErr, ok := err.(*services.RateLimitError); ok {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": rateLimitErr.Error, "limit": rateLimitErr.Limit, "window": rateLimitErr.Window, "retry_after": rateLimitErr.RetryAfter})
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": rateLimitErr.Message, "limit": rateLimitErr.Limit, "window": rateLimitErr.Window, "retry_after": rateLimitErr.RetryAfter})
 			return
 		}
 		if valErr, ok := err.(*services.ValidationError); ok {

@@ -1,0 +1,53 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it, vi } from 'vitest';
+import { UserMenu } from './UserMenu';
+
+const auth = vi.hoisted(() => ({
+    user: null as null | Record<string, unknown>,
+    logout: vi.fn(),
+    isModeratorOrAdmin: false,
+}));
+
+vi.mock('../../context/AuthContext', () => ({ useAuth: () => auth }));
+
+const baseUser = {
+    id: 'u1',
+    username: 'streamer_one',
+    display_name: 'Streamer One',
+    role: 'user',
+    karma_points: 0,
+    is_banned: false,
+    created_at: '2026-01-01T00:00:00Z',
+};
+
+async function openMenu() {
+    render(
+        <MemoryRouter>
+            <UserMenu />
+        </MemoryRouter>,
+    );
+    // The menu resets its keyboard focus in a microtask after opening.
+    await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'User menu' }));
+    });
+}
+
+describe('UserMenu clip room link', () => {
+    it('links a Twitch-connected account to its own clip room', async () => {
+        auth.user = { ...baseUser, twitch_id: '123' };
+        await openMenu();
+
+        expect(screen.getByRole('menuitem', { name: /Stream Clip Room/ })).toHaveAttribute(
+            'href',
+            '/streamer-tools/streamer_one/clips',
+        );
+    });
+
+    it('hides the link for accounts without a Twitch login', async () => {
+        auth.user = { ...baseUser, twitch_id: '' };
+        await openMenu();
+
+        expect(screen.queryByRole('menuitem', { name: /Stream Clip Room/ })).not.toBeInTheDocument();
+    });
+});

@@ -27,13 +27,13 @@ func TestInputValidationMiddleware_SQLInjectionEdgeCases(t *testing.T) {
 	}{
 		{
 			name:         "union with spaces",
-			query:        "?q=test'  UNION  SELECT  *  FROM  users--",
+			query:        "?id=test'  UNION  SELECT  *  FROM  users--",
 			shouldReject: true,
 			description:  "Space-separated UNION SELECT",
 		},
 		{
 			name:         "case variation union",
-			query:        "?q=test' UnIoN SeLeCt * FrOm users--",
+			query:        "?id=test' UnIoN SeLeCt * FrOm users--",
 			shouldReject: true,
 			description:  "Case variation SQLi",
 		},

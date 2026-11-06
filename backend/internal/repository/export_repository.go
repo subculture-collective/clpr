@@ -165,7 +165,13 @@ func (r *ExportRepository) MarkEmailSent(ctx context.Context, id uuid.UUID) erro
 	return err
 }
 
-// GetPendingExportRequests retrieves all pending export requests
+// staleExportProcessingAfter is how long an export may stay 'processing'
+// before it is treated as interrupted (crash or deploy mid-run) and retried.
+// Exports take seconds; the bound leaves wide room for a slow one.
+const staleExportProcessingAfter = "30 minutes"
+
+// GetPendingExportRequests retrieves pending export requests, plus exports
+// whose processing was interrupted and has not been updated since.
 func (r *ExportRepository) GetPendingExportRequests(ctx context.Context, limit int) ([]*models.ExportRequest, error) {
 	query := `
 		SELECT 
@@ -174,10 +180,11 @@ func (r *ExportRepository) GetPendingExportRequests(ctx context.Context, limit i
 			created_at, updated_at, completed_at
 		FROM export_requests
 		WHERE status = $1
+		   OR (status = $3 AND updated_at < NOW() - $4::interval)
 		ORDER BY created_at ASC
 		LIMIT $2
 	`
-	rows, err := r.pool.Query(ctx, query, models.ExportStatusPending, limit)
+	rows, err := r.pool.Query(ctx, query, models.ExportStatusPending, limit, models.ExportStatusProcessing, staleExportProcessingAfter)
 	if err != nil {
 		return nil, err
 	}

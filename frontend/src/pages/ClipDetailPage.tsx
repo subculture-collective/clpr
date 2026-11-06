@@ -24,7 +24,7 @@ import { TagList } from '@/components/tag/TagList';
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { topicApi } from '@/lib/topic-api';
-import { isNotFoundError } from '@/lib/error-utils';
+import { getErrorMessage, isNotFoundError } from '@/lib/error-utils';
 
 export function ClipDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -58,11 +58,13 @@ export function ClipDetailPage() {
 
     // For iframe-only clips (no video_url), record a basic "viewed" entry
     // since Twitch embeds don't expose playback events per TOS
-    const viewRecorded = useRef(false);
+    // Keyed by clip id: the route component stays mounted when moving
+    // between clips, so a boolean would skip every clip after the first.
+    const viewRecordedFor = useRef<string | null>(null);
     useEffect(() => {
-        if (!isAuthenticated || !clip || clip.video_url || viewRecorded.current)
+        if (!isAuthenticated || !clip || clip.video_url || viewRecordedFor.current === clip.id)
             return;
-        viewRecorded.current = true;
+        viewRecordedFor.current = clip.id;
         apiClient.post('/watch-history', {
             clip_id: clip.id,
             progress_seconds: Math.floor(clip.duration || 0),
@@ -104,8 +106,7 @@ export function ClipDetailPage() {
         if (clip.user_vote === voteType) return;
         voteMutation.mutate({ clip_id: clip.id, vote_type: voteType }, {
             onError: (error) => {
-                const msg = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
-                toast.error(msg || 'Failed to vote. Please try again.');
+                toast.error(getErrorMessage(error, 'Failed to vote. Please try again.'));
             },
         });
     };
@@ -121,8 +122,7 @@ export function ClipDetailPage() {
             is_favorited: Boolean(clip.is_favorited),
         }, {
             onError: (error) => {
-                const msg = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
-                toast.error(msg || 'Failed to favorite. Please try again.');
+                toast.error(getErrorMessage(error, 'Failed to favorite. Please try again.'));
             },
         });
     };

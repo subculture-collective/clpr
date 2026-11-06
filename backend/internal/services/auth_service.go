@@ -219,7 +219,7 @@ func (s *AuthService) GetUserByUsername(ctx context.Context, username string) (*
 // RefreshAccessToken refreshes an access token using a refresh token
 func (s *AuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (string, string, error) {
 	// Validate refresh token
-	_, err := s.jwtManager.ValidateToken(refreshToken)
+	_, err := s.jwtManager.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -281,7 +281,7 @@ func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 
 // GetUserFromToken retrieves a user from an access token
 func (s *AuthService) GetUserFromToken(ctx context.Context, token string) (*models.User, error) {
-	claims, err := s.jwtManager.ValidateToken(token)
+	claims, err := s.jwtManager.ValidateAccessToken(token)
 	if err != nil {
 		return nil, err
 	}

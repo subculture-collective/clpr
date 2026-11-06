@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Card, CardHeader, CardBody, Button } from '../../components';
 import { RefreshCw, Clock, CheckCircle, AlertCircle, XCircle, PlayCircle, Info } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '@/lib/api';
 
 interface SyncStatus {
   last_sync_time: string;
@@ -20,7 +20,7 @@ export function AdminSyncPage() {
   const { data: status, isLoading, error, refetch } = useQuery<SyncStatus>({
     queryKey: ['sync-status'],
     queryFn: async () => {
-      const response = await axios.get('/api/v1/admin/sync/status');
+      const response = await apiClient.get('/admin/sync/status');
       return response.data;
     },
     refetchInterval: 10000, // Auto-refresh every 10 seconds
@@ -29,7 +29,7 @@ export function AdminSyncPage() {
   // Trigger manual sync mutation
   const triggerSyncMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post('/api/v1/admin/sync/clips', {});
+      const response = await apiClient.post('/admin/sync/clips', {});
       return response.data;
     },
     onMutate: () => {
