@@ -55,6 +55,9 @@ export const searchApi = {
                 page: params.page || 1,
                 limit: params.limit || 20,
             },
+            // Gin binds []string from repeated keys (tags=a&tags=b), not the
+            // default bracket form (tags[]=a).
+            paramsSerializer: { indexes: null },
         });
         return normalizeSearchResponse(response.data);
     },

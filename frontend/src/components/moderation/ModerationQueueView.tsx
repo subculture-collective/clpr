@@ -33,7 +33,7 @@ export function ModerationQueueView({
     title,
     description,
 }: ModerationQueueViewProps) {
-    const { isAuthenticated, isAdmin } = useAuth();
+    const { isAuthenticated, isModeratorOrAdmin } = useAuth();
     const navigate = useNavigate();
     const [items, setItems] = useState<ModerationQueueItem[]>([]);
     const [stats, setStats] = useState<ModerationQueueStats | null>(null);
@@ -145,14 +145,14 @@ export function ModerationQueueView({
     }, [selectedIds, handleBulkApprove, handleBulkReject]);
 
     useEffect(() => {
-        if (!isAuthenticated || !isAdmin) {
+        if (!isAuthenticated || !isModeratorOrAdmin) {
             navigate('/');
             return;
         }
 
         loadQueue();
         loadStats();
-    }, [isAuthenticated, isAdmin, navigate, loadQueue, loadStats]);
+    }, [isAuthenticated, isModeratorOrAdmin, navigate, loadQueue, loadStats]);
 
     // Clear selection when filters change
     useEffect(() => {
@@ -222,7 +222,7 @@ export function ModerationQueueView({
         }
     };
 
-    if (!isAuthenticated || !isAdmin) {
+    if (!isAuthenticated || !isModeratorOrAdmin) {
         return null;
     }
 

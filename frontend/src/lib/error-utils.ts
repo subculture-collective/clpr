@@ -2,53 +2,49 @@
  * Utility functions for handling API errors consistently across the application
  */
 
-interface ApiErrorResponse {
-  response?: {
-    data?: {
-      error?: string;
-    };
-  };
-  message?: string;
-}
-
 /**
- * Safely extracts error message from an API error response
+ * Safely extracts a displayable error message from an API error response.
+ * Always returns a string, so the result is safe to render as a React child.
+ * Handles string errors, `{ error: string }`, `{ error: { message } }`,
+ * `{ message }` bodies and plain Error objects.
  * @param error - The error object from an API call
  * @param fallbackMessage - Default message if error message cannot be extracted
  * @returns A user-friendly error message
  */
 export function getErrorMessage(error: unknown, fallbackMessage: string = 'An unexpected error occurred'): string {
-  if (!error) {
+  if (typeof error === 'string') {
+    return error || fallbackMessage;
+  }
+  if (typeof error !== 'object' || error === null) {
     return fallbackMessage;
   }
 
-  // Type guard for API error response
-  if (isApiErrorResponse(error)) {
-    return error.response?.data?.error || error.message || fallbackMessage;
+  // HTTP errors: prefer the server's message; the transport message
+  // ("Request failed with status code 500") is not useful to people.
+  if ('response' in error) {
+    const data = (error as { response?: { data?: unknown } }).response?.data;
+    return messageFromBody(data) || fallbackMessage;
   }
 
-  // Handle Error objects
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  // Handle string errors
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  return fallbackMessage;
+  const message = (error as { message?: unknown }).message;
+  return typeof message === 'string' && message ? message : fallbackMessage;
 }
 
-/**
- * Type guard to check if an error is an API error response
- */
-function isApiErrorResponse(error: unknown): error is ApiErrorResponse {
-  return (
-    typeof error === 'object' &&
-    error != null &&
-    ('response' in error || 'message' in error)
-  );
+function messageFromBody(data: unknown): string | undefined {
+  if (typeof data !== 'object' || data === null) {
+    return undefined;
+  }
+  const { error, message } = data as { error?: unknown; message?: unknown };
+  if (typeof error === 'string' && error) {
+    return error;
+  }
+  if (typeof error === 'object' && error !== null) {
+    const nested = (error as { message?: unknown }).message;
+    if (typeof nested === 'string' && nested) {
+      return nested;
+    }
+  }
+  return typeof message === 'string' && message ? message : undefined;
 }
 
 /**

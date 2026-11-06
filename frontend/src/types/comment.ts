@@ -54,6 +54,6 @@ export interface CommentVotePayload {
 
 export interface ReportCommentPayload {
   comment_id: string;
-  reason: 'spam' | 'harassment' | 'off-topic' | 'misinformation' | 'other';
+  reason: 'spam' | 'harassment' | 'nsfw' | 'violence' | 'copyright' | 'other';
   description?: string;
 }

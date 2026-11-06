@@ -101,23 +101,6 @@ export function SearchPage() {
         return () => window.removeEventListener('popstate', handlePopState);
     }, [setSearchParams]);
 
-    // Ensure the search input receives the first Tab focus on this page
-    useEffect(() => {
-        const handler = (event: KeyboardEvent) => {
-            if (event.key !== 'Tab') return;
-            const input = document.querySelector(
-                '[data-testid="search-input"]',
-            ) as HTMLInputElement | null;
-            if (input) {
-                event.preventDefault();
-                input.focus();
-            }
-        };
-
-        window.addEventListener('keydown', handler, { once: true });
-        return () => window.removeEventListener('keydown', handler);
-    }, []);
-
     // Search error state management
     const {
         errorState,

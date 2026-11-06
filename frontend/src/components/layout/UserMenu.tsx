@@ -14,6 +14,7 @@ import {
     Clock,
     ClipboardList,
     Upload,
+    Clapperboard,
     Shield,
     LogOut,
     ChevronDown,
@@ -26,8 +27,13 @@ export function UserMenu() {
     const buttonRef = useRef<HTMLButtonElement>(null);
     const navigate = useNavigate();
 
+    // Twitch sign-ins use the Twitch login as the username, which names the
+    // channel the clip room listens to; the room page handles authorization.
+    const hasTwitchChannel = Boolean(user?.twitch_id && user.username);
+
     // Calculate menu item count
-    const menuItemCount = isModeratorOrAdmin ? 9 : 8; // Profile, Settings, Favorites, Playlists, Watch History, Queue, Submissions, (Admin), Logout
+    // Profile, Settings, Favorites, Playlists, Watch History, Queue, Submissions, (Clip Room), (Admin), Logout
+    const menuItemCount = 8 + (hasTwitchChannel ? 1 : 0) + (isModeratorOrAdmin ? 1 : 0);
     const { menuRef } = useMenuKeyboard(
         isOpen,
         () => setIsOpen(false),
@@ -176,6 +182,17 @@ export function UserMenu() {
                         >
                             <Upload size={16} strokeWidth={1.75} /> My Submissions
                         </Link>
+                        {hasTwitchChannel && (
+                            <Link
+                                to={`/streamer-tools/${encodeURIComponent(user.username)}/clips`}
+                                className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                                onClick={() => setIsOpen(false)}
+                                role='menuitem'
+                                tabIndex={-1}
+                            >
+                                <Clapperboard size={16} strokeWidth={1.75} /> Stream Clip Room
+                            </Link>
+                        )}
 
                         {isModeratorOrAdmin && (
                             <>

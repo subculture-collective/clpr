@@ -533,4 +533,75 @@ describe('useClips', () => {
             expect(result.current.error).toEqual(error);
         });
     });
+    describe('clip caches outside the main feed', () => {
+        const createClient = () => {
+            const queryClient = new QueryClient({
+                defaultOptions: {
+                    queries: { retry: false },
+                    mutations: { retry: false },
+                },
+            });
+            const wrapper = ({ children }: { children: ReactNode }) =>
+                createElement(QueryClientProvider, { client: queryClient }, children);
+            return { queryClient, wrapper };
+        };
+
+        const seedOtherCaches = (queryClient: QueryClient, clip: Clip) => {
+            queryClient.setQueryData(['search', 'q', 'clips'], { results: { clips: [clip] }, counts: { clips: 1 } });
+            queryClient.setQueryData(['user-clips', 'u1', 1], { clips: [clip], total: 1 });
+            queryClient.setQueryData(['broadcasterClips', 'b1', 1, 'recent'], { data: [clip] });
+            queryClient.setQueryData(['playlist', 'p1'], { items: [{ id: 'item-1', clip }] });
+        };
+
+        const readOtherCaches = (queryClient: QueryClient) => [
+            queryClient.getQueryData<{ results: { clips: Clip[] } }>(['search', 'q', 'clips'])?.results.clips[0],
+            queryClient.getQueryData<{ clips: Clip[] }>(['user-clips', 'u1', 1])?.clips[0],
+            queryClient.getQueryData<{ data: Clip[] }>(['broadcasterClips', 'b1', 1, 'recent'])?.data[0],
+            queryClient.getQueryData<{ items: { clip: Clip }[] }>(['playlist', 'p1'])?.items[0].clip,
+        ];
+
+        it('applies a vote to every cached query holding the clip', async () => {
+            vi.mocked(clipApi.voteOnClip).mockResolvedValue({
+                message: 'ok', vote_score: 101, upvote_count: 51, downvote_count: 0, user_vote: 1,
+            });
+            const { queryClient, wrapper } = createClient();
+            seedOtherCaches(queryClient, { ...mockClip });
+
+            const { result } = renderHook(() => useClipVote(), { wrapper });
+            result.current.mutate({ clip_id: mockClip.id, vote_type: 1 });
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+            for (const clip of readOtherCaches(queryClient)) {
+                expect(clip).toMatchObject({ user_vote: 1, vote_score: 101 });
+            }
+        });
+
+        it('rolls back the vote in every cache on error', async () => {
+            vi.mocked(clipApi.voteOnClip).mockRejectedValue(new Error('nope'));
+            const { queryClient, wrapper } = createClient();
+            seedOtherCaches(queryClient, { ...mockClip });
+
+            const { result } = renderHook(() => useClipVote(), { wrapper });
+            result.current.mutate({ clip_id: mockClip.id, vote_type: 1 });
+            await waitFor(() => expect(result.current.isError).toBe(true));
+
+            for (const clip of readOtherCaches(queryClient)) {
+                expect(clip).toMatchObject({ user_vote: null, vote_score: 100 });
+            }
+        });
+
+        it('marks the clip favorited everywhere so a second click removes it', async () => {
+            vi.mocked(clipApi.addFavorite).mockResolvedValue({ message: 'ok', is_favorited: true });
+            const { queryClient, wrapper } = createClient();
+            seedOtherCaches(queryClient, { ...mockClip, is_favorited: false, favorite_count: 5 });
+
+            const { result } = renderHook(() => useClipFavorite(), { wrapper });
+            result.current.mutate({ clip_id: mockClip.id, is_favorited: false });
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+            for (const clip of readOtherCaches(queryClient)) {
+                expect(clip).toMatchObject({ is_favorited: true, favorite_count: 6 });
+            }
+        });
+    });
 });

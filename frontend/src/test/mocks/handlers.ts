@@ -254,8 +254,8 @@ export const handlers = [
     // POST /reports - Report content
     http.post(`${API_BASE_URL}/reports`, async ({ request }) => {
         const body = (await request.json()) as {
-            target_type: string;
-            target_id: string;
+            reportable_type: string;
+            reportable_id: string;
             reason: string;
             description?: string;
         };

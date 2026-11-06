@@ -4,6 +4,7 @@ import { useAuth, useToast } from '@/hooks';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import type { WatchHistoryEntry } from '@/types/watchHistory';
+import apiClient from '@/lib/api';
 
 type FilterType = 'all' | 'completed' | 'in-progress';
 
@@ -50,16 +51,7 @@ export function WatchHistoryPage() {
 
   const handleClearHistory = async () => {
     try {
-      const response = await fetch('/api/v1/watch-history', {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        showToast('Failed to clear watch history', 'error');
-        console.error('Failed to clear watch history');
-        return;
-      }
+      await apiClient.delete('/watch-history');
 
       setHistory([]);
       setShowClearConfirm(false);

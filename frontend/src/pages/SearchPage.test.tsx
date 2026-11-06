@@ -156,4 +156,26 @@ describe('SearchPage - Sort Controls', () => {
         expect(await screen.findAllByTestId('empty-state')).toHaveLength(1);
         expect(screen.getByTestId('search-results')).toBeVisible();
     });
+
+    it('leaves the first Tab to the browser so the skip link stays reachable', async () => {
+        render(
+            <HelmetProvider>
+                <QueryClientProvider client={queryClient}>
+                    <ToastProvider>
+                        <MemoryRouter initialEntries={['/search']}>
+                            <SearchPage />
+                        </MemoryRouter>
+                    </ToastProvider>
+                </QueryClientProvider>
+            </HelmetProvider>,
+        );
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+        window.dispatchEvent(tab);
+
+        expect(tab.defaultPrevented).toBe(false);
+    });
 });

@@ -1,11 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Clip } from '../types/clip';
+import { apiClient } from '@/lib/api';
 
 const useClipByIdMock = vi.fn();
+const isAuthenticatedMock = vi.fn(() => false);
+const voteMutate = vi.fn();
+const toastError = vi.fn();
 
 vi.mock('../components', async () => {
     const { ResourceUnavailable } = await vi.importActual<typeof import('../components/ui/ResourceUnavailable')>(
@@ -25,10 +29,10 @@ vi.mock('../components', async () => {
 vi.mock('../hooks', () => ({
     useClipById: (id: string) => useClipByIdMock(id),
     useUser: () => null,
-    useClipVote: () => ({ mutate: vi.fn(), isPending: false }),
+    useClipVote: () => ({ mutate: voteMutate, isPending: false }),
     useClipFavorite: () => ({ mutate: vi.fn(), isPending: false }),
-    useIsAuthenticated: () => false,
-    useToast: () => ({ info: vi.fn(), error: vi.fn() }),
+    useIsAuthenticated: () => isAuthenticatedMock(),
+    useToast: () => ({ info: vi.fn(), error: toastError }),
     useWatchHistory: () => ({
         progress: 0,
         hasProgress: false,
@@ -87,7 +91,12 @@ const clip: Clip = {
 };
 
 describe('ClipDetailPage', () => {
-    beforeEach(() => useClipByIdMock.mockReset());
+    beforeEach(() => {
+        useClipByIdMock.mockReset();
+        isAuthenticatedMock.mockReturnValue(false);
+        voteMutate.mockReset();
+        toastError.mockReset();
+    });
 
     it('shows a friendly not-found state for a 404 without the transport message', () => {
         useClipByIdMock.mockReturnValue({ data: undefined, isLoading: false, error: axiosError(404), refetch: vi.fn() });
@@ -117,5 +126,42 @@ describe('ClipDetailPage', () => {
 
         const views = screen.getByText('499 Twitch views at last sync');
         expect(views).toHaveAttribute('title', expect.stringContaining('The player shows the live count'));
+    });
+
+    it('records an embed view for each clip when moving between clips', async () => {
+        isAuthenticatedMock.mockReturnValue(true);
+        const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: {} });
+        useClipByIdMock.mockImplementation((id: string) => ({ data: { ...clip, id }, isLoading: false, error: null, refetch: vi.fn() }));
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+        render(
+            <QueryClientProvider client={client}>
+                <MemoryRouter initialEntries={['/clip/clip-1']}>
+                    <Routes>
+                        <Route path='/clip/:id' element={<><ClipDetailPage /><Link to='/clip/clip-2'>Next clip</Link></>} />
+                    </Routes>
+                </MemoryRouter>
+            </QueryClientProvider>,
+        );
+
+        await userEvent.click(screen.getByRole('link', { name: 'Next clip' }));
+
+        const viewed = post.mock.calls.filter(([url]) => url === '/watch-history').map(([, body]) => (body as { clip_id: string }).clip_id);
+        expect(viewed).toEqual(['clip-1', 'clip-2']);
+        post.mockRestore();
+    });
+
+    it('shows the message from an error envelope as text when a vote fails', async () => {
+        isAuthenticatedMock.mockReturnValue(true);
+        vi.spyOn(apiClient, 'post').mockResolvedValue({ data: {} });
+        voteMutate.mockImplementation((_payload, options: { onError: (error: unknown) => void }) => {
+            options.onError({ response: { status: 403, data: { success: false, error: { code: 'FORBIDDEN', message: 'Voting is paused' } } } });
+        });
+        useClipByIdMock.mockReturnValue({ data: clip, isLoading: false, error: null, refetch: vi.fn() });
+        renderClip('clip-1');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Upvote: 0 votes' }));
+
+        expect(toastError).toHaveBeenCalledWith('Voting is paused');
+        vi.restoreAllMocks();
     });
 });

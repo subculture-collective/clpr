@@ -532,11 +532,12 @@ describe('useComments', () => {
         wrapper: createWrapper(),
       });
 
-      const reasons: Array<'spam' | 'harassment' | 'off-topic' | 'misinformation' | 'other'> = [
+      const reasons: Array<ReportCommentPayload['reason']> = [
         'spam',
         'harassment',
-        'off-topic',
-        'misinformation',
+        'nsfw',
+        'violence',
+        'copyright',
         'other',
       ];
 
