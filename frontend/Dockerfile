@@ -62,7 +62,11 @@ ENV BACKEND_URL=http://clpr-backend:8080 \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 
 # Copy built assets from builder
+RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /app/dist /usr/share/nginx/html
+RUN printf '{"source_commit":"%s","repository":"subculture-collective/clpr"}\n' "$OCI_REVISION" \
+    > /usr/share/nginx/html/build-info.json \
+    && chmod 0444 /usr/share/nginx/html/build-info.json
 
 # Static assets may retain restrictive source modes from the build context.
 # nginx runs as an unprivileged user and must be able to traverse and read all

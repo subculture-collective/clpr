@@ -1,6 +1,8 @@
 name: Immutable production candidate
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -104,6 +106,11 @@ jobs:
             test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")" = "$candidate_sha"
             test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.source"}}' "$image")" = "$OCI_SOURCE"
             test "$(docker image inspect --format '{{.Config.User}}' "$image")" = "$expected_user"
+
+            if [[ "$name" == frontend ]]; then
+              python3 scripts/ci/qualify-frontend.py "$image" "$candidate_sha" \
+                >"$evidence_dir/frontend-http.json"
+            fi
 
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \

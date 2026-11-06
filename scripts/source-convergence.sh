@@ -43,7 +43,7 @@ docs       markdown/local-link/anchor/orphan/asset checks and inventory parity
 secrets    full-history/current-tree Gitleaks and JWT exposure audit
 browser    mocked accessibility and real-backend Chromium/Firefox/WebKit gates
 contracts  edge runtime, blue-green, and operator preflight contracts
-images     three OCI-labelled builds, HIGH/CRITICAL scans, and image SBOMs
+images     OCI-labelled builds, frontend HTTP checks, HIGH/CRITICAL scans, and SBOMs
 EOF
 }
 
@@ -133,6 +133,7 @@ require_selected_tools() {
                 ;;
             images)
                 require_command docker
+                require_command python3
                 ;;
         esac
     done
@@ -344,6 +345,8 @@ phase_images() {
     assert_image_contract "$backend_image" '10001:10001'
     assert_image_contract "$crawler_image" '10001:10001'
     assert_image_contract "$frontend_image" '101:101'
+    python3 scripts/ci/qualify-frontend.py "$frontend_image" "$candidate_sha" \
+        >"$artifact_dir/images/frontend-http.json"
     scan_image "$backend_image" backend-trivy.json
     scan_image "$crawler_image" crawler-trivy.json
     scan_image "$frontend_image" frontend-trivy.json
