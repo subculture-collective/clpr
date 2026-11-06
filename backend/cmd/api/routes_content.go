@@ -23,9 +23,9 @@ func registerContentRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, inf
 	search := v1.Group("/search")
 	{
 		// Public search endpoints with rate limiting (60 requests/minute = 1 per second)
-		search.GET("", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Search.Search)
+		search.GET("", middleware.OptionalAuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Search.Search)
 		search.GET("/suggestions", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Search.GetSuggestions)
-		search.GET("/scores", middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Search.SearchWithScores) // Hybrid search with similarity scores
+		search.GET("/scores", middleware.OptionalAuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 60, time.Minute), h.Search.SearchWithScores) // Hybrid search with similarity scores
 
 		// Search analytics endpoints
 		search.GET("/trending", middleware.RateLimitMiddleware(infra.Redis, 30, time.Minute), h.Search.GetTrendingSearches) // Popular searches (public)

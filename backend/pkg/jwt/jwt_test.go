@@ -297,3 +297,81 @@ func TestTokenExpiration(t *testing.T) {
 		t.Errorf("Refresh token expiration %v is outside expected range [%v, %v]", actualExpiry, minExpiry, maxExpiry)
 	}
 }
+
+func TestTypedValidationRejectsTheOtherTokenType(t *testing.T) {
+	privateKey, _, err := GenerateRSAKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateRSAKeyPair() error = %v", err)
+	}
+	manager, err := NewManager(privateKey)
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+	userID := uuid.New()
+	access, err := manager.GenerateAccessToken(userID, "user")
+	if err != nil {
+		t.Fatalf("GenerateAccessToken() error = %v", err)
+	}
+	refresh, err := manager.GenerateRefreshToken(userID)
+	if err != nil {
+		t.Fatalf("GenerateRefreshToken() error = %v", err)
+	}
+
+	if _, err := manager.ValidateAccessToken(access); err != nil {
+		t.Fatalf("ValidateAccessToken(access) error = %v", err)
+	}
+	if _, err := manager.ValidateRefreshToken(refresh); err != nil {
+		t.Fatalf("ValidateRefreshToken(refresh) error = %v", err)
+	}
+	if _, err := manager.ValidateAccessToken(refresh); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("ValidateAccessToken(refresh) error = %v, want %v", err, ErrInvalidToken)
+	}
+	if _, err := manager.ValidateRefreshToken(access); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("ValidateRefreshToken(access) error = %v, want %v", err, ErrInvalidToken)
+	}
+}
+
+// Tokens issued before the token_type claim are classified by lifetime so
+// signed-in users keep their sessions across the deployment.
+func TestTypedValidationClassifiesLegacyTokensByLifetime(t *testing.T) {
+	privateKey, _, err := GenerateRSAKeyPair()
+	if err != nil {
+		t.Fatalf("GenerateRSAKeyPair() error = %v", err)
+	}
+	manager, err := NewManager(privateKey)
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+	legacy := func(lifetime time.Duration) string {
+		now := time.Now()
+		token := jwtlib.NewWithClaims(jwtlib.SigningMethodRS256, Claims{
+			UserID: uuid.New(),
+			JTI:    uuid.NewString(),
+			RegisteredClaims: jwtlib.RegisteredClaims{
+				IssuedAt:  jwtlib.NewNumericDate(now),
+				NotBefore: jwtlib.NewNumericDate(now),
+				ExpiresAt: jwtlib.NewNumericDate(now.Add(lifetime)),
+			},
+		})
+		signed, err := token.SignedString(manager.privateKey)
+		if err != nil {
+			t.Fatalf("SignedString() error = %v", err)
+		}
+		return signed
+	}
+	legacyAccess := legacy(15 * time.Minute)
+	legacyRefresh := legacy(7 * 24 * time.Hour)
+
+	if _, err := manager.ValidateAccessToken(legacyAccess); err != nil {
+		t.Fatalf("ValidateAccessToken(legacy access) error = %v", err)
+	}
+	if _, err := manager.ValidateRefreshToken(legacyRefresh); err != nil {
+		t.Fatalf("ValidateRefreshToken(legacy refresh) error = %v", err)
+	}
+	if _, err := manager.ValidateAccessToken(legacyRefresh); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("ValidateAccessToken(legacy refresh) error = %v, want %v", err, ErrInvalidToken)
+	}
+	if _, err := manager.ValidateRefreshToken(legacyAccess); !errors.Is(err, ErrInvalidToken) {
+		t.Fatalf("ValidateRefreshToken(legacy access) error = %v, want %v", err, ErrInvalidToken)
+	}
+}

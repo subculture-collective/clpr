@@ -12,9 +12,9 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	clips := v1.Group("/clips")
 	{
 		// Public clip endpoints
-		clips.GET("", h.Clip.ListClips)
+		clips.GET("", middleware.OptionalAuthMiddleware(svcs.Auth), h.Clip.ListClips)
 		clips.GET("/:id/media", h.Clip.GetClipMedia)
-		clips.GET("/:id", h.Clip.GetClip)
+		clips.GET("/:id", middleware.OptionalAuthMiddleware(svcs.Auth), h.Clip.GetClip)
 		clips.GET("/:id/related", h.Clip.GetRelatedClips)
 
 		// Batch endpoint for media URLs (public, rate limited)
@@ -35,7 +35,7 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		clips.GET("/:id/progress", middleware.OptionalAuthMiddleware(svcs.Auth), h.WatchHistory.GetResumePosition)
 
 		// List comments for a clip (public or authenticated)
-		clips.GET("/:id/comments", h.Comment.ListComments)
+		clips.GET("/:id/comments", middleware.OptionalAuthMiddleware(svcs.Auth), h.Comment.ListComments)
 
 		// Create comment (authenticated, rate limited)
 		clips.POST("/:id/comments", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Comment.CreateComment)
@@ -45,9 +45,10 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		clips.POST("/:id/favorite", middleware.AuthMiddleware(svcs.Auth), h.Clip.AddFavorite)
 		clips.DELETE("/:id/favorite", middleware.AuthMiddleware(svcs.Auth), h.Clip.RemoveFavorite)
 
-		// Tag management for clips (authenticated, rate limited)
+		// Tag management for clips (authenticated, rate limited). Removing a tag
+		// is destructive and has no ownership check, so it is staff-only.
 		clips.POST("/:id/tags", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Tag.AddTagsToClip)
-		clips.DELETE("/:id/tags/:slug", middleware.AuthMiddleware(svcs.Auth), h.Tag.RemoveTagFromClip)
+		clips.DELETE("/:id/tags/:slug", middleware.AuthMiddleware(svcs.Auth), middleware.RequireRole("admin", "moderator"), h.Tag.RemoveTagFromClip)
 
 		// Creator content management (authenticated)
 		clips.PUT("/:id/metadata", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Minute), h.Clip.UpdateClipMetadata)
@@ -74,7 +75,7 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	comments := v1.Group("/comments")
 	{
 		// Get replies to a comment (can be public or authenticated)
-		comments.GET("/:id/replies", h.Comment.GetReplies)
+		comments.GET("/:id/replies", middleware.OptionalAuthMiddleware(svcs.Auth), h.Comment.GetReplies)
 
 		// Protected comment endpoints
 		comments.PUT("/:id", middleware.AuthMiddleware(svcs.Auth), h.Comment.UpdateComment)

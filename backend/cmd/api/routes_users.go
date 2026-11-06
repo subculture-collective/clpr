@@ -11,28 +11,34 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 	// Reputation routes
 	users := v1.Group("/users")
 	{
+		// Public profile routes honour the owner's privacy settings, which need
+		// the optional viewer identity.
+		optionalAuth := middleware.OptionalAuthMiddleware(svcs.Auth)
+		profilePrivacy := h.User.ProfilePrivacy(svcs.UserSettings, false)
+		karmaPrivacy := h.User.ProfilePrivacy(svcs.UserSettings, true)
+
 		// Public user profile
-		users.GET("/by-username/:username", h.User.GetUserByUsername)
+		users.GET("/by-username/:username", optionalAuth, profilePrivacy, h.User.GetUserByUsername)
 
 		// User autocomplete for mentions/suggestions - must be before /:id to avoid route conflicts
 		users.GET("/autocomplete", middleware.RateLimitMiddleware(infra.Redis, 100, time.Hour), h.User.SearchUsersAutocomplete)
 
-		users.GET("/:id", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserProfile)
+		users.GET("/:id", optionalAuth, profilePrivacy, h.User.GetUserProfile)
 
 		// Account claiming for unclaimed profiles
 		users.POST("/claim-account", middleware.AuthMiddleware(svcs.Auth), h.User.ClaimAccount)
 
 		// Public reputation endpoints
 		users.GET("/:id/reputation", h.Reputation.GetUserReputation)
-		users.GET("/:id/karma", h.Reputation.GetUserKarma)
+		users.GET("/:id/karma", optionalAuth, karmaPrivacy, h.Reputation.GetUserKarma)
 		users.GET("/:id/badges", h.Reputation.GetUserBadges)
 
 		// User activity endpoints
-		users.GET("/:id/comments", h.User.GetUserComments)
+		users.GET("/:id/comments", optionalAuth, profilePrivacy, h.User.GetUserComments)
 		users.GET("/:id/clips", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserClips)
-		users.GET("/:id/activity", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserActivity)
-		users.GET("/:id/upvoted", h.User.GetUserUpvotedClips)
-		users.GET("/:id/downvoted", h.User.GetUserDownvotedClips)
+		users.GET("/:id/activity", optionalAuth, profilePrivacy, h.User.GetUserActivity)
+		users.GET("/:id/upvoted", optionalAuth, profilePrivacy, h.User.GetUserUpvotedClips)
+		users.GET("/:id/downvoted", optionalAuth, profilePrivacy, h.User.GetUserDownvotedClips)
 
 		// User social connections
 		users.GET("/:id/followers", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserFollowers)
