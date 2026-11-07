@@ -18,6 +18,8 @@ type mockMFAService struct {
 	inGracePeriod bool
 	shouldError   bool
 	errorMessage  error
+
+	setRequiredCalls int
 }
 
 func (m *mockMFAService) IsAdminActionAllowed(ctx context.Context, userID uuid.UUID) (bool, string, error) {
@@ -51,7 +53,12 @@ func (m *mockMFAService) SetMFARequired(ctx context.Context, userID uuid.UUID) e
 	if m.shouldError {
 		return m.errorMessage
 	}
+	if !m.required {
+		// The real service starts a seven-day grace period.
+		m.inGracePeriod = true
+	}
 	m.required = true
+	m.setRequiredCalls++
 	return nil
 }
 
@@ -332,5 +339,56 @@ func TestCheckMFARequirementMiddleware(t *testing.T) {
 	// Verify MFA requirement was set
 	if !mfaService.required {
 		t.Error("Expected MFA to be required after admin promotion")
+	}
+}
+
+func TestRequireMFAForAdminMiddleware_StaffWithoutRequirementStartsGracePeriod(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, role := range []string{models.RoleAdmin, models.RoleModerator} {
+		t.Run(role, func(t *testing.T) {
+			router := gin.New()
+			router.Use(func(c *gin.Context) {
+				c.Set("user", &models.User{ID: uuid.New(), Username: "staff", Role: role})
+				c.Next()
+			})
+			// No MFA row on record: the role was granted outside the promotion flow.
+			mfaService := &mockMFAService{}
+			router.Use(RequireMFAForAdminMiddleware(mfaService))
+			router.GET("/test", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
+
+			for i := 0; i < 2; i++ {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/test", nil)
+				router.ServeHTTP(w, req)
+				if w.Code != http.StatusOK {
+					t.Fatalf("request %d: status = %d, want 200 during the grace period", i+1, w.Code)
+				}
+				if w.Header().Get("X-MFA-Warning") == "" {
+					t.Fatalf("request %d: expected an X-MFA-Warning header", i+1)
+				}
+			}
+			if !mfaService.required || mfaService.setRequiredCalls != 1 {
+				t.Fatalf("required=%v setRequiredCalls=%d, want the requirement recorded once", mfaService.required, mfaService.setRequiredCalls)
+			}
+		})
+	}
+}
+
+func TestRequireMFAForAdminMiddleware_RegularUserGetsNoRequirement(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("user", &models.User{ID: uuid.New(), Username: "viewer", Role: models.RoleUser})
+		c.Next()
+	})
+	mfaService := &mockMFAService{}
+	router.Use(RequireMFAForAdminMiddleware(mfaService))
+	router.GET("/test", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK || mfaService.setRequiredCalls != 0 {
+		t.Fatalf("status=%d setRequiredCalls=%d; regular users must not be enrolled", w.Code, mfaService.setRequiredCalls)
 	}
 }
