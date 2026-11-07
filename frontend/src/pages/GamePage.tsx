@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Container, Spinner, Button, ResourceUnavailable } from '../components';
 import { ClipGridCard } from '../components/clip';
@@ -19,20 +20,16 @@ export function GamePage() {
     const { showToast } = useToast();
 
     const [game, setGame] = useState<GameWithStats | null>(null);
-    const [clips, setClips] = useState<Clip[]>([]);
     const [loading, setLoading] = useState(true);
-    const [clipsLoading, setClipsLoading] = useState(false);
     const [following, setFollowing] = useState(false);
     const [loadFailed, setLoadFailed] = useState(false);
     // The category has no details record. Clips may still be tracked for it.
     const [gameMissing, setGameMissing] = useState(false);
-    const [clipsLoaded, setClipsLoaded] = useState(false);
     const [reloadCount, setReloadCount] = useState(0);
 
     const sort = (searchParams.get('sort') as GameSort | null) || 'hot';
     const timeframe = searchParams.get('timeframe') as GameTimeframe | null;
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const [hasMore, setHasMore] = useState(false);
 
     useEffect(() => {
         const fetchGame = async () => {
@@ -61,35 +58,31 @@ export function GamePage() {
         fetchGame();
     }, [gameId, reloadCount]);
 
-    useEffect(() => {
-        const fetchClips = async () => {
-            if (!gameId) return;
-
+    // The clip list lives in the query cache so a vote or favorite on a card
+    // updates it like every other clip list.
+    const clipsQuery = useQuery({
+        queryKey: ['game-clips', gameId, sort, timeframe, page, reloadCount],
+        queryFn: async () => {
+            const params: {
+                page: number;
+                limit: number;
+                sort: GameSort;
+                timeframe?: GameTimeframe;
+            } = { page, limit: 20, sort };
+            if (timeframe) params.timeframe = timeframe;
             try {
-                setClipsLoading(true);
-                const params: {
-                    page: number;
-                    limit: number;
-                    sort: GameSort;
-                    timeframe?: GameTimeframe;
-                } = { page, limit: 20, sort };
-                if (timeframe) params.timeframe = timeframe;
-
-                const data = await twitchCategoryApi.getGameClips(gameId, params);
-                setClips(data.clips || []);
-                setHasMore(data.has_more);
+                return await twitchCategoryApi.getGameClips(gameId as string, params);
             } catch (err) {
-                setClips([]);
-                setHasMore(false);
                 if (!isNotFoundError(err)) console.error('Failed to fetch clips:', err);
-            } finally {
-                setClipsLoading(false);
-                setClipsLoaded(true);
+                return { clips: [] as Clip[], has_more: false };
             }
-        };
-
-        fetchClips();
-    }, [gameId, sort, timeframe, page, reloadCount]);
+        },
+        enabled: Boolean(gameId),
+    });
+    const clips = clipsQuery.data?.clips ?? [];
+    const hasMore = clipsQuery.data?.has_more ?? false;
+    const clipsLoading = clipsQuery.isLoading;
+    const clipsLoaded = clipsQuery.isFetched;
 
     const handleFollow = async () => {
         if (!user) {

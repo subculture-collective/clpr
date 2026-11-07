@@ -1,5 +1,6 @@
 import { formatTimestamp } from '../lib/utils';
 import { useCallback, useState, useEffect } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 
@@ -25,7 +26,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import type { KarmaBreakdown, UserReputation } from '../types/reputation';
-import type { Clip } from '../types/clip';
 import type { Comment } from '../types/comment';
 import type { UserRole } from '../lib/roles';
 import {
@@ -56,8 +56,6 @@ export function ProfilePage() {
 
     // Tab-specific data states
     const [comments, setComments] = useState<Comment[]>([]);
-    const [upvotedClips, setUpvotedClips] = useState<Clip[]>([]);
-    const [downvotedClips, setDownvotedClips] = useState<Clip[]>([]);
     const [loadingTabData, setLoadingTabData] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
@@ -105,25 +103,6 @@ export function ProfilePage() {
                         setHasMore(data.has_more);
                         break;
                     }
-                    case 'upvoted': {
-                        const data = await fetchUserUpvotedClips(user.id, page);
-                        setUpvotedClips(prev =>
-                            append ? [...prev, ...data.clips] : data.clips,
-                        );
-                        setHasMore(data.has_more);
-                        break;
-                    }
-                    case 'downvoted': {
-                        const data = await fetchUserDownvotedClips(
-                            user.id,
-                            page,
-                        );
-                        setDownvotedClips(prev =>
-                            append ? [...prev, ...data.clips] : data.clips,
-                        );
-                        setHasMore(data.has_more);
-                        break;
-                    }
                 }
                 setCurrentPage(page);
             } catch (error) {
@@ -138,20 +117,42 @@ export function ProfilePage() {
 
     const handleTabChange = (tab: TabType) => {
         setActiveTab(tab);
-        if (tab === 'comments' || tab === 'upvoted' || tab === 'downvoted') {
-            // Reset only the relevant tab data when switching
-            if (tab === 'comments') {
-                setComments([]);
-            } else if (tab === 'upvoted') {
-                setUpvotedClips([]);
-            } else if (tab === 'downvoted') {
-                setDownvotedClips([]);
-            }
+        if (tab === 'comments') {
+            setComments([]);
             setCurrentPage(1);
             setHasMore(false);
             fetchTabData(tab, 1, false);
         }
     };
+
+    // The voted lists live in the query cache, so voting on a card updates the
+    // card like every other clip list.
+    const useVotedClips = (kind: 'upvoted' | 'downvoted') =>
+        useInfiniteQuery({
+            queryKey: ['profile-voted-clips', user?.id, kind],
+            queryFn: async ({ pageParam }) => {
+                const fetchPage =
+                    kind === 'upvoted' ?
+                        fetchUserUpvotedClips
+                    :   fetchUserDownvotedClips;
+                try {
+                    return await fetchPage(user!.id, pageParam);
+                } catch (error) {
+                    console.error(`Failed to fetch ${kind} data:`, error);
+                    toast.error(`Failed to load ${kind}`);
+                    throw error;
+                }
+            },
+            initialPageParam: 1,
+            getNextPageParam: last => (last.has_more ? last.page + 1 : undefined),
+            enabled: Boolean(user) && activeTab === kind,
+            retry: false,
+        });
+    const upvotedQuery = useVotedClips('upvoted');
+    const downvotedQuery = useVotedClips('downvoted');
+    const upvotedClips = upvotedQuery.data?.pages.flatMap(p => p.clips) ?? [];
+    const downvotedClips =
+        downvotedQuery.data?.pages.flatMap(p => p.clips) ?? [];
 
     const handleReauthorize = async () => {
         try {
@@ -612,7 +613,7 @@ export function ProfilePage() {
 
                             {activeTab === 'upvoted' && (
                                 <div>
-                                    {loadingTabData ?
+                                    {upvotedQuery.isLoading ?
                                         <div className='space-y-6'>
                                             {[...Array(5)].map((_, i) => (
                                                 <ClipCardSkeleton key={i} />
@@ -626,15 +627,14 @@ export function ProfilePage() {
                                                     clip={clip}
                                                 />
                                             ))}
-                                            {hasMore && (
+                                            {upvotedQuery.hasNextPage && (
                                                 <div className='text-center pt-4'>
                                                     <Button
                                                         onClick={() =>
-                                                            fetchTabData(
-                                                                'upvoted',
-                                                                currentPage + 1,
-                                                                true,
-                                                            )
+                                                            upvotedQuery.fetchNextPage()
+                                                        }
+                                                        disabled={
+                                                            upvotedQuery.isFetchingNextPage
                                                         }
                                                         variant='outline'
                                                     >
@@ -676,7 +676,7 @@ export function ProfilePage() {
 
                             {activeTab === 'downvoted' && (
                                 <div>
-                                    {loadingTabData ?
+                                    {downvotedQuery.isLoading ?
                                         <div className='space-y-6'>
                                             {[...Array(5)].map((_, i) => (
                                                 <ClipCardSkeleton key={i} />
@@ -690,15 +690,14 @@ export function ProfilePage() {
                                                     clip={clip}
                                                 />
                                             ))}
-                                            {hasMore && (
+                                            {downvotedQuery.hasNextPage && (
                                                 <div className='text-center pt-4'>
                                                     <Button
                                                         onClick={() =>
-                                                            fetchTabData(
-                                                                'downvoted',
-                                                                currentPage + 1,
-                                                                true,
-                                                            )
+                                                            downvotedQuery.fetchNextPage()
+                                                        }
+                                                        disabled={
+                                                            downvotedQuery.isFetchingNextPage
                                                         }
                                                         variant='outline'
                                                     >
