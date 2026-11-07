@@ -9,6 +9,7 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,9 +27,25 @@ func NewGameRepository(pool *pgxpool.Pool) *GameRepository {
 	}
 }
 
-// Create inserts a new game into the database
+// Create inserts a new game into the database, or updates the row with the
+// same Twitch game ID. Twitch can list two categories under one name (for
+// example two "The Legend of Zelda: Ocarina of Time" IDs), so when another
+// game already owns the name's slug this game gets the slug suffixed with its
+// Twitch ID instead.
 func (r *GameRepository) Create(ctx context.Context, game *models.GameEntity) error {
 	slug := utils.Slugify(game.Name)
+	err := r.upsertGame(ctx, game, slug)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "idx_games_slug" {
+		err = r.upsertGame(ctx, game, slug+"-"+game.TwitchGameID)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to create game: %w", err)
+	}
+	return nil
+}
+
+func (r *GameRepository) upsertGame(ctx context.Context, game *models.GameEntity, slug string) error {
 	query := `
 		INSERT INTO games (id, twitch_game_id, name, slug, box_art_url, igdb_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -40,17 +57,10 @@ func (r *GameRepository) Create(ctx context.Context, game *models.GameEntity) er
 			updated_at = EXCLUDED.updated_at
 		RETURNING id
 	`
-
-	err := r.pool.QueryRow(ctx, query,
+	return r.pool.QueryRow(ctx, query,
 		game.ID, game.TwitchGameID, game.Name, slug, game.BoxArtURL,
 		game.IGDBID, game.CreatedAt, game.UpdatedAt,
 	).Scan(&game.ID)
-
-	if err != nil {
-		return fmt.Errorf("failed to create game: %w", err)
-	}
-
-	return nil
 }
 
 // GetByID retrieves a game by its internal ID

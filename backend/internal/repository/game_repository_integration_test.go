@@ -45,3 +45,32 @@ func TestCreatingKnownGamePopulatesItsCuratedCategories(t *testing.T) {
 		t.Fatalf("category games = %+v, want %s", games, game.TwitchGameID)
 	}
 }
+
+func TestCreatingGameWithDuplicateNameKeepsBothCategories(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "games")
+	ctx := context.Background()
+	gameRepo := NewGameRepository(pool)
+	now := time.Now()
+	name := "The Legend of Zelda: Ocarina of Time"
+	original := &models.GameEntity{ID: uuid.New(), TwitchGameID: "11557", Name: name, CreatedAt: now, UpdatedAt: now}
+	duplicate := &models.GameEntity{ID: uuid.New(), TwitchGameID: "2067181260", Name: name, CreatedAt: now, UpdatedAt: now}
+	for _, game := range []*models.GameEntity{original, duplicate, original, duplicate} {
+		if err := gameRepo.Create(ctx, game); err != nil {
+			t.Fatalf("create game %s: %v", game.TwitchGameID, err)
+		}
+	}
+	for twitchID, wantSlug := range map[string]string{
+		"11557":      "the-legend-of-zelda-ocarina-of-time",
+		"2067181260": "the-legend-of-zelda-ocarina-of-time-2067181260",
+	} {
+		game, err := gameRepo.GetByTwitchGameID(ctx, twitchID)
+		if err != nil {
+			t.Fatalf("get game %s: %v", twitchID, err)
+		}
+		if game.Slug != wantSlug {
+			t.Fatalf("game %s slug = %q, want %q", twitchID, game.Slug, wantSlug)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -191,5 +192,15 @@ func TestHashForLogging(t *testing.T) {
 	// Test that hash doesn't contain original value
 	if strings.Contains(hash1, "test") || strings.Contains(hash1, "example") {
 		t.Error("Hash should not contain parts of original value")
+	}
+}
+
+func TestRedactPIIFromFieldsRendersErrorMessages(t *testing.T) {
+	got := RedactPIIFromFields(map[string]interface{}{
+		"error": errors.New("duplicate key value violates unique constraint for user@example.com"),
+	})
+	want := "duplicate key value violates unique constraint for [REDACTED_EMAIL]"
+	if got["error"] != want {
+		t.Fatalf("error field = %#v, want %q", got["error"], want)
 	}
 }
