@@ -11,6 +11,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -112,5 +113,86 @@ func TestProfilePrivacySettingsAreEnforced(t *testing.T) {
 		if rec.Code != http.StatusOK || karmaOf(rec) != 4321 {
 			t.Errorf("owner %s: status %d karma %d, want 200 with karma 4321", path, rec.Code, karmaOf(rec))
 		}
+	}
+}
+
+// The profile lists and reputation route ignored the owner's privacy settings,
+// and reputation showed hidden karma and everyone's trust score.
+func TestProfileListsAndReputationFollowPrivacy(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	gin.SetMode(gin.TestMode)
+
+	suffix := uuid.NewString()[:8]
+	createUser := func(name string) uuid.UUID {
+		t.Helper()
+		id := uuid.New()
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO users (id, twitch_id, username, display_name, role, karma_points)
+			VALUES ($1, $2, $3, $3, 'user', 4321)`, id, uuid.NewString(), name+"-"+suffix); err != nil {
+			t.Fatalf("insert %s: %v", name, err)
+		}
+		t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, id) })
+		return id
+	}
+	owner, stranger := createUser("rp-owner"), createUser("rp-stranger")
+	setPrivacy := func(visibility string, showKarma bool) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO user_settings (user_id, profile_visibility, show_karma_publicly) VALUES ($1, $2, $3)
+			ON CONFLICT (user_id) DO UPDATE SET profile_visibility = $2, show_karma_publicly = $3`,
+			owner, visibility, showKarma); err != nil {
+			t.Fatalf("set privacy: %v", err)
+		}
+	}
+
+	userRepo := repository.NewUserRepository(pool)
+	handler := &UserHandler{userRepo: userRepo}
+	reputation := NewReputationHandler(services.NewReputationService(repository.NewReputationRepository(pool), userRepo), nil)
+	privacy := handler.ProfilePrivacy(settingsRepoReader{repository.NewUserSettingsRepository(pool)}, false)
+	get := func(viewer uuid.UUID, path string) *httptest.ResponseRecorder {
+		router := gin.New()
+		identity := func(c *gin.Context) {
+			c.Set("user_id", viewer)
+			c.Set("user_role", models.RoleUser)
+		}
+		router.GET("/users/:id/followers", identity, privacy, handler.GetUserFollowers)
+		router.GET("/users/:id/following", identity, privacy, handler.GetUserFollowing)
+		router.GET("/users/:id/reputation", identity, privacy, reputation.GetUserReputation)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		return rec
+	}
+	base := "/users/" + owner.String()
+
+	setPrivacy("private", true)
+	for _, path := range []string{base + "/followers", base + "/following", base + "/reputation"} {
+		if rec := get(stranger, path); rec.Code != http.StatusNotFound {
+			t.Errorf("stranger %s on a private profile: status %d, want 404", path, rec.Code)
+		}
+		if rec := get(owner, path); rec.Code != http.StatusOK {
+			t.Errorf("owner %s: status %d, want 200", path, rec.Code)
+		}
+	}
+
+	setPrivacy("public", false)
+	var rep models.UserReputation
+	decode := func(rec *httptest.ResponseRecorder) {
+		t.Helper()
+		rep = models.UserReputation{}
+		if rec.Code != http.StatusOK {
+			t.Fatalf("reputation status %d: %s", rec.Code, rec.Body.String())
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &rep); err != nil {
+			t.Fatalf("decode %s: %v", rec.Body.String(), err)
+		}
+	}
+	decode(get(stranger, base+"/reputation"))
+	if rep.KarmaPoints != 0 || rep.Rank != "" || rep.TrustScore != 0 {
+		t.Errorf("stranger sees karma %d rank %q trust %d, want all hidden", rep.KarmaPoints, rep.Rank, rep.TrustScore)
+	}
+	decode(get(owner, base+"/reputation"))
+	if rep.KarmaPoints != 4321 || rep.Rank == "" {
+		t.Errorf("owner sees karma %d rank %q, want 4321 and a rank", rep.KarmaPoints, rep.Rank)
 	}
 }

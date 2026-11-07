@@ -200,7 +200,7 @@ func (h *UserHandler) GetUserComments(c *gin.Context) {
 		UserID        string  `json:"user_id"`
 		Username      string  `json:"username"`
 		UserAvatar    *string `json:"user_avatar"`
-		UserKarma     int     `json:"user_karma"`
+		UserKarma     *int    `json:"user_karma,omitempty"`
 		UserRole      string  `json:"user_role"`
 		ParentID      *string `json:"parent_id"`
 		Content       string  `json:"content"`
@@ -219,7 +219,7 @@ func (h *UserHandler) GetUserComments(c *gin.Context) {
 	responses := make([]CommentResponse, len(comments))
 	for i, comment := range comments {
 		if hideKarma {
-			comment.AuthorKarma = 0
+			comment.AuthorKarma = nil
 		}
 		var parentID *string
 		if comment.ParentCommentID != nil {
@@ -477,15 +477,21 @@ func hideProfileKarma(c *gin.Context) bool {
 	return c.GetBool(profileHideKarmaKey)
 }
 
+// viewerIsOwnerOrStaff reports whether the requester is the user ownerID or a
+// moderator or administrator.
+func viewerIsOwnerOrStaff(c *gin.Context, ownerID uuid.UUID) bool {
+	viewer, _ := c.Get("user_id")
+	if id, ok := viewer.(uuid.UUID); ok && id != uuid.Nil && id == ownerID {
+		return true
+	}
+	role, _ := c.Get("user_role")
+	return role == models.RoleAdmin || role == models.RoleModerator
+}
+
 // redactPrivateProfileFields clears account details that only the profile
 // owner and staff may see: the email address, trust score and last sign-in.
 func redactPrivateProfileFields(c *gin.Context, profile *models.UserProfile) {
-	viewer, _ := c.Get("user_id")
-	if id, ok := viewer.(uuid.UUID); ok && id != uuid.Nil && id == profile.ID {
-		return
-	}
-	role, _ := c.Get("user_role")
-	if role == models.RoleAdmin || role == models.RoleModerator {
+	if viewerIsOwnerOrStaff(c, profile.ID) {
 		return
 	}
 	profile.Email = nil

@@ -72,6 +72,14 @@ func TestProfileRoutesEnforcePrivacySettings(t *testing.T) {
 		"/api/v1/users/" + id + "/upvoted",
 		"/api/v1/users/" + id + "/downvoted",
 		"/api/v1/users/" + id + "/activity",
+		"/api/v1/users/" + id + "/clips",
+		"/api/v1/users/" + id + "/followers",
+		"/api/v1/users/" + id + "/following",
+		"/api/v1/users/" + id + "/following/broadcasters",
+		"/api/v1/users/" + id + "/games/following",
+		"/api/v1/users/" + id + "/twitch-categories/following",
+		"/api/v1/users/" + id + "/reputation",
+		"/api/v1/users/" + id + "/badges",
 	} {
 		chain := handlerChain(t, router, http.MethodGet, path)
 		optional := strings.Index(chain, ".OptionalAuthMiddleware.")
