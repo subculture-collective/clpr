@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
@@ -155,7 +156,7 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		metrics.JobExecutionTotal.WithLabelValues(autoTagJobName, "success").Inc()
 		metrics.JobLastSuccessTimestamp.WithLabelValues(autoTagJobName).Set(float64(time.Now().Unix()))
 		metrics.JobQueueSize.WithLabelValues(autoTagJobName).Set(0)
-		if s.transcription != nil {
+		if s.transcription != nil && s.transcription.Operational() {
 			s.processTranscriptionClips(ctx)
 		}
 		if s.thumbnail != nil && s.thumbnail.Operational() {
@@ -222,7 +223,7 @@ func (s *AutoTagScheduler) processClips(ctx context.Context) {
 		"duration":  duration.String(),
 	})
 
-	if s.transcription != nil {
+	if s.transcription != nil && s.transcription.Operational() {
 		s.processTranscriptionClips(ctx)
 	}
 	if s.thumbnail != nil && s.thumbnail.Operational() {
@@ -260,7 +261,13 @@ func (s *AutoTagScheduler) processTranscriptionClips(ctx context.Context) {
 		if transcribeErr != nil {
 			utils.Warn("Authorized clip transcription failed", map[string]interface{}{
 				"clip_id": clip.ID.String(),
+				"error":   transcribeErr.Error(),
 			})
+			// A provider-wide failure says nothing about this clip; keep its
+			// attempt budget and leave the rest of the queue for later.
+			if errors.Is(transcribeErr, services.ErrTranscriptionProviderUnavailable) {
+				break
+			}
 			if recordErr := s.clipRepo.RecordTranscriptionFailure(ctx, clip.ID, transcribeErr); recordErr != nil {
 				utils.Error("Failed to record transcription failure", recordErr, map[string]interface{}{
 					"clip_id": clip.ID.String(),

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,11 @@ import (
 	"strings"
 	"time"
 )
+
+// ErrTwitchClipDownloadUnavailable marks a failure of the Twitch download API
+// itself (unreachable, rate limited or a server error) rather than of one
+// clip, so callers can stop instead of charging every queued clip.
+var ErrTwitchClipDownloadUnavailable = errors.New("Twitch clip download API is unavailable")
 
 // TwitchClipDownloadService obtains temporary clip media URLs through Twitch's
 // official, broadcaster-authorized Helix endpoint.
@@ -57,12 +63,16 @@ func (s *TwitchClipDownloadService) GetDownloadURL(ctx context.Context, broadcas
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("requesting Twitch clip download URL: %w", err)
+		return "", fmt.Errorf("%w: requesting Twitch clip download URL: %v", ErrTwitchClipDownloadUnavailable, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return "", fmt.Errorf("Twitch clip download API returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		err := fmt.Errorf("Twitch clip download API returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError {
+			err = fmt.Errorf("%w: %v", ErrTwitchClipDownloadUnavailable, err)
+		}
+		return "", err
 	}
 
 	var payload struct {

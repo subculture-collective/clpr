@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -39,4 +40,27 @@ func TestTwitchClipDownloadServiceGetsOfficialAuthorizedURL(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "https://production.assets.clips.twitchcdn.net/authorized.mp4", downloadURL)
+}
+
+func TestTwitchClipDownloadServiceMarksProviderFailures(t *testing.T) {
+	for status, providerWide := range map[int]bool{
+		http.StatusTooManyRequests:     true,
+		http.StatusServiceUnavailable:  true,
+		http.StatusInternalServerError: true,
+		http.StatusNotFound:            false,
+		http.StatusUnauthorized:        false,
+	} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(status)
+		}))
+		service := NewTwitchClipDownloadService("clpr-client-id", server.URL+"/helix", server.Client())
+		_, err := service.GetDownloadURL(context.Background(), "broadcaster-123", "clip-456", "token")
+		server.Close()
+		require.Error(t, err, "status %d", status)
+		assert.Equal(t, providerWide, errors.Is(err, ErrTwitchClipDownloadUnavailable), "status %d", status)
+	}
+
+	service := NewTwitchClipDownloadService("clpr-client-id", "http://127.0.0.1:1/helix", nil)
+	_, err := service.GetDownloadURL(context.Background(), "broadcaster-123", "clip-456", "token")
+	assert.ErrorIs(t, err, ErrTwitchClipDownloadUnavailable, "unreachable API")
 }
