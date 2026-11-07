@@ -22,9 +22,9 @@ missed the stream.
 
 ## Available today
 
-clpr is available as a responsive web application at [clpr.tv](https://clpr.tv).
-Native mobile apps are planned. The
-[launch feature inventory](docs/LAUNCH_FEATURE_INVENTORY.md) records the supported scope.
+clpr is a responsive web application at [clpr.tv](https://clpr.tv). The
+[launch feature inventory](docs/LAUNCH_FEATURE_INVENTORY.md) records the supported
+scope and the features removed in November 2026.
 
 ## Build with us
 

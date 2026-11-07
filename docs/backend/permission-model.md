@@ -386,6 +386,8 @@ For community moderators, the system automatically validates channel access:
 4. Validates `channel_id` against user's `moderation_channels` array
 5. Returns 403 if channel is not in the allowed list
 
+> **Note:** the `/api/v1/channels/...` paths in this section are illustrations from the site chat era. Site chat and its routes were removed in November 2026 (#63), and no current route takes a `channel_id` path parameter.
+
 **Channel ID Resolution Priority:**
 1. Path parameter: `/api/v1/channels/:channel_id/moderate`
 2. Query parameter: `/api/v1/moderate?channel_id=xxx`

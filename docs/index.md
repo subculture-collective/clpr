@@ -43,7 +43,6 @@ In-depth documentation for major platform features:
 
 - **[[features/index|Features Hub]]** - Complete feature documentation index
 - **[[features/comments|Comment System]]** - Reddit-style nested threading, E2E testing, and performance optimization
-- **[[features/live-streams|Live Streams]]** - Watch Twitch streams with integrated chat, follow notifications, and clip creation
 - **[[features/feature-feed-filtering|Feed Filtering]]** - Personalized content filtering
 - **[[features/feature-playlists|Playlists]]** - User-created clip collections
 - **[[features/feature-queue-history|Queue History]]** - Viewing history and playback queue
@@ -89,31 +88,15 @@ In-depth documentation for major platform features:
 - **[[frontend/component-library|Component Library]]** - Reusable UI components
 - **[[frontend/accessibility|Accessibility]]** - WCAG compliance and best practices
 
-#### Mobile (React Native + Expo)
-
-- **[[mobile/index|Mobile Hub]]** - Complete mobile app documentation index
-- **[[mobile/architecture|Architecture]]** - App structure, navigation, and platform considerations
-- **[[mobile/implementation|Implementation Guide]]** - Features, OAuth, search, comments, and submit flow
-- **[[mobile/deep-linking|Deep Linking]]** - Universal links and app navigation
-- **[[mobile/offline-caching|Offline Caching]]** - Offline-first architecture
-- **[[mobile/i18n|Internationalization]]** - Multi-language support
-
 #### Data Pipelines
 
 - **[[pipelines/ingest|Data Ingestion]]** - Twitch API integration and clip importing
 - **[[pipelines/clipping|Clip Processing]]** - Metadata extraction and enrichment
 - **[[pipelines/analysis|Analytics Pipeline]]** - User behavior and engagement analytics
 
-### Premium & Monetization
+### Archive
 
-- **[[premium/index|Premium Hub]]** - Complete premium and monetization documentation index
-- **[[premium/overview|Premium Overview]]** - Complete guide to subscription features
-- **[[premium/tiers|Pricing Tiers]]** - Free vs Pro benefits, pricing strategy
-- **[[premium/entitlements|Entitlements]]** - Feature gates and access control implementation
-- **[[premium/stripe|Stripe Integration]]** - Billing, trials, discounts, and payment recovery
-- **[[premium/dunning|Dunning]]** - Payment recovery process
-- **[[premium/trials-and-discounts|Trials & Discounts]]** - Trial periods and discount codes
-- **[[product/ad-slot-specification|Ad Slot Specification]]** - Ad taxonomy, placements, sizes, and fallback rules
+- **[Archive](archive/index.md)** - Retired premium and billing material and native mobile planning, kept for history. Nothing in it describes the current product.
 
 ### Deployment & Operations
 
@@ -135,7 +118,6 @@ In-depth documentation for major platform features:
 ### Architecture Decisions
 
 - **[[decisions/adr-1-semantic-search-vector-db|ADR 001: Semantic Search & Vector DB]]** - Hybrid search architecture
-- **[[decisions/adr-002-mobile-framework-selection|ADR 002: Mobile Framework]]** - React Native + Expo decision
 - **[[decisions/adr-003-advanced-query-language|ADR 003: Query Language]]** - Advanced search syntax
 - **[[decisions/index|All Architecture Decisions]]** - Complete ADR index
 - **[[rfcs/index|Request for Comments (RFCs)]]** - Feature proposals and RFCs
@@ -178,13 +160,10 @@ In-depth documentation for major platform features:
 - ✅ OpenSearch integration
 - ✅ Semantic vector search
 - ✅ React frontend (web)
-- 📋 Native mobile workspace is planned and is not part of this release
-- 🚧 Premium subscriptions remain disabled until the Stripe lifecycle gate passes
+- ❌ Paid subscriptions retired in September 2026; accounts are free
 - ✅ CI/CD pipeline
 - 🚧 Production hardening
-- 🚧 Mobile app release
 - 📋 Advanced moderation tools
-- 📋 Machine learning recommendations
 
 ## 🔗 External Links
 

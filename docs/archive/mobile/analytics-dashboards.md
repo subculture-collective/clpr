@@ -778,7 +778,7 @@ Set up Slack notifications:
 ### Documentation Links
 
 - PostHog Analytics Integration
-- [Mobile Architecture](../ARCHITECTURE.md)
+- [Mobile Architecture](../../ARCHITECTURE.md)
 - Mobile Analytics Event Schema
 - Sentry Integration
 
