@@ -56,6 +56,7 @@ type Handlers struct {
 	Recommendation      *handlers.RecommendationHandler
 	Playlist            *handlers.PlaylistHandler
 	PlaylistScript      *handlers.PlaylistScriptHandler
+	Countdown           *handlers.CountdownHandler
 	Queue               *handlers.QueueHandler
 	StreamerClipRoom    *handlers.StreamerClipRoomHandler
 	WatchHistory        *handlers.WatchHistoryHandler
@@ -239,6 +240,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Recommendation:      recommendationHandler,
 		Playlist:            playlistHandler,
 		PlaylistScript:      playlistScriptHandler,
+		Countdown:           handlers.NewCountdownHandler(svcs.Countdown),
 		Queue:               queueHandler,
 		StreamerClipRoom:    streamerClipRoomHandler,
 		WatchHistory:        watchHistoryHandler,

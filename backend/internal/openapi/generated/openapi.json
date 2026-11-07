@@ -162,6 +162,10 @@
       "description": "Automated owned playlist definitions and generation"
     },
     {
+      "name": "Countdowns",
+      "description": "Daily countdown series, editions and exclusions"
+    },
+    {
       "name": "Forum",
       "description": "Forum discussions"
     },
@@ -12405,6 +12409,449 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/countdowns/series": {
+      "get": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "List countdown series",
+        "description": "Returns every countdown series in selection order (priority, then creation). Administrator MFA is required.",
+        "operationId": "getApiV1AdminCountdownsSeries",
+        "responses": {
+          "200": {
+            "description": "Countdown series",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownSeriesListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "Create a countdown series",
+        "description": "Creates a daily ranked list, overall or limited to one Twitch category or language. Administrator MFA and CSRF protection are required.",
+        "operationId": "postApiV1AdminCountdownsSeries",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CSRFToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountdownSeriesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Series created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownSeriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/countdowns/series/{id}": {
+      "put": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "Replace a countdown series configuration",
+        "description": "Replaces every field of the series. Editions already selected keep their window. Administrator MFA and CSRF protection are required.",
+        "operationId": "putApiV1AdminCountdownsSeriesId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CSRFToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountdownSeriesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Series updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownSeriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/countdowns/series/{id}/editions": {
+      "post": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "Select a countdown edition again",
+        "description": "Selects the series edition for a past date again, replacing an edition that is still selected or failed. Fewer eligible clips than the series size store a failed edition with no clips. Administrator MFA and CSRF protection are required.",
+        "operationId": "postApiV1AdminCountdownsSeriesIdEditions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CSRFToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "date"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Edition date (UTC); its selection hour must have passed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Selected edition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownEditionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/countdowns/editions": {
+      "get": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "List countdown editions",
+        "description": "Returns editions newest first with their ranked clips, optionally for one date or one series. Administrator MFA is required.",
+        "operationId": "getApiV1AdminCountdownsEditions",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "series_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Countdown editions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownEditionListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/countdowns/exclusions": {
+      "get": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "List countdown exclusions",
+        "description": "Returns the broadcasters and clips left out of future editions, newest first. Administrator MFA is required.",
+        "operationId": "getApiV1AdminCountdownsExclusions",
+        "responses": {
+          "200": {
+            "description": "Countdown exclusions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownExclusionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "Exclude a broadcaster or clip from countdowns",
+        "description": "Leaves one broadcaster (Twitch ID) or one clip out of every future edition, on request, after a DMCA notice or after a takedown. Set exactly one of broadcaster_id and clip_id. Administrator MFA and CSRF protection are required.",
+        "operationId": "postApiV1AdminCountdownsExclusions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CSRFToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountdownExclusionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exclusion created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownExclusionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/countdowns/exclusions/{id}": {
+      "delete": {
+        "tags": [
+          "Admin",
+          "Countdowns"
+        ],
+        "summary": "Remove a countdown exclusion",
+        "description": "Lets the broadcaster or clip into future editions again. Administrator MFA and CSRF protection are required.",
+        "operationId": "deleteApiV1AdminCountdownsExclusionsId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CSRFToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exclusion removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -29059,6 +29506,435 @@
           "title_template": {
             "type": "string",
             "maxLength": 200
+          }
+        }
+      },
+      "CountdownSeries": {
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "size",
+          "window_hours",
+          "per_broadcaster_cap",
+          "selection_hour_utc",
+          "priority",
+          "enabled",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "game_id": {
+            "type": "string",
+            "description": "Twitch category ID; absent for every category"
+          },
+          "language": {
+            "type": "string",
+            "description": "Clip language; absent for every language"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Number of clips in an edition"
+          },
+          "window_hours": {
+            "type": "integer",
+            "description": "Hours before the selection hour from which clips are eligible"
+          },
+          "per_broadcaster_cap": {
+            "type": "integer"
+          },
+          "selection_hour_utc": {
+            "type": "integer",
+            "description": "Hour (UTC) when the day's edition is selected and its window ends"
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Lower selects first; a clip goes to at most one edition per day"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CountdownSeriesInput": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "game_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 10
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 50,
+            "description": "0 means the default of 10"
+          },
+          "window_hours": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 168,
+            "description": "0 means the default of 24"
+          },
+          "per_broadcaster_cap": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "0 means the default of 1"
+          },
+          "selection_hour_utc": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CountdownEditionClip": {
+        "type": "object",
+        "required": [
+          "position",
+          "clip_id",
+          "view_velocity",
+          "title",
+          "broadcaster_name",
+          "twitch_clip_url"
+        ],
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "1 is the top clip"
+          },
+          "clip_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "view_velocity": {
+            "type": "number",
+            "description": "View velocity when the edition was selected"
+          },
+          "title": {
+            "type": "string"
+          },
+          "broadcaster_name": {
+            "type": "string"
+          },
+          "broadcaster_id": {
+            "type": "string"
+          },
+          "twitch_clip_url": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "number"
+          }
+        }
+      },
+      "CountdownEdition": {
+        "type": "object",
+        "required": [
+          "id",
+          "series_id",
+          "series_slug",
+          "edition_date",
+          "status",
+          "window_start",
+          "window_end",
+          "created_at",
+          "updated_at",
+          "clips"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series_slug": {
+            "type": "string"
+          },
+          "edition_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "selected",
+              "fetching",
+              "rendering",
+              "rendered",
+              "published",
+              "failed"
+            ]
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "failure_reason": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountdownEditionClip"
+            }
+          }
+        }
+      },
+      "CountdownExclusion": {
+        "type": "object",
+        "required": [
+          "id",
+          "reason",
+          "source",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "broadcaster_id": {
+            "type": "string"
+          },
+          "clip_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "request",
+              "dmca",
+              "takedown"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "self_service"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CountdownExclusionInput": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "broadcaster_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "Twitch broadcaster ID"
+          },
+          "clip_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "request",
+              "dmca",
+              "takedown"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          }
+        }
+      },
+      "CountdownSeriesListResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountdownSeries"
+            }
+          }
+        }
+      },
+      "CountdownSeriesResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/CountdownSeries"
+          }
+        }
+      },
+      "CountdownEditionListResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountdownEdition"
+            }
+          }
+        }
+      },
+      "CountdownEditionResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/CountdownEdition"
+          }
+        }
+      },
+      "CountdownExclusionListResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountdownExclusion"
+            }
+          }
+        }
+      },
+      "CountdownExclusionResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/CountdownExclusion"
           }
         }
       },

@@ -17,6 +17,7 @@ const (
 	playlistScriptSchedulerName = "playlist_script"
 	playlistScriptJobGenerate   = "playlist_script_generate"
 	playlistScriptJobCleanup    = "playlist_script_cleanup"
+	countdownJobSelect          = "countdown_edition_select"
 )
 
 // PlaylistScriptServiceInterface defines the methods the scheduler needs from the service.
@@ -27,14 +28,20 @@ type PlaylistScriptServiceInterface interface {
 	DeleteStaleGeneratedPlaylists(ctx context.Context) (int64, error)
 }
 
+// CountdownEditionGenerator selects the daily countdown editions (#76).
+type CountdownEditionGenerator interface {
+	GenerateDueEditions(ctx context.Context) (selected, failed int, err error)
+}
+
 type playlistGenerationLocker interface {
 	TryGenerationLock(context.Context) (release func(), locked bool, err error)
 }
 
 // PlaylistScriptScheduler manages periodic automated playlist generation.
 type PlaylistScriptScheduler struct {
-	service  PlaylistScriptServiceInterface
-	interval time.Duration
+	service    PlaylistScriptServiceInterface
+	countdowns CountdownEditionGenerator
+	interval   time.Duration
 	stopChan chan struct{}
 	stopOnce sync.Once
 }
@@ -49,6 +56,12 @@ func NewPlaylistScriptScheduler(service PlaylistScriptServiceInterface, interval
 		interval: time.Duration(intervalMinutes) * time.Minute,
 		stopChan: make(chan struct{}),
 	}
+}
+
+// SetCountdowns makes each cycle also select the countdown editions that are
+// due, under the same generation lock as playlist scripts.
+func (s *PlaylistScriptScheduler) SetCountdowns(countdowns CountdownEditionGenerator) {
+	s.countdowns = countdowns
 }
 
 // Start begins the periodic playlist script execution loop.
@@ -107,6 +120,8 @@ func (s *PlaylistScriptScheduler) runDueScripts(ctx context.Context) {
 		}
 		defer release()
 	}
+
+	s.runCountdowns(ctx)
 
 	scripts, err := s.service.ListDueForExecution(ctx)
 	if err != nil {
@@ -194,6 +209,32 @@ func (s *PlaylistScriptScheduler) runDueScripts(ctx context.Context) {
 		"failed":    failCount,
 		"duration":  duration.String(),
 	})
+}
+
+// runCountdowns selects the countdown editions that are due.
+func (s *PlaylistScriptScheduler) runCountdowns(ctx context.Context) {
+	if s.countdowns == nil {
+		return
+	}
+	startTime := time.Now()
+	selected, failed, err := s.countdowns.GenerateDueEditions(ctx)
+	metrics.JobExecutionDuration.WithLabelValues(countdownJobSelect).Observe(time.Since(startTime).Seconds())
+	if err != nil {
+		metrics.JobExecutionTotal.WithLabelValues(countdownJobSelect, "failed").Inc()
+		utils.Error("Countdown edition selection failed", err, map[string]interface{}{
+			"scheduler": playlistScriptSchedulerName,
+			"job":       countdownJobSelect,
+			"selected":  selected,
+			"failed":    failed,
+		})
+		return
+	}
+	if failed > 0 {
+		metrics.JobExecutionTotal.WithLabelValues(countdownJobSelect, "partial").Inc()
+		return
+	}
+	metrics.JobExecutionTotal.WithLabelValues(countdownJobSelect, "success").Inc()
+	metrics.JobLastSuccessTimestamp.WithLabelValues(countdownJobSelect).Set(float64(time.Now().Unix()))
 }
 
 // cleanupStale removes generated playlists past their retention period.

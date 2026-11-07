@@ -120,6 +120,7 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 
 	// Start playlist script scheduler (checks every 5 minutes for due scripts)
 	sg.PlaylistScript = scheduler.NewPlaylistScriptScheduler(svcs.PlaylistScript, 5)
+	sg.PlaylistScript.SetCountdowns(svcs.Countdown)
 	sg.launch(ctx, time.Duration(cfg.Jobs.PlaylistStartDelaySeconds)*time.Second, sg.PlaylistScript.Start)
 
 	// Start auto-tag scheduler (runs every 30 seconds to tag newly synced clips)
