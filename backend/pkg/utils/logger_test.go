@@ -204,3 +204,20 @@ func TestRedactPIIFromFieldsRendersErrorMessages(t *testing.T) {
 		t.Fatalf("error field = %#v, want %q", got["error"], want)
 	}
 }
+
+func TestRedactPIIFromFieldsKeepsNumericIdentifiers(t *testing.T) {
+	got := RedactPIIFromFields(map[string]interface{}{
+		"game_id":     "2067181260",
+		"description": "call 2067181260",
+		"user_id":     "4111111111111111",
+	})
+	if got["game_id"] != "2067181260" {
+		t.Fatalf("game_id = %#v, want the Twitch ID", got["game_id"])
+	}
+	if got["description"] == "call 2067181260" {
+		t.Fatalf("free text phone number was not redacted")
+	}
+	if got["user_id"] == "4111111111111111" {
+		t.Fatalf("card-length number in an ID field was not redacted")
+	}
+}

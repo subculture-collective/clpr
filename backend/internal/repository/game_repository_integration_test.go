@@ -74,3 +74,33 @@ func TestCreatingGameWithDuplicateNameKeepsBothCategories(t *testing.T) {
 		}
 	}
 }
+
+func TestCreatingKnownGameWithoutArtKeepsStoredArt(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "games")
+	ctx := context.Background()
+	gameRepo := NewGameRepository(pool)
+	now := time.Now()
+	art := "https://static-cdn.jtvnw.net/ttv-boxart/11557-{width}x{height}.jpg"
+	igdb := "1029"
+	if err := gameRepo.Create(ctx, &models.GameEntity{
+		ID: uuid.New(), TwitchGameID: "11557", Name: "The Legend of Zelda: Ocarina of Time",
+		BoxArtURL: &art, IGDBID: &igdb, CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("create game with art: %v", err)
+	}
+	if err := gameRepo.Create(ctx, &models.GameEntity{
+		ID: uuid.New(), TwitchGameID: "11557", Name: "The Legend of Zelda: Ocarina of Time",
+		CreatedAt: now, UpdatedAt: now,
+	}); err != nil {
+		t.Fatalf("upsert game without art: %v", err)
+	}
+	game, err := gameRepo.GetByTwitchGameID(ctx, "11557")
+	if err != nil {
+		t.Fatalf("get game: %v", err)
+	}
+	if game.BoxArtURL == nil || *game.BoxArtURL != art || game.IGDBID == nil || *game.IGDBID != igdb {
+		t.Fatalf("box art %v / igdb %v were not preserved", game.BoxArtURL, game.IGDBID)
+	}
+}

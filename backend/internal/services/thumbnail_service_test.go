@@ -423,6 +423,14 @@ func TestShouldApplySuggestedTitle_RejectsInsufficientOrUncertainSuggestion(t *t
 	}))
 }
 
+func TestShouldApplySuggestedTitle_RejectsSourceTitleBasisForWeakTitle(t *testing.T) {
+	assert.False(t, ShouldApplySuggestedTitle(&models.Clip{Title: "cba"}, &ClipThumbnailEnrichment{
+		SuggestedTitle: "Gonzoop - Just Resubscribed!",
+		Confidence:     0.95,
+		Basis:          "source_title",
+	}))
+}
+
 func TestShouldApplySuggestedTitle_NeverChangesUserSubmittedClip(t *testing.T) {
 	userID := uuid.New()
 	clip := &models.Clip{Title: "lol", SubmittedByUserID: &userID}
