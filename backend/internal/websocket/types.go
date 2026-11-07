@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"golang.org/x/time/rate"
 )
 
 // ClientMessage represents a message from client to server
@@ -35,13 +34,11 @@ type ServerMessage struct {
 
 // ChatClient represents a connected WebSocket client
 type ChatClient struct {
-	Hub       *ChannelHub
-	Conn      *websocket.Conn
-	UserID    uuid.UUID
-	Username  string
-	Send      chan []byte
-	RateLimit *rate.Limiter
-	ReadOnly  bool
+	Hub      *ChannelHub
+	Conn     *websocket.Conn
+	UserID   uuid.UUID
+	Username string
+	Send     chan []byte
 
 	// sendMu guards sendClosed so that writers (hub broadcasts, history
 	// goroutines, error replies) never send on a channel that the hub has

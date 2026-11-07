@@ -983,24 +983,6 @@ WHERE random() < 0.5
 ON CONFLICT (user_id) DO NOTHING;
 
 -- ============================================================
--- 38. USER CLIP INTERACTIONS (for recommendations)
--- ============================================================
-
-INSERT INTO user_clip_interactions (id, user_id, clip_id, interaction_type, dwell_time, timestamp)
-SELECT
-    gen_random_uuid(),
-    u.id,
-    c.id,
-    v.itype,
-    CASE WHEN v.itype = 'dwell' THEN (random() * 60)::int + 5 ELSE NULL END,
-    NOW() - (random() * 30 || ' days')::interval
-FROM (SELECT id FROM users ORDER BY random() LIMIT 30) u
-CROSS JOIN LATERAL (SELECT id FROM clips ORDER BY random() LIMIT 5) c
-CROSS JOIN (VALUES ('view'), ('like'), ('dwell')) AS v(itype)
-WHERE random() < 0.4
-ON CONFLICT (user_id, clip_id, interaction_type) DO NOTHING;
-
--- ============================================================
 -- 39. STREAM SESSIONS
 -- ============================================================
 
@@ -1075,9 +1057,6 @@ DECLARE
     comm_count int;
     pl_count int;
     st_count int;
-    wp_count int;
-    ft_count int;
-    ch_count int;
 BEGIN
     SELECT count(*) INTO u_count FROM users;
     SELECT count(*) INTO c_count FROM clips;
@@ -1088,9 +1067,6 @@ BEGIN
     SELECT count(*) INTO comm_count FROM communities;
     SELECT count(*) INTO pl_count FROM playlists;
     SELECT count(*) INTO st_count FROM streams;
-    SELECT count(*) INTO wp_count FROM watch_parties;
-    SELECT count(*) INTO ft_count FROM forum_threads;
-    SELECT count(*) INTO ch_count FROM chat_channels;
 
     RAISE NOTICE '';
     RAISE NOTICE '=== SEED COMPLETE ===';
@@ -1103,8 +1079,5 @@ BEGIN
     RAISE NOTICE 'Communities:  %', comm_count;
     RAISE NOTICE 'Playlists:    %', pl_count;
     RAISE NOTICE 'Streams:      %', st_count;
-    RAISE NOTICE 'Watch Parties:%', wp_count;
-    RAISE NOTICE 'Forum Threads:%', ft_count;
-    RAISE NOTICE 'Chat Channels:%', ch_count;
     RAISE NOTICE '=====================';
 END $$;

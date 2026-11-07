@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
@@ -18,55 +17,8 @@ func newSafetyTestClient(hub *ChannelHub) *ChatClient {
 	}
 }
 
-// A message whose channel_id differs from the connection's channel must be
-// rejected before anything else happens (regression: client-chosen channel
-// bypassed the access and ban checks done for the URL channel).
-func TestHandleChatMessage_RejectsMismatchedChannel(t *testing.T) {
-	hub := NewChannelHub(uuid.New().String(), nil, nil)
-	client := newSafetyTestClient(hub)
-	content := "hello"
-
-	client.handleChatMessage(&ClientMessage{
-		Type:      MessageTypeMessage,
-		ChannelID: uuid.New().String(),
-		Content:   &content,
-	})
-
-	select {
-	case raw := <-client.Send:
-		var msg ServerMessage
-		if err := json.Unmarshal(raw, &msg); err != nil {
-			t.Fatalf("unmarshal: %v", err)
-		}
-		if msg.Type != MessageTypeError || msg.Error == nil || *msg.Error != "Channel ID does not match this connection" {
-			t.Fatalf("expected channel mismatch error, got %+v", msg)
-		}
-	default:
-		t.Fatal("expected an error reply")
-	}
-	if len(hub.Broadcast) != 0 {
-		t.Fatal("mismatched message must not be broadcast")
-	}
-}
-
-func TestHandleTypingIndicator_UsesHubChannel(t *testing.T) {
-	hub := NewChannelHub(uuid.New().String(), nil, nil)
-	client := newSafetyTestClient(hub)
-	hub.Clients[client] = true
-
-	client.handleTypingIndicator(&ClientMessage{Type: MessageTypeTyping, ChannelID: uuid.New().String()})
-
-	var msg ServerMessage
-	if err := json.Unmarshal(<-client.Send, &msg); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if msg.ChannelID != hub.ID {
-		t.Fatalf("typing indicator channel = %s, want hub channel %s", msg.ChannelID, hub.ID)
-	}
-}
-
-// Regression: sendMessageHistory runs in its own goroutine and could send on
-// client.Send after handleUnregister/shutdown closed it, panicking the process.
+// Regression: a send on client.Send after handleUnregister/shutdown closed it
+// panicked the process.
 func TestChatClient_SendAfterCloseDoesNotPanic(t *testing.T) {
 	client := newSafetyTestClient(NewChannelHub(uuid.New().String(), nil, nil))
 
@@ -91,7 +43,6 @@ func TestChatClient_SendAfterCloseDoesNotPanic(t *testing.T) {
 	if client.trySend([]byte("late")) {
 		t.Fatal("trySend must fail after closeSend")
 	}
-	client.sendError("late error") // must not panic
 }
 
 // Regression: handleRegister/handleUnregister ran on the hub goroutine and

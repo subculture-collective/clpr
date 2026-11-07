@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -76,36 +75,6 @@ func (s *Server) GetOrCreateHub(channelID string) *ChannelHub {
 	}
 
 	return hub
-}
-
-// HandleWebSocket handles WebSocket connection requests
-func (s *Server) HandleWebSocket(w http.ResponseWriter, r *http.Request, userID uuid.UUID, username, channelID string) error {
-	// Upgrade HTTP connection to WebSocket
-	conn, err := s.Upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("Failed to upgrade connection: %v", err)
-		return err
-	}
-
-	// Get or create hub for the channel
-	hub := s.GetOrCreateHub(channelID)
-
-	// Create client
-	client := NewChatClient(hub, conn, userID, username)
-
-	// Register client with hub; a hub that is shutting down never reads again.
-	select {
-	case hub.Register <- client:
-	case <-hub.Stop:
-		conn.Close()
-		return nil
-	}
-
-	// Start read and write pumps
-	go client.WritePump()
-	go client.ReadPump()
-
-	return nil
 }
 
 // Shutdown gracefully shuts down all hubs
