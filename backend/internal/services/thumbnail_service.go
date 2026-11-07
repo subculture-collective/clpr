@@ -390,7 +390,13 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 		return nil, fmt.Errorf("marshalling clip metadata: %w", err)
 	}
 
-	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. confidence and basis describe the suggested title only. Evaluate tags independently: an insufficient title does not require empty tags when the thumbnail directly supports a visible tag. For tags, source-title wording alone is never sufficient evidence. Prefer the most specific supported tag and do not add broad synonyms for the same evidence. Return exactly one JSON object matching this schema: {"suggested_title":"string","confidence":0.0,"basis":"source_title|transcript|visible|metadata|insufficient","evidence":["short string"],"tags":["allowed-slug"]}. confidence must be a JSON number from 0 to 1; evidence and tags must be JSON arrays of strings. Evidence must briefly support every returned tag. Use empty tags only when no catalog tag is supported.`
+	// Offer transcript as a basis only when one is supplied; otherwise the
+	// model cites it for evidence it never saw.
+	basisChoices := "source_title|visible|metadata|insufficient"
+	if transcript != "" {
+		basisChoices = "source_title|transcript|visible|metadata|insufficient"
+	}
+	systemPrompt := `You enrich Twitch clip metadata using only the supplied Twitch metadata, authorized transcript when present, and thumbnail. Do not invent dialogue, identities, events, causes, or outcomes. A transcript is evidence of spoken words but not proof that an event occurred; a thumbnail is weak visual evidence. Prefer a cleaned version of the source title when it is informative. confidence and basis describe the suggested title only. Evaluate tags independently: an insufficient title does not require empty tags when the thumbnail directly supports a visible tag. For tags, source-title wording alone is never sufficient evidence. Prefer the most specific supported tag and do not add broad synonyms for the same evidence. Return exactly one JSON object matching this schema: {"suggested_title":"string","confidence":0.0,"basis":"` + basisChoices + `","evidence":["short string"],"tags":["allowed-slug"]}. basis is one of those values, not several. confidence must be a JSON number from 0 to 1; evidence and tags must be JSON arrays of strings. Evidence must briefly support every returned tag. Use empty tags only when no catalog tag is supported.`
 	transcriptContext := "No authorized transcript is available."
 	if transcript != "" {
 		runes := []rune(transcript)
@@ -414,7 +420,7 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 			}},
 		},
 		"response_format": map[string]string{"type": "json_object"},
-		"max_tokens":      300,
+		"max_tokens":      500,
 		"temperature":     0.0,
 	}
 
@@ -427,7 +433,12 @@ func (ts *ThumbnailService) analyzeClip(ctx context.Context, clip *models.Clip, 
 		return nil, err
 	}
 	if result.Basis == "transcript" && transcript == "" {
-		return nil, fmt.Errorf("vision API returned transcript basis without a transcript")
+		// The title claim cites evidence the model never saw. Mark it
+		// unsupported so the title gate rejects it, but keep the independently
+		// validated tags: discarding the whole result fails identically on
+		// every retry at temperature 0.
+		result.Confidence = 0
+		result.Basis = "insufficient"
 	}
 	return result, nil
 }
@@ -568,7 +579,13 @@ func (ts *ThumbnailService) parseClipEnrichmentResponse(body []byte) (*ClipThumb
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
 		return nil, fmt.Errorf("parsing clip enrichment content: %w (content: %s)", err, content)
 	}
-	result.Basis = strings.ToLower(strings.TrimSpace(result.Basis))
+	result.Basis = strings.ReplaceAll(strings.ToLower(strings.TrimSpace(result.Basis)), "-", "_")
+	if strings.Contains(result.Basis, "|") {
+		// The model copied the list of allowed values instead of choosing one,
+		// so the title claim has no stated basis.
+		result.Basis = "insufficient"
+		result.Confidence = 0
+	}
 	validBasis := result.Basis == "source_title" || result.Basis == "transcript" ||
 		result.Basis == "visible" || result.Basis == "metadata" || result.Basis == "insufficient"
 	if !validBasis {

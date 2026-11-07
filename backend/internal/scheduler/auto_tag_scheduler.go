@@ -315,6 +315,7 @@ func (s *AutoTagScheduler) processVisionClips(ctx context.Context) {
 		if analyzeErr != nil {
 			utils.Warn("Twitch thumbnail enrichment failed", map[string]interface{}{
 				"clip_id": clip.ID.String(),
+				"error":   analyzeErr.Error(),
 			})
 			// A provider-wide payment, configuration, rate-limit, or outage
 			// pause must not be expanded into one failed attempt per queued clip.

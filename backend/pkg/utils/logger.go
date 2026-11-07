@@ -457,6 +457,9 @@ func redactLogValue(value interface{}) interface{} {
 	switch typed := value.(type) {
 	case string:
 		return RedactPII(typed)
+	case error:
+		// encoding/json renders most error values as {}, so log the message.
+		return RedactPII(typed.Error())
 	case map[string]interface{}:
 		return RedactPIIFromFields(typed)
 	case []interface{}:

@@ -292,7 +292,7 @@ func TestAnalyzeClipThumbnail_UsesTwitchThumbnailAndMetadata(t *testing.T) {
 	assert.Equal(t, []string{"funny"}, result.Tags)
 }
 
-func TestAnalyzeClipThumbnail_RejectsUnsupportedEvidenceBasis(t *testing.T) {
+func TestAnalyzeClipThumbnail_DowngradesTranscriptBasisWithoutTranscript(t *testing.T) {
 	thumbnailURL := testThumbnailDataURL
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := map[string]interface{}{
@@ -311,12 +311,46 @@ func TestAnalyzeClipThumbnail_RejectsUnsupportedEvidenceBasis(t *testing.T) {
 	defer server.Close()
 
 	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "gpt-4o-mini", true)
-	_, err := svc.AnalyzeClipThumbnail(context.Background(), &models.Clip{
-		Title: "clip", ThumbnailURL: &thumbnailURL,
-	})
+	clip := &models.Clip{Title: "clip", ThumbnailURL: &thumbnailURL}
+	result, err := svc.AnalyzeClipThumbnail(context.Background(), clip)
 
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "basis")
+	require.NoError(t, err)
+	assert.Equal(t, "insufficient", result.Basis)
+	assert.Zero(t, result.Confidence)
+	assert.False(t, ShouldApplySuggestedTitle(clip, result))
+}
+
+func TestAnalyzeClipThumbnail_TreatsCopiedBasisListAsInsufficient(t *testing.T) {
+	thumbnailURL := testThumbnailDataURL
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		encoded, err := json.Marshal(body)
+		require.NoError(t, err)
+		assert.Contains(t, string(encoded), `\"basis\":\"source_title|visible|metadata|insufficient\"`)
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{"message": map[string]string{"content": `{
+					"suggested_title":"Player Clutches A Round",
+					"confidence":0.95,
+					"basis":"source_title|transcript|visible",
+					"evidence":["A scoreboard is visible."],
+					"tags":["highlights"]
+				}`}},
+			},
+		}))
+	}))
+	defer server.Close()
+
+	svc := newTestThumbnailService("ffmpeg", t.TempDir(), "test-api-key", server.URL, "gpt-4o-mini", true)
+	clip := &models.Clip{Title: "clip", ThumbnailURL: &thumbnailURL}
+	result, err := svc.AnalyzeClipThumbnail(context.Background(), clip)
+
+	require.NoError(t, err)
+	assert.Equal(t, "insufficient", result.Basis)
+	assert.Zero(t, result.Confidence)
+	assert.Equal(t, []string{"highlights"}, result.Tags)
+	assert.False(t, ShouldApplySuggestedTitle(clip, result))
 }
 
 func TestAnalyzeClipWithTranscriptUsesSpokenWordsAsTitleEvidence(t *testing.T) {
