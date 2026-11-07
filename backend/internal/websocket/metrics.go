@@ -23,23 +23,6 @@ var (
 		[]string{"channel_id"},
 	)
 
-	wsMessagesTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "websocket_messages_total",
-			Help: "Total number of WebSocket messages",
-		},
-		[]string{"channel_id", "type"},
-	)
-
-	wsMessageLatency = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "websocket_message_latency_seconds",
-			Help:    "Message delivery latency in seconds",
-			Buckets: []float64{.001, .005, .01, .025, .05, .1, .25, .5, 1},
-		},
-		[]string{"channel_id"},
-	)
-
 	wsErrorsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "websocket_errors_total",
@@ -53,14 +36,6 @@ var (
 			Name: "websocket_channels_active",
 			Help: "Number of active chat channels",
 		},
-	)
-
-	wsRateLimitHits = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "websocket_rate_limit_hits_total",
-			Help: "Total number of rate limit hits",
-		},
-		[]string{"channel_id"},
 	)
 
 	wsBroadcastDuration = promauto.NewHistogramVec(
@@ -84,16 +59,6 @@ func RecordDisconnection(channelID string) {
 	wsConnectionsCurrent.WithLabelValues(channelID).Dec()
 }
 
-// RecordMessage increments message metrics
-func RecordMessage(channelID, msgType string) {
-	wsMessagesTotal.WithLabelValues(channelID, msgType).Inc()
-}
-
-// RecordMessageLatency records message delivery latency
-func RecordMessageLatency(channelID string, latency float64) {
-	wsMessageLatency.WithLabelValues(channelID).Observe(latency)
-}
-
 // RecordError increments error metrics
 func RecordError(channelID, errorType string) {
 	wsErrorsTotal.WithLabelValues(channelID, errorType).Inc()
@@ -102,11 +67,6 @@ func RecordError(channelID, errorType string) {
 // SetActiveChannels updates the active channels metric
 func SetActiveChannels(count int) {
 	wsChannelsActive.Set(float64(count))
-}
-
-// RecordRateLimitHit increments rate limit hit metrics
-func RecordRateLimitHit(channelID string) {
-	wsRateLimitHits.WithLabelValues(channelID).Inc()
 }
 
 // RecordBroadcastDuration records broadcast operation duration

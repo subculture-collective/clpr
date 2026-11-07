@@ -240,41 +240,46 @@ func TestMigrationRollback000011(t *testing.T) {
 	})
 }
 
-// TestMigrationRollback000069 tests rolling back forum moderation
-func TestMigrationRollback000069(t *testing.T) {
+// TestMigrationRollback000148 checks the retired-feature drop: the tables are
+// gone at 000148, rolling back recreates them with their triggers, and the
+// drop applies again cleanly.
+func TestMigrationRollback000148(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping rollback test in short mode")
 	}
 
 	mh := setupMigrationTest(t)
 	ctx := context.Background()
+	if version := getCurrentMigrationVersion(t); version != 148 {
+		t.Skipf("Rollback drill for 000148 needs the database at 148, got %d", version)
+	}
 
-	t.Run("ForumTablesExist", func(t *testing.T) {
-		tables := []string{
-			"forum_threads",
-			"forum_replies",
-			"moderation_actions",
-			"user_bans",
-			"content_flags",
-		}
-
+	dropped := []string{"forum_threads", "forum_replies", "content_flags", "chat_channels", "chat_messages", "watch_parties", "ads", "clip_mirrors"}
+	kept := []string{"user_preferences", "subscriptions", "user_mfa", "outbound_webhook_dead_letter_queue"}
+	assertTables := func(t *testing.T, tables []string, want bool) {
+		t.Helper()
 		for _, table := range tables {
 			exists, err := mh.tableExists(ctx, table)
 			require.NoError(t, err)
-			assert.True(t, exists, fmt.Sprintf("Table %s should exist", table))
+			assert.Equal(t, want, exists, "table %s exists", table)
 		}
-	})
+	}
 
-	t.Run("ForumTriggersExist", func(t *testing.T) {
-		// Verify triggers exist
-		exists, err := mh.triggerExists(ctx, "forum_replies", "trg_update_thread_reply_count")
-		require.NoError(t, err)
-		assert.True(t, exists, "Reply count trigger should exist")
+	assertTables(t, dropped, false)
+	assertTables(t, kept, true)
 
-		exists, err = mh.triggerExists(ctx, "content_flags", "trg_update_thread_flag_count")
-		require.NoError(t, err)
-		assert.True(t, exists, "Flag count trigger should exist")
-	})
+	require.NoError(t, runMigration("down", 1))
+	assertTables(t, dropped, true)
+	exists, err := mh.triggerExists(ctx, "forum_replies", "trg_update_thread_reply_count")
+	require.NoError(t, err)
+	assert.True(t, exists, "reply count trigger should be recreated")
+	exists, err = mh.triggerExists(ctx, "content_flags", "trg_update_thread_flag_count")
+	require.NoError(t, err)
+	assert.True(t, exists, "flag count trigger should be recreated")
+
+	require.NoError(t, runMigration("up", 1))
+	assertTables(t, dropped, false)
+	assertTables(t, kept, true)
 }
 
 // TestMigrationRollback000097 tests rolling back audit logs update

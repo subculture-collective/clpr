@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -121,13 +120,6 @@ func (h *ChannelHub) handleRegister(client *ChatClient) {
 		h.handleBroadcast(data)
 	}
 
-	// Send message history to new client, unless the hub is shutting down
-	select {
-	case <-h.Stop:
-		// Hub is shutting down; skip sending message history
-	default:
-		go h.sendMessageHistory(client)
-	}
 }
 
 // handleUnregister unregisters a client
@@ -202,88 +194,6 @@ func (h *ChannelHub) broadcastToClients(message []byte) {
 		if !client.trySend(message) {
 			// Client's send channel is full or closed, skip
 			log.Printf("Client send buffer full, skipping message for user_id=%s", client.UserID)
-		}
-	}
-}
-
-// sendMessageHistory sends the last 50 messages to a newly connected client
-func (h *ChannelHub) sendMessageHistory(client *ChatClient) {
-	// Skip if DB is not available (e.g., in tests)
-	if h.DB == nil {
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	query := `
-		SELECT cm.id, cm.channel_id, cm.user_id, cm.content, cm.created_at,
-		       u.username, u.display_name, u.avatar_url
-		FROM chat_messages cm
-		JOIN users u ON cm.user_id = u.id
-		WHERE cm.channel_id = $1 AND cm.is_deleted = false
-		ORDER BY cm.created_at DESC
-		LIMIT 50
-	`
-
-	channelUUID, err := uuid.Parse(h.ID)
-	if err != nil {
-		log.Printf("Invalid channel UUID: %v", err)
-		return
-	}
-
-	rows, err := h.DB.Query(ctx, query, channelUUID)
-	if err != nil {
-		log.Printf("Failed to fetch message history: %v", err)
-		return
-	}
-	defer rows.Close()
-
-	var messages []ServerMessage
-	for rows.Next() {
-		var (
-			id          uuid.UUID
-			channelID   uuid.UUID
-			userID      uuid.UUID
-			content     string
-			createdAt   time.Time
-			username    string
-			displayName string
-			avatarURL   *string
-		)
-
-		err := rows.Scan(&id, &channelID, &userID, &content, &createdAt,
-			&username, &displayName, &avatarURL)
-		if err != nil {
-			log.Printf("Failed to scan message: %v", err)
-			continue
-		}
-
-		idStr := id.String()
-		userIDStr := userID.String()
-		msg := ServerMessage{
-			Type:        MessageTypeMessage,
-			ChannelID:   channelID.String(),
-			UserID:      &userIDStr,
-			Username:    &username,
-			DisplayName: &displayName,
-			AvatarURL:   avatarURL,
-			Content:     &content,
-			MessageID:   &idStr,
-			Timestamp:   &createdAt,
-		}
-		messages = append(messages, msg)
-	}
-
-	// Reverse messages to send oldest first
-	for i := len(messages) - 1; i >= 0; i-- {
-		data, err := json.Marshal(messages[i])
-		if err != nil {
-			continue
-		}
-		if !client.trySend(data) {
-			// Client disconnected or buffer full
-			return
 		}
 	}
 }

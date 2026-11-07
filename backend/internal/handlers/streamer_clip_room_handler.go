@@ -337,7 +337,6 @@ func (h *StreamerClipRoomHandler) WebSocket(c *gin.Context) {
 	}
 
 	client := ws.NewChatClient(hub, conn, userID, username)
-	client.ReadOnly = true
 	hub.Register <- client
 	go client.WritePump()
 	go client.ReadPump()
