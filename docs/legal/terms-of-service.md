@@ -248,9 +248,11 @@ The Service integrates with Twitch and displays content from Twitch. Your use of
 
 - **Content Ownership:** All Twitch clips, streams, and other content displayed on Clipper remain the property of their respective creators and Twitch. Clipper does not claim ownership of any Twitch content.
 
-- **Embed-Only Playback:** All Twitch videos and clips are displayed using official Twitch embed players. We do NOT download, re-host, proxy, or redistribute Twitch video files.
+- **Embed Playback on Clipper:** On Clipper, Twitch clips play through official Twitch embed players. We do not re-host Twitch clips on Clipper or offer downloads of them.
 
-- **Official APIs Only:** We access Twitch data exclusively through official Twitch Helix API endpoints. We do not scrape, parse, or use unofficial methods to access Twitch data.
+- **Countdown Videos:** We publish compilation videos, such as daily countdowns and Shorts, on other platforms including YouTube. To make them, we download selected public Twitch clips, edit them with rankings, captions and commentary, and credit each broadcaster with a link to their channel and the original clip. Downloaded files are deleted after the video is rendered. A broadcaster can ask to be left out of future videos, and to have an existing video edited or removed, by contacting us at [SUPPORT_EMAIL@clpr.com].
+
+- **Twitch APIs:** We get Twitch data through the official Twitch Helix API. To download clips for countdown videos we may also use the playback files Twitch's own player uses.
 
 - **Creator Rights:** Creators retain all rights to their content. If a clip is deleted by its creator or removed from Twitch, it will no longer be available on Clipper.
 
