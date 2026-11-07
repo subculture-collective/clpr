@@ -52,8 +52,9 @@ func (r *GameRepository) upsertGame(ctx context.Context, game *models.GameEntity
 		ON CONFLICT (twitch_game_id) DO UPDATE SET
 			name = EXCLUDED.name,
 			slug = EXCLUDED.slug,
-			box_art_url = EXCLUDED.box_art_url,
-			igdb_id = EXCLUDED.igdb_id,
+			-- The trending catalog only knows ID and name; keep enrichment it lacks.
+			box_art_url = COALESCE(EXCLUDED.box_art_url, games.box_art_url),
+			igdb_id = COALESCE(EXCLUDED.igdb_id, games.igdb_id),
 			updated_at = EXCLUDED.updated_at
 		RETURNING id
 	`

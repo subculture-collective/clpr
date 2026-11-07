@@ -402,6 +402,8 @@ var (
 	emailPattern = regexp.MustCompile(`\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b`)
 	// Credit card pattern (with optional separators)
 	creditCardPattern = regexp.MustCompile(`\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b`)
+	// Numeric IDs such as Twitch game and user IDs; capped below card-number length.
+	numericIdentifierPattern = regexp.MustCompile(`^[0-9]{1,12}$`)
 	// Phone number patterns (various formats)
 	phonePattern = regexp.MustCompile(`\b(\+?1[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}\b`)
 	// SSN pattern
@@ -453,6 +455,14 @@ func sensitiveLogKey(key string) bool {
 	return key == "code" || key == "state"
 }
 
+func numericIdentifierField(key, value string) bool {
+	key = strings.ToLower(strings.TrimSpace(key))
+	if key != "id" && !strings.HasSuffix(key, "_id") {
+		return false
+	}
+	return numericIdentifierPattern.MatchString(value)
+}
+
 func redactLogValue(value interface{}) interface{} {
 	switch typed := value.(type) {
 	case string:
@@ -489,6 +499,12 @@ func RedactPIIFromFields(fields map[string]interface{}) map[string]interface{} {
 	for key, value := range fields {
 		if sensitiveLogKey(key) {
 			redacted[key] = "[REDACTED]"
+			continue
+		}
+		if text, ok := value.(string); ok && numericIdentifierField(key, text) {
+			// Twitch IDs are up to ten digits and otherwise match the phone
+			// pattern, which hid every game and broadcaster ID in the logs.
+			redacted[key] = text
 			continue
 		}
 		redacted[key] = redactLogValue(value)

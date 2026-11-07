@@ -77,8 +77,11 @@ func ShouldApplySuggestedTitle(clip *models.Clip, result *ClipThumbnailEnrichmen
 	if !isWeakSourceTitle(clip.Title) || result.Confidence < 0.90 {
 		return false
 	}
+	// Only weak source titles reach this point, so a suggestion cannot be
+	// grounded in the source title; in production that basis produced
+	// invented titles such as "Gonzoop - Just Resubscribed!" for "cba".
 	basis := strings.ToLower(strings.TrimSpace(result.Basis))
-	if basis != "source_title" && basis != "visible" && basis != "metadata" && basis != "transcript" {
+	if basis != "visible" && basis != "metadata" && basis != "transcript" {
 		return false
 	}
 	candidate := strings.TrimSpace(result.SuggestedTitle)
