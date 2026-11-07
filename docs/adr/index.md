@@ -45,6 +45,7 @@ SORT file.name ASC
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
 | [[001-semantic-search-vector-db\|ADR-001]] | Semantic Search Vector Database Selection | Accepted | 2025-11-03 |
+| [[002-media-handling-for-countdowns\|ADR-002]] | Media handling for countdown videos and Shorts | Accepted on merge | 2026-11-07 |
 
 ## Creating a New ADR
 
