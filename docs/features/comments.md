@@ -561,6 +561,8 @@ curl -X GET "https://clpr.tv/api/v1/clips/123e4567-e89b-12d3-a456-426614174000/c
 }
 ```
 
+`author_karma` is omitted when the author has turned off "Show karma publicly".
+
 ### Example 2: Create a Top-Level Comment
 
 **Request:**

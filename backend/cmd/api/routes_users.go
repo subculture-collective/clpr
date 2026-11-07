@@ -29,21 +29,21 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		users.POST("/claim-account", middleware.AuthMiddleware(svcs.Auth), h.User.ClaimAccount)
 
 		// Public reputation endpoints
-		users.GET("/:id/reputation", h.Reputation.GetUserReputation)
+		users.GET("/:id/reputation", optionalAuth, profilePrivacy, h.Reputation.GetUserReputation)
 		users.GET("/:id/karma", optionalAuth, karmaPrivacy, h.Reputation.GetUserKarma)
-		users.GET("/:id/badges", h.Reputation.GetUserBadges)
+		users.GET("/:id/badges", optionalAuth, profilePrivacy, h.Reputation.GetUserBadges)
 
 		// User activity endpoints
 		users.GET("/:id/comments", optionalAuth, profilePrivacy, h.User.GetUserComments)
-		users.GET("/:id/clips", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserClips)
+		users.GET("/:id/clips", optionalAuth, profilePrivacy, h.User.GetUserClips)
 		users.GET("/:id/activity", optionalAuth, profilePrivacy, h.User.GetUserActivity)
 		users.GET("/:id/upvoted", optionalAuth, profilePrivacy, h.User.GetUserUpvotedClips)
 		users.GET("/:id/downvoted", optionalAuth, profilePrivacy, h.User.GetUserDownvotedClips)
 
 		// User social connections
-		users.GET("/:id/followers", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserFollowers)
-		users.GET("/:id/following", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetUserFollowing)
-		users.GET("/:id/following/broadcasters", middleware.OptionalAuthMiddleware(svcs.Auth), h.User.GetFollowedBroadcasters)
+		users.GET("/:id/followers", optionalAuth, profilePrivacy, h.User.GetUserFollowers)
+		users.GET("/:id/following", optionalAuth, profilePrivacy, h.User.GetUserFollowing)
+		users.GET("/:id/following/broadcasters", optionalAuth, profilePrivacy, h.User.GetFollowedBroadcasters)
 		users.POST("/:id/follow", middleware.AuthMiddleware(svcs.Auth), h.User.FollowUser)
 		users.DELETE("/:id/follow", middleware.AuthMiddleware(svcs.Auth), h.User.UnfollowUser)
 
@@ -75,8 +75,8 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		users.GET("/me/discovery-list-follows", middleware.AuthMiddleware(svcs.Auth), h.DiscoveryList.GetUserFollowedLists)
 
 		// Game follows for a user
-		users.GET("/:id/games/following", h.Game.GetFollowedGames)
-		users.GET("/:id/twitch-categories/following", h.Game.GetFollowedGames)
+		users.GET("/:id/games/following", optionalAuth, profilePrivacy, h.Game.GetFollowedGames)
+		users.GET("/:id/twitch-categories/following", optionalAuth, profilePrivacy, h.Game.GetFollowedGames)
 		// User feeds routes
 		users.GET("/:id/feeds", middleware.OptionalAuthMiddleware(svcs.Auth), h.Feed.ListUserFeeds)
 		users.POST("/:id/feeds", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 10, time.Hour), h.Feed.CreateFeed)

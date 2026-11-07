@@ -23,13 +23,14 @@ func NewCommentRepository(pool *pgxpool.Pool) *CommentRepository {
 	}
 }
 
-// CommentWithAuthor represents a comment with author information
+// CommentWithAuthor represents a comment with author information. AuthorKarma
+// is nil when the author hides karma (show_karma_publicly = false).
 type CommentWithAuthor struct {
 	models.Comment
 	AuthorUsername    string  `json:"author_username" db:"author_username"`
 	AuthorDisplayName string  `json:"author_display_name" db:"author_display_name"`
 	AuthorAvatarURL   *string `json:"author_avatar_url" db:"author_avatar_url"`
-	AuthorKarma       int     `json:"author_karma" db:"author_karma"`
+	AuthorKarma       *int    `json:"author_karma,omitempty" db:"author_karma"`
 	AuthorRole        string  `json:"author_role" db:"author_role"`
 	ReplyCount        int     `json:"reply_count" db:"reply_count"`
 	UserVote          *int16  `json:"user_vote,omitempty" db:"user_vote"`
@@ -96,7 +97,8 @@ func (r *CommentRepository) ListByClipID(ctx context.Context, clipID uuid.UUID, 
 				u.username AS author_username,
 				u.display_name AS author_display_name,
 				u.avatar_url AS author_avatar_url,
-				u.karma_points AS author_karma,
+				CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 				u.role AS author_role,
 				COALESCE(cv.vote_type, NULL) AS user_vote,
 				0 AS depth,
@@ -164,7 +166,8 @@ func (r *CommentRepository) GetReplies(ctx context.Context, parentID uuid.UUID, 
 			u.username AS author_username,
 			u.display_name AS author_display_name,
 			u.avatar_url AS author_avatar_url,
-			u.karma_points AS author_karma,
+			CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 			u.role AS author_role,
 			COALESCE(cv.vote_type, NULL) AS user_vote
 		FROM comments c
@@ -221,7 +224,8 @@ func (r *CommentRepository) GetByID(ctx context.Context, id uuid.UUID, userID *u
 			u.username AS author_username,
 			u.display_name AS author_display_name,
 			u.avatar_url AS author_avatar_url,
-			u.karma_points AS author_karma,
+			CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 			u.role AS author_role,
 			COALESCE(cv.vote_type, NULL) AS user_vote
 		FROM comments c
@@ -461,7 +465,8 @@ func (r *CommentRepository) GetCommentTree(ctx context.Context, parentID uuid.UU
 				u.username AS author_username,
 				u.display_name AS author_display_name,
 				u.avatar_url AS author_avatar_url,
-				u.karma_points AS author_karma,
+				CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 				u.role AS author_role,
 				COALESCE(cv.vote_type, NULL) AS user_vote,
 				0 AS depth,
@@ -481,7 +486,8 @@ func (r *CommentRepository) GetCommentTree(ctx context.Context, parentID uuid.UU
 				u.username AS author_username,
 				u.display_name AS author_display_name,
 				u.avatar_url AS author_avatar_url,
-				u.karma_points AS author_karma,
+				CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 				u.role AS author_role,
 				COALESCE(cv.vote_type, NULL) AS user_vote,
 				ct.depth + 1,
@@ -549,7 +555,8 @@ func (r *CommentRepository) GetTopLevelComments(ctx context.Context, clipID uuid
 			u.username AS author_username,
 			u.display_name AS author_display_name,
 			u.avatar_url AS author_avatar_url,
-			u.karma_points AS author_karma,
+			CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 			u.role AS author_role,
 			COALESCE(cv.vote_type, NULL) AS user_vote
 		FROM comments c
@@ -614,7 +621,8 @@ func (r *CommentRepository) ListByUserID(ctx context.Context, userID uuid.UUID, 
 			u.username AS author_username,
 			u.display_name AS author_display_name,
 			u.avatar_url AS author_avatar_url,
-			u.karma_points AS author_karma,
+			CASE WHEN COALESCE((SELECT us.show_karma_publicly FROM user_settings us WHERE us.user_id = u.id), true)
+					THEN u.karma_points END AS author_karma,
 			u.role AS author_role,
 			NULL AS user_vote
 		FROM comments c

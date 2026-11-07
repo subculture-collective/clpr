@@ -51,6 +51,16 @@ func (h *ReputationHandler) GetUserReputation(c *gin.Context) {
 		return
 	}
 
+	// Karma and the rank derived from it follow show_karma_publicly; the trust
+	// score is private to the owner and staff, as on the profile.
+	if hideProfileKarma(c) {
+		reputation.KarmaPoints = 0
+		reputation.Rank = ""
+	}
+	if !viewerIsOwnerOrStaff(c, userID) {
+		reputation.TrustScore = 0
+	}
+
 	c.JSON(http.StatusOK, reputation)
 }
 
