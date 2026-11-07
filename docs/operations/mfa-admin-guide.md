@@ -38,7 +38,7 @@ This significantly reduces the risk of:
 
 ### Grace Period
 
-When you are promoted to admin or moderator:
+The grace period starts when you are promoted to admin or moderator. An account given a staff role another way, such as directly in the database, starts its grace period on its first admin request.
 - You have **7 days** to set up MFA
 - During this grace period, you can access admin features with a warning
 - After 7 days, admin actions will be **blocked** until MFA is enabled
@@ -263,6 +263,6 @@ If you need assistance with MFA setup:
 
 ### Grace Period
 
-- **Duration**: 7 days from admin/moderator promotion
+- **Duration**: 7 days from admin/moderator promotion, or from the first admin request of a staff account that had no MFA requirement on record
 - **Actions**: Admin actions allowed with warnings
 - **Expiration**: Admin actions blocked until MFA enabled

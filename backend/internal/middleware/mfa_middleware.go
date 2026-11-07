@@ -53,6 +53,26 @@ func RequireMFAForAdminMiddleware(mfaService MFAServiceInterface) gin.HandlerFun
 			return
 		}
 
+		// Staff accounts given their role outside the promotion flow have no
+		// MFA requirement on record, which would leave them unprotected. Mark it
+		// now; that starts the normal grace period, after which admin actions
+		// need an enrolled authenticator.
+		required, _, _, err := mfaService.CheckMFARequired(c.Request.Context(), user.ID)
+		if err == nil && !required {
+			err = mfaService.SetMFARequired(c.Request.Context(), user.ID)
+		}
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": "Failed to check MFA status",
+				},
+			})
+			c.Abort()
+			return
+		}
+
 		// Check if admin action is allowed based on MFA status
 		allowed, message, err := mfaService.IsAdminActionAllowed(c.Request.Context(), user.ID)
 		if err != nil {
