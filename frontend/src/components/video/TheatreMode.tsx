@@ -15,6 +15,8 @@ import { PlaybackControls } from './PlaybackControls';
 export interface TheatreModeProps {
     title: string;
     hlsUrl?: string; // Optional HLS URL for clips that support it
+    captionsUrl?: string;
+    captionsLanguage?: string;
     className?: string;
     fit?: 'width' | 'height';
     // Watch history props
@@ -43,6 +45,8 @@ const AVAILABLE_QUALITIES: VideoQuality[] = [
 export function TheatreMode({
     title,
     hlsUrl,
+    captionsUrl,
+    captionsLanguage,
     className,
     fit = 'width',
     resumePosition = 0,
@@ -363,6 +367,8 @@ export function TheatreMode({
                 onBandwidthUpdate={setBandwidth}
                 onBufferHealthUpdate={setBufferHealth}
                 className='absolute inset-0 w-full h-full object-contain'
+                captionsUrl={captionsUrl}
+                captionsLanguage={captionsLanguage}
             />
 
             {/* Bitrate Indicator */}

@@ -12,6 +12,9 @@ export interface HlsPlayerProps {
   onBandwidthUpdate?: (bandwidth: number) => void;
   onBufferHealthUpdate?: (health: number) => void;
   className?: string;
+  /** WebVTT captions shown as a selectable caption track. */
+  captionsUrl?: string;
+  captionsLanguage?: string;
 }
 
 /**
@@ -27,6 +30,8 @@ export function HlsPlayer({
   onBandwidthUpdate,
   onBufferHealthUpdate,
   className,
+  captionsUrl,
+  captionsLanguage,
 }: HlsPlayerProps) {
   const internalVideoRef = useRef<HTMLVideoElement>(null);
   const videoRef = externalVideoRef || internalVideoRef;
@@ -222,6 +227,15 @@ export function HlsPlayer({
         playsInline
         preload="metadata"
       >
+        {captionsUrl && (
+          <track
+            kind="captions"
+            src={captionsUrl}
+            srcLang={captionsLanguage || 'en'}
+            label="Captions"
+            default
+          />
+        )}
         Your browser does not support the video tag.
       </video>
       {isLoading && (

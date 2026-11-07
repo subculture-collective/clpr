@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -286,6 +288,11 @@ func (h *SubmissionHandler) SubmitUpload(c *gin.Context) {
 		isNSFW = parsed
 	}
 
+	archiveHandoff, editedCues, ok := parseUploadArchiveHandoff(c)
+	if !ok {
+		return
+	}
+
 	file, err := fileHeader.Open()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to open uploaded file"})
@@ -307,7 +314,9 @@ func (h *SubmissionHandler) SubmitUpload(c *gin.Context) {
 	tempPath := tempFile.Name()
 	defer os.Remove(tempPath)
 
-	if copied, err := io.Copy(tempFile, io.LimitReader(file, maxUploadBytes+1)); err != nil {
+	hasher := sha256.New()
+	copied, err := io.Copy(io.MultiWriter(tempFile, hasher), io.LimitReader(file, maxUploadBytes+1))
+	if err != nil {
 		tempFile.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stage uploaded file"})
 		return
@@ -319,6 +328,20 @@ func (h *SubmissionHandler) SubmitUpload(c *gin.Context) {
 	if err := tempFile.Close(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stage uploaded file"})
 		return
+	}
+
+	var archiveProvenance *services.ArchiveProvenanceRecord
+	if archiveHandoff != nil {
+		digest := hex.EncodeToString(hasher.Sum(nil))
+		if copied != archiveHandoff.Media.Bytes || digest != archiveHandoff.Media.SHA256 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   fmt.Sprintf("The selected video does not match the archive handoff: it expects %s (%d bytes). Choose the MP4 downloaded with this handoff.", archiveHandoff.Media.Filename, archiveHandoff.Media.Bytes),
+				"field":   "file",
+				"success": false,
+			})
+			return
+		}
+		archiveProvenance = services.BuildArchiveProvenanceRecord(archiveHandoff, editedCues, time.Now())
 	}
 
 	validationResult, err := h.uploadValidator.Validate(c.Request.Context(), mimeType, fileHeader.Size, tempPath)
@@ -377,6 +400,8 @@ func (h *SubmissionHandler) SubmitUpload(c *gin.Context) {
 		StorageProvider:  storageResult.Provider,
 		StorageBucket:    storageResult.Bucket,
 		StorageKey:       storageResult.Key,
+
+		ArchiveProvenance: archiveProvenance,
 	}, c.ClientIP(), c.GetHeader("User-Agent"))
 	if err != nil {
 		var moderationErr *services.CreatorModerationError
@@ -402,6 +427,45 @@ func (h *SubmissionHandler) SubmitUpload(c *gin.Context) {
 		"message":    "Upload submitted for review",
 		"submission": toSubmissionResponse(submission),
 	})
+}
+
+// parseUploadArchiveHandoff reads the optional archive_handoff and
+// caption_cues form fields. It writes the error response and returns false
+// when either is invalid.
+func parseUploadArchiveHandoff(c *gin.Context) (*services.ArchiveHandoff, []services.ArchiveCaptionCue, bool) {
+	rawHandoff := strings.TrimSpace(c.PostForm("archive_handoff"))
+	rawCues, hasCues := c.GetPostForm("caption_cues")
+	if rawHandoff == "" {
+		if hasCues {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "caption_cues can only be sent with an archive_handoff", "field": "caption_cues", "success": false})
+			return nil, nil, false
+		}
+		return nil, nil, true
+	}
+
+	handoff, err := services.ParseArchiveHandoff([]byte(rawHandoff))
+	if err != nil {
+		writeUploadValidationError(c, err)
+		return nil, nil, false
+	}
+	if !hasCues {
+		return handoff, nil, true
+	}
+	cues, err := services.ParseEditedArchiveCaptionCues([]byte(rawCues), handoff.Passage.DurationMs)
+	if err != nil {
+		writeUploadValidationError(c, err)
+		return nil, nil, false
+	}
+	return handoff, cues, true
+}
+
+func writeUploadValidationError(c *gin.Context, err error) {
+	var valErr *services.ValidationError
+	if errors.As(err, &valErr) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": valErr.Message, "field": valErr.Field, "success": false})
+		return
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid upload", "success": false})
 }
 
 // GetUserSubmissions lists submissions for the authenticated user

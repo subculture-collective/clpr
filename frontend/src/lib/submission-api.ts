@@ -8,6 +8,7 @@ import type {
   ModerationQueueResponse,
 } from '../types/submission';
 import type { Clip } from '../types/clip';
+import type { ArchiveCaptionCue } from './archive-handoff';
 
 /**
  * Response from checking clip status
@@ -39,6 +40,10 @@ export interface SubmitClipUploadRequest {
   custom_title?: string;
   is_nsfw: boolean;
   submission_reason?: string;
+  /** The imported archive handoff document, sent unchanged. */
+  archive_handoff?: string;
+  /** The submitter's caption cues; only sent with archive_handoff. */
+  caption_cues?: ArchiveCaptionCue[];
 }
 
 /**
@@ -66,6 +71,12 @@ export async function submitClipUpload(
   formData.append('custom_title', request.custom_title?.trim() || '');
   formData.append('is_nsfw', String(request.is_nsfw));
   formData.append('submission_reason', request.submission_reason?.trim() || '');
+  if (request.archive_handoff) {
+    formData.append('archive_handoff', request.archive_handoff);
+    if (request.caption_cues) {
+      formData.append('caption_cues', JSON.stringify(request.caption_cues));
+    }
+  }
 
   const response = await apiClient.post<SubmissionResponse>(
     '/submissions/upload',

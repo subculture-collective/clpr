@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { SubmitClipRequest } from '../types/submission';
 import type { Tag } from '../types/tag';
+import type { ArchiveImportDraft } from '../lib/archive-handoff';
 
 const DRAFT_STORAGE_KEY = 'submission_draft';
 // Allow configuration via environment variable for testing
@@ -15,7 +16,20 @@ const DRAFT_AUTOSAVE_INTERVAL = getAutoSaveInterval();
 export interface SubmissionDraft {
     formData: SubmitClipRequest;
     selectedTags: Tag[];
+    /** An imported archive handoff and the submitter's caption edits. */
+    archiveImport?: ArchiveImportDraft | null;
     lastSaved: number;
+}
+
+function isArchiveImportDraft(value: unknown): value is ArchiveImportDraft {
+    if (!value || typeof value !== 'object') return false;
+    const draft = value as Partial<ArchiveImportDraft>;
+    return (
+        typeof draft.raw === 'string' &&
+        !!draft.handoff &&
+        typeof draft.handoff === 'object' &&
+        Array.isArray(draft.cues)
+    );
 }
 
 export function useSubmissionDraft() {
@@ -29,6 +43,8 @@ export function useSubmissionDraft() {
             const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
             if (stored) {
                 const draft: SubmissionDraft = JSON.parse(stored);
+                // The server re-validates an import; drop one the browser cannot read.
+                draft.archiveImport = isArchiveImportDraft(draft.archiveImport) ? draft.archiveImport : null;
                 setHasDraft(true);
                 setLastSaved(draft.lastSaved);
                 return draft;
@@ -40,11 +56,12 @@ export function useSubmissionDraft() {
     }, []);
 
     // Save draft to localStorage
-    const saveDraft = useCallback((formData: SubmitClipRequest, selectedTags: Tag[]) => {
+    const saveDraft = useCallback((formData: SubmitClipRequest, selectedTags: Tag[], archiveImport: ArchiveImportDraft | null = null) => {
         try {
             const draft: SubmissionDraft = {
                 formData,
                 selectedTags,
+                archiveImport,
                 lastSaved: Date.now(),
             };
             localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
@@ -67,8 +84,9 @@ export function useSubmissionDraft() {
     }, []);
 
     // Check if form has meaningful content to save
-    const hasContent = useCallback((formData: SubmitClipRequest, selectedTags: Tag[]): boolean => {
+    const hasContent = useCallback((formData: SubmitClipRequest, selectedTags: Tag[], archiveImport: ArchiveImportDraft | null = null): boolean => {
         return Boolean(
+            archiveImport ||
             formData.clip_url ||
             formData.custom_title ||
             formData.submission_reason ||
@@ -78,16 +96,16 @@ export function useSubmissionDraft() {
     }, []);
 
     // Setup auto-save
-    const startAutoSave = useCallback((formData: SubmitClipRequest, selectedTags: Tag[]) => {
+    const startAutoSave = useCallback((formData: SubmitClipRequest, selectedTags: Tag[], archiveImport: ArchiveImportDraft | null = null) => {
         // Clear existing timer
         if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
         }
 
         // Only auto-save if there's content
-        if (hasContent(formData, selectedTags)) {
+        if (hasContent(formData, selectedTags, archiveImport)) {
             autoSaveTimerRef.current = setTimeout(() => {
-                saveDraft(formData, selectedTags);
+                saveDraft(formData, selectedTags, archiveImport);
             }, DRAFT_AUTOSAVE_INTERVAL) as unknown as number;
         }
     }, [hasContent, saveDraft]);

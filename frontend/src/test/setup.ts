@@ -217,3 +217,28 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
         fillRect: () => {},
     }),
 });
+
+// jsdom's Blob lacks arrayBuffer() and text(), which browsers provide.
+// Read through FileReader, which jsdom implements.
+function readBlob(blob: Blob, as: 'arrayBuffer' | 'text'): Promise<ArrayBuffer | string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer | string);
+        reader.onerror = () => reject(reader.error);
+        if (as === 'text') {
+            reader.readAsText(blob);
+        } else {
+            reader.readAsArrayBuffer(blob);
+        }
+    });
+}
+if (typeof Blob.prototype.arrayBuffer !== 'function') {
+    Blob.prototype.arrayBuffer = function arrayBuffer() {
+        return readBlob(this, 'arrayBuffer') as Promise<ArrayBuffer>;
+    };
+}
+if (typeof Blob.prototype.text !== 'function') {
+    Blob.prototype.text = function text() {
+        return readBlob(this, 'text') as Promise<string>;
+    };
+}

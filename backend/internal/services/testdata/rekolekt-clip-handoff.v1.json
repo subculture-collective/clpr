@@ -1,0 +1,73 @@
+{
+  "schema": "rekolekt.clip-handoff",
+  "schema_version": 1,
+  "export_id": "9b1c2d3e-4f50-4a61-8b72-93a4b5c6d7e8",
+  "generated_at": 1794067200.0,
+  "archive": {
+    "name": "Transcript Archive",
+    "origin": "https://archive.example"
+  },
+  "recording": {
+    "video_id": "3f2b8c1e-5d47-4a9b-9e21-7c0d4b6a1f53",
+    "youtube_id": "BaW_jenozKc"
+  },
+  "passage": {
+    "url": "https://archive.example/api/share/videos/3f2b8c1e-5d47-4a9b-9e21-7c0d4b6a1f53?start_ms=754000&end_ms=763000",
+    "player_url": "https://archive.example/v/3f2b8c1e-5d47-4a9b-9e21-7c0d4b6a1f53?t=754&t_ms=754000&end_ms=763000#moment-754000",
+    "start_ms": 754000,
+    "end_ms": 763000,
+    "duration_ms": 9000
+  },
+  "transcript": {
+    "status": "captured",
+    "source": "whisper",
+    "transcript_id": "5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9",
+    "language": "en",
+    "kind": "machine",
+    "segment_count": 1873,
+    "revision_sha256": "4c1f0e9a7b2d6c3e8f5a1b0d9c7e6f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e",
+    "timing": "segment",
+    "captured_at": 1794066900.0
+  },
+  "captions": {
+    "timing": "clip-relative",
+    "cues": [
+      {
+        "start_ms": 0,
+        "end_ms": 1840,
+        "text": "and that's the part nobody reads,"
+      },
+      {
+        "start_ms": 1840,
+        "end_ms": 5210,
+        "text": "the footnote on page forty that changes the whole story."
+      },
+      {
+        "start_ms": 5210,
+        "end_ms": null,
+        "text": "[laughter]"
+      },
+      {
+        "start_ms": 6900,
+        "end_ms": 9000,
+        "text": "So let's actually read it."
+      }
+    ],
+    "cues_truncated": false,
+    "text_sha256": "d9c7ad084c026a0b90974f17ef70e415b714a2b97690e3f93dded73fbbc3b64a"
+  },
+  "media": {
+    "type": "video/mp4",
+    "filename": "passage-9b1c2d3e-4f50-4a61-8b72-93a4b5c6d7e8.mp4",
+    "bytes": 2847211,
+    "sha256": "a3f5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a5"
+  },
+  "provenance": {
+    "basis": "declared",
+    "statement": "Declared archive provenance. It records which recording, range and transcript were selected; it is not independent proof of rights to use the media.",
+    "media_source": {
+      "kind": "youtube-range",
+      "youtube_id": "BaW_jenozKc"
+    }
+  }
+}

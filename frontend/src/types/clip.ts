@@ -29,6 +29,7 @@ export interface Clip extends ClipSourceFields {
     created_at: string;
     imported_at: string;
     video_url?: string; // HLS video URL for clips with adaptive streaming support
+    source_metadata?: Record<string, unknown>; // includes archive_provenance for archive imports
     stream_source?: ClipSourceType | 'stream'; // 'twitch' = imported clip, 'stream' = created from live stream
     vote_score: number;
     comment_count: number;

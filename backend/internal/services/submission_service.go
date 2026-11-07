@@ -305,6 +305,9 @@ type SubmitUploadRequest struct {
 	StorageProvider  string
 	StorageBucket    string
 	StorageKey       string
+	// ArchiveProvenance is set when the upload was imported from an archive
+	// handoff whose media digest matched the uploaded bytes.
+	ArchiveProvenance *ArchiveProvenanceRecord
 }
 
 // ValidationError represents a validation error
@@ -992,6 +995,9 @@ func (s *SubmissionService) SubmitUpload(ctx context.Context, userID uuid.UUID, 
 			"upload_status":      "validated",
 			"duration_seconds":   req.DurationSeconds,
 		}
+		if req.ArchiveProvenance != nil {
+			metadata["archive_export_id"] = req.ArchiveProvenance.ExportID
+		}
 		if submission.CustomTitle != nil {
 			metadata["custom_title"] = *submission.CustomTitle
 		}
@@ -1026,6 +1032,9 @@ func (s *SubmissionService) buildUploadSubmissionRecord(userID, submissionID uui
 		"storage_bucket":    req.StorageBucket,
 		"storage_key":       req.StorageKey,
 		"file_size_bytes":   fileSize,
+	}
+	if req.ArchiveProvenance != nil {
+		metadata["archive_provenance"] = req.ArchiveProvenance
 	}
 	metadataBytes, err := json.Marshal(metadata)
 	if err != nil {

@@ -33,6 +33,13 @@ import { TagSelector } from '../components/tag/TagSelector';
 import { tagApi } from '../lib/tag-api';
 import type { Tag } from '../types/tag';
 import { useSubmissionDraft } from '../hooks/useSubmissionDraft';
+import { ArchiveHandoffImport } from '../components/clip/ArchiveHandoffImport';
+import {
+    checkArchiveMedia,
+    validateCaptionCues,
+    type ArchiveCaptionCue,
+    type ArchiveImportDraft,
+} from '../lib/archive-handoff';
 
 /**
  * Clip-specific duplicate error patterns to avoid false positives
@@ -218,6 +225,9 @@ export function SubmitClipPage() {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [archiveImport, setArchiveImport] = useState<ArchiveImportDraft | null>(null);
+    const [archiveMediaError, setArchiveMediaError] = useState<string | null>(null);
+    const [archiveMediaChecking, setArchiveMediaChecking] = useState(false);
     const [tagQueryLoading, setTagQueryLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -286,17 +296,20 @@ export function SubmitClipPage() {
             setFromDiscover(true);
         }
 
+        const prefillSource = (url: string): ClipSourceType =>
+            getExternalSourcePlatform(url) ? 'external' : 'twitch';
+
         if (state?.clipUrl) {
             setFormData(prev => ({
                 ...prev,
                 clip_url: state.clipUrl!,
-                source_type: 'twitch',
+                source_type: prefillSource(state.clipUrl!),
             }));
         } else if (urlFromQuery) {
             setFormData(prev => ({
                 ...prev,
                 clip_url: urlFromQuery,
-                source_type: 'twitch',
+                source_type: prefillSource(urlFromQuery),
             }));
         } else {
             // Try to load draft if no state from navigation
@@ -308,6 +321,7 @@ export function SubmitClipPage() {
                     source_type: savedDraft.formData.source_type ?? 'twitch',
                 });
                 setSelectedTags(savedDraft.selectedTags);
+                setArchiveImport(savedDraft.archiveImport ?? null);
                 setShowDraftRestored(true);
                 // Auto-hide the restored message after 5 seconds
                 timeoutId = setTimeout(
@@ -483,8 +497,54 @@ export function SubmitClipPage() {
 
     // Auto-save draft every 30 seconds when form has content
     useEffect(() => {
-        draft.startAutoSave(formData, selectedTags);
-    }, [formData, selectedTags, draft]);
+        draft.startAutoSave(formData, selectedTags, archiveImport);
+    }, [formData, selectedTags, archiveImport, draft]);
+
+    // An imported handoff names the exact MP4; check the chosen file's digest.
+    const archiveHandoff = archiveImport?.handoff;
+    useEffect(() => {
+        if (!archiveHandoff || !uploadFile) {
+            setArchiveMediaError(null);
+            setArchiveMediaChecking(false);
+            return;
+        }
+        let isActive = true;
+        setArchiveMediaChecking(true);
+        checkArchiveMedia(uploadFile, archiveHandoff)
+            .then(message => {
+                if (isActive) setArchiveMediaError(message);
+            })
+            .catch(() => {
+                if (isActive) {
+                    setArchiveMediaError(
+                        'The selected video could not be read to check it against the archive handoff',
+                    );
+                }
+            })
+            .finally(() => {
+                if (isActive) setArchiveMediaChecking(false);
+            });
+        return () => {
+            isActive = false;
+        };
+    }, [uploadFile, archiveHandoff]);
+
+    const handleApplyArchiveImport = (importDraft: ArchiveImportDraft) => {
+        const nextForm: SubmitClipRequest = {
+            ...createEmptyFormData(),
+            source_type: 'upload',
+        };
+        setFormData(nextForm);
+        setSelectedTags([]);
+        setArchiveImport(importDraft);
+        setError(null);
+        setUploadError(null);
+        draft.saveDraft(nextForm, [], importDraft);
+    };
+
+    const handleArchiveCuesChange = (cues: ArchiveCaptionCue[]) => {
+        setArchiveImport(prev => (prev ? { ...prev, cues } : prev));
+    };
 
     const handleCreateTag = async (name: string): Promise<Tag | null> => {
         const slug = slugify(name);
@@ -560,6 +620,7 @@ export function SubmitClipPage() {
     const resetSubmissionForm = () => {
         setFormData(createEmptyFormData());
         setSelectedTags([]);
+        setArchiveImport(null);
         setUploadFile(null);
         setUploadProgress(null);
         setUploadError(null);
@@ -575,6 +636,29 @@ export function SubmitClipPage() {
             if (!uploadFile) {
                 setUploadError('Please choose a video file to upload');
                 return;
+            }
+            if (archiveImport) {
+                if (archiveMediaChecking) {
+                    setUploadError('Still checking the video against the archive handoff');
+                    return;
+                }
+                if (archiveMediaError) {
+                    setUploadError(archiveMediaError);
+                    return;
+                }
+                const emptyCue = archiveImport.cues.findIndex(cue => !cue.text.trim());
+                if (emptyCue >= 0) {
+                    setUploadError(`Caption ${emptyCue + 1} is empty; remove it instead`);
+                    return;
+                }
+                const cueProblem = validateCaptionCues(
+                    archiveImport.cues,
+                    archiveImport.handoff.passage.duration_ms,
+                );
+                if (cueProblem) {
+                    setUploadError(cueProblem);
+                    return;
+                }
             }
         } else {
             const normalizedClipUrl = normalizeUrl(formData.clip_url);
@@ -621,6 +705,16 @@ export function SubmitClipPage() {
                             is_nsfw: formData.is_nsfw,
                             submission_reason:
                                 formData.submission_reason?.trim() || '',
+                            ...(archiveImport ?
+                                {
+                                    archive_handoff: archiveImport.raw,
+                                    caption_cues: archiveImport.cues.map(cue => ({
+                                        start_ms: cue.start_ms,
+                                        end_ms: cue.end_ms,
+                                        text: cue.text.trim(),
+                                    })),
+                                }
+                            :   {}),
                         },
                         event => {
                             const progressFraction =
@@ -1052,6 +1146,14 @@ export function SubmitClipPage() {
                                 </div>
                             ) : (
                                 <div className='space-y-3'>
+                                    <ArchiveHandoffImport
+                                        current={archiveImport}
+                                        draftHasContent={draft.hasContent(formData, selectedTags)}
+                                        disabled={!canSubmit || isSubmitting}
+                                        onApply={handleApplyArchiveImport}
+                                        onRemove={() => setArchiveImport(null)}
+                                        onCuesChange={handleArchiveCuesChange}
+                                    />
                                     <div>
                                         <label
                                             htmlFor='clip_file'
@@ -1096,7 +1198,13 @@ export function SubmitClipPage() {
                                                     </p>
                                                 </div>
                                                 <span className=' border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-medium text-link'>
-                                                    Ready to upload
+                                                    {!archiveImport ?
+                                                        'Ready to upload'
+                                                    : archiveMediaChecking ?
+                                                        'Checking against the handoff'
+                                                    : archiveMediaError ?
+                                                        'Does not match the handoff'
+                                                    :   'Matches the archive handoff'}
                                                 </span>
                                             </div>
                                             {uploadProgress !== null && isSubmitting && (
@@ -1113,6 +1221,11 @@ export function SubmitClipPage() {
                                                 </div>
                                             )}
                                         </div>
+                                    )}
+                                    {archiveMediaError && archiveMediaError !== uploadError && (
+                                        <p role='alert' className='text-xs text-red-500'>
+                                            {archiveMediaError}
+                                        </p>
                                     )}
                                     {uploadError && (
                                         <p className='text-xs text-red-500'>

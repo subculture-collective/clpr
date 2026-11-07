@@ -21,7 +21,9 @@ vi.mock('../components', async () => {
         CommentSection: () => null,
         SEO: () => null,
         VideoPlayer: () => <div data-testid='player' />,
-        TheatreMode: () => null,
+        TheatreMode: ({ captionsUrl, captionsLanguage }: { captionsUrl?: string; captionsLanguage?: string }) => (
+            <div data-testid='theatre' data-captions={captionsUrl ?? ''} data-captions-lang={captionsLanguage ?? ''} />
+        ),
         ResourceUnavailable,
     };
 });
@@ -118,6 +120,44 @@ describe('ClipDetailPage', () => {
         expect(screen.queryByText(/status code/i)).not.toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
         expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('links an archive import to its source passage and attaches its captions', () => {
+        const passageURL = 'https://archive.example/api/share/videos/v1?start_ms=754000&end_ms=763000';
+        const cue = { start_ms: 0, end_ms: 1840, text: 'and that is the part nobody reads,' };
+        useClipByIdMock.mockReturnValue({
+            data: {
+                ...clip,
+                video_url: '/api/v1/clips/clip-1/media',
+                source_metadata: {
+                    archive_provenance: {
+                        export_id: '9b1c2d3e-4f50-4a61-8b72-93a4b5c6d7e8',
+                        archive: { name: 'Transcript Archive', origin: 'https://archive.example' },
+                        passage: { url: passageURL, player_url: passageURL, start_ms: 754000, end_ms: 763000, duration_ms: 9000 },
+                        captions: { source_cues: [cue], cues: [cue], edited: false, language: 'en' },
+                    },
+                },
+            },
+            isLoading: false,
+            error: null,
+            refetch: vi.fn(),
+        });
+        renderClip('clip-1');
+
+        const link = screen.getByRole('link', { name: /Transcript Archive passage, 12:34.0–12:43.0/ });
+        expect(link).toHaveAttribute('href', passageURL);
+        expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+        expect(screen.getByText(/not verified by clpr/)).toBeInTheDocument();
+        expect(screen.getByTestId('theatre')).toHaveAttribute('data-captions', '/api/v1/clips/clip-1/captions');
+        expect(screen.getByTestId('theatre')).toHaveAttribute('data-captions-lang', 'en');
+    });
+
+    it('shows no archive source for an ordinary clip', () => {
+        useClipByIdMock.mockReturnValue({ data: { ...clip, video_url: '/api/v1/clips/clip-1/media' }, isLoading: false, error: null, refetch: vi.fn() });
+        renderClip('clip-1');
+
+        expect(screen.queryByTestId('archive-source')).not.toBeInTheDocument();
+        expect(screen.getByTestId('theatre')).toHaveAttribute('data-captions', '');
     });
 
     it('labels the stored view count as a sync snapshot, not the live Twitch count', () => {
