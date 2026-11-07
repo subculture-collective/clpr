@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { Gamepad2 } from 'lucide-react';
 import { Container, Spinner, Button, CategoryIcon, SEO, ResourceUnavailable } from '../components';
@@ -20,16 +21,13 @@ export function CategoryPage() {
 
     const [category, setCategory] = useState<Category | null>(null);
     const [games, setGames] = useState<GameWithStats[]>([]);
-    const [clips, setClips] = useState<Clip[]>([]);
     const [loading, setLoading] = useState(true);
-    const [clipsLoading, setClipsLoading] = useState(false);
     const [loadState, setLoadState] = useState<'ok' | 'missing' | 'error'>('ok');
     const [reloadCount, setReloadCount] = useState(0);
 
     const sort = (searchParams.get('sort') as CategorySort | null) || 'hot';
     const timeframe = searchParams.get('timeframe') as CategoryTimeframe | null;
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const [hasMore, setHasMore] = useState(false);
 
     const legacyTopicRedirects: Record<string, string> = {
         news: 'news-politics', politics: 'news-politics', irl: 'irl-travel',
@@ -76,37 +74,28 @@ export function CategoryPage() {
         };
     }, [categorySlug, canonicalSlug, reloadCount]);
 
-    useEffect(() => {
-        if (!categorySlug || canonicalSlug) return;
-        let cancelled = false;
-
-        const fetchClips = async () => {
+    // The clip list lives in the query cache so a vote or favorite on a card
+    // updates it like every other clip list.
+    const clipsQuery = useQuery({
+        queryKey: ['category-clips', categorySlug, sort, timeframe, page, reloadCount],
+        queryFn: async () => {
             try {
-                setClipsLoading(true);
-                const clipsData = await categoryApi.getCategoryClips(categorySlug, {
+                return await categoryApi.getCategoryClips(categorySlug as string, {
                     page,
                     limit: 20,
                     sort,
                     timeframe: timeframe || undefined,
                 });
-                if (cancelled) return;
-                setClips(clipsData.clips || []);
-                setHasMore(clipsData.has_more);
             } catch (err) {
-                if (cancelled) return;
-                setClips([]);
-                setHasMore(false);
                 if (!isNotFoundError(err)) console.error('Failed to fetch category clips:', err);
-            } finally {
-                if (!cancelled) setClipsLoading(false);
+                return { clips: [] as Clip[], has_more: false };
             }
-        };
-
-        fetchClips();
-        return () => {
-            cancelled = true;
-        };
-    }, [categorySlug, canonicalSlug, sort, timeframe, page, reloadCount]);
+        },
+        enabled: Boolean(categorySlug) && !canonicalSlug,
+    });
+    const clips = clipsQuery.data?.clips ?? [];
+    const hasMore = clipsQuery.data?.has_more ?? false;
+    const clipsLoading = clipsQuery.isLoading;
 
     if (canonicalSlug) {
         return <Navigate replace to={`/topics/${canonicalSlug}${location.search}`} />;

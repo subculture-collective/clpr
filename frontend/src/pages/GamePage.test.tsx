@@ -1,17 +1,31 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { allowTestConsole } from '../test/setup';
 
-const { getGame, getGameClips } = vi.hoisted(() => ({ getGame: vi.fn(), getGameClips: vi.fn() }));
+const { getGame, getGameClips, voteOnClip } = vi.hoisted(() => ({ getGame: vi.fn(), getGameClips: vi.fn(), voteOnClip: vi.fn() }));
 
 vi.mock('../lib/game-api', () => ({ twitchCategoryApi: { getGame, getGameClips } }));
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
-vi.mock('../components/clip', () => ({
-    ClipGridCard: ({ clip }: { clip: { title: string } }) => <article>{clip.title}</article>,
-}));
+vi.mock('@/lib/clip-api', () => ({ voteOnClip }));
+vi.mock('../components/clip', async () => {
+    const { useClipVote } = await import('../hooks/useClips');
+    return {
+        ClipGridCard: ({ clip }: { clip: { id: string; title: string; vote_score?: number } }) => {
+            const vote = useClipVote();
+            return (
+                <article>
+                    <h3>{clip.title}</h3>
+                    <span>score {clip.vote_score}</span>
+                    <button onClick={() => vote.mutate({ clip_id: clip.id, vote_type: 1 })}>Upvote {clip.title}</button>
+                </article>
+            );
+        },
+    };
+});
 
 import { GamePage } from './GamePage';
 
@@ -24,11 +38,13 @@ function axiosError(status: number) {
 
 function renderGame(id = '999999999') {
     return render(
-        <MemoryRouter initialEntries={[`/twitch-category/${id}`]}>
-            <Routes>
-                <Route path='/twitch-category/:gameId' element={<GamePage />} />
-            </Routes>
-        </MemoryRouter>,
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+            <MemoryRouter initialEntries={[`/twitch-category/${id}`]}>
+                <Routes>
+                    <Route path='/twitch-category/:gameId' element={<GamePage />} />
+                </Routes>
+            </MemoryRouter>
+        </QueryClientProvider>,
     );
 }
 
@@ -74,5 +90,17 @@ describe('GamePage', () => {
         });
         await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
         expect(await screen.findByRole('heading', { level: 1, name: 'Fortnite' })).toBeInTheDocument();
+    });
+
+    it('shows a vote on a card without reloading the list', async () => {
+        getGame.mockRejectedValue(axiosError(404));
+        getGameClips.mockResolvedValue({ clips: [{ id: 'c1', title: 'A tracked clip', vote_score: 5 }], has_more: false });
+        voteOnClip.mockResolvedValue({ message: 'ok', vote_score: 6, upvote_count: 6, downvote_count: 0, user_vote: 1 });
+        renderGame('509658');
+
+        expect(await screen.findByText('score 5')).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: 'Upvote A tracked clip' }));
+        expect(await screen.findByText('score 6')).toBeInTheDocument();
+        expect(getGameClips).toHaveBeenCalledTimes(1);
     });
 });
