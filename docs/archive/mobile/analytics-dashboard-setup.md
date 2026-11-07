@@ -528,8 +528,8 @@ After setup is complete:
 
 ## Support
 
-- **Technical Questions**: See [analytics-dashboards.md](./analytics-dashboards.md)
-- **Query Help**: See [posthog-dashboard-queries.md](./posthog-dashboard-queries.md)
+- **Technical Questions**: See [analytics-dashboards.md](analytics-dashboards.md)
+- **Query Help**: See [posthog-dashboard-queries.md](posthog-dashboard-queries.md)
 - **PostHog Docs**: https://posthog.com/docs
 - **Team Contact**: [Your team channel/email]
 

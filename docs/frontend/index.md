@@ -48,6 +48,5 @@ SORT title ASC
 ---
 
 **See also:**
-[[../mobile/architecture|Mobile Architecture]] ·
 [[../backend/api|API Reference]] ·
 [[../index|Documentation Home]]

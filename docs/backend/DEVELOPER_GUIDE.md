@@ -1330,11 +1330,9 @@ CREATE TRIGGER trg_moderation_queue_reviewed
 Follow REST conventions for moderation endpoints:
 
 ```
-GET    /api/v1/moderation/communities/:id/bans       - List bans
-POST   /api/v1/moderation/communities/:id/ban        - Create ban
-DELETE /api/v1/moderation/communities/:id/bans/:user_id  - Remove ban
-GET    /api/v1/moderation/communities/:id/bans/:user_id  - Get ban details
-PATCH  /api/v1/moderation/communities/:id/bans/:user_id  - Update ban
+GET    /api/v1/communities/:id/bans                  - List bans
+POST   /api/v1/communities/:id/ban                   - Create ban
+DELETE /api/v1/communities/:id/ban/:userId           - Remove ban
 
 GET    /api/v1/moderation/audit-logs                 - List audit logs
 GET    /api/v1/moderation/audit-logs/:id             - Get specific log

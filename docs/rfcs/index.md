@@ -34,15 +34,15 @@ SORT file.name ASC
 
 ## Available RFCs
 
-- [[001-mobile-framework-selection|RFC-001: Mobile Framework Selection]] - React Native + Expo decision (Accepted, 2025-11)
 - [[002-advanced-query-language|RFC-002: Advanced Query Language]] - Advanced search syntax (Accepted, 2025-11)
 - [[003-infrastructure-modernization|RFC-003: Infrastructure Modernization]] - Infrastructure modernization proposal (Proposed, 2025-11)
 
 | RFC | Title | Status | Date |
 |-----|-------|--------|------|
-| [[001-mobile-framework-selection\|RFC-001]] | Mobile Framework Selection | Accepted | 2025-11 |
 | [[002-advanced-query-language\|RFC-002]] | Advanced Query Language | Accepted | 2025-11 |
 | [[003-infrastructure-modernization\|RFC-003]] | Infrastructure Modernization | Proposed | 2025-11 |
+
+RFC-001 (mobile framework selection) is in the [archive](../archive/index.md); no native client is planned.
 
 ## RFC Process
 

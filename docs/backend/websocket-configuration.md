@@ -15,7 +15,7 @@ This document describes the WebSocket CORS (Cross-Origin Resource Sharing) confi
 
 ## Overview
 
-The WebSocket server provides real-time chat functionality for channels. To prevent unauthorized access and cross-site attacks, WebSocket connections are restricted to allowed origins configured via environment variables.
+The WebSocket server carries live updates for the streamer clip room (`GET /api/v1/streamer-clip-rooms/:channel/ws`). Site chat was removed in November 2026. To prevent unauthorized access and cross-site attacks, WebSocket connections are restricted to allowed origins configured via environment variables.
 
 ## Configuration
 

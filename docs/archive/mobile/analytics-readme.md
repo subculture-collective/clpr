@@ -16,17 +16,17 @@ Welcome to the Clipper mobile analytics documentation. This guide helps you navi
 ## 📚 Documentation Index
 
 ### For Quick Implementation
-**Start Here**: [analytics-dashboard-setup.md](./analytics-dashboard-setup.md)  
+**Start Here**: [analytics-dashboard-setup.md](analytics-dashboard-setup.md)  
 ⏱️ Implementation time: 4-6 hours  
 👥 Audience: Anyone setting up dashboards in PostHog
 
 ### For Comprehensive Reference
-**Main Guide**: [analytics-dashboards.md](./analytics-dashboards.md)  
+**Main Guide**: [analytics-dashboards.md](analytics-dashboards.md)  
 📖 Complete dashboard configurations, testing procedures, maintenance  
 👥 Audience: Product managers, analytics leads
 
 ### For Query Help
-**Query Reference**: [posthog-dashboard-queries.md](./posthog-dashboard-queries.md)  
+**Query Reference**: [posthog-dashboard-queries.md](posthog-dashboard-queries.md)  
 🔍 100+ query examples, common patterns, optimization tips  
 👥 Audience: Dashboard creators, data analysts
 
@@ -39,13 +39,13 @@ Welcome to the Clipper mobile analytics documentation. This guide helps you navi
 ### I want to...
 
 **Set up dashboards in PostHog**
-→ Follow [analytics-dashboard-setup.md](./analytics-dashboard-setup.md)
+→ Follow [analytics-dashboard-setup.md](analytics-dashboard-setup.md)
 
 **Understand what metrics we track**
-→ See [analytics-dashboards.md](./analytics-dashboards.md#event-schema-reference)
+→ See [analytics-dashboards.md](analytics-dashboards.md#event-schema-reference)
 
 **Find a specific query**
-→ Check [posthog-dashboard-queries.md](./posthog-dashboard-queries.md)
+→ Check [posthog-dashboard-queries.md](posthog-dashboard-queries.md)
 
 **Add event tracking to the mobile app**
 → Follow ../../mobile/ANALYTICS_EVENT_TRACKING_TODO.md
@@ -95,7 +95,7 @@ We have 5 core dashboards:
 - ✅ Mobile app deployed with analytics enabled
 
 ### Step-by-Step
-1. Read [analytics-dashboard-setup.md](./analytics-dashboard-setup.md)
+1. Read [analytics-dashboard-setup.md](analytics-dashboard-setup.md)
 2. Follow dashboard creation instructions (4-6 hours)
 3. Implement event tracking using ANALYTICS_EVENT_TRACKING_TODO.md
 4. Test with staging environment
@@ -108,7 +108,7 @@ We have 5 core dashboards:
 **PostHog Dashboards**: 🟡 Ready for implementation  
 **Event Tracking**: 🟡 Partially implemented (screen views ✅, manual events pending)
 
-See [Maintained documentation](../index.md) for detailed status.
+See [Maintained documentation](../../index.md) for detailed status.
 
 ## 🔍 What's Tracked
 
@@ -144,10 +144,10 @@ See ANALYTICS_EVENT_TRACKING_TODO.md for implementation guide.
 ### Questions About...
 
 **Dashboard Setup**  
-→ Check [analytics-dashboard-setup.md](./analytics-dashboard-setup.md) troubleshooting section
+→ Check [analytics-dashboard-setup.md](analytics-dashboard-setup.md) troubleshooting section
 
 **Query Syntax**  
-→ Refer to [posthog-dashboard-queries.md](./posthog-dashboard-queries.md)
+→ Refer to [posthog-dashboard-queries.md](posthog-dashboard-queries.md)
 
 **Event Tracking**  
 → See ANALYTICS_EVENT_TRACKING_TODO.md
@@ -181,4 +181,4 @@ See ANALYTICS_EVENT_TRACKING_TODO.md for implementation guide.
 
 **Need help?** Check the troubleshooting sections in each guide or reach out to the analytics team.
 
-**Ready to implement?** Start with [analytics-dashboard-setup.md](./analytics-dashboard-setup.md)!
+**Ready to implement?** Start with [analytics-dashboard-setup.md](analytics-dashboard-setup.md)!

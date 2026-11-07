@@ -481,4 +481,4 @@ Row 4: Paths (1 sankey)
 
 **Quick Start**: Copy a query from this guide, paste into PostHog Insights, adjust filters for your needs.
 
-**Need Help?** Refer to [analytics-dashboards.md](./analytics-dashboards.md) for detailed setup instructions.
+**Need Help?** Refer to [analytics-dashboards.md](analytics-dashboards.md) for detailed setup instructions.

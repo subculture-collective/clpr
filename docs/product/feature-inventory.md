@@ -6,18 +6,18 @@ area: "product"
 status: "draft"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2026-09-08
+last_reviewed: 2026-11-07
 ---
 
 # Feature Inventory & Verification Map
 
-> **Last Updated**: 2026-09-08
+> **Last Updated**: 2026-11-07
 >
-> **Sweep**: Free-account candidate scope and UI maintenance
+> **Sweep**: November 2026 product reduction (#62–#70) and documentation reconciliation (#73)
 >
 > **Purpose**: Complete inventory of all features in the Clipper platform, documenting status, location, tests, typing, and documentation coverage.
 >
-> **Scope**: Covers the tracked backend API, frontend web app, infrastructure, and documentation. Native mobile material is planning documentation only.
+> **Scope**: Covers the tracked backend API, frontend web app, infrastructure, and documentation. There is no native mobile client; its planning material is in the [archive](../archive/index.md).
 >
 > **Current evidence**: Maintained source, real-backend browser, release-evidence, and immutable-image workflows exist. Their passing results are revision-specific. Production promotion additionally requires reconciled provider obligations, fresh staging OAuth, review, and protected operational evidence. No buildable native mobile workspace is present.
 
@@ -56,8 +56,7 @@ counts that included planned or missing artifacts.
   migration, and engagement coverage checks in source convergence.
 - **Frontend**: React web app with production typecheck, lint, reachability,
   ownership, critical coverage, build budgets, and three-engine browser gates.
-- **Mobile**: No tracked buildable application. Mobile documents describe a
-  possible future client and are not current product availability.
+- **Mobile**: No native client. The earlier planning documents are archived.
 - **Infrastructure**: Authoritative Gitea workflows cover operator preflight,
   release gates, complete source convergence, immutable images, and release
   readiness. Workflow availability does not prove branch-protection enforcement
@@ -86,7 +85,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/auth/twitch`, `/api/v1/auth/twitch/callback`
 - **Frontend**: `AuthCallbackPage.tsx`, `LoginPage.tsx`
-- **Planned mobile design**: `app/auth/login.tsx` (workspace absent)
 - **Handlers**: `auth_handler.go`, `twitch_oauth_handler.go`
 - **Services**: `auth_service.go`
 - **Tests**: ✅ Handler tests exist
@@ -96,7 +94,6 @@ counts that included planned or missing artifacts.
 
 **Features**:
 - OAuth 2.0 flow with Twitch
-- PKCE support for mobile apps
 - Token refresh mechanism
 - Session management with Redis
 - JWT-based authentication
@@ -127,7 +124,6 @@ counts that included planned or missing artifacts.
 - Required for admin actions
 
 **Gaps**:
-- Mobile MFA UI needs implementation
 
 ---
 
@@ -159,7 +155,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/clips/*`
 - **Frontend**: `ClipDetailPage.tsx`, clip components
-- **Planned mobile design**: `app/clip/[id].tsx` (workspace absent)
 - **Handlers**: `clip_handler.go`
 - **Services**: `clip_service.go`
 - **Repository**: `clip_repository.go`
@@ -188,7 +183,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/submissions/*`
 - **Frontend**: `SubmitClipPage.tsx`, `UserSubmissionsPage.tsx`
-- **Planned mobile design**: `app/submit/index.tsx` (workspace absent)
 - **Handlers**: `submission_handler.go`
 - **Services**: `submission_service.go`, `submission_abuse_detection.go`
 - **Tests**: 🟡 partial
@@ -268,7 +262,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/clips/:id/favorite`, `/api/v1/favorites`
 - **Frontend**: `FavoritesPage.tsx`, favorite buttons
-- **Planned mobile design**: `app/(tabs)/favorites.tsx` (workspace absent)
 - **Handlers**: `favorite_handler.go`
 - **Repository**: `favorite_repository.go`
 - **Tests**: ✅ Unit tests exist
@@ -295,7 +288,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/users/:id`, `/api/v1/users/by-username/:username`
 - **Frontend**: `UserProfilePage.tsx`, `ProfilePage.tsx`
-- **Planned mobile design**: `app/(tabs)/profile.tsx`, `app/profile/[id].tsx`, `app/profile/edit.tsx` (workspace absent)
 - **Handlers**: `user_handler.go`, `admin_user_handler.go`
 - **Repository**: `user_repository.go`
 - **Tests**: 🟡 partial
@@ -323,7 +315,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/users/me/settings`
 - **Frontend**: `SettingsPage.tsx`, `NotificationPreferencesPage.tsx`, `CookieSettingsPage.tsx`
-- **Planned mobile design**: `app/settings/index.tsx` (workspace absent)
 - **Handlers**: `user_settings_handler.go`
 - **Services**: `user_settings_service.go`
 - **Tests**: ✅ Unit tests exist
@@ -342,7 +333,6 @@ counts that included planned or missing artifacts.
 
 **Gaps**:
 - Language localization incomplete
-- Mobile settings UI parity
 
 ---
 
@@ -350,8 +340,8 @@ counts that included planned or missing artifacts.
 
 - **Status**: ✅ complete
 - **Backend**: `/api/v1/users/me/*`
-- **Handlers**: `user_settings_handler.go`, `account_type_handler.go`
-- **Services**: `user_settings_service.go`, `account_type_service.go`
+- **Handlers**: `user_settings_handler.go`
+- **Services**: `user_settings_service.go`
 - **Tests**: ✅ Unit tests exist
 - **Typing**: ✅ Complete
 - **Docs**: [GDPR Compliance](../compliance/gdpr-compliance.md)
@@ -508,7 +498,6 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete (hybrid search)
 - **Backend**: `/api/v1/search`, `/api/v1/search/suggestions`, `/api/v1/search/scores`
 - **Frontend**: `SearchPage.tsx`
-- **Planned mobile design**: `app/(tabs)/search.tsx` (workspace absent)
 - **Handlers**: `search_handler.go`
 - **Services**: `opensearch_search_service.go`, `hybrid_search_service.go`, `embedding_service.go`
 - **Repository**: `search_repository.go`
@@ -537,7 +526,7 @@ counts that included planned or missing artifacts.
 #### 5.2 Feed System
 
 - **Status**: ✅ complete | **Backend**: `/api/v1/feeds/*` | **Frontend**: HomePage, TopFeedPage, etc.
-- **Features**: Hot/new/top/rising/following/live feeds, custom feeds, filtering, discovery, analytics
+- **Features**: Hot/new/top/rising/following feeds, custom feeds, filtering, discovery, analytics
 - **Gaps**: Personalized algorithm tuning, feed recommendations
 
 #### 5.3 Discovery Lists
@@ -760,7 +749,7 @@ anomaly-scoring analytics implementation has been removed. See
 - **Watch History**: Track/resume playback (✅ complete)
 - **Ad System**: removed in November 2026 (no audience to serve)
 - **Chat System**: removed in November 2026 (no active channels)
-- **WebSocket Infrastructure**: Connection mgmt, scaling (✅ complete)
+- **WebSocket Infrastructure**: live updates for the streamer clip room (✅ complete)
 - **Data Export**: GDPR compliance (✅ complete)
 - **Category/Game/Broadcaster Systems**: All ✅ complete
 - **Tag System**: Auto-tagging, management (✅ complete)
@@ -792,7 +781,6 @@ For each feature category (25 categories above), create a GitHub issue using the
 1. Verify all API endpoints are documented
 2. Update outdated documentation
 3. Add missing user guides
-4. Review mobile parity documentation
 
 ### Phase 4: Typing & Quality (Week 3-4)
 
@@ -886,7 +874,6 @@ this document—are authoritative for launch decisions.
 
 **New Features Added Since 2024-12-24**:
 - Abuse Detection Analytics (Section 8.4)
-- Enhanced Chat Moderation with auto-moderation (Section 6.3)
 - Application Logging System (Section 13.3)
 
 ---

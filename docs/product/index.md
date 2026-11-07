@@ -74,4 +74,4 @@ SORT title ASC
 
 ---
 
-**See also:** [[../users/index|User Documentation]] · [[../premium/overview|Premium]] · [[../index|Documentation Home]]
+**See also:** [[../users/index|User Documentation]] · [[../index|Documentation Home]]
