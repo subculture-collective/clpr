@@ -2293,6 +2293,13 @@ paths:
                   type: string
                 is_nsfw:
                   type: boolean
+                archive_handoff:
+                  type: string
+                  maxLength: 524288
+                  description: Optional Rekolekt clip handoff (`rekolekt.clip-handoff` version 1) as a JSON string. The uploaded file must match its `media.bytes` and `media.sha256`. The handoff is stored as declared provenance under `source_metadata.archive_provenance`; it does not bypass upload validation or moderation.
+                caption_cues:
+                  type: string
+                  description: Optional JSON array of edited caption cues (`start_ms`, `end_ms` or null, `text`), timed relative to the clip. Only accepted with `archive_handoff`.
       responses:
         '201':
           description: Upload submitted for moderation
@@ -9552,6 +9559,31 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/clips/{id}/captions:
+    get:
+      tags:
+        - Clips
+      summary: Get clip captions
+      description: Returns the captions of a clip imported from an archive handoff as WebVTT, using the submitter's edited cues when present.
+      operationId: getApiV1ClipsIdCaptions
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: WebVTT captions
+          content:
+            text/vtt:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/communities:
     get:
       tags:

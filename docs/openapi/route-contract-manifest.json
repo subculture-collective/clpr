@@ -932,6 +932,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/clips/{id}/captions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipHandler).GetClipCaptions-fm",
+    "operation_id": "getApiV1ClipsIdCaptions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/clips/{id}/comments",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CommentHandler).ListComments-fm",
     "operation_id": "listClipComments",

@@ -14,6 +14,7 @@ func registerClipRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		// Public clip endpoints
 		clips.GET("", middleware.OptionalAuthMiddleware(svcs.Auth), h.Clip.ListClips)
 		clips.GET("/:id/media", h.Clip.GetClipMedia)
+		clips.GET("/:id/captions", h.Clip.GetClipCaptions)
 		clips.GET("/:id", middleware.OptionalAuthMiddleware(svcs.Auth), h.Clip.GetClip)
 		clips.GET("/:id/related", h.Clip.GetRelatedClips)
 

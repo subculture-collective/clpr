@@ -25,6 +25,11 @@ import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { topicApi } from '@/lib/topic-api';
 import { getErrorMessage, isNotFoundError } from '@/lib/error-utils';
+import {
+    archiveProvenanceFromMetadata,
+    clipCaptionsURL,
+    formatArchiveMs,
+} from '@/lib/archive-handoff';
 
 export function ClipDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -176,6 +181,9 @@ export function ClipDetailPage() {
     };
 
     // Generate rich description
+    const archiveSource = archiveProvenanceFromMetadata(clip.source_metadata);
+    const hasArchiveCaptions = (archiveSource?.captions.cues.length ?? 0) > 0;
+
     const description = `Watch "${clip.title}" by ${clip.creator_name} on ${
         clip.broadcaster_name
     }'s channel${
@@ -236,6 +244,8 @@ export function ClipDetailPage() {
                         <TheatreMode
                             title={clip.title}
                             hlsUrl={clip.video_url}
+                            captionsUrl={hasArchiveCaptions ? clipCaptionsURL(clip.id) : undefined}
+                            captionsLanguage={archiveSource?.captions.language ?? undefined}
                             resumePosition={resumePosition}
                             hasProgress={hasProgress}
                             isLoadingProgress={isLoadingProgress}
@@ -305,6 +315,27 @@ export function ClipDetailPage() {
                             })}
                         </span>
                     </div>
+
+                    {archiveSource && (
+                        <div className='mb-4 grid gap-2 sm:grid-cols-[6rem_1fr] sm:items-start' data-testid='archive-source'>
+                            <p className='kicker pt-0.5'>Source</p>
+                            <p className='text-sm'>
+                                <a
+                                    href={archiveSource.passage.url}
+                                    target='_blank'
+                                    rel='noopener noreferrer nofollow'
+                                    className='text-link underline'
+                                >
+                                    {archiveSource.archive.name} passage,{' '}
+                                    {formatArchiveMs(archiveSource.passage.start_ms)}–
+                                    {formatArchiveMs(archiveSource.passage.end_ms)}
+                                </a>
+                                <span className='block text-xs text-muted-foreground'>
+                                    Provenance declared by the archive, not verified by clpr.
+                                </span>
+                            </p>
+                        </div>
+                    )}
 
                     <div className='mb-4 grid gap-2 sm:grid-cols-[6rem_1fr] sm:items-start'>
                         <p className='kicker pt-1.5'>Tags</p>

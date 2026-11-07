@@ -386,6 +386,19 @@ describe('SubmitClipPage', () => {
             expect(mockCheckClipStatus).not.toHaveBeenCalled();
             expect(mockGetClipMetadata).not.toHaveBeenCalled();
         });
+
+        it('prefills an external URL from the query string as an external source', async () => {
+            window.history.pushState({}, '', '/submit?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc123');
+            try {
+                render(<SubmitClipPage />);
+
+                expect(await screen.findByRole('radio', { name: /external url/i })).toHaveAttribute('aria-checked', 'true');
+                expect(screen.getByLabelText(/External URL/)).toHaveValue('https://www.youtube.com/watch?v=abc123');
+                expect(mockGetClipMetadata).not.toHaveBeenCalled();
+            } finally {
+                window.history.pushState({}, '', '/');
+            }
+        });
     });
 
     describe('Tags Management', () => {
