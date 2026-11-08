@@ -2,7 +2,7 @@
 // remain thumbnails so long feeds never accumulate off-screen iframes.
 // Twitch requires the player to be at least 400×300 and never covered by page
 // elements, so nothing is drawn over the iframe and small screens link out.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Play, RotateCw } from 'lucide-react';
 import { useVolumePreference } from '@/hooks';
 import { useTwitchEmbedFits } from '@/hooks/useTwitchEmbedFits';
@@ -18,6 +18,8 @@ interface TwitchEmbedProps {
   thumbnailUrl?: string;
   title?: string;
   onActivate?: () => void;
+  /** Called with whether the Twitch player is on screen; false when it does not fit or failed. */
+  onPlayingChange?: (playing: boolean) => void;
 }
 
 export function TwitchEmbed({
@@ -28,6 +30,7 @@ export function TwitchEmbed({
   thumbnailUrl,
   title = 'Twitch Clip',
   onActivate,
+  onPlayingChange,
 }: TwitchEmbedProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const fits = useTwitchEmbedFits(boxRef);
@@ -40,6 +43,9 @@ export function TwitchEmbed({
   const embedUrl = `https://clips.twitch.tv/embed?clip=${encodeURIComponent(clipId)}&parent=${encodeURIComponent(parentDomain)}&autoplay=${shouldAutoplay ? 'true' : 'false'}&muted=${embedMuted ? 'true' : 'false'}`;
   const playing = active && fits === true && !hasError;
   useRegisterTwitchPlayer(boxRef, playing);
+  useEffect(() => {
+    onPlayingChange?.(playing);
+  }, [playing, onPlayingChange]);
 
   const thumbnail = thumbnailUrl ? (
     <img

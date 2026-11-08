@@ -14,6 +14,7 @@ function EditionCard({ edition }: { edition: PublicCountdownEdition }) {
   return (
     <Link
       to={countdownPath(edition)}
+      state={{ play: true }}
       className='group block overflow-hidden rounded-xl border border-border bg-surface hover:border-brand transition-colors'
     >
       <div className='relative aspect-video bg-neutral-950'>
