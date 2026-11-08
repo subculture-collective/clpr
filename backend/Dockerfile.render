@@ -12,29 +12,46 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags '-s -w' -o /app/bin/countdown-media ./cmd/countdown-media
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags '-s -w' -o /app/bin/countdown-media ./cmd/countdown-media \
+    && CGO_ENABLED=0 GOOS=linux go test -c -o /app/bin/countdownrender.test ./internal/countdownrender
+
+# Runtime base: ffmpeg, yt-dlp and the fonts the render template names.
+FROM alpine:3.22@sha256:bfe7ceb9f09ec0566c48fb93356e45a47a00be5a1dd14fa5b909e7709c66b034 AS runtime
+
+# yt-dlp follows Twitch player changes; rebuild the image to update it.
+RUN apk --no-cache add --upgrade ca-certificates ffmpeg yt-dlp font-noto-cjk 'libcrypto3>=3.5.8-r0' 'libssl3>=3.5.8-r0' 'zlib>=1.3.2-r1'
+
+# The golden-frame tests run against this exact ffmpeg and these fonts, so the
+# image cannot be built when renders drift. To regenerate the goldens, run the
+# test binary in this stage with UPDATE_GOLDEN=1 and the source testdata
+# directory mounted at /test/testdata.
+FROM runtime AS render-test
+WORKDIR /test
+COPY --from=builder /app/internal/countdownrender/testdata ./testdata
+COPY --from=builder /app/bin/countdownrender.test ./
+RUN ./countdownrender.test -test.v -test.count=1 > /test/result.txt 2>&1 || (cat /test/result.txt; exit 1)
 
 # Final stage
-FROM alpine:3.22@sha256:bfe7ceb9f09ec0566c48fb93356e45a47a00be5a1dd14fa5b909e7709c66b034
+FROM runtime
 
 ARG OCI_REVISION=unknown
 ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
 LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
       org.opencontainers.image.source="${OCI_SOURCE}"
 
-# yt-dlp follows Twitch player changes; rebuild the image to update it.
-RUN apk --no-cache add --upgrade ca-certificates ffmpeg yt-dlp 'libcrypto3>=3.5.8-r0' 'libssl3>=3.5.8-r0' 'zlib>=1.3.2-r1'
-
 RUN addgroup -S -g 10001 clpr && adduser -S -D -H -u 10001 -G clpr clpr \
-    && mkdir -p /var/lib/clpr-countdown-media && chown clpr:clpr /var/lib/clpr-countdown-media \
-    && chmod 0700 /var/lib/clpr-countdown-media
+    && mkdir -p /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders \
+    && chown clpr:clpr /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders \
+    && chmod 0700 /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders
 
+COPY --from=render-test /test/result.txt /usr/share/doc/clpr-render/golden-test-result.txt
 COPY --from=builder --chown=clpr:clpr /app/bin/countdown-media /usr/local/bin/countdown-media
 
 USER 10001:10001
 
-ENV COUNTDOWN_MEDIA_DIR=/var/lib/clpr-countdown-media
-VOLUME ["/var/lib/clpr-countdown-media"]
+ENV COUNTDOWN_MEDIA_DIR=/var/lib/clpr-countdown-media \
+    COUNTDOWN_RENDER_DIR=/var/lib/clpr-countdown-renders
+VOLUME ["/var/lib/clpr-countdown-media", "/var/lib/clpr-countdown-renders"]
 EXPOSE 9464
 
 CMD ["countdown-media"]

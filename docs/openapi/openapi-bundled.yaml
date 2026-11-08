@@ -19553,6 +19553,7 @@ components:
         - selection_hour_utc
         - priority
         - enabled
+        - shorts_count
         - created_at
         - updated_at
       properties:
@@ -19585,6 +19586,9 @@ components:
           description: Lower selects first; a clip goes to at most one edition per day
         enabled:
           type: boolean
+        shorts_count:
+          type: integer
+          description: How many top clips of each edition also get a 9:16 Short
         created_at:
           type: string
           format: date-time
@@ -19639,6 +19643,11 @@ components:
           type: integer
         enabled:
           type: boolean
+        shorts_count:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: At most size
     CountdownEditionClip:
       type: object
       required:
