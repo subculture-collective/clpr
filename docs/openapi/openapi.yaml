@@ -13392,7 +13392,7 @@ components:
 
     CountdownEditionClip:
       type: object
-      required: [position, clip_id, view_velocity, title, broadcaster_name, twitch_clip_url]
+      required: [position, clip_id, view_velocity, title, broadcaster_name, twitch_clip_id, twitch_clip_url]
       properties:
         position: {type: integer, minimum: 1, description: 1 is the top clip}
         clip_id: {type: string, format: uuid}
@@ -13400,6 +13400,7 @@ components:
         title: {type: string}
         broadcaster_name: {type: string}
         broadcaster_id: {type: string}
+        twitch_clip_id: {type: string}
         twitch_clip_url: {type: string}
         duration: {type: number}
 
@@ -13411,7 +13412,7 @@ components:
         series_id: {type: string, format: uuid}
         series_slug: {type: string}
         edition_date: {type: string, format: date}
-        status: {type: string, enum: [selected, fetching, rendering, rendered, published, failed]}
+        status: {type: string, enum: [selected, fetching, fetched, rendering, rendered, published, failed]}
         window_start: {type: string, format: date-time}
         window_end: {type: string, format: date-time}
         failure_reason: {type: string}

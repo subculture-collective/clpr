@@ -5,8 +5,8 @@ tags: ["compliance","api"]
 area: "compliance"
 status: "stable"
 owner: "team-core"
-version: "2.0"
-last_reviewed: 2026-09-25
+version: "2.1"
+last_reviewed: 2026-11-07
 ---
 
 # How clpr Uses the Twitch API
@@ -25,6 +25,10 @@ Playback is covered separately in [How clpr embeds Twitch content](twitch-embeds
   actions a broadcaster has authorized on their own channel.
 - Sign-in requests one scope, `user:read:email`.
 - App-token requests share a limit of 800 per minute per API process.
+- The countdown media worker on the render host downloads the clips of each
+  countdown edition, through Helix where the broadcaster authorized it and
+  otherwise from Twitch's player with yt-dlp. See
+  [Countdown media](#countdown-media).
 
 ## Helix endpoints
 
@@ -40,7 +44,7 @@ where it is called from.
 | `GET /streams` | `GetStreams`, `GetStreamStatusByUsername` | App | `internal/services/live_status_service.go`, `internal/handlers/stream_handler.go` | Live status for broadcasters and the stream page |
 | `GET /users` | `GetUsers`, `GetStreamStatusByUsername` | App | `internal/handlers/broadcaster_handler.go`, `internal/handlers/stream_handler.go` | Broadcaster display name, avatar, and description; resolve a login to a user ID |
 | `GET /channels` | `GetChannels` | App | `internal/services/clip_sync_service.go` | Channel tags applied to imported clips |
-| `GET /clips/downloads` | `GetDownloadURL` (`backend/internal/services/twitch_clip_download_service.go`) | Broadcaster | `internal/services/clip_transcription_service.go` | Optional clip transcription, described below |
+| `GET /clips/downloads` | `GetDownloadURL` (`backend/internal/services/twitch_clip_download_service.go`) | Broadcaster | `internal/services/clip_transcription_service.go`, `internal/services/countdown_media.go` | Optional clip transcription and countdown media, described below |
 | `GET /users` | `fetchTwitchUser` (`backend/internal/services/auth_service.go`) and `TwitchOAuthCallback` (`backend/internal/handlers/twitch_oauth_handler.go`) | User | Sign-in and channel connection | Identify the Twitch account that just authorized clpr |
 
 Backend paths in the "Called from" column are relative to `backend/`.
@@ -109,6 +113,35 @@ stored with the clip and used by the auto-tagging job
 enabled (`VISION_ENABLED=true`), the transcript is sent with the clip's
 metadata and public thumbnail to the configured AI provider.
 
+## Countdown media
+
+Countdown videos and Shorts are rendered from clip files, under the media
+policy in [ADR-002](../adr/002-media-handling-for-countdowns.md). The
+`countdown-media` worker (`backend/cmd/countdown-media`, image
+`backend/Dockerfile.render`) runs on the render host beside the database, not
+in the API process. For each selected edition it fetches every clip
+(`backend/internal/services/countdown_media.go`, `TwitchClipMediaFetcher`):
+
+- **Helix, when authorized.** If the broadcaster connected clpr with
+  `channel:manage:clips` and the token has not expired, it asks
+  `GET /clips/downloads` for the official download URL with the broadcaster's
+  token, as transcription does, and downloads the file over HTTPS.
+- **Twitch's player otherwise.** It runs `yt-dlp --no-config` on the clip's
+  `clips.twitch.tv` or `twitch.tv/<channel>/clip/` URL. yt-dlp reads the
+  playback files Twitch serves to its own player through Twitch's internal
+  player API (`gql.twitch.tv`), using yt-dlp's own client settings. clpr's
+  client ID and tokens are never sent to that API. This is the only use of
+  the internal API.
+
+Each file is checked with ffprobe (a video stream, and a duration within 2 s
+of the clip's), hashed with SHA-256 and recorded in
+`countdown_edition_media`. A clip that fails is skipped and the next eligible
+clip takes its place; after three skips in one edition, or if yt-dlp or
+ffprobe is missing, the edition is marked failed instead of going out short.
+Files stay in the worker's own volume, are never served by clpr.tv or put in
+object storage, and are deleted within 24 hours of fetching, or as soon as
+the edition fails.
+
 ## App access token
 
 `backend/pkg/twitch/auth.go` obtains the app token with the
@@ -162,11 +195,12 @@ The client caches some responses in Redis (`backend/pkg/twitch/endpoints.go`):
 
 ## Clip video
 
-clpr does not copy Twitch clip video. Clips submitted from Twitch are stored
-with a `clips.twitch.tv/embed` URL and no video URL
+clpr.tv does not serve Twitch clip video. Clips submitted from Twitch are
+stored with a `clips.twitch.tv/embed` URL and no video URL
 (`backend/internal/services/submission_service.go`, the `SourceTypeTwitch`
-case), and playback uses Twitch's players. The only server-side media access
-is the optional transcription described above.
+case), and playback uses Twitch's players. Server-side media access is
+limited to the optional transcription and the countdown media worker, both
+described above.
 
 ## References
 

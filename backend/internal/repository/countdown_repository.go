@@ -121,10 +121,13 @@ func (r *CountdownRepository) EditionExists(ctx context.Context, seriesID uuid.U
 
 // countdownCandidatesQuery ranks the eligible clips of one series window by
 // view_velocity, keeping at most per_broadcaster_cap clips per broadcaster
-// and leaving out clips already in another edition that day.
+// and leaving out clips already in an edition that day or skipped that day
+// because their media could not be fetched. When $10 names an edition (a
+// backfill), its remaining clips count toward the per-broadcaster cap.
 const countdownCandidatesQuery = `
 	WITH eligible AS (
 		SELECT c.id, c.view_velocity, c.view_count,
+		       COALESCE(c.broadcaster_id, lower(c.broadcaster_name)) AS broadcaster_key,
 		       ROW_NUMBER() OVER (
 		           PARTITION BY COALESCE(c.broadcaster_id, lower(c.broadcaster_name))
 		           ORDER BY c.view_velocity DESC, c.view_count DESC, c.id
@@ -148,11 +151,22 @@ const countdownCandidatesQuery = `
 		      SELECT 1 FROM countdown_edition_clips ec
 		      WHERE ec.edition_date = $7::date AND ec.clip_id = c.id
 		  )
+		  AND NOT EXISTS (
+		      SELECT 1 FROM countdown_edition_skips sk
+		      WHERE sk.edition_date = $7::date AND sk.clip_id = c.id
+		  )
+	), taken AS (
+		SELECT COALESCE(c.broadcaster_id, lower(c.broadcaster_name)) AS broadcaster_key, count(*) AS clips
+		FROM countdown_edition_clips ec
+		JOIN clips c ON c.id = ec.clip_id
+		WHERE ec.edition_id = $10::uuid
+		GROUP BY 1
 	)
-	SELECT id, view_velocity
-	FROM eligible
-	WHERE broadcaster_rank <= $8
-	ORDER BY view_velocity DESC, view_count DESC, id
+	SELECT e.id, e.view_velocity
+	FROM eligible e
+	LEFT JOIN taken t ON t.broadcaster_key = e.broadcaster_key
+	WHERE e.broadcaster_rank + COALESCE(t.clips, 0) <= $8
+	ORDER BY e.view_velocity DESC, e.view_count DESC, e.id
 	LIMIT $9`
 
 // SelectEdition picks and stores the edition of series for date. When fewer
@@ -192,7 +206,7 @@ func (r *CountdownRepository) SelectEdition(ctx context.Context, series *models.
 
 	rows, err := tx.Query(ctx, countdownCandidatesQuery,
 		CountdownMinClipSeconds, CountdownMaxClipSeconds, windowStart.UTC(), windowEnd.UTC(),
-		series.GameID, series.Language, date, series.PerBroadcasterCap, series.Size)
+		series.GameID, series.Language, date, series.PerBroadcasterCap, series.Size, (*uuid.UUID)(nil))
 	if err != nil {
 		return nil, fmt.Errorf("select countdown candidates: %w", err)
 	}
@@ -295,7 +309,7 @@ func (r *CountdownRepository) listEditions(ctx context.Context, where string, ar
 
 	clipRows, err := r.pool.Query(ctx, `
 		SELECT ec.edition_id, ec.position, ec.clip_id, ec.view_velocity, c.title, c.broadcaster_name,
-		       c.broadcaster_id, c.twitch_clip_url, c.duration
+		       c.broadcaster_id, c.twitch_clip_id, c.twitch_clip_url, c.duration
 		FROM countdown_edition_clips ec
 		JOIN clips c ON c.id = ec.clip_id
 		WHERE ec.edition_id = ANY($1)
@@ -308,7 +322,7 @@ func (r *CountdownRepository) listEditions(ctx context.Context, where string, ar
 		var editionID uuid.UUID
 		var c models.CountdownEditionClip
 		if err := clipRows.Scan(&editionID, &c.Position, &c.ClipID, &c.ViewVelocity, &c.Title,
-			&c.BroadcasterName, &c.BroadcasterID, &c.TwitchClipURL, &c.Duration); err != nil {
+			&c.BroadcasterName, &c.BroadcasterID, &c.TwitchClipID, &c.TwitchClipURL, &c.Duration); err != nil {
 			return nil, err
 		}
 		e := &editions[index[editionID]]

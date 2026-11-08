@@ -19647,6 +19647,7 @@ components:
         - view_velocity
         - title
         - broadcaster_name
+        - twitch_clip_id
         - twitch_clip_url
       properties:
         position:
@@ -19664,6 +19665,8 @@ components:
         broadcaster_name:
           type: string
         broadcaster_id:
+          type: string
+        twitch_clip_id:
           type: string
         twitch_clip_url:
           type: string
@@ -19699,6 +19702,7 @@ components:
           enum:
             - selected
             - fetching
+            - fetched
             - rendering
             - rendered
             - published

@@ -1,0 +1,40 @@
+# Render host worker for countdown videos (#77, #78; ADR-002). It holds clip
+# media only in its own volume and deletes it within 24 hours. Run it on the
+# render host (Almaz or Kvant), never on Dozor or the API host.
+
+# Build stage
+FROM golang:1.26.10-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e6ee4338db547050308 AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags '-s -w' -o /app/bin/countdown-media ./cmd/countdown-media
+
+# Final stage
+FROM alpine:3.22@sha256:bfe7ceb9f09ec0566c48fb93356e45a47a00be5a1dd14fa5b909e7709c66b034
+
+ARG OCI_REVISION=unknown
+ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
+LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
+      org.opencontainers.image.source="${OCI_SOURCE}"
+
+# yt-dlp follows Twitch player changes; rebuild the image to update it.
+RUN apk --no-cache add --upgrade ca-certificates ffmpeg yt-dlp 'libcrypto3>=3.5.8-r0' 'libssl3>=3.5.8-r0' 'zlib>=1.3.2-r1'
+
+RUN addgroup -S -g 10001 clpr && adduser -S -D -H -u 10001 -G clpr clpr \
+    && mkdir -p /var/lib/clpr-countdown-media && chown clpr:clpr /var/lib/clpr-countdown-media \
+    && chmod 0700 /var/lib/clpr-countdown-media
+
+COPY --from=builder --chown=clpr:clpr /app/bin/countdown-media /usr/local/bin/countdown-media
+
+USER 10001:10001
+
+ENV COUNTDOWN_MEDIA_DIR=/var/lib/clpr-countdown-media
+VOLUME ["/var/lib/clpr-countdown-media"]
+EXPOSE 9464
+
+CMD ["countdown-media"]
