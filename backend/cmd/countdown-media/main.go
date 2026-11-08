@@ -119,6 +119,11 @@ func run() error {
 		RenderDir: renderDir,
 		Retention: envDuration("COUNTDOWN_RENDER_RETENTION_DAYS", 7*24*time.Hour, 24*time.Hour),
 		Metrics:   services.NewCountdownRenderMetrics(registry),
+		Notifier: &services.CountdownPublishNotifier{
+			Editions: store,
+			Webhooks: services.NewOutboundWebhookService(repository.NewOutboundWebhookRepository(db.Pool)),
+			BaseURL:  cfg.Server.BaseURL,
+		},
 	}
 	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "clpr_countdown_media_last_run_timestamp_seconds",

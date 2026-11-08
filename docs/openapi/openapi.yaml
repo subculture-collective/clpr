@@ -11027,6 +11027,7 @@ components:
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
         last_delivery_at: {type: [string, 'null'], format: date-time}
+        target_type: {type: string, enum: [generic, discord], description: 'generic receives the signed JSON event; discord receives a Discord message'}
 
     WebhookDelivery:
       type: object
@@ -11057,8 +11058,13 @@ components:
           type: array
           minItems: 1
           maxItems: 10
-          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected]}
+          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected, countdown.published, daily.top_clips]}
         description: {type: [string, 'null'], maxLength: 500}
+        target_type:
+          type: string
+          enum: [generic, discord]
+          default: generic
+          description: A discord target needs a https://discord.com/api/webhooks/<id>/<token> URL and takes only countdown.published and daily.top_clips. The target type cannot be changed later.
 
     UpdateWebhookSubscriptionRequest:
       type: object
@@ -11069,7 +11075,7 @@ components:
           type: array
           minItems: 1
           maxItems: 10
-          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected]}
+          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected, countdown.published, daily.top_clips]}
         is_active: {type: boolean}
         description: {type: [string, 'null'], maxLength: 500}
 
@@ -11107,12 +11113,20 @@ components:
 
     WebhookEventsResponse:
       type: object
-      required: [success, data]
+      required: [success, data, meta]
       properties:
         success: {type: boolean, const: true}
         data:
           type: array
-          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected]}
+          items: {type: string, enum: [clip.submitted, clip.approved, clip.rejected, countdown.published, daily.top_clips]}
+        meta:
+          type: object
+          required: [discord_events]
+          properties:
+            discord_events:
+              type: array
+              description: Events a discord target can subscribe to
+              items: {type: string, enum: [countdown.published, daily.top_clips]}
 
     WebhookDeliveriesResponse:
       type: object

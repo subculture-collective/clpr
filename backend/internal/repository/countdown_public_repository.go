@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"github.com/google/uuid"
@@ -168,4 +169,38 @@ func (r *CountdownRepository) ListPublicEditionKeys(ctx context.Context, limit i
 		keys = append(keys, k)
 	}
 	return keys, rows.Err()
+}
+
+// ListDailyTopClips returns the clips created in [start, end) that drew views
+// fastest, at most two per broadcaster, under the countdown eligibility rules
+// apart from clip length.
+func (r *CountdownRepository) ListDailyTopClips(ctx context.Context, start, end time.Time, limit int) ([]models.DailyTopClip, error) {
+	rows, err := r.pool.Query(ctx, fmt.Sprintf(`
+		SELECT id, title, broadcaster_name, twitch_clip_url, thumbnail_url, view_count
+		FROM (
+			SELECT c.id, c.title, c.broadcaster_name, c.twitch_clip_url, c.thumbnail_url, COALESCE(c.view_count, 0) AS view_count, c.view_velocity,
+			       ROW_NUMBER() OVER (
+			           PARTITION BY COALESCE(c.broadcaster_id, lower(c.broadcaster_name))
+			           ORDER BY c.view_velocity DESC, COALESCE(c.view_count, 0) DESC, c.id
+			       ) AS broadcaster_rank
+			FROM clips c
+			WHERE c.source_type = 'twitch' AND c.is_nsfw = false AND c.view_velocity > 0
+			  AND c.created_at >= $1 AND c.created_at < $2 AND %s
+		) ranked
+		WHERE broadcaster_rank <= 2
+		ORDER BY view_velocity DESC, view_count DESC, id
+		LIMIT $3`, countdownPublicClip), start.UTC(), end.UTC(), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	clips := []models.DailyTopClip{}
+	for rows.Next() {
+		var c models.DailyTopClip
+		if err := rows.Scan(&c.ClipID, &c.Title, &c.BroadcasterName, &c.TwitchClipURL, &c.ThumbnailURL, &c.ViewCount); err != nil {
+			return nil, err
+		}
+		clips = append(clips, c)
+	}
+	return clips, rows.Err()
 }

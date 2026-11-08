@@ -94,6 +94,8 @@ An edition becomes public once it is `rendered` or `published`. Selected, in-pro
 
 The pages read `GET /api/v1/countdowns`, `GET /api/v1/countdowns/{date}/{series}` and `GET /api/v1/countdowns/featured`. They need no sign-in, are rate-limited to 120 requests a minute per client and may be cached for five minutes. A clip removed, hidden, taken down or excluded after its edition was made drops out of these pages, so the ranks shown can skip a number. The sitemap lists `/countdowns` and the newest 1,000 edition pages. The YouTube link joins each page once #79 stores the video ID.
 
+When an edition is rendered, the worker also queues the `countdown.published` webhook event, which Discord subscriptions post to their channel (see [[../backend/webhook-subscription-management#discord-delivery|Discord delivery]]). The links in it use `BASE_URL`, so the worker needs the same value as the API.
+
 ## Exclusions
 
 `/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition. Each has a reason (`request`, `dmca` or `takedown`) and a source (`admin` now, `self_service` once #75 adds the broadcaster's own toggle). Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.

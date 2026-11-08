@@ -6,7 +6,7 @@ area: "backend"
 status: "stable"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2026-01-29
+last_reviewed: 2026-11-07
 ---
 
 # Webhook Subscription Management
@@ -27,7 +27,8 @@ The webhook subscription management feature allows users to create and manage we
 
 - **Access**: Navigate to Settings > Webhooks or directly to `/settings/webhooks`
 - **CRUD Operations**: Create, read, update, and delete webhook subscriptions
-- **Event Selection**: Subscribe to specific events (clip.submitted, clip.approved, clip.rejected)
+- **Event Selection**: Subscribe to specific events (clip.submitted, clip.approved, clip.rejected, countdown.published, daily.top_clips)
+- **Discord**: Post the daily top clips and new countdowns to a Discord channel (see [Discord delivery](#discord-delivery))
 - **Secret Management**: Secure secret generation and rotation
 - **Delivery History**: View audit log of webhook deliveries with status and error messages
 
@@ -192,6 +193,15 @@ Response:
 - Create webhook: 10 requests per hour
 - Regenerate secret: 5 requests per hour
 - Get events: 60 requests per minute
+
+## Discord delivery
+
+A subscription with `"target_type": "discord"` posts a Discord message instead of the signed JSON event. Its URL must be a Discord channel webhook (`https://discord.com/api/webhooks/<id>/<token>`; in Discord: channel settings, Integrations, Webhooks, Copy Webhook URL). It takes two events, and the target type cannot be changed after creation:
+
+- `daily.top_clips`: once a day, after `DAILY_TOP_CLIPS_HOUR_UTC` (default 16:00 UTC), the ten clips of the preceding 24 hours that drew views fastest, at most two per broadcaster. Each clip is an embed with its title, a link to its clpr page, the broadcaster, the view count and a thumbnail. The rules that keep a clip out of countdowns (removed, hidden, NSFW, DMCA, excluded broadcaster) apply.
+- `countdown.published`: when a countdown edition is rendered and its page at `/countdowns/<date>/<series>` goes public. The embed links that page, lists the ranked clips and shows the #1 thumbnail.
+
+Mentions in titles are disabled (`allowed_mentions` is empty) and markdown is escaped. Each event is queued at most once per subscription, even when several API instances or a restarted worker queue it again. Deliveries use the same retries, dead-letter queue and `webhook_delivery_*` metrics as other webhooks, labelled with the event type. The JSON data of both events is also available to generic subscriptions.
 
 ## Webhook Payload Format
 

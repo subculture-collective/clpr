@@ -22846,6 +22846,14 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "generic",
+              "discord"
+            ],
+            "description": "generic receives the signed JSON event; discord receives a Discord message"
           }
         }
       },
@@ -22958,7 +22966,9 @@
               "enum": [
                 "clip.submitted",
                 "clip.approved",
-                "clip.rejected"
+                "clip.rejected",
+                "countdown.published",
+                "daily.top_clips"
               ]
             }
           },
@@ -22968,6 +22978,15 @@
               "null"
             ],
             "maxLength": 500
+          },
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "generic",
+              "discord"
+            ],
+            "default": "generic",
+            "description": "A discord target needs a https://discord.com/api/webhooks/<id>/<token> URL and takes only countdown.published and daily.top_clips. The target type cannot be changed later."
           }
         }
       },
@@ -22989,7 +23008,9 @@
               "enum": [
                 "clip.submitted",
                 "clip.approved",
-                "clip.rejected"
+                "clip.rejected",
+                "countdown.published",
+                "daily.top_clips"
               ]
             }
           },
@@ -23086,7 +23107,8 @@
         "type": "object",
         "required": [
           "success",
-          "data"
+          "data",
+          "meta"
         ],
         "properties": {
           "success": {
@@ -23100,8 +23122,29 @@
               "enum": [
                 "clip.submitted",
                 "clip.approved",
-                "clip.rejected"
+                "clip.rejected",
+                "countdown.published",
+                "daily.top_clips"
               ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "discord_events"
+            ],
+            "properties": {
+              "discord_events": {
+                "type": "array",
+                "description": "Events a discord target can subscribe to",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "countdown.published",
+                    "daily.top_clips"
+                  ]
+                }
+              }
             }
           }
         }

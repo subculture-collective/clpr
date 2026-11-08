@@ -184,6 +184,7 @@ type JobsConfig struct {
 	TagPromotionStartDelaySeconds  int
 	HotScoreStartDelaySeconds      int
 	PlaylistStartDelaySeconds      int
+	DailyTopClipsHourUTC           int
 	TrendingStartDelaySeconds      int
 	EmbeddingStartDelaySeconds     int
 
@@ -539,6 +540,7 @@ func Load() (*Config, error) {
 			TagPromotionStartDelaySeconds:  getEnvInt("TAG_PROMOTION_START_DELAY_SECONDS", 90),
 			HotScoreStartDelaySeconds:      getEnvInt("HOT_SCORE_START_DELAY_SECONDS", 120),
 			PlaylistStartDelaySeconds:      getEnvInt("PLAYLIST_START_DELAY_SECONDS", 240),
+			DailyTopClipsHourUTC:           getEnvInt("DAILY_TOP_CLIPS_HOUR_UTC", 16),
 			TrendingStartDelaySeconds:      getEnvInt("TRENDING_START_DELAY_SECONDS", 420),
 			EmbeddingStartDelaySeconds:     getEnvInt("EMBEDDING_START_DELAY_SECONDS", 720),
 

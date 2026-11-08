@@ -195,3 +195,13 @@ type CountdownEditionKey struct {
 	EditionDate string
 	SeriesSlug  string
 }
+
+// DailyTopClip is one clip of the daily top-clips post.
+type DailyTopClip struct {
+	ClipID          uuid.UUID `json:"clip_id"`
+	Title           string    `json:"title"`
+	BroadcasterName string    `json:"broadcaster_name"`
+	TwitchClipURL   string    `json:"twitch_clip_url"`
+	ThumbnailURL    *string   `json:"thumbnail_url,omitempty"`
+	ViewCount       int64     `json:"view_count"`
+}

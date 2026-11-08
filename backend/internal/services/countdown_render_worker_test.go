@@ -108,11 +108,23 @@ func renderFixture(t *testing.T, shorts int) (*fakeRenderStore, *CountdownRender
 	return store, worker
 }
 
+type fakeEditionNotifier struct{ editions []uuid.UUID }
+
+func (f *fakeEditionNotifier) EditionPublished(_ context.Context, e *models.CountdownEdition) error {
+	f.editions = append(f.editions, e.ID)
+	return nil
+}
+
 func TestCountdownRenderWorkerRendersAndDeletesSources(t *testing.T) {
 	store, worker := renderFixture(t, 2)
+	notifier := &fakeEditionNotifier{}
+	worker.Notifier = notifier
 	renderer := worker.Renderer.(*fakeRenderer)
 	if err := worker.RunOnce(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	if len(notifier.editions) != 1 || notifier.editions[0] != store.edition.ID {
+		t.Fatalf("announced editions = %v", notifier.editions)
 	}
 	if store.status != models.CountdownEditionRendered {
 		t.Fatalf("status %q (%s)", store.status, store.reason)
@@ -153,9 +165,14 @@ func TestCountdownRenderWorkerRendersAndDeletesSources(t *testing.T) {
 
 func TestCountdownRenderWorkerFailureStillDeletesSources(t *testing.T) {
 	store, worker := renderFixture(t, 0)
+	notifier := &fakeEditionNotifier{}
+	worker.Notifier = notifier
 	worker.Renderer.(*fakeRenderer).fail = errors.New("ffmpeg failed: boom")
 	if err := worker.RunOnce(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	if len(notifier.editions) != 0 {
+		t.Fatalf("a failed edition was announced: %v", notifier.editions)
 	}
 	if store.status != models.CountdownEditionFailed || store.reason != "render countdown: ffmpeg failed: boom" {
 		t.Fatalf("status %q reason %q", store.status, store.reason)

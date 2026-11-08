@@ -276,6 +276,7 @@ func (h *WebhookSubscriptionHandler) GetSupportedEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    events,
+		"meta":    gin.H{"discord_events": models.GetDiscordWebhookEvents()},
 	})
 }
 

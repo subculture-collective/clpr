@@ -80,6 +80,10 @@ type CountdownRenderWorker struct {
 	StaleAfter time.Duration
 	Metrics    *CountdownRenderMetrics
 	Now        func() time.Time
+	// Notifier, when set, announces each rendered edition (#83).
+	Notifier interface {
+		EditionPublished(ctx context.Context, edition *models.CountdownEdition) error
+	}
 }
 
 func (w *CountdownRenderWorker) ensure() {
@@ -139,8 +143,14 @@ func (w *CountdownRenderWorker) RenderNext(ctx context.Context) (bool, error) {
 	}
 	// ADR-002: source clips go once the render finishes, whatever the outcome.
 	deleteErr := w.deleteSources(ctx, media)
+	var notifyErr error
 	if finishErr == nil {
 		w.Metrics.Editions.WithLabelValues(outcome).Inc()
+		if outcome == models.CountdownEditionRendered && w.Notifier != nil {
+			if notifyErr = w.Notifier.EditionPublished(ctx, edition); notifyErr != nil {
+				notifyErr = fmt.Errorf("announce edition %s: %w", edition.ID, notifyErr)
+			}
+		}
 	}
 	fields := map[string]interface{}{"edition_id": edition.ID.String(), "series": edition.SeriesSlug, "edition_date": edition.EditionDate}
 	if err != nil {
@@ -149,7 +159,7 @@ func (w *CountdownRenderWorker) RenderNext(ctx context.Context) (bool, error) {
 	} else {
 		utils.Info("Countdown edition rendered", fields)
 	}
-	return true, errors.Join(finishErr, deleteErr)
+	return true, errors.Join(finishErr, deleteErr, notifyErr)
 }
 
 func (w *CountdownRenderWorker) render(ctx context.Context, edition *models.CountdownEdition, series *models.CountdownSeries, media []models.CountdownEditionMedia) error {
