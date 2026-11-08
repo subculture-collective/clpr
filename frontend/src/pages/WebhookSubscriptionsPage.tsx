@@ -16,6 +16,7 @@ import {
     Toggle,
 } from '../components';
 import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../lib/error-utils';
 import {
     createWebhookSubscription,
     deleteWebhookSubscription,
@@ -496,8 +497,8 @@ export function WebhookSubscriptionsPage() {
                         {createMutation.isError && (
                             <Alert variant="error">
                                 <p className="font-medium">Failed to create webhook subscription</p>
-                                {createMutation.error instanceof Error && createMutation.error.message && (
-                                    <p className="mt-1 text-sm">{createMutation.error.message}</p>
+                                {createMutation.error && (
+                                    <p className="mt-1 text-sm">{getErrorMessage(createMutation.error, 'Please try again.')}</p>
                                 )}
                             </Alert>
                         )}
@@ -595,8 +596,8 @@ export function WebhookSubscriptionsPage() {
                         {updateMutation.isError && (
                             <Alert variant="error">
                                 <p className="font-medium">Failed to update webhook subscription</p>
-                                {updateMutation.error instanceof Error && updateMutation.error.message && (
-                                    <p className="mt-1 text-sm">{updateMutation.error.message}</p>
+                                {updateMutation.error && (
+                                    <p className="mt-1 text-sm">{getErrorMessage(updateMutation.error, 'Please try again.')}</p>
                                 )}
                             </Alert>
                         )}

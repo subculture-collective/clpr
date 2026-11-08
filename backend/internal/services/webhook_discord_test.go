@@ -132,7 +132,9 @@ func TestDiscordBodyDailyTopClips(t *testing.T) {
 	}
 }
 
-type fakePublicReader struct{ edition *models.PublicCountdownEdition }
+type fakePublicReader struct {
+	edition *models.PublicCountdownEdition
+}
 
 func (f fakePublicReader) GetPublicEdition(context.Context, string, string) (*models.PublicCountdownEdition, error) {
 	return f.edition, nil

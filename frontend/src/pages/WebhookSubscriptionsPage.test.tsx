@@ -63,6 +63,23 @@ describe('WebhookSubscriptionsPage', () => {
     expect(screen.queryByText('unused')).not.toBeInTheDocument();
   });
 
+  it('shows why the server rejected a webhook URL', async () => {
+    api.listWebhookSubscriptions.mockResolvedValue([]);
+    api.createWebhookSubscription.mockRejectedValue(Object.assign(new Error('Request failed with status code 400'), {
+      response: { status: 400, data: { error: 'a Discord webhook URL looks like https://discord.com/api/webhooks/<id>/<token>' } },
+    }));
+    const user = userEvent.setup();
+    render(<WebhookSubscriptionsPage />);
+    await user.click(await screen.findByRole('button', { name: 'Create Webhook' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('radio', { name: 'Discord channel' }));
+    await user.type(within(dialog).getByLabelText(/Discord webhook URL/), 'https://evil.example/api/webhooks/1/x');
+    await user.click(await within(dialog).findByLabelText('daily.top_clips'));
+    await user.click(within(dialog).getByRole('button', { name: 'Create Webhook' }));
+    expect(await within(dialog).findByText(/a Discord webhook URL looks like/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/status code/)).not.toBeInTheDocument();
+  });
+
   it('marks Discord subscriptions and offers no secret for them', async () => {
     api.listWebhookSubscriptions.mockResolvedValue([discordSub]);
     render(<WebhookSubscriptionsPage />);

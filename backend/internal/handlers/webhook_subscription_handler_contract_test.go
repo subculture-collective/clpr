@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -168,4 +170,29 @@ func TestWebhookSubscriptionRejectsMalformedIdentityWithoutPanicking(t *testing.
 	ctx.Set("user_id", "not-a-uuid")
 	require.NotPanics(t, func() { handler.ListSubscriptions(ctx) })
 	require.Equal(t, http.StatusUnauthorized, recorder.Code)
+}
+
+func TestWebhookSubscriptionValidationErrorsAreBadRequests(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	userID := uuid.New()
+	stub := &webhookSubscriptionServiceStub{err: fmt.Errorf("%w: a Discord webhook URL looks like https://discord.com/api/webhooks/<id>/<token>", services.ErrWebhookValidation)}
+	handler := NewWebhookSubscriptionHandler(stub)
+
+	ctx, recorder := webhookTestContext(http.MethodPost, "/api/v1/webhooks",
+		strings.NewReader(`{"url":"https://evil.example/api/webhooks/1/x","events":["daily.top_clips"],"target_type":"discord"}`), userID)
+	handler.CreateSubscription(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.JSONEq(t, `{"error":"a Discord webhook URL looks like https://discord.com/api/webhooks/<id>/<token>"}`, recorder.Body.String())
+
+	id := uuid.New()
+	ctx, recorder = webhookTestContext(http.MethodPatch, "/api/v1/webhooks/"+id.String(), strings.NewReader(`{"events":["clip.approved"]}`), userID)
+	ctx.Params = gin.Params{{Key: "id", Value: id.String()}}
+	handler.UpdateSubscription(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	stub.err = fmt.Errorf("database down")
+	ctx, recorder = webhookTestContext(http.MethodPost, "/api/v1/webhooks",
+		strings.NewReader(`{"url":"https://example.com/hook","events":["clip.approved"]}`), userID)
+	handler.CreateSubscription(ctx)
+	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 }
