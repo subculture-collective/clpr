@@ -12863,7 +12863,7 @@
           "Countdowns"
         ],
         "summary": "Select a countdown edition again",
-        "description": "Selects the series edition for a past date again, replacing an edition that is still selected or failed. Fewer eligible clips than the series size store a failed edition with no clips. Administrator MFA and CSRF protection are required.",
+        "description": "Selects the series edition for a past date again, replacing an edition that is still selected, failed or skipped. Fewer eligible clips than the series size store a failed edition with no clips. Administrator MFA and CSRF protection are required.",
         "operationId": "postApiV1AdminCountdownsSeriesIdEditions",
         "parameters": [
           {
@@ -30012,7 +30012,11 @@
           },
           "size": {
             "type": "integer",
-            "description": "Number of clips in an edition"
+            "description": "Most clips in an edition"
+          },
+          "min_size": {
+            "type": "integer",
+            "description": "Fewest clips for an edition; with fewer the day is skipped. Absent means an edition needs exactly size clips or fails"
           },
           "window_hours": {
             "type": "integer",
@@ -30077,6 +30081,15 @@
             ],
             "minLength": 2,
             "maxLength": 10
+          },
+          "min_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 50,
+            "description": "Fewest clips for an edition; null requires exactly size clips"
           },
           "size": {
             "type": "integer",
@@ -30199,7 +30212,8 @@
               "rendering",
               "rendered",
               "published",
-              "failed"
+              "failed",
+              "skipped"
             ]
           },
           "window_start": {

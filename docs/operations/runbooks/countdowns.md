@@ -6,7 +6,7 @@ area: "operations"
 status: "stable"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2026-11-07
+last_reviewed: 2026-11-08
 ---
 
 # Countdowns Runbook
@@ -30,6 +30,7 @@ The worker is image `backend/Dockerfile.render` with command `countdown-media`. 
 
 - **Volumes:** two named volumes, one at `/var/lib/clpr-countdown-media` (source clips, deleted within 24 hours) and one at `/var/lib/clpr-countdown-renders` (renders, deleted after 7 days). The Whisper model downloads to `/var/lib/clpr-whisper-models` inside the container on first use.
 - **Environment:**
+  - `ENVIRONMENT=local` and `GIN_MODE=release`. The worker shares the API's config loader, and `ENVIRONMENT=production` would demand API-only secrets such as the JWT key. `GIN_MODE=release` gives JSON logs;
   - the API's database settings and `TWITCH_CLIENT_ID`;
   - `BASE_URL`, the same as the API's, for links in webhooks and video descriptions;
   - once the channel is authorized, `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET_FILE` and `YOUTUBE_REFRESH_TOKEN_FILE` from the secret store.
@@ -51,21 +52,27 @@ Plan of record: one overall series and two or three category series, with three 
 INSERT INTO countdown_series (slug, name, game_id, size, window_hours, per_broadcaster_cap, selection_hour_utc, priority, enabled, shorts_count)
 VALUES
   ('overall',       'Overall',       NULL,     10, 24, 2, 12, 0, true, 3),
-  ('just-chatting', 'Just Chatting', '509658', 10, 24, 1, 12, 1, true, 1),
-  ('<category>',    '<Category>',    '<id>',   10, 24, 1, 12, 2, true, 1)
+  ('just-chatting', 'Just Chatting', '509658', 5,  24, 1, 12, 1, true, 1),
+  ('<category>',    '<Category>',    '<id>',   5,  24, 1, 12, 2, true, 1)
 ON CONFLICT (slug) DO NOTHING;
 ```
+
+Size each series from its supply, not from a fixed number. In the week of 2026-11-01, Overall had about 800 usable clips a day and the largest category, Just Chatting, about 40. Top 10 with one clip per broadcaster would have failed most days in any category.
+
+`min_size` makes a series follow the day's supply. With it set, an edition takes up to `size` clips, and a day with fewer than `min_size` is stored as `skipped`, which raises no alert. Without it, an edition needs exactly `size` clips or it fails and **Missed edition** fires. To set it: `UPDATE countdown_series SET size = 10, min_size = 5 WHERE slug = '<series>';`
+
+A second list on the same day is another series row at a different `selection_hour_utc` and priority. A clip still goes to at most one edition a day.
 
 The overall series picks first (priority 0); a clip goes to at most one edition a day. Choose the other categories from where the clips are, for example the categories with the most clips in the last week:
 
 ```sql
-SELECT game_id, game_name, count(*) AS clips
-FROM clips
-WHERE source_type = 'twitch' AND created_at > NOW() - INTERVAL '7 days' AND NOT is_removed AND game_id IS NOT NULL
-GROUP BY game_id, game_name ORDER BY clips DESC LIMIT 10;
+SELECT c.game_id, g.name, count(*) AS clips
+FROM clips c LEFT JOIN games g ON g.twitch_game_id = c.game_id
+WHERE c.source_type = 'twitch' AND c.created_at > NOW() - INTERVAL '7 days' AND NOT c.is_removed AND c.game_id IS NOT NULL
+GROUP BY c.game_id, g.name ORDER BY clips DESC LIMIT 10;
 ```
 
-A series needs `size` eligible clips (5 to 60 seconds, not NSFW, removed or excluded) in its window. With fewer, the edition is stored as `failed` with the reason, and **Missed edition** fires.
+A series needs `size` eligible clips, or `min_size` if it has one, in its window. A clip is eligible at 5 to 60 seconds, when it is not NSFW, removed or excluded, and once clpr has seen its view count rise. Below that number, an edition without `min_size` is stored as `failed` with the reason and **Missed edition** fires, and an edition with `min_size` is stored as `skipped`.
 
 ## Metrics
 
@@ -93,10 +100,10 @@ A series needs `size` eligible clips (5 to 60 seconds, not NSFW, removed or excl
 
 1. Find the edition: `GET /api/v1/admin/countdowns/editions?series_id=<id>&limit=3`, or `SELECT edition_date, status, failure_reason FROM countdown_editions e JOIN countdown_series s ON s.id = e.series_id WHERE s.slug = '<series>' ORDER BY edition_date DESC LIMIT 3;`
 2. **No row for the date:** selection did not run. The API's playlist script scheduler selects editions every 5 minutes. Check the API is up, that `job_last_success_timestamp_seconds{job_name="countdown_edition_select"}` is recent, and look for "Countdown edition selection failed" in the API log.
-3. **`failed` with "only N eligible clips":** the category had too few clips that day. Lower `size`, widen `window_hours`, or accept the gap.
+3. **`failed` with "only N of M clips were eligible":** the category had too few clips that day. Set `min_size`, lower `size`, widen `window_hours`, or accept the gap. A wider window can repeat a clip from the day before.
 4. **`failed` in fetch or render:** see [Failed edition](#failed-edition).
 5. **Stuck in `selected`, `fetched` or `rendering`:** the worker is not making progress; see [Worker down or stalled](#worker-down-or-stalled).
-6. To try a date again after fixing the cause, select it again: `POST /api/v1/admin/countdowns/series/<id>/editions` with `{"date": "YYYY-MM-DD"}`. This works only while the edition is `selected` or `failed`.
+6. To try a date again after fixing the cause, select it again: `POST /api/v1/admin/countdowns/series/<id>/editions` with `{"date": "YYYY-MM-DD"}`. This works only while the edition is `selected`, `failed` or `skipped`.
 
 ### Failed edition
 
@@ -132,7 +139,7 @@ A broadcaster's request or a claim against a clip becomes a countdown exclusion 
 
 ## Rollback
 
-Stop the worker: nothing else depends on it. Editions wait in their current status and resume when it runs again. To roll back the database, migrations 149 to 153 have down files; take a dump first, because down migrations drop the countdown tables.
+Stop the worker: nothing else depends on it. Editions wait in their current status and resume when it runs again. To roll back the database, migrations 149 to 155 have down files; take a dump first, because down migrations drop the countdown tables.
 
 ---
 

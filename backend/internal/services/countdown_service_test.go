@@ -148,6 +148,8 @@ func TestReselectEditionRejectsFutureSelectionHour(t *testing.T) {
 	}
 }
 
+func intPtr(v int) *int { return &v }
+
 func TestNormalizeCountdownSeries(t *testing.T) {
 	lang := " EN "
 	empty := "  "
@@ -171,6 +173,9 @@ func TestNormalizeCountdownSeries(t *testing.T) {
 		{Slug: "ok", Name: "x", PerBroadcasterCap: 11},
 		{Slug: "ok", Name: "x", SelectionHourUTC: 24},
 		{Slug: "ok", Name: "x", SelectionHourUTC: -1},
+		{Slug: "ok", Name: "x", Size: 5, MinSize: intPtr(0)},
+		{Slug: "ok", Name: "x", Size: 5, MinSize: intPtr(6)},
+		{Slug: "ok", Name: "x", Size: 5, MinSize: intPtr(2), ShortsCount: 3},
 	}
 	for _, b := range bad {
 		b := b

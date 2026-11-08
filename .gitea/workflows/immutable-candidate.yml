@@ -143,6 +143,7 @@ jobs:
 
           build_candidate backend backend backend/Dockerfile 10001:10001
           build_candidate crawler backend backend/Dockerfile.crawler 10001:10001
+          build_candidate render backend backend/Dockerfile.render 10001:10001
           build_candidate frontend . frontend/Dockerfile 101:101
 
           built_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"

@@ -24,7 +24,7 @@ FROM python:3.12-slim-trixie@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12
 # yt-dlp follows Twitch player changes; bump its pin and rebuild to update it.
 # PyAV 19 dropped an argument faster-whisper 1.2.0 passes, so av is pinned.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates ffmpeg fonts-noto-cjk \
+    && apt-get install -y --no-install-recommends ca-certificates ffmpeg zlib1g fonts-noto-cjk \
     && pip install --no-cache-dir yt-dlp==2026.10.26 faster-whisper==1.2.0 av==18.1.0 requests==2.34.2 \
     && rm -rf /var/lib/apt/lists/*
 

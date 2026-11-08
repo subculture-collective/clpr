@@ -100,6 +100,10 @@ func normalizeCountdownSeries(in *models.CountdownSeriesInput) error {
 		return countdownInvalid("selection_hour_utc must be between 0 and 23")
 	case in.ShortsCount < 0 || in.ShortsCount > 10 || in.ShortsCount > in.Size:
 		return countdownInvalid("shorts_count must be between 0 and 10 and at most size")
+	case in.MinSize != nil && (*in.MinSize < 1 || *in.MinSize > in.Size):
+		return countdownInvalid("min_size must be between 1 and size")
+	case in.MinSize != nil && in.ShortsCount > *in.MinSize:
+		return countdownInvalid("shorts_count must be at most min_size")
 	}
 	return nil
 }
@@ -207,6 +211,13 @@ func (s *CountdownService) GenerateDueEditions(ctx context.Context) (selected, f
 			continue
 		}
 		fields := map[string]interface{}{"series": sr.Slug, "edition_date": date, "status": edition.Status, "clips": len(edition.Clips)}
+		if edition.Status == models.CountdownEditionSkipped {
+			if edition.FailureReason != nil {
+				fields["reason"] = *edition.FailureReason
+			}
+			utils.Info("Countdown edition skipped: too few clips", fields)
+			continue
+		}
 		if edition.Status == models.CountdownEditionFailed {
 			failed++
 			if edition.FailureReason != nil {

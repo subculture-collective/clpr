@@ -18,6 +18,9 @@ const (
 	CountdownEditionPublishing = "publishing"
 	CountdownEditionPublished  = "published"
 	CountdownEditionFailed     = "failed"
+	// CountdownEditionSkipped marks a day with fewer clips than the series
+	// min_size. It is not an error and raises no alert.
+	CountdownEditionSkipped = "skipped"
 )
 
 // Countdown exclusion reasons and sources.
@@ -39,6 +42,7 @@ type CountdownSeries struct {
 	GameID            *string   `json:"game_id,omitempty" db:"game_id"`
 	Language          *string   `json:"language,omitempty" db:"language"`
 	Size              int       `json:"size" db:"size"`
+	MinSize           *int      `json:"min_size,omitempty" db:"min_size"`
 	WindowHours       int       `json:"window_hours" db:"window_hours"`
 	PerBroadcasterCap int       `json:"per_broadcaster_cap" db:"per_broadcaster_cap"`
 	SelectionHourUTC  int       `json:"selection_hour_utc" db:"selection_hour_utc"`
@@ -56,6 +60,7 @@ type CountdownSeriesInput struct {
 	GameID            *string `json:"game_id"`
 	Language          *string `json:"language"`
 	Size              int     `json:"size"`
+	MinSize           *int    `json:"min_size"`
 	WindowHours       int     `json:"window_hours"`
 	PerBroadcasterCap int     `json:"per_broadcaster_cap"`
 	SelectionHourUTC  int     `json:"selection_hour_utc"`
