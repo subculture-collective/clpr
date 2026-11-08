@@ -14,8 +14,10 @@ const (
 	CountdownEditionFetched   = "fetched"
 	CountdownEditionRendering = "rendering"
 	CountdownEditionRendered  = "rendered"
-	CountdownEditionPublished = "published"
-	CountdownEditionFailed    = "failed"
+	// CountdownEditionPublishing: the worker is uploading the renders (#79).
+	CountdownEditionPublishing = "publishing"
+	CountdownEditionPublished  = "published"
+	CountdownEditionFailed     = "failed"
 )
 
 // Countdown exclusion reasons and sources.
@@ -154,4 +156,16 @@ type CountdownExclusionInput struct {
 	ClipID        *uuid.UUID `json:"clip_id"`
 	Reason        string     `json:"reason"`
 	Note          *string    `json:"note"`
+}
+
+// CountdownUpload is one render uploaded to YouTube.
+type CountdownUpload struct {
+	RenderID       uuid.UUID  `json:"render_id" db:"render_id"`
+	EditionID      uuid.UUID  `json:"edition_id" db:"edition_id"`
+	Kind           string     `json:"kind" db:"kind"`
+	ClipID         *uuid.UUID `json:"clip_id,omitempty" db:"clip_id"`
+	YouTubeVideoID string     `json:"youtube_video_id" db:"youtube_video_id"`
+	PrivacyStatus  string     `json:"privacy_status" db:"privacy_status"`
+	PublishAt      *time.Time `json:"publish_at,omitempty" db:"publish_at"`
+	UploadedAt     time.Time  `json:"uploaded_at" db:"uploaded_at"`
 }

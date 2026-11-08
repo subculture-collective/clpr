@@ -18,6 +18,7 @@ This directory contains comprehensive compliance documentation for Clipper's Twi
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | **[twitch-api-usage.md](./twitch-api-usage.md)** | API endpoints, rate limits, caching | Backend Developers |
+| **[youtube-api-usage.md](./youtube-api-usage.md)** | Countdown uploads, OAuth, quota, audit | Backend Developers, Operators |
 | **[twitch-embeds.md](./twitch-embeds.md)** | Embed compliance, video playback | Frontend Developers |
 | **[data-retention.md](./data-retention.md)** | Data storage, retention policies | Backend Devs, Legal |
 | **[oauth-scopes.md](./oauth-scopes.md)** | OAuth scopes, token security | Backend Devs, Security |

@@ -11,7 +11,7 @@ last_reviewed: 2026-11-07
 
 # Countdown editions
 
-A countdown edition is one day's ranked list of clips for a countdown video or Short. This page covers selection (#76), fetching the media (#77) and rendering (#78). Publishing (#79) builds on the renders stored here. The media policy is [[../adr/002-media-handling-for-countdowns|ADR-002]].
+A countdown edition is one day's ranked list of clips for a countdown video or Short. This page covers selection (#76), fetching the media (#77), rendering (#78) and publishing to YouTube (#79). The media policy is [[../adr/002-media-handling-for-countdowns|ADR-002]].
 
 ## Series
 
@@ -84,6 +84,28 @@ The source clips are deleted as soon as the edition finishes rendering, whether 
 
 Two renders of the same inputs are byte-identical. On a 4-core host, a 10-clip edition of 30-second 1080p60 clips renders in about 2.5 minutes, and a 30-second Short in under 30 seconds.
 
+## Publishing
+
+Once the channel is authorized (see [[../compliance/youtube-api-usage|YouTube API usage]]), the same worker uploads each `rendered` edition. It moves the edition to `publishing`, and then:
+
+1. uploads the countdown video, sets its thumbnail and adds it to the series playlist, creating the playlist on first use;
+2. uploads each Short;
+3. moves the edition to `published`.
+
+Every upload is recorded in `countdown_uploads` as soon as it finishes, so a retry skips it.
+
+- **Errors:** a quota error returns the edition to `rendered` and pauses publishing until 08:00 UTC; temporary errors pause it for 15 minutes, and an authorization error for an hour. An error YouTube will repeat, such as rejected metadata, fails the edition with the reason. A failed thumbnail or playlist step leaves the video published and counts a failure.
+- **Privacy:** uploads are private until the API audit passes; `YOUTUBE_PRIVACY` then switches to `scheduled`, `public` or `unlisted`.
+- **Metrics:** `clpr_countdown_youtube_uploads_total{kind,outcome}` and `clpr_countdown_publish_editions_total{outcome}`.
+
+**Titles and descriptions:**
+
+- The countdown is titled "Top N Twitch Clips of <date>: <series>".
+- Its description links the edition page and lists chapters: one per rank, timed from the rank card length and each clip's fetched duration, then the credits. It credits every clip's broadcaster and original clip, and says how to have a clip removed.
+- Shorts are titled with the clip title and `#Shorts`.
+- Angle brackets, which YouTube rejects, become ‹ and ›.
+- Titles stop at 100 characters, descriptions at 5,000 bytes and tags at 500 characters.
+
 ## Exclusions
 
 `/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition. Each has a reason (`request`, `dmca` or `takedown`) and a source (`admin` now, `self_service` once #75 adds the broadcaster's own toggle). Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.
@@ -98,6 +120,7 @@ Excluding a broadcaster affects editions selected afterwards. Removing them from
 - `backend/internal/services/countdown_media_test.go`: the worker's fetch, backfill, give-up and failure paths, the 24-hour sweep, ffprobe parsing, the Twitch URL check, and source choice between Helix and yt-dlp.
 - `backend/internal/countdownrender/render_test.go`: golden frames of the countdown (cards, clips with and without the lower third, a portrait clip, the outro), both Shorts and the thumbnail; stream formats and durations; byte-identical output across runs; and, with `COUNTDOWN_RENDER_TIMING=1`, a full-size timing run. These tests need ffmpeg and the fonts, so `backend/Dockerfile.render` runs them while building the image. To regenerate the goldens, run the test binary in the image's `runtime` stage with `UPDATE_GOLDEN=1` and the source `testdata` directory mounted.
 - `backend/internal/repository/countdown_render_repository_integration_test.go` and `backend/internal/services/countdown_render_worker_test.go`: claiming, recording and finishing renders, source deletion on success and failure, missing media, shutdown, and the render sweep.
+- `backend/internal/services/youtube_client_test.go`, `backend/internal/services/countdown_youtube_test.go` and `backend/internal/repository/countdown_publish_repository_integration_test.go`: the YouTube calls against a fake API (token refresh and caching, resumable upload, thumbnail, playlist, error reasons); titles, chapters, credits and limits; publishing with quota, authorization, temporary and permanent errors without uploading anything twice; scheduled publish times; claiming, recording and finishing in the database.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 
 ---
