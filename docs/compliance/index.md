@@ -23,6 +23,7 @@ Legal, regulatory, and compliance documentation for Clipper including GDPR, data
 - [[oauth-scopes|OAuth Scopes]] - Third-party authentication permissions
 - [[twitch-api-usage|Twitch API Usage]] - Twitch API compliance requirements
 - [[twitch-embeds|Twitch Embeds]] - Twitch embed policy and implementation
+- [[youtube-api-usage|YouTube API Usage]] - Countdown uploads to clpr's YouTube channel
 
 ## Documentation Index
 

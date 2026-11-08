@@ -1,0 +1,77 @@
+# promtool test rules monitoring/prometheus/clpr-countdown-rules.test.yml
+# Controlled failures for the countdown alerts (#80).
+rule_files:
+  - clpr-slo-rules.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="clpr-countdown-media",instance="almaz:9464"}'
+        values: '1x5 0x15'
+      - series: 'clpr_countdown_edition_overdue_seconds{series="overall",stage="rendered"}'
+        values: '0x5 10900+60x15'
+      - series: 'clpr_countdown_edition_overdue_seconds{series="just-chatting",stage="rendered"}'
+        values: '0x20'
+      - series: 'clpr_countdown_render_editions_total{outcome="failed"}'
+        values: '0x5 1x15'
+      - series: 'clpr_countdown_youtube_uploads_total{kind="short",outcome="failed"}'
+        values: '0x5 1x15'
+      - series: 'clpr_countdown_publish_editions_total{outcome="auth"}'
+        values: '0x5 1x15'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ClprCountdownEditionMissed
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: ClprCountdownWorkerDown
+        exp_alerts: []
+      - eval_time: 18m
+        alertname: ClprCountdownWorkerDown
+        exp_alerts:
+          - exp_labels: {severity: critical, project: clpr, job: clpr-countdown-media, instance: "almaz:9464"}
+            exp_annotations:
+              summary: "The countdown worker on almaz:9464 is not answering scrapes"
+              runbook_url: "docs/operations/runbooks/countdowns.md#worker-down-or-stalled"
+      - eval_time: 12m
+        alertname: ClprCountdownEditionMissed
+        exp_alerts:
+          - exp_labels: {severity: critical, project: clpr, series: overall, stage: rendered}
+            exp_annotations:
+              summary: "Countdown series overall has no rendered edition 3 hours after its selection hour"
+              runbook_url: "docs/operations/runbooks/countdowns.md#missed-edition"
+      - eval_time: 8m
+        alertname: ClprCountdownEditionFailed
+        exp_alerts:
+          - exp_labels: {severity: warning, project: clpr, stage: render}
+            exp_annotations:
+              summary: "A countdown edition failed at the render stage"
+              runbook_url: "docs/operations/runbooks/countdowns.md#failed-edition"
+      - eval_time: 8m
+        alertname: ClprCountdownUploadFailed
+        exp_alerts:
+          - exp_labels: {severity: warning, project: clpr, kind: short}
+            exp_annotations:
+              summary: "A YouTube upload of a countdown short failed"
+              runbook_url: "docs/operations/runbooks/countdowns.md#upload-failed"
+      - eval_time: 8m
+        alertname: ClprCountdownYouTubeAuthFailed
+        exp_alerts:
+          - exp_labels: {severity: critical, project: clpr, outcome: auth}
+            exp_annotations:
+              summary: "YouTube rejected the channel authorization; publishing is paused"
+              runbook_url: "docs/operations/runbooks/countdowns.md#youtube-authorization"
+  - interval: 1m
+    input_series:
+      - series: 'clpr_countdown_media_last_run_timestamp_seconds'
+        values: '0x45'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: ClprCountdownWorkerStalled
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: ClprCountdownWorkerStalled
+        exp_alerts:
+          - exp_labels: {severity: warning, project: clpr}
+            exp_annotations:
+              summary: "The countdown worker has not finished a cycle without errors for 30 minutes"
+              runbook_url: "docs/operations/runbooks/countdowns.md#worker-down-or-stalled"

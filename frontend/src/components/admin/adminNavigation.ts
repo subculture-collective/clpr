@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import { Activity, BarChart3, BookOpen, Bot, ClipboardList, FileWarning, Film, LayoutDashboard, ListVideo, MessageSquare, Radio, ScrollText, Shield, Tags, Users, Webhook } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, Bot, ClipboardList, FileWarning, Film, LayoutDashboard, ListVideo, MessageSquare, Radio, ScrollText, Shield, Tags, Trophy, Users, Webhook } from 'lucide-react';
 
 export type AdminNavItem = { label: string; href: string; description: string; icon: ElementType };
 export type AdminNavGroup = { label: string; items: AdminNavItem[] };
@@ -21,6 +21,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     { label: 'Discovery', items: [
         { label: 'Curated collections', href: '/admin/discovery-lists', description: 'Featured clip collections', icon: ListVideo },
         { label: 'Playlist automation', href: '/admin/playlist-scripts', description: 'Rules for generated collections', icon: Bot },
+        { label: 'Countdowns', href: '/admin/countdowns', description: 'Exclusions and video takedowns', icon: Trophy },
         { label: 'Topics', href: '/admin/topics', description: 'Editorial topic taxonomy', icon: ClipboardList },
         { label: 'Tags', href: '/admin/tags', description: 'Tag cleanup and blacklist', icon: Tags },
         { label: 'Tag promotion', href: '/admin/tag-promotion', description: 'Review emerging tags', icon: Activity },
@@ -39,7 +40,7 @@ export const adminNavItems = adminNavGroups.flatMap(group => group.items);
 export const adminOnlyPaths = new Set([
     '/admin/dashboard', '/admin/analytics', '/admin/reports',
     '/admin/moderators', '/admin/users',
-    '/admin/playlist-scripts', '/admin/tags', '/admin/tag-promotion',
+    '/admin/playlist-scripts', '/admin/countdowns', '/admin/tags', '/admin/tag-promotion',
     '/admin/webhooks/dlq', '/admin/api-docs',
 ]);
 

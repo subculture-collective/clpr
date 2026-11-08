@@ -75,14 +75,20 @@ The `state` value is signed and bound to the clpr user. This flow requests:
 | Scope | Purpose stated in the code | Used by |
 | --- | --- | --- |
 | `channel:bot` | Let the clpr bot account join and read this broadcaster's chat | Streamer clip room, below |
-| `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room |
+| `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room, and the broadcaster's "feature my clips" opt-in |
 
 The callback exchanges the code, reads the account from `GET /users`, and
 stores the access token, refresh token, granted scopes, and expiry in the
 `twitch_auth` table. `GET /api/v1/twitch/auth/status` refreshes an expired
 token with the refresh token grant.
 
-`DELETE /api/v1/twitch/auth` deletes the stored tokens. clpr does not call
+"Feature my clips" in settings starts the same flow with `purpose=feature`. It asks for
+`channel:manage:clips` only, plus any scope the broadcaster granted before, because a new
+token replaces the old one. When the grant includes the scope, the callback records an
+opt-in in `broadcaster_feature_optins` (broadcaster, user, scope, consent text version,
+time). Countdown media for that broadcaster then comes through `GET /clips/downloads`.
+
+`DELETE /api/v1/twitch/auth` deletes the stored tokens and the opt-in. clpr does not call
 Twitch's token revocation endpoint. Users can also disconnect clpr in their
 Twitch connection settings, after which the stored tokens stop working.
 

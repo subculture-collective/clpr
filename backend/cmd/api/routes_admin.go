@@ -225,6 +225,8 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminCountdowns.GET("/exclusions", h.Countdown.ListExclusions)
 			adminCountdowns.POST("/exclusions", h.Countdown.CreateExclusion)
 			adminCountdowns.DELETE("/exclusions/:id", h.Countdown.DeleteExclusion)
+			adminCountdowns.GET("/removals", h.CountdownControls.ListRemovals)
+			adminCountdowns.POST("/removals", h.CountdownControls.ResolveRemoval)
 		}
 
 		// Broadcaster ranking management (admin only)

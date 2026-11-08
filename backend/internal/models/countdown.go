@@ -14,8 +14,10 @@ const (
 	CountdownEditionFetched   = "fetched"
 	CountdownEditionRendering = "rendering"
 	CountdownEditionRendered  = "rendered"
-	CountdownEditionPublished = "published"
-	CountdownEditionFailed    = "failed"
+	// CountdownEditionPublishing: the worker is uploading the renders (#79).
+	CountdownEditionPublishing = "publishing"
+	CountdownEditionPublished  = "published"
+	CountdownEditionFailed     = "failed"
 )
 
 // Countdown exclusion reasons and sources.
@@ -204,4 +206,70 @@ type DailyTopClip struct {
 	TwitchClipURL   string    `json:"twitch_clip_url"`
 	ThumbnailURL    *string   `json:"thumbnail_url,omitempty"`
 	ViewCount       int64     `json:"view_count"`
+}
+
+// CountdownUpload is one render uploaded to YouTube.
+type CountdownUpload struct {
+	RenderID       uuid.UUID  `json:"render_id" db:"render_id"`
+	EditionID      uuid.UUID  `json:"edition_id" db:"edition_id"`
+	Kind           string     `json:"kind" db:"kind"`
+	ClipID         *uuid.UUID `json:"clip_id,omitempty" db:"clip_id"`
+	YouTubeVideoID string     `json:"youtube_video_id" db:"youtube_video_id"`
+	PrivacyStatus  string     `json:"privacy_status" db:"privacy_status"`
+	PublishAt      *time.Time `json:"publish_at,omitempty" db:"publish_at"`
+	UploadedAt     time.Time  `json:"uploaded_at" db:"uploaded_at"`
+}
+
+// CountdownSeriesProgress is how far an enabled series has got: the newest
+// edition dates (YYYY-MM-DD) that were rendered and published.
+type CountdownSeriesProgress struct {
+	Slug             string
+	SelectionHourUTC int
+	CreatedAt        time.Time
+	LatestRendered   *string
+	LatestPublished  *string
+}
+
+// CountdownConsentTextVersion names the wording broadcasters see for the
+// countdown controls (#75). Change it whenever the wording changes.
+const CountdownConsentTextVersion = "2026-11-07"
+
+// BroadcasterCountdownState is a broadcaster's countdown controls.
+type BroadcasterCountdownState struct {
+	BroadcasterID   string     `json:"broadcaster_id"`
+	Excluded        bool       `json:"excluded"`
+	ExclusionSource *string    `json:"exclusion_source,omitempty"`
+	ExcludedAt      *time.Time `json:"excluded_at,omitempty"`
+	Featured        bool       `json:"featured"`
+	FeaturedAt      *time.Time `json:"featured_at,omitempty"`
+	// ClipDownloadAuthorized: the signed-in user's Twitch connection holds
+	// channel:manage:clips. Set by the handler.
+	ClipDownloadAuthorized bool   `json:"clip_download_authorized"`
+	ConsentTextVersion     string `json:"consent_text_version"`
+}
+
+// CountdownRemovalTask is a clip in an uploaded video that an exclusion
+// made after the upload requires removing.
+type CountdownRemovalTask struct {
+	RenderID        uuid.UUID `json:"render_id"`
+	Kind            string    `json:"kind"`
+	YouTubeVideoID  string    `json:"youtube_video_id"`
+	EditionDate     string    `json:"edition_date"`
+	SeriesSlug      string    `json:"series_slug"`
+	ClipID          uuid.UUID `json:"clip_id"`
+	ClipTitle       string    `json:"clip_title"`
+	BroadcasterName string    `json:"broadcaster_name"`
+	BroadcasterID   *string   `json:"broadcaster_id,omitempty"`
+	ExclusionReason string    `json:"exclusion_reason"`
+	ExclusionSource string    `json:"exclusion_source"`
+	ExcludedAt      time.Time `json:"excluded_at"`
+	DueAt           time.Time `json:"due_at"`
+}
+
+// CountdownRemovalInput resolves one removal task.
+type CountdownRemovalInput struct {
+	RenderID   uuid.UUID `json:"render_id"`
+	ClipID     uuid.UUID `json:"clip_id"`
+	Resolution string    `json:"resolution"`
+	Note       *string   `json:"note"`
 }

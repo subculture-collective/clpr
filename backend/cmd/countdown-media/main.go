@@ -1,7 +1,8 @@
 // Command countdown-media runs on the render host beside the database. Each
 // cycle it fetches the clip media of selected countdown editions (#77) and
 // renders fetched editions into a countdown video, a thumbnail and Shorts
-// (#78). Downloaded clips are deleted when their edition finishes rendering,
+// (#78), then uploads rendered editions to YouTube when the channel is
+// authorized (#79; see "countdown-media youtube-auth"). Downloaded clips are deleted when their edition finishes rendering,
 // and within 24 hours in any case (ADR-002). It never runs on the API host
 // and never writes media to object storage.
 package main
@@ -9,6 +10,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -48,6 +50,13 @@ func envString(name, fallback string) string {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "youtube-auth" {
+		if err := youTubeAuth(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(); err != nil {
 		utils.Error("Countdown media worker stopped", err)
 		os.Exit(1)
@@ -136,6 +145,29 @@ func run() error {
 			WorkDir: filepath.Join(dir, ".captions"),
 		}
 	}
+	// YouTube publishing (#79) runs once the channel is authorized.
+	youTube, err := youTubeClientFromEnv()
+	if err != nil {
+		return err
+	}
+	privacy, publishHour, err := youTubePrivacyFromEnv()
+	if err != nil {
+		return err
+	}
+	var publisher *services.CountdownPublisher
+	if youTube != nil {
+		publisher = &services.CountdownPublisher{
+			Store:           store,
+			YouTube:         youTube,
+			RenderDir:       renderDir,
+			BaseURL:         cfg.Server.BaseURL,
+			Privacy:         privacy,
+			PublishHourUTC:  publishHour,
+			RankCardSeconds: template.RankCardSeconds,
+			Metrics:         services.NewCountdownPublishMetrics(registry),
+		}
+	}
+	progress := services.NewCountdownProgress(store, publisher != nil, registry)
 	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "clpr_countdown_media_last_run_timestamp_seconds",
 		Help: "Unix time the countdown media worker last finished a cycle without error.",
@@ -162,11 +194,16 @@ func run() error {
 		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
 		"captions": renders.Captioner != nil,
+		"youtube":  publisher != nil, "youtube_privacy": privacy,
 	})
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		err := errors.Join(worker.RunOnce(ctx), renders.RunOnce(ctx))
+		if publisher != nil {
+			err = errors.Join(err, publisher.RunOnce(ctx))
+		}
+		err = errors.Join(err, progress.Update(ctx, time.Now()))
 		if err != nil && ctx.Err() == nil {
 			utils.Error("Countdown media cycle failed", err)
 		} else if err == nil {

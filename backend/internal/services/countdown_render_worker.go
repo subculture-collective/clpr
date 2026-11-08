@@ -65,6 +65,10 @@ func NewCountdownRenderMetrics(reg prometheus.Registerer) *CountdownRenderMetric
 			Help: "Shorts by caption outcome (captioned, none for no English speech, failed).",
 		}, []string{"outcome"}),
 	}
+	// Outcomes start at zero so an alert on increase() sees the first one.
+	for _, outcome := range []string{"rendered", "failed"} {
+		m.Editions.WithLabelValues(outcome)
+	}
 	if reg != nil {
 		reg.MustRegister(m.Seconds, m.Editions, m.Deleted, m.Captions)
 	}

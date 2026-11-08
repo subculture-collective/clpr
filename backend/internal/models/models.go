@@ -1700,6 +1700,10 @@ type BroadcasterProfile struct {
 	AvgVoteScore    float64   `json:"avg_vote_score"`
 	IsFollowing     bool      `json:"is_following"` // Whether the current user is following
 	UpdatedAt       time.Time `json:"updated_at"`
+	// CountdownExcluded: the broadcaster's clips are left out of countdowns
+	// (#75). CountdownFeatured: they opted in to having their clips featured.
+	CountdownExcluded bool `json:"countdown_excluded"`
+	CountdownFeatured bool `json:"countdown_featured"`
 }
 
 // PopularBroadcaster represents a broadcaster summary for navigation/discovery

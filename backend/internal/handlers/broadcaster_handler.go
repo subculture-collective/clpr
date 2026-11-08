@@ -18,6 +18,7 @@ import (
 
 // BroadcasterHandler handles broadcaster-related HTTP requests
 type BroadcasterHandler struct {
+	countdownStates      broadcasterCountdownStates
 	broadcasterRepo      *repository.BroadcasterRepository
 	rankingRefresher     broadcasterRankingRefresher
 	creatorDiscoveryRepo creatorDiscoveryLister
@@ -30,6 +31,15 @@ type BroadcasterHandler struct {
 }
 
 const popularBroadcastersCacheTTL = 5 * time.Minute
+
+type broadcasterCountdownStates interface {
+	BroadcasterCountdownState(ctx context.Context, broadcasterID string) (*models.BroadcasterCountdownState, error)
+}
+
+// SetCountdownStates adds the broadcaster's countdown controls to profiles.
+func (h *BroadcasterHandler) SetCountdownStates(states broadcasterCountdownStates) {
+	h.countdownStates = states
+}
 
 type broadcasterRankingRefresher interface {
 	RefreshRankings(context.Context) error
@@ -139,6 +149,13 @@ func (h *BroadcasterHandler) GetBroadcasterProfile(c *gin.Context) {
 		AvgVoteScore:    avgVoteScore,
 		IsFollowing:     isFollowing,
 		UpdatedAt:       time.Now(),
+	}
+	if h.countdownStates != nil {
+		if state, err := h.countdownStates.BroadcasterCountdownState(ctx, broadcasterID); err == nil {
+			profile.CountdownExcluded, profile.CountdownFeatured = state.Excluded, state.Featured
+		} else {
+			utils.Warn("Could not load the broadcaster's countdown state", map[string]interface{}{"broadcaster_id": broadcasterID, "reason": err.Error()})
+		}
 	}
 
 	c.JSON(http.StatusOK, profile)
