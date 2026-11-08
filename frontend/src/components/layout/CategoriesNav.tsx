@@ -75,6 +75,7 @@ export function CategoriesNav() {
     return (
         <div className='border-b border-border bg-background' aria-busy={loading}>
             <nav className='flex min-h-12 items-center gap-2 overflow-x-auto px-4 md:hidden scrollbar-hide' aria-label='Discover creators, topics, and tags'>
+                <Link to='/countdowns' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Countdowns</Link>
                 <Link to='/creators' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Creators</Link>
                 <Link to='/topics' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Topics</Link>
                 <Link to='/tags' className='inline-flex min-h-9 shrink-0 items-center border border-line-strong bg-transparent px-4 text-foreground font-heading text-[14px] font-bold uppercase tracking-[0.04em]'>Tags</Link>

@@ -155,3 +155,43 @@ type CountdownExclusionInput struct {
 	Reason        string     `json:"reason"`
 	Note          *string    `json:"note"`
 }
+
+// PublicCountdownEdition is a rendered or published edition as the public
+// countdown pages show it. Size is the number of ranked clips in the edition;
+// Clips leaves out clips removed or excluded since, so positions can skip.
+type PublicCountdownEdition struct {
+	EditionDate string                `json:"edition_date"`
+	SeriesSlug  string                `json:"series_slug"`
+	SeriesName  string                `json:"series_name"`
+	Size        int                   `json:"size"`
+	Clips       []PublicCountdownClip `json:"clips"`
+}
+
+// PublicCountdownClip is one ranked entry of a public edition.
+type PublicCountdownClip struct {
+	Position        int       `json:"position"`
+	ClipID          uuid.UUID `json:"clip_id"`
+	Title           string    `json:"title"`
+	BroadcasterName string    `json:"broadcaster_name"`
+	BroadcasterID   *string   `json:"broadcaster_id,omitempty"`
+	TwitchClipID    string    `json:"twitch_clip_id"`
+	TwitchClipURL   string    `json:"twitch_clip_url"`
+	ThumbnailURL    *string   `json:"thumbnail_url,omitempty"`
+	Duration        *float64  `json:"duration,omitempty"`
+}
+
+// CountdownFeature records that a clip placed in a public edition.
+type CountdownFeature struct {
+	EditionDate string    `json:"edition_date"`
+	SeriesSlug  string    `json:"series_slug"`
+	SeriesName  string    `json:"series_name"`
+	Position    int       `json:"position"`
+	ClipID      uuid.UUID `json:"clip_id"`
+	Title       string    `json:"title"`
+}
+
+// CountdownEditionKey names one public edition page.
+type CountdownEditionKey struct {
+	EditionDate string
+	SeriesSlug  string
+}

@@ -32,6 +32,8 @@
     "/clips/:id",
     "/community-rules",
     "/contact",
+    "/countdowns",
+    "/countdowns/:date/:series",
     "/creator/:creatorId",
     "/creator/:creatorId/dashboard",
     "/creator/:creatorName/analytics",

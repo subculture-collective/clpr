@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CountdownFeatures } from '../components/countdown/CountdownFeatures';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Container, SEO } from '../components';
@@ -211,6 +212,8 @@ export function BroadcasterPage() {
                                     {profile.bio}
                                 </p>
                             )}
+
+                            <CountdownFeatures broadcasterId={profile.broadcaster_id} />
 
                             {/* Stats */}
                             <div className='flex flex-wrap gap-6 text-sm'>

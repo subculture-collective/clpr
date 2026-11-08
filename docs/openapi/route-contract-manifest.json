@@ -1296,6 +1296,27 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/countdowns",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownPublicHandler).ListEditions-fm",
+    "operation_id": "getApiV1Countdowns",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/countdowns/featured",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownPublicHandler).ListFeatures-fm",
+    "operation_id": "getApiV1CountdownsFeatured",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/countdowns/{date}/{series}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownPublicHandler).GetEdition-fm",
+    "operation_id": "getApiV1CountdownsDateSeries",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/creators/me/export/download/{id}",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ExportHandler).DownloadExport-fm",
     "operation_id": "downloadCreatorExport",

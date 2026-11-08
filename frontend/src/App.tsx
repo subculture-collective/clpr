@@ -27,6 +27,14 @@ const DiscoveryListDetailPage = lazy(() =>
         default: m.DiscoveryListDetailPage,
     })),
 );
+const CountdownsPage = lazy(() =>
+    import('./pages/CountdownsPage').then(m => ({ default: m.CountdownsPage })),
+);
+const CountdownEditionPage = lazy(() =>
+    import('./pages/CountdownEditionPage').then(m => ({
+        default: m.CountdownEditionPage,
+    })),
+);
 const ClipDetailPage = lazy(() =>
     import('./pages/ClipDetailPage').then(m => ({ default: m.ClipDetailPage })),
 );
@@ -371,6 +379,14 @@ function App() {
                                         <Route
                                             path='/discover/scraped'
                                             element={<Navigate to='/' replace />}
+                                        />
+                                        <Route
+                                            path='/countdowns'
+                                            element={<CountdownsPage />}
+                                        />
+                                        <Route
+                                            path='/countdowns/:date/:series'
+                                            element={<CountdownEditionPage />}
                                         />
                                         <Route
                                             path='/clip/:id'

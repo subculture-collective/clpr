@@ -25,10 +25,16 @@ type GameRepositoryForSEO interface {
 	ListAllWithClipCounts(ctx context.Context, limit, offset int) ([]*models.GameWithStats, error)
 }
 
+// CountdownRepositoryForSEO lists the public countdown pages.
+type CountdownRepositoryForSEO interface {
+	ListPublicEditionKeys(ctx context.Context, limit int) ([]models.CountdownEditionKey, error)
+}
+
 // SEOHandler handles SEO-related endpoints (sitemap, robots.txt)
 type SEOHandler struct {
-	clipRepo ClipRepositoryForSEO
-	gameRepo GameRepositoryForSEO
+	clipRepo      ClipRepositoryForSEO
+	gameRepo      GameRepositoryForSEO
+	countdownRepo CountdownRepositoryForSEO
 }
 
 // NewSEOHandler creates a new SEO handler
@@ -37,6 +43,11 @@ func NewSEOHandler(clipRepo ClipRepositoryForSEO, gameRepo GameRepositoryForSEO)
 		clipRepo: clipRepo,
 		gameRepo: gameRepo,
 	}
+}
+
+// SetCountdowns adds the public countdown pages to the sitemap.
+func (h *SEOHandler) SetCountdowns(repo CountdownRepositoryForSEO) {
+	h.countdownRepo = repo
 }
 
 // GetSitemap generates and returns an XML sitemap
@@ -73,6 +84,7 @@ func (h *SEOHandler) GetSitemap(c *gin.Context) {
 		{"/new", "0.9", "daily"},
 		{"/top", "0.9", "daily"},
 		{"/rising", "0.9", "daily"},
+		{"/countdowns", "0.8", "daily"},
 		{"/search", "0.8", "weekly"},
 		{"/leaderboards", "0.7", "weekly"},
 		{"/about", "0.5", "monthly"},
@@ -153,6 +165,24 @@ func (h *SEOHandler) GetSitemap(c *gin.Context) {
     <priority>0.7</priority>
   </url>
 `, baseURL, slug))
+			}
+		}
+	}
+
+	// Countdown edition pages
+	if h.countdownRepo != nil {
+		editions, err := h.countdownRepo.ListPublicEditionKeys(ctx, 1000)
+		if err != nil {
+			log.Printf("Error fetching countdowns for sitemap: %v", err)
+		} else {
+			for _, e := range editions {
+				builder.WriteString(fmt.Sprintf(`  <url>
+    <loc>%s/countdowns/%s/%s</loc>
+    <lastmod>%s</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`, baseURL, e.EditionDate, e.SeriesSlug, e.EditionDate))
 			}
 		}
 	}
