@@ -95,7 +95,7 @@ Two renders of the same inputs are byte-identical. On a 4-core host, a 10-clip e
 An edition becomes public once it is `rendered` or `published`. Selected, in-progress and failed editions stay admin-only.
 
 - `/countdowns` lists the public editions by day, newest first, 14 days at a time.
-- `/countdowns/<date>/<series>` (for example `/countdowns/2026-11-07/overall`) shows one edition counted down from the lowest rank to #1, with a Twitch player per clip. Only one player runs at a time, and none loads until the visitor presses play.
+- `/countdowns/<date>/<series>` (for example `/countdowns/2026-11-07/overall`) plays one edition as a playlist, from the lowest rank to #1: one Twitch player, previous and next buttons, and the ranked list beside it. Opening it from `/countdowns` starts playing on screens at least 768 pixels wide; a shared link waits for a press. A Twitch clip embed cannot report its end, so the page moves on three seconds after the clip's duration, and only while the player is on screen.
 - Clip pages and broadcaster pages show "Featured in countdown" with links to the editions the clip, or the broadcaster's clips, placed in.
 
 The pages read `GET /api/v1/countdowns`, `GET /api/v1/countdowns/{date}/{series}` and `GET /api/v1/countdowns/featured`. They need no sign-in, are rate-limited to 120 requests a minute per client and may be cached for five minutes. A clip removed, hidden, taken down or excluded after its edition was made drops out of these pages, so the ranks shown can skip a number. The sitemap lists `/countdowns` and the newest 1,000 edition pages. The YouTube link joins each page once #79 stores the video ID.

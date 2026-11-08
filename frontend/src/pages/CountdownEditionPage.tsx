@@ -1,15 +1,17 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Container, SEO, Spinner } from '../components';
-import { TwitchEmbed } from '../components/clip/TwitchEmbed';
+import { CountdownPlayer } from '../components/countdown/CountdownPlayer';
 import { countdownApi, formatCountdownDate } from '../lib/countdown-api';
 import { isNotFoundError } from '../lib/error-utils';
 import { NotFoundPage } from './NotFoundPage';
 
 export function CountdownEditionPage() {
   const { date = '', series = '' } = useParams<{ date: string; series: string }>();
-  const [active, setActive] = useState<string | null>(null);
+  const location = useLocation();
+  // Clicking a list starts it. A shared link waits for a press, and a phone
+  // held upright has no room for the Twitch player.
+  const autoStart = (location.state as { play?: boolean } | null)?.play === true && window.innerWidth >= 768;
   const { data: edition, isLoading, error } = useQuery({
     queryKey: ['countdown', date, series],
     queryFn: () => countdownApi.get(date, series),
@@ -75,37 +77,7 @@ export function CountdownEditionPage() {
         {clips.length === 0 ? (
           <p className='text-center text-muted-foreground py-16'>The clips in this countdown are no longer available.</p>
         ) : (
-          <ol className='mx-auto max-w-4xl space-y-10'>
-            {clips.map(clip => (
-              <li key={clip.clip_id} aria-label={`Number ${clip.position}`}>
-                <div className='mb-3 flex items-baseline gap-4'>
-                  <span className='font-heading text-4xl font-bold text-brand' aria-hidden='true'>
-                    #{clip.position}
-                  </span>
-                  <div className='min-w-0'>
-                    <h2 className='text-xl text-foreground'>
-                      <Link to={`/clip/${clip.clip_id}`} className='hover:underline'>
-                        {clip.title}
-                      </Link>
-                    </h2>
-                    <Link
-                      to={`/broadcaster/${clip.broadcaster_id || clip.broadcaster_name}`}
-                      className='font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground hover:text-foreground'
-                    >
-                      {clip.broadcaster_name}
-                    </Link>
-                  </div>
-                </div>
-                <TwitchEmbed
-                  clipId={clip.twitch_clip_id}
-                  thumbnailUrl={clip.thumbnail_url}
-                  title={clip.title}
-                  active={active === clip.clip_id}
-                  onActivate={() => setActive(clip.clip_id)}
-                />
-              </li>
-            ))}
-          </ol>
+          <CountdownPlayer clips={clips} autoStart={autoStart} />
         )}
       </Container>
     </>
