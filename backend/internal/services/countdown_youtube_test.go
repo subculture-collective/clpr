@@ -118,7 +118,9 @@ func (s *fakePublishStore) FinishPublish(_ context.Context, _ uuid.UUID, status 
 	}
 	return nil
 }
-func (s *fakePublishStore) SeriesPlaylist(context.Context, uuid.UUID) (string, error) { return s.playlist, nil }
+func (s *fakePublishStore) SeriesPlaylist(context.Context, uuid.UUID) (string, error) {
+	return s.playlist, nil
+}
 func (s *fakePublishStore) SaveSeriesPlaylist(_ context.Context, _ uuid.UUID, id string) error {
 	s.playlist = id
 	return nil

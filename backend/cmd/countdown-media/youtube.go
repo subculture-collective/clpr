@@ -76,9 +76,9 @@ func youTubePrivacyFromEnv() (string, int, error) {
 }
 
 const (
-	googleAuthURL  = "https://accounts.google.com/o/oauth2/v2/auth"
+	googleAuthURL       = "https://accounts.google.com/o/oauth2/v2/auth"
 	googleOAuthExchange = "https://oauth2.googleapis.com/token"
-	youTubeScope   = "https://www.googleapis.com/auth/youtube"
+	youTubeScope        = "https://www.googleapis.com/auth/youtube"
 )
 
 func randomURLString(n int) (string, error) {
