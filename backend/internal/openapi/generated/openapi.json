@@ -29646,6 +29646,7 @@
           "view_velocity",
           "title",
           "broadcaster_name",
+          "twitch_clip_id",
           "twitch_clip_url"
         ],
         "properties": {
@@ -29669,6 +29670,9 @@
             "type": "string"
           },
           "broadcaster_id": {
+            "type": "string"
+          },
+          "twitch_clip_id": {
             "type": "string"
           },
           "twitch_clip_url": {
@@ -29714,6 +29718,7 @@
             "enum": [
               "selected",
               "fetching",
+              "fetched",
               "rendering",
               "rendered",
               "published",

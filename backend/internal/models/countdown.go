@@ -11,6 +11,7 @@ import (
 const (
 	CountdownEditionSelected  = "selected"
 	CountdownEditionFetching  = "fetching"
+	CountdownEditionFetched   = "fetched"
 	CountdownEditionRendering = "rendering"
 	CountdownEditionRendered  = "rendered"
 	CountdownEditionPublished = "published"
@@ -82,9 +83,34 @@ type CountdownEditionClip struct {
 	Title           string    `json:"title" db:"title"`
 	BroadcasterName string    `json:"broadcaster_name" db:"broadcaster_name"`
 	BroadcasterID   *string   `json:"broadcaster_id,omitempty" db:"broadcaster_id"`
+	TwitchClipID    string    `json:"twitch_clip_id" db:"twitch_clip_id"`
 	TwitchClipURL   string    `json:"twitch_clip_url" db:"twitch_clip_url"`
 	Duration        *float64  `json:"duration,omitempty" db:"duration"`
 }
+
+// CountdownEditionMedia is one fetched clip file on the render host. FileName
+// is relative to the media directory.
+type CountdownEditionMedia struct {
+	EditionID       uuid.UUID  `json:"edition_id" db:"edition_id"`
+	ClipID          uuid.UUID  `json:"clip_id" db:"clip_id"`
+	Source          string     `json:"source" db:"source"`
+	FileName        string     `json:"file_name" db:"file_name"`
+	SHA256          string     `json:"sha256" db:"sha256"`
+	Bytes           int64      `json:"bytes" db:"bytes"`
+	DurationSeconds float64    `json:"duration_seconds" db:"duration_seconds"`
+	Width           int        `json:"width" db:"width"`
+	Height          int        `json:"height" db:"height"`
+	FetchedAt       time.Time  `json:"fetched_at" db:"fetched_at"`
+	DeletedAt       *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+}
+
+// Countdown media sources: Twitch's official Helix download endpoint, used
+// when the broadcaster granted channel:manage:clips, or the playback files
+// Twitch serves to its own player, fetched with yt-dlp (ADR-002).
+const (
+	CountdownMediaSourceHelix  = "helix"
+	CountdownMediaSourcePlayer = "player"
+)
 
 // CountdownExclusion leaves a broadcaster or one clip out of future editions.
 type CountdownExclusion struct {

@@ -1,0 +1,131 @@
+// Command countdown-media fetches the clip media of selected countdown
+// editions onto the render host and deletes it within 24 hours (#77,
+// ADR-002). It runs beside the database on the render host, never on the API
+// host, and never writes media to object storage.
+package main
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
+	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
+	"git.subcult.tv/subculture-collective/clpr/pkg/database"
+	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+func envDuration(name string, fallback time.Duration, unit time.Duration) time.Duration {
+	value := os.Getenv(name)
+	if value == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(value)
+	if err != nil || n <= 0 {
+		utils.Warn("Ignoring invalid duration setting", map[string]interface{}{"name": name})
+		return fallback
+	}
+	return time.Duration(n) * unit
+}
+
+func envString(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
+}
+
+func main() {
+	if err := run(); err != nil {
+		utils.Error("Countdown media worker stopped", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	// Media files and their directories are readable by this user only.
+	syscall.Umask(0o077)
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	db, err := database.NewDB(&cfg.Database)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	dir := envString("COUNTDOWN_MEDIA_DIR", "/var/lib/clpr-countdown-media")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	interval := envDuration("COUNTDOWN_MEDIA_INTERVAL_SECONDS", time.Minute, time.Second)
+	retention := envDuration("COUNTDOWN_MEDIA_RETENTION_HOURS", 24*time.Hour, time.Hour)
+	if retention > 24*time.Hour {
+		retention = 24 * time.Hour // ADR-002
+	}
+
+	fetcher := &services.TwitchClipMediaFetcher{YTDLPPath: envString("YTDLP_PATH", "yt-dlp")}
+	if cfg.Twitch.ClientID != "" {
+		// Helix is used only for broadcasters who granted channel:manage:clips.
+		fetcher.Auth = repository.NewTwitchAuthRepository(db.Pool)
+		fetcher.Downloads = services.NewTwitchClipDownloadService(cfg.Twitch.ClientID, "", nil)
+	}
+	registry := prometheus.NewRegistry()
+	worker := &services.CountdownMediaWorker{
+		Store:     repository.NewCountdownRepository(db.Pool),
+		Fetcher:   fetcher,
+		Prober:    &services.FFprobeMediaProber{FFprobePath: envString("FFPROBE_PATH", "ffprobe")},
+		Dir:       dir,
+		Retention: retention,
+		MaxSkips:  3,
+		Metrics:   services.NewCountdownMediaMetrics(registry),
+	}
+	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "clpr_countdown_media_last_run_timestamp_seconds",
+		Help: "Unix time the countdown media worker last finished a cycle without error.",
+	})
+	registry.MustRegister(lastRun)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if addr := envString("COUNTDOWN_MEDIA_METRICS_ADDR", ":9464"); addr != "off" {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+		server := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+		go func() {
+			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				utils.Error("Countdown media metrics server failed", err)
+			}
+		}()
+		defer server.Close()
+	}
+
+	utils.Info("Countdown media worker started", map[string]interface{}{
+		"dir": dir, "interval": interval.String(), "retention": retention.String(), "helix": fetcher.Downloads != nil,
+	})
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		if err := worker.RunOnce(ctx); err != nil && ctx.Err() == nil {
+			utils.Error("Countdown media cycle failed", err)
+		} else if err == nil {
+			lastRun.SetToCurrentTime()
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+	}
+}
