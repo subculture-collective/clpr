@@ -98,6 +98,8 @@ func normalizeCountdownSeries(in *models.CountdownSeriesInput) error {
 		return countdownInvalid("per_broadcaster_cap must be between 1 and 10")
 	case in.SelectionHourUTC < 0 || in.SelectionHourUTC > 23:
 		return countdownInvalid("selection_hour_utc must be between 0 and 23")
+	case in.ShortsCount < 0 || in.ShortsCount > 10 || in.ShortsCount > in.Size:
+		return countdownInvalid("shorts_count must be between 0 and 10 and at most size")
 	}
 	return nil
 }

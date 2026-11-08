@@ -40,12 +40,12 @@ func NewCountdownRepository(pool *pgxpool.Pool) *CountdownRepository {
 }
 
 const countdownSeriesColumns = `id, slug, name, game_id, language, size, window_hours, per_broadcaster_cap,
-	selection_hour_utc, priority, enabled, created_at, updated_at`
+	selection_hour_utc, priority, enabled, shorts_count, created_at, updated_at`
 
 func scanCountdownSeries(row pgx.Row) (*models.CountdownSeries, error) {
 	var s models.CountdownSeries
 	err := row.Scan(&s.ID, &s.Slug, &s.Name, &s.GameID, &s.Language, &s.Size, &s.WindowHours,
-		&s.PerBroadcasterCap, &s.SelectionHourUTC, &s.Priority, &s.Enabled, &s.CreatedAt, &s.UpdatedAt)
+		&s.PerBroadcasterCap, &s.SelectionHourUTC, &s.Priority, &s.Enabled, &s.ShortsCount, &s.CreatedAt, &s.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrCountdownSeriesNotFound
 	}
@@ -87,11 +87,11 @@ func countdownSeriesWriteErr(err error) error {
 func (r *CountdownRepository) CreateSeries(ctx context.Context, in *models.CountdownSeriesInput) (*models.CountdownSeries, error) {
 	s, err := scanCountdownSeries(r.pool.QueryRow(ctx, `
 		INSERT INTO countdown_series (slug, name, game_id, language, size, window_hours, per_broadcaster_cap,
-			selection_hour_utc, priority, enabled)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			selection_hour_utc, priority, enabled, shorts_count)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING `+countdownSeriesColumns,
 		in.Slug, in.Name, in.GameID, in.Language, in.Size, in.WindowHours, in.PerBroadcasterCap,
-		in.SelectionHourUTC, in.Priority, in.Enabled))
+		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount))
 	return s, countdownSeriesWriteErr(err)
 }
 
@@ -101,11 +101,11 @@ func (r *CountdownRepository) UpdateSeries(ctx context.Context, id uuid.UUID, in
 	s, err := scanCountdownSeries(r.pool.QueryRow(ctx, `
 		UPDATE countdown_series SET slug = $2, name = $3, game_id = $4, language = $5, size = $6,
 			window_hours = $7, per_broadcaster_cap = $8, selection_hour_utc = $9, priority = $10,
-			enabled = $11, updated_at = NOW()
+			enabled = $11, shorts_count = $12, updated_at = NOW()
 		WHERE id = $1
 		RETURNING `+countdownSeriesColumns,
 		id, in.Slug, in.Name, in.GameID, in.Language, in.Size, in.WindowHours, in.PerBroadcasterCap,
-		in.SelectionHourUTC, in.Priority, in.Enabled))
+		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount))
 	return s, countdownSeriesWriteErr(err)
 }
 

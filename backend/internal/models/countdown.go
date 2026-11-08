@@ -42,6 +42,7 @@ type CountdownSeries struct {
 	SelectionHourUTC  int       `json:"selection_hour_utc" db:"selection_hour_utc"`
 	Priority          int       `json:"priority" db:"priority"`
 	Enabled           bool      `json:"enabled" db:"enabled"`
+	ShortsCount       int       `json:"shorts_count" db:"shorts_count"`
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -58,6 +59,7 @@ type CountdownSeriesInput struct {
 	SelectionHourUTC  int     `json:"selection_hour_utc"`
 	Priority          int     `json:"priority"`
 	Enabled           bool    `json:"enabled"`
+	ShortsCount       int     `json:"shorts_count"`
 }
 
 // CountdownEdition is one day's selection for a series.
@@ -101,6 +103,28 @@ type CountdownEditionMedia struct {
 	Width           int        `json:"width" db:"width"`
 	Height          int        `json:"height" db:"height"`
 	FetchedAt       time.Time  `json:"fetched_at" db:"fetched_at"`
+	DeletedAt       *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+}
+
+// Countdown render kinds.
+const (
+	CountdownRenderCountdown = "countdown"
+	CountdownRenderShort     = "short"
+	CountdownRenderThumbnail = "thumbnail"
+)
+
+// CountdownRender is one rendered file on the render host. FileName is
+// relative to the render directory; ClipID is set for Shorts only.
+type CountdownRender struct {
+	ID              uuid.UUID  `json:"id" db:"id"`
+	EditionID       uuid.UUID  `json:"edition_id" db:"edition_id"`
+	Kind            string     `json:"kind" db:"kind"`
+	ClipID          *uuid.UUID `json:"clip_id,omitempty" db:"clip_id"`
+	FileName        string     `json:"file_name" db:"file_name"`
+	SHA256          string     `json:"sha256" db:"sha256"`
+	Bytes           int64      `json:"bytes" db:"bytes"`
+	DurationSeconds *float64   `json:"duration_seconds,omitempty" db:"duration_seconds"`
+	RenderedAt      time.Time  `json:"rendered_at" db:"rendered_at"`
 	DeletedAt       *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 

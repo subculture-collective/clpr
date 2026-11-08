@@ -1,7 +1,9 @@
-// Command countdown-media fetches the clip media of selected countdown
-// editions onto the render host and deletes it within 24 hours (#77,
-// ADR-002). It runs beside the database on the render host, never on the API
-// host, and never writes media to object storage.
+// Command countdown-media runs on the render host beside the database. Each
+// cycle it fetches the clip media of selected countdown editions (#77) and
+// renders fetched editions into a countdown video, a thumbnail and Shorts
+// (#78). Downloaded clips are deleted when their edition finishes rendering,
+// and within 24 hours in any case (ADR-002). It never runs on the API host
+// and never writes media to object storage.
 package main
 
 import (
@@ -10,11 +12,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/countdownrender"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
@@ -67,6 +71,14 @@ func run() error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
+	renderDir := envString("COUNTDOWN_RENDER_DIR", "/var/lib/clpr-countdown-renders")
+	if err := os.MkdirAll(renderDir, 0o700); err != nil {
+		return err
+	}
+	template, err := countdownrender.LoadTemplate(os.Getenv("COUNTDOWN_RENDER_TEMPLATE"))
+	if err != nil {
+		return err
+	}
 	interval := envDuration("COUNTDOWN_MEDIA_INTERVAL_SECONDS", time.Minute, time.Second)
 	retention := envDuration("COUNTDOWN_MEDIA_RETENTION_HOURS", 24*time.Hour, time.Hour)
 	if retention > 24*time.Hour {
@@ -80,14 +92,33 @@ func run() error {
 		fetcher.Downloads = services.NewTwitchClipDownloadService(cfg.Twitch.ClientID, "", nil)
 	}
 	registry := prometheus.NewRegistry()
+	store := repository.NewCountdownRepository(db.Pool)
+	prober := &services.FFprobeMediaProber{FFprobePath: envString("FFPROBE_PATH", "ffprobe")}
 	worker := &services.CountdownMediaWorker{
-		Store:     repository.NewCountdownRepository(db.Pool),
+		Store:     store,
 		Fetcher:   fetcher,
-		Prober:    &services.FFprobeMediaProber{FFprobePath: envString("FFPROBE_PATH", "ffprobe")},
+		Prober:    prober,
 		Dir:       dir,
 		Retention: retention,
 		MaxSkips:  3,
 		Metrics:   services.NewCountdownMediaMetrics(registry),
+	}
+	renderer := &countdownrender.Renderer{
+		FFmpegPath:  envString("FFMPEG_PATH", "ffmpeg"),
+		FFprobePath: envString("FFPROBE_PATH", "ffprobe"),
+		Template:    template,
+		// Intermediate segments hold clip footage, so they live under the
+		// media directory and its 24-hour sweep.
+		WorkDir: filepath.Join(dir, ".render-work"),
+	}
+	renders := &services.CountdownRenderWorker{
+		Store:     store,
+		Renderer:  renderer,
+		Prober:    prober,
+		MediaDir:  dir,
+		RenderDir: renderDir,
+		Retention: envDuration("COUNTDOWN_RENDER_RETENTION_DAYS", 7*24*time.Hour, 24*time.Hour),
+		Metrics:   services.NewCountdownRenderMetrics(registry),
 	}
 	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "clpr_countdown_media_last_run_timestamp_seconds",
@@ -112,12 +143,14 @@ func run() error {
 	}
 
 	utils.Info("Countdown media worker started", map[string]interface{}{
-		"dir": dir, "interval": interval.String(), "retention": retention.String(), "helix": fetcher.Downloads != nil,
+		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
+		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
 	})
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
-		if err := worker.RunOnce(ctx); err != nil && ctx.Err() == nil {
+		err := errors.Join(worker.RunOnce(ctx), renders.RunOnce(ctx))
+		if err != nil && ctx.Err() == nil {
 			utils.Error("Countdown media cycle failed", err)
 		} else if err == nil {
 			lastRun.SetToCurrentTime()

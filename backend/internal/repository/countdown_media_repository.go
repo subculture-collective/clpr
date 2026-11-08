@@ -20,18 +20,24 @@ var ErrCountdownEditionNotFetching = errors.New("countdown edition is not being 
 // staleAfter (a worker that died) is claimed again. It returns nil, nil when
 // nothing is waiting.
 func (r *CountdownRepository) ClaimEditionForFetch(ctx context.Context, staleAfter time.Duration) (*models.CountdownEdition, *models.CountdownSeries, error) {
+	return r.claimEdition(ctx, models.CountdownEditionSelected, models.CountdownEditionFetching, staleAfter)
+}
+
+// claimEdition moves the oldest edition in status from (or left in status
+// to for longer than staleAfter) to status to.
+func (r *CountdownRepository) claimEdition(ctx context.Context, from, to string, staleAfter time.Duration) (*models.CountdownEdition, *models.CountdownSeries, error) {
 	var editionID, seriesID uuid.UUID
 	err := r.pool.QueryRow(ctx, `
-		UPDATE countdown_editions e SET status = 'fetching', failure_reason = NULL, updated_at = NOW()
+		UPDATE countdown_editions e SET status = $3, failure_reason = NULL, updated_at = NOW()
 		WHERE e.id = (
 			SELECT id FROM countdown_editions
-			WHERE status = 'selected'
-			   OR (status = 'fetching' AND updated_at < NOW() - make_interval(secs => $1))
+			WHERE status = $2
+			   OR (status = $3 AND updated_at < NOW() - make_interval(secs => $1))
 			ORDER BY edition_date, created_at, id
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1
 		)
-		RETURNING e.id, e.series_id`, staleAfter.Seconds()).Scan(&editionID, &seriesID)
+		RETURNING e.id, e.series_id`, staleAfter.Seconds(), from, to).Scan(&editionID, &seriesID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil, nil
 	}

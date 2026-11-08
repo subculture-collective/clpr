@@ -1,0 +1,21 @@
+{
+  "font_file": "/usr/share/fonts/noto/NotoSansCJK-Regular.ttc",
+  "bold_font_file": "/usr/share/fonts/noto/NotoSansCJK-Bold.ttc",
+  "background": "0x0B0B12",
+  "accent": "0xFF4F6D",
+  "text": "0xFFFFFF",
+  "muted": "0xB8B8C8",
+  "frame_rate": 30,
+  "rank_card_seconds": 2.5,
+  "outro_seconds": 8,
+  "lower_third_seconds": 6,
+  "title_max_chars": 40,
+  "short_title_max_chars": 24,
+  "site_label": "clpr.tv",
+  "outro_heading": "Today's countdown",
+  "outro_footer": "Every clip belongs to its broadcaster. Links to each channel and clip are in the description.",
+  "video_crf": 20,
+  "video_preset": "veryfast",
+  "audio_bitrate": "160k",
+  "loudness_lufs": -16
+}

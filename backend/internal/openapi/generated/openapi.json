@@ -29521,6 +29521,7 @@
           "selection_hour_utc",
           "priority",
           "enabled",
+          "shorts_count",
           "created_at",
           "updated_at"
         ],
@@ -29564,6 +29565,10 @@
           },
           "enabled": {
             "type": "boolean"
+          },
+          "shorts_count": {
+            "type": "integer",
+            "description": "How many top clips of each edition also get a 9:16 Short"
           },
           "created_at": {
             "type": "string",
@@ -29635,6 +29640,12 @@
           },
           "enabled": {
             "type": "boolean"
+          },
+          "shorts_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "At most size"
           }
         }
       },

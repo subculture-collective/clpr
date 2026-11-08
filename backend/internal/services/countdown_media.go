@@ -540,8 +540,20 @@ func (w *CountdownMediaWorker) Sweep(ctx context.Context) error {
 		w.Metrics.Deleted.Inc()
 	}
 
+	removed, err := removeStaleFiles(root, cutoff)
+	w.Metrics.Deleted.Add(float64(removed))
+	if err != nil {
+		errs = append(errs, err)
+	}
+	return errors.Join(errs...)
+}
+
+// removeStaleFiles deletes regular files modified before cutoff under root,
+// then the directories left empty.
+func removeStaleFiles(root *os.Root, cutoff time.Time) (int, error) {
+	removed := 0
 	var dirs []string
-	err = fs.WalkDir(root.FS(), ".", func(name string, d fs.DirEntry, walkErr error) error {
+	err := fs.WalkDir(root.FS(), ".", func(name string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			if errors.Is(walkErr, fs.ErrNotExist) {
 				return nil
@@ -562,15 +574,12 @@ func (w *CountdownMediaWorker) Sweep(ctx context.Context) error {
 			return nil
 		}
 		if err := root.Remove(name); err == nil {
-			w.Metrics.Deleted.Inc()
+			removed++
 		}
 		return nil
 	})
-	if err != nil {
-		errs = append(errs, err)
-	}
 	for i := len(dirs) - 1; i >= 0; i-- {
 		_ = root.Remove(dirs[i]) // only succeeds when empty
 	}
-	return errors.Join(errs...)
+	return removed, err
 }
