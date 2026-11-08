@@ -229,3 +229,77 @@ func equalStrings(a, b []string) bool {
 	}
 	return true
 }
+
+func TestCountdownMinSize(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "countdown_series", "clips", "users")
+	ctx := context.Background()
+	repo := NewCountdownRepository(pool)
+
+	day := "2026-11-07"
+	windowEnd := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	windowStart := windowEnd.Add(-24 * time.Hour)
+	insertCountdownClips(t, pool, windowEnd, []countdownClip{
+		{name: "a", broadcaster: "alpha", game: "g1", language: "en", velocity: 900, duration: 30, age: time.Hour},
+		{name: "b", broadcaster: "bravo", game: "g1", language: "en", velocity: 800, duration: 30, age: time.Hour},
+		{name: "c", broadcaster: "charlie", game: "g1", language: "en", velocity: 700, duration: 30, age: time.Hour},
+		{name: "d", broadcaster: "delta", game: "g2", language: "en", velocity: 600, duration: 30, age: time.Hour},
+	})
+	three := 3
+	create := func(slug, game string, priority int) *models.CountdownSeries {
+		t.Helper()
+		series, err := repo.CreateSeries(ctx, &models.CountdownSeriesInput{
+			Slug: slug, Name: slug, GameID: &game, Size: 5, MinSize: &three, WindowHours: 24,
+			PerBroadcasterCap: 1, SelectionHourUTC: 12, Priority: priority, Enabled: true,
+		})
+		if err != nil {
+			t.Fatalf("create %s: %v", slug, err)
+		}
+		if series.MinSize == nil || *series.MinSize != 3 {
+			t.Fatalf("%s min_size = %v", slug, series.MinSize)
+		}
+		return series
+	}
+	short := create("short-list", "g1", 0)
+	thin := create("thin-day", "g2", 1)
+
+	edition, err := repo.SelectEdition(ctx, short, day, windowStart, windowEnd, false)
+	if err != nil {
+		t.Fatalf("select short list: %v", err)
+	}
+	if got, want := editionClipNames(edition), []string{"a", "b", "c"}; edition.Status != models.CountdownEditionSelected || !equalStrings(got, want) {
+		t.Fatalf("short list = %s %v, want selected %v", edition.Status, got, want)
+	}
+
+	edition, err = repo.SelectEdition(ctx, thin, day, windowStart, windowEnd, false)
+	if err != nil {
+		t.Fatalf("select thin day: %v", err)
+	}
+	if edition.Status != models.CountdownEditionSkipped || len(edition.Clips) != 0 || edition.FailureReason == nil ||
+		*edition.FailureReason != "only 1 of 3 clips were eligible" {
+		t.Fatalf("thin day = %+v", edition)
+	}
+
+	progress, err := repo.ListSeriesProgress(ctx)
+	if err != nil {
+		t.Fatalf("progress: %v", err)
+	}
+	if len(progress) != 2 || progress[1].LatestRendered == nil || *progress[1].LatestRendered != day ||
+		progress[1].LatestPublished == nil || *progress[1].LatestPublished != day {
+		t.Fatalf("a skipped day should count as reached: %+v", progress)
+	}
+
+	// A skipped edition can be selected again once more clips exist.
+	insertCountdownClips(t, pool, windowEnd, []countdownClip{
+		{name: "e", broadcaster: "echo", game: "g2", language: "en", velocity: 500, duration: 30, age: time.Hour},
+		{name: "f", broadcaster: "foxtrot", game: "g2", language: "en", velocity: 400, duration: 30, age: time.Hour},
+	})
+	edition, err = repo.SelectEdition(ctx, thin, day, windowStart, windowEnd, true)
+	if err != nil {
+		t.Fatalf("reselect thin day: %v", err)
+	}
+	if got, want := editionClipNames(edition), []string{"d", "e", "f"}; edition.Status != models.CountdownEditionSelected || !equalStrings(got, want) {
+		t.Fatalf("reselected = %s %v, want selected %v", edition.Status, got, want)
+	}
+}

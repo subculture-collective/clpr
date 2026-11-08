@@ -153,12 +153,13 @@ func (r *CountdownRepository) SaveSeriesPlaylist(ctx context.Context, seriesID u
 }
 
 // ListSeriesProgress returns, for each enabled series, its newest rendered
-// (or later) and newest published edition dates.
+// (or later) and newest published edition dates. A skipped day counts as
+// reached at both stages: nothing is owed for it.
 func (r *CountdownRepository) ListSeriesProgress(ctx context.Context) ([]models.CountdownSeriesProgress, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT s.slug, s.selection_hour_utc, s.created_at,
-		       to_char(max(e.edition_date) FILTER (WHERE e.status IN ('rendered', 'publishing', 'published')), 'YYYY-MM-DD'),
-		       to_char(max(e.edition_date) FILTER (WHERE e.status = 'published'), 'YYYY-MM-DD')
+		       to_char(max(e.edition_date) FILTER (WHERE e.status IN ('rendered', 'publishing', 'published', 'skipped')), 'YYYY-MM-DD'),
+		       to_char(max(e.edition_date) FILTER (WHERE e.status IN ('published', 'skipped')), 'YYYY-MM-DD')
 		FROM countdown_series s
 		LEFT JOIN countdown_editions e ON e.series_id = s.id
 		WHERE s.enabled

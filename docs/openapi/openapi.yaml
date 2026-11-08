@@ -6727,7 +6727,7 @@ paths:
     post:
       tags: [Admin, Countdowns]
       summary: Select a countdown edition again
-      description: Selects the series edition for a past date again, replacing an edition that is still selected or failed. Fewer eligible clips than the series size store a failed edition with no clips. Administrator MFA and CSRF protection are required.
+      description: Selects the series edition for a past date again, replacing an edition that is still selected, failed or skipped. Fewer eligible clips than the series size store a failed edition with no clips. Administrator MFA and CSRF protection are required.
       operationId: postApiV1AdminCountdownsSeriesIdEditions
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -13525,7 +13525,8 @@ components:
         name: {type: string}
         game_id: {type: string, description: Twitch category ID; absent for every category}
         language: {type: string, description: Clip language; absent for every language}
-        size: {type: integer, description: Number of clips in an edition}
+        size: {type: integer, description: Most clips in an edition}
+        min_size: {type: integer, description: Fewest clips for an edition; with fewer the day is skipped. Absent means an edition needs exactly size clips or fails}
         window_hours: {type: integer, description: Hours before the selection hour from which clips are eligible}
         per_broadcaster_cap: {type: integer}
         selection_hour_utc: {type: integer, description: Hour (UTC) when the day's edition is selected and its window ends}
@@ -13543,6 +13544,7 @@ components:
         name: {type: string, minLength: 1, maxLength: 120}
         game_id: {type: [string, 'null'], maxLength: 50}
         language: {type: [string, 'null'], minLength: 2, maxLength: 10}
+        min_size: {type: [integer, 'null'], minimum: 1, maximum: 50, description: Fewest clips for an edition; null requires exactly size clips}
         size: {type: integer, minimum: 0, maximum: 50, description: 0 means the default of 10}
         window_hours: {type: integer, minimum: 0, maximum: 168, description: 0 means the default of 24}
         per_broadcaster_cap: {type: integer, minimum: 0, maximum: 10, description: 0 means the default of 1}
@@ -13573,7 +13575,7 @@ components:
         series_id: {type: string, format: uuid}
         series_slug: {type: string}
         edition_date: {type: string, format: date}
-        status: {type: string, enum: [selected, fetching, fetched, rendering, rendered, published, failed]}
+        status: {type: string, enum: [selected, fetching, fetched, rendering, rendered, published, failed, skipped]}
         window_start: {type: string, format: date-time}
         window_end: {type: string, format: date-time}
         failure_reason: {type: string}

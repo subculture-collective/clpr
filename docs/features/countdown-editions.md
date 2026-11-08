@@ -22,7 +22,8 @@ A series is one daily list. Admins configure series under `/api/v1/admin/countdo
 | `slug`, `name` | Identifier and display name | required |
 | `game_id` | Limit to one Twitch category | every category |
 | `language` | Limit to one clip language | every language |
-| `size` | Clips per edition | 10 |
+| `size` | Most clips in an edition | 10 |
+| `min_size` | Fewest clips for an edition. Below it the day is `skipped`. Unset means exactly `size` clips or `failed` | unset |
 | `window_hours` | Clips created this many hours before the selection hour are eligible | 24 |
 | `per_broadcaster_cap` | Most clips from one broadcaster in an edition | 1 |
 | `selection_hour_utc` | Hour (UTC) when the day's edition is selected; the window ends here | 12 |
@@ -46,7 +47,7 @@ A clip is eligible when it:
 
 Eligible clips are ranked by `view_velocity`, then view count. Position 1 is the top clip. The database refuses a second row for the same clip and date (`UNIQUE (edition_date, clip_id)`), so a clip is in at most one edition per day. Series with a lower priority get first pick.
 
-When fewer clips are eligible than the series size, the edition is stored as `failed` with a reason such as "only 6 of 10 clips were eligible" and no clips. It is not retried on its own. An admin can select a past date again with `POST /api/v1/admin/countdowns/series/{id}/editions`, which replaces an edition that is still `selected` or `failed`. Editions that have moved on to `fetching` or later are left alone.
+A series with `min_size` takes up to `size` clips and stores a `skipped` edition, which raises no alert, when fewer than `min_size` are eligible. Without `min_size`, when fewer clips are eligible than the series size, the edition is stored as `failed` with a reason such as "only 6 of 10 clips were eligible" and no clips. It is not retried on its own. An admin can select a past date again with `POST /api/v1/admin/countdowns/series/{id}/editions`, which replaces an edition that is still `selected` or `failed`. Editions that have moved on to `fetching` or later are left alone.
 
 ## Media
 

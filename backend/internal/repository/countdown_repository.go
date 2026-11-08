@@ -40,12 +40,12 @@ func NewCountdownRepository(pool *pgxpool.Pool) *CountdownRepository {
 }
 
 const countdownSeriesColumns = `id, slug, name, game_id, language, size, window_hours, per_broadcaster_cap,
-	selection_hour_utc, priority, enabled, shorts_count, created_at, updated_at`
+	selection_hour_utc, priority, enabled, shorts_count, min_size, created_at, updated_at`
 
 func scanCountdownSeries(row pgx.Row) (*models.CountdownSeries, error) {
 	var s models.CountdownSeries
 	err := row.Scan(&s.ID, &s.Slug, &s.Name, &s.GameID, &s.Language, &s.Size, &s.WindowHours,
-		&s.PerBroadcasterCap, &s.SelectionHourUTC, &s.Priority, &s.Enabled, &s.ShortsCount, &s.CreatedAt, &s.UpdatedAt)
+		&s.PerBroadcasterCap, &s.SelectionHourUTC, &s.Priority, &s.Enabled, &s.ShortsCount, &s.MinSize, &s.CreatedAt, &s.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrCountdownSeriesNotFound
 	}
@@ -87,11 +87,11 @@ func countdownSeriesWriteErr(err error) error {
 func (r *CountdownRepository) CreateSeries(ctx context.Context, in *models.CountdownSeriesInput) (*models.CountdownSeries, error) {
 	s, err := scanCountdownSeries(r.pool.QueryRow(ctx, `
 		INSERT INTO countdown_series (slug, name, game_id, language, size, window_hours, per_broadcaster_cap,
-			selection_hour_utc, priority, enabled, shorts_count)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			selection_hour_utc, priority, enabled, shorts_count, min_size)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING `+countdownSeriesColumns,
 		in.Slug, in.Name, in.GameID, in.Language, in.Size, in.WindowHours, in.PerBroadcasterCap,
-		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount))
+		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount, in.MinSize))
 	return s, countdownSeriesWriteErr(err)
 }
 
@@ -101,11 +101,11 @@ func (r *CountdownRepository) UpdateSeries(ctx context.Context, id uuid.UUID, in
 	s, err := scanCountdownSeries(r.pool.QueryRow(ctx, `
 		UPDATE countdown_series SET slug = $2, name = $3, game_id = $4, language = $5, size = $6,
 			window_hours = $7, per_broadcaster_cap = $8, selection_hour_utc = $9, priority = $10,
-			enabled = $11, shorts_count = $12, updated_at = NOW()
+			enabled = $11, shorts_count = $12, min_size = $13, updated_at = NOW()
 		WHERE id = $1
 		RETURNING `+countdownSeriesColumns,
 		id, in.Slug, in.Name, in.GameID, in.Language, in.Size, in.WindowHours, in.PerBroadcasterCap,
-		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount))
+		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount, in.MinSize))
 	return s, countdownSeriesWriteErr(err)
 }
 
@@ -169,10 +169,12 @@ const countdownCandidatesQuery = `
 	ORDER BY e.view_velocity DESC, e.view_count DESC, e.id
 	LIMIT $9`
 
-// SelectEdition picks and stores the edition of series for date. When fewer
-// than series.Size clips are eligible, it stores a failed edition with no
-// clips, so a short list never goes out quietly. With replace, an existing
-// edition that is still "selected" or "failed" is selected again.
+// SelectEdition picks and stores the edition of series for date, up to
+// series.Size clips. A series with MinSize takes a shorter list on a thin day
+// and stores a skipped edition below MinSize. A series without it stores a
+// failed edition when fewer than Size clips are eligible, so a short list
+// never goes out by accident. With replace, an existing edition that is still
+// "selected", "failed" or "skipped" is selected again.
 func (r *CountdownRepository) SelectEdition(ctx context.Context, series *models.CountdownSeries, date string, windowStart, windowEnd time.Time, replace bool) (*models.CountdownEdition, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -194,7 +196,8 @@ func (r *CountdownRepository) SelectEdition(ctx context.Context, series *models.
 		if !replace {
 			return nil, ErrCountdownEditionExists
 		}
-		if existingStatus != models.CountdownEditionSelected && existingStatus != models.CountdownEditionFailed {
+		if existingStatus != models.CountdownEditionSelected && existingStatus != models.CountdownEditionFailed &&
+			existingStatus != models.CountdownEditionSkipped {
 			return nil, ErrCountdownEditionInProgress
 		}
 		if _, err := tx.Exec(ctx, `DELETE FROM countdown_editions WHERE id = $1`, existingID); err != nil {
@@ -230,9 +233,16 @@ func (r *CountdownRepository) SelectEdition(ctx context.Context, series *models.
 
 	status := models.CountdownEditionSelected
 	var failure *string
-	if len(picked) < series.Size {
+	required := series.Size
+	if series.MinSize != nil {
+		required = *series.MinSize
+	}
+	if len(picked) < required {
 		status = models.CountdownEditionFailed
-		reason := fmt.Sprintf("only %d of %d clips were eligible", len(picked), series.Size)
+		if series.MinSize != nil {
+			status = models.CountdownEditionSkipped
+		}
+		reason := fmt.Sprintf("only %d of %d clips were eligible", len(picked), required)
 		failure = &reason
 		picked = nil
 	}
