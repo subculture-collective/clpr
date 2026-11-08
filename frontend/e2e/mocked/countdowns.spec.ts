@@ -39,9 +39,10 @@ async function mockApi(page: Page) {
         await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     });
     await page.route('https://placehold.co/**', route => route.fulfill({ status: 404, body: '' }));
+    await page.route('https://clips.twitch.tv/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '' }));
 }
 
-test('a visitor opens a daily countdown and plays clips one at a time', async ({ page }) => {
+test('opening a daily countdown plays it as a playlist', async ({ page }) => {
     await mockApi(page);
     await page.goto('/countdowns');
 
@@ -51,8 +52,30 @@ test('a visitor opens a daily countdown and plays clips one at a time', async ({
     await expect(page).toHaveURL(/\/countdowns\/2026-11-07\/overall$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Top 3: Overall' })).toBeVisible();
     await expect(page.getByRole('listitem', { name: /^Number \d+$/ })).toHaveText([/#3/, /#2/, /#1/]);
-    await expect(page.locator('iframe')).toHaveCount(0);
     await expect(page).toHaveTitle(/Top 3 Twitch clips: Overall, November 7, 2026/);
+
+    // One player, starting at the lowest rank.
+    const player = page.locator('iframe');
+    await expect(player).toHaveCount(1);
+    await expect(player).toHaveAttribute('src', /clip=TwitchClip-3/);
+    await expect(page.getByText(/Next clip in \d+s/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Next clip' }).click();
+    await expect(player).toHaveCount(1);
+    await expect(player).toHaveAttribute('src', /clip=TwitchClip-2/);
+
+    await page.getByRole('button', { name: /^#1 / }).click();
+    await expect(player).toHaveAttribute('src', /clip=TwitchClip-1/);
+    await expect(page.getByRole('button', { name: 'Next clip' })).toBeDisabled();
+    await expect(page.getByText(/Next clip in \d+s/)).toHaveCount(0);
+});
+
+test('a shared countdown link waits for a press', async ({ page }) => {
+    await mockApi(page);
+    await page.goto('/countdowns/2026-11-07/overall');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Top 3: Overall' })).toBeVisible();
+    await expect(page.locator('iframe')).toHaveCount(0);
 });
 
 test('a countdown fits a phone screen', async ({ page }) => {
