@@ -26,6 +26,9 @@ import (
 )
 
 var (
+	// ErrWebhookValidation marks a subscription the caller must fix: a URL
+	// or events the target type does not accept.
+	ErrWebhookValidation           = errors.New("invalid webhook subscription")
 	ErrWebhookDLQItemNotFound      = errors.New("webhook DLQ item not found")
 	ErrWebhookDLQReplayUnavailable = errors.New("webhook DLQ item is already replayed or currently replaying")
 )
@@ -61,12 +64,12 @@ func (s *OutboundWebhookService) CreateSubscription(ctx context.Context, userID 
 
 	// Validate URL for SSRF protection
 	if err := s.validateTargetURL(targetType, req.URL); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 	}
 
 	// Validate events
 	if err := s.validateTargetEvents(targetType, req.Events); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 	}
 
 	// Generate a secure random secret for HMAC signing
@@ -131,7 +134,7 @@ func (s *OutboundWebhookService) UpdateSubscription(ctx context.Context, id uuid
 	// Validate URL if provided
 	if req.URL != nil {
 		if err := s.validateTargetURL(subscription.TargetType, *req.URL); err != nil {
-			return err
+			return fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 		}
 	}
 
@@ -140,10 +143,10 @@ func (s *OutboundWebhookService) UpdateSubscription(ctx context.Context, id uuid
 	if req.Events != nil {
 		// Check if empty array was explicitly provided (invalid)
 		if len(req.Events) == 0 {
-			return fmt.Errorf("events array cannot be empty; omit the field to keep current events")
+			return fmt.Errorf("%w: events array cannot be empty; omit the field to keep current events", ErrWebhookValidation)
 		}
 		if err := s.validateTargetEvents(subscription.TargetType, req.Events); err != nil {
-			return err
+			return fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 		}
 		eventsToUpdate = req.Events
 	} else {

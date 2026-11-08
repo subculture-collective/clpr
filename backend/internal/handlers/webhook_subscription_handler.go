@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -30,6 +33,12 @@ func NewWebhookSubscriptionHandler(webhookService webhookSubscriptionService) *W
 	return &WebhookSubscriptionHandler{
 		webhookService: webhookService,
 	}
+}
+
+// webhookValidationMessage is the part of a validation error the user can
+// act on.
+func webhookValidationMessage(err error) string {
+	return strings.TrimPrefix(err.Error(), services.ErrWebhookValidation.Error()+": ")
 }
 
 func webhookUserID(c *gin.Context) (uuid.UUID, bool) {
@@ -62,6 +71,10 @@ func (h *WebhookSubscriptionHandler) CreateSubscription(c *gin.Context) {
 	}
 
 	subscription, err := h.webhookService.CreateSubscription(c.Request.Context(), userID, &req)
+	if errors.Is(err, services.ErrWebhookValidation) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": webhookValidationMessage(err)})
+		return
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to create webhook subscription: " + err.Error(),
@@ -169,6 +182,10 @@ func (h *WebhookSubscriptionHandler) UpdateSubscription(c *gin.Context) {
 	}
 
 	if err := h.webhookService.UpdateSubscription(c.Request.Context(), subscriptionID, userID, &req); err != nil {
+		if errors.Is(err, services.ErrWebhookValidation) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": webhookValidationMessage(err)})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update webhook subscription: " + err.Error(),
 		})
