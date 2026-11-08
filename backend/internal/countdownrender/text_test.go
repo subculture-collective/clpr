@@ -2,6 +2,7 @@ package countdownrender
 
 import (
 	"crypto/sha256"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -72,5 +73,37 @@ func TestTemplateValidation(t *testing.T) {
 	}
 	if !strings.HasPrefix(DefaultTemplate().FontFile, "/usr/share/fonts/") {
 		t.Fatal("default font moved; update Dockerfile.render")
+	}
+}
+
+func TestCaptions(t *testing.T) {
+	words := []Word{
+		{0.2, 0.5, "No"}, {0.5, 0.8, "way"}, {0.8, 1.1, "he"}, {1.1, 1.4, "actually"}, {1.4, 1.9, "hit"},
+		{1.9, 2.2, "that"}, {2.2, 2.3, "🔥"}, {4.0, 4.2, "what"}, {4.2, 4.21, "?"},
+		{5.0, 5.4, "Supercalifragilisticexpialidocious-and-more"},
+	}
+	got := Captions(words, 16)
+	want := []Caption{
+		{0.2, 1.1, "No way he"},        // "No way he actually" is 18 columns
+		{1.1, 1.9, "actually hit"},     // "actually hit that" is 17
+		{1.9, 2.6, "that"},             // the emoji is dropped; lingers 0.4 s
+		{4.0, 4.61, "what ?"},          // a pause over a second starts a line
+		{5.0, 5.8, "Supercalifragil…"}, // a word wider than a line is cut
+	}
+	if len(got) != len(want) {
+		t.Fatalf("captions = %+v", got)
+	}
+	for i := range want {
+		if got[i].Text != want[i].Text || math.Abs(got[i].Start-want[i].Start) > 1e-9 || math.Abs(got[i].End-want[i].End) > 1e-9 {
+			t.Errorf("caption %d = %+v, want %+v", i, got[i], want[i])
+		}
+	}
+	if Captions(nil, 16) != nil {
+		t.Error("no words should give no captions")
+	}
+	// A short line is held for at least half a second, pushing the next one.
+	short := Captions([]Word{{1.0, 1.05, "a"}, {1.06, 1.1, "b"}, {1.2, 1.3, "verylongwordhere"}}, 8)
+	if len(short) != 2 || short[0].End != 1.5 || short[1].Start != 1.5 || short[1].End < short[1].Start {
+		t.Fatalf("short captions = %+v", short)
 	}
 }

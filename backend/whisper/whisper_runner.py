@@ -9,8 +9,13 @@ from faster_whisper import WhisperModel
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: whisper_runner.py AUDIO_PATH", file=sys.stderr)
+    args = sys.argv[1:]
+    # --words adds word timings, used for Short captions (#81).
+    words = bool(args) and args[0] == "--words"
+    if words:
+        args = args[1:]
+    if len(args) != 1:
+        print("usage: whisper_runner.py [--words] AUDIO_PATH", file=sys.stderr)
         return 2
 
     model_name = os.getenv("WHISPER_MODEL", "base")
@@ -23,11 +28,12 @@ def main() -> int:
         download_root=os.getenv("WHISPER_MODEL_DIR", "/tmp/clpr-whisper-models"),
     )
     segments_iter, info = model.transcribe(
-        sys.argv[1],
+        args[0],
         beam_size=int(os.getenv("WHISPER_BEAM_SIZE", "5")),
         temperature=0.0,
         vad_filter=True,
         condition_on_previous_text=False,
+        word_timestamps=words,
     )
 
     segments = []
@@ -35,14 +41,20 @@ def main() -> int:
         text = segment.text.strip()
         if not text:
             continue
-        segments.append(
-            {
-                "start": segment.start,
-                "end": segment.end,
-                "text": text,
-                "avg_logprob": segment.avg_logprob,
-            }
-        )
+        entry = {
+            "start": segment.start,
+            "end": segment.end,
+            "text": text,
+            "avg_logprob": segment.avg_logprob,
+            "no_speech_prob": segment.no_speech_prob,
+        }
+        if words:
+            entry["words"] = [
+                {"start": w.start, "end": w.end, "word": w.word.strip()}
+                for w in segment.words or []
+                if w.word.strip()
+            ]
+        segments.append(entry)
 
     print(
         json.dumps(
