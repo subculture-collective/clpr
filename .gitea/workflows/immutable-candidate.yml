@@ -128,6 +128,13 @@ jobs:
             test -s "$evidence_dir/$name-trivy.json"
             test -s "$evidence_dir/$name.spdx.json"
 
+            # GHCR denies this registry credential a push to the render
+            # package, and the candidate manifest does not list it. The
+            # release copies this image from the runner, so it stops here.
+            if [[ "$name" == render ]]; then
+              return 0
+            fi
+
             docker push "$image"
             repository_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")"
             digest="${repository_digest##*@}"
