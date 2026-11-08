@@ -151,6 +151,7 @@ func run() error {
 			Metrics:         services.NewCountdownPublishMetrics(registry),
 		}
 	}
+	progress := services.NewCountdownProgress(store, publisher != nil, registry)
 	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "clpr_countdown_media_last_run_timestamp_seconds",
 		Help: "Unix time the countdown media worker last finished a cycle without error.",
@@ -185,6 +186,7 @@ func run() error {
 		if publisher != nil {
 			err = errors.Join(err, publisher.RunOnce(ctx))
 		}
+		err = errors.Join(err, progress.Update(ctx, time.Now()))
 		if err != nil && ctx.Err() == nil {
 			utils.Error("Countdown media cycle failed", err)
 		} else if err == nil {

@@ -106,6 +106,10 @@ Every upload is recorded in `countdown_uploads` as soon as it finishes, so a ret
 - Angle brackets, which YouTube rejects, become ‹ and ›.
 - Titles stop at 100 characters, descriptions at 5,000 bytes and tags at 500 characters.
 
+## Operations
+
+Series setup, the worker deployment, metrics, alerts and what to do when they fire are in the [[../operations/runbooks/countdowns|countdowns runbook]]. The alert rules are the `clpr-countdowns` group in `monitoring/prometheus/clpr-slo-rules.yml`, with controlled-failure tests in `monitoring/prometheus/clpr-countdown-rules.test.yml` (`promtool test rules`).
+
 ## Exclusions
 
 `/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition. Each has a reason (`request`, `dmca` or `takedown`) and a source (`admin` now, `self_service` once #75 adds the broadcaster's own toggle). Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.

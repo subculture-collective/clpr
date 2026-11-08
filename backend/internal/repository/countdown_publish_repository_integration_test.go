@@ -119,6 +119,12 @@ func TestCountdownPublishClaimRecordAndFinish(t *testing.T) {
 	if err := repo.FinishPublish(ctx, edition.ID, models.CountdownEditionPublished, nil); err != nil {
 		t.Fatal(err)
 	}
+	progress, err := repo.ListSeriesProgress(ctx)
+	if err != nil || len(progress) != 1 || progress[0].Slug != "overall" || progress[0].SelectionHourUTC != 12 ||
+		progress[0].LatestRendered == nil || *progress[0].LatestRendered != "2026-11-07" ||
+		progress[0].LatestPublished == nil || *progress[0].LatestPublished != "2026-11-07" {
+		t.Fatalf("progress = %+v, %v", progress, err)
+	}
 	if err := repo.FinishPublish(ctx, edition.ID, models.CountdownEditionPublished, nil); !errors.Is(err, ErrCountdownEditionNotPublishing) {
 		t.Fatalf("second finish = %v", err)
 	}

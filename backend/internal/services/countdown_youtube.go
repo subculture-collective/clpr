@@ -56,6 +56,15 @@ func NewCountdownPublishMetrics(reg prometheus.Registerer) *CountdownPublishMetr
 			Help: "Countdown editions leaving the publish stage, by outcome (published, retry, quota, auth, failed).",
 		}, []string{"outcome"}),
 	}
+	// Outcomes start at zero so an alert on increase() sees the first one.
+	for _, outcome := range []string{"published", "retry", "quota", "auth", "failed"} {
+		m.Editions.WithLabelValues(outcome)
+	}
+	for _, kind := range []string{"countdown", "short"} {
+		for _, outcome := range []string{"ok", "quota", "failed"} {
+			m.Uploads.WithLabelValues(kind, outcome)
+		}
+	}
 	if reg != nil {
 		reg.MustRegister(m.Uploads, m.Editions)
 	}

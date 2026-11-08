@@ -151,3 +151,30 @@ func (r *CountdownRepository) SaveSeriesPlaylist(ctx context.Context, seriesID u
 		ON CONFLICT (series_id) DO UPDATE SET playlist_id = EXCLUDED.playlist_id`, seriesID, playlistID)
 	return err
 }
+
+// ListSeriesProgress returns, for each enabled series, its newest rendered
+// (or later) and newest published edition dates.
+func (r *CountdownRepository) ListSeriesProgress(ctx context.Context) ([]models.CountdownSeriesProgress, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT s.slug, s.selection_hour_utc, s.created_at,
+		       to_char(max(e.edition_date) FILTER (WHERE e.status IN ('rendered', 'publishing', 'published')), 'YYYY-MM-DD'),
+		       to_char(max(e.edition_date) FILTER (WHERE e.status = 'published'), 'YYYY-MM-DD')
+		FROM countdown_series s
+		LEFT JOIN countdown_editions e ON e.series_id = s.id
+		WHERE s.enabled
+		GROUP BY s.id
+		ORDER BY s.priority, s.slug`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []models.CountdownSeriesProgress{}
+	for rows.Next() {
+		var p models.CountdownSeriesProgress
+		if err := rows.Scan(&p.Slug, &p.SelectionHourUTC, &p.CreatedAt, &p.LatestRendered, &p.LatestPublished); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}

@@ -169,3 +169,13 @@ type CountdownUpload struct {
 	PublishAt      *time.Time `json:"publish_at,omitempty" db:"publish_at"`
 	UploadedAt     time.Time  `json:"uploaded_at" db:"uploaded_at"`
 }
+
+// CountdownSeriesProgress is how far an enabled series has got: the newest
+// edition dates (YYYY-MM-DD) that were rendered and published.
+type CountdownSeriesProgress struct {
+	Slug             string
+	SelectionHourUTC int
+	CreatedAt        time.Time
+	LatestRendered   *string
+	LatestPublished  *string
+}
