@@ -8,6 +8,7 @@
     "/admin/audit-logs",
     "/admin/clips",
     "/admin/comments",
+    "/admin/countdowns",
     "/admin/dashboard",
     "/admin/discovery-lists",
     "/admin/discovery-lists/:id/edit",

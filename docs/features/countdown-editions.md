@@ -112,9 +112,16 @@ Series setup, the worker deployment, metrics, alerts and what to do when they fi
 
 ## Exclusions
 
-`/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition. Each has a reason (`request`, `dmca` or `takedown`) and a source (`admin` now, `self_service` once #75 adds the broadcaster's own toggle). Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.
+`/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition and off the public countdown pages. Each has a reason (`request`, `dmca` or `takedown`) and a source:
 
-Excluding a broadcaster affects editions selected afterwards. Removing them from videos already published is #75.
+- **`admin`:** recorded on `/admin/countdowns`, for example for a broadcaster who asked by email and has no clpr account.
+- **`self_service`:** the broadcaster's own "Leave my clips out" toggle in Settings (`PUT /api/v1/users/me/countdowns/exclusion`), which also records the consent text version. Turning the toggle off removes only their own exclusion; an admin's stays and locks the toggle.
+
+Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.
+
+An exclusion affects editions selected afterwards. Clips it covers in videos already on YouTube appear on `/admin/countdowns` as removal tasks, due 7 days after the exclusion. An admin cuts the clip in YouTube Studio or removes the video, then marks the task done (`removed`, `edited`, or `kept` with a note). The video IDs are in `countdown_uploads`.
+
+**Feature my clips.** A broadcaster can opt in from Settings by granting `channel:manage:clips` through Twitch (see [[../compliance/twitch-api-usage|Twitch API usage]]). Their clips are then fetched through Helix rather than Twitch's player. "Stop featuring" or disconnecting Twitch removes the opt-in. The broadcaster API object (`GET /api/v1/broadcasters/{id}`) shows both controls as `countdown_excluded` and `countdown_featured`.
 
 ## Tests
 
@@ -125,6 +132,7 @@ Excluding a broadcaster affects editions selected afterwards. Removing them from
 - `backend/internal/countdownrender/render_test.go`: golden frames of the countdown (cards, clips with and without the lower third, a portrait clip, the outro), both Shorts and the thumbnail; stream formats and durations; byte-identical output across runs; and, with `COUNTDOWN_RENDER_TIMING=1`, a full-size timing run. These tests need ffmpeg and the fonts, so `backend/Dockerfile.render` runs them while building the image. To regenerate the goldens, run the test binary in the image's `runtime` stage with `UPDATE_GOLDEN=1` and the source `testdata` directory mounted.
 - `backend/internal/repository/countdown_render_repository_integration_test.go` and `backend/internal/services/countdown_render_worker_test.go`: claiming, recording and finishing renders, source deletion on success and failure, missing media, shutdown, and the render sweep.
 - `backend/internal/services/youtube_client_test.go`, `backend/internal/services/countdown_youtube_test.go` and `backend/internal/repository/countdown_publish_repository_integration_test.go`: the YouTube calls against a fake API (token refresh and caching, resumable upload, thumbnail, playlist, error reasons); titles, chapters, credits and limits; publishing with quota, authorization, temporary and permanent errors without uploading anything twice; scheduled publish times; claiming, recording and finishing in the database.
+- `backend/internal/repository/countdown_controls_repository_integration_test.go`, `backend/internal/handlers/countdown_controls_handler_test.go`, `frontend/src/components/countdown/CountdownSettingsCard.test.tsx`, `frontend/src/pages/admin/AdminCountdownsPage.test.tsx` and `frontend/e2e/mocked/broadcaster-controls.spec.ts`: the self-service toggle (an admin's exclusion survives it), removal tasks for countdowns and Shorts and their resolution, the admin path for a broadcaster without an account, and the "feature my clips" grant and its removal.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 
 ---

@@ -179,3 +179,47 @@ type CountdownSeriesProgress struct {
 	LatestRendered   *string
 	LatestPublished  *string
 }
+
+// CountdownConsentTextVersion names the wording broadcasters see for the
+// countdown controls (#75). Change it whenever the wording changes.
+const CountdownConsentTextVersion = "2026-11-07"
+
+// BroadcasterCountdownState is a broadcaster's countdown controls.
+type BroadcasterCountdownState struct {
+	BroadcasterID   string     `json:"broadcaster_id"`
+	Excluded        bool       `json:"excluded"`
+	ExclusionSource *string    `json:"exclusion_source,omitempty"`
+	ExcludedAt      *time.Time `json:"excluded_at,omitempty"`
+	Featured        bool       `json:"featured"`
+	FeaturedAt      *time.Time `json:"featured_at,omitempty"`
+	// ClipDownloadAuthorized: the signed-in user's Twitch connection holds
+	// channel:manage:clips. Set by the handler.
+	ClipDownloadAuthorized bool   `json:"clip_download_authorized"`
+	ConsentTextVersion     string `json:"consent_text_version"`
+}
+
+// CountdownRemovalTask is a clip in an uploaded video that an exclusion
+// made after the upload requires removing.
+type CountdownRemovalTask struct {
+	RenderID        uuid.UUID `json:"render_id"`
+	Kind            string    `json:"kind"`
+	YouTubeVideoID  string    `json:"youtube_video_id"`
+	EditionDate     string    `json:"edition_date"`
+	SeriesSlug      string    `json:"series_slug"`
+	ClipID          uuid.UUID `json:"clip_id"`
+	ClipTitle       string    `json:"clip_title"`
+	BroadcasterName string    `json:"broadcaster_name"`
+	BroadcasterID   *string   `json:"broadcaster_id,omitempty"`
+	ExclusionReason string    `json:"exclusion_reason"`
+	ExclusionSource string    `json:"exclusion_source"`
+	ExcludedAt      time.Time `json:"excluded_at"`
+	DueAt           time.Time `json:"due_at"`
+}
+
+// CountdownRemovalInput resolves one removal task.
+type CountdownRemovalInput struct {
+	RenderID   uuid.UUID `json:"render_id"`
+	ClipID     uuid.UUID `json:"clip_id"`
+	Resolution string    `json:"resolution"`
+	Note       *string   `json:"note"`
+}

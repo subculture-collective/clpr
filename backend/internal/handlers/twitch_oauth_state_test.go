@@ -119,3 +119,19 @@ func TestTwitchOAuthCallbackErrorsRedirectToSignedReturnPath(t *testing.T) {
 		})
 	}
 }
+
+func TestTwitchOAuthStateCarriesFeaturePurpose(t *testing.T) {
+	userID := uuid.New()
+	signed, err := signTwitchOAuthStateFor(userID, "secret", time.Now(), "/settings", "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, ok := decodeTwitchOAuthState(signed)
+	if !ok || !verifyTwitchOAuthState(signed, userID, "secret", time.Now()) || state.Purpose != "feature" || state.ReturnTo != "/settings" {
+		t.Fatalf("state = %+v, ok %v", state, ok)
+	}
+	plain, _ := signTwitchOAuthState(userID, "secret", time.Now())
+	if s, _ := decodeTwitchOAuthState(plain); s.Purpose != "" {
+		t.Fatalf("plain state has purpose %q", s.Purpose)
+	}
+}

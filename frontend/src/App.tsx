@@ -237,6 +237,11 @@ const AdminDiscoveryListFormPage = lazy(() =>
         default: m.AdminDiscoveryListFormPage,
     })),
 );
+const AdminCountdownsPage = lazy(() =>
+    import('./pages/admin/AdminCountdownsPage').then(m => ({
+        default: m.AdminCountdownsPage,
+    })),
+);
 const AdminPlaylistScriptsPage = lazy(() =>
     import('./pages/admin/AdminPlaylistScriptsPage').then(m => ({
         default: m.AdminPlaylistScriptsPage,
@@ -541,6 +546,7 @@ function App() {
                                                 discoveryLists: AdminDiscoveryListsPage,
                                                 discoveryListForm: AdminDiscoveryListFormPage,
                                                 playlistScripts: AdminPlaylistScriptsPage,
+                                                countdowns: AdminCountdownsPage,
                                                 tags: AdminTagsPage,
                                                 topics: AdminTopicsPage,
                                                 tagPromotion: AdminTagPromotionPage,

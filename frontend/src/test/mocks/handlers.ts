@@ -126,6 +126,14 @@ export const handlers = [
         return HttpResponse.json({ data: [] });
     }),
 
+    // GET /api/users/me/countdowns - Settings shows the broadcaster's countdown controls.
+    http.get(`${API_BASE_URL}/users/me/countdowns`, () => {
+        return HttpResponse.json({
+            success: true,
+            data: { broadcaster_id: '1234', excluded: false, featured: false, clip_download_authorized: false, consent_text_version: '2026-11-07' },
+        });
+    }),
+
     // POST /api/clips/:id/vote - Vote on clip
     http.post(`${API_BASE_URL}/clips/:id/vote`, () => {
         return HttpResponse.json({ success: true });

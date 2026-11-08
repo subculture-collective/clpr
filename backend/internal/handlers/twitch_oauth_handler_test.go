@@ -278,6 +278,36 @@ func TestTwitchOAuthHandler_InitiateTwitchOAuth(t *testing.T) {
 	}
 }
 
+func TestTwitchOAuthHandler_InitiateFeatureOptIn(t *testing.T) {
+	handler, _, cleanup := setupTwitchOAuthTestHandler(t)
+	if handler == nil {
+		return
+	}
+	defer cleanup()
+	t.Setenv("TWITCH_CLIENT_ID", "test_client_id")
+	t.Setenv("TWITCH_CLIENT_SECRET", "test_client_secret")
+	t.Setenv("TWITCH_REDIRECT_URI", "http://localhost:8080/api/v1/twitch/oauth/callback")
+
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/api/v1/twitch/oauth/authorize?purpose=feature&return_to=/settings", nil)
+	c.Set("user_id", uuid.New())
+	handler.InitiateTwitchOAuth(c)
+
+	parsed, err := url.Parse(w.Header().Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Feature my clips asks for clip downloads only, not the chat bot.
+	if scope := parsed.Query().Get("scope"); scope != "channel:manage:clips" {
+		t.Fatalf("scope = %q", scope)
+	}
+	if state, ok := decodeTwitchOAuthState(parsed.Query().Get("state")); !ok || state.Purpose != "feature" {
+		t.Fatalf("state = %+v", state)
+	}
+}
+
 func TestTwitchOAuthStatePreservesSafeReturnPath(t *testing.T) {
 	userID := uuid.New()
 	signed, err := signTwitchOAuthState(userID, "secret", time.Now(), "/streamer-tools/teststreamer/clips")

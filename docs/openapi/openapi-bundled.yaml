@@ -3860,6 +3860,88 @@ paths:
                 type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/users/me/countdowns:
+    get:
+      tags:
+        - Users
+        - Countdowns
+      summary: Get my countdown controls
+      description: The signed-in broadcaster's countdown controls. The broadcaster is the user's Twitch account; users without one get 409.
+      operationId: getApiV1UsersMeCountdowns
+      responses:
+        '200':
+          description: Countdown controls
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcasterCountdownStateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/users/me/countdowns/exclusion:
+    put:
+      tags:
+        - Users
+        - Countdowns
+      summary: Leave my clips out of countdowns
+      description: Turns the broadcaster's own exclusion on or off. On, their clips stay out of every future edition and off the public countdown pages, and their clips in uploaded videos join the admin removal list (due in 7 days). Off removes only the broadcaster's own exclusion; one an admin recorded stays. Records the consent text version.
+      operationId: putApiV1UsersMeCountdownsExclusion
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - excluded
+              properties:
+                excluded:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated controls
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcasterCountdownStateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/v1/users/me/countdowns/feature:
+    delete:
+      tags:
+        - Users
+        - Countdowns
+      summary: Stop featuring my clips
+      description: Removes the "feature my clips" opt-in. Disconnecting Twitch removes it too. Grant it with `GET /api/v1/twitch/oauth/authorize?purpose=feature`.
+      operationId: deleteApiV1UsersMeCountdownsFeature
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Updated controls
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcasterCountdownStateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/users/{id}/engagement:
     get:
       tags:
@@ -8233,6 +8315,85 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /api/v1/admin/countdowns/removals:
+    get:
+      tags:
+        - Admin
+        - Countdowns
+      summary: List countdown removal tasks
+      description: Clips in uploaded YouTube videos that an exclusion made after the upload covers and no admin has resolved, the oldest due first. Each is due 7 days after its exclusion. Administrator MFA is required.
+      operationId: getApiV1AdminCountdownsRemovals
+      responses:
+        '200':
+          description: Removal tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountdownRemovalTaskListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Admin
+        - Countdowns
+      summary: Resolve a countdown removal task
+      description: Records that the clip was removed from the video, the video was edited, or the video was kept (with a note why). Administrator MFA and CSRF protection are required.
+      operationId: postApiV1AdminCountdownsRemovals
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - render_id
+                - clip_id
+                - resolution
+              properties:
+                render_id:
+                  type: string
+                  format: uuid
+                clip_id:
+                  type: string
+                  format: uuid
+                resolution:
+                  type: string
+                  enum:
+                    - removed
+                    - edited
+                    - kept
+                note:
+                  type: string
+                  maxLength: 500
+      responses:
+        '200':
+          description: Resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    const: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /api/v1/admin/submissions:
     get:
       tags:
@@ -9652,7 +9813,7 @@ paths:
       tags:
         - Broadcasters
       summary: Get a visible broadcaster profile
-      description: Returns visible clip/follower statistics and optional authenticated follow state for a bounded Twitch broadcaster ID.
+      description: Returns visible clip/follower statistics and optional authenticated follow state for a bounded Twitch broadcaster ID. `countdown_excluded` and `countdown_featured` give the broadcaster's countdown controls.
       operationId: getApiV1BroadcastersId
       security: []
       parameters:
@@ -12591,6 +12752,14 @@ paths:
             type: string
             maxLength: 512
             pattern: ^/(?!/).*
+        - name: purpose
+          in: query
+          required: false
+          description: '`feature` asks only for channel:manage:clips (keeping scopes granted before) and records the broadcaster''s "feature my clips" opt-in when granted.'
+          schema:
+            type: string
+            enum:
+              - feature
       responses:
         '307':
           $ref: '#/components/responses/OAuthRedirect'
@@ -19844,6 +20013,120 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/CountdownEdition'
+    BroadcasterCountdownState:
+      type: object
+      required:
+        - broadcaster_id
+        - excluded
+        - featured
+        - clip_download_authorized
+        - consent_text_version
+      properties:
+        broadcaster_id:
+          type: string
+        excluded:
+          type: boolean
+        exclusion_source:
+          type: string
+          enum:
+            - admin
+            - self_service
+        excluded_at:
+          type: string
+          format: date-time
+        featured:
+          type: boolean
+          description: The broadcaster opted in to "feature my clips"
+        featured_at:
+          type: string
+          format: date-time
+        clip_download_authorized:
+          type: boolean
+          description: The user's Twitch connection holds channel:manage:clips for this broadcaster
+        consent_text_version:
+          type: string
+          description: Version of the consent wording recorded with each change
+    BroadcasterCountdownStateResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/BroadcasterCountdownState'
+    CountdownRemovalTask:
+      type: object
+      required:
+        - render_id
+        - kind
+        - youtube_video_id
+        - edition_date
+        - series_slug
+        - clip_id
+        - clip_title
+        - broadcaster_name
+        - exclusion_reason
+        - exclusion_source
+        - excluded_at
+        - due_at
+      properties:
+        render_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - countdown
+            - short
+        youtube_video_id:
+          type: string
+        edition_date:
+          type: string
+          format: date
+        series_slug:
+          type: string
+        clip_id:
+          type: string
+          format: uuid
+        clip_title:
+          type: string
+        broadcaster_name:
+          type: string
+        broadcaster_id:
+          type: string
+        exclusion_reason:
+          type: string
+          enum:
+            - request
+            - dmca
+            - takedown
+        exclusion_source:
+          type: string
+          enum:
+            - admin
+            - self_service
+        excluded_at:
+          type: string
+          format: date-time
+        due_at:
+          type: string
+          format: date-time
+    CountdownRemovalTaskListResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountdownRemovalTask'
     CountdownExclusionListResponse:
       type: object
       required:

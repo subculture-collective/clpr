@@ -24,6 +24,7 @@ import (
 // TwitchOAuthHandler handles Twitch OAuth for chat integration
 type TwitchOAuthHandler struct {
 	twitchAuthRepo *repository.TwitchAuthRepository
+	optIns         twitchFeatureOptIns
 }
 
 // NewTwitchOAuthHandler creates a new Twitch OAuth handler
@@ -55,18 +56,37 @@ type twitchOAuthState struct {
 	ExpiresAt int64  `json:"exp"`
 	Nonce     string `json:"nonce"`
 	ReturnTo  string `json:"return_to,omitempty"`
+	// Purpose "feature" records the broadcaster's "feature my clips" opt-in
+	// (#75) when the grant includes channel:manage:clips.
+	Purpose string `json:"purpose,omitempty"`
+}
+
+// twitchFeatureOptIns records and removes "feature my clips" opt-ins.
+type twitchFeatureOptIns interface {
+	RecordFeatureOptIn(ctx context.Context, broadcasterID string, userID uuid.UUID, scope string) error
+	DeleteFeatureOptIns(ctx context.Context, userID uuid.UUID) error
+}
+
+// SetFeatureOptIns lets the OAuth flow record "feature my clips" opt-ins.
+func (h *TwitchOAuthHandler) SetFeatureOptIns(optIns twitchFeatureOptIns) {
+	h.optIns = optIns
 }
 
 func signTwitchOAuthState(userID uuid.UUID, secret string, now time.Time, returnTo ...string) (string, error) {
+	target := ""
+	if len(returnTo) > 0 {
+		target = returnTo[0]
+	}
+	return signTwitchOAuthStateFor(userID, secret, now, target, "")
+}
+
+func signTwitchOAuthStateFor(userID uuid.UUID, secret string, now time.Time, returnTo, purpose string) (string, error) {
 	nonce := make([]byte, 24)
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
-	safeReturnTo := ""
-	if len(returnTo) > 0 {
-		safeReturnTo = sanitizeOAuthReturnTo(returnTo[0])
-	}
-	payload, err := json.Marshal(twitchOAuthState{UserID: userID.String(), ExpiresAt: now.Add(10 * time.Minute).Unix(), Nonce: base64.RawURLEncoding.EncodeToString(nonce), ReturnTo: safeReturnTo})
+	payload, err := json.Marshal(twitchOAuthState{UserID: userID.String(), ExpiresAt: now.Add(10 * time.Minute).Unix(),
+		Nonce: base64.RawURLEncoding.EncodeToString(nonce), ReturnTo: sanitizeOAuthReturnTo(returnTo), Purpose: purpose})
 	if err != nil {
 		return "", err
 	}
@@ -189,7 +209,11 @@ func (h *TwitchOAuthHandler) InitiateTwitchOAuth(c *gin.Context) {
 	if !ok {
 		return
 	}
-	state, err := signTwitchOAuthState(userID, clientSecret, time.Now(), c.Query("return_to"))
+	purpose := ""
+	if c.Query("purpose") == "feature" {
+		purpose = "feature"
+	}
+	state, err := signTwitchOAuthStateFor(userID, clientSecret, time.Now(), c.Query("return_to"), purpose)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to initialize OAuth state"})
 		return
@@ -201,6 +225,19 @@ func (h *TwitchOAuthHandler) InitiateTwitchOAuth(c *gin.Context) {
 	// - channel:manage:clips: obtain official temporary download URLs for this broadcaster's clips
 	// Ban scopes are no longer requested: ban sync and the Twitch ban actions were removed.
 	scopes := "channel:bot channel:manage:clips"
+	if purpose == "feature" {
+		// "Feature my clips" asks only for channel:manage:clips, keeping any
+		// scope the broadcaster granted before, since a new token replaces
+		// the old one.
+		scopes = "channel:manage:clips"
+		if existing, err := h.twitchAuthRepo.GetTwitchAuth(c.Request.Context(), userID); err == nil && existing != nil {
+			for _, scope := range strings.Fields(existing.Scopes) {
+				if scope != "channel:manage:clips" {
+					scopes += " " + scope
+				}
+			}
+		}
+	}
 
 	params := url.Values{"client_id": {clientID}, "redirect_uri": {redirectURI}, "response_type": {"code"}, "scope": {scopes}, "state": {state}}
 	authURL := "https://id.twitch.tv/oauth2/authorize?" + params.Encode()
@@ -376,6 +413,14 @@ func (h *TwitchOAuthHandler) TwitchOAuthCallback(c *gin.Context) {
 		return
 	}
 
+	if state.Purpose == "feature" && h.optIns != nil && hasTwitchScope(auth.Scopes, "channel:manage:clips") {
+		if err := h.optIns.RecordFeatureOptIn(ctx, auth.TwitchUserID, userID, "channel:manage:clips"); err != nil {
+			utils.GetLogger().Error("Failed to record the feature opt-in", err, map[string]interface{}{"user_id": userID.String()})
+			c.Redirect(http.StatusTemporaryRedirect, appendOAuthResult(returnTo, "error", "oauth_failed"))
+			return
+		}
+	}
+
 	utils.GetLogger().Info("Twitch OAuth completed successfully", map[string]interface{}{
 		"user_id":         userID.String(),
 		"twitch_username": userData.Data[0].Login,
@@ -475,6 +520,14 @@ func (h *TwitchOAuthHandler) RevokeTwitchAuth(c *gin.Context) {
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke authentication"})
 		return
+	}
+	// Without the token clpr can no longer feature this broadcaster's clips.
+	if h.optIns != nil {
+		if err := h.optIns.DeleteFeatureOptIns(ctx, userID); err != nil {
+			utils.GetLogger().Error("Failed to remove the feature opt-in", err, map[string]interface{}{"user_id": userID.String()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke authentication"})
+			return
+		}
 	}
 
 	utils.GetLogger().Info("Twitch OAuth revoked", map[string]interface{}{
