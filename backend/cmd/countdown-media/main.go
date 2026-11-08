@@ -125,6 +125,17 @@ func run() error {
 			BaseURL:  cfg.Server.BaseURL,
 		},
 	}
+	// Short captions (#81) run when the image provides the Whisper runner.
+	if python, runner := os.Getenv("WHISPER_PYTHON_PATH"), os.Getenv("WHISPER_RUNNER_DIR"); python != "" && runner != "" &&
+		os.Getenv("COUNTDOWN_CAPTIONS") != "off" {
+		renders.Captioner = &services.WhisperCaptioner{
+			Whisper:    services.NewWhisperService(python, runner),
+			FFmpegPath: envString("FFMPEG_PATH", "ffmpeg"),
+			// The temporary WAV holds clip audio, so it stays under the
+			// media directory and its 24-hour sweep.
+			WorkDir: filepath.Join(dir, ".captions"),
+		}
+	}
 	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "clpr_countdown_media_last_run_timestamp_seconds",
 		Help: "Unix time the countdown media worker last finished a cycle without error.",
@@ -150,6 +161,7 @@ func run() error {
 	utils.Info("Countdown media worker started", map[string]interface{}{
 		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
+		"captions": renders.Captioner != nil,
 	})
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()

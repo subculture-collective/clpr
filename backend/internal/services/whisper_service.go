@@ -18,10 +18,20 @@ type WhisperService struct {
 
 // WhisperSegment represents a single transcribed segment with timing.
 type WhisperSegment struct {
-	Start      float64 `json:"start"`
-	End        float64 `json:"end"`
-	Text       string  `json:"text"`
-	AvgLogprob float64 `json:"avg_logprob"`
+	Start        float64       `json:"start"`
+	End          float64       `json:"end"`
+	Text         string        `json:"text"`
+	AvgLogprob   float64       `json:"avg_logprob"`
+	NoSpeechProb float64       `json:"no_speech_prob"`
+	Words        []WhisperWord `json:"words,omitempty"`
+}
+
+// WhisperWord is one word with its timing, present when word timings were
+// asked for.
+type WhisperWord struct {
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+	Word  string  `json:"word"`
 }
 
 // WhisperResult is the structured output from a transcription run.
@@ -43,7 +53,16 @@ func NewWhisperService(pythonPath, runnerDir string) *WhisperService {
 // TranscribeAudio runs whisper_runner.py on a WAV file and returns the
 // structured transcription result.
 func (s *WhisperService) TranscribeAudio(ctx context.Context, wavPath string) (*WhisperResult, error) {
-	cmd := exec.CommandContext(ctx, s.pythonPath, s.runnerPath, wavPath)
+	return s.run(ctx, s.runnerPath, wavPath)
+}
+
+// TranscribeWords is TranscribeAudio with word timings in each segment.
+func (s *WhisperService) TranscribeWords(ctx context.Context, wavPath string) (*WhisperResult, error) {
+	return s.run(ctx, s.runnerPath, "--words", wavPath)
+}
+
+func (s *WhisperService) run(ctx context.Context, args ...string) (*WhisperResult, error) {
+	cmd := exec.CommandContext(ctx, s.pythonPath, args...)
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

@@ -40,6 +40,7 @@ type CountdownRenderMetrics struct {
 	Seconds  *prometheus.HistogramVec
 	Editions *prometheus.CounterVec
 	Deleted  prometheus.Counter
+	Captions *prometheus.CounterVec
 }
 
 // NewCountdownRenderMetrics creates the metrics and registers them with reg
@@ -59,9 +60,13 @@ func NewCountdownRenderMetrics(reg prometheus.Registerer) *CountdownRenderMetric
 			Name: "clpr_countdown_render_files_deleted_total",
 			Help: "Rendered countdown files deleted from the render host.",
 		}),
+		Captions: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "clpr_countdown_short_captions_total",
+			Help: "Shorts by caption outcome (captioned, none for no English speech, failed).",
+		}, []string{"outcome"}),
 	}
 	if reg != nil {
-		reg.MustRegister(m.Seconds, m.Editions, m.Deleted)
+		reg.MustRegister(m.Seconds, m.Editions, m.Deleted, m.Captions)
 	}
 	return m
 }
@@ -83,6 +88,11 @@ type CountdownRenderWorker struct {
 	// Notifier, when set, announces each rendered edition (#83).
 	Notifier interface {
 		EditionPublished(ctx context.Context, edition *models.CountdownEdition) error
+	}
+	// Captioner, when set, transcribes the clips of Shorts for captions
+	// (#81). A clip it cannot transcribe gets a Short without captions.
+	Captioner interface {
+		Words(ctx context.Context, mediaPath string) ([]countdownrender.Word, error)
 	}
 }
 
@@ -202,6 +212,7 @@ func (w *CountdownRenderWorker) render(ctx context.Context, edition *models.Coun
 	for i := 0; i < series.ShortsCount && i < len(ed.Clips); i++ {
 		c := ed.Clips[i]
 		clipID := clips[i].ClipID
+		c.Words = w.captionWords(ctx, edition, c)
 		if err := w.output(ctx, edition.ID, models.CountdownRenderShort, &clipID, fmt.Sprintf("short-%02d.mp4", c.Rank), func(out string) error {
 			return w.Renderer.RenderShort(ctx, c, out)
 		}); err != nil {
@@ -209,6 +220,28 @@ func (w *CountdownRenderWorker) render(ctx context.Context, edition *models.Coun
 		}
 	}
 	return nil
+}
+
+// captionWords transcribes one Short's clip. Failures leave the Short
+// without captions rather than failing the edition.
+func (w *CountdownRenderWorker) captionWords(ctx context.Context, edition *models.CountdownEdition, c countdownrender.Clip) []countdownrender.Word {
+	if w.Captioner == nil {
+		return nil
+	}
+	words, err := w.Captioner.Words(ctx, c.Path)
+	switch {
+	case err != nil:
+		w.Metrics.Captions.WithLabelValues("failed").Inc()
+		utils.Warn("Short captions failed; rendering without them", map[string]interface{}{
+			"edition_id": edition.ID.String(), "rank": c.Rank, "reason": err.Error(),
+		})
+		return nil
+	case len(words) == 0:
+		w.Metrics.Captions.WithLabelValues("none").Inc()
+	default:
+		w.Metrics.Captions.WithLabelValues("captioned").Inc()
+	}
+	return words
 }
 
 // output renders one file under a temporary name, checks it, and records it.

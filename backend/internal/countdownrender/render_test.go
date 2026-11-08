@@ -214,6 +214,23 @@ func TestRenderShortAndThumbnailGoldenFrames(t *testing.T) {
 	}
 	checkGolden(t, "short-landscape", frameAt(t, short, 1.0, goldenHeight, goldenWidth))
 
+	// Captions show while their words are spoken and are gone afterwards.
+	captioned := ed.Clips[0]
+	captioned.Words = []Word{{0.4, 0.7, "No"}, {0.7, 1.0, "way"}, {1.0, 1.3, "he"}, {1.3, 1.6, "hit"}, {1.6, 2.0, "that"}}
+	withCaptions := filepath.Join(dir, "short-captions.mp4")
+	if err := r.RenderShort(context.Background(), captioned, withCaptions); err != nil {
+		t.Fatal(err)
+	}
+	during := frameAt(t, withCaptions, 1.0, goldenHeight, goldenWidth)
+	checkGolden(t, "short-captions", during)
+	// Encoding noise alone differs by a few tenths; a caption by much more.
+	shown := meanDifference(during, frameAt(t, short, 1.0, goldenHeight, goldenWidth))
+	after := meanDifference(frameAt(t, withCaptions, 3.5, goldenHeight, goldenWidth), frameAt(t, short, 3.5, goldenHeight, goldenWidth))
+	t.Logf("caption frame difference: %.2f while shown, %.2f after", shown, after)
+	if shown < 3*after || shown < 0.5 {
+		t.Errorf("captions: difference %.2f while shown, %.2f after", shown, after)
+	}
+
 	silent := filepath.Join(dir, "short-silent.mp4")
 	if err := r.RenderShort(context.Background(), ed.Clips[1], silent); err != nil {
 		t.Fatal(err)

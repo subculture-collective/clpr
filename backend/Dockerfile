@@ -38,7 +38,7 @@ RUN apt-get update \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libapt-pkg6.0)" ge '2.6.2' \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libssl3)" ge '3.0.22-1~deb12u2' \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' openssl)" ge '3.0.22-1~deb12u2' \
-    && pip install --no-cache-dir faster-whisper==1.2.0 requests==2.34.2 \
+    && pip install --no-cache-dir faster-whisper==1.2.0 av==18.1.0 requests==2.34.2 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system --gid 10001 clpr \

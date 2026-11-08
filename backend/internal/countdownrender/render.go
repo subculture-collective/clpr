@@ -29,6 +29,65 @@ type Clip struct {
 	Path        string
 	Title       string
 	Broadcaster string
+	// Words, when set, are burned into the clip's Short as captions (#81).
+	Words []Word
+}
+
+// Word is one transcribed word with its time in the clip, in seconds.
+type Word struct {
+	Start, End float64
+	Text       string
+}
+
+// Caption is one line shown on a Short from Start to End.
+type Caption struct {
+	Start, End float64
+	Text       string
+}
+
+// Captions groups words into lines of at most maxChars columns. A line shows
+// from its first word until the next line starts, or briefly after its last
+// word when speech pauses.
+func Captions(words []Word, maxChars int) []Caption {
+	const linger, minimum = 0.4, 0.5
+	var out []Caption
+	var line []string
+	var start, end float64
+	flush := func() {
+		if len(line) > 0 {
+			out = append(out, Caption{Start: start, End: end + linger, Text: strings.Join(line, " ")})
+			line = nil
+		}
+	}
+	for _, w := range words {
+		text := cleanText(w.Text)
+		if text == "" || w.End <= w.Start {
+			continue
+		}
+		text = truncate(text, maxChars)
+		joined := strings.Join(append(append([]string{}, line...), text), " ")
+		if len(line) > 0 && (textWidth(joined) > maxChars || w.Start-end > 1.0) {
+			flush()
+		}
+		if len(line) == 0 {
+			start = w.Start
+		}
+		line = append(line, text)
+		end = w.End
+	}
+	flush()
+	for i := range out {
+		if i+1 < len(out) && out[i].End > out[i+1].Start {
+			out[i].End = out[i+1].Start
+		}
+		if out[i].End-out[i].Start < minimum {
+			out[i].End = out[i].Start + minimum
+			if i+1 < len(out) && out[i].End > out[i+1].Start {
+				out[i+1].Start = out[i].End
+			}
+		}
+	}
+	return out
 }
 
 // Edition is what a countdown video shows. Clips are in rank order, 1 first.
@@ -373,9 +432,18 @@ func (r *Renderer) RenderShort(ctx context.Context, c Clip, out string) error {
 		drawtext(t.BoldFontFile, title, 66, t.Text, "(w-text_w)/2", "190", "line_spacing=16", "text_align=C"),
 		drawtext(t.BoldFontFile, broadcaster, 52, t.Accent, "(w-text_w)/2", "h-360"),
 		drawtext(t.FontFile, site, 42, t.Muted, "(w-text_w)/2", "h-280"),
-		"format=yuv420p",
 	}, ",")
-	return r.video(ctx, c.Path, out, chain)
+	for _, caption := range Captions(c.Words, t.CaptionMaxChars) {
+		text, err := s.textFile(caption.Text)
+		if err != nil {
+			return err
+		}
+		// Below a landscape clip, which ends at y=1264; over a portrait one.
+		chain += "," + drawtext(t.BoldFontFile, text, 64, t.Text, "(w-text_w)/2", "1330",
+			"borderw=4", "bordercolor=black",
+			"enable=between(t\\,"+seconds(caption.Start)+"\\,"+seconds(caption.End)+")")
+	}
+	return r.video(ctx, c.Path, out, chain+",format=yuv420p")
 }
 
 // RenderThumbnail writes a 1280x720 JPEG from the middle of the #1 clip with

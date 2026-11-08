@@ -15,11 +15,18 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags '-s -w' -o /app/bin/countdown-media ./cmd/countdown-media \
     && CGO_ENABLED=0 GOOS=linux go test -c -o /app/bin/countdownrender.test ./internal/countdownrender
 
-# Runtime base: ffmpeg, yt-dlp and the fonts the render template names.
-FROM alpine:3.22@sha256:bfe7ceb9f09ec0566c48fb93356e45a47a00be5a1dd14fa5b909e7709c66b034 AS runtime
+# Runtime base: ffmpeg, yt-dlp, the fonts the render template names, and the
+# faster-whisper runtime for Short captions (#81). Debian rather than Alpine:
+# faster-whisper's wheels need glibc, and drawtext's text_align needs ffmpeg
+# 6.1 or later, which bookworm does not have.
+FROM python:3.12-slim-trixie@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54 AS runtime
 
-# yt-dlp follows Twitch player changes; rebuild the image to update it.
-RUN apk --no-cache add --upgrade ca-certificates ffmpeg yt-dlp font-noto-cjk 'libcrypto3>=3.5.8-r0' 'libssl3>=3.5.8-r0' 'zlib>=1.3.2-r1'
+# yt-dlp follows Twitch player changes; bump its pin and rebuild to update it.
+# PyAV 19 dropped an argument faster-whisper 1.2.0 passes, so av is pinned.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates ffmpeg fonts-noto-cjk \
+    && pip install --no-cache-dir yt-dlp==2026.10.26 faster-whisper==1.2.0 av==18.1.0 requests==2.34.2 \
+    && rm -rf /var/lib/apt/lists/*
 
 # The golden-frame tests run against this exact ffmpeg and these fonts, so the
 # image cannot be built when renders drift. To regenerate the goldens, run the
@@ -39,18 +46,25 @@ ARG OCI_SOURCE=https://git.subcult.tv/subculture-collective/clpr
 LABEL org.opencontainers.image.revision="${OCI_REVISION}" \
       org.opencontainers.image.source="${OCI_SOURCE}"
 
-RUN addgroup -S -g 10001 clpr && adduser -S -D -H -u 10001 -G clpr clpr \
-    && mkdir -p /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders \
-    && chown clpr:clpr /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders \
-    && chmod 0700 /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders
+RUN groupadd --system --gid 10001 clpr \
+    && useradd --system --uid 10001 --gid 10001 --no-create-home clpr \
+    && mkdir -p /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders /var/lib/clpr-whisper-models \
+    && chown clpr:clpr /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders /var/lib/clpr-whisper-models \
+    && chmod 0700 /var/lib/clpr-countdown-media /var/lib/clpr-countdown-renders /var/lib/clpr-whisper-models
 
 COPY --from=render-test /test/result.txt /usr/share/doc/clpr-render/golden-test-result.txt
 COPY --from=builder --chown=clpr:clpr /app/bin/countdown-media /usr/local/bin/countdown-media
+COPY --from=builder /app/whisper /opt/clpr/whisper
 
 USER 10001:10001
 
 ENV COUNTDOWN_MEDIA_DIR=/var/lib/clpr-countdown-media \
-    COUNTDOWN_RENDER_DIR=/var/lib/clpr-countdown-renders
+    COUNTDOWN_RENDER_DIR=/var/lib/clpr-countdown-renders \
+    WHISPER_PYTHON_PATH=/usr/local/bin/python3 \
+    WHISPER_RUNNER_DIR=/opt/clpr/whisper \
+    WHISPER_MODEL_DIR=/var/lib/clpr-whisper-models \
+    HF_HOME=/var/lib/clpr-whisper-models/huggingface \
+    XDG_CACHE_HOME=/var/lib/clpr-whisper-models/cache
 VOLUME ["/var/lib/clpr-countdown-media", "/var/lib/clpr-countdown-renders"]
 EXPOSE 9464
 
