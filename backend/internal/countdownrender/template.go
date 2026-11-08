@@ -29,6 +29,7 @@ type Template struct {
 	LowerThirdSeconds  float64 `json:"lower_third_seconds"`
 	TitleMaxChars      int     `json:"title_max_chars"`
 	ShortTitleMaxChars int     `json:"short_title_max_chars"`
+	CaptionMaxChars    int     `json:"caption_max_chars"`
 	SiteLabel          string  `json:"site_label"`
 	OutroHeading       string  `json:"outro_heading"`
 	OutroFooter        string  `json:"outro_footer"`
@@ -91,6 +92,8 @@ func (t Template) Validate() error {
 		return fmt.Errorf("template lower_third_seconds must be 0 to 60")
 	case t.TitleMaxChars < 10 || t.ShortTitleMaxChars < 10:
 		return fmt.Errorf("template title widths must be at least 10")
+	case t.CaptionMaxChars < 8 || t.CaptionMaxChars > 40:
+		return fmt.Errorf("template caption_max_chars must be 8 to 40")
 	case t.VideoCRF < 10 || t.VideoCRF > 35 || !presetPattern.MatchString(t.VideoPreset) || !bitratePattern.MatchString(t.AudioBitrate):
 		return fmt.Errorf("template encoder settings are out of range")
 	case t.LoudnessLUFS < -30 || t.LoudnessLUFS > -8:

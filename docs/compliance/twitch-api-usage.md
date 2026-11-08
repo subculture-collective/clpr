@@ -142,6 +142,13 @@ Files stay in the worker's own volume, are never served by clpr.tv or put in
 object storage, and are deleted within 24 hours of fetching, or as soon as
 the edition fails.
 
+For the clips that get a Short, the worker also transcribes the fetched file
+on the render host to burn captions into the Short
+(`backend/internal/services/countdown_captions.go`). It uses the same local
+faster-whisper runner as the optional transcription above, writes a temporary
+WAV under the media volume and deletes it at once. Nothing leaves the render
+host, the transcript is not stored, and only English speech gets captions.
+
 ## App access token
 
 `backend/pkg/twitch/auth.go` obtains the app token with the
