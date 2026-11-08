@@ -1486,7 +1486,14 @@ type WebhookSubscription struct {
 	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at" db:"updated_at"`
 	LastDeliveryAt *time.Time `json:"last_delivery_at,omitempty" db:"last_delivery_at"`
+	TargetType     string     `json:"target_type" db:"target_type"`
 }
+
+// Webhook target types: the signed JSON event, or a Discord message.
+const (
+	WebhookTargetGeneric = "generic"
+	WebhookTargetDiscord = "discord"
+)
 
 // WebhookDelivery represents a webhook delivery attempt
 type WebhookDelivery struct {
@@ -1519,6 +1526,7 @@ type CreateWebhookSubscriptionRequest struct {
 	URL         string   `json:"url" binding:"required,url,max=2048"`
 	Events      []string `json:"events" binding:"required,min=1,max=10"`
 	Description *string  `json:"description,omitempty" binding:"omitempty,max=500"`
+	TargetType  string   `json:"target_type,omitempty" binding:"omitempty,oneof=generic discord"`
 }
 
 // UpdateWebhookSubscriptionRequest represents a request to update a webhook subscription
@@ -1534,6 +1542,10 @@ const (
 	WebhookEventClipSubmitted = "clip.submitted"
 	WebhookEventClipApproved  = "clip.approved"
 	WebhookEventClipRejected  = "clip.rejected"
+	// WebhookEventCountdownPublished fires when a countdown edition's page
+	// goes public; WebhookEventDailyTopClips once a day with the day's clips.
+	WebhookEventCountdownPublished = "countdown.published"
+	WebhookEventDailyTopClips      = "daily.top_clips"
 )
 
 // GetSupportedWebhookEvents returns the list of supported webhook events
@@ -1542,7 +1554,14 @@ func GetSupportedWebhookEvents() []string {
 		WebhookEventClipSubmitted,
 		WebhookEventClipApproved,
 		WebhookEventClipRejected,
+		WebhookEventCountdownPublished,
+		WebhookEventDailyTopClips,
 	}
+}
+
+// GetDiscordWebhookEvents returns the events a Discord target can receive.
+func GetDiscordWebhookEvents() []string {
+	return []string{WebhookEventCountdownPublished, WebhookEventDailyTopClips}
 }
 
 // OutboundWebhookDeadLetterQueue represents a permanently failed outbound webhook delivery
@@ -1681,6 +1700,10 @@ type BroadcasterProfile struct {
 	AvgVoteScore    float64   `json:"avg_vote_score"`
 	IsFollowing     bool      `json:"is_following"` // Whether the current user is following
 	UpdatedAt       time.Time `json:"updated_at"`
+	// CountdownExcluded: the broadcaster's clips are left out of countdowns
+	// (#75). CountdownFeatured: they opted in to having their clips featured.
+	CountdownExcluded bool `json:"countdown_excluded"`
+	CountdownFeatured bool `json:"countdown_featured"`
 }
 
 // PopularBroadcaster represents a broadcaster summary for navigation/discovery

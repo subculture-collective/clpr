@@ -186,6 +186,9 @@ Validating alert configurations and testing alerting pipelines.
 #### [Background Jobs](./background-jobs.md)
 Troubleshooting background job processing and queue management.
 
+#### [Countdowns](./countdowns.md)
+Daily countdown series, the render-host worker, YouTube publishing, and their alerts.
+
 #### [HPA Scaling](./hpa-scaling.md)
 Horizontal Pod Autoscaling configuration and troubleshooting.
 

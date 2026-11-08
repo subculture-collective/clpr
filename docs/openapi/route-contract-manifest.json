@@ -113,6 +113,20 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/admin/countdowns/removals",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownControlsHandler).ListRemovals-fm",
+    "operation_id": "getApiV1AdminCountdownsRemovals",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/countdowns/removals",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownControlsHandler).ResolveRemoval-fm",
+    "operation_id": "postApiV1AdminCountdownsRemovals",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/admin/countdowns/series",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).ListSeries-fm",
     "operation_id": "getApiV1AdminCountdownsSeries",
@@ -2384,6 +2398,27 @@
     "path": "/api/v1/users/me/consent",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ConsentHandler).SaveConsent-fm",
     "operation_id": "saveConsent",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me/countdowns",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownControlsHandler).GetMyCountdownControls-fm",
+    "operation_id": "getApiV1UsersMeCountdowns",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/me/countdowns/exclusion",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownControlsHandler).SetMyCountdownExclusion-fm",
+    "operation_id": "putApiV1UsersMeCountdownsExclusion",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/users/me/countdowns/feature",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownControlsHandler).DeleteMyFeatureOptIn-fm",
+    "operation_id": "deleteApiV1UsersMeCountdownsFeature",
     "contract_level": "route-specific"
   },
   {

@@ -10,6 +10,7 @@ import type { UpdateProfileRequest, UpdateSettingsRequest } from '../lib/user-se
 import { getUserSettings, updateProfile, updateUserSettings } from '../lib/user-settings-api';
 import { useFeedAutoplayPreference } from '../hooks';
 import { SUPPORT_URL } from '../lib/support-link';
+import { CountdownSettingsCard } from '../components/countdown/CountdownSettingsCard';
 
 export function SettingsPage() {
     const { user, refreshUser } = useAuth();
@@ -214,6 +215,8 @@ export function SettingsPage() {
                             />
                         </CardBody>
                     </Card>
+
+                    <CountdownSettingsCard />
 
                     {/* Privacy Settings */}
                     <Card className='mb-6'>

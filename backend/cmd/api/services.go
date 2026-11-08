@@ -239,6 +239,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 	var submissionService *services.SubmissionService
 	var liveStatusService *services.LiveStatusService
 	outboundWebhookService := services.NewOutboundWebhookService(repos.OutboundWebhook)
+	outboundWebhookService.SetDailyTopClips(repos.Countdown, cfg.Server.BaseURL, cfg.Jobs.DailyTopClipsHourUTC)
 	if infra.TwitchClient != nil {
 		clipSyncService = services.NewClipSyncService(infra.TwitchClient, repos.Clip, repos.Tag, repos.User, infra.Redis, autoTagService)
 		clipSyncService.SetGameRepository(repos.Game)

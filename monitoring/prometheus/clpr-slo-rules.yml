@@ -108,3 +108,61 @@ groups:
         annotations:
           summary: "clpr handler background work was dropped because its queue was full"
           runbook_url: "docs/operations/runbooks/background-jobs.md#job-failures"
+
+  # Countdown worker on the render host (#80). Prometheus scrapes it as job
+  # clpr-countdown-media on port 9464.
+  - name: clpr-countdowns
+    interval: 1m
+    rules:
+      - alert: ClprCountdownWorkerDown
+        expr: up{job="clpr-countdown-media"} == 0
+        for: 10m
+        labels: {severity: critical, project: clpr}
+        annotations:
+          summary: "The countdown worker on {{ $labels.instance }} is not answering scrapes"
+          runbook_url: "docs/operations/runbooks/countdowns.md#worker-down-or-stalled"
+      - alert: ClprCountdownWorkerStalled
+        expr: time() - clpr_countdown_media_last_run_timestamp_seconds > 1800
+        for: 5m
+        labels: {severity: warning, project: clpr}
+        annotations:
+          summary: "The countdown worker has not finished a cycle without errors for 30 minutes"
+          runbook_url: "docs/operations/runbooks/countdowns.md#worker-down-or-stalled"
+      - alert: ClprCountdownEditionMissed
+        expr: clpr_countdown_edition_overdue_seconds{stage="rendered"} > 10800
+        for: 5m
+        labels: {severity: critical, project: clpr}
+        annotations:
+          summary: "Countdown series {{ $labels.series }} has no rendered edition 3 hours after its selection hour"
+          runbook_url: "docs/operations/runbooks/countdowns.md#missed-edition"
+      - alert: ClprCountdownEditionNotPublished
+        expr: clpr_countdown_edition_overdue_seconds{stage="published"} > 86400
+        for: 10m
+        labels: {severity: warning, project: clpr}
+        annotations:
+          summary: "Countdown series {{ $labels.series }} has not been published to YouTube for a day past its selection hour"
+          runbook_url: "docs/operations/runbooks/countdowns.md#not-published"
+      - alert: ClprCountdownEditionFailed
+        expr: sum by (stage) (label_replace(increase(clpr_countdown_media_editions_total{outcome="failed"}[1h]), "stage", "fetch", "", "") or label_replace(increase(clpr_countdown_render_editions_total{outcome="failed"}[1h]), "stage", "render", "", "") or label_replace(increase(clpr_countdown_publish_editions_total{outcome="failed"}[1h]), "stage", "publish", "", "")) > 0
+        labels: {severity: warning, project: clpr}
+        annotations:
+          summary: "A countdown edition failed at the {{ $labels.stage }} stage"
+          runbook_url: "docs/operations/runbooks/countdowns.md#failed-edition"
+      - alert: ClprCountdownUploadFailed
+        expr: sum by (kind) (increase(clpr_countdown_youtube_uploads_total{kind=~"countdown|short",outcome="failed"}[1h])) > 0
+        labels: {severity: warning, project: clpr}
+        annotations:
+          summary: "A YouTube upload of a countdown {{ $labels.kind }} failed"
+          runbook_url: "docs/operations/runbooks/countdowns.md#upload-failed"
+      - alert: ClprCountdownYouTubeQuotaReached
+        expr: increase(clpr_countdown_publish_editions_total{outcome="quota"}[6h]) > 0
+        labels: {severity: warning, project: clpr}
+        annotations:
+          summary: "YouTube quota or the channel's upload limit stopped publishing until 08:00 UTC"
+          runbook_url: "docs/operations/runbooks/countdowns.md#upload-failed"
+      - alert: ClprCountdownYouTubeAuthFailed
+        expr: increase(clpr_countdown_publish_editions_total{outcome="auth"}[2h]) > 0
+        labels: {severity: critical, project: clpr}
+        annotations:
+          summary: "YouTube rejected the channel authorization; publishing is paused"
+          runbook_url: "docs/operations/runbooks/countdowns.md#youtube-authorization"

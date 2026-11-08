@@ -8,6 +8,15 @@ export interface WebhookSubscription {
     created_at: string;
     updated_at: string;
     last_delivery_at?: string;
+    target_type?: WebhookTargetType;
+}
+
+/** generic posts the signed JSON event; discord posts a Discord message. */
+export type WebhookTargetType = 'generic' | 'discord';
+
+export interface WebhookEventCatalog {
+    events: string[];
+    discordEvents: string[];
 }
 
 export interface WebhookDelivery {
@@ -32,6 +41,7 @@ export interface CreateWebhookSubscriptionRequest {
     url: string;
     events: string[];
     description?: string;
+    target_type?: WebhookTargetType;
 }
 
 export interface UpdateWebhookSubscriptionRequest {

@@ -286,6 +286,10 @@ func NewCountdownMediaMetrics(reg prometheus.Registerer) *CountdownMediaMetrics 
 			Help: "Countdown media files deleted from the render host.",
 		}),
 	}
+	// Outcomes start at zero so an alert on increase() sees the first one.
+	for _, outcome := range []string{"fetched", "failed"} {
+		m.Editions.WithLabelValues(outcome)
+	}
 	if reg != nil {
 		reg.MustRegister(m.Fetches, m.Skips, m.Editions, m.Deleted)
 	}

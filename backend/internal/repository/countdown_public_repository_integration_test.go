@@ -101,6 +101,11 @@ func TestCountdownPublicPages(t *testing.T) {
 		t.Fatalf("excluded clip features = %+v, %v", features, err)
 	}
 
+	top, err := repo.ListDailyTopClips(ctx, end1.Add(-24*time.Hour), end1, 10)
+	if err != nil || len(top) != 2 || top[0].ClipID != ids["a1"] || top[1].ClipID != ids["c1"] || top[0].ViewCount != 100 {
+		t.Fatalf("daily top clips = %+v, %v (bravo is excluded)", top, err)
+	}
+
 	keys, err := repo.ListPublicEditionKeys(ctx, 100)
 	if err != nil || len(keys) != 2 || keys[0] != (models.CountdownEditionKey{EditionDate: day2, SeriesSlug: "overall"}) {
 		t.Fatalf("keys = %+v, %v", keys, err)

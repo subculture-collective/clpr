@@ -16,6 +16,7 @@ import {
     Toggle,
 } from '../components';
 import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../lib/error-utils';
 import {
     createWebhookSubscription,
     deleteWebhookSubscription,
@@ -30,6 +31,7 @@ import type {
     UpdateWebhookSubscriptionRequest,
     WebhookSubscription,
     WebhookDelivery,
+    WebhookTargetType,
 } from '../types/webhook';
 
 export function WebhookSubscriptionsPage() {
@@ -64,19 +66,26 @@ export function WebhookSubscriptionsPage() {
     });
 
     // Load supported events
-    const { data: supportedEvents } = useQuery({
+    const { data: eventCatalog } = useQuery({
         queryKey: ['webhookEvents'],
         queryFn: getSupportedWebhookEvents,
     });
+    const eventsFor = (target?: WebhookTargetType) =>
+        target === 'discord' ? eventCatalog?.discordEvents : eventCatalog?.events;
+    const createEvents = eventsFor(createForm.target_type);
+    const editEvents = eventsFor(selectedSubscription?.target_type);
 
     // Create mutation
     const createMutation = useMutation({
         mutationFn: createWebhookSubscription,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['webhookSubscriptions'] });
-            setNewSecret(data.secret);
             setShowCreateModal(false);
-            setShowSecretModal(true);
+            // Discord does not check signatures, so its secret is not shown.
+            if (data.subscription?.target_type !== 'discord') {
+                setNewSecret(data.secret);
+                setShowSecretModal(true);
+            }
             setCreateForm({ url: '', events: [], description: '' });
         },
     });
@@ -254,6 +263,11 @@ export function WebhookSubscriptionsPage() {
                                                     <h3 className="text-lg font-semibold">
                                                         {subscription.url}
                                                     </h3>
+                                                    {subscription.target_type === 'discord' && (
+                                                        <span className="px-2 py-0.5 text-xs bg-primary-100 text-link rounded">
+                                                            Discord
+                                                        </span>
+                                                    )}
                                                     {subscription.is_active ? (
                                                         <span className="px-2 py-0.5 text-xs bg-success-100 text-success-700 rounded">
                                                             Active
@@ -319,17 +333,19 @@ export function WebhookSubscriptionsPage() {
                                                 >
                                                     Edit
                                                 </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleRegenerateSecret(
-                                                            subscription
-                                                        )
-                                                    }
-                                                >
-                                                    Regenerate Secret
-                                                </Button>
+                                                {subscription.target_type !== 'discord' && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleRegenerateSecret(
+                                                                subscription
+                                                            )
+                                                        }
+                                                    >
+                                                        Regenerate Secret
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -391,8 +407,39 @@ export function WebhookSubscriptionsPage() {
             >
                 <form onSubmit={handleCreateSubmit}>
                     <Stack direction="vertical" gap={4}>
+                        <fieldset>
+                            <legend className="block text-sm font-medium mb-2">
+                                Destination
+                            </legend>
+                            <div className="flex flex-wrap gap-4">
+                                {(
+                                    [
+                                        ['generic', 'Your endpoint (signed JSON)'],
+                                        ['discord', 'Discord channel'],
+                                    ] as const
+                                ).map(([value, label]) => (
+                                    <label key={value} className="inline-flex min-h-11 items-center gap-2 text-sm">
+                                        <input
+                                            type="radio"
+                                            name="target_type"
+                                            value={value}
+                                            checked={(createForm.target_type ?? 'generic') === value}
+                                            onChange={() => {
+                                                const allowed = eventsFor(value) ?? [];
+                                                setCreateForm({
+                                                    ...createForm,
+                                                    target_type: value,
+                                                    events: createForm.events.filter((e) => allowed.includes(e)),
+                                                });
+                                            }}
+                                        />
+                                        {label}
+                                    </label>
+                                ))}
+                            </div>
+                        </fieldset>
                         <Input
-                            label="Webhook URL"
+                            label={createForm.target_type === 'discord' ? 'Discord webhook URL' : 'Webhook URL'}
                             value={createForm.url}
                             onChange={(e) =>
                                 setCreateForm({
@@ -400,7 +447,16 @@ export function WebhookSubscriptionsPage() {
                                     url: e.target.value,
                                 })
                             }
-                            placeholder="https://example.com/webhook"
+                            placeholder={
+                                createForm.target_type === 'discord'
+                                    ? 'https://discord.com/api/webhooks/…'
+                                    : 'https://example.com/webhook'
+                            }
+                            helperText={
+                                createForm.target_type === 'discord'
+                                    ? 'In Discord: channel settings, Integrations, Webhooks, Copy Webhook URL.'
+                                    : undefined
+                            }
                             required
                         />
                         <TextArea
@@ -420,8 +476,8 @@ export function WebhookSubscriptionsPage() {
                                 Select Events *
                             </label>
                             <div className="space-y-2">
-                                {supportedEvents && supportedEvents.length > 0 ? (
-                                    supportedEvents.map((event) => (
+                                {createEvents && createEvents.length > 0 ? (
+                                    createEvents.map((event) => (
                                         <Toggle
                                             key={event}
                                             label={event}
@@ -441,8 +497,8 @@ export function WebhookSubscriptionsPage() {
                         {createMutation.isError && (
                             <Alert variant="error">
                                 <p className="font-medium">Failed to create webhook subscription</p>
-                                {createMutation.error instanceof Error && createMutation.error.message && (
-                                    <p className="mt-1 text-sm">{createMutation.error.message}</p>
+                                {createMutation.error && (
+                                    <p className="mt-1 text-sm">{getErrorMessage(createMutation.error, 'Please try again.')}</p>
                                 )}
                             </Alert>
                         )}
@@ -518,8 +574,8 @@ export function WebhookSubscriptionsPage() {
                                 Select Events
                             </label>
                             <div className="space-y-2">
-                                {supportedEvents && supportedEvents.length > 0 ? (
-                                    supportedEvents.map((event) => (
+                                {editEvents && editEvents.length > 0 ? (
+                                    editEvents.map((event) => (
                                         <Toggle
                                             key={event}
                                             label={event}
@@ -540,8 +596,8 @@ export function WebhookSubscriptionsPage() {
                         {updateMutation.isError && (
                             <Alert variant="error">
                                 <p className="font-medium">Failed to update webhook subscription</p>
-                                {updateMutation.error instanceof Error && updateMutation.error.message && (
-                                    <p className="mt-1 text-sm">{updateMutation.error.message}</p>
+                                {updateMutation.error && (
+                                    <p className="mt-1 text-sm">{getErrorMessage(updateMutation.error, 'Please try again.')}</p>
                                 )}
                             </Alert>
                         )}

@@ -11,7 +11,7 @@ last_reviewed: 2026-11-07
 
 # Countdown editions
 
-A countdown edition is one day's ranked list of clips for a countdown video or Short. This page covers selection (#76), fetching the media (#77), rendering (#78) and the public pages (#82). Publishing (#79) builds on the renders stored here. The media policy is [[../adr/002-media-handling-for-countdowns|ADR-002]].
+A countdown edition is one day's ranked list of clips for a countdown video or Short. This page covers selection (#76), fetching the media (#77), rendering (#78), the public pages (#82) and publishing to YouTube (#79). The media policy is [[../adr/002-media-handling-for-countdowns|ADR-002]].
 
 ## Series
 
@@ -100,11 +100,46 @@ An edition becomes public once it is `rendered` or `published`. Selected, in-pro
 
 The pages read `GET /api/v1/countdowns`, `GET /api/v1/countdowns/{date}/{series}` and `GET /api/v1/countdowns/featured`. They need no sign-in, are rate-limited to 120 requests a minute per client and may be cached for five minutes. A clip removed, hidden, taken down or excluded after its edition was made drops out of these pages, so the ranks shown can skip a number. The sitemap lists `/countdowns` and the newest 1,000 edition pages. The YouTube link joins each page once #79 stores the video ID.
 
+When an edition is rendered, the worker also queues the `countdown.published` webhook event, which Discord subscriptions post to their channel (see [[../backend/webhook-subscription-management#discord-delivery|Discord delivery]]). The links in it use `BASE_URL`, so the worker needs the same value as the API.
+
+## Publishing
+
+Once the channel is authorized (see [[../compliance/youtube-api-usage|YouTube API usage]]), the same worker uploads each `rendered` edition. It moves the edition to `publishing`, and then:
+
+1. uploads the countdown video, sets its thumbnail and adds it to the series playlist, creating the playlist on first use;
+2. uploads each Short;
+3. moves the edition to `published`.
+
+Every upload is recorded in `countdown_uploads` as soon as it finishes, so a retry skips it.
+
+- **Errors:** a quota error returns the edition to `rendered` and pauses publishing until 08:00 UTC; temporary errors pause it for 15 minutes, and an authorization error for an hour. An error YouTube will repeat, such as rejected metadata, fails the edition with the reason. A failed thumbnail or playlist step leaves the video published and counts a failure.
+- **Privacy:** uploads are private until the API audit passes; `YOUTUBE_PRIVACY` then switches to `scheduled`, `public` or `unlisted`.
+- **Metrics:** `clpr_countdown_youtube_uploads_total{kind,outcome}` and `clpr_countdown_publish_editions_total{outcome}`.
+
+**Titles and descriptions:**
+
+- The countdown is titled "Top N Twitch Clips of <date>: <series>".
+- Its description links the edition page and lists chapters: one per rank, timed from the rank card length and each clip's fetched duration, then the credits. It credits every clip's broadcaster and original clip, and says how to have a clip removed.
+- Shorts are titled with the clip title and `#Shorts`.
+- Angle brackets, which YouTube rejects, become ‹ and ›.
+- Titles stop at 100 characters, descriptions at 5,000 bytes and tags at 500 characters.
+
+## Operations
+
+Series setup, the worker deployment, metrics, alerts and what to do when they fire are in the [[../operations/runbooks/countdowns|countdowns runbook]]. The alert rules are the `clpr-countdowns` group in `monitoring/prometheus/clpr-slo-rules.yml`, with controlled-failure tests in `monitoring/prometheus/clpr-countdown-rules.test.yml` (`promtool test rules`).
+
 ## Exclusions
 
-`/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition. Each has a reason (`request`, `dmca` or `takedown`) and a source (`admin` now, `self_service` once #75 adds the broadcaster's own toggle). Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.
+`/api/v1/admin/countdowns/exclusions` holds the broadcasters (by Twitch ID) and single clips left out of every future edition and off the public countdown pages. Each has a reason (`request`, `dmca` or `takedown`) and a source:
 
-Excluding a broadcaster affects editions selected afterwards. Removing them from videos already published is #75.
+- **`admin`:** recorded on `/admin/countdowns`, for example for a broadcaster who asked by email and has no clpr account.
+- **`self_service`:** the broadcaster's own "Leave my clips out" toggle in Settings (`PUT /api/v1/users/me/countdowns/exclusion`), which also records the consent text version. Turning the toggle off removes only their own exclusion; an admin's stays and locks the toggle.
+
+Clips removed after a DMCA notice are already ineligible without a row. A YouTube claim against a clip is recorded as a `takedown` exclusion.
+
+An exclusion affects editions selected afterwards. Clips it covers in videos already on YouTube appear on `/admin/countdowns` as removal tasks, due 7 days after the exclusion. An admin cuts the clip in YouTube Studio or removes the video, then marks the task done (`removed`, `edited`, or `kept` with a note). The video IDs are in `countdown_uploads`.
+
+**Feature my clips.** A broadcaster can opt in from Settings by granting `channel:manage:clips` through Twitch (see [[../compliance/twitch-api-usage|Twitch API usage]]). Their clips are then fetched through Helix rather than Twitch's player. "Stop featuring" or disconnecting Twitch removes the opt-in. The broadcaster API object (`GET /api/v1/broadcasters/{id}`) shows both controls as `countdown_excluded` and `countdown_featured`.
 
 ## Tests
 
@@ -116,6 +151,8 @@ Excluding a broadcaster affects editions selected afterwards. Removing them from
 - `backend/internal/countdownrender/text_test.go` and `backend/internal/services/countdown_captions_test.go`: grouping words into caption lines; keeping only confident English speech; Shorts rendered without captions when transcription fails.
 - `backend/internal/repository/countdown_render_repository_integration_test.go` and `backend/internal/services/countdown_render_worker_test.go`: claiming, recording and finishing renders, source deletion on success and failure, missing media, shutdown, and the render sweep.
 - `backend/internal/repository/countdown_public_repository_integration_test.go`, `backend/internal/handlers/countdown_public_handler_test.go`, `frontend/src/pages/CountdownPages.test.tsx` and `frontend/e2e/mocked/countdowns.spec.ts`: which editions and clips are public, paging by day, placements, request validation, the sitemap entries, and both pages in a browser, including a phone-width check.
+- `backend/internal/services/youtube_client_test.go`, `backend/internal/services/countdown_youtube_test.go` and `backend/internal/repository/countdown_publish_repository_integration_test.go`: the YouTube calls against a fake API (token refresh and caching, resumable upload, thumbnail, playlist, error reasons); titles, chapters, credits and limits; publishing with quota, authorization, temporary and permanent errors without uploading anything twice; scheduled publish times; claiming, recording and finishing in the database.
+- `backend/internal/repository/countdown_controls_repository_integration_test.go`, `backend/internal/handlers/countdown_controls_handler_test.go`, `frontend/src/components/countdown/CountdownSettingsCard.test.tsx`, `frontend/src/pages/admin/AdminCountdownsPage.test.tsx` and `frontend/e2e/mocked/broadcaster-controls.spec.ts`: the self-service toggle (an admin's exclusion survives it), removal tasks for countdowns and Shorts and their resolution, the admin path for a broadcaster without an account, and the "feature my clips" grant and its removal.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 
 ---

@@ -26,6 +26,9 @@ import (
 )
 
 var (
+	// ErrWebhookValidation marks a subscription the caller must fix: a URL
+	// or events the target type does not accept.
+	ErrWebhookValidation           = errors.New("invalid webhook subscription")
 	ErrWebhookDLQItemNotFound      = errors.New("webhook DLQ item not found")
 	ErrWebhookDLQReplayUnavailable = errors.New("webhook DLQ item is already replayed or currently replaying")
 )
@@ -39,6 +42,7 @@ const (
 type OutboundWebhookService struct {
 	webhookRepo *repository.OutboundWebhookRepository
 	httpClient  *http.Client
+	daily       *dailyTopClips
 }
 
 // NewOutboundWebhookService creates a new outbound webhook service
@@ -53,14 +57,19 @@ func NewOutboundWebhookService(webhookRepo *repository.OutboundWebhookRepository
 
 // CreateSubscription creates a new webhook subscription
 func (s *OutboundWebhookService) CreateSubscription(ctx context.Context, userID uuid.UUID, req *models.CreateWebhookSubscriptionRequest) (*models.WebhookSubscription, error) {
+	targetType := req.TargetType
+	if targetType == "" {
+		targetType = models.WebhookTargetGeneric
+	}
+
 	// Validate URL for SSRF protection
-	if err := s.validateURL(req.URL); err != nil {
-		return nil, err
+	if err := s.validateTargetURL(targetType, req.URL); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 	}
 
 	// Validate events
-	if err := s.validateEvents(req.Events); err != nil {
-		return nil, err
+	if err := s.validateTargetEvents(targetType, req.Events); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 	}
 
 	// Generate a secure random secret for HMAC signing
@@ -77,6 +86,7 @@ func (s *OutboundWebhookService) CreateSubscription(ctx context.Context, userID 
 		Events:      req.Events,
 		IsActive:    true,
 		Description: req.Description,
+		TargetType:  targetType,
 	}
 
 	if err := s.webhookRepo.CreateSubscription(ctx, subscription); err != nil {
@@ -123,8 +133,8 @@ func (s *OutboundWebhookService) UpdateSubscription(ctx context.Context, id uuid
 
 	// Validate URL if provided
 	if req.URL != nil {
-		if err := s.validateURL(*req.URL); err != nil {
-			return err
+		if err := s.validateTargetURL(subscription.TargetType, *req.URL); err != nil {
+			return fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 		}
 	}
 
@@ -133,10 +143,10 @@ func (s *OutboundWebhookService) UpdateSubscription(ctx context.Context, id uuid
 	if req.Events != nil {
 		// Check if empty array was explicitly provided (invalid)
 		if len(req.Events) == 0 {
-			return fmt.Errorf("events array cannot be empty; omit the field to keep current events")
+			return fmt.Errorf("%w: events array cannot be empty; omit the field to keep current events", ErrWebhookValidation)
 		}
-		if err := s.validateEvents(req.Events); err != nil {
-			return err
+		if err := s.validateTargetEvents(subscription.TargetType, req.Events); err != nil {
+			return fmt.Errorf("%w: %v", ErrWebhookValidation, err)
 		}
 		eventsToUpdate = req.Events
 	} else {
@@ -332,8 +342,17 @@ func (s *OutboundWebhookService) processDelivery(ctx context.Context, delivery *
 	// Generate signature
 	signature := s.generateSignature(delivery.Payload, subscription.Secret)
 
+	body := []byte(delivery.Payload)
+	if subscription.TargetType == models.WebhookTargetDiscord {
+		body, err = discordBody(delivery.EventType, delivery.Payload)
+		if err != nil {
+			webhookDeliveryTotal.WithLabelValues(delivery.EventType, "failed").Inc()
+			return s.webhookRepo.UpdateDeliveryFailure(ctx, delivery.ID, nil, err.Error(), nil)
+		}
+	}
+
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", subscription.URL, bytes.NewBufferString(delivery.Payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", subscription.URL, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -598,6 +617,34 @@ func (s *OutboundWebhookService) validateEvents(events []string) error {
 		}
 	}
 
+	return nil
+}
+
+// validateTargetURL checks a subscription URL for its target type.
+func (s *OutboundWebhookService) validateTargetURL(targetType, urlStr string) error {
+	if targetType == models.WebhookTargetDiscord {
+		if err := validateDiscordWebhookURL(urlStr); err != nil {
+			return err
+		}
+	}
+	return s.validateURL(urlStr)
+}
+
+// validateTargetEvents checks the events of a subscription; Discord targets
+// take only the events that have a Discord format.
+func (s *OutboundWebhookService) validateTargetEvents(targetType string, events []string) error {
+	if targetType != models.WebhookTargetDiscord {
+		return s.validateEvents(events)
+	}
+	allowed := map[string]bool{}
+	for _, event := range models.GetDiscordWebhookEvents() {
+		allowed[event] = true
+	}
+	for _, event := range events {
+		if !allowed[event] {
+			return fmt.Errorf("unsupported event for a Discord webhook: %s", event)
+		}
+	}
 	return nil
 }
 

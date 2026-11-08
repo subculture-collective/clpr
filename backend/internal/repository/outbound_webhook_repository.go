@@ -24,8 +24,8 @@ func NewOutboundWebhookRepository(db *pgxpool.Pool) *OutboundWebhookRepository {
 // CreateSubscription creates a new webhook subscription
 func (r *OutboundWebhookRepository) CreateSubscription(ctx context.Context, subscription *models.WebhookSubscription) error {
 	query := `
-		INSERT INTO webhook_subscriptions (id, user_id, url, secret, events, is_active, description)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO webhook_subscriptions (id, user_id, url, secret, events, is_active, description, target_type)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	_, err := r.db.Exec(ctx, query,
@@ -36,6 +36,7 @@ func (r *OutboundWebhookRepository) CreateSubscription(ctx context.Context, subs
 		subscription.Events,
 		subscription.IsActive,
 		subscription.Description,
+		subscription.TargetType,
 	)
 
 	return err
@@ -44,7 +45,7 @@ func (r *OutboundWebhookRepository) CreateSubscription(ctx context.Context, subs
 // GetSubscriptionByID retrieves a webhook subscription by ID
 func (r *OutboundWebhookRepository) GetSubscriptionByID(ctx context.Context, id uuid.UUID) (*models.WebhookSubscription, error) {
 	query := `
-		SELECT id, user_id, url, secret, events, is_active, description, created_at, updated_at, last_delivery_at
+		SELECT id, user_id, url, secret, events, is_active, description, created_at, updated_at, last_delivery_at, target_type
 		FROM webhook_subscriptions
 		WHERE id = $1
 	`
@@ -61,6 +62,7 @@ func (r *OutboundWebhookRepository) GetSubscriptionByID(ctx context.Context, id 
 		&subscription.CreatedAt,
 		&subscription.UpdatedAt,
 		&subscription.LastDeliveryAt,
+		&subscription.TargetType,
 	)
 
 	if err != nil {
@@ -73,7 +75,7 @@ func (r *OutboundWebhookRepository) GetSubscriptionByID(ctx context.Context, id 
 // GetSubscriptionsByUserID retrieves all webhook subscriptions for a user
 func (r *OutboundWebhookRepository) GetSubscriptionsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.WebhookSubscription, error) {
 	query := `
-		SELECT id, user_id, url, secret, events, is_active, description, created_at, updated_at, last_delivery_at
+		SELECT id, user_id, url, secret, events, is_active, description, created_at, updated_at, last_delivery_at, target_type
 		FROM webhook_subscriptions
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -99,6 +101,7 @@ func (r *OutboundWebhookRepository) GetSubscriptionsByUserID(ctx context.Context
 			&subscription.CreatedAt,
 			&subscription.UpdatedAt,
 			&subscription.LastDeliveryAt,
+			&subscription.TargetType,
 		)
 		if err != nil {
 			return nil, err
@@ -112,7 +115,7 @@ func (r *OutboundWebhookRepository) GetSubscriptionsByUserID(ctx context.Context
 // GetActiveSubscriptionsByEvent retrieves all active webhook subscriptions for a specific event
 func (r *OutboundWebhookRepository) GetActiveSubscriptionsByEvent(ctx context.Context, eventType string) ([]*models.WebhookSubscription, error) {
 	query := `
-		SELECT id, user_id, url, secret, events, is_active, description, created_at, updated_at, last_delivery_at
+		SELECT id, user_id, url, secret, events, is_active, description, created_at, updated_at, last_delivery_at, target_type
 		FROM webhook_subscriptions
 		WHERE is_active = true AND $1 = ANY(events)
 		ORDER BY created_at ASC
@@ -138,6 +141,7 @@ func (r *OutboundWebhookRepository) GetActiveSubscriptionsByEvent(ctx context.Co
 			&subscription.CreatedAt,
 			&subscription.UpdatedAt,
 			&subscription.LastDeliveryAt,
+			&subscription.TargetType,
 		)
 		if err != nil {
 			return nil, err
@@ -189,6 +193,8 @@ func (r *OutboundWebhookRepository) CreateDelivery(ctx context.Context, delivery
 	query := `
 		INSERT INTO webhook_deliveries (id, subscription_id, event_type, event_id, payload, status, attempt_count, max_attempts, next_attempt_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (subscription_id, event_type, event_id)
+		    WHERE event_type IN ('countdown.published', 'daily.top_clips') DO NOTHING
 	`
 
 	_, err := r.db.Exec(ctx, query,

@@ -58,6 +58,7 @@ type Handlers struct {
 	PlaylistScript      *handlers.PlaylistScriptHandler
 	Countdown           *handlers.CountdownHandler
 	CountdownPublic     *handlers.CountdownPublicHandler
+	CountdownControls   *handlers.CountdownControlsHandler
 	Queue               *handlers.QueueHandler
 	StreamerClipRoom    *handlers.StreamerClipRoomHandler
 	WatchHistory        *handlers.WatchHistoryHandler
@@ -130,6 +131,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	webhookDLQHandler := handlers.NewWebhookDLQHandler(svcs.OutboundWebhook)
 	configHandler := handlers.NewConfigHandler(cfg)
 	broadcasterHandler := handlers.NewBroadcasterHandler(repos.Broadcaster, repos.Clip, infra.TwitchClient, svcs.Auth)
+	broadcasterHandler.SetCountdownStates(repos.Countdown)
 	emailMetricsHandler := handlers.NewEmailMetricsHandler(svcs.EmailMetrics, repos.EmailLog)
 	sendgridWebhookHandler := handlers.NewSendGridWebhookHandler(repos.EmailLog, cfg.Email.SendGridWebhookPublicKey)
 	feedHandler := handlers.NewFeedHandler(svcs.Feed, svcs.Auth, repos.Vote, repos.Favorite, repos.User)
@@ -180,6 +182,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	// Initialize Twitch-related handlers
 	if infra.TwitchClient != nil {
 		twitchOAuthHandler = handlers.NewTwitchOAuthHandler(repos.TwitchAuth)
+		twitchOAuthHandler.SetFeatureOptIns(repos.Countdown)
 	}
 
 	if svcs.Submission != nil {
@@ -244,6 +247,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		PlaylistScript:      playlistScriptHandler,
 		Countdown:           handlers.NewCountdownHandler(svcs.Countdown),
 		CountdownPublic:     handlers.NewCountdownPublicHandler(repos.Countdown),
+		CountdownControls:   handlers.NewCountdownControlsHandler(repos.Countdown, repos.User, repos.TwitchAuth),
 		Queue:               queueHandler,
 		StreamerClipRoom:    streamerClipRoomHandler,
 		WatchHistory:        watchHistoryHandler,

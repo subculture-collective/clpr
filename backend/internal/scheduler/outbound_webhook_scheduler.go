@@ -69,6 +69,11 @@ func (s *OutboundWebhookScheduler) Stop() {
 
 // processDeliveries processes pending webhook deliveries
 func (s *OutboundWebhookScheduler) processDeliveries(ctx context.Context) {
+	if err := s.webhookService.QueueDailyTopClips(ctx, time.Now()); err != nil {
+		utils.Error("Error queueing the daily top clips webhook", err, map[string]interface{}{
+			"scheduler": "outbound_webhook",
+		})
+	}
 	if err := s.webhookService.ProcessPendingDeliveries(ctx, s.batchSize); err != nil {
 		utils.Error("Error processing outbound webhook deliveries", err, map[string]interface{}{
 			"batch_size": s.batchSize,

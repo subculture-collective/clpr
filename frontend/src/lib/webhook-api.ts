@@ -4,12 +4,16 @@ import type {
     WebhookDelivery,
     CreateWebhookSubscriptionRequest,
     UpdateWebhookSubscriptionRequest,
+    WebhookEventCatalog,
 } from '../types/webhook';
 
 // Get supported webhook events
-export async function getSupportedWebhookEvents(): Promise<string[]> {
+export async function getSupportedWebhookEvents(): Promise<WebhookEventCatalog> {
     const response = await apiClient.get('/webhooks/events');
-    return response.data.data || [];
+    return {
+        events: response.data.data || [],
+        discordEvents: response.data.meta?.discord_events || [],
+    };
 }
 
 // Create a new webhook subscription

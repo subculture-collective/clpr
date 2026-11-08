@@ -21,6 +21,7 @@ export interface AdminRoutePages {
     discoveryLists: Page;
     discoveryListForm: Page;
     playlistScripts: Page;
+    countdowns: Page;
     tags: Page;
     topics: Page;
     apiDocs: Page;
@@ -67,6 +68,7 @@ export function adminRoutes(pages: AdminRoutePages) {
                 path='/admin/playlist-scripts'
                 element={protectedPage(pages.playlistScripts)}
             />
+            <Route path='/admin/countdowns' element={protectedPage(pages.countdowns)} />
             <Route path='/admin/tags' element={protectedPage(pages.tags)} />
             <Route path='/admin/topics' element={protectedPage(pages.topics)} />
             <Route
