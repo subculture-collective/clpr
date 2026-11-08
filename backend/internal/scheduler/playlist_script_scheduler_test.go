@@ -62,3 +62,21 @@ func TestRunDueScriptsDoesNotAcknowledgeRealGenerationFailure(t *testing.T) {
 		t.Fatalf("expected real failures not to be acknowledged, got %v", service.acknowledged)
 	}
 }
+
+type countdownGeneratorStub struct{ calls int }
+
+func (c *countdownGeneratorStub) GenerateDueEditions(context.Context) (int, int, error) {
+	c.calls++
+	return 1, 0, nil
+}
+
+func TestRunDueScriptsSelectsCountdownsWithoutDueScripts(t *testing.T) {
+	countdowns := &countdownGeneratorStub{}
+	scheduler := NewPlaylistScriptScheduler(&playlistScriptSchedulerServiceStub{}, 1)
+	scheduler.SetCountdowns(countdowns)
+	scheduler.runDueScripts(context.Background())
+
+	if countdowns.calls != 1 {
+		t.Fatalf("countdown selection ran %d times, want 1", countdowns.calls)
+	}
+}

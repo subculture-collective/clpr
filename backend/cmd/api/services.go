@@ -46,6 +46,7 @@ type Services struct {
 	Recommendation           *services.RecommendationService
 	Playlist                 *services.PlaylistService
 	PlaylistScript           *services.PlaylistScriptService
+	Countdown                *services.CountdownService
 	Queue                    *services.QueueService
 	StreamerClipRoom         *services.StreamerClipRoomService
 	StreamerClipRoomListener *services.TwitchChatListenerManager
@@ -342,6 +343,7 @@ func initServices(cfg *config.Config, repos *Repositories, infra *Infrastructure
 		Recommendation:           recommendationService,
 		Playlist:                 playlistService,
 		PlaylistScript:           playlistScriptService,
+		Countdown:                services.NewCountdownService(repos.Countdown),
 		Queue:                    queueService,
 		StreamerClipRoom:         streamerClipRoomService,
 		StreamerClipRoomListener: streamerClipRoomChat,

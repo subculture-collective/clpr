@@ -213,6 +213,20 @@ func registerAdminRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra
 			adminPlaylistScripts.POST("/:id/generate", h.PlaylistScript.GeneratePlaylist)
 		}
 
+		// Countdown series, editions and exclusions (admin only)
+		adminCountdowns := admin.Group("/countdowns")
+		adminCountdowns.Use(middleware.RequireRole("admin"))
+		{
+			adminCountdowns.GET("/series", h.Countdown.ListSeries)
+			adminCountdowns.POST("/series", h.Countdown.CreateSeries)
+			adminCountdowns.PUT("/series/:id", h.Countdown.UpdateSeries)
+			adminCountdowns.POST("/series/:id/editions", h.Countdown.ReselectEdition)
+			adminCountdowns.GET("/editions", h.Countdown.ListEditions)
+			adminCountdowns.GET("/exclusions", h.Countdown.ListExclusions)
+			adminCountdowns.POST("/exclusions", h.Countdown.CreateExclusion)
+			adminCountdowns.DELETE("/exclusions/:id", h.Countdown.DeleteExclusion)
+		}
+
 		// Broadcaster ranking management (admin only)
 		adminBroadcasters := admin.Group("/broadcasters")
 		{

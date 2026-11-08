@@ -85,6 +85,62 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/admin/countdowns/editions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).ListEditions-fm",
+    "operation_id": "getApiV1AdminCountdownsEditions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/countdowns/exclusions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).ListExclusions-fm",
+    "operation_id": "getApiV1AdminCountdownsExclusions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/countdowns/exclusions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).CreateExclusion-fm",
+    "operation_id": "postApiV1AdminCountdownsExclusions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/countdowns/exclusions/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).DeleteExclusion-fm",
+    "operation_id": "deleteApiV1AdminCountdownsExclusionsId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/countdowns/series",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).ListSeries-fm",
+    "operation_id": "getApiV1AdminCountdownsSeries",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/countdowns/series",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).CreateSeries-fm",
+    "operation_id": "postApiV1AdminCountdownsSeries",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/countdowns/series/{id}",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).UpdateSeries-fm",
+    "operation_id": "putApiV1AdminCountdownsSeriesId",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/countdowns/series/{id}/editions",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownHandler).ReselectEdition-fm",
+    "operation_id": "postApiV1AdminCountdownsSeriesIdEditions",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/admin/discovery-lists",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).AdminListDiscoveryLists-fm",
     "operation_id": "adminListDiscoveryLists",

@@ -19,6 +19,7 @@ In-depth documentation for major platform features and functionality.
 - [[comments|Comment System]] - Reddit-style nested threading with markdown support
 - [[UNCLAIMED_ACCOUNTS|Unclaimed Accounts]] - Account claiming system
 - [[archive-handoff-import|Archive Handoff Import]] - Upload drafts from a Rekolekt clip handoff, with source link and captions
+- [[countdown-editions|Countdown Editions]] - Daily ranked clip selection for countdown videos, with exclusions
 
 ## Feed & Discovery
 
