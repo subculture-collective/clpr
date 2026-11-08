@@ -26,6 +26,12 @@ func (m *mockClipRepository) ListForSitemapBroadcasters(ctx context.Context) ([]
 	return nil, nil
 }
 
+type fakeCountdownKeys []models.CountdownEditionKey
+
+func (f fakeCountdownKeys) ListPublicEditionKeys(context.Context, int) ([]models.CountdownEditionKey, error) {
+	return f, nil
+}
+
 func TestGetSitemap(t *testing.T) {
 	// Set Gin to test mode
 	gin.SetMode(gin.TestMode)
@@ -45,6 +51,7 @@ func TestGetSitemap(t *testing.T) {
 	}
 
 	handler := NewSEOHandler(mockRepo, nil)
+	handler.SetCountdowns(fakeCountdownKeys{{EditionDate: "2026-11-07", SeriesSlug: "overall"}})
 
 	// Create router
 	r := gin.New()
@@ -82,6 +89,8 @@ func TestGetSitemap(t *testing.T) {
 		"https://test.clpr.app/discover",
 		clip1.ID.String(),
 		clip2.ID.String(),
+		"<loc>https://test.clpr.app/countdowns</loc>",
+		"<loc>https://test.clpr.app/countdowns/2026-11-07/overall</loc>",
 		"</urlset>",
 	}
 

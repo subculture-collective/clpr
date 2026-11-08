@@ -57,6 +57,7 @@ type Handlers struct {
 	Playlist            *handlers.PlaylistHandler
 	PlaylistScript      *handlers.PlaylistScriptHandler
 	Countdown           *handlers.CountdownHandler
+	CountdownPublic     *handlers.CountdownPublicHandler
 	Queue               *handlers.QueueHandler
 	StreamerClipRoom    *handlers.StreamerClipRoomHandler
 	WatchHistory        *handlers.WatchHistoryHandler
@@ -111,6 +112,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	consentHandler := handlers.NewConsentHandler(repos.Consent)
 	contactHandler := handlers.NewContactHandler(repos.Contact)
 	seoHandler := handlers.NewSEOHandler(repos.Clip, repos.Game)
+	seoHandler.SetCountdowns(repos.Countdown)
 	pagesHandler := handlers.NewPagesHandler(repos.Clip, repos.Broadcaster, repos.Game)
 	shareHandler := handlers.NewShareHandler(repos.Clip)
 	docsFS, docsSource := docscontent.Open(cfg.Server.DocsPath)
@@ -241,6 +243,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Playlist:            playlistHandler,
 		PlaylistScript:      playlistScriptHandler,
 		Countdown:           handlers.NewCountdownHandler(svcs.Countdown),
+		CountdownPublic:     handlers.NewCountdownPublicHandler(repos.Countdown),
 		Queue:               queueHandler,
 		StreamerClipRoom:    streamerClipRoomHandler,
 		WatchHistory:        watchHistoryHandler,

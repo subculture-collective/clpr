@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
 import { ShareButton } from '@/components/clip/ShareButton';
+import { CountdownFeatures } from '@/components/countdown/CountdownFeatures';
 import { TagList } from '@/components/tag/TagList';
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -315,6 +316,8 @@ export function ClipDetailPage() {
                             })}
                         </span>
                     </div>
+
+                    <CountdownFeatures clipId={clip.id} />
 
                     {archiveSource && (
                         <div className='mb-4 grid gap-2 sm:grid-cols-[6rem_1fr] sm:items-start' data-testid='archive-source'>

@@ -126,6 +126,11 @@ export const handlers = [
         return HttpResponse.json({ data: [] });
     }),
 
+    // GET /api/countdowns/featured - Clip and broadcaster pages ask for countdown placements.
+    http.get(`${API_BASE_URL}/countdowns/featured`, () => {
+        return HttpResponse.json({ success: true, data: [] });
+    }),
+
     // POST /api/clips/:id/vote - Vote on clip
     http.post(`${API_BASE_URL}/clips/:id/vote`, () => {
         return HttpResponse.json({ success: true });

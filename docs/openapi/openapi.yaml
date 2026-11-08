@@ -6575,6 +6575,61 @@ paths:
         '409': {$ref: '#/components/responses/Conflict'}
         '500': {$ref: '#/components/responses/InternalServerError'}
 
+  /api/v1/countdowns:
+    get:
+      tags: [Countdowns]
+      summary: List public countdowns
+      description: >-
+        Returns the rendered and published countdown editions of the newest
+        `days` dates, newest first, optionally before a date or for one series.
+        Clips removed, hidden, taken down or excluded after the edition was
+        made are left out, so positions can skip. `meta.next_before` is the
+        `before` value for the next page, or null on the last page. Responses
+        may be cached for five minutes.
+      operationId: getApiV1Countdowns
+      security: []
+      parameters:
+        - {name: days, in: query, schema: {type: integer, minimum: 1, maximum: 60, default: 14}}
+        - {name: before, in: query, schema: {type: string, format: date}}
+        - {name: series, in: query, schema: {type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 64}}
+      responses:
+        '200': {description: Public countdowns, content: {application/json: {schema: {$ref: '#/components/schemas/PublicCountdownListResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/countdowns/featured:
+    get:
+      tags: [Countdowns]
+      summary: List countdown placements of a clip or broadcaster
+      description: Returns up to 20 placements in public countdowns, newest first, for one clip or for the clips of one broadcaster (Twitch ID). Pass exactly one of clip_id and broadcaster_id.
+      operationId: getApiV1CountdownsFeatured
+      security: []
+      parameters:
+        - {name: clip_id, in: query, schema: {type: string, format: uuid}}
+        - {name: broadcaster_id, in: query, schema: {type: string, maxLength: 64}}
+      responses:
+        '200': {description: Countdown placements, content: {application/json: {schema: {$ref: '#/components/schemas/CountdownFeatureListResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
+  /api/v1/countdowns/{date}/{series}:
+    get:
+      tags: [Countdowns]
+      summary: Get one public countdown
+      description: Returns one rendered or published edition with its visible clips in rank order. Editions that are not public yet return 404.
+      operationId: getApiV1CountdownsDateSeries
+      security: []
+      parameters:
+        - {name: date, in: path, required: true, schema: {type: string, format: date}}
+        - {name: series, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Public countdown, content: {application/json: {schema: {$ref: '#/components/schemas/PublicCountdownResponse'}}}}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+        '500': {$ref: '#/components/responses/InternalServerError'}
+
   /api/v1/admin/countdowns/series:
     get:
       tags: [Admin, Countdowns]
@@ -13471,6 +13526,67 @@ components:
       properties:
         success: {type: boolean, const: true}
         data: {$ref: '#/components/schemas/CountdownEdition'}
+
+    PublicCountdownClip:
+      type: object
+      required: [position, clip_id, title, broadcaster_name, twitch_clip_id, twitch_clip_url]
+      properties:
+        position: {type: integer, minimum: 1, description: 1 is the top clip}
+        clip_id: {type: string, format: uuid}
+        title: {type: string}
+        broadcaster_name: {type: string}
+        broadcaster_id: {type: string}
+        twitch_clip_id: {type: string}
+        twitch_clip_url: {type: string}
+        thumbnail_url: {type: string}
+        duration: {type: number}
+
+    PublicCountdownEdition:
+      type: object
+      required: [edition_date, series_slug, series_name, size, clips]
+      properties:
+        edition_date: {type: string, format: date}
+        series_slug: {type: string}
+        series_name: {type: string}
+        size: {type: integer, description: 'Number of ranked clips in the edition, including clips no longer shown'}
+        clips: {type: array, items: {$ref: '#/components/schemas/PublicCountdownClip'}}
+
+    PublicCountdownListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, items: {$ref: '#/components/schemas/PublicCountdownEdition'}}
+        meta:
+          type: object
+          required: [next_before]
+          properties:
+            next_before: {type: [string, 'null'], format: date}
+
+    PublicCountdownResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/PublicCountdownEdition'}
+
+    CountdownFeature:
+      type: object
+      required: [edition_date, series_slug, series_name, position, clip_id, title]
+      properties:
+        edition_date: {type: string, format: date}
+        series_slug: {type: string}
+        series_name: {type: string}
+        position: {type: integer, minimum: 1}
+        clip_id: {type: string, format: uuid}
+        title: {type: string}
+
+    CountdownFeatureListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {type: array, items: {$ref: '#/components/schemas/CountdownFeature'}}
 
     CountdownExclusionListResponse:
       type: object

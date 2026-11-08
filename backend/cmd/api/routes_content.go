@@ -19,6 +19,15 @@ func registerContentRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, inf
 		tags.GET("/:slug/clips", h.Tag.GetClipsByTag)
 	}
 
+	// Public countdown pages (#82)
+	countdowns := v1.Group("/countdowns")
+	countdowns.Use(middleware.RateLimitMiddleware(infra.Redis, 120, time.Minute))
+	{
+		countdowns.GET("", h.CountdownPublic.ListEditions)
+		countdowns.GET("/featured", h.CountdownPublic.ListFeatures)
+		countdowns.GET("/:date/:series", h.CountdownPublic.GetEdition)
+	}
+
 	// Search routes
 	search := v1.Group("/search")
 	{
