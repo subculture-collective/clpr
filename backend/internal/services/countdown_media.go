@@ -500,6 +500,8 @@ func (w *CountdownMediaWorker) fail(ctx context.Context, edition *models.Countdo
 
 // Sweep deletes the files of failed editions and files older than the
 // retention window, then any stray file older than the window (from a crash).
+// Every lookup and removal goes through os.Root, so a symlink cannot lead it
+// outside the media directory.
 func (w *CountdownMediaWorker) Sweep(ctx context.Context) error {
 	w.ensureMetrics()
 	retention := w.Retention
@@ -507,18 +509,27 @@ func (w *CountdownMediaWorker) Sweep(ctx context.Context) error {
 		retention = 24 * time.Hour
 	}
 	cutoff := w.now().Add(-retention)
+	root, err := os.OpenRoot(w.Dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
 	var errs []error
 	media, err := w.Store.ListMediaToDelete(ctx, cutoff)
 	if err != nil {
 		errs = append(errs, err)
 	}
 	for _, m := range media {
-		path, ok := w.mediaPath(m.FileName)
-		if !ok {
+		name := filepath.ToSlash(filepath.Clean(m.FileName))
+		if !fs.ValidPath(name) || name == "." {
 			errs = append(errs, fmt.Errorf("refusing to delete %q outside the media directory", m.FileName))
 			continue
 		}
-		if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			errs = append(errs, err)
 			continue
 		}
@@ -529,21 +540,28 @@ func (w *CountdownMediaWorker) Sweep(ctx context.Context) error {
 		w.Metrics.Deleted.Inc()
 	}
 
-	err = filepath.WalkDir(w.Dir, func(path string, d fs.DirEntry, walkErr error) error {
+	var dirs []string
+	err = fs.WalkDir(root.FS(), ".", func(name string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			if errors.Is(walkErr, fs.ErrNotExist) {
 				return nil
 			}
 			return walkErr
 		}
-		if d.IsDir() || !d.Type().IsRegular() {
+		if d.IsDir() {
+			if name != "." {
+				dirs = append(dirs, name)
+			}
+			return nil
+		}
+		if !d.Type().IsRegular() {
 			return nil
 		}
 		info, err := d.Info()
 		if err != nil || !info.ModTime().Before(cutoff) {
 			return nil
 		}
-		if err := os.Remove(path); err == nil {
+		if err := root.Remove(name); err == nil {
 			w.Metrics.Deleted.Inc()
 		}
 		return nil
@@ -551,21 +569,8 @@ func (w *CountdownMediaWorker) Sweep(ctx context.Context) error {
 	if err != nil {
 		errs = append(errs, err)
 	}
-	if entries, err := os.ReadDir(w.Dir); err == nil {
-		for _, e := range entries {
-			if e.IsDir() {
-				_ = os.Remove(filepath.Join(w.Dir, e.Name())) // only succeeds when empty
-			}
-		}
+	for i := len(dirs) - 1; i >= 0; i-- {
+		_ = root.Remove(dirs[i]) // only succeeds when empty
 	}
 	return errors.Join(errs...)
-}
-
-func (w *CountdownMediaWorker) mediaPath(name string) (string, bool) {
-	path := filepath.Join(w.Dir, name)
-	rel, err := filepath.Rel(w.Dir, path)
-	if err != nil || rel == "." || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
-		return "", false
-	}
-	return path, true
 }
