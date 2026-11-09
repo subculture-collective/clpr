@@ -11,6 +11,8 @@ concurrency:
 jobs:
   converge:
     name: Complete local-equivalent source gate
+    env:
+      TEST_SERVICE_HOST: 127.0.0.1
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
