@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-login="${TEA_LOGIN:-patrickfanella}"
+login="${TEA_LOGIN:-subcult-agent}"
 repository="${GITEA_REPOSITORY:-subculture-collective/clpr}"
 manifest="${OPERATOR_JOURNEY_MANIFEST:-config/release/operator-journeys.json}"
 
@@ -48,11 +48,7 @@ for key, expected in requirements.items():
 if int(protection.get("required_approvals") or 0) != 0:
     failures.append("main protection must use zero required approvals for the solo-maintainer workflow")
 required_contexts = {
-    "Source convergence / Complete local-equivalent source gate (pull_request)",
-    "Authoritative release gates / Secret history gate (pull_request)",
-    "Authoritative release gates / Documentation and OpenAPI gate (pull_request)",
-    "Authoritative release gates / Browser gate (Chromium, Firefox, WebKit) (pull_request)",
-    "Authoritative release gates / Image scan and SBOM gate (pull_request)",
+    "GitHub CI / Mirror CI gate",
     "Operator release preflight / Operator and recovery source contracts (pull_request)",
 }
 configured_contexts = set(protection.get("status_check_contexts") or [])

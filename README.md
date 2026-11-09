@@ -37,3 +37,11 @@ to work on a change.
 - [Operations runbooks](docs/operations/runbooks/README.md)
 
 Built by [Subcult](https://subcult.tv). Licensed under [MIT](LICENSE).
+
+## Public mirror CI
+
+Pull-request verification runs on standard GitHub-hosted runners in the public
+[subculture-collective/clpr mirror](https://github.com/subculture-collective/clpr/actions/workflows/mirror-ci.yml).
+Gitea remains the source for changes and pull requests. Its required
+`GitHub CI / Mirror CI gate` status follows the exact mirrored commit. Main-branch
+release verification and deployments run in Gitea.

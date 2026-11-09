@@ -99,6 +99,10 @@ for path in pathlib.Path('.gitea/workflows').glob('*.yml'):
                 raise SystemExit(f'{path}: action source is not explicit: {action}')
 
 release_gates = yaml.safe_load(pathlib.Path('.gitea/workflows/release-gates.yml').read_text())
+triggers = release_gates.get('on', release_gates.get(True, {}))
+if set(triggers) != {'push', 'workflow_dispatch'}:
+    raise SystemExit('pull-request phase gates must not duplicate GitHub convergence')
+
 required_names = {
     'Secret history gate',
     'Documentation and OpenAPI gate',

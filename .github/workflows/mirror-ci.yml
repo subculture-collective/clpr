@@ -1,0 +1,92 @@
+name: Mirror CI
+run-name: Mirror CI ${{ github.sha }}
+'on':
+  push: null
+  workflow_dispatch: null
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  converge:
+    name: Complete local-equivalent source gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: backend/go.mod
+        cache-dependency-path: backend/go.sum
+        cache: true
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          frontend/package-lock.json
+    - name: Install deterministic dependencies
+      shell: bash
+      run: |
+        set -euo pipefail
+        go install github.com/go-task/task/v3/cmd/task@v3.45.4
+        go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
+        go install github.com/zricethezav/gitleaks/v8@v8.28.0
+        bash scripts/install-lychee.sh
+        echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+        go -C backend mod download
+        npm ci
+        npm --prefix frontend ci
+        npm --prefix frontend exec -- playwright install --with-deps chromium firefox webkit
+    - name: Run complete source convergence
+      shell: bash
+      run: |
+        set -euo pipefail
+        source scripts/configure-hosted-test-ports.sh
+        mkdir -p .tmp/source-convergence
+        bash scripts/source-convergence.sh --all 2>&1 \
+          | tee .tmp/source-convergence/workflow.log
+    - name: Remove isolated test services
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        source scripts/configure-hosted-test-ports.sh
+        docker compose -f docker-compose.test.yml down -v --remove-orphans
+    - name: Upload convergence diagnostics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: source-convergence-${{ github.sha }}
+        path: |
+          .tmp/source-convergence
+          !.tmp/source-convergence/**/backend/api
+        include-hidden-files: true
+        if-no-files-found: error
+        retention-days: 1
+    if: github.repository == 'subculture-collective/clpr'
+  mirror-gate:
+    name: Mirror CI gate
+    if: always() && github.repository == 'subculture-collective/clpr'
+    needs:
+    - converge
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - name: Require every verification job
+      env:
+        RESULTS: ${{ toJSON(needs) }}
+      run: |
+        python3 - <<'PY'
+        import json, os
+        results = json.loads(os.environ["RESULTS"])
+        expected = {'converge'}
+        assert set(results) == expected, results
+        for name, result in results.items():
+            assert result["result"] == "success", name + " did not pass"
+        PY
