@@ -10,9 +10,13 @@ on:
 permissions:
   contents: read
 
+# A superseded main commit cannot deploy (the delivery verifier requires the
+# current main revision), so its gate run is cancelled when main moves on.
+# The event is part of the group so a manual dispatch never cancels the push
+# run whose (push) contexts the verifier reads.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   security:
