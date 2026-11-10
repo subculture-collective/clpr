@@ -36,6 +36,7 @@ The worker is image `backend/Dockerfile.render` with command `countdown-media`. 
   - the API's database settings and `TWITCH_CLIENT_ID`;
   - `BASE_URL`, the same as the API's, for links in webhooks and video descriptions;
   - once the channel is authorized, `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET_FILE` and `YOUTUBE_REFRESH_TOKEN_FILE` from the secret store.
+  - for transcript search, nothing: popular clips are transcribed whenever Whisper is available ([ADR-003](../../adr/003-transcribing-clips-for-search.md)). `SEARCH_TRANSCRIPTS=off` stops it, and `SEARCH_TRANSCRIPT_MIN_VIEWS`, `SEARCH_TRANSCRIPT_MAX_AGE_DAYS` and `SEARCH_TRANSCRIPT_DAILY_LIMIT` change its bounds (see [Transcript search](../../features/transcript-search.md#settings));
   - for weekly clip packs, `CLIP_PACK_LINK_SECRET_FILE` (a random secret of at least 32 bytes from the secret store) and `CLIP_PACK_BASE_URL`, the public address of the pack server. Give the API the same two values as `CLIP_PACK_LINK_SECRET` and `CLIP_PACK_BASE_URL`. Packs also need `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`: they use only Helix downloads, and the worker renews broadcasters' Twitch tokens, which last about four hours, with the client secret.
 - **Resources:** about 2 GB of memory and up to 4 CPUs while rendering. The image is about 1.6 GB.
 - **Metrics:** port 9464 (`COUNTDOWN_MEDIA_METRICS_ADDR`). Publish it on the LAN address only, and add a Prometheus scrape job named `clpr-countdown-media` on Dozor.
@@ -44,7 +45,7 @@ The worker is image `backend/Dockerfile.render` with command `countdown-media`. 
 
 Check after deploying:
 
-1. The log line "Countdown media worker started" shows `captions: true`, and `youtube: true` once authorized.
+1. The log line "Countdown media worker started" shows `captions: true` and `search_transcripts: true`, and `youtube: true` once authorized.
 2. `curl -s http://<render-host>:9464/metrics | grep clpr_countdown_edition_overdue_seconds` lists every enabled series.
 3. In Prometheus, `up{job="clpr-countdown-media"}` is 1.
 
@@ -87,6 +88,7 @@ A series needs `size` eligible clips, or `min_size` if it has one, in its window
 | `clpr_countdown_media_editions_total{outcome}`, `clpr_countdown_media_fetches_total{source,outcome}`, `clpr_countdown_media_skips_total` | Fetch stage |
 | `clpr_countdown_render_editions_total{outcome}`, `clpr_countdown_render_seconds{kind}`, `clpr_countdown_short_captions_total{outcome}` | Render stage |
 | `clpr_countdown_publish_editions_total{outcome}`, `clpr_countdown_youtube_uploads_total{kind,outcome}` | Publish stage |
+| `clpr_search_transcription_clips_total{outcome}` | Popular clips transcribed for search, by outcome (`transcribed`, `no_speech`, `failed`) |
 
 ## Alerts
 
@@ -139,7 +141,7 @@ A series needs `size` eligible clips, or `min_size` if it has one, in its window
 
 ## Takedowns
 
-A broadcaster's request or a claim against a clip becomes a countdown exclusion (`/api/v1/admin/countdowns/exclusions`). It keeps the clip or broadcaster out of future editions and off the public countdown pages at once. Videos already on YouTube must be edited or removed in YouTube Studio; the video IDs are in `countdown_uploads`.
+A broadcaster's request or a claim against a clip becomes a countdown exclusion (`/api/v1/admin/countdowns/exclusions`). It keeps the clip or broadcaster out of future editions and off the public countdown pages at once. On its next cycle the worker also empties the render host's transcripts of their clips, and the search index drops the text within five minutes. Videos already on YouTube must be edited or removed in YouTube Studio; the video IDs are in `countdown_uploads`.
 
 ## Rollback
 

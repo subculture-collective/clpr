@@ -2,7 +2,7 @@ import { Container, Card, CardBody, SEO } from '../components';
 import { Link } from 'react-router-dom';
 
 export function TermsPage() {
-  const lastUpdated = 'August 11, 2026';
+  const lastUpdated = 'November 10, 2026';
 
   return (
     <>
@@ -173,6 +173,13 @@ export function TermsPage() {
                   original clip, and delete the downloaded files after rendering. A broadcaster can ask to be
                   left out of future videos, or to have an existing video edited or removed, using the
                   contact details in <a href="#contact" className="text-link underline">section 14</a>.
+                </p>
+                <p className="text-muted-foreground mt-3">
+                  To let you search clips by what is said in them, we also download popular public clips,
+                  transcribe their speech and delete each file right after. We keep only the text, use it for
+                  search and short snippets around a match, and never publish the clip. A broadcaster who asks
+                  to be left out of countdown videos is also left out of transcription, and the transcripts of
+                  their clips are cleared.
                 </p>
               </div>
             </div>

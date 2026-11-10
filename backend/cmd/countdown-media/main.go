@@ -4,7 +4,8 @@
 // (#78), then uploads rendered editions to YouTube when the channel is
 // authorized (#79; see "countdown-media youtube-auth") and reads their view counts (#84).
 // It also builds the weekly clip packs of broadcasters who feature their clips
-// and serves them by expiring link (#86). Downloaded clips are deleted when their edition finishes rendering,
+// and serves them by expiring link (#86), and transcribes public clips above
+// a view threshold for transcript search (ADR-003). Downloaded clips are deleted when their edition finishes rendering,
 // and within 24 hours in any case (ADR-002). It never runs on the API host
 // and never writes media to object storage.
 package main
@@ -42,6 +43,19 @@ func envDuration(name string, fallback time.Duration, unit time.Duration) time.D
 		return fallback
 	}
 	return time.Duration(n) * unit
+}
+
+func envInt(name string, fallback int) int {
+	value := os.Getenv(name)
+	if value == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(value)
+	if err != nil || n <= 0 {
+		utils.Warn("Ignoring invalid number setting", map[string]interface{}{"name": name})
+		return fallback
+	}
+	return n
 }
 
 func envString(name, fallback string) string {
@@ -159,6 +173,23 @@ func run() error {
 			renders.Transcripts = store
 		}
 	}
+	// Public clips above a view threshold are transcribed for search too
+	// (ADR-003): each file is deleted as soon as it is transcribed.
+	var searchTranscripts *services.SearchTranscriptionWorker
+	if renders.Captioner != nil && os.Getenv("SEARCH_TRANSCRIPTS") != "off" {
+		searchTranscripts = &services.SearchTranscriptionWorker{
+			Store:      repository.NewSearchTranscriptionRepository(db.Pool),
+			Fetcher:    fetcher,
+			Prober:     prober,
+			Captioner:  renders.Captioner,
+			Dir:        dir,
+			MinViews:   envInt("SEARCH_TRANSCRIPT_MIN_VIEWS", 1000),
+			MaxAge:     envDuration("SEARCH_TRANSCRIPT_MAX_AGE_DAYS", 30*24*time.Hour, 24*time.Hour),
+			DailyLimit: envInt("SEARCH_TRANSCRIPT_DAILY_LIMIT", 500),
+			BatchSize:  5,
+			Metrics:    services.NewSearchTranscriptionMetrics(registry),
+		}
+	}
 	// YouTube publishing (#79) runs once the channel is authorized.
 	youTube, err := youTubeClientFromEnv()
 	if err != nil {
@@ -224,7 +255,7 @@ func run() error {
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
 		"captions": renders.Captioner != nil, "transcripts": renders.Transcripts != nil,
 		"youtube": publisher != nil, "youtube_privacy": privacy,
-		"clip_packs": packs != nil,
+		"clip_packs": packs != nil, "search_transcripts": searchTranscripts != nil,
 	})
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -236,6 +267,10 @@ func run() error {
 		err = errors.Join(err, progress.Update(ctx, time.Now()))
 		if packs != nil {
 			err = errors.Join(err, packs.RunOnce(ctx))
+		}
+		// Last, so countdown and pack work in the cycle comes first.
+		if searchTranscripts != nil {
+			err = errors.Join(err, searchTranscripts.RunOnce(ctx))
 		}
 		if err != nil && ctx.Err() == nil {
 			utils.Error("Countdown media cycle failed", err)

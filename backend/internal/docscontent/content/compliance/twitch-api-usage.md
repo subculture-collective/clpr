@@ -26,9 +26,9 @@ Playback is covered separately in [How clpr embeds Twitch content](twitch-embeds
 - Sign-in requests one scope, `user:read:email`.
 - App-token requests share a limit of 800 per minute per API process.
 - The countdown media worker on the render host downloads the clips of each
-  countdown edition, through Helix where the broadcaster authorized it and
-  otherwise from Twitch's player with yt-dlp. See
-  [Countdown media](#countdown-media).
+  countdown edition, and popular public clips to transcribe for search, through
+  Helix where the broadcaster authorized it and otherwise from Twitch's player
+  with yt-dlp. See [Countdown media](#countdown-media).
 
 ## Helix endpoints
 
@@ -155,7 +155,16 @@ uses the same local faster-whisper runner as the optional transcription above,
 writes a temporary WAV under the media volume and deletes it at once. No audio
 or video leaves the render host. The transcript text is stored in
 `clip_transcripts` and indexed for search, and only English speech is kept.
-Clips are never downloaded for transcription alone.
+
+Under [ADR-003](../adr/003-transcribing-clips-for-search.md) the worker also
+downloads public clips for transcript search alone
+(`backend/internal/services/search_transcription_worker.go`): clips with at
+least 1,000 views from the last 30 days, most viewed first, up to 500 a day,
+leaving out clips and broadcasters on the countdown exclusion list. It fetches
+each clip the same way as countdown media, transcribes it and deletes the file
+before fetching the next. Only the transcript is kept, and full transcripts
+are never sent to clients. When a clip or broadcaster is excluded, the worker
+empties the render host's transcripts of their clips.
 
 The same worker builds weekly clip packs for broadcasters who feature their
 clips (`backend/internal/services/clip_pack_worker.go`). A pack is made from

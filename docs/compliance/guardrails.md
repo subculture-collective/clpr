@@ -81,7 +81,7 @@ const clips = await twitchClient.GetClips(ctx, &twitch.ClipParams{
 
 **WHY:** Violates ToS, may break without notice, security risk
 
-**Exception, countdown render host only ([ADR-002](../adr/002-media-handling-for-countdowns.md)):** the countdown downloader may use Twitch's internal player API (`gql.twitch.tv`) to get the playback file of a clip selected for an edition, through yt-dlp. Nothing else may call it, and it must never run with clpr's OAuth tokens.
+**Exception, countdown render host only ([ADR-002](../adr/002-media-handling-for-countdowns.md)):** the countdown downloader may use Twitch's internal player API (`gql.twitch.tv`) to get the playback file of a clip selected for an edition, through yt-dlp, and of a public clip it transcribes for search ([ADR-003](../adr/003-transcribing-clips-for-search.md)). Nothing else may call it, and it must never run with clpr's OAuth tokens.
 
 **INSTEAD:**
 - ✅ Use official Twitch Helix API only
@@ -126,7 +126,7 @@ fetch('https://api.twitch.tv/helix/clips', {
 
 **WHY:** Copyright infringement, DMCA violations, Twitch ToS breach
 
-**Exception, countdown render host only ([ADR-002](../adr/002-media-handling-for-countdowns.md)):** the render worker (#78) may download clips selected for a countdown or Short with yt-dlp and ffmpeg, edit them, and publish the rendered video to YouTube. Downloaded files stay on the render host, are deleted within 24 hours, and are never served from clpr.tv. Everything else in this section still applies to the website and API.
+**Exception, countdown render host only ([ADR-002](../adr/002-media-handling-for-countdowns.md)):** the render worker (#78) may download clips selected for a countdown or Short with yt-dlp and ffmpeg, edit them, and publish the rendered video to YouTube. Downloaded files stay on the render host, are deleted within 24 hours, and are never served from clpr.tv. Under [ADR-003](../adr/003-transcribing-clips-for-search.md) the same worker may also download public clips above a view threshold to transcribe them for search; it deletes each file as soon as it is transcribed and keeps only the text. Everything else in this section still applies to the website and API.
 
 **INSTEAD:**
 - ✅ Use official Twitch embed URLs only
