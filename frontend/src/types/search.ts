@@ -11,6 +11,8 @@ export interface SearchRequest {
   creatorId?: string;
   language?: string;
   tags?: string[];
+  /** Only clips whose transcript contains this phrase. */
+  said?: string;
   minVotes?: number;
   dateFrom?: string;
   dateTo?: string;
@@ -88,6 +90,7 @@ export interface SearchFilters {
   creatorId?: string;
   language?: string;
   tags?: string[];
+  said?: string;
   minVotes?: number;
   dateFrom?: string;
   dateTo?: string;

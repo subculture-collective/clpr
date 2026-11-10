@@ -2,12 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/countdownrender"
@@ -62,7 +64,7 @@ func NewCountdownRenderMetrics(reg prometheus.Registerer) *CountdownRenderMetric
 		}),
 		Captions: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "clpr_countdown_short_captions_total",
-			Help: "Shorts by caption outcome (captioned, none for no English speech, failed).",
+			Help: "Clips transcribed on the render host, for Short captions and transcript search, by outcome (captioned, none for no English speech, failed).",
 		}, []string{"outcome"}),
 	}
 	// Outcomes start at zero so an alert on increase() sees the first one.
@@ -98,6 +100,15 @@ type CountdownRenderWorker struct {
 	Captioner interface {
 		Words(ctx context.Context, mediaPath string) ([]countdownrender.Word, error)
 	}
+	// Transcripts, when set with Captioner, receives the transcript of every
+	// clip in the edition for transcript search (#87), not only the Shorts'.
+	Transcripts CountdownTranscriptStore
+}
+
+// CountdownTranscriptStore stores render-host transcripts and their cost.
+type CountdownTranscriptStore interface {
+	SaveCountdownTranscript(ctx context.Context, clipID uuid.UUID, language, fullText string, segments json.RawMessage) (bool, error)
+	RecordTranscriptionUsage(ctx context.Context, u repository.TranscriptionUsage) error
 }
 
 func (w *CountdownRenderWorker) ensure() {
@@ -178,7 +189,9 @@ func (w *CountdownRenderWorker) RenderNext(ctx context.Context) (bool, error) {
 
 func (w *CountdownRenderWorker) render(ctx context.Context, edition *models.CountdownEdition, series *models.CountdownSeries, media []models.CountdownEditionMedia) error {
 	files := make(map[uuid.UUID]string, len(media))
+	durations := make(map[uuid.UUID]float64, len(media))
 	for _, m := range media {
+		durations[m.ClipID] = m.DurationSeconds
 		path, ok := pathInside(w.MediaDir, m.FileName)
 		if !ok {
 			return fmt.Errorf("media path %q is outside the media directory", m.FileName)
@@ -213,10 +226,11 @@ func (w *CountdownRenderWorker) render(ctx context.Context, edition *models.Coun
 	}); err != nil {
 		return err
 	}
+	words := w.transcribe(ctx, edition, ed.Clips, clips, durations, series.ShortsCount)
 	for i := 0; i < series.ShortsCount && i < len(ed.Clips); i++ {
 		c := ed.Clips[i]
 		clipID := clips[i].ClipID
-		c.Words = w.captionWords(ctx, edition, c)
+		c.Words = words[clipID]
 		if err := w.output(ctx, edition.ID, models.CountdownRenderShort, &clipID, fmt.Sprintf("short-%02d.mp4", c.Rank), func(out string) error {
 			return w.Renderer.RenderShort(ctx, c, out)
 		}); err != nil {
@@ -224,6 +238,67 @@ func (w *CountdownRenderWorker) render(ctx context.Context, edition *models.Coun
 		}
 	}
 	return nil
+}
+
+// transcribe returns the caption words of the edition's clips: the top
+// shorts clips, or every clip when transcripts are stored for search (#87).
+// Each stored transcript and its compute time are recorded; a failure to
+// store one is logged and does not fail the render.
+func (w *CountdownRenderWorker) transcribe(ctx context.Context, edition *models.CountdownEdition, rendered []countdownrender.Clip,
+	clips []models.CountdownEditionClip, durations map[uuid.UUID]float64, shorts int) map[uuid.UUID][]countdownrender.Word {
+	words := map[uuid.UUID][]countdownrender.Word{}
+	count := min(shorts, len(rendered))
+	if w.Transcripts != nil && w.Captioner != nil {
+		count = len(rendered)
+	}
+	for i := 0; i < count; i++ {
+		clipID := clips[i].ClipID
+		start := w.now()
+		words[clipID] = w.captionWords(ctx, edition, rendered[i])
+		if w.Transcripts == nil || w.Captioner == nil {
+			continue
+		}
+		usage := repository.TranscriptionUsage{Day: start, Source: repository.TranscriptSourceCountdown,
+			AudioSeconds: durations[clipID], ComputeSeconds: w.now().Sub(start).Seconds()}
+		if text, segments := transcriptFromWords(words[clipID]); text != "" {
+			stored, err := w.Transcripts.SaveCountdownTranscript(ctx, clipID, "en", text, segments)
+			if err != nil {
+				utils.Warn("Countdown transcript not stored", map[string]interface{}{
+					"edition_id": edition.ID.String(), "clip_id": clipID.String(), "reason": err.Error(),
+				})
+			}
+			usage.Transcribed = stored
+		}
+		if err := w.Transcripts.RecordTranscriptionUsage(ctx, usage); err != nil {
+			utils.Warn("Transcription usage not recorded", map[string]interface{}{"reason": err.Error()})
+		}
+	}
+	return words
+}
+
+// transcriptFromWords joins caption words into a transcript's full text and
+// its word timings.
+func transcriptFromWords(words []countdownrender.Word) (string, json.RawMessage) {
+	type segment struct {
+		Start float64 `json:"start"`
+		End   float64 `json:"end"`
+		Text  string  `json:"text"`
+	}
+	segments := make([]segment, 0, len(words))
+	var text strings.Builder
+	for _, w := range words {
+		text.WriteString(w.Text)
+		segments = append(segments, segment{Start: w.Start, End: w.End, Text: strings.TrimSpace(w.Text)})
+	}
+	full := strings.Join(strings.Fields(text.String()), " ")
+	if full == "" {
+		return "", nil
+	}
+	raw, err := json.Marshal(segments)
+	if err != nil {
+		return "", nil
+	}
+	return full, raw
 }
 
 // captionWords transcribes one Short's clip. Failures leave the Short

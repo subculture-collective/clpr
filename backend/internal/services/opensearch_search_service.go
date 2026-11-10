@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -184,6 +185,18 @@ func (s *OpenSearchService) searchClipsWithFacets(ctx context.Context, req *mode
 		"size":  req.Limit,
 		"sort":  s.buildSortClause(req.Sort),
 		"aggs":  aggs,
+	}
+	// Transcripts are searched but not returned; the matching part comes back
+	// as a highlight, with each matched word between U+E000 and U+E001.
+	searchBody["_source"] = map[string]interface{}{"excludes": []string{"transcript"}}
+	if req.Query != "" || clipSaidPhrase(req) != "" {
+		searchBody["highlight"] = map[string]interface{}{
+			"pre_tags":  []string{transcriptMatchStart},
+			"post_tags": []string{transcriptMatchEnd},
+			"fields": map[string]interface{}{
+				"transcript": map[string]interface{}{"fragment_size": 140, "number_of_fragments": 1},
+			},
+		}
 	}
 
 	bodyJSON, err := json.Marshal(searchBody)
@@ -448,7 +461,7 @@ func (s *OpenSearchService) buildClipQuery(req *models.SearchRequest) map[string
 	// Add text search if query is provided with language-specific fields
 	if req.Query != "" {
 		// Build fields list based on language if specified
-		fields := []string{"title^3", "creator_name^2", "broadcaster_name^2", "game_name"}
+		fields := []string{"title^3", "creator_name^2", "broadcaster_name^2", "game_name", "transcript"}
 
 		// Add language-specific field with higher boost if language is specified
 		if req.Language != nil && *req.Language != "" {
@@ -470,6 +483,16 @@ func (s *OpenSearchService) buildClipQuery(req *models.SearchRequest) map[string
 				"fields":    fields,
 				"fuzziness": "AUTO",
 				"operator":  "and",
+			},
+		})
+	}
+
+	// "said": the transcript holds the phrase (#87). It is part of the
+	// scored query so the matching words are highlighted.
+	if said := clipSaidPhrase(req); said != "" {
+		must = append(must, map[string]interface{}{
+			"match_phrase": map[string]interface{}{
+				"transcript": map[string]interface{}{"query": said, "slop": 1},
 			},
 		})
 	}
@@ -728,6 +751,36 @@ func (s *OpenSearchService) buildFacetAggregations() map[string]interface{} {
 	}
 }
 
+// Transcript highlights mark each matched word with these private-use
+// characters, which transcripts never contain, so clients can show the match
+// without parsing HTML.
+const (
+	transcriptMatchStart = "\ue000"
+	transcriptMatchEnd   = "\ue001"
+)
+
+// clipSaidPhrase is the trimmed "said" phrase of a request, or "".
+func clipSaidPhrase(req *models.SearchRequest) string {
+	if req.Said == nil {
+		return ""
+	}
+	return strings.TrimSpace(*req.Said)
+}
+
+// transcriptSnippet returns the transcript highlight of a search hit.
+func transcriptSnippet(hit map[string]interface{}) *string {
+	highlight, _ := hit["highlight"].(map[string]interface{})
+	fragments, _ := highlight["transcript"].([]interface{})
+	if len(fragments) == 0 {
+		return nil
+	}
+	snippet, ok := fragments[0].(string)
+	if !ok || snippet == "" {
+		return nil
+	}
+	return &snippet
+}
+
 // parseClipsFromResult extracts clips from OpenSearch response
 func (s *OpenSearchService) parseClipsFromResult(result map[string]interface{}) ([]models.Clip, int, error) {
 	hitsRaw, ok := result["hits"]
@@ -784,6 +837,7 @@ func (s *OpenSearchService) parseClipsFromResult(result map[string]interface{}) 
 		if err := json.Unmarshal(sourceJSON, &clip); err != nil {
 			continue
 		}
+		clip.TranscriptSnippet = transcriptSnippet(hitMap)
 		clips = append(clips, clip)
 	}
 

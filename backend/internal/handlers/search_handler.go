@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
@@ -260,8 +261,23 @@ func getFailoverReason(err error) string {
 
 // validateAndSetDefaults validates search request parameters and sets defaults
 func (h *SearchHandler) validateAndSetDefaults(req *models.SearchRequest) error {
+	if req.Said != nil {
+		said := strings.TrimSpace(*req.Said)
+		if utf8.RuneCountInString(said) > 200 {
+			return fmt.Errorf("Query parameter 'said' must be at most 200 characters")
+		}
+		if said == "" {
+			req.Said = nil
+		} else {
+			req.Said = &said
+		}
+	}
+	if req.Query == "" && req.Said == nil {
+		return fmt.Errorf("Query parameter 'q' or 'said' is required")
+	}
 	if req.Query == "" {
-		return fmt.Errorf("Query parameter 'q' is required")
+		// A transcript phrase alone searches clips only.
+		req.Type = "clips"
 	}
 
 	if req.Page < 1 {

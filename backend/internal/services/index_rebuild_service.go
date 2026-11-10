@@ -160,7 +160,8 @@ func (s *IndexRebuildService) indexClipsToVersionedIndex(ctx context.Context, in
 			       game_id, game_name, language, thumbnail_url, duration,
 			       view_count, created_at, imported_at, vote_score,
 			       comment_count, favorite_count, is_featured, is_nsfw,
-			       is_removed, removed_reason, submitted_by_user_id, is_hidden, dmca_removed
+			       is_removed, removed_reason, submitted_by_user_id, is_hidden, dmca_removed,
+			       (SELECT t.full_text FROM clip_transcripts t WHERE t.clip_id = clips.id)
 			FROM clips
 			WHERE is_removed = false
 			ORDER BY id
@@ -182,7 +183,7 @@ func (s *IndexRebuildService) indexClipsToVersionedIndex(ctx context.Context, in
 				&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
 				&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
 				&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
-				&clip.SubmittedByUserID, &clip.IsHidden, &clip.DMCARemoved,
+				&clip.SubmittedByUserID, &clip.IsHidden, &clip.DMCARemoved, &clip.Transcript,
 			)
 			if err != nil {
 				rows.Close()
@@ -273,6 +274,9 @@ func (s *IndexRebuildService) bulkIndexClipsToIndex(ctx context.Context, indexNa
 		}
 		if clip.SubmittedByUserID != nil {
 			doc["submitted_by_user_id"] = clip.SubmittedByUserID.String()
+		}
+		if clip.Transcript != nil {
+			doc["transcript"] = *clip.Transcript
 		}
 		docJSON, err := json.Marshal(doc)
 		if err != nil {

@@ -10,6 +10,8 @@ export interface ClipSubmitter {
 
 export interface Clip extends ClipSourceFields {
     id: string;
+    /** In search results: the part of the transcript that matched, each matched word between U+E000 and U+E001. */
+    transcript_snippet?: string;
     twitch_clip_id: string;
     twitch_clip_url: string;
     embed_url: string;

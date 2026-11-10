@@ -148,12 +148,14 @@ Files stay in the worker's own volume, are never served by clpr.tv or put in
 object storage, and are deleted within 24 hours of fetching, or as soon as
 the edition fails.
 
-For the clips that get a Short, the worker also transcribes the fetched file
-on the render host to burn captions into the Short
-(`backend/internal/services/countdown_captions.go`). It uses the same local
-faster-whisper runner as the optional transcription above, writes a temporary
-WAV under the media volume and deletes it at once. Nothing leaves the render
-host, the transcript is not stored, and only English speech gets captions.
+The worker also transcribes each fetched clip on the render host
+(`backend/internal/services/countdown_captions.go`): to burn captions into the
+Shorts, and to store the English transcript for transcript search (#87). It
+uses the same local faster-whisper runner as the optional transcription above,
+writes a temporary WAV under the media volume and deletes it at once. No audio
+or video leaves the render host. The transcript text is stored in
+`clip_transcripts` and indexed for search, and only English speech is kept.
+Clips are never downloaded for transcription alone.
 
 ## App access token
 

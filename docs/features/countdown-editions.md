@@ -87,6 +87,8 @@ The source clips are deleted as soon as the edition finishes rendering, whether 
 
 Before rendering a Short, the worker transcribes its clip with the faster-whisper runner the API uses for transcription (`backend/whisper/whisper_runner.py --words`), with word timings. Lines of at most `caption_max_chars` columns (template, default 22) show from their first word until the next line starts. Segments Whisper marks as probably not speech (no-speech probability above 0.6, or average log-probability below -1.0) are left out, and clips Whisper does not detect as English get no captions. A failed transcription renders the Short without captions and counts `clpr_countdown_short_captions_total{outcome="failed"}`; the other outcomes are `captioned` and `none`. The temporary WAV is written under the media directory and deleted at once.
 
+The worker transcribes every clip of the edition this way, not only the Shorts', and stores the English transcripts for [[transcript-search|transcript search]] (#87). Each clip is transcribed once; its Short reuses the words. `COUNTDOWN_TRANSCRIPTS=off` goes back to the Shorts' captions only.
+
 The render image sets `WHISPER_PYTHON_PATH` and `WHISPER_RUNNER_DIR`, so captions are on by default; `COUNTDOWN_CAPTIONS=off` turns them off. `WHISPER_MODEL` picks the model (default `base`), which is downloaded on first use to `/var/lib/clpr-whisper-models`. A 12-second clip took 7 seconds to transcribe on a 4-core host, model download included.
 
 Two renders of the same inputs are byte-identical. On a 4-core host, a 10-clip edition of 30-second 1080p60 clips renders in about 2.5 minutes, and a 30-second Short in under 30 seconds.

@@ -23,6 +23,7 @@ type SchedulerGroup struct {
 	PlaylistScript  *scheduler.PlaylistScriptScheduler
 	AutoTag         *scheduler.AutoTagScheduler
 	TagPromotion    *scheduler.TagPromotionScheduler
+	TranscriptIndex *scheduler.TranscriptIndexScheduler // may be nil
 	cancel          context.CancelFunc
 	wg              sync.WaitGroup
 }
@@ -144,6 +145,12 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 		time.Duration(cfg.Jobs.TagPromotionStartDelaySeconds)*time.Second,
 	)
 	sg.launch(ctx, 0, sg.TagPromotion.Start)
+
+	// Copy new clip transcripts into the search index (#87).
+	if svcs.SearchIndexer != nil {
+		sg.TranscriptIndex = scheduler.NewTranscriptIndexScheduler(repos.Clip, svcs.SearchIndexer, 5*time.Minute)
+		sg.launch(ctx, time.Minute, sg.TranscriptIndex.Start)
+	}
 
 	return sg
 }

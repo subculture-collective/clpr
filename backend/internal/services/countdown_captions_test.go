@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -9,6 +10,8 @@ import (
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/countdownrender"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -107,5 +110,62 @@ func TestWhisperCaptionerKeepsConfidentEnglishSpeech(t *testing.T) {
 	result.Language = "de"
 	if words, err := c.Words(context.Background(), clip); err != nil || words != nil {
 		t.Fatalf("a German clip got captions: %v, %v", words, err)
+	}
+}
+
+type fakeTranscriptStore struct {
+	saved map[uuid.UUID]string
+	usage []repository.TranscriptionUsage
+}
+
+func (f *fakeTranscriptStore) SaveCountdownTranscript(_ context.Context, clipID uuid.UUID, language, text string, segments json.RawMessage) (bool, error) {
+	if language != "en" || !json.Valid(segments) {
+		return false, errors.New("bad transcript")
+	}
+	f.saved[clipID] = text
+	return true, nil
+}
+
+func (f *fakeTranscriptStore) RecordTranscriptionUsage(_ context.Context, u repository.TranscriptionUsage) error {
+	f.usage = append(f.usage, u)
+	return nil
+}
+
+func TestCountdownRenderWorkerTranscribesEveryClipForSearch(t *testing.T) {
+	store, worker := renderFixture(t, 1)
+	worker.Metrics = NewCountdownRenderMetrics(nil)
+	first := filepath.Join(worker.MediaDir, store.media[1].FileName) // position 1
+	third := filepath.Join(worker.MediaDir, store.media[2].FileName)
+	captioner := &fakeCaptioner{words: map[string][]countdownrender.Word{
+		first: {{Start: 0.1, End: 0.4, Text: " no"}, {Start: 0.4, End: 0.9, Text: " way"}},
+		third: {{Start: 1, End: 2, Text: " clutch"}},
+	}}
+	worker.Captioner = captioner
+	transcripts := &fakeTranscriptStore{saved: map[uuid.UUID]string{}}
+	worker.Transcripts = transcripts
+	if err := worker.RunOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(captioner.paths) != 3 {
+		t.Fatalf("captioner ran %d times, want once per clip", len(captioner.paths))
+	}
+	if len(transcripts.saved) != 2 || transcripts.saved[store.media[1].ClipID] != "no way" || transcripts.saved[store.media[2].ClipID] != "clutch" {
+		t.Fatalf("saved = %v", transcripts.saved)
+	}
+	stored := 0
+	for _, u := range transcripts.usage {
+		if u.Source != repository.TranscriptSourceCountdown || u.ComputeSeconds < 0 {
+			t.Fatalf("usage = %+v", u)
+		}
+		if u.Transcribed {
+			stored++
+		}
+	}
+	if len(transcripts.usage) != 3 || stored != 2 {
+		t.Fatalf("usage = %+v", transcripts.usage)
+	}
+	shorts := worker.Renderer.(*fakeRenderer).shorts
+	if len(shorts) != 1 || len(shorts[0].Words) != 2 {
+		t.Fatalf("the Short lost its captions: %+v", shorts)
 	}
 }
