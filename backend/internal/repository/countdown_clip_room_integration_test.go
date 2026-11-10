@@ -89,6 +89,29 @@ func TestClipRoomFeedsCountdownAndPack(t *testing.T) {
 		t.Fatalf("edition %s clips = %s", edition.Status, got)
 	}
 
+	// A clip that cannot be fetched is replaced from the room, not by velocity:
+	// with the room exhausted, nothing replaces it.
+	claimed, claimedSeries, err := repo.ClaimEditionForFetch(ctx, time.Hour)
+	if err != nil || claimed == nil || claimed.ID != edition.ID {
+		t.Fatalf("claimed = %+v, %v", claimed, err)
+	}
+	if next, err := repo.BackfillClip(ctx, claimed, claimedSeries, ids["own-1"], "HTTP 404"); err != nil || next != nil {
+		t.Fatalf("backfill from an exhausted room = %+v, %v", next, err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO streamer_clip_room_items (room_id, clip_id, source_url, source_type, status, position, approved_at)
+		VALUES ($1, $2, 'https://clips.twitch.tv/x', 'twitch', 'approved', 6, $3)`, roomID, ids["rejected"], approved.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if next, err := repo.BackfillClip(ctx, claimed, claimedSeries, ids["own-2"], "HTTP 404"); err != nil || next == nil || next.ClipID != ids["rejected"] || next.Position != 2 {
+		t.Fatalf("backfill from the room = %+v, %v", next, err)
+	}
+	date := "2026-11-07"
+	after, err := repo.ListEditions(ctx, &date, &series.ID, 1)
+	if err != nil || len(after) != 1 || strings.Join(editionClipNames(&after[0]), ",") != "viewer,rejected" {
+		t.Fatalf("edition after backfill = %+v, %v", after, err)
+	}
+
 	// A velocity series the same day does not get the room's clips again.
 	overall, err := repo.CreateSeries(ctx, &models.CountdownSeriesInput{Slug: "overall", Name: "Overall", Size: 1,
 		WindowHours: 24, PerBroadcasterCap: 1, SelectionHourUTC: 12, Enabled: true})

@@ -28,27 +28,37 @@ func (r *CountdownRepository) EnsureWeeklyPacks(ctx context.Context, weekStart t
 	}
 	var created int
 	err := r.pool.QueryRow(ctx, `
-		WITH eligible AS (
-			SELECT o.broadcaster_id, c.id AS clip_id, left(c.broadcaster_name, 100) AS broadcaster_name,
-			       ROW_NUMBER() OVER (
-			           PARTITION BY o.broadcaster_id
-			           ORDER BY room.rank NULLS LAST, COALESCE(c.view_count, 0) DESC, c.created_at, c.id
-			       ) AS pos
+		WITH room AS (
+			-- Clips the broadcaster approved in their own rooms that week,
+			-- from the approved-items index rather than every clip.
+			SELECT o.broadcaster_id, i.clip_id, min(i.position) AS rank
+			FROM broadcaster_feature_optins o
+			JOIN streamer_clip_rooms r ON r.owner_user_id = o.user_id
+			JOIN streamer_clip_room_items i ON i.room_id = r.id
+			WHERE i.status = 'approved' AND i.clip_id IS NOT NULL
+			  AND i.approved_at >= $4::timestamptz AND i.approved_at < $5::timestamptz
+			GROUP BY o.broadcaster_id, i.clip_id
+		), candidates AS (
+			SELECT o.broadcaster_id, c.id AS clip_id
 			FROM broadcaster_feature_optins o
 			JOIN clips c ON c.broadcaster_id = o.broadcaster_id
-			LEFT JOIN LATERAL (
-			    SELECT min(i.position) AS rank
-			    FROM streamer_clip_room_items i
-			    JOIN streamer_clip_rooms r ON r.id = i.room_id
-			    WHERE r.owner_user_id = o.user_id AND i.clip_id = c.id AND i.status = 'approved'
-			      AND i.approved_at >= $4::timestamptz AND i.approved_at < $5::timestamptz
-			) room ON TRUE
+			WHERE c.created_at >= $1 AND c.created_at < $2
+			UNION
+			SELECT broadcaster_id, clip_id FROM room
+		), eligible AS (
+			SELECT cand.broadcaster_id, c.id AS clip_id, left(c.broadcaster_name, 100) AS broadcaster_name,
+			       ROW_NUMBER() OVER (
+			           PARTITION BY cand.broadcaster_id
+			           ORDER BY room.rank NULLS LAST, COALESCE(c.view_count, 0) DESC, c.created_at, c.id
+			       ) AS pos
+			FROM candidates cand
+			JOIN clips c ON c.id = cand.clip_id AND c.broadcaster_id = cand.broadcaster_id
+			LEFT JOIN room ON room.broadcaster_id = cand.broadcaster_id AND room.clip_id = c.id
 			WHERE c.source_type = 'twitch'
-			  AND ((c.created_at >= $1 AND c.created_at < $2) OR room.rank IS NOT NULL)
 			  AND c.is_removed = false AND c.is_hidden = false AND COALESCE(c.dmca_removed, false) = false
 			  AND c.broadcaster_name <> ''
 			  AND NOT EXISTS (
-			      SELECT 1 FROM countdown_exclusions x WHERE x.clip_id = c.id OR x.broadcaster_id = o.broadcaster_id
+			      SELECT 1 FROM countdown_exclusions x WHERE x.clip_id = c.id OR x.broadcaster_id = cand.broadcaster_id
 			  )
 		), packs AS (
 			INSERT INTO clip_packs (broadcaster_id, broadcaster_name, week_start)
