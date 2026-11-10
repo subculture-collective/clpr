@@ -49,8 +49,12 @@ type CountdownSeries struct {
 	Priority          int       `json:"priority" db:"priority"`
 	Enabled           bool      `json:"enabled" db:"enabled"`
 	ShortsCount       int       `json:"shorts_count" db:"shorts_count"`
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
+	// Source is velocity (the fastest-rising clips) or clip_room (#88).
+	Source          string     `json:"source" db:"source"`
+	ClipRoomID      *uuid.UUID `json:"clip_room_id,omitempty" db:"clip_room_id"`
+	ClipRoomChannel *string    `json:"clip_room_channel,omitempty" db:"-"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // CountdownSeriesInput creates or replaces a series configuration.
@@ -67,7 +71,16 @@ type CountdownSeriesInput struct {
 	Priority          int     `json:"priority"`
 	Enabled           bool    `json:"enabled"`
 	ShortsCount       int     `json:"shorts_count"`
+	// Source is velocity (default) or clip_room, which needs ClipRoomID.
+	Source     string     `json:"source"`
+	ClipRoomID *uuid.UUID `json:"clip_room_id"`
 }
+
+// Countdown series sources (#88).
+const (
+	CountdownSourceVelocity = "velocity"
+	CountdownSourceClipRoom = "clip_room"
+)
 
 // CountdownEdition is one day's selection for a series.
 type CountdownEdition struct {

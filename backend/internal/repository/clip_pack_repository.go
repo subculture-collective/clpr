@@ -16,9 +16,11 @@ var ErrClipPackNotBuilding = errors.New("clip pack is not being built")
 
 // EnsureWeeklyPacks creates a pending pack for the week starting weekStart
 // (a Monday, UTC) for every broadcaster who features their clips and had a
-// clip that week, with their perPack most-viewed clips. Broadcasters left out
-// of countdowns get none. A pack that already exists is left alone. It
-// returns how many packs it created.
+// clip that week, with up to perPack of their clips: first the ones they
+// approved in their own clip room that week, in the room's order (#88), then
+// their most-viewed clips of the week. Broadcasters left out of countdowns
+// get none. A pack that already exists is left alone. It returns how many
+// packs it created.
 func (r *CountdownRepository) EnsureWeeklyPacks(ctx context.Context, weekStart time.Time, perPack int) (int, error) {
 	start := time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 0, 0, 0, 0, time.UTC)
 	if start.Weekday() != time.Monday {
@@ -30,11 +32,19 @@ func (r *CountdownRepository) EnsureWeeklyPacks(ctx context.Context, weekStart t
 			SELECT o.broadcaster_id, c.id AS clip_id, left(c.broadcaster_name, 100) AS broadcaster_name,
 			       ROW_NUMBER() OVER (
 			           PARTITION BY o.broadcaster_id
-			           ORDER BY COALESCE(c.view_count, 0) DESC, c.created_at, c.id
+			           ORDER BY room.rank NULLS LAST, COALESCE(c.view_count, 0) DESC, c.created_at, c.id
 			       ) AS pos
 			FROM broadcaster_feature_optins o
 			JOIN clips c ON c.broadcaster_id = o.broadcaster_id
-			WHERE c.source_type = 'twitch' AND c.created_at >= $1 AND c.created_at < $2
+			LEFT JOIN LATERAL (
+			    SELECT min(i.position) AS rank
+			    FROM streamer_clip_room_items i
+			    JOIN streamer_clip_rooms r ON r.id = i.room_id
+			    WHERE r.owner_user_id = o.user_id AND i.clip_id = c.id AND i.status = 'approved'
+			      AND i.approved_at >= $4::timestamptz AND i.approved_at < $5::timestamptz
+			) room ON TRUE
+			WHERE c.source_type = 'twitch'
+			  AND ((c.created_at >= $1 AND c.created_at < $2) OR room.rank IS NOT NULL)
 			  AND c.is_removed = false AND c.is_hidden = false AND COALESCE(c.dmca_removed, false) = false
 			  AND c.broadcaster_name <> ''
 			  AND NOT EXISTS (
@@ -50,7 +60,7 @@ func (r *CountdownRepository) EnsureWeeklyPacks(ctx context.Context, weekStart t
 			SELECT p.id, e.pos, e.clip_id FROM packs p JOIN eligible e ON e.broadcaster_id = p.broadcaster_id
 			WHERE e.pos <= $3
 		)
-		SELECT count(*) FROM packs`, start, start.AddDate(0, 0, 7), perPack).Scan(&created)
+		SELECT count(*) FROM packs`, start, start.AddDate(0, 0, 7), perPack, start, start.AddDate(0, 0, 7)).Scan(&created)
 	return created, err
 }
 

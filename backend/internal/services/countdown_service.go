@@ -81,6 +81,18 @@ func normalizeCountdownSeries(in *models.CountdownSeriesInput) error {
 	if in.PerBroadcasterCap == 0 {
 		in.PerBroadcasterCap = 1
 	}
+	in.Source = strings.TrimSpace(in.Source)
+	if in.Source == "" {
+		in.Source = models.CountdownSourceVelocity
+	}
+	switch {
+	case in.Source != models.CountdownSourceVelocity && in.Source != models.CountdownSourceClipRoom:
+		return countdownInvalid("source must be velocity or clip_room")
+	case in.Source == models.CountdownSourceClipRoom && in.ClipRoomID == nil:
+		return countdownInvalid("a clip_room series needs clip_room_id")
+	case in.Source == models.CountdownSourceVelocity && in.ClipRoomID != nil:
+		return countdownInvalid("clip_room_id needs source clip_room")
+	}
 	switch {
 	case len(in.Slug) > 64 || !countdownSlugPattern.MatchString(in.Slug):
 		return countdownInvalid("slug must be lowercase letters, digits and single hyphens, at most 64 characters")

@@ -137,10 +137,11 @@ func (r *CountdownRepository) BackfillClip(ctx context.Context, edition *models.
 	}
 	var next uuid.UUID
 	var velocity float64
-	err = tx.QueryRow(ctx, countdownCandidatesQuery,
-		CountdownMinClipSeconds, CountdownMaxClipSeconds, edition.WindowStart.UTC(), edition.WindowEnd.UTC(),
-		series.GameID, series.Language, edition.EditionDate, series.PerBroadcasterCap, 1, edition.ID).Scan(&next, &velocity)
-	if errors.Is(err, pgx.ErrNoRows) {
+	query, args, err := countdownCandidates(series, edition.WindowStart, edition.WindowEnd, edition.EditionDate, 1, &edition.ID)
+	if err == nil {
+		err = tx.QueryRow(ctx, query, args...).Scan(&next, &velocity)
+	}
+	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, errCountdownRoomGone) {
 		if err := tx.Commit(ctx); err != nil {
 			return nil, err
 		}
