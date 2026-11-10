@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const twitchTokenEndpoint = "https://id.twitch.tv/oauth2/token"
+const twitchOAuthEndpoint = "https://id.twitch.tv/oauth2/token"
 
 // TwitchTokenStore saves a refreshed broadcaster token.
 type TwitchTokenStore interface {
@@ -47,7 +47,7 @@ func (r *TwitchTokenRefresher) Refresh(ctx context.Context, auth *models.TwitchA
 		"refresh_token": {auth.RefreshToken},
 		"grant_type":    {"refresh_token"},
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, orDefault(r.TokenURL, twitchTokenEndpoint), strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, orDefault(r.TokenURL, twitchOAuthEndpoint), strings.NewReader(form.Encode()))
 	if err != nil {
 		return err
 	}
