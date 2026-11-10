@@ -2430,6 +2430,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/users/me/countdowns/placements",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*CountdownControlsHandler).ListMyPlacements-fm",
+    "operation_id": "getApiV1UsersMeCountdownsPlacements",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/users/me/discovery-list-follows",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*DiscoveryListHandler).GetUserFollowedLists-fm",
     "operation_id": "getUserFollowedDiscoveryLists",

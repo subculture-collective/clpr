@@ -6135,6 +6135,38 @@
         }
       }
     },
+    "/api/v1/users/me/countdowns/placements": {
+      "get": {
+        "tags": [
+          "Users",
+          "Countdowns"
+        ],
+        "summary": "List my countdown placements",
+        "description": "The signed-in broadcaster's clips in public countdowns, newest first (at most 50), with the countdown video and the Short each clip appears in. A video is listed only once viewers can open it on YouTube; its view count comes from the YouTube Data API and is refreshed every few hours.",
+        "operationId": "getApiV1UsersMeCountdownsPlacements",
+        "responses": {
+          "200": {
+            "description": "Countdown placements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountdownPlacementListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/api/v1/users/me/clip-packs": {
       "get": {
         "tags": [
@@ -30606,6 +30638,90 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CountdownFeature"
+            }
+          }
+        }
+      },
+      "CountdownVideo": {
+        "type": "object",
+        "required": [
+          "youtube_video_id"
+        ],
+        "properties": {
+          "youtube_video_id": {
+            "type": "string"
+          },
+          "view_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "description": "Absent until the worker first reads it"
+          },
+          "views_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CountdownPlacement": {
+        "type": "object",
+        "required": [
+          "edition_date",
+          "series_slug",
+          "series_name",
+          "position",
+          "clip_id",
+          "title"
+        ],
+        "properties": {
+          "edition_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "series_slug": {
+            "type": "string"
+          },
+          "series_name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "clip_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "countdown": {
+            "$ref": "#/components/schemas/CountdownVideo"
+          },
+          "short": {
+            "$ref": "#/components/schemas/CountdownVideo"
+          }
+        }
+      },
+      "CountdownPlacementListResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountdownPlacement"
             }
           }
         }

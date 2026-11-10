@@ -139,6 +139,11 @@ export const handlers = [
         });
     }),
 
+    // GET /api/users/me/countdowns/placements - The creator dashboard lists countdown placements.
+    http.get(`${API_BASE_URL}/users/me/countdowns/placements`, () => {
+        return HttpResponse.json({ success: true, data: [] });
+    }),
+
     // GET /api/users/me/clip-packs - The creator dashboard lists weekly clip packs.
     http.get(`${API_BASE_URL}/users/me/clip-packs`, () => {
         return HttpResponse.json({ success: true, data: [] });

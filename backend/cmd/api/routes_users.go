@@ -59,6 +59,7 @@ func registerUserRoutes(v1 *gin.RouterGroup, h *Handlers, svcs *Services, infra 
 		users.GET("/me/countdowns", middleware.AuthMiddleware(svcs.Auth), h.CountdownControls.GetMyCountdownControls)
 		users.PUT("/me/countdowns/exclusion", middleware.AuthMiddleware(svcs.Auth), middleware.RateLimitMiddleware(infra.Redis, 20, time.Hour), h.CountdownControls.SetMyCountdownExclusion)
 		users.DELETE("/me/countdowns/feature", middleware.AuthMiddleware(svcs.Auth), h.CountdownControls.DeleteMyFeatureOptIn)
+		users.GET("/me/countdowns/placements", middleware.AuthMiddleware(svcs.Auth), h.CountdownControls.ListMyPlacements)
 		users.GET("/me/clip-packs", middleware.AuthMiddleware(svcs.Auth), h.ClipPacks.ListMyPacks)
 
 		// User engagement score (authenticated)

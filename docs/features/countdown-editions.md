@@ -11,7 +11,7 @@ last_reviewed: 2026-11-07
 
 # Countdown editions
 
-A countdown edition is one day's ranked list of clips for a countdown video or Short. This page covers selection (#76), fetching the media (#77), rendering (#78), the public pages (#82) and publishing to YouTube (#79). The media policy is [[../adr/002-media-handling-for-countdowns|ADR-002]].
+A countdown edition is one day's ranked list of clips for a countdown video or Short. This page covers selection (#76), fetching the media (#77), rendering (#78), the public pages (#82), publishing to YouTube (#79) and the creator dashboard (#84). The media policy is [[../adr/002-media-handling-for-countdowns|ADR-002]].
 
 ## Series
 
@@ -125,6 +125,14 @@ Every upload is recorded in `countdown_uploads` as soon as it finishes, so a ret
 - Angle brackets, which YouTube rejects, become ‹ and ›.
 - Titles stop at 100 characters, descriptions at 5,000 bytes and tags at 500 characters.
 
+## Creator dashboard
+
+`/countdowns` carries an offer to streamers: connect the channel, get featured in the daily countdowns, and see where each clip placed. It links a signed-in Twitch account to its creator dashboard (`/creator/<twitch id>/dashboard`, also in the user menu) and asks anyone else to sign in.
+
+On their own dashboard, a broadcaster sees "Your clips in countdowns": each placement with its rank, series and date, linked to the edition page, and the countdown video and Short it appears in with their YouTube view counts. Until they have featured their clips, the card also offers "Connect my channel", the same `channel:manage:clips` grant as in Settings, returning to the dashboard. The card reads `GET /api/v1/users/me/countdowns/placements` (the newest 50, under the public-page rules) and hides itself for accounts without Twitch.
+
+A video is linked only once viewers can open it: YouTube reports it public or unlisted, or, before the worker first reads it, its scheduled publish time has passed. The worker reads view counts with `videos.list` once an hour, for videos uploaded in the last 90 days whose count is more than 6 hours old, 50 per call. A video YouTube no longer returns is marked missing and no longer linked or read. Quota and authorization errors pause the reads as they pause publishing; other errors pause them until the next period.
+
 ## Weekly clip packs
 
 Broadcasters who feature their clips get a weekly clip pack (#86): their most-viewed clips of the past week, ready to post.
@@ -164,6 +172,7 @@ An exclusion affects editions selected afterwards. Clips it covers in videos alr
 - `backend/internal/repository/countdown_public_repository_integration_test.go`, `backend/internal/handlers/countdown_public_handler_test.go`, `frontend/src/pages/CountdownPages.test.tsx` and `frontend/e2e/mocked/countdowns.spec.ts`: which editions and clips are public, paging by day, placements, request validation, the sitemap entries, and both pages in a browser, including a phone-width check.
 - `backend/internal/services/youtube_client_test.go`, `backend/internal/services/countdown_youtube_test.go` and `backend/internal/repository/countdown_publish_repository_integration_test.go`: the YouTube calls against a fake API (token refresh and caching, resumable upload, thumbnail, playlist, error reasons); titles, chapters, credits and limits; publishing with quota, authorization, temporary and permanent errors without uploading anything twice; scheduled publish times; claiming, recording and finishing in the database.
 - `backend/internal/repository/countdown_controls_repository_integration_test.go`, `backend/internal/handlers/countdown_controls_handler_test.go`, `frontend/src/components/countdown/CountdownSettingsCard.test.tsx`, `frontend/src/pages/admin/AdminCountdownsPage.test.tsx` and `frontend/e2e/mocked/broadcaster-controls.spec.ts`: the self-service toggle (an admin's exclusion survives it), removal tasks for countdowns and Shorts and their resolution, the admin path for a broadcaster without an account, and the "feature my clips" grant and its removal.
+- `backend/internal/repository/countdown_stats_repository_integration_test.go`, `backend/internal/services/countdown_youtube_stats_test.go`, `frontend/src/components/countdown/CountdownPlacementsCard.test.tsx`, `frontend/src/components/countdown/CreatorConnectOffer.test.tsx` and the dashboard test in `frontend/e2e/mocked/broadcaster-controls.spec.ts`: which placements and videos the dashboard shows before and after a view-count read, missing videos, the refresher's batching, interval and pauses, the connect offer, and the card at phone width.
 - `backend/internal/repository/clip_pack_repository_integration_test.go`, `backend/internal/services/clip_pack_worker_test.go`, `backend/internal/handlers/clip_pack_handler_test.go` and `frontend/src/components/countdown/ClipPacksCard.test.tsx`: which broadcasters and clips get a pack, claiming and finishing, the zip's contents, a clip that cannot be downloaded, the week boundaries, deleting expired zips, signed links (tampered, expired, past the pack's expiry) and the pack server's answers, and the dashboard list.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 

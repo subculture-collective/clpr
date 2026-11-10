@@ -8,6 +8,7 @@ import { fetchCreatorClips, updateClipMetadata, updateClipVisibility } from '../
 import { Container, Button, ResourceUnavailable } from '../components';
 import type { Clip } from '../types/clip';
 import { CreatorEvents, trackEvent } from '../lib/telemetry';
+import { CountdownPlacementsCard } from '../components/countdown/CountdownPlacementsCard';
 import { ClipPacksCard } from '../components/countdown/ClipPacksCard';
 
 export function CreatorDashboardPage() {
@@ -113,6 +114,9 @@ export function CreatorDashboardPage() {
           </p>
         </div>
 
+        {user.twitch_id === creatorId && (
+          <CountdownPlacementsCard returnTo={`/creator/${encodeURIComponent(creatorId)}/dashboard`} />
+        )}
         {user.twitch_id === creatorId && <ClipPacksCard />}
 
         {data?.clips?.length === 0 ? (

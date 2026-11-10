@@ -67,6 +67,11 @@ func (f *fakeYouTubeAPI) server(t *testing.T) *httptest.Server {
 		case r.URL.Path == "/api/playlists":
 			_ = json.NewDecoder(r.Body).Decode(&f.playlistBody)
 			_, _ = io.WriteString(w, `{"id":"PLxxxxxxxxxxxx"}`)
+		case r.Method == http.MethodGet && r.URL.Path == "/api/videos":
+			if r.URL.Query().Get("part") != "statistics,status" || r.URL.Query().Get("id") != "vid_A,vid_gone" {
+				t.Errorf("videos.list %s", r.URL)
+			}
+			_, _ = io.WriteString(w, `{"items":[{"id":"vid_A","statistics":{"viewCount":"1234"},"status":{"privacyStatus":"public"}}]}`)
 		case r.URL.Path == "/api/playlistItems":
 			_ = json.NewDecoder(r.Body).Decode(&f.itemBody)
 			_, _ = io.WriteString(w, `{"id":"item"}`)
@@ -161,4 +166,21 @@ func asYouTubeError(err error, target **YouTubeError) bool {
 		return true
 	}
 	return false
+}
+
+func TestYouTubeClientVideoStats(t *testing.T) {
+	api := &fakeYouTubeAPI{}
+	srv := api.server(t)
+	defer srv.Close()
+	c := testYouTubeClient(srv, "refresh")
+	stats, err := c.VideoStats(context.Background(), []string{"vid_A", "vid_gone"})
+	if err != nil || len(stats) != 1 || stats["vid_A"] != (YouTubeVideoStats{ViewCount: 1234, PrivacyStatus: "public"}) {
+		t.Fatalf("stats = %+v, %v", stats, err)
+	}
+	if stats, err := c.VideoStats(context.Background(), nil); err != nil || len(stats) != 0 {
+		t.Fatalf("no IDs = %+v, %v", stats, err)
+	}
+	if _, err := c.VideoStats(context.Background(), make([]string, 51)); err == nil {
+		t.Fatal("51 IDs were accepted")
+	}
 }
