@@ -59,6 +59,7 @@ type Handlers struct {
 	Countdown           *handlers.CountdownHandler
 	CountdownPublic     *handlers.CountdownPublicHandler
 	CountdownControls   *handlers.CountdownControlsHandler
+	ClipPacks           *handlers.ClipPackHandler
 	Queue               *handlers.QueueHandler
 	StreamerClipRoom    *handlers.StreamerClipRoomHandler
 	WatchHistory        *handlers.WatchHistoryHandler
@@ -133,6 +134,8 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	broadcasterHandler := handlers.NewBroadcasterHandler(repos.Broadcaster, repos.Clip, infra.TwitchClient, svcs.Auth)
 	broadcasterHandler.SetCountdownStates(repos.Countdown)
 	emailMetricsHandler := handlers.NewEmailMetricsHandler(svcs.EmailMetrics, repos.EmailLog)
+	clipPackHandler := handlers.NewClipPackHandler(repos.Countdown, repos.User,
+		services.ClipPackLinks{Secret: []byte(cfg.ClipPacks.LinkSecret), BaseURL: cfg.ClipPacks.BaseURL})
 	sendgridWebhookHandler := handlers.NewSendGridWebhookHandler(repos.EmailLog, cfg.Email.SendGridWebhookPublicKey)
 	feedHandler := handlers.NewFeedHandler(svcs.Feed, svcs.Auth, repos.Vote, repos.Favorite, repos.User)
 	if cfg.FeatureFlags.RecentEngagement {
@@ -248,6 +251,7 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 		Countdown:           handlers.NewCountdownHandler(svcs.Countdown),
 		CountdownPublic:     handlers.NewCountdownPublicHandler(repos.Countdown),
 		CountdownControls:   handlers.NewCountdownControlsHandler(repos.Countdown, repos.User, repos.TwitchAuth),
+		ClipPacks:           clipPackHandler,
 		Queue:               queueHandler,
 		StreamerClipRoom:    streamerClipRoomHandler,
 		WatchHistory:        watchHistoryHandler,

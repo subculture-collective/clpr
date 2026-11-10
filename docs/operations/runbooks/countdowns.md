@@ -22,6 +22,7 @@ Each day clpr selects the fastest-rising Twitch clips for every enabled countdow
 | Render | same worker | `rendering` → `rendered`; the page at `/countdowns/<date>/<series>` goes public |
 | Publish to YouTube | same worker, once the channel is authorized | `publishing` → `published` |
 | View counts for the creator dashboard, hourly | same worker, once the channel is authorized | unchanged |
+| Weekly clip packs, from Monday 06:00 UTC | same worker, once `CLIP_PACK_LINK_SECRET` is set | separate `clip_packs` rows: `pending` → `building` → `ready` → `expired` after 7 days |
 
 The worker runs a cycle every minute (`COUNTDOWN_MEDIA_INTERVAL_SECONDS`). A 10-clip edition takes about 3 minutes to render on 4 cores, plus about 30 seconds per Short and up to 10 seconds of transcription per Short for captions.
 
@@ -29,14 +30,16 @@ The worker runs a cycle every minute (`COUNTDOWN_MEDIA_INTERVAL_SECONDS`). A 10-
 
 The worker is image `backend/Dockerfile.render` with command `countdown-media`. Run it on the render host beside the database (Almaz), never on Dozor.
 
-- **Volumes:** two named volumes, one at `/var/lib/clpr-countdown-media` (source clips, deleted within 24 hours) and one at `/var/lib/clpr-countdown-renders` (renders, deleted after 7 days). The Whisper model downloads to `/var/lib/clpr-whisper-models` inside the container on first use.
+- **Volumes:** three named volumes: `/var/lib/clpr-countdown-media` (source clips, deleted within 24 hours), `/var/lib/clpr-countdown-renders` (renders, deleted after 7 days) and `/var/lib/clpr-clip-packs` (weekly clip packs, deleted after 7 days). The Whisper model downloads to `/var/lib/clpr-whisper-models` inside the container on first use.
 - **Environment:**
   - `ENVIRONMENT=local` and `GIN_MODE=release`. The worker shares the API's config loader, and `ENVIRONMENT=production` would demand API-only secrets such as the JWT key. `GIN_MODE=release` gives JSON logs;
   - the API's database settings and `TWITCH_CLIENT_ID`;
   - `BASE_URL`, the same as the API's, for links in webhooks and video descriptions;
   - once the channel is authorized, `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET_FILE` and `YOUTUBE_REFRESH_TOKEN_FILE` from the secret store.
+  - for weekly clip packs, `CLIP_PACK_LINK_SECRET_FILE` (a random secret of at least 32 bytes from the secret store) and `CLIP_PACK_BASE_URL`, the public address of the pack server. Give the API the same two values as `CLIP_PACK_LINK_SECRET` and `CLIP_PACK_BASE_URL`. Packs also need `TWITCH_CLIENT_ID`, since they use only Helix downloads.
 - **Resources:** about 2 GB of memory and up to 4 CPUs while rendering. The image is about 1.6 GB.
 - **Metrics:** port 9464 (`COUNTDOWN_MEDIA_METRICS_ADDR`). Publish it on the LAN address only, and add a Prometheus scrape job named `clpr-countdown-media` on Dozor.
+- **Clip pack server:** port 9465 (`CLIP_PACK_ADDR`) serves only `GET /packs/<id>.zip` with a signed link. Route the `CLIP_PACK_BASE_URL` hostname to it through the edge (Caddy on Almaz), without Authelia, since broadcasters download with the link alone. It is off while `CLIP_PACK_LINK_SECRET` is unset.
 - **Alert rules:** the `clpr-countdowns` group in `monitoring/prometheus/clpr-slo-rules.yml`. Copy it into Dozor's rules with the scrape job. Critical alerts page through the existing ntfy route; warnings go to the daily digest.
 
 Check after deploying:

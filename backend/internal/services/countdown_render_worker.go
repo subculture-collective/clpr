@@ -95,9 +95,12 @@ type CountdownRenderWorker struct {
 	}
 	// Captioner, when set, transcribes the clips of Shorts for captions
 	// (#81). A clip it cannot transcribe gets a Short without captions.
-	Captioner interface {
-		Words(ctx context.Context, mediaPath string) ([]countdownrender.Word, error)
-	}
+	Captioner CountdownCaptioner
+}
+
+// CountdownCaptioner transcribes a clip file for captions.
+type CountdownCaptioner interface {
+	Words(ctx context.Context, mediaPath string) ([]countdownrender.Word, error)
 }
 
 func (w *CountdownRenderWorker) ensure() {

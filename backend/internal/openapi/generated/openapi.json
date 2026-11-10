@@ -6167,6 +6167,38 @@
         }
       }
     },
+    "/api/v1/users/me/clip-packs": {
+      "get": {
+        "tags": [
+          "Users",
+          "Countdowns"
+        ],
+        "summary": "List my weekly clip packs",
+        "description": "The signed-in broadcaster's weekly clip packs, newest week first (at most 8). Each Monday, broadcasters who feature their clips get a zip of their most-viewed clips of the past week as captioned 9:16 videos and a 16:9 highlight reel. A ready pack has a `download_url` to the render host that is valid for 24 hours and never past the pack's `expires_at`, 7 days after it was made.",
+        "operationId": "getApiV1UsersMeClipPacks",
+        "responses": {
+          "200": {
+            "description": "Clip packs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClipPackListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/api/v1/users/{id}/engagement": {
       "get": {
         "tags": [
@@ -30690,6 +30722,88 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CountdownPlacement"
+            }
+          }
+        }
+      },
+      "ClipPack": {
+        "type": "object",
+        "required": [
+          "id",
+          "broadcaster_id",
+          "broadcaster_name",
+          "week_start",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "broadcaster_id": {
+            "type": "string"
+          },
+          "broadcaster_name": {
+            "type": "string"
+          },
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "description": "The Monday (UTC) that starts the week"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "building",
+              "ready",
+              "failed",
+              "expired"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "clip_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ready_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "download_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Signed link to the zip; set for ready packs when the server can sign links"
+          }
+        }
+      },
+      "ClipPackListResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClipPack"
             }
           }
         }
