@@ -143,6 +143,16 @@ Broadcasters who feature their clips get a weekly clip pack (#86): their most-vi
 - **Delivery:** the zip stays on the render host in `COUNTDOWN_PACK_DIR` (default `/var/lib/clpr-clip-packs`) for 7 days, then the worker deletes it and marks the pack `expired`. `GET /api/v1/users/me/clip-packs` lists the broadcaster's packs, and the creator dashboard shows them with a Download button. The link points at the worker's pack server (`CLIP_PACK_BASE_URL/packs/<id>.zip`), is signed with `CLIP_PACK_LINK_SECRET` (HMAC-SHA256), lasts 24 hours and never outlasts the pack. The server answers 403 for a bad or expired link and 410 for a pack that is gone.
 - **Metrics:** `clpr_clip_packs_total{outcome}` and `clpr_clip_pack_files_deleted_total`.
 
+## Weekly streamer digest
+
+Broadcasters who feature their clips get a digest email every Monday (#85): their five most-viewed clips of the past week, where their clips placed in the daily countdowns, and whether their clip pack is ready, with a button to the creator dashboard.
+
+- **Who:** a "feature my clips" opt-in, an email address, email notifications turned on (`email_enabled`, off by default), the "Weekly Streamer Digest" preference on (on by default), an email frequency other than "never", and not left out of countdowns. A broadcaster with no clips, placements or pack that week gets no email.
+- **When:** the API checks hourly and sends last week's digests from Monday 09:00 UTC, after the clip packs. It runs only with `EMAIL_ENABLED=true`. Each digest is recorded in `streamer_digest_sends` before it is sent, so it goes out at most once even with several API replicas; the row ends as `sent`, `skipped` or `failed` with the reason.
+- **Unsubscribe:** the email's "Stop the weekly digest" link turns off only the digest; Settings → Notifications has the same switch.
+- **Tracking:** the email goes through SendGrid with the category `streamer_digest`, so the SendGrid event webhook records its deliveries, opens and clicks under that template in the email metrics. It is also logged in `email_notification_logs` with the type `streamer_digest`.
+- **Turning it on:** set `EMAIL_SANDBOX_MODE=true` with `EMAIL_ENABLED=true` first, so digests are logged but not sent, and check a log line "SANDBOX MODE: Email would be sent". Then turn sandbox mode off.
+
 ## Operations
 
 Series setup, the worker deployment, metrics, alerts and what to do when they fire are in the [[../operations/runbooks/countdowns|countdowns runbook]]. The alert rules are the `clpr-countdowns` group in `monitoring/prometheus/clpr-slo-rules.yml`, with controlled-failure tests in `monitoring/prometheus/clpr-countdown-rules.test.yml` (`promtool test rules`).
@@ -174,6 +184,7 @@ An exclusion affects editions selected afterwards. Clips it covers in videos alr
 - `backend/internal/repository/countdown_controls_repository_integration_test.go`, `backend/internal/handlers/countdown_controls_handler_test.go`, `frontend/src/components/countdown/CountdownSettingsCard.test.tsx`, `frontend/src/pages/admin/AdminCountdownsPage.test.tsx` and `frontend/e2e/mocked/broadcaster-controls.spec.ts`: the self-service toggle (an admin's exclusion survives it), removal tasks for countdowns and Shorts and their resolution, the admin path for a broadcaster without an account, and the "feature my clips" grant and its removal.
 - `backend/internal/repository/countdown_stats_repository_integration_test.go`, `backend/internal/services/countdown_youtube_stats_test.go`, `frontend/src/components/countdown/CountdownPlacementsCard.test.tsx`, `frontend/src/components/countdown/CreatorConnectOffer.test.tsx` and the dashboard test in `frontend/e2e/mocked/broadcaster-controls.spec.ts`: which placements and videos the dashboard shows before and after a view-count read, missing videos, the refresher's batching, interval and pauses, the connect offer, and the card at phone width.
 - `backend/internal/repository/clip_pack_repository_integration_test.go`, `backend/internal/services/clip_pack_worker_test.go`, `backend/internal/handlers/clip_pack_handler_test.go` and `frontend/src/components/countdown/ClipPacksCard.test.tsx`: which broadcasters and clips get a pack, claiming and finishing, the zip's contents, a clip that cannot be downloaded, the week boundaries, deleting expired zips, signed links (tampered, expired, past the pack's expiry) and the pack server's answers, and the dashboard list.
+- `backend/internal/services/streamer_digest_test.go`, `backend/internal/services/streamer_digest_integration_test.go` and `frontend/src/pages/NotificationPreferencesPage.test.tsx`: the email's content and escaping, who gets a digest, sending once per week, skipped and failed digests, the digest-only unsubscribe, preference updates that leave the field out, and the settings switch.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 
 ---

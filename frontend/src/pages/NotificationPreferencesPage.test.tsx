@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { NotificationPreferencesPage, ToggleSwitch } from './NotificationPreferencesPage';
@@ -38,5 +38,20 @@ describe('notification preference switch', () => {
 
         expect(await screen.findByRole('switch', { name: 'Creator Live on Clpr' })).toBeInTheDocument();
         expect(screen.queryByRole('switch', { name: 'Stream Live' })).not.toBeInTheDocument();
+    });
+
+    it('offers the weekly streamer digest, on by default', async () => {
+        render(
+            <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+                <MemoryRouter>
+                    <NotificationPreferencesPage />
+                </MemoryRouter>
+            </QueryClientProvider>,
+        );
+
+        const digest = await screen.findByRole('switch', { name: 'Weekly Streamer Digest' });
+        expect(digest).toHaveAttribute('aria-checked', 'true');
+        fireEvent.click(digest);
+        expect(screen.getByRole('switch', { name: 'Weekly Streamer Digest' })).toHaveAttribute('aria-checked', 'false');
     });
 });

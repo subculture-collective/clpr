@@ -220,7 +220,7 @@ func (s *EmailService) SendNotificationEmail(
 }
 
 // sendViaSendGrid sends an email using SendGrid API
-func (s *EmailService) sendViaSendGrid(to, subject, htmlContent, textContent string) (string, error) {
+func (s *EmailService) sendViaSendGrid(to, subject, htmlContent, textContent string, categories ...string) (string, error) {
 	// Sandbox mode: log the email but don't actually send it
 	if s.sandboxMode {
 		s.logger.Info("SANDBOX MODE: Email would be sent", map[string]interface{}{
@@ -239,6 +239,10 @@ func (s *EmailService) sendViaSendGrid(to, subject, htmlContent, textContent str
 	toEmail := sendgridmail.NewEmail("", to)
 
 	message := sendgridmail.NewSingleEmail(from, subject, toEmail, textContent, htmlContent)
+	if len(categories) > 0 {
+		// Categories name the template in SendGrid events, for the email metrics.
+		message.AddCategories(categories...)
+	}
 	client := sendgrid.NewSendClient(s.apiKey)
 
 	response, err := client.Send(message)
@@ -337,6 +341,9 @@ func (s *EmailService) shouldSendEmailForType(prefs *models.NotificationPreferen
 		return prefs.NotifyPolicyUpdates
 	case models.NotificationTypePlatformAnnouncement:
 		return prefs.NotifyPlatformAnnouncements
+
+	case models.NotificationTypeStreamerDigest:
+		return prefs.NotifyStreamerDigest == nil || *prefs.NotifyStreamerDigest
 
 	default:
 		// For unknown types, allow the email (safer default)

@@ -944,6 +944,10 @@ type NotificationPreferences struct {
 	NotifyPolicyUpdates         bool `json:"notify_policy_updates" db:"notify_policy_updates"`
 	NotifyPlatformAnnouncements bool `json:"notify_platform_announcements" db:"notify_platform_announcements"`
 
+	// NotifyStreamerDigest is the weekly streamer digest email (#85). A
+	// request that leaves it out keeps the stored value.
+	NotifyStreamerDigest *bool `json:"notify_streamer_digest" db:"notify_streamer_digest"`
+
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
@@ -972,6 +976,8 @@ const (
 	NotificationTypeClipComment       = "clip_comment"
 	NotificationTypeClipViewThreshold = "clip_view_threshold"
 	NotificationTypeClipVoteThreshold = "clip_vote_threshold"
+	// NotificationTypeStreamerDigest is the weekly streamer digest email (#85).
+	NotificationTypeStreamerDigest = "streamer_digest"
 	// Account & Security notification types
 	NotificationTypeLoginNewDevice  = "login_new_device"
 	NotificationTypeFailedLogin     = "failed_login"
