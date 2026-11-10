@@ -15,6 +15,7 @@ last_reviewed: 2026-11-07
 **Date**: 2026-11-07
 **Decision maker**: the owner (issue #74)
 **Related issues**: #74; changes the scope of #75, #76 and #77
+**Extended by**: [ADR-003](003-transcribing-clips-for-search.md), which also allows downloading public clips to transcribe them for search
 
 ## Context
 

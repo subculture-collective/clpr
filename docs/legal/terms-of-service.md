@@ -252,7 +252,8 @@ The Service integrates with Twitch and displays content from Twitch. Your use of
 
 - **Countdown Videos:** We publish compilation videos, such as daily countdowns and Shorts, on other platforms including YouTube. To make them, we download selected public Twitch clips, edit them with rankings, captions and commentary, and credit each broadcaster with a link to their channel and the original clip. Downloaded files are deleted after the video is rendered. A broadcaster can ask to be left out of future videos, and to have an existing video edited or removed, by contacting us at [SUPPORT_EMAIL@clpr.com].
 
-- **Twitch APIs:** We get Twitch data through the official Twitch Helix API. To download clips for countdown videos we may also use the playback files Twitch's own player uses.
+- **Transcript Search:** To let you search clips by what is said in them, we download popular public Twitch clips, transcribe their speech, and delete each file right after. We keep only the text, use it for search and short snippets around a match, and never publish the clip. A broadcaster who asks to be left out of countdown videos is also left out of transcription, and the transcripts of their clips are cleared.
+- **Twitch APIs:** We get Twitch data through the official Twitch Helix API. To download clips for countdown videos and transcript search we may also use the playback files Twitch's own player uses.
 
 - **Creator Rights:** Creators retain all rights to their content. If a clip is deleted by its creator or removed from Twitch, it will no longer be available on Clipper.
 
