@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -74,6 +75,11 @@ type TwitchClipMediaFetcher struct {
 	// HelixOnly refuses the player fallback: weekly clip packs (#86) use only
 	// the broadcaster's own authorized download.
 	HelixOnly bool
+	// PadBefore and PadAfter, in seconds, extend each clip with that much of
+	// the broadcast before and after it, cut from the VOD with yt-dlp
+	// (ADR-004). Zero, the default, fetches the clip alone. A clip whose VOD
+	// is unknown or gone is fetched alone. HelixOnly ignores them.
+	PadBefore, PadAfter int
 	// Refresher, when set, renews an expired broadcaster token before the
 	// Helix download. Without it an expired token means no Helix download.
 	Refresher interface {
@@ -89,8 +95,38 @@ func (f *TwitchClipMediaFetcher) now() time.Time {
 	return time.Now()
 }
 
+// CountdownMaxPadSeconds is the most VOD padding allowed on each side of a
+// clip (ADR-004).
+const CountdownMaxPadSeconds = 30
+
+var twitchVideoIDPattern = regexp.MustCompile(`^[0-9]{1,20}$`)
+
+// vodSection returns the part of the clip's VOD to download, in seconds:
+// the clip plus the padding, cut short at the start of the broadcast.
+func vodSection(clip *models.CountdownEditionClip, before, after int) (videoID string, start, end float64, ok bool) {
+	before, after = min(max(before, 0), CountdownMaxPadSeconds), min(max(after, 0), CountdownMaxPadSeconds)
+	if before == 0 && after == 0 || clip.TwitchVideoID == nil || !twitchVideoIDPattern.MatchString(*clip.TwitchVideoID) ||
+		clip.TwitchVODOffset == nil || *clip.TwitchVODOffset < 0 || clip.Duration == nil || *clip.Duration <= 0 {
+		return "", 0, 0, false
+	}
+	offset := float64(*clip.TwitchVODOffset)
+	return *clip.TwitchVideoID, max(offset-float64(before), 0), offset + *clip.Duration + float64(after), true
+}
+
 // Fetch implements ClipMediaFetcher.
 func (f *TwitchClipMediaFetcher) Fetch(ctx context.Context, clip *models.CountdownEditionClip, dest string) (string, error) {
+	if !f.HelixOnly {
+		if videoID, start, end, ok := vodSection(clip, f.PadBefore, f.PadAfter); ok {
+			err := f.runYTDLP(ctx, "https://www.twitch.tv/videos/"+videoID, dest,
+				"--download-sections", fmt.Sprintf("*%.3f-%.3f", start, end), "--force-keyframes-at-cuts")
+			if err == nil || errors.Is(err, ErrCountdownMediaUnavailable) {
+				return models.CountdownMediaSourceVOD, err
+			}
+			utils.Warn("VOD padding failed; fetching the clip alone", map[string]interface{}{
+				"clip_id": clip.ClipID.String(), "error": err.Error(),
+			})
+		}
+	}
 	if f.Auth != nil && f.Downloads != nil && clip.BroadcasterID != nil && strings.TrimSpace(*clip.BroadcasterID) != "" {
 		broadcasterID := strings.TrimSpace(*clip.BroadcasterID)
 		auth, err := f.Auth.GetTwitchAuthByTwitchUserID(ctx, broadcasterID)
@@ -190,15 +226,21 @@ func (f *TwitchClipMediaFetcher) ytdlp(ctx context.Context, rawURL, dest string)
 	if err != nil {
 		return err
 	}
+	return f.runYTDLP(ctx, clipURL, dest)
+}
+
+// runYTDLP downloads one Twitch URL to dest with yt-dlp.
+func (f *TwitchClipMediaFetcher) runYTDLP(ctx context.Context, sourceURL, dest string, extra ...string) error {
 	path := f.YTDLPPath
 	if path == "" {
 		path = "yt-dlp"
 	}
-	cmd := exec.CommandContext(ctx, path,
+	args := append([]string{
 		"--no-config", "--no-playlist", "--no-progress", "--quiet", "--no-warnings", "--no-part",
 		"--max-filesize", strconv.Itoa(countdownMaxMediaBytes),
 		"-f", "best[ext=mp4][vcodec!=none][acodec!=none]/best[ext=mp4]/best",
-		"-o", dest, "--", clipURL)
+		"-o", dest}, extra...)
+	cmd := exec.CommandContext(ctx, path, append(args, "--", sourceURL)...)
 	output, err := cmd.CombinedOutput()
 	if toolMissing(err) {
 		return fmt.Errorf("%w: %v", ErrCountdownMediaUnavailable, err)
@@ -454,7 +496,7 @@ func (w *CountdownMediaWorker) fetchClip(ctx context.Context, edition *models.Co
 	}
 	info, err := w.Prober.Probe(ctx, temp)
 	if err == nil {
-		err = verifyCountdownMedia(clip, info)
+		err = verifyCountdownMedia(clip, source, info)
 	}
 	if err != nil {
 		_ = os.Remove(temp)
@@ -484,11 +526,16 @@ func (w *CountdownMediaWorker) fetchClip(ctx context.Context, edition *models.Co
 }
 
 // verifyCountdownMedia checks a probed file against the clip it should be.
-func verifyCountdownMedia(clip *models.CountdownEditionClip, info *MediaInfo) error {
-	if info.DurationSeconds > repository.CountdownMaxClipSeconds+5 {
+// A file cut from the VOD may be longer by up to the padding on both sides.
+func verifyCountdownMedia(clip *models.CountdownEditionClip, source string, info *MediaInfo) error {
+	padding := 0.0
+	if source == models.CountdownMediaSourceVOD {
+		padding = 2 * CountdownMaxPadSeconds
+	}
+	if info.DurationSeconds > repository.CountdownMaxClipSeconds+padding+5 {
 		return fmt.Errorf("file lasts %.1f s, longer than any eligible clip", info.DurationSeconds)
 	}
-	if clip.Duration != nil && math.Abs(info.DurationSeconds-*clip.Duration) > 2 {
+	if clip.Duration != nil && (info.DurationSeconds < *clip.Duration-2 || info.DurationSeconds > *clip.Duration+padding+2) {
 		return fmt.Errorf("file lasts %.1f s but the clip lasts %.1f s", info.DurationSeconds, *clip.Duration)
 	}
 	return nil

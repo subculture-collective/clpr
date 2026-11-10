@@ -81,7 +81,7 @@ const clips = await twitchClient.GetClips(ctx, &twitch.ClipParams{
 
 **WHY:** Violates ToS, may break without notice, security risk
 
-**Exception, countdown render host only ([ADR-002](../adr/002-media-handling-for-countdowns.md)):** the countdown downloader may use Twitch's internal player API (`gql.twitch.tv`) to get the playback file of a clip selected for an edition, through yt-dlp, and of a public clip it transcribes for search ([ADR-003](../adr/003-transcribing-clips-for-search.md)). Nothing else may call it, and it must never run with clpr's OAuth tokens.
+**Exception, countdown render host only ([ADR-002](../adr/002-media-handling-for-countdowns.md)):** the countdown downloader may use Twitch's internal player API (`gql.twitch.tv`) to get the playback file of a clip selected for an edition, through yt-dlp, with up to 30 seconds of the VOD on each side when padding is on ([ADR-004](../adr/004-padding-countdown-clips-from-the-vod.md)), and of a public clip it transcribes for search ([ADR-003](../adr/003-transcribing-clips-for-search.md)). Nothing else may call it, and it must never run with clpr's OAuth tokens.
 
 **INSTEAD:**
 - ✅ Use official Twitch Helix API only

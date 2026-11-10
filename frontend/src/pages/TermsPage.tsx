@@ -168,9 +168,10 @@ export function TermsPage() {
                 </p>
                 <p className="text-muted-foreground mt-3">
                   We also publish compilation videos, such as daily countdowns and Shorts, on platforms
-                  including YouTube. For these we download selected public clips, edit them with rankings,
-                  captions and commentary, credit each broadcaster with a link to their channel and the
-                  original clip, and delete the downloaded files after rendering. A broadcaster can ask to be
+                  including YouTube. For these we download selected public clips, sometimes with a few seconds
+                  of the broadcast before and after each clip from the broadcaster&apos;s past broadcast, edit them
+                  with rankings, captions and commentary, credit each broadcaster with a link to their channel
+                  and the original clip, and delete the downloaded files after rendering. A broadcaster can ask to be
                   left out of future videos, or to have an existing video edited or removed, using the
                   contact details in <a href="#contact" className="text-link underline">section 14</a>.
                 </p>

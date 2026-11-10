@@ -108,6 +108,10 @@ type CountdownEditionClip struct {
 	TwitchClipID    string    `json:"twitch_clip_id" db:"twitch_clip_id"`
 	TwitchClipURL   string    `json:"twitch_clip_url" db:"twitch_clip_url"`
 	Duration        *float64  `json:"duration,omitempty" db:"duration"`
+	// The clip's past broadcast and where in it the clip starts, for
+	// padding countdown media from the VOD (ADR-004). Not sent to clients.
+	TwitchVideoID   *string `json:"-" db:"twitch_video_id"`
+	TwitchVODOffset *int    `json:"-" db:"twitch_vod_offset"`
 }
 
 // CountdownEditionMedia is one fetched clip file on the render host. FileName
@@ -154,6 +158,9 @@ type CountdownRender struct {
 const (
 	CountdownMediaSourceHelix  = "helix"
 	CountdownMediaSourcePlayer = "player"
+	// CountdownMediaSourceVOD is the clip with some of the broadcast before
+	// and after it, cut from the VOD (ADR-004).
+	CountdownMediaSourceVOD = "vod"
 )
 
 // CountdownExclusion leaves a broadcaster or one clip out of future editions.

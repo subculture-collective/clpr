@@ -160,8 +160,10 @@ func (r *CountdownRepository) BackfillClip(ctx context.Context, edition *models.
 	}
 	clip := models.CountdownEditionClip{Position: remaining + 1, ClipID: next, ViewVelocity: velocity}
 	if err := tx.QueryRow(ctx, `
-		SELECT title, broadcaster_name, broadcaster_id, twitch_clip_id, twitch_clip_url, duration FROM clips WHERE id = $1`, next).
-		Scan(&clip.Title, &clip.BroadcasterName, &clip.BroadcasterID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.Duration); err != nil {
+		SELECT title, broadcaster_name, broadcaster_id, twitch_clip_id, twitch_clip_url, duration, twitch_video_id, twitch_vod_offset
+		FROM clips WHERE id = $1`, next).
+		Scan(&clip.Title, &clip.BroadcasterName, &clip.BroadcasterID, &clip.TwitchClipID, &clip.TwitchClipURL, &clip.Duration,
+			&clip.TwitchVideoID, &clip.TwitchVODOffset); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {

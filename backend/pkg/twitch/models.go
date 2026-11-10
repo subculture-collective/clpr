@@ -34,6 +34,16 @@ type Clip struct {
 	VodOffset       *int      `json:"vod_offset"`
 }
 
+// VOD returns the clip's past broadcast and offset as stored values: nil
+// when Twitch reports none.
+func (c *Clip) VOD() (*string, *int) {
+	if c.VideoID == "" {
+		return nil, nil
+	}
+	videoID := c.VideoID
+	return &videoID, c.VodOffset
+}
+
 // ClipsResponse represents the response from the clips endpoint
 type ClipsResponse struct {
 	Data       []Clip     `json:"data"`

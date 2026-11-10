@@ -396,7 +396,7 @@ func (r *CountdownRepository) listEditions(ctx context.Context, where string, ar
 
 	clipRows, err := r.pool.Query(ctx, `
 		SELECT ec.edition_id, ec.position, ec.clip_id, ec.view_velocity, c.title, c.broadcaster_name,
-		       c.broadcaster_id, c.twitch_clip_id, c.twitch_clip_url, c.duration
+		       c.broadcaster_id, c.twitch_clip_id, c.twitch_clip_url, c.duration, c.twitch_video_id, c.twitch_vod_offset
 		FROM countdown_edition_clips ec
 		JOIN clips c ON c.id = ec.clip_id
 		WHERE ec.edition_id = ANY($1)
@@ -409,7 +409,8 @@ func (r *CountdownRepository) listEditions(ctx context.Context, where string, ar
 		var editionID uuid.UUID
 		var c models.CountdownEditionClip
 		if err := clipRows.Scan(&editionID, &c.Position, &c.ClipID, &c.ViewVelocity, &c.Title,
-			&c.BroadcasterName, &c.BroadcasterID, &c.TwitchClipID, &c.TwitchClipURL, &c.Duration); err != nil {
+			&c.BroadcasterName, &c.BroadcasterID, &c.TwitchClipID, &c.TwitchClipURL, &c.Duration,
+			&c.TwitchVideoID, &c.TwitchVODOffset); err != nil {
 			return nil, err
 		}
 		e := &editions[index[editionID]]

@@ -83,8 +83,8 @@ func TestClipRepository_Create_IncludesSourceFields(t *testing.T) {
 	if !strings.Contains(pool.query, "source_type") || !strings.Contains(pool.query, "video_url") {
 		t.Fatalf("query missing source/upload columns: %s", pool.query)
 	}
-	if got := len(pool.args); got != 47 {
-		t.Fatalf("args len = %d, want 47", got)
+	if got := len(pool.args); got != 49 {
+		t.Fatalf("args len = %d, want 49", got)
 	}
 	if pool.args[7] != clip.CreatorAccountID {
 		t.Fatalf("creator_account_id arg = %v, want %v", pool.args[7], clip.CreatorAccountID)

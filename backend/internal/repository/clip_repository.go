@@ -212,11 +212,12 @@ func (r *ClipRepository) Create(ctx context.Context, clip *models.Clip) error {
 			source_type, source_platform, source_url, source_id, source_metadata,
 			duration_seconds, duration_verified, storage_provider, storage_bucket, storage_key,
 			original_filename, mime_type, file_size_bytes,
-			stream_source, status, video_url, processed_at, quality, start_time, end_time
+			stream_source, status, video_url, processed_at, quality, start_time, end_time,
+			twitch_video_id, twitch_vod_offset
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
 			$19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
-			$33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47
+			$33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49
 		)
 	`
 
@@ -232,6 +233,7 @@ func (r *ClipRepository) Create(ctx context.Context, clip *models.Clip) error {
 		clip.DurationSeconds, clip.DurationVerified, clip.StorageProvider, clip.StorageBucket, clip.StorageKey,
 		clip.OriginalFilename, clip.MimeType, clip.FileSizeBytes,
 		clip.StreamSource, clip.Status, clip.VideoURL, clip.ProcessedAt, clip.Quality, clip.StartTime, clip.EndTime,
+		clip.TwitchVideoID, clip.TwitchVODOffset,
 	)
 
 	if err != nil {
@@ -252,12 +254,14 @@ func (r *ClipRepository) PublishAutomatedClip(ctx context.Context, clip *models.
 			game_id, game_name, language, thumbnail_url, duration,
 			view_count, created_at, imported_at, vote_score, comment_count, favorite_count,
 			is_featured, is_nsfw, is_removed, is_hidden,
-			submitted_by_user_id, submitted_at
+			submitted_by_user_id, submitted_at, twitch_video_id, twitch_vod_offset
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-			$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
+			$14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
 		)
 		ON CONFLICT (twitch_clip_id) DO UPDATE SET
+			twitch_video_id = EXCLUDED.twitch_video_id,
+			twitch_vod_offset = EXCLUDED.twitch_vod_offset,
 			twitch_clip_url = EXCLUDED.twitch_clip_url,
 			embed_url = EXCLUDED.embed_url,
 			title = CASE WHEN clips.title_source = 'twitch' THEN EXCLUDED.title ELSE clips.title END,
@@ -298,7 +302,7 @@ func (r *ClipRepository) PublishAutomatedClip(ctx context.Context, clip *models.
 		clip.ThumbnailURL, clip.Duration, clip.ViewCount, clip.CreatedAt,
 		clip.ImportedAt, clip.VoteScore, clip.CommentCount, clip.FavoriteCount,
 		clip.IsFeatured, clip.IsNSFW, clip.IsRemoved, clip.IsHidden,
-		clip.SubmittedByUserID, clip.SubmittedAt,
+		clip.SubmittedByUserID, clip.SubmittedAt, clip.TwitchVideoID, clip.TwitchVODOffset,
 	).Scan(&id, &inserted)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to publish automated clip: %w", err)
@@ -420,7 +424,7 @@ func (r *ClipRepository) GetByTwitchClipIDs(ctx context.Context, twitchClipIDs [
 }
 
 // UpdateViewCount updates the view count for a clip
-func (r *ClipRepository) UpdateViewCount(ctx context.Context, twitchClipID string, viewCount int) error {
+func (r *ClipRepository) UpdateViewCount(ctx context.Context, twitchClipID string, viewCount int, videoID *string, vodOffset *int) error {
 	query := `
 		UPDATE clips
 		SET
@@ -439,11 +443,13 @@ func (r *ClipRepository) UpdateViewCount(ctx context.Context, twitchClipID strin
 				ELSE view_count_observed_at
 			END,
 			view_count = GREATEST(view_count, $2),
-			twitch_view_count_raw = $2
+			twitch_view_count_raw = $2,
+			twitch_video_id = $3,
+			twitch_vod_offset = $4
 		WHERE twitch_clip_id = $1
 	`
 
-	_, err := r.pool.Exec(ctx, query, twitchClipID, viewCount)
+	_, err := r.pool.Exec(ctx, query, twitchClipID, viewCount, videoID, vodOffset)
 	if err != nil {
 		return fmt.Errorf("failed to update view count: %w", err)
 	}

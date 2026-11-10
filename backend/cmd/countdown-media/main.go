@@ -111,6 +111,9 @@ func run() error {
 	}
 
 	fetcher := &services.TwitchClipMediaFetcher{YTDLPPath: envString("YTDLP_PATH", "yt-dlp")}
+	// Optional padding from the VOD around each countdown clip (ADR-004).
+	fetcher.PadBefore = min(envInt("COUNTDOWN_VOD_PAD_BEFORE_SECONDS", 0), services.CountdownMaxPadSeconds)
+	fetcher.PadAfter = min(envInt("COUNTDOWN_VOD_PAD_AFTER_SECONDS", 0), services.CountdownMaxPadSeconds)
 	if cfg.Twitch.ClientID != "" {
 		// Helix is used only for broadcasters who granted channel:manage:clips.
 		authRepo := repository.NewTwitchAuthRepository(db.Pool)
@@ -177,9 +180,13 @@ func run() error {
 	// (ADR-003): each file is deleted as soon as it is transcribed.
 	var searchTranscripts *services.SearchTranscriptionWorker
 	if renders.Captioner != nil && os.Getenv("SEARCH_TRANSCRIPTS") != "off" {
+		// Search transcripts cover the clip alone, so the snippet matches
+		// what the embedded clip plays.
+		clipOnly := *fetcher
+		clipOnly.PadBefore, clipOnly.PadAfter = 0, 0
 		searchTranscripts = &services.SearchTranscriptionWorker{
 			Store:      repository.NewSearchTranscriptionRepository(db.Pool),
-			Fetcher:    fetcher,
+			Fetcher:    &clipOnly,
 			Prober:     prober,
 			Captioner:  renders.Captioner,
 			Dir:        dir,
@@ -253,6 +260,7 @@ func run() error {
 	utils.Info("Countdown media worker started", map[string]interface{}{
 		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
+		"vod_pad_before": fetcher.PadBefore, "vod_pad_after": fetcher.PadAfter,
 		"captions": renders.Captioner != nil, "transcripts": renders.Transcripts != nil,
 		"youtube": publisher != nil, "youtube_privacy": privacy,
 		"clip_packs": packs != nil, "search_transcripts": searchTranscripts != nil,

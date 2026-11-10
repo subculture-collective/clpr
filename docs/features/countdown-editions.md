@@ -63,6 +63,10 @@ The streamer's weekly clip pack also starts with the clips they approved in thei
 
 The `countdown-media` worker (`backend/cmd/countdown-media`, built from `backend/Dockerfile.render`) fetches the clips of each edition onto the render host. It claims the oldest `selected` edition and moves it to `fetching`, fetches and verifies every clip, and then moves it to `fetched`, or to `failed` with the reason. A claim left in `fetching` for an hour, for example by a worker that died, is taken again. [[../compliance/twitch-api-usage#countdown-media|Twitch API usage]] describes the two sources and the checks.
 
+### Padding from the VOD
+
+[[../adr/004-padding-countdown-clips-from-the-vod|ADR-004]] allows each clip to be extended with some of the broadcast around it. The importer stores the clip's VOD and offset from Helix (`clips.twitch_video_id`, `clips.twitch_vod_offset`) and refreshes them each time the crawler sees the clip again. With `COUNTDOWN_VOD_PAD_BEFORE_SECONDS` or `COUNTDOWN_VOD_PAD_AFTER_SECONDS` set, the worker downloads the clip plus that many seconds before and after it from the VOD (`yt-dlp --download-sections --force-keyframes-at-cuts`) and records the source as `vod`. Padding stops at the start of the broadcast. A clip without a known VOD and offset, or whose VOD download fails, is fetched alone. A padded file passes verification when it lasts at least as long as the clip and at most the clip plus 60 seconds. Search transcripts and weekly clip packs are never padded.
+
 When a clip cannot be fetched or fails verification, it is recorded in `countdown_edition_skips`, the clips below it move up one place, and the next eligible clip is appended, still under the per-broadcaster cap. A skipped clip is left out of every edition that day. After three skips in one edition the worker gives up and fails it, because that many usually means the source changed.
 
 Files live in the worker's volume (`COUNTDOWN_MEDIA_DIR`, default `/var/lib/clpr-countdown-media`). Each cycle deletes files fetched more than 24 hours ago (`COUNTDOWN_MEDIA_RETENTION_HOURS`, at most 24), the files of failed editions, and any leftover file older than that. `countdown_edition_media` keeps the source, SHA-256, size, duration and frame size of each file, and when it was deleted.
@@ -73,6 +77,7 @@ Files live in the worker's volume (`COUNTDOWN_MEDIA_DIR`, default `/var/lib/clpr
 | `COUNTDOWN_MEDIA_INTERVAL_SECONDS` | 60 |
 | `COUNTDOWN_MEDIA_RETENTION_HOURS` | 24 (the maximum) |
 | `YTDLP_PATH`, `FFPROBE_PATH` | `yt-dlp`, `ffprobe` |
+| `COUNTDOWN_VOD_PAD_BEFORE_SECONDS`, `COUNTDOWN_VOD_PAD_AFTER_SECONDS` | 0 (off); at most 30 each |
 | `COUNTDOWN_MEDIA_METRICS_ADDR` | `:9464`; `off` disables `/metrics` and `/healthz` |
 | `COUNTDOWN_RENDER_DIR` | `/var/lib/clpr-countdown-renders` |
 | `COUNTDOWN_RENDER_RETENTION_DAYS` | 7 |
@@ -189,7 +194,8 @@ An exclusion affects editions selected afterwards. Clips it covers in videos alr
 - `backend/internal/repository/countdown_repository_integration_test.go`: every eligibility rule, ranking, the per-broadcaster cap, cross-series dedupe for the day, short editions stored as failed, reselection and exclusions, against a migrated database.
 - `backend/internal/services/countdown_service_test.go`: due dates and windows, skipped series, input validation.
 - `backend/internal/repository/countdown_media_repository_integration_test.go`: claiming, reclaiming a stale claim, backfill with the cap and the position shift, skips across series, recording media, and deletion.
-- `backend/internal/services/countdown_media_test.go`: the worker's fetch, backfill, give-up and failure paths, the 24-hour sweep, ffprobe parsing, the Twitch URL check, and source choice between Helix and yt-dlp.
+- `backend/internal/services/countdown_media_test.go`: the worker's fetch, backfill, give-up and failure paths, the 24-hour sweep, ffprobe parsing, the Twitch URL check, source choice between Helix and yt-dlp, and VOD padding: the section, the yt-dlp arguments, the fallback to the clip alone and the length check.
+- `backend/internal/repository/clip_repository_test.go` (`TestClipRepository_StoresTheClipVOD`): the VOD ID and offset stored at import and updated on refresh, including when the VOD is deleted.
 - `backend/internal/countdownrender/render_test.go`: golden frames of the countdown (cards, clips with and without the lower third, a portrait clip, the outro), both Shorts, a captioned Short (shown while its words are spoken, gone after) and the thumbnail; stream formats and durations; byte-identical output across runs; and, with `COUNTDOWN_RENDER_TIMING=1`, a full-size timing run. These tests need ffmpeg and the fonts, so `backend/Dockerfile.render` runs them while building the image. To regenerate the goldens, run the test binary in the image's `runtime` stage with `UPDATE_GOLDEN=1` and the source `testdata` directory mounted.
 - `backend/internal/countdownrender/text_test.go` and `backend/internal/services/countdown_captions_test.go`: grouping words into caption lines; keeping only confident English speech; Shorts rendered without captions when transcription fails.
 - `backend/internal/repository/countdown_render_repository_integration_test.go` and `backend/internal/services/countdown_render_worker_test.go`: claiming, recording and finishing renders, source deletion on success and failure, missing media, shutdown, and the render sweep.
