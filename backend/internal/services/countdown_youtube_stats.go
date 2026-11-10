@@ -84,7 +84,9 @@ func (r *CountdownStatsRefresher) RunOnce(ctx context.Context) error {
 		stats := make([]models.CountdownVideoStats, 0, len(found))
 		var missing []string
 		for _, id := range batch {
-			if s, ok := found[id]; ok {
+			// A video YouTube rejected, failed to process or deleted cannot
+			// be watched, so it counts as missing.
+			if s, ok := found[id]; ok && s.UploadStatus != "rejected" && s.UploadStatus != "failed" && s.UploadStatus != "deleted" {
 				stats = append(stats, models.CountdownVideoStats{YouTubeVideoID: id, ViewCount: s.ViewCount, PrivacyStatus: s.PrivacyStatus})
 			} else {
 				missing = append(missing, id)

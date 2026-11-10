@@ -88,7 +88,7 @@ type ClipPackWorker struct {
 	// PerPack is the most clips in a pack; default 10.
 	PerPack int
 	// ReadyHourUTC is the hour on Monday from which last week's packs are
-	// made; default 6.
+	// made; 0 means the default, 6.
 	ReadyHourUTC int
 	Metrics      *ClipPackMetrics
 	Now          func() time.Time
@@ -116,7 +116,11 @@ func (w *ClipPackWorker) lastWeek(now time.Time) time.Time {
 	now = now.UTC()
 	day := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	monday := day.AddDate(0, 0, -((int(day.Weekday()) + 6) % 7))
-	if now.Before(monday.Add(time.Duration(w.ReadyHourUTC) * time.Hour)) {
+	hour := w.ReadyHourUTC
+	if hour <= 0 || hour > 23 {
+		hour = 6
+	}
+	if now.Before(monday.Add(time.Duration(hour) * time.Hour)) {
 		monday = monday.AddDate(0, 0, -7)
 	}
 	return monday.AddDate(0, 0, -7)
@@ -124,7 +128,8 @@ func (w *ClipPackWorker) lastWeek(now time.Time) time.Time {
 
 // RunOnce deletes expired zips, makes last week's packs (at most once an
 // hour, so a broadcaster who opts in later in the week still gets one), and
-// builds every pending pack.
+// builds one pending pack. One a cycle keeps a Monday of packs from holding
+// up the day's countdown editions in the same worker.
 func (w *ClipPackWorker) RunOnce(ctx context.Context) error {
 	errs := []error{w.Sweep(ctx)}
 	if now := w.now(); !now.Before(w.lastEnsure.Add(time.Hour)) {
@@ -143,12 +148,8 @@ func (w *ClipPackWorker) RunOnce(ctx context.Context) error {
 			}
 		}
 	}
-	for {
-		built, err := w.BuildNext(ctx)
-		if err != nil || !built {
-			return errors.Join(append(errs, err)...)
-		}
-	}
+	_, err := w.BuildNext(ctx)
+	return errors.Join(append(errs, err)...)
 }
 
 // BuildNext claims one pending pack and builds it. It reports whether a pack
@@ -168,6 +169,9 @@ func (w *ClipPackWorker) BuildNext(ctx context.Context) (bool, error) {
 	}
 	var finishErr error
 	if err != nil {
+		// A partial zip from this or an earlier attempt must not outlive the
+		// pack, and a failed pack is never swept.
+		_ = os.RemoveAll(filepath.Join(w.PackDir, pack.ID.String()))
 		fields["reason"] = err.Error()
 		utils.Warn("Clip pack failed", fields)
 		w.Metrics.Packs.WithLabelValues("failed").Inc()
@@ -222,6 +226,9 @@ func (w *ClipPackWorker) build(ctx context.Context, pack *models.ClipPack) (name
 		rank := len(clips) + 1
 		clips = append(clips, countdownrender.Clip{Rank: rank, Path: path, Title: c.Title, Broadcaster: c.BroadcasterName})
 		fmt.Fprintf(&credits, "%02d. %s (%d views)\n    %s\n", rank, c.Title, c.ViewCount, c.TwitchClipURL)
+	}
+	if len(pack.Clips) == 0 {
+		return "", "", 0, 0, errors.New("no clip of the week may still go in the pack")
 	}
 	if len(clips) == 0 {
 		return "", "", 0, 0, errors.New("no clip of the week could be downloaded")

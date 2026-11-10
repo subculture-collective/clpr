@@ -111,7 +111,7 @@ func (s *ClipPackServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the pack could not be loaded", http.StatusInternalServerError)
 		return
 	}
-	if file == nil || file.Status != models.ClipPackReady || file.Deleted || file.FileName == "" ||
+	if file == nil || file.Status != models.ClipPackReady || file.Deleted || file.Withdrawn || file.FileName == "" ||
 		file.ExpiresAt == nil || !now.Before(*file.ExpiresAt) {
 		http.Error(w, "this pack is no longer available", http.StatusGone)
 		return

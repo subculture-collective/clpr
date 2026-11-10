@@ -13769,6 +13769,7 @@ components:
         ready_at: {type: string, format: date-time}
         expires_at: {type: string, format: date-time}
         download_url: {type: string, format: uri, description: Signed link to the zip; set for ready packs when the server can sign links}
+        withdrawn: {type: boolean, description: 'A clip in the pack was removed or excluded, or the broadcaster stopped featuring their clips; the pack is no longer served'}
 
     ClipPackListResponse:
       type: object

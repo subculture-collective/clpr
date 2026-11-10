@@ -12,6 +12,8 @@ export interface ClipPack {
   ready_at?: string;
   expires_at?: string;
   download_url?: string;
+  /** No longer served: a clip in it was removed, or the broadcaster stopped featuring their clips. */
+  withdrawn?: boolean;
 }
 
 export const clipPackApi = {

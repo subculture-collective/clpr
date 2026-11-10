@@ -99,6 +99,20 @@ func TestClipPackLifecycle(t *testing.T) {
 		t.Fatalf("alpha packs = %+v, %v", packs, err)
 	}
 
+	// A clip taken down after the pack was made withdraws the pack.
+	if _, err := pool.Exec(ctx, `UPDATE clips SET dmca_removed = true WHERE id = $1`, ids["a-top"]); err != nil {
+		t.Fatal(err)
+	}
+	if file, _ := repo.PackFile(ctx, pack.ID); file == nil || !file.Withdrawn {
+		t.Fatalf("pack with a removed clip = %+v", file)
+	}
+	if packs, _ := repo.ListBroadcasterPacks(ctx, "alpha", 10); len(packs) != 1 || !packs[0].Withdrawn {
+		t.Fatalf("listed pack with a removed clip = %+v", packs)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE clips SET dmca_removed = false WHERE id = $1`, ids["a-top"]); err != nil {
+		t.Fatal(err)
+	}
+
 	if due, err := repo.ListPacksToDelete(ctx, time.Now()); err != nil || len(due) != 0 {
 		t.Fatalf("due before expiry = %+v, %v", due, err)
 	}
@@ -114,5 +128,47 @@ func TestClipPackLifecycle(t *testing.T) {
 	}
 	if due, err := repo.ListPacksToDelete(ctx, expires.Add(time.Minute)); err != nil || len(due) != 0 {
 		t.Fatalf("due after deletion = %+v, %v", due, err)
+	}
+}
+
+func TestClipPackClaimRechecksEligibility(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clip_packs", "countdown_exclusions", "broadcaster_feature_optins", "clips", "users")
+	ctx := context.Background()
+	repo := NewCountdownRepository(pool)
+
+	weekStart := time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC)
+	ids := insertCountdownClips(t, pool, weekStart.AddDate(0, 0, 7), []countdownClip{
+		{name: "kept", broadcaster: "alpha", velocity: 1, duration: 30, age: 24 * time.Hour},
+		{name: "hidden-later", broadcaster: "alpha", velocity: 1, duration: 30, age: 48 * time.Hour},
+	})
+	userID := uuid.New()
+	if _, err := pool.Exec(ctx, `INSERT INTO users (id, twitch_id, username, display_name, role, account_type)
+		VALUES ($1, 'alpha', 'alpha', 'alpha', 'user', 'member')`, userID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO broadcaster_feature_optins (broadcaster_id, user_id, scope, consent_text_version)
+		VALUES ('alpha', $1, 'channel:manage:clips', '2026-11-07')`, userID); err != nil {
+		t.Fatal(err)
+	}
+	if created, err := repo.EnsureWeeklyPacks(ctx, weekStart, 10); err != nil || created != 1 {
+		t.Fatalf("created = %d, %v", created, err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE clips SET is_hidden = true WHERE id = $1`, ids["hidden-later"]); err != nil {
+		t.Fatal(err)
+	}
+	pack, err := repo.ClaimPackForBuild(ctx, time.Hour)
+	if err != nil || pack == nil || len(pack.Clips) != 1 || pack.Clips[0].ClipID != ids["kept"] {
+		t.Fatalf("claimed = %+v, %v", pack, err)
+	}
+
+	// A broadcaster who stopped featuring their clips gets an empty claim.
+	if _, err := pool.Exec(ctx, `DELETE FROM broadcaster_feature_optins`); err != nil {
+		t.Fatal(err)
+	}
+	pack, err = repo.ClaimPackForBuild(ctx, 0)
+	if err != nil || pack == nil || len(pack.Clips) != 0 {
+		t.Fatalf("claim after opting out = %+v, %v", pack, err)
 	}
 }
