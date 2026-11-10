@@ -136,7 +136,7 @@ func TestClipRepository_UpdateViewCountRecordsVelocity(t *testing.T) {
 		t.Fatalf("arrange prior observation: %v", err)
 	}
 
-	if err := repo.UpdateViewCount(ctx, clip.TwitchClipID, 200); err != nil {
+	if err := repo.UpdateViewCount(ctx, clip.TwitchClipID, 200, nil, nil); err != nil {
 		t.Fatalf("update view count: %v", err)
 	}
 
@@ -188,6 +188,69 @@ func TestClipRepository_PublishAutomatedClipRecordsVelocity(t *testing.T) {
 	}
 	if velocity < 49 || velocity > 51 {
 		t.Fatalf("view velocity = %.2f, want approximately 50 views/hour", velocity)
+	}
+}
+
+func TestClipRepository_StoresTheClipVOD(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	defer testutil.CleanupTestDB(t, pool)
+	testutil.TruncateTables(t, pool, "clips")
+
+	repo := NewClipRepository(pool)
+	ctx := context.Background()
+	readVOD := func(id uuid.UUID) (*string, *int) {
+		t.Helper()
+		var video *string
+		var offset *int
+		if err := pool.QueryRow(ctx, `SELECT twitch_video_id, twitch_vod_offset FROM clips WHERE id = $1`, id).Scan(&video, &offset); err != nil {
+			t.Fatal(err)
+		}
+		return video, offset
+	}
+	clip := &models.Clip{
+		ID: uuid.New(), TwitchClipID: "vod-" + uuid.NewString(),
+		TwitchClipURL: "https://clips.twitch.tv/vod", EmbedURL: "https://clips.twitch.tv/embed?clip=vod",
+		Title: "VOD", CreatorName: "creator", BroadcasterName: "broadcaster",
+		ViewCount: 100, CreatedAt: time.Now().Add(-time.Hour), ImportedAt: time.Now(),
+	}
+	// Imported before Twitch processed the VOD: the offset is unknown.
+	video := "2280000001"
+	clip.TwitchVideoID = &video
+	if _, _, err := repo.PublishAutomatedClip(ctx, clip); err != nil {
+		t.Fatal(err)
+	}
+	if v, o := readVOD(clip.ID); v == nil || *v != video || o != nil {
+		t.Fatalf("after import: %v %v", v, o)
+	}
+	// A later refresh fills in the offset.
+	offset := 3725
+	clip.TwitchVODOffset = &offset
+	if _, _, err := repo.PublishAutomatedClip(ctx, clip); err != nil {
+		t.Fatal(err)
+	}
+	if v, o := readVOD(clip.ID); v == nil || o == nil || *o != offset {
+		t.Fatalf("after refresh: %v %v", v, o)
+	}
+	// Once the VOD is deleted, Twitch reports neither.
+	if err := repo.UpdateViewCount(ctx, clip.TwitchClipID, 150, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if v, o := readVOD(clip.ID); v != nil || o != nil {
+		t.Fatalf("after the VOD is gone: %v %v", v, o)
+	}
+
+	created := &models.Clip{
+		ID: uuid.New(), TwitchClipID: "vod-created-" + uuid.NewString(),
+		TwitchClipURL: "https://clips.twitch.tv/vod-created", EmbedURL: "https://clips.twitch.tv/embed?clip=vod-created",
+		Title: "VOD created", CreatorName: "creator", BroadcasterName: "broadcaster",
+		ViewCount: 10, CreatedAt: time.Now().Add(-time.Hour), ImportedAt: time.Now(),
+		TwitchVideoID: &video, TwitchVODOffset: &offset,
+	}
+	if err := repo.Create(ctx, created); err != nil {
+		t.Fatal(err)
+	}
+	if v, o := readVOD(created.ID); v == nil || o == nil || *v != video || *o != offset {
+		t.Fatalf("after create: %v %v", v, o)
 	}
 }
 

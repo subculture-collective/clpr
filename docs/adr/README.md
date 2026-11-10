@@ -35,6 +35,7 @@ Each ADR follows this structure:
 | [ADR-001](./001-semantic-search-vector-db.md) | Semantic Search Vector Database Selection | Accepted | 2025-11-03 |
 | [ADR-002](./002-media-handling-for-countdowns.md) | Media handling for countdown videos and Shorts | Accepted on merge | 2026-11-07 |
 | [ADR-003](./003-transcribing-clips-for-search.md) | Transcribing public clips for search (extends ADR-002) | Accepted on merge | 2026-11-10 |
+| [ADR-004](./004-padding-countdown-clips-from-the-vod.md) | Padding countdown clips from the VOD (extends ADR-002) | Accepted on merge | 2026-11-10 |
 
 ## Creating a New ADR
 

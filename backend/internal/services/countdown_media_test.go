@@ -375,3 +375,96 @@ func TestTwitchClipMediaFetcherSources(t *testing.T) {
 		t.Fatalf("missing yt-dlp err = %v", err)
 	}
 }
+
+func TestVODSection(t *testing.T) {
+	video, offset, duration := "2280000001", 100, 20.0
+	clip := &models.CountdownEditionClip{TwitchVideoID: &video, TwitchVODOffset: &offset, Duration: &duration}
+	if id, start, end, ok := vodSection(clip, 10, 5); !ok || id != video || start != 90 || end != 125 {
+		t.Fatalf("section = %s %v-%v %v", id, start, end, ok)
+	}
+	// Padding stops at the start of the broadcast and at the cap.
+	early := 4
+	clip.TwitchVODOffset = &early
+	if _, start, end, ok := vodSection(clip, 10, 100); !ok || start != 0 || end != 4+20+CountdownMaxPadSeconds {
+		t.Fatalf("early section = %v-%v %v", start, end, ok)
+	}
+	clip.TwitchVODOffset = &offset
+	bad := "../1"
+	for name, c := range map[string]*models.CountdownEditionClip{
+		"no padding":   clip,
+		"no VOD":       {TwitchVODOffset: &offset, Duration: &duration},
+		"no offset":    {TwitchVideoID: &video, Duration: &duration},
+		"odd video ID": {TwitchVideoID: &bad, TwitchVODOffset: &offset, Duration: &duration},
+		"no duration":  {TwitchVideoID: &video, TwitchVODOffset: &offset},
+	} {
+		before := 10
+		if name == "no padding" {
+			before = 0
+		}
+		if _, _, _, ok := vodSection(c, before, 0); ok {
+			t.Fatalf("%s: padded", name)
+		}
+	}
+}
+
+func TestTwitchClipMediaFetcherPadsFromTheVOD(t *testing.T) {
+	ytdlp, argsFile := fakeYTDLP(t)
+	video, offset, duration := "2280000001", 100, 20.0
+	clip := &models.CountdownEditionClip{ClipID: uuid.New(), TwitchClipID: "BraveSlug", TwitchClipURL: "https://clips.twitch.tv/BraveSlug",
+		TwitchVideoID: &video, TwitchVODOffset: &offset, Duration: &duration}
+	fetcher := &TwitchClipMediaFetcher{YTDLPPath: ytdlp, PadBefore: 10, PadAfter: 5}
+	source, err := fetcher.Fetch(context.Background(), clip, filepath.Join(t.TempDir(), "clip.mp4"))
+	if err != nil || source != models.CountdownMediaSourceVOD {
+		t.Fatalf("source %q, err %v", source, err)
+	}
+	args, _ := os.ReadFile(argsFile)
+	if !strings.Contains(string(args), "--download-sections\n*90.000-125.000\n--force-keyframes-at-cuts\n") ||
+		!strings.HasSuffix(string(args), "--\nhttps://www.twitch.tv/videos/2280000001\n") {
+		t.Fatalf("yt-dlp args = %q", args)
+	}
+
+	// Clip packs never pad.
+	_ = os.Remove(argsFile)
+	packs := *fetcher
+	packs.HelixOnly = true
+	if _, err := packs.Fetch(context.Background(), clip, filepath.Join(t.TempDir(), "clip.mp4")); err == nil {
+		t.Fatal("Helix-only fetch without authorization succeeded")
+	}
+	if _, err := os.ReadFile(argsFile); err == nil {
+		t.Fatal("Helix-only fetch ran yt-dlp")
+	}
+
+	// A VOD that cannot be downloaded falls back to the clip alone.
+	dir := t.TempDir()
+	script := "#!/bin/sh\ncase \"$*\" in *videos*) echo 'VOD is gone' >&2; exit 1;; esac\n" +
+		"while [ $# -gt 0 ]; do if [ \"$1\" = -o ]; then printf player > \"$2\"; fi; shift; done\n"
+	failing := filepath.Join(dir, "yt-dlp")
+	if err := os.WriteFile(failing, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	fetcher.YTDLPPath = failing
+	if source, err := fetcher.Fetch(context.Background(), clip, filepath.Join(dir, "clip.mp4")); err != nil || source != models.CountdownMediaSourcePlayer {
+		t.Fatalf("fallback source %q, err %v", source, err)
+	}
+}
+
+func TestVerifyCountdownMediaAllowsVODPadding(t *testing.T) {
+	duration := 20.0
+	clip := &models.CountdownEditionClip{Duration: &duration}
+	for _, tc := range []struct {
+		source string
+		file   float64
+		ok     bool
+	}{
+		{models.CountdownMediaSourcePlayer, 21, true},
+		{models.CountdownMediaSourcePlayer, 35, false},
+		{models.CountdownMediaSourceVOD, 35, true},
+		{models.CountdownMediaSourceVOD, 20 + 2*CountdownMaxPadSeconds + 3, false},
+		{models.CountdownMediaSourceVOD, 15, false},
+	} {
+		err := verifyCountdownMedia(clip, tc.source, &MediaInfo{DurationSeconds: tc.file})
+		if (err == nil) != tc.ok {
+			t.Fatalf("%s %v s: err %v", tc.source, tc.file, err)
+		}
+	}
+}

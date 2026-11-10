@@ -48,7 +48,7 @@ func (p *TwitchClipPublisher) Publish(ctx context.Context, twitchClip *twitch.Cl
 }
 
 func clipModelFromTwitch(twitchClip *twitch.Clip) *models.Clip {
-	return &models.Clip{
+	clip := &models.Clip{
 		ID:              uuid.New(),
 		TwitchClipID:    twitchClip.ID,
 		TwitchClipURL:   twitchClip.URL,
@@ -66,4 +66,6 @@ func clipModelFromTwitch(twitchClip *twitch.Clip) *models.Clip {
 		CreatedAt:       twitchClip.CreatedAt,
 		ImportedAt:      time.Now(),
 	}
+	clip.TwitchVideoID, clip.TwitchVODOffset = twitchClip.VOD()
+	return clip
 }

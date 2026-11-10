@@ -900,7 +900,8 @@ func (s *ClipSyncService) processClipAsPosted(ctx context.Context, twitchClip *t
 
 	if existing != nil {
 		// Update view count
-		if err := s.clipRepo.UpdateViewCount(ctx, twitchClip.ID, twitchClip.ViewCount); err != nil {
+		videoID, offset := twitchClip.VOD()
+		if err := s.clipRepo.UpdateViewCount(ctx, twitchClip.ID, twitchClip.ViewCount, videoID, offset); err != nil {
 			return fmt.Errorf("failed to update view count: %w", err)
 		}
 
@@ -952,7 +953,7 @@ func (s *ClipSyncService) processClipAsPosted(ctx context.Context, twitchClip *t
 
 // transformTwitchClip converts a Twitch API clip to our database model
 func transformTwitchClip(twitchClip *twitch.Clip) *models.Clip {
-	return &models.Clip{
+	clip := &models.Clip{
 		ID:              uuid.New(),
 		TwitchClipID:    twitchClip.ID,
 		TwitchClipURL:   twitchClip.URL,
@@ -978,6 +979,8 @@ func transformTwitchClip(twitchClip *twitch.Clip) *models.Clip {
 		IsRemoved:       false,
 		RemovedReason:   nil,
 	}
+	clip.TwitchVideoID, clip.TwitchVODOffset = twitchClip.VOD()
+	return clip
 }
 
 // ensureUnclaimedUser creates an unclaimed user account if one doesn't exist for the given Twitch ID

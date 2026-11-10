@@ -138,9 +138,17 @@ in the API process. For each selected edition it fetches every clip
   player API (`gql.twitch.tv`), using yt-dlp's own client settings. clpr's
   client ID and tokens are never sent to that API. This is the only use of
   the internal API.
+- **The VOD, when padding is on** ([ADR-004](../adr/004-padding-countdown-clips-from-the-vod.md)).
+  With `COUNTDOWN_VOD_PAD_BEFORE_SECONDS` or `COUNTDOWN_VOD_PAD_AFTER_SECONDS`
+  set (both 0 by default, at most 30), it runs yt-dlp on
+  `https://www.twitch.tv/videos/<video_id>` with `--download-sections` to cut
+  the clip plus that many seconds before and after it from the past
+  broadcast, through the same player API. `video_id` and `vod_offset` come
+  from Helix `GET /clips`, stored when the clip is imported or refreshed. A
+  clip whose VOD is unknown or cannot be downloaded is fetched alone.
 
 Each file is checked with ffprobe (a video stream, and a duration within 2 s
-of the clip's), hashed with SHA-256 and recorded in
+of the clip's, or for a padded file between the clip's and the clip's plus 60 s), hashed with SHA-256 and recorded in
 `countdown_edition_media`. A clip that fails is skipped and the next eligible
 clip takes its place; after three skips in one edition, or if yt-dlp or
 ffprobe is missing, the edition is marked failed instead of going out short.
