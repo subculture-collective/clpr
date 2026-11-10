@@ -39,6 +39,8 @@ type StreamerDigestClip struct {
 }
 
 // Empty reports whether there is nothing to tell the broadcaster this week.
+// A pack that failed or expired is not news on its own.
 func (d *StreamerDigest) Empty() bool {
-	return len(d.TopClips) == 0 && len(d.Placements) == 0 && d.PackStatus == ""
+	packNews := d.PackStatus == ClipPackReady || d.PackStatus == ClipPackPending || d.PackStatus == ClipPackBuilding
+	return len(d.TopClips) == 0 && len(d.Placements) == 0 && !packNews
 }

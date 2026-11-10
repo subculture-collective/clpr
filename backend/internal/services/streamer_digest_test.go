@@ -151,3 +151,12 @@ func TestSendStreamerDigestNeedsEmail(t *testing.T) {
 		t.Fatalf("disabled email = %v", err)
 	}
 }
+
+func TestStreamerDigestEmptyIgnoresFailedPacks(t *testing.T) {
+	for status, empty := range map[string]bool{"": true, models.ClipPackFailed: true, models.ClipPackExpired: true,
+		models.ClipPackReady: false, models.ClipPackPending: false} {
+		if got := (&models.StreamerDigest{PackStatus: status}).Empty(); got != empty {
+			t.Errorf("pack %q: Empty() = %v, want %v", status, got, empty)
+		}
+	}
+}
