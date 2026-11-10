@@ -1,0 +1,29 @@
+name: Auto-merge
+
+# Turns on GitHub auto-merge for each ready pull request opened from a branch of
+# this repository. GitHub then merges it once the checks that branch protection
+# requires have passed and the branch has no conflicts. Drafts and pull
+# requests from forks are left alone. To hold one back, turn auto-merge off on
+# the pull request (gh pr merge --disable-auto <number>).
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable:
+    name: Enable auto-merge
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
