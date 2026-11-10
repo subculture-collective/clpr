@@ -38,6 +38,8 @@ vi.mock('../components/clip/TwitchEmbed', async () => {
   };
 });
 
+vi.mock('../components/countdown/CreatorConnectOffer', () => ({ CreatorConnectOffer: () => null }));
+
 vi.mock('./NotFoundPage', () => ({ NotFoundPage: () => <h1>Page not found</h1> }));
 
 const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), featured: vi.fn() }));

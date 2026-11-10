@@ -42,6 +42,7 @@ describe('UserMenu clip room link', () => {
             'href',
             '/streamer-tools/streamer_one/clips',
         );
+        expect(screen.getByRole('menuitem', { name: /Creator Dashboard/ })).toHaveAttribute('href', '/creator/123/dashboard');
     });
 
     it('hides the link for accounts without a Twitch login', async () => {
@@ -49,5 +50,6 @@ describe('UserMenu clip room link', () => {
         await openMenu();
 
         expect(screen.queryByRole('menuitem', { name: /Stream Clip Room/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: /Creator Dashboard/ })).not.toBeInTheDocument();
     });
 });

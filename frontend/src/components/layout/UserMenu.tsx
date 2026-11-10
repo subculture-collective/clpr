@@ -17,6 +17,7 @@ import {
     Clapperboard,
     Shield,
     LogOut,
+    LayoutDashboard,
     ChevronDown,
 } from 'lucide-react';
 
@@ -32,8 +33,8 @@ export function UserMenu() {
     const hasTwitchChannel = Boolean(user?.twitch_id && user.username);
 
     // Calculate menu item count
-    // Profile, Settings, Favorites, Playlists, Watch History, Queue, Submissions, (Clip Room), (Admin), Logout
-    const menuItemCount = 8 + (hasTwitchChannel ? 1 : 0) + (isModeratorOrAdmin ? 1 : 0);
+    // Profile, Settings, Favorites, Playlists, Watch History, Queue, Submissions, (Creator Dashboard, Clip Room), (Admin), Logout
+    const menuItemCount = 8 + (hasTwitchChannel ? 2 : 0) + (isModeratorOrAdmin ? 1 : 0);
     const { menuRef } = useMenuKeyboard(
         isOpen,
         () => setIsOpen(false),
@@ -182,6 +183,17 @@ export function UserMenu() {
                         >
                             <Upload size={16} strokeWidth={1.75} /> My Submissions
                         </Link>
+                        {hasTwitchChannel && (
+                            <Link
+                                to={`/creator/${encodeURIComponent(user.twitch_id ?? '')}/dashboard`}
+                                className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
+                                onClick={() => setIsOpen(false)}
+                                role='menuitem'
+                                tabIndex={-1}
+                            >
+                                <LayoutDashboard size={16} strokeWidth={1.75} /> Creator Dashboard
+                            </Link>
+                        )}
                         {hasTwitchChannel && (
                             <Link
                                 to={`/streamer-tools/${encodeURIComponent(user.username)}/clips`}
