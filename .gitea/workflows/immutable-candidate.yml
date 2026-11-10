@@ -32,6 +32,25 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Check current main and deployment access before building
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.server_url == 'https://git.subcult.tv'
+        shell: bash
+        env:
+          DEPLOY_KEY: ${{ secrets.HOMELAB_WEB_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOMELAB_WEB_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          current_main="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+          test "$current_main" = "${GITEA_SHA:-${GITHUB_SHA:-}}"
+          umask 077
+          deploy_dir="$(mktemp -d)"
+          trap 'rm -rf "$deploy_dir"' EXIT
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          printf '%s\n' "$DEPLOY_KEY" > "$deploy_dir/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$deploy_dir/known_hosts"
+          ssh -i "$deploy_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$deploy_dir/known_hosts" \
+            -o ConnectTimeout=10 onnwee@10.0.0.200 status >/dev/null
       - uses: https://github.com/actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
@@ -195,6 +214,55 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
+
+  deploy:
+    name: Deliver signed frontend
+    needs: candidate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.server_url == 'https://git.subcult.tv'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      REGISTRY_ROOT: ghcr.io/subculture-collective/clpr
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: https://github.com/actions/download-artifact@v3
+        with:
+          name: release-candidate-manifest
+          path: .tmp/release-candidate
+      - uses: https://github.com/sigstore/cosign-installer@v3.8.2
+        with:
+          cosign-release: v2.4.3
+      - name: Restore the qualified immutable frontend
+        shell: bash
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          revision="$(git rev-parse HEAD)"
+          evidence_dir="$PWD/.tmp/release-candidate"
+          cosign verify-blob --offline --key env://COSIGN_PUBLIC_KEY \
+            --bundle "$evidence_dir/frontend-delivery.sigstore.json" \
+            "$evidence_dir/frontend-delivery.json"
+          digest="$(python3 - "$evidence_dir/frontend-delivery.json" "$revision" <<'PY'
+          import importlib.util, json, pathlib, sys
+          path = pathlib.Path('scripts/ci/web-delivery.py')
+          spec = importlib.util.spec_from_file_location('delivery', path)
+          delivery = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(delivery)
+          statement = delivery.validate_statement(json.loads(pathlib.Path(sys.argv[1]).read_text()), sys.argv[2])
+          print(statement['candidate']['frontend_digest'])
+          PY
+          )"
+          printf '%s\n' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+          image="$REGISTRY_ROOT/frontend@$digest"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "$image" >/dev/null
+          docker pull "$image"
+          docker tag "$image" "$REGISTRY_ROOT/frontend:candidate-$revision"
       - name: Deploy qualified frontend
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.server_url == 'https://git.subcult.tv'
         shell: bash

@@ -23,7 +23,7 @@ for source, floor in contracts.items():
     total = sum(size for size, _ in blocks)
     covered = sum(size for size, count in blocks if count > 0)
     percent = 100 * covered / total if total else 0
-    print(f"{source}: {percent:.1f}% statements; required {floor}%")
+    print(f"Coverage {percent:.1f}% statements (required {floor}%) for {source}")
     if percent < floor:
         failures.append(f"Engagement contract was not sufficiently exercised: {source}")
 if failures:

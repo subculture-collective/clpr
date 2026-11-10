@@ -1,10 +1,11 @@
 name: Authoritative release gates
 
+# Pull-request verification runs on the public GitHub CI mirror. Retain the
+# main-branch contexts consumed by the native deployment verifier.
 on:
   push:
     branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+  workflow_dispatch:
 
 permissions:
   contents: read

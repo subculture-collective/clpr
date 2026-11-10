@@ -92,8 +92,8 @@ grep -A4 '^  image-security:' .gitea/workflows/release-gates.yml \
   || fail "release image security must wait for the browser gate"
 grep -Fq 'workflow_dispatch:' .gitea/workflows/source-convergence.yml \
   || fail "source convergence must remain manually dispatchable"
-grep -Fq '  pull_request:' .gitea/workflows/source-convergence.yml \
-  || fail "source convergence must remain a required pull-request gate"
+! grep -Fq '  pull_request:' .gitea/workflows/source-convergence.yml \
+  || fail "local convergence must not duplicate the GitHub pull-request gate"
 ! grep -Eq '^  push:' .gitea/workflows/source-convergence.yml \
   || fail "source convergence must not duplicate post-merge release work"
 
