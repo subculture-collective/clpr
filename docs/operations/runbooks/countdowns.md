@@ -21,6 +21,7 @@ Each day clpr selects the fastest-rising Twitch clips for every enabled countdow
 | Media fetch | `countdown-media` worker on the render host | `fetching` → `fetched` |
 | Render | same worker | `rendering` → `rendered`; the page at `/countdowns/<date>/<series>` goes public |
 | Publish to YouTube | same worker, once the channel is authorized | `publishing` → `published` |
+| View counts for the creator dashboard, hourly | same worker, once the channel is authorized | unchanged |
 
 The worker runs a cycle every minute (`COUNTDOWN_MEDIA_INTERVAL_SECONDS`). A 10-clip edition takes about 3 minutes to render on 4 cores, plus about 30 seconds per Short and up to 10 seconds of transcription per Short for captions.
 

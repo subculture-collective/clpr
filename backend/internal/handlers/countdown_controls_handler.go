@@ -20,6 +20,7 @@ type CountdownControlsStore interface {
 	DeleteFeatureOptIns(ctx context.Context, userID uuid.UUID) error
 	ListRemovalTasks(ctx context.Context) ([]models.CountdownRemovalTask, error)
 	ResolveRemoval(ctx context.Context, in *models.CountdownRemovalInput, adminID uuid.UUID) error
+	ListBroadcasterPlacements(ctx context.Context, broadcasterID string, limit int) ([]models.CountdownPlacement, error)
 }
 
 type countdownUserLookup interface {
@@ -125,6 +126,22 @@ func (h *CountdownControlsHandler) DeleteMyFeatureOptIn(c *gin.Context) {
 		return
 	}
 	h.respondState(c, userID, broadcasterID)
+}
+
+// ListMyPlacements handles GET /api/v1/users/me/countdowns/placements: the
+// signed-in broadcaster's clips in public countdowns, newest first, with the
+// YouTube videos they appear in and those videos' view counts (#84).
+func (h *CountdownControlsHandler) ListMyPlacements(c *gin.Context) {
+	_, broadcasterID, ok := h.broadcaster(c)
+	if !ok {
+		return
+	}
+	placements, err := h.store.ListBroadcasterPlacements(c.Request.Context(), broadcasterID, 50)
+	if err != nil {
+		h.internal(c, err, "list your countdown placements")
+		return
+	}
+	c.JSON(http.StatusOK, StandardResponse{Success: true, Data: placements})
 }
 
 // ListRemovals handles GET /api/v1/admin/countdowns/removals.

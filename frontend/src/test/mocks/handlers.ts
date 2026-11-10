@@ -139,6 +139,11 @@ export const handlers = [
         });
     }),
 
+    // GET /api/users/me/countdowns/placements - The creator dashboard lists countdown placements.
+    http.get(`${API_BASE_URL}/users/me/countdowns/placements`, () => {
+        return HttpResponse.json({ success: true, data: [] });
+    }),
+
     // POST /api/clips/:id/vote - Vote on clip
     http.post(`${API_BASE_URL}/clips/:id/vote`, () => {
         return HttpResponse.json({ success: true });

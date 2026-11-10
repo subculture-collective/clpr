@@ -86,3 +86,34 @@ test('an admin excludes a broadcaster without an account and clears a removal ta
     await page.getByRole('button', { name: 'Exclude' }).click();
     await expect(page.getByTestId('exclusion')).toContainText('Broadcaster 987654');
 });
+
+test('the creator dashboard shows where clips placed and their views, on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockApi(page, 'user', (method, path) => {
+        if (path === '/users/me/countdowns') return { success: true, data: { ...controls, featured: true, clip_download_authorized: true } };
+        if (path === '/users/me/countdowns/placements') {
+            return {
+                success: true,
+                data: [{
+                    edition_date: '2026-11-09', series_slug: 'overall', series_name: 'Overall', position: 3,
+                    clip_id: '33333333-3333-4333-8333-333333333333', title: 'A very long clip title that should wrap or truncate on a narrow phone screen',
+                    countdown: { youtube_video_id: 'vidCountdown1', view_count: 48210 },
+                    short: { youtube_video_id: 'vidShortA1', view_count: 912 },
+                }],
+            };
+        }
+        if (path.startsWith('/creators/') || path.includes('/clips')) {
+            return { success: true, data: [], meta: { page: 1, limit: 25, total: 0, total_pages: 0, has_next: false, has_prev: false } };
+        }
+        return undefined;
+    });
+    await page.goto('/creator/121059319/dashboard');
+
+    const card = page.getByTestId('countdown-placements');
+    await expect(card.getByRole('link', { name: /#3 · Overall/ })).toHaveAttribute('href', '/countdowns/2026-11-09/overall');
+    await expect(card.getByRole('link', { name: /Countdown video 48,210 views/ })).toBeVisible();
+    await expect(card.getByRole('link', { name: /Short 912 views/ })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Connect my channel' })).toHaveCount(0);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+});

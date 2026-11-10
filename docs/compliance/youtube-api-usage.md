@@ -6,12 +6,12 @@ area: "compliance"
 status: "stable"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2026-11-07
+last_reviewed: 2026-11-10
 ---
 
 # How clpr Uses the YouTube Data API
 
-clpr uploads its daily countdown videos and Shorts to one YouTube channel that clpr owns (#79). Nothing reads or writes any other channel, and no viewer signs in with Google.
+clpr uploads its daily countdown videos and Shorts to one YouTube channel that clpr owns (#79), and reads the view counts of those videos for the creator dashboard (#84). Nothing reads or writes any other channel, and no viewer signs in with Google.
 
 ## Authorization
 
@@ -30,6 +30,7 @@ clpr uploads its daily countdown videos and Shorts to one YouTube channel that c
 | `thumbnails.set` | The countdown's custom thumbnail; needs a verified channel, and a failure leaves the video uploaded |
 | `playlists.insert` | One playlist per series, created on its first video |
 | `playlistItems.insert` | Add each countdown video to its series playlist |
+| `videos.list` (`part=statistics,status`) | View count and privacy of clpr's own uploads, 50 videos per call, for the creator dashboard |
 
 `backend/internal/services/youtube_client.go` makes all of them; `backend/internal/services/countdown_youtube.go` decides what to upload.
 
@@ -42,10 +43,13 @@ YouTube forces videos uploaded by an API project that has not passed its complia
 - **Daily limits:** when YouTube answers `quotaExceeded`, `dailyLimitExceeded` or `uploadLimitExceeded`, the worker stops publishing until 08:00 UTC, the latest time YouTube resets daily quota (midnight Pacific).
 - **Other temporary errors:** rate limits, 5xx responses and network errors pause publishing for 15 minutes.
 - **No duplicates:** an uploaded render is recorded in `countdown_uploads` at once, so a retry does not upload it again.
+- **View counts:** the worker reads them once an hour, only for videos uploaded in the last 90 days whose count is more than 6 hours old, 50 videos per `videos.list` call (1 unit). With four series of one countdown and five Shorts a day, that is under 200 units a day. Errors pause the reads the same way they pause publishing.
 
 ## What is stored
 
-`countdown_uploads` keeps, per uploaded render, the YouTube video ID, the privacy status and the publish time. `countdown_youtube_playlists` keeps one playlist ID per series. No YouTube viewer or analytics data is read or stored.
+`countdown_uploads` keeps, per uploaded render, the YouTube video ID, the privacy status and the publish time, and from `videos.list` the public view count, the current privacy status, whether YouTube still returns the video, and when it was read. `countdown_youtube_playlists` keeps one playlist ID per series. No data about YouTube viewers and no YouTube Analytics data is read or stored.
+
+The creator dashboard shows a broadcaster the view counts of the clpr videos their clips appear in, and links only videos that are public or unlisted. The counts are YouTube's public counts from the worker's last read.
 
 ## What each video says
 

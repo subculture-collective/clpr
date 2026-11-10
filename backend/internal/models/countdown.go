@@ -197,6 +197,36 @@ type CountdownFeature struct {
 	Title       string    `json:"title"`
 }
 
+// CountdownVideo is a countdown video or Short on YouTube that viewers can
+// open, with its view count when the worker has read it.
+type CountdownVideo struct {
+	YouTubeVideoID string     `json:"youtube_video_id"`
+	ViewCount      *int64     `json:"view_count,omitempty"`
+	ViewsUpdatedAt *time.Time `json:"views_updated_at,omitempty"`
+}
+
+// CountdownPlacement is one of a broadcaster's clips in a public edition,
+// with the videos it appears in (#84). Countdown and Short are set only for
+// videos that are public or unlisted on YouTube.
+type CountdownPlacement struct {
+	EditionDate  string          `json:"edition_date"`
+	SeriesSlug   string          `json:"series_slug"`
+	SeriesName   string          `json:"series_name"`
+	Position     int             `json:"position"`
+	ClipID       uuid.UUID       `json:"clip_id"`
+	Title        string          `json:"title"`
+	ThumbnailURL *string         `json:"thumbnail_url,omitempty"`
+	Countdown    *CountdownVideo `json:"countdown,omitempty"`
+	Short        *CountdownVideo `json:"short,omitempty"`
+}
+
+// CountdownVideoStats is what YouTube reports for one uploaded video.
+type CountdownVideoStats struct {
+	YouTubeVideoID string
+	ViewCount      int64
+	PrivacyStatus  string
+}
+
 // CountdownEditionKey names one public edition page.
 type CountdownEditionKey struct {
 	EditionDate string
