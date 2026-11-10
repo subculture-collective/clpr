@@ -146,7 +146,8 @@ export function SearchPage() {
                     (result.counts.creators || 0) +
                     (result.counts.twitch_categories || result.counts.games || 0) +
                     (result.counts.tags || 0);
-                addToHistory(query, totalResults);
+                // A said-only search has no query to remember.
+                if (query) addToHistory(query, totalResults);
 
                 // Check for failover indicators even on successful responses
                 // Note: This requires the API client to expose response headers

@@ -42,7 +42,7 @@ func TestClipSearchSaidFilterAndSnippets(t *testing.T) {
 	raw, _ := json.Marshal(body)
 	text := string(raw)
 	for _, want := range []string{
-		`"match_phrase":{"transcript":{"query":"cleanest ace","slop":1}}`,
+		`"match_phrase":{"transcript":{"query":"cleanest ace","slop":0}}`,
 		`"_source":{"excludes":["transcript"]}`,
 		`"highlight":{"fields":{"transcript":`,
 	} {
@@ -77,5 +77,36 @@ func TestClipTranscriptNeverSerialized(t *testing.T) {
 	raw, _ := json.Marshal(models.Clip{ID: uuid.New(), Transcript: &text})
 	if strings.Contains(string(raw), text) {
 		t.Fatalf("clip JSON carries the transcript: %s", raw)
+	}
+}
+
+func TestUpdateClipTranscriptsToleratesClipsNotYetIndexed(t *testing.T) {
+	for _, tc := range []struct {
+		response string
+		wantErr  bool
+	}{
+		{`{"errors":true,"items":[{"update":{"status":200}},{"update":{"status":404,"error":{"type":"document_missing_exception"}}}]}`, false},
+		{`{"errors":true,"items":[{"update":{"status":400,"error":{"type":"mapper_parsing_exception"}}}]}`, true},
+	} {
+		var body string
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			raw, _ := io.ReadAll(r.Body)
+			body = string(raw)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, tc.response)
+		}))
+		client, err := opensearch.NewClient(&opensearch.Config{URL: server.URL})
+		if err != nil {
+			t.Fatal(err)
+		}
+		id := uuid.New()
+		err = NewSearchIndexerService(client).UpdateClipTranscripts(context.Background(), map[uuid.UUID]string{id: "no way"})
+		server.Close()
+		if (err != nil) != tc.wantErr {
+			t.Fatalf("response %s: err = %v", tc.response, err)
+		}
+		if !strings.Contains(body, `"update":{"_id":"`+id.String()+`","_index":"clips"}`) || !strings.Contains(body, `{"doc":{"transcript":"no way"}}`) {
+			t.Fatalf("bulk body = %s", body)
+		}
 	}
 }

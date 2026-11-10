@@ -121,3 +121,31 @@ func (r *ClipRepository) MarkTranscriptsIndexed(ctx context.Context, indexed []P
 		WHERE t.clip_id = v.clip_id`, ids, versions)
 	return err
 }
+
+// ClipsWithTranscripts reports which of the clips already have a transcript.
+func (r *CountdownRepository) ClipsWithTranscripts(ctx context.Context, clipIDs []uuid.UUID) (map[uuid.UUID]bool, error) {
+	rows, err := r.pool.Query(ctx, `SELECT clip_id FROM clip_transcripts WHERE clip_id = ANY($1)`, clipIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[uuid.UUID]bool{}
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}
+
+// RequeueTranscriptsSince marks transcripts written or changed since a full
+// index run started as not yet in the search index, so the transcript
+// scheduler copies them again. A full run reads each transcript once; one
+// written after that read would otherwise be lost (rebuild) or overwritten
+// with older text (backfill).
+func RequeueTranscriptsSince(ctx context.Context, db execer, since time.Time) error {
+	_, err := db.Exec(ctx, `UPDATE clip_transcripts SET search_indexed_at = NULL WHERE updated_at >= $1`, since)
+	return err
+}

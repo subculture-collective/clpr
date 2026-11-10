@@ -11,6 +11,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
+	"github.com/google/uuid"
 )
 
 func TestTranscriptSearchStorage(t *testing.T) {
@@ -86,6 +87,23 @@ func TestTranscriptSearchStorage(t *testing.T) {
 	}
 	if again, err := clips.ListTranscriptsToIndex(ctx, 10); err != nil || len(again) != 2 {
 		t.Fatalf("pending after a change = %+v, %v", again, err)
+	}
+
+	known, err := countdowns.ClipsWithTranscripts(ctx, []uuid.UUID{ids["said-it"], ids["authorized"], ids["quiet"]})
+	if err != nil || len(known) != 2 || !known[ids["said-it"]] || !known[ids["authorized"]] || known[ids["quiet"]] {
+		t.Fatalf("known transcripts = %v, %v", known, err)
+	}
+
+	// A full index run requeues the transcripts written since it started.
+	all, _ := clips.ListTranscriptsToIndex(ctx, 10)
+	if err := clips.MarkTranscriptsIndexed(ctx, all); err != nil {
+		t.Fatal(err)
+	}
+	if err := RequeueTranscriptsSince(ctx, pool, time.Now().Add(-time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if again, err := clips.ListTranscriptsToIndex(ctx, 10); err != nil || len(again) != 2 {
+		t.Fatalf("requeued = %+v, %v", again, err)
 	}
 
 	// The database search finds the clip by what was said.

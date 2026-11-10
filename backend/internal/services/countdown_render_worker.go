@@ -112,6 +112,7 @@ type CountdownCaptioner interface {
 type CountdownTranscriptStore interface {
 	SaveCountdownTranscript(ctx context.Context, clipID uuid.UUID, language, fullText string, segments json.RawMessage) (bool, error)
 	RecordTranscriptionUsage(ctx context.Context, u repository.TranscriptionUsage) error
+	ClipsWithTranscripts(ctx context.Context, clipIDs []uuid.UUID) (map[uuid.UUID]bool, error)
 }
 
 func (w *CountdownRenderWorker) ensure() {
@@ -251,11 +252,25 @@ func (w *CountdownRenderWorker) transcribe(ctx context.Context, edition *models.
 	clips []models.CountdownEditionClip, durations map[uuid.UUID]float64, shorts int) map[uuid.UUID][]countdownrender.Word {
 	words := map[uuid.UUID][]countdownrender.Word{}
 	count := min(shorts, len(rendered))
+	var known map[uuid.UUID]bool
 	if w.Transcripts != nil && w.Captioner != nil {
 		count = len(rendered)
+		ids := make([]uuid.UUID, len(clips))
+		for i, c := range clips {
+			ids[i] = c.ClipID
+		}
+		var err error
+		if known, err = w.Transcripts.ClipsWithTranscripts(ctx, ids); err != nil {
+			utils.Warn("Existing transcripts not checked", map[string]interface{}{"edition_id": edition.ID.String(), "reason": err.Error()})
+		}
 	}
 	for i := 0; i < count; i++ {
 		clipID := clips[i].ClipID
+		// Shorts always need the word timings; other clips only a transcript
+		// they do not have yet.
+		if i >= shorts && known[clipID] {
+			continue
+		}
 		start := w.now()
 		words[clipID] = w.captionWords(ctx, edition, rendered[i])
 		if w.Transcripts == nil || w.Captioner == nil {

@@ -116,6 +116,11 @@ func TestWhisperCaptionerKeepsConfidentEnglishSpeech(t *testing.T) {
 type fakeTranscriptStore struct {
 	saved map[uuid.UUID]string
 	usage []repository.TranscriptionUsage
+	known map[uuid.UUID]bool
+}
+
+func (f *fakeTranscriptStore) ClipsWithTranscripts(context.Context, []uuid.UUID) (map[uuid.UUID]bool, error) {
+	return f.known, nil
 }
 
 func (f *fakeTranscriptStore) SaveCountdownTranscript(_ context.Context, clipID uuid.UUID, language, text string, segments json.RawMessage) (bool, error) {
@@ -167,5 +172,29 @@ func TestCountdownRenderWorkerTranscribesEveryClipForSearch(t *testing.T) {
 	shorts := worker.Renderer.(*fakeRenderer).shorts
 	if len(shorts) != 1 || len(shorts[0].Words) != 2 {
 		t.Fatalf("the Short lost its captions: %+v", shorts)
+	}
+}
+
+func TestCountdownRenderWorkerSkipsClipsWithTranscripts(t *testing.T) {
+	store, worker := renderFixture(t, 1)
+	worker.Metrics = NewCountdownRenderMetrics(nil)
+	captioner := &fakeCaptioner{words: map[string][]countdownrender.Word{}}
+	worker.Captioner = captioner
+	// media[1] is position 1 (the Short), media[0] position 2, media[2] position 3.
+	transcripts := &fakeTranscriptStore{saved: map[uuid.UUID]string{},
+		known: map[uuid.UUID]bool{store.media[1].ClipID: true, store.media[0].ClipID: true}}
+	worker.Transcripts = transcripts
+	if err := worker.RunOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	// The Short's clip is transcribed for its captions anyway; position 2 is
+	// skipped; position 3 has no transcript yet.
+	if len(captioner.paths) != 2 || len(transcripts.usage) != 2 {
+		t.Fatalf("transcribed %v, usage %d", captioner.paths, len(transcripts.usage))
+	}
+	for _, p := range captioner.paths {
+		if p == filepath.Join(worker.MediaDir, store.media[0].FileName) {
+			t.Fatal("a clip with a transcript was transcribed again")
+		}
 	}
 }

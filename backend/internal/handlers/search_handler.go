@@ -217,7 +217,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	totalResults := results.Counts.Clips + results.Counts.Creators + results.Counts.Games + results.Counts.Tags
 
 	// Try to get user from context (if authenticated)
-	if h.searchRepo != nil {
+	if h.searchRepo != nil && req.Query != "" { // a said-only search has no query to record
 		if userVal, exists := c.Get("user"); exists {
 			if user, ok := userVal.(*models.User); ok {
 				// Track search with user ID
@@ -407,12 +407,13 @@ func (h *SearchHandler) SearchWithScores(c *gin.Context) {
 	// Track search analytics
 	totalResults := results.Counts.Clips + results.Counts.Creators + results.Counts.Games + results.Counts.Tags
 
-	// Try to get user from context (if authenticated)
-	if userVal, exists := c.Get("user"); exists {
+	// Try to get user from context (if authenticated); a said-only search
+	// has no query to record.
+	if userVal, exists := c.Get("user"); exists && req.Query != "" {
 		if user, ok := userVal.(*models.User); ok {
 			_ = h.searchRepo.TrackSearch(c.Request.Context(), &user.ID, req.Query, totalResults)
 		}
-	} else {
+	} else if req.Query != "" {
 		_ = h.searchRepo.TrackSearch(c.Request.Context(), nil, req.Query, totalResults)
 	}
 

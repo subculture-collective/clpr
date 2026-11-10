@@ -17,21 +17,21 @@ Search finds clips by what was said in them (#87). A query matches clip transcri
 
 Transcripts come from two places, both already running Whisper locally:
 
-- **Countdown clips.** The `countdown-media` worker transcribes every clip of each countdown edition while its media is on the render host, not only the clips that get a Short (see [[countdown-editions#captions|Captions]]). Countdown clips are the day's fastest-rising clips, so they serve as the view threshold. Only confident English speech is kept, the same rule as for captions. `COUNTDOWN_TRANSCRIPTS=off` limits the worker to the Shorts' captions again.
+- **Countdown clips.** The `countdown-media` worker transcribes every clip of each countdown edition while its media is on the render host, not only the clips that get a Short (see [[countdown-editions#captions|Captions]]). Countdown clips are the day's fastest-rising clips, so they serve as the view threshold. A clip that already has a transcript is not transcribed again unless it gets a Short, which needs the word timings for captions. Only confident English speech is kept, the same rule as for captions. `COUNTDOWN_TRANSCRIPTS=off` limits the worker to the Shorts' captions again.
 - **Authorized clips.** The API's existing transcription of clips whose broadcaster granted `channel:manage:clips`.
 
 No clip is downloaded for search alone: [[../adr/002-media-handling-for-countdowns|ADR-002]] allows downloading clips only for countdowns. A transcript from the broadcaster's own authorization replaces one from the render host, never the other way round. Transcripts are stored in `clip_transcripts` (`source` is `twitch_authorized_whisper` or `countdown_render_whisper`) and are never sent to clients in full.
 
 ## Indexing
 
-The clips search index has a `transcript` field. Full index runs (`backfill-search`, `search-index-manager rebuild`) read it from `clip_transcripts`. Between them, an API scheduler copies new and changed transcripts into the index every five minutes, 200 at a time, with partial updates; `clip_transcripts.search_indexed_at` records the version it copied. A clip the index does not hold yet is skipped and picked up by the next full run.
+The clips search index has a `transcript` field. Full index runs (`backfill-search`, `search-index-manager rebuild`) read it from `clip_transcripts`. Between them, an API scheduler copies new and changed transcripts into the index every five minutes, 200 at a time, with partial updates; `clip_transcripts.search_indexed_at` records the version it copied. A clip the index does not hold yet is skipped and picked up by the next full run. When a full run finishes, the transcripts written while it ran are queued again, since the run read them before they changed.
 
 An index created before this change gets the field from OpenSearch's dynamic mapping (text with a keyword subfield), which serves phrase queries and highlights. Rebuild the index with `search-index-manager rebuild -index clips` to get the declared mapping, which adds an English-analyzed `transcript.en` subfield.
 
 ## Searching
 
 - **Text query (`q`):** the clip query's `multi_match` includes `transcript` with the same weight as the Twitch category name.
-- **`said`:** `GET /api/v1/search?said=<phrase>` adds a `match_phrase` on `transcript` (slop 1), so the words must appear in that order. It works with or without `q`; without `q`, only clips are searched. At most 200 characters.
+- **`said`:** `GET /api/v1/search?said=<phrase>` adds a `match_phrase` on `transcript`, so the words must appear next to each other in that order, as in the database fallback. It works with or without `q`; without `q`, only clips are searched. At most 200 characters.
 - **Snippets:** for clips that matched in their transcript, the response carries `transcript_snippet`: about 140 characters around the match, with each matched word between U+E000 and U+E001. The search page shows it under the clip with the words marked. Hybrid reranking keeps the snippets.
 - **Database fallback:** when OpenSearch is unavailable and search falls back to PostgreSQL, `said` uses `phraseto_tsquery` on the transcript and `ts_headline` for the snippet, with the same markers.
 
@@ -39,7 +39,7 @@ The search page has a "Said in the clip" box above the filters, which sets the `
 
 ## Cost
 
-Whisper runs on clpr's own hosts, so its cost is compute time. Each transcription adds to `transcription_usage_daily`, one row per UTC day and source, with the clips attempted, transcripts stored, seconds of audio and seconds of compute. Clips the API skipped because the broadcaster has not authorized transcription, or because the provider is down, are not counted.
+Whisper runs on clpr's own hosts, so its cost is compute time. Each transcription adds to `transcription_usage_daily`, one row per UTC day and source, with the clips attempted, transcripts stored, seconds of audio and seconds of compute. Clips the API skipped because the broadcaster has not authorized transcription, or because the provider is down, are not counted. A search with only `said` is not recorded in search history or analytics.
 
 ```sql
 SELECT day, source, clips, transcripts, round(audio_seconds) AS audio_s, round(compute_seconds) AS compute_s

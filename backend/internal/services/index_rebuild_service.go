@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	"git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
@@ -129,6 +130,11 @@ func (s *IndexRebuildService) RebuildClipsIndex(ctx context.Context, config *Reb
 			return result, fmt.Errorf("failed to swap alias: %w", err)
 		}
 		result.SwappedAlias = true
+		// Transcripts copied into the old index while this one was being
+		// filled are missing from it; send them again (#87).
+		if err := repository.RequeueTranscriptsSince(ctx, s.db.Pool, result.StartTime); err != nil {
+			log.Printf("WARNING: Failed to requeue transcripts written during the rebuild: %v", err)
+		}
 	}
 
 	// Clean up old versions

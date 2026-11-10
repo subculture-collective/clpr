@@ -492,7 +492,7 @@ func (s *OpenSearchService) buildClipQuery(req *models.SearchRequest) map[string
 	if said := clipSaidPhrase(req); said != "" {
 		must = append(must, map[string]interface{}{
 			"match_phrase": map[string]interface{}{
-				"transcript": map[string]interface{}{"query": said, "slop": 1},
+				"transcript": map[string]interface{}{"query": said, "slop": 0},
 			},
 		})
 	}
