@@ -219,7 +219,7 @@ jobs:
   deploy:
     name: Deliver signed frontend
     needs: candidate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.server_url == 'https://git.subcult.tv'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.server_url, 'https://git.subcult.tv')
     # Homelab deploy keys accept only Kvant's address (Kvant and its Kuznya VM); the kvant label keeps this job off Buran.
     runs-on: [ubuntu-24.04, kvant]
     timeout-minutes: 20
