@@ -13578,6 +13578,9 @@ components:
         priority: {type: integer, description: Lower selects first; a clip goes to at most one edition per day}
         enabled: {type: boolean}
         shorts_count: {type: integer, description: How many top clips of each edition also get a 9:16 Short}
+        source: {type: string, enum: [velocity, clip_room], description: 'velocity: the fastest-rising clips; clip_room: the approved clips of a clip room, in room order'}
+        clip_room_id: {type: string, format: uuid, description: The clip room of a clip_room series; absent once the room is deleted}
+        clip_room_channel: {type: string, description: Twitch channel of the clip room}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
 
@@ -13597,6 +13600,8 @@ components:
         priority: {type: integer}
         enabled: {type: boolean}
         shorts_count: {type: integer, minimum: 0, maximum: 10, description: At most size}
+        source: {type: string, enum: [velocity, clip_room], description: Defaults to velocity}
+        clip_room_id: {type: [string, 'null'], format: uuid, description: Required for a clip_room series and only allowed there}
 
     CountdownEditionClip:
       type: object

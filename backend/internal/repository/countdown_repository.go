@@ -27,6 +27,7 @@ var (
 	ErrCountdownExclusionExists    = errors.New("countdown exclusion already exists")
 	ErrCountdownExclusionNotFound  = errors.New("countdown exclusion not found")
 	ErrCountdownExclusionClipUnset = errors.New("countdown exclusion clip does not exist")
+	ErrCountdownClipRoomNotFound   = errors.New("clip room not found")
 )
 
 // CountdownRepository stores countdown series, editions and exclusions.
@@ -40,12 +41,15 @@ func NewCountdownRepository(pool *pgxpool.Pool) *CountdownRepository {
 }
 
 const countdownSeriesColumns = `id, slug, name, game_id, language, size, window_hours, per_broadcaster_cap,
-	selection_hour_utc, priority, enabled, shorts_count, min_size, created_at, updated_at`
+	selection_hour_utc, priority, enabled, shorts_count, min_size, source, clip_room_id,
+	(SELECT r.twitch_channel FROM streamer_clip_rooms r WHERE r.id = countdown_series.clip_room_id),
+	created_at, updated_at`
 
 func scanCountdownSeries(row pgx.Row) (*models.CountdownSeries, error) {
 	var s models.CountdownSeries
 	err := row.Scan(&s.ID, &s.Slug, &s.Name, &s.GameID, &s.Language, &s.Size, &s.WindowHours,
-		&s.PerBroadcasterCap, &s.SelectionHourUTC, &s.Priority, &s.Enabled, &s.ShortsCount, &s.MinSize, &s.CreatedAt, &s.UpdatedAt)
+		&s.PerBroadcasterCap, &s.SelectionHourUTC, &s.Priority, &s.Enabled, &s.ShortsCount, &s.MinSize,
+		&s.Source, &s.ClipRoomID, &s.ClipRoomChannel, &s.CreatedAt, &s.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrCountdownSeriesNotFound
 	}
@@ -80,18 +84,29 @@ func countdownSeriesWriteErr(err error) error {
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 		return ErrCountdownSeriesSlugTaken
 	}
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" && pgErr.ConstraintName == "countdown_series_clip_room_id_fkey" {
+		return ErrCountdownClipRoomNotFound
+	}
 	return err
+}
+
+// seriesSource is the input's source, velocity when unset.
+func seriesSource(in *models.CountdownSeriesInput) string {
+	if in.Source == "" {
+		return models.CountdownSourceVelocity
+	}
+	return in.Source
 }
 
 // CreateSeries inserts a series. The input must already be validated.
 func (r *CountdownRepository) CreateSeries(ctx context.Context, in *models.CountdownSeriesInput) (*models.CountdownSeries, error) {
 	s, err := scanCountdownSeries(r.pool.QueryRow(ctx, `
 		INSERT INTO countdown_series (slug, name, game_id, language, size, window_hours, per_broadcaster_cap,
-			selection_hour_utc, priority, enabled, shorts_count, min_size)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			selection_hour_utc, priority, enabled, shorts_count, min_size, source, clip_room_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING `+countdownSeriesColumns,
 		in.Slug, in.Name, in.GameID, in.Language, in.Size, in.WindowHours, in.PerBroadcasterCap,
-		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount, in.MinSize))
+		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount, in.MinSize, seriesSource(in), in.ClipRoomID))
 	return s, countdownSeriesWriteErr(err)
 }
 
@@ -101,11 +116,11 @@ func (r *CountdownRepository) UpdateSeries(ctx context.Context, id uuid.UUID, in
 	s, err := scanCountdownSeries(r.pool.QueryRow(ctx, `
 		UPDATE countdown_series SET slug = $2, name = $3, game_id = $4, language = $5, size = $6,
 			window_hours = $7, per_broadcaster_cap = $8, selection_hour_utc = $9, priority = $10,
-			enabled = $11, shorts_count = $12, min_size = $13, updated_at = NOW()
+			enabled = $11, shorts_count = $12, min_size = $13, source = $14, clip_room_id = $15, updated_at = NOW()
 		WHERE id = $1
 		RETURNING `+countdownSeriesColumns,
 		id, in.Slug, in.Name, in.GameID, in.Language, in.Size, in.WindowHours, in.PerBroadcasterCap,
-		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount, in.MinSize))
+		in.SelectionHourUTC, in.Priority, in.Enabled, in.ShortsCount, in.MinSize, seriesSource(in), in.ClipRoomID))
 	return s, countdownSeriesWriteErr(err)
 }
 
@@ -169,6 +184,61 @@ const countdownCandidatesQuery = `
 	ORDER BY e.view_velocity DESC, e.view_count DESC, e.id
 	LIMIT $9`
 
+// countdownRoomCandidatesQuery lists the approved clips of a clip room
+// series (#88) in the room's order, under the same clip rules as the
+// velocity ranking apart from view velocity and the per-broadcaster cap: the
+// streamer chose them. A clip approved twice counts once, at its first place.
+const countdownRoomCandidatesQuery = `
+	WITH items AS (
+		SELECT i.clip_id, i.position, i.approved_at, i.id,
+		       ROW_NUMBER() OVER (PARTITION BY i.clip_id ORDER BY i.position NULLS LAST, i.approved_at, i.id) AS copy
+		FROM streamer_clip_room_items i
+		WHERE i.room_id = $5 AND i.status = 'approved' AND i.clip_id IS NOT NULL
+		  AND i.approved_at >= $3 AND i.approved_at < $4
+	)
+	SELECT c.id, COALESCE(c.view_velocity, 0)
+	FROM items i
+	JOIN clips c ON c.id = i.clip_id
+	WHERE i.copy = 1
+	  AND c.source_type = 'twitch'
+	  AND c.is_removed = false
+	  AND c.is_hidden = false
+	  AND c.is_nsfw = false
+	  AND COALESCE(c.dmca_removed, false) = false
+	  AND c.duration BETWEEN $1 AND $2
+	  AND NOT EXISTS (
+	      SELECT 1 FROM countdown_exclusions x
+	      WHERE x.clip_id = c.id OR (c.broadcaster_id IS NOT NULL AND x.broadcaster_id = c.broadcaster_id)
+	  )
+	  AND NOT EXISTS (
+	      SELECT 1 FROM countdown_edition_clips ec
+	      WHERE ec.edition_date = $6::date AND ec.clip_id = c.id
+	  )
+	  AND NOT EXISTS (
+	      SELECT 1 FROM countdown_edition_skips sk
+	      WHERE sk.edition_date = $6::date AND sk.clip_id = c.id
+	  )
+	ORDER BY i.position NULLS LAST, i.approved_at, i.id
+	LIMIT $7`
+
+// errCountdownRoomGone means a clip room series lost its room.
+var errCountdownRoomGone = errors.New("the clip room of this series no longer exists")
+
+// countdownCandidates returns the query and arguments that rank the
+// candidates of series for date, at most limit. backfill names the edition
+// whose clips count toward the per-broadcaster cap of a velocity series.
+func countdownCandidates(series *models.CountdownSeries, windowStart, windowEnd time.Time, date string, limit int, backfill *uuid.UUID) (string, []any, error) {
+	if series.Source == models.CountdownSourceClipRoom {
+		if series.ClipRoomID == nil {
+			return "", nil, errCountdownRoomGone
+		}
+		return countdownRoomCandidatesQuery, []any{CountdownMinClipSeconds, CountdownMaxClipSeconds,
+			windowStart.UTC(), windowEnd.UTC(), *series.ClipRoomID, date, limit}, nil
+	}
+	return countdownCandidatesQuery, []any{CountdownMinClipSeconds, CountdownMaxClipSeconds, windowStart.UTC(), windowEnd.UTC(),
+		series.GameID, series.Language, date, series.PerBroadcasterCap, limit, backfill}, nil
+}
+
 // SelectEdition picks and stores the edition of series for date, up to
 // series.Size clips. A series with MinSize takes a shorter list on a thin day
 // and stores a skipped edition below MinSize. A series without it stores a
@@ -207,37 +277,44 @@ func (r *CountdownRepository) SelectEdition(ctx context.Context, series *models.
 		return nil, err
 	}
 
-	rows, err := tx.Query(ctx, countdownCandidatesQuery,
-		CountdownMinClipSeconds, CountdownMaxClipSeconds, windowStart.UTC(), windowEnd.UTC(),
-		series.GameID, series.Language, date, series.PerBroadcasterCap, series.Size, (*uuid.UUID)(nil))
-	if err != nil {
-		return nil, fmt.Errorf("select countdown candidates: %w", err)
-	}
 	type candidate struct {
 		id       uuid.UUID
 		velocity float64
 	}
 	var picked []candidate
-	for rows.Next() {
-		var c candidate
-		if err := rows.Scan(&c.id, &c.velocity); err != nil {
-			rows.Close()
+	var failure *string
+	query, args, err := countdownCandidates(series, windowStart, windowEnd, date, series.Size, nil)
+	if errors.Is(err, errCountdownRoomGone) {
+		reason := err.Error()
+		failure = &reason
+	} else {
+		rows, err := tx.Query(ctx, query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("select countdown candidates: %w", err)
+		}
+		for rows.Next() {
+			var c candidate
+			if err := rows.Scan(&c.id, &c.velocity); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			picked = append(picked, c)
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
 			return nil, err
 		}
-		picked = append(picked, c)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	status := models.CountdownEditionSelected
-	var failure *string
 	required := series.Size
 	if series.MinSize != nil {
 		required = *series.MinSize
 	}
-	if len(picked) < required {
+	switch {
+	case failure != nil:
+		status = models.CountdownEditionFailed
+	case len(picked) < required:
 		status = models.CountdownEditionFailed
 		if series.MinSize != nil {
 			status = models.CountdownEditionSkipped

@@ -30,6 +30,8 @@ A series is one daily list. Admins configure series under `/api/v1/admin/countdo
 | `priority` | Lower selects first each day | 100 |
 | `enabled` | Disabled series are skipped | true |
 | `shorts_count` | How many top clips of each edition also get a 9:16 Short, at most `size` | 0 |
+| `source` | `velocity` (the fastest-rising clips) or `clip_room` (a streamer's clip room, below) | `velocity` |
+| `clip_room_id` | The clip room of a `clip_room` series | unset |
 
 ## Selection
 
@@ -48,6 +50,14 @@ A clip is eligible when it:
 Eligible clips are ranked by `view_velocity`, then view count. Position 1 is the top clip. The database refuses a second row for the same clip and date (`UNIQUE (edition_date, clip_id)`), so a clip is in at most one edition per day. Series with a lower priority get first pick.
 
 A series with `min_size` takes up to `size` clips and stores a `skipped` edition, which raises no alert, when fewer than `min_size` are eligible. Without `min_size`, when fewer clips are eligible than the series size, the edition is stored as `failed` with a reason such as "only 6 of 10 clips were eligible" and no clips. It is not retried on its own. An admin can select a past date again with `POST /api/v1/admin/countdowns/series/{id}/editions`, which replaces an edition that is still `selected` or `failed`. Editions that have moved on to `fetching` or later are left alone.
+
+### Clip room series
+
+A series with `source: clip_room` turns a streamer's clip room into their own countdown (#88). Its editions take the clips the streamer approved in the room during the series window, in the room's order: the first approved clip is #1. The clip rules above still apply, apart from view velocity and the per-broadcaster cap, since the streamer chose the clips; a clip approved twice counts once. A clip already in another edition that day is left out, so give the room series a lower `priority` than the others if it should get first pick. A clip that cannot be fetched is replaced by the next one in the room. When the room is deleted, `clip_room_id` becomes empty and the series' editions fail with "the clip room of this series no longer exists" until an admin disables or changes it.
+
+Admins create one with `POST /api/v1/admin/countdowns/series` and the room's ID (the `room.id` of `GET /api/v1/streamer-clip-rooms/{channel}`). The series lists the room's Twitch channel as `clip_room_channel`.
+
+The streamer's weekly clip pack also starts with the clips they approved in their own room that week, in room order, before their most-viewed clips. Only their own clips go in, since packs are downloaded with their own authorization; an older clip they picked that week counts.
 
 ## Media
 
@@ -189,6 +199,7 @@ An exclusion affects editions selected afterwards. Clips it covers in videos alr
 - `backend/internal/repository/countdown_stats_repository_integration_test.go`, `backend/internal/services/countdown_youtube_stats_test.go`, `frontend/src/components/countdown/CountdownPlacementsCard.test.tsx`, `frontend/src/components/countdown/CreatorConnectOffer.test.tsx` and the dashboard test in `frontend/e2e/mocked/broadcaster-controls.spec.ts`: which placements and videos the dashboard shows before and after a view-count read, missing videos, the refresher's batching, interval and pauses, the connect offer, and the card at phone width.
 - `backend/internal/repository/clip_pack_repository_integration_test.go`, `backend/internal/services/clip_pack_worker_test.go`, `backend/internal/handlers/clip_pack_handler_test.go` and `frontend/src/components/countdown/ClipPacksCard.test.tsx`: which broadcasters and clips get a pack, claiming and finishing, the zip's contents, a clip that cannot be downloaded, the week boundaries, deleting expired zips, signed links (tampered, expired, past the pack's expiry) and the pack server's answers, and the dashboard list.
 - `backend/internal/services/streamer_digest_test.go`, `backend/internal/services/streamer_digest_integration_test.go` and `frontend/src/pages/NotificationPreferencesPage.test.tsx`: the email's content and escaping, who gets a digest, sending once per week, skipped and failed digests, the digest-only unsubscribe, preference updates that leave the field out, and the settings switch.
+- `backend/internal/repository/countdown_clip_room_integration_test.go`: room order, the clip rules for a room series, no per-broadcaster cap, dedupe with a velocity series, the room deleted, and room order leading the pack.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 
 ---

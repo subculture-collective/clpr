@@ -36,6 +36,8 @@ func countdownError(c *gin.Context, err error, action string) {
 		countdownFail(c, http.StatusNotFound, "NOT_FOUND", "Countdown series not found")
 	case errors.Is(err, repository.ErrCountdownExclusionNotFound):
 		countdownFail(c, http.StatusNotFound, "NOT_FOUND", "Countdown exclusion not found")
+	case errors.Is(err, repository.ErrCountdownClipRoomNotFound):
+		countdownFail(c, http.StatusBadRequest, "INVALID_REQUEST", "clip_room_id is not a clip room")
 	case errors.Is(err, repository.ErrCountdownExclusionClipUnset):
 		countdownFail(c, http.StatusBadRequest, "INVALID_REQUEST", "clip_id is not a clip")
 	case errors.Is(err, repository.ErrCountdownSeriesSlugTaken):

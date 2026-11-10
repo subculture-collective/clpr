@@ -160,8 +160,13 @@ func TestNormalizeCountdownSeries(t *testing.T) {
 	if in.Slug != "just-chatting" || in.Name != "Just Chatting" || *in.Language != "en" || in.GameID != nil {
 		t.Fatalf("normalized = %+v", in)
 	}
-	if in.Size != 10 || in.WindowHours != 24 || in.PerBroadcasterCap != 1 {
+	if in.Size != 10 || in.WindowHours != 24 || in.PerBroadcasterCap != 1 || in.Source != models.CountdownSourceVelocity {
 		t.Fatalf("defaults = %+v", in)
+	}
+	room := uuid.New()
+	roomSeries := models.CountdownSeriesInput{Slug: "room", Name: "Room", Source: " clip_room ", ClipRoomID: &room}
+	if err := normalizeCountdownSeries(&roomSeries); err != nil || roomSeries.Source != models.CountdownSourceClipRoom {
+		t.Fatalf("clip room series = %+v, %v", roomSeries, err)
 	}
 
 	bad := []models.CountdownSeriesInput{
@@ -176,6 +181,9 @@ func TestNormalizeCountdownSeries(t *testing.T) {
 		{Slug: "ok", Name: "x", Size: 5, MinSize: intPtr(0)},
 		{Slug: "ok", Name: "x", Size: 5, MinSize: intPtr(6)},
 		{Slug: "ok", Name: "x", Size: 5, MinSize: intPtr(2), ShortsCount: 3},
+		{Slug: "ok", Name: "x", Source: "trending"},
+		{Slug: "ok", Name: "x", Source: models.CountdownSourceClipRoom},
+		{Slug: "ok", Name: "x", ClipRoomID: &room},
 	}
 	for _, b := range bad {
 		b := b
