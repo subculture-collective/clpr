@@ -2388,6 +2388,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/users/me/clip-packs",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ClipPackHandler).ListMyPacks-fm",
+    "operation_id": "getApiV1UsersMeClipPacks",
+    "contract_level": "route-specific"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/users/me/consent",
     "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*ConsentHandler).GetConsent-fm",
     "operation_id": "getConsent",

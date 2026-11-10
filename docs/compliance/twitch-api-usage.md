@@ -75,7 +75,7 @@ The `state` value is signed and bound to the clpr user. This flow requests:
 | Scope | Purpose stated in the code | Used by |
 | --- | --- | --- |
 | `channel:bot` | Let the clpr bot account join and read this broadcaster's chat | Streamer clip room, below |
-| `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room, and the broadcaster's "feature my clips" opt-in |
+| `channel:manage:clips` | Official temporary download URLs for this broadcaster's clips | Optional transcription, below; also required to start the clip room, and the broadcaster's "feature my clips" opt-in and weekly clip packs |
 
 The callback exchanges the code, reads the account from `GET /users`, and
 stores the access token, refresh token, granted scopes, and expiry in the
@@ -156,6 +156,14 @@ writes a temporary WAV under the media volume and deletes it at once. No audio
 or video leaves the render host. The transcript text is stored in
 `clip_transcripts` and indexed for search, and only English speech is kept.
 Clips are never downloaded for transcription alone.
+
+The same worker builds weekly clip packs for broadcasters who feature their
+clips (`backend/internal/services/clip_pack_worker.go`). A pack is made from
+the broadcaster's own clips and fetched only through Helix with their own
+`channel:manage:clips` token; a clip without a working Helix download is left
+out, and the player fallback is never used. The downloaded clips are deleted
+as soon as the pack is built. The zip is served only to the broadcaster, by a
+signed link that expires within a day, and is deleted 7 days after it is made.
 
 ## App access token
 

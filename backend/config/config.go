@@ -39,6 +39,7 @@ type Config struct {
 	Telemetry    TelemetryConfig
 	ClipSource   ClipSourceConfig
 	ClipStorage  ClipStorageConfig
+	ClipPacks    ClipPackConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -277,6 +278,14 @@ type ClipStorageConfig struct {
 	SecretKey      string `mapstructure:"secret_key"`
 	ForcePathStyle bool   `mapstructure:"force_path_style"`
 	PublicBaseURL  string `mapstructure:"public_base_url"`
+}
+
+// ClipPackConfig signs the download links of weekly clip packs (#86). The
+// render host serves the packs at BaseURL and checks links with the same
+// LinkSecret. With either unset, packs are listed without links.
+type ClipPackConfig struct {
+	LinkSecret string
+	BaseURL    string
 }
 
 // QueryLimitsConfig holds database query limits
@@ -682,6 +691,10 @@ func Load() (*Config, error) {
 			SecretKey:      getEnv("CLIP_STORAGE_SECRET_KEY", ""),
 			ForcePathStyle: getEnvBool("CLIP_STORAGE_FORCE_PATH_STYLE", true),
 			PublicBaseURL:  getEnv("CLIP_STORAGE_PUBLIC_BASE_URL", ""),
+		},
+		ClipPacks: ClipPackConfig{
+			LinkSecret: getEnv("CLIP_PACK_LINK_SECRET", ""),
+			BaseURL:    getEnv("CLIP_PACK_BASE_URL", ""),
 		},
 	}
 
