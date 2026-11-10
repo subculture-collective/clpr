@@ -8,6 +8,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 	"github.com/redis/go-redis/v9"
@@ -104,7 +105,7 @@ func (s *HybridSearchService) Search(ctx context.Context, req *models.SearchRequ
 			TotalItems: candidates.Counts.Clips,
 		},
 	}
-	response.Results.Clips = rerankedClips
+	response.Results.Clips = copyTranscriptSnippets(rerankedClips, candidates.Results.Clips)
 
 	// Calculate total pages
 	if req.Limit > 0 {
@@ -288,7 +289,7 @@ func (s *HybridSearchService) SearchWithScores(ctx context.Context, req *models.
 		},
 		Scores: scores,
 	}
-	response.SearchResponse.Results.Clips = rerankedClips
+	response.SearchResponse.Results.Clips = copyTranscriptSnippets(rerankedClips, candidates.Results.Clips)
 
 	if req.Limit > 0 {
 		response.SearchResponse.Meta.TotalPages = (response.SearchResponse.Meta.TotalItems + req.Limit - 1) / req.Limit
@@ -394,4 +395,21 @@ func (s *HybridSearchService) recordSearchMetrics(searchType string, start time.
 			metrics.SearchZeroResultsTotal.WithLabelValues(searchType).Inc()
 		}
 	}
+}
+
+// copyTranscriptSnippets puts the transcript highlights of the BM25 hits on
+// the reranked clips, which are read again from the database without them.
+func copyTranscriptSnippets(reranked, hits []models.Clip) []models.Clip {
+	snippets := map[uuid.UUID]*string{}
+	for _, hit := range hits {
+		if hit.TranscriptSnippet != nil {
+			snippets[hit.ID] = hit.TranscriptSnippet
+		}
+	}
+	for i := range reranked {
+		if snippet, ok := snippets[reranked[i].ID]; ok {
+			reranked[i].TranscriptSnippet = snippet
+		}
+	}
+	return reranked
 }

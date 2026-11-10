@@ -10,6 +10,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/config"
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/database"
 	opensearchpkg "git.subcult.tv/subculture-collective/clpr/pkg/opensearch"
@@ -111,6 +112,7 @@ func runPaged(batchSize int, page func(offset int) (fetched, indexed int, err er
 }
 
 func backfillClips(ctx context.Context, db *database.DB, indexer *services.SearchIndexerService, batchSize int) (int, error) {
+	started := time.Now()
 	totalIndexed, failed, err := runPaged(batchSize, func(offset int) (int, int, error) {
 		query := `
 			SELECT id, twitch_clip_id, twitch_clip_url, embed_url, title, 
@@ -118,7 +120,8 @@ func backfillClips(ctx context.Context, db *database.DB, indexer *services.Searc
 			       game_id, game_name, language, thumbnail_url, duration,
 			       view_count, created_at, imported_at, vote_score,
 			       comment_count, favorite_count, is_featured, is_nsfw,
-			       is_removed, removed_reason, submitted_by_user_id, is_hidden, dmca_removed
+			       is_removed, removed_reason, submitted_by_user_id, is_hidden, dmca_removed,
+			       (SELECT t.full_text FROM clip_transcripts t WHERE t.clip_id = clips.id)
 			FROM clips
 			WHERE is_removed = false
 			ORDER BY id
@@ -140,7 +143,7 @@ func backfillClips(ctx context.Context, db *database.DB, indexer *services.Searc
 				&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
 				&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
 				&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
-				&clip.SubmittedByUserID, &clip.IsHidden, &clip.DMCARemoved,
+				&clip.SubmittedByUserID, &clip.IsHidden, &clip.DMCARemoved, &clip.Transcript,
 			)
 			if err != nil {
 				rows.Close()
@@ -169,6 +172,11 @@ func backfillClips(ctx context.Context, db *database.DB, indexer *services.Searc
 	}
 
 	log.Printf("Completed indexing %d clips", totalIndexed)
+	// Transcripts written during the run may have been overwritten with the
+	// older text read earlier; send them again (#87).
+	if err := repository.RequeueTranscriptsSince(ctx, db.Pool, started); err != nil {
+		log.Printf("WARNING: Failed to requeue transcripts written during the backfill: %v", err)
+	}
 	return failed, nil
 }
 

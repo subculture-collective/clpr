@@ -159,8 +159,45 @@ func TestClipPackWorkerFailsWithoutClips(t *testing.T) {
 	}
 }
 
+func TestClipPackWorkerBuildsOnePackPerCycle(t *testing.T) {
+	first := &models.ClipPack{ID: uuid.New(), BroadcasterID: "1", BroadcasterName: "a", WeekStart: "2026-11-02",
+		Clips: []models.ClipPackClip{{Position: 1, ClipID: uuid.New(), Title: "x"}}}
+	second := &models.ClipPack{ID: uuid.New(), BroadcasterID: "2", BroadcasterName: "b", WeekStart: "2026-11-02",
+		Clips: []models.ClipPackClip{{Position: 1, ClipID: uuid.New(), Title: "y"}}}
+	store := newFakePackStore(first, second)
+	w, _ := newPackWorker(t, store, nil, time.Date(2026, 11, 9, 7, 0, 0, 0, time.UTC))
+	if err := w.RunOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(store.completed) != 1 || len(store.pending) != 1 {
+		t.Fatalf("built %d packs in one cycle, %d left", len(store.completed), len(store.pending))
+	}
+}
+
+func TestClipPackWorkerFailsAndCleansUpAWithdrawnPack(t *testing.T) {
+	pack := &models.ClipPack{ID: uuid.New(), BroadcasterID: "1", BroadcasterName: "a", WeekStart: "2026-11-02"}
+	store := newFakePackStore(pack)
+	w, _ := newPackWorker(t, store, nil, time.Date(2026, 11, 9, 7, 0, 0, 0, time.UTC))
+	leftover := filepath.Join(w.PackDir, pack.ID.String())
+	if err := os.MkdirAll(leftover, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(leftover, "partial.zip"), []byte("half"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.RunOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if store.failed[pack.ID] != "no clip of the week may still go in the pack" {
+		t.Fatalf("failed = %v", store.failed)
+	}
+	if _, err := os.Stat(leftover); !os.IsNotExist(err) {
+		t.Fatalf("partial zip left behind: %v", err)
+	}
+}
+
 func TestClipPackLastWeek(t *testing.T) {
-	w := &ClipPackWorker{ReadyHourUTC: 6}
+	w := &ClipPackWorker{} // the default ready hour is 06:00 UTC
 	for _, tc := range []struct{ now, want string }{
 		{"2026-11-09T05:59:00Z", "2026-10-26"}, // Monday before the hour: the week before last
 		{"2026-11-09T06:00:00Z", "2026-11-02"},
@@ -209,7 +246,7 @@ func (f fakePackFiles) PackFile(_ context.Context, id uuid.UUID) (*models.ClipPa
 func TestClipPackLinksAndServer(t *testing.T) {
 	now := time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC)
 	links := ClipPackLinks{Secret: []byte("secret"), BaseURL: "https://packs.example/"}
-	ready, expired, gone := uuid.New(), uuid.New(), uuid.New()
+	ready, expired, gone, withdrawn := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	dir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(dir, ready.String()), 0o700); err != nil {
 		t.Fatal(err)
@@ -219,9 +256,10 @@ func TestClipPackLinksAndServer(t *testing.T) {
 	}
 	later, earlier := now.Add(6*24*time.Hour), now.Add(-time.Minute)
 	server := &ClipPackServer{Dir: dir, Links: links, Now: func() time.Time { return now }, Store: fakePackFiles{
-		ready:   {FileName: ready.String() + "/clpr-pack-x-2026-11-02.zip", Status: models.ClipPackReady, ExpiresAt: &later},
-		expired: {FileName: expired.String() + "/a.zip", Status: models.ClipPackExpired, ExpiresAt: &earlier, Deleted: true},
-		gone:    {FileName: gone.String() + "/missing.zip", Status: models.ClipPackReady, ExpiresAt: &later},
+		ready:     {FileName: ready.String() + "/clpr-pack-x-2026-11-02.zip", Status: models.ClipPackReady, ExpiresAt: &later},
+		expired:   {FileName: expired.String() + "/a.zip", Status: models.ClipPackExpired, ExpiresAt: &earlier, Deleted: true},
+		gone:      {FileName: gone.String() + "/missing.zip", Status: models.ClipPackReady, ExpiresAt: &later},
+		withdrawn: {FileName: ready.String() + "/clpr-pack-x-2026-11-02.zip", Status: models.ClipPackReady, ExpiresAt: &later, Withdrawn: true},
 	}}
 
 	get := func(target string) *httptest.ResponseRecorder {
@@ -249,6 +287,9 @@ func TestClipPackLinksAndServer(t *testing.T) {
 	}
 	if w := get(links.URL(gone, later, now)); w.Code != http.StatusGone {
 		t.Fatalf("missing file = %d", w.Code)
+	}
+	if w := get(links.URL(withdrawn, later, now)); w.Code != http.StatusGone {
+		t.Fatalf("withdrawn pack = %d", w.Code)
 	}
 	if w := get("/packs/../etc/passwd.zip"); w.Code != http.StatusNotFound {
 		t.Fatalf("bad path = %d", w.Code)

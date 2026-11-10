@@ -20,6 +20,7 @@ In-depth documentation for major platform features and functionality.
 - [[UNCLAIMED_ACCOUNTS|Unclaimed Accounts]] - Account claiming system
 - [[archive-handoff-import|Archive Handoff Import]] - Upload drafts from a Rekolekt clip handoff, with source link and captions
 - [[countdown-editions|Countdown Editions]] - Daily ranked clip selection for countdown videos, with exclusions
+- [[transcript-search|Transcript Search]] - Find clips by what was said, with snippets and the daily transcription cost
 
 ## Feed & Discovery
 

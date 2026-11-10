@@ -11,7 +11,10 @@ function megabytes(bytes?: number): string {
 function PackRow({ pack }: { pack: ClipPack }) {
   const week = `Week of ${formatCountdownDate(pack.week_start, 'short')}`;
   let detail: string;
-  switch (pack.status) {
+  switch (pack.withdrawn && pack.status === 'ready' ? 'withdrawn' : pack.status) {
+    case 'withdrawn':
+      detail = 'No longer available: a clip in it was removed, or you stopped featuring your clips';
+      break;
     case 'ready':
       detail = [
         `${pack.clip_count ?? 0} clips`,
@@ -37,7 +40,7 @@ function PackRow({ pack }: { pack: ClipPack }) {
         <p className='font-semibold text-foreground'>{week}</p>
         <p className='text-sm text-muted-foreground'>{detail}</p>
       </div>
-      {pack.status === 'ready' && pack.download_url && (
+      {pack.status === 'ready' && !pack.withdrawn && pack.download_url && (
         <a
           href={pack.download_url}
           download

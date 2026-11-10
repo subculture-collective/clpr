@@ -340,6 +340,7 @@ func (c *YouTubeClient) VideoStats(ctx context.Context, ids []string) (map[strin
 			} `json:"statistics"`
 			Status struct {
 				PrivacyStatus string `json:"privacyStatus"`
+				UploadStatus  string `json:"uploadStatus"`
 			} `json:"status"`
 		} `json:"items"`
 	}
@@ -350,7 +351,7 @@ func (c *YouTubeClient) VideoStats(ctx context.Context, ids []string) (map[strin
 	for _, item := range body.Items {
 		// viewCount is a decimal string; it is absent when the owner hides it.
 		views, _ := strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
-		out[item.ID] = YouTubeVideoStats{ViewCount: views, PrivacyStatus: item.Status.PrivacyStatus}
+		out[item.ID] = YouTubeVideoStats{ViewCount: views, PrivacyStatus: item.Status.PrivacyStatus, UploadStatus: item.Status.UploadStatus}
 	}
 	return out, nil
 }
@@ -359,4 +360,6 @@ func (c *YouTubeClient) VideoStats(ctx context.Context, ids []string) (map[strin
 type YouTubeVideoStats struct {
 	ViewCount     int64
 	PrivacyStatus string
+	// UploadStatus is uploaded, processed, failed, rejected or deleted.
+	UploadStatus string
 }

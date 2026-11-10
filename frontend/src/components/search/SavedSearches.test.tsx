@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { SavedSearches } from './SavedSearches';
 
 describe('SavedSearches - Integration', () => {
@@ -166,5 +166,25 @@ describe('SavedSearches - Integration', () => {
     // Verify localStorage is unchanged
     const stored = JSON.parse(localStorage.getItem('savedSearches') || '[]');
     expect(stored).toHaveLength(1);
+  });
+
+  it('reopens a said-only search with its phrase', () => {
+    localStorage.setItem('savedSearches', JSON.stringify([
+      { id: '1', query: '', filters: { said: 'cleanest ace' }, created_at: new Date().toISOString() },
+    ]));
+    const Location = () => <span data-testid='location'>{useLocation().search}</span>;
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <Routes>
+            <Route path='/' element={<SavedSearches />} />
+            <Route path='/search' element={<Location />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('1 filter(s)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('said "cleanest ace"'));
+    expect(screen.getByTestId('location')).toHaveTextContent('?said=cleanest+ace');
   });
 });

@@ -179,3 +179,39 @@ describe('SearchPage - Sort Controls', () => {
         expect(tab.defaultPrevented).toBe(false);
     });
 });
+
+describe('SearchPage - said in the clip', () => {
+    it('searches a transcript phrase alone and shows the snippet', async () => {
+        mockedSearchApi.search.mockResolvedValue({
+            ...mockSearchResponse,
+            results: {
+                ...mockSearchResponse.results,
+                clips: [{
+                    id: 'c1', twitch_clip_id: 't1', twitch_clip_url: 'https://clips.twitch.tv/t1', embed_url: 'https://clips.twitch.tv/embed?clip=t1',
+                    title: 'Valorant highlight', creator_name: 'clipper', broadcaster_name: 'alpha', view_count: 10, vote_score: 0,
+                    comment_count: 0, favorite_count: 0, is_featured: false, is_nsfw: false, is_removed: false,
+                    created_at: '2026-11-09T12:00:00Z', imported_at: '2026-11-09T12:00:00Z',
+                    transcript_snippet: 'that was the cleanest ace ever',
+                }],
+            },
+            counts: { ...mockSearchResponse.counts, clips: 1 },
+            meta: { ...mockSearchResponse.meta, total_items: 1 },
+        });
+        render(
+            <HelmetProvider>
+                <QueryClientProvider client={queryClient}>
+                    <ToastProvider>
+                        <MemoryRouter initialEntries={['/search?said=cleanest%20ace']}>
+                            <SearchPage />
+                        </MemoryRouter>
+                    </ToastProvider>
+                </QueryClientProvider>
+            </HelmetProvider>
+        );
+        const snippet = await screen.findByTestId('transcript-snippet');
+        expect(snippet).toHaveTextContent('that was the cleanest ace ever');
+        expect(mockedSearchApi.search).toHaveBeenCalledWith(expect.objectContaining({ query: '', said: 'cleanest ace' }));
+        expect(screen.getByTestId('results-count')).toHaveTextContent('said “cleanest ace”');
+        expect(screen.getByLabelText('Said in the clip')).toHaveValue('cleanest ace');
+    });
+});

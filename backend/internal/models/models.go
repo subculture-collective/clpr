@@ -185,6 +185,12 @@ type Clip struct {
 	LastMirrorSyncAt *time.Time `json:"last_mirror_sync_at,omitempty" db:"last_mirror_sync_at"`
 	// Watch progress (populated from watch history, not in database)
 	WatchProgress *WatchProgressInfo `json:"watch_progress,omitempty" db:"-"`
+	// Transcript is the clip's stored transcript, read only to index it for
+	// search (#87); it is never sent to clients.
+	Transcript *string `json:"-" db:"-"`
+	// TranscriptSnippet is the part of the transcript that matched a search,
+	// with each matched word between U+E000 and U+E001.
+	TranscriptSnippet *string `json:"transcript_snippet,omitempty" db:"-"`
 }
 
 func clipWireValue(clip Clip) struct {
@@ -429,6 +435,9 @@ type SearchRequest struct {
 	DateTo           *string  `json:"date_to" form:"date_to"`
 	Page             int      `json:"page" form:"page"`
 	Limit            int      `json:"limit" form:"limit"`
+
+	// Said limits clips to those whose transcript contains this phrase (#87).
+	Said *string `json:"said" form:"said"`
 }
 
 // SearchResponse represents search results

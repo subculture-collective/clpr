@@ -99,8 +99,15 @@ func run() error {
 	fetcher := &services.TwitchClipMediaFetcher{YTDLPPath: envString("YTDLP_PATH", "yt-dlp")}
 	if cfg.Twitch.ClientID != "" {
 		// Helix is used only for broadcasters who granted channel:manage:clips.
-		fetcher.Auth = repository.NewTwitchAuthRepository(db.Pool)
+		authRepo := repository.NewTwitchAuthRepository(db.Pool)
+		fetcher.Auth = authRepo
 		fetcher.Downloads = services.NewTwitchClipDownloadService(cfg.Twitch.ClientID, "", nil)
+		// With the client secret, expired broadcaster tokens are renewed
+		// here; weekly clip packs depend on it (#86).
+		if cfg.Twitch.ClientSecret != "" {
+			fetcher.Refresher = &services.TwitchTokenRefresher{ClientID: cfg.Twitch.ClientID,
+				ClientSecret: cfg.Twitch.ClientSecret, Store: authRepo}
+		}
 	}
 	registry := prometheus.NewRegistry()
 	store := repository.NewCountdownRepository(db.Pool)
@@ -145,6 +152,11 @@ func run() error {
 			// The temporary WAV holds clip audio, so it stays under the
 			// media directory and its 24-hour sweep.
 			WorkDir: filepath.Join(dir, ".captions"),
+		}
+		// Every edition clip is transcribed for transcript search (#87)
+		// while its media is on the render host.
+		if os.Getenv("COUNTDOWN_TRANSCRIPTS") != "off" {
+			renders.Transcripts = store
 		}
 	}
 	// YouTube publishing (#79) runs once the channel is authorized.
@@ -210,8 +222,8 @@ func run() error {
 	utils.Info("Countdown media worker started", map[string]interface{}{
 		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
-		"captions": renders.Captioner != nil,
-		"youtube":  publisher != nil, "youtube_privacy": privacy,
+		"captions": renders.Captioner != nil, "transcripts": renders.Transcripts != nil,
+		"youtube": publisher != nil, "youtube_privacy": privacy,
 		"clip_packs": packs != nil,
 	})
 	ticker := time.NewTicker(interval)
