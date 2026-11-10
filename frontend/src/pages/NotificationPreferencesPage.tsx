@@ -356,6 +356,14 @@ export function NotificationPreferencesPage() {
                   checked={formData.notify_clip_threshold ?? true}
                   onChange={() => handleToggle('notify_clip_threshold')}
                 />
+                <ToggleSwitch
+                  label="Weekly Streamer Digest"
+                  description="If you feature your clips: a Monday email with your top clips, countdown placements and clip pack. Needs email notifications on."
+                  checked={formData.notify_streamer_digest ?? true}
+                  onChange={() =>
+                    setFormData((prev) => ({ ...prev, notify_streamer_digest: !(prev.notify_streamer_digest ?? true) }))
+                  }
+                />
               </div>
             </div>
 

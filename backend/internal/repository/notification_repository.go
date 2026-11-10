@@ -265,7 +265,7 @@ func (r *NotificationRepository) GetPreferences(ctx context.Context, userID uuid
 			notify_clip_approved, notify_clip_rejected, notify_clip_comments, notify_clip_threshold,
 			notify_broadcaster_live, notify_stream_live,
 			notify_marketing, notify_policy_updates, notify_platform_announcements,
-			updated_at
+			notify_streamer_digest, updated_at
 		FROM notification_preferences
 		WHERE user_id = $1
 	`
@@ -304,6 +304,7 @@ func (r *NotificationRepository) GetPreferences(ctx context.Context, userID uuid
 		&prefs.NotifyMarketing,
 		&prefs.NotifyPolicyUpdates,
 		&prefs.NotifyPlatformAnnouncements,
+		&prefs.NotifyStreamerDigest,
 		&prefs.UpdatedAt,
 	)
 
@@ -334,7 +335,7 @@ func (r *NotificationRepository) CreateDefaultPreferences(ctx context.Context, u
 			notify_clip_approved, notify_clip_rejected, notify_clip_comments, notify_clip_threshold,
 			notify_broadcaster_live, notify_stream_live,
 			notify_marketing, notify_policy_updates, notify_platform_announcements,
-			updated_at
+			notify_streamer_digest, updated_at
 	`
 
 	var prefs models.NotificationPreferences
@@ -371,6 +372,7 @@ func (r *NotificationRepository) CreateDefaultPreferences(ctx context.Context, u
 		&prefs.NotifyMarketing,
 		&prefs.NotifyPolicyUpdates,
 		&prefs.NotifyPlatformAnnouncements,
+		&prefs.NotifyStreamerDigest,
 		&prefs.UpdatedAt,
 	)
 
@@ -417,6 +419,7 @@ func (r *NotificationRepository) UpdatePreferences(ctx context.Context, prefs *m
 			notify_marketing = $30,
 			notify_policy_updates = $31,
 			notify_platform_announcements = $32,
+			notify_streamer_digest = COALESCE($33, notify_streamer_digest),
 			updated_at = NOW()
 		WHERE user_id = $1
 	`
@@ -454,6 +457,7 @@ func (r *NotificationRepository) UpdatePreferences(ctx context.Context, prefs *m
 		prefs.NotifyMarketing,
 		prefs.NotifyPolicyUpdates,
 		prefs.NotifyPlatformAnnouncements,
+		prefs.NotifyStreamerDigest,
 	)
 
 	if err != nil {

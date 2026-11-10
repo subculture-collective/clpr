@@ -17860,6 +17860,9 @@ components:
           type: boolean
         notify_platform_announcements:
           type: boolean
+        notify_streamer_digest:
+          type: boolean
+          description: Weekly streamer digest email for broadcasters who feature their clips. Left out of an update, the stored value stays.
     NotificationPreferences:
       allOf:
         - $ref: '#/components/schemas/NotificationPreferencesUpdate'

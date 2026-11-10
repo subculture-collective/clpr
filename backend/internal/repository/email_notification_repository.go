@@ -179,6 +179,8 @@ func (r *EmailNotificationRepository) ConsumeUnsubscribeToken(ctx context.Contex
 			query = `UPDATE notification_preferences SET notify_replies = false, updated_at = NOW() WHERE user_id = $1`
 		case models.NotificationTypeMention:
 			query = `UPDATE notification_preferences SET notify_mentions = false, updated_at = NOW() WHERE user_id = $1`
+		case models.NotificationTypeStreamerDigest:
+			query = `UPDATE notification_preferences SET notify_streamer_digest = false, updated_at = NOW() WHERE user_id = $1`
 		default:
 			return fmt.Errorf("unsupported unsubscribe notification type")
 		}

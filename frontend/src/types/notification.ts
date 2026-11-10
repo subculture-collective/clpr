@@ -82,6 +82,9 @@ export interface NotificationPreferences {
   notify_marketing: boolean;
   notify_policy_updates: boolean;
   notify_platform_announcements: boolean;
+
+  // Weekly streamer digest email for broadcasters who feature their clips (#85)
+  notify_streamer_digest?: boolean;
   
   updated_at: string;
 }

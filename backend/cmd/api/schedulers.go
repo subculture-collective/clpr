@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/scheduler"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 )
 
 // SchedulerGroup holds all background scheduler instances for graceful shutdown.
@@ -23,6 +24,7 @@ type SchedulerGroup struct {
 	PlaylistScript  *scheduler.PlaylistScriptScheduler
 	AutoTag         *scheduler.AutoTagScheduler
 	TagPromotion    *scheduler.TagPromotionScheduler
+	StreamerDigest  *scheduler.StreamerDigestScheduler  // may be nil
 	TranscriptIndex *scheduler.TranscriptIndexScheduler // may be nil
 	cancel          context.CancelFunc
 	wg              sync.WaitGroup
@@ -145,6 +147,13 @@ func startSchedulers(svcs *Services, repos *Repositories, infra *Infrastructure)
 		time.Duration(cfg.Jobs.TagPromotionStartDelaySeconds)*time.Second,
 	)
 	sg.launch(ctx, 0, sg.TagPromotion.Start)
+
+	// Weekly streamer digest email (#85), only with email turned on.
+	if cfg.Email.Enabled && svcs.Email != nil {
+		digests := &services.StreamerDigestService{Store: repos.Countdown, Sender: svcs.Email}
+		sg.StreamerDigest = scheduler.NewStreamerDigestScheduler(digests, time.Hour)
+		sg.launch(ctx, 5*time.Minute, sg.StreamerDigest.Start)
+	}
 
 	// Copy new clip transcripts into the search index (#87).
 	if svcs.SearchIndexer != nil {
