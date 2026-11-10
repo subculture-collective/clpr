@@ -99,8 +99,15 @@ func run() error {
 	fetcher := &services.TwitchClipMediaFetcher{YTDLPPath: envString("YTDLP_PATH", "yt-dlp")}
 	if cfg.Twitch.ClientID != "" {
 		// Helix is used only for broadcasters who granted channel:manage:clips.
-		fetcher.Auth = repository.NewTwitchAuthRepository(db.Pool)
+		authRepo := repository.NewTwitchAuthRepository(db.Pool)
+		fetcher.Auth = authRepo
 		fetcher.Downloads = services.NewTwitchClipDownloadService(cfg.Twitch.ClientID, "", nil)
+		// With the client secret, expired broadcaster tokens are renewed
+		// here; weekly clip packs depend on it (#86).
+		if cfg.Twitch.ClientSecret != "" {
+			fetcher.Refresher = &services.TwitchTokenRefresher{ClientID: cfg.Twitch.ClientID,
+				ClientSecret: cfg.Twitch.ClientSecret, Store: authRepo}
+		}
 	}
 	registry := prometheus.NewRegistry()
 	store := repository.NewCountdownRepository(db.Pool)

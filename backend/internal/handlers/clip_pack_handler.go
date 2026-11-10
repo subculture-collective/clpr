@@ -59,7 +59,7 @@ func (h *ClipPackHandler) ListMyPacks(c *gin.Context) {
 	canSign := len(h.links.Secret) > 0 && h.links.BaseURL != ""
 	for i := range packs {
 		p := &packs[i]
-		if canSign && p.Status == models.ClipPackReady && p.ExpiresAt != nil && now.Before(*p.ExpiresAt) {
+		if canSign && p.Status == models.ClipPackReady && !p.Withdrawn && p.ExpiresAt != nil && now.Before(*p.ExpiresAt) {
 			link := h.links.URL(p.ID, *p.ExpiresAt, now)
 			p.DownloadURL = &link
 		}

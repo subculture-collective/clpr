@@ -74,7 +74,12 @@ type TwitchClipMediaFetcher struct {
 	// HelixOnly refuses the player fallback: weekly clip packs (#86) use only
 	// the broadcaster's own authorized download.
 	HelixOnly bool
-	Now       func() time.Time
+	// Refresher, when set, renews an expired broadcaster token before the
+	// Helix download. Without it an expired token means no Helix download.
+	Refresher interface {
+		Refresh(ctx context.Context, auth *models.TwitchAuth) error
+	}
+	Now func() time.Time
 }
 
 func (f *TwitchClipMediaFetcher) now() time.Time {
@@ -91,6 +96,13 @@ func (f *TwitchClipMediaFetcher) Fetch(ctx context.Context, clip *models.Countdo
 		auth, err := f.Auth.GetTwitchAuthByTwitchUserID(ctx, broadcasterID)
 		if err != nil {
 			return "", fmt.Errorf("%w: loading broadcaster Twitch authorization: %v", ErrCountdownMediaUnavailable, err)
+		}
+		if auth != nil && hasScope(auth.Scopes, "channel:manage:clips") && !auth.ExpiresAt.After(f.now().Add(time.Minute)) && f.Refresher != nil {
+			if err := f.Refresher.Refresh(ctx, auth); err != nil {
+				utils.Warn("Broadcaster Twitch token not refreshed", map[string]interface{}{
+					"clip_id": clip.ClipID.String(), "error": err.Error(),
+				})
+			}
 		}
 		if auth != nil && hasScope(auth.Scopes, "channel:manage:clips") && auth.ExpiresAt.After(f.now()) {
 			mediaURL, err := f.Downloads.GetDownloadURL(ctx, broadcasterID, clip.TwitchClipID, auth.AccessToken)

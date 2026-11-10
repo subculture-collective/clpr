@@ -11,13 +11,15 @@ import (
 
 // ListUploadsForStats returns the YouTube video IDs of uploads made after
 // uploadedAfter whose view counts were last read before staleBefore, or never,
-// oldest reading first.
+// oldest reading first. A video YouTube did not return is asked about again
+// a week later, in case the miss was temporary.
 func (r *CountdownRepository) ListUploadsForStats(ctx context.Context, uploadedAfter, staleBefore time.Time, limit int) ([]string, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT youtube_video_id
 		FROM countdown_uploads
-		WHERE youtube_missing = FALSE AND uploaded_at >= $1
+		WHERE uploaded_at >= $1
 		  AND (stats_refreshed_at IS NULL OR stats_refreshed_at < $2)
+		  AND (youtube_missing = FALSE OR stats_refreshed_at < $2::timestamptz - INTERVAL '6 days')
 		ORDER BY stats_refreshed_at NULLS FIRST, uploaded_at DESC
 		LIMIT $3`, uploadedAfter, staleBefore, limit)
 	if err != nil {
@@ -47,7 +49,8 @@ func (r *CountdownRepository) SaveUploadStats(ctx context.Context, stats []model
 		}
 		batch.Queue(`
 			UPDATE countdown_uploads
-			SET view_count = $2, youtube_privacy_status = COALESCE($3, youtube_privacy_status), stats_refreshed_at = $4
+			SET view_count = $2, youtube_privacy_status = COALESCE($3, youtube_privacy_status), stats_refreshed_at = $4,
+			    youtube_missing = FALSE
 			WHERE youtube_video_id = $1`, s.YouTubeVideoID, max(s.ViewCount, 0), privacy, at)
 	}
 	for _, id := range missing {
@@ -59,12 +62,13 @@ func (r *CountdownRepository) SaveUploadStats(ctx context.Context, stats []model
 	return r.pool.SendBatch(ctx, batch).Close()
 }
 
-// countdownVideoVisible: viewers can open the video on YouTube. Before the
-// worker first reads a video, a scheduled upload counts as public from its
-// publish time.
+// countdownVideoVisible: viewers can open the video on YouTube. A scheduled
+// upload counts as public from its publish time until the worker reads it
+// again, since YouTube reported it private before then.
 const countdownVideoVisible = `u.youtube_missing = FALSE AND (
 	u.youtube_privacy_status IN ('public', 'unlisted')
-	OR (u.youtube_privacy_status IS NULL AND (u.privacy_status IN ('public', 'unlisted') OR u.publish_at <= NOW()))
+	OR (u.youtube_privacy_status IS NULL AND u.privacy_status IN ('public', 'unlisted'))
+	OR (u.publish_at <= NOW() AND (u.stats_refreshed_at IS NULL OR u.stats_refreshed_at < u.publish_at))
 )`
 
 // ListBroadcasterPlacements returns the broadcaster's clips in public
