@@ -99,6 +99,40 @@ func TestCountdownPlacementsAndViewCounts(t *testing.T) {
 	if due, err := repo.ListUploadsForStats(ctx, windowEnd.Add(-48*time.Hour), now.Add(2*time.Hour), 10); err != nil || len(due) != 1 || due[0] != "vidCountdown1" {
 		t.Fatalf("due after missing = %v, %v", due, err)
 	}
+	// A week later the missing Short is asked about again, and a read that
+	// finds it brings it back.
+	if due, err := repo.ListUploadsForStats(ctx, windowEnd.Add(-48*time.Hour), now.Add(8*24*time.Hour), 10); err != nil || len(due) != 2 {
+		t.Fatalf("due a week later = %v, %v", due, err)
+	}
+	if err := repo.SaveUploadStats(ctx, []models.CountdownVideoStats{{YouTubeVideoID: "vidShortA1", ViewCount: 25, PrivacyStatus: "public"}}, nil, now.Add(8*24*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if placements, _ := repo.ListBroadcasterPlacements(ctx, "alpha", 50); len(placements) != 1 || placements[0].Short == nil || *placements[0].Short.ViewCount != 25 {
+		t.Fatalf("Short after it came back = %+v", placements)
+	}
+
+	// A scheduled upload read as private before its publish time shows once
+	// the publish time passes, without waiting for the next read.
+	var renderID string
+	if err := pool.QueryRow(ctx, `SELECT render_id FROM countdown_uploads WHERE youtube_video_id = 'vidCountdown1'`).Scan(&renderID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE countdown_uploads SET youtube_privacy_status = 'private', stats_refreshed_at = NOW() - INTERVAL '2 hours',
+		publish_at = NOW() - INTERVAL '1 hour' WHERE render_id = $1`, renderID); err != nil {
+		t.Fatal(err)
+	}
+	if placements, _ := repo.ListBroadcasterPlacements(ctx, "alpha", 50); len(placements) != 1 || placements[0].Countdown == nil {
+		t.Fatalf("scheduled video after its publish time = %+v", placements)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE countdown_uploads SET stats_refreshed_at = NOW() WHERE render_id = $1`, renderID); err != nil {
+		t.Fatal(err)
+	}
+	if placements, _ := repo.ListBroadcasterPlacements(ctx, "alpha", 50); len(placements) != 1 || placements[0].Countdown != nil {
+		t.Fatalf("video YouTube still reports private after its publish time = %+v", placements)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE countdown_uploads SET youtube_privacy_status = 'public' WHERE render_id = $1`, renderID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Excluding the broadcaster hides their placements, like the public pages.
 	alpha := "alpha"

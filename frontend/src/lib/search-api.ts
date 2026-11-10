@@ -42,13 +42,14 @@ export const searchApi = {
     async search(params: SearchRequest): Promise<SearchResponse> {
         const response = await apiClient.get<LegacySearchResponse>('/search', {
             params: {
-                q: params.query,
+                q: params.query || undefined,
                 type: params.type,
                 sort: params.sort,
                 twitch_category_id: params.twitchCategoryId ?? params.gameId,
                 creator_id: params.creatorId,
                 language: params.language,
                 tags: params.tags,
+                said: params.said || undefined,
                 min_votes: params.minVotes,
                 date_from: params.dateFrom,
                 date_to: params.dateTo,

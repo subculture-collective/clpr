@@ -17,6 +17,8 @@ describe('ClipPacksCard', () => {
               bytes: 154_000_000, expires_at: '2026-11-16T07:00:00Z', download_url: 'https://packs.example/packs/p1.zip?expires=1&sig=x' },
             { id: 'p2', broadcaster_id: '1', broadcaster_name: 'a', week_start: '2026-10-26', status: 'expired' },
             { id: 'p3', broadcaster_id: '1', broadcaster_name: 'a', week_start: '2026-10-19', status: 'failed' },
+            { id: 'p4', broadcaster_id: '1', broadcaster_name: 'a', week_start: '2026-10-12', status: 'ready', withdrawn: true,
+              download_url: 'https://packs.example/packs/p4.zip' },
           ],
         })),
     );
@@ -30,6 +32,8 @@ describe('ClipPacksCard', () => {
     expect(rows[1]).toHaveTextContent('Expired after 7 days');
     expect(within(rows[1]).queryByRole('link')).not.toBeInTheDocument();
     expect(rows[2]).toHaveTextContent('Could not be made');
+    expect(rows[3]).toHaveTextContent('No longer available');
+    expect(within(rows[3]).queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('renders nothing before the first pack', async () => {

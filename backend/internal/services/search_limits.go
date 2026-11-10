@@ -266,6 +266,8 @@ func getAllowedSearchFields() map[string]bool {
 		"creator_id",
 		"broadcaster_name",
 		"broadcaster_id",
+		"transcript",
+		"transcript.en",
 		"game_name",
 		"game_name.keyword",
 		"game_id",

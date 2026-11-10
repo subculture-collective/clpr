@@ -147,6 +147,18 @@ func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req 
 		argPos++
 	}
 
+	// "said": the transcript holds the phrase (#87).
+	saidPos := 0
+	if req.Said != nil && strings.TrimSpace(*req.Said) != "" {
+		whereClause += fmt.Sprintf(` AND EXISTS (
+			SELECT 1 FROM clip_transcripts tr
+			WHERE tr.clip_id = c.id AND to_tsvector('english', tr.full_text) @@ phraseto_tsquery('english', %s)
+		)`, utils.SQLPlaceholder(argPos))
+		args = append(args, strings.TrimSpace(*req.Said))
+		saidPos = argPos
+		argPos++
+	}
+
 	// Handle tag filters
 	if len(req.Tags) > 0 {
 		whereClause += fmt.Sprintf(` AND c.id IN (
@@ -175,6 +187,16 @@ func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req 
 		return nil, 0, err
 	}
 
+	// The matching part of the transcript, each matched word between U+E000
+	// and U+E001 as in the OpenSearch highlights.
+	snippetColumn := "NULL::text"
+	if saidPos > 0 {
+		snippetColumn = fmt.Sprintf(`(SELECT ts_headline('english', tr.full_text, phraseto_tsquery('english', %s), %s)
+			FROM clip_transcripts tr WHERE tr.clip_id = c.id)`, utils.SQLPlaceholder(saidPos), utils.SQLPlaceholder(argPos))
+		args = append(args, "StartSel=\ue000, StopSel=\ue001, MaxWords=24, MinWords=8")
+		argPos++
+	}
+
 	// Get paginated results
 	offset := (req.Page - 1) * req.Limit
 	query := fmt.Sprintf(`
@@ -184,12 +206,12 @@ func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req 
 			c.broadcaster_id, c.game_id, c.game_name, c.language,
 			c.thumbnail_url, c.duration, c.view_count, c.created_at,
 			c.imported_at, c.vote_score, c.comment_count, c.favorite_count,
-			c.is_featured, c.is_nsfw, c.is_removed, c.removed_reason
+			c.is_featured, c.is_nsfw, c.is_removed, c.removed_reason, %s
 		FROM clips c
 		WHERE %s
 		ORDER BY %s
 		LIMIT %s OFFSET %s
-	`, whereClause, orderBy, utils.SQLPlaceholder(argPos), utils.SQLPlaceholder(argPos+1))
+	`, snippetColumn, whereClause, orderBy, utils.SQLPlaceholder(argPos), utils.SQLPlaceholder(argPos+1))
 	args = append(args, req.Limit, offset)
 
 	rows, err := r.db.Query(ctx, query, args...)
@@ -207,7 +229,7 @@ func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req 
 			&clip.BroadcasterID, &clip.GameID, &clip.GameName, &clip.Language,
 			&clip.ThumbnailURL, &clip.Duration, &clip.ViewCount, &clip.CreatedAt,
 			&clip.ImportedAt, &clip.VoteScore, &clip.CommentCount, &clip.FavoriteCount,
-			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason,
+			&clip.IsFeatured, &clip.IsNSFW, &clip.IsRemoved, &clip.RemovedReason, &clip.TranscriptSnippet,
 		)
 		if err != nil {
 			return nil, 0, err

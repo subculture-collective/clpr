@@ -32,6 +32,9 @@ type ClipPack struct {
 	Clips           []ClipPackClip `json:"-"`
 	// DownloadURL is a signed link to the zip, set by the API for ready packs.
 	DownloadURL *string `json:"download_url,omitempty"`
+	// Withdrawn: the broadcaster stopped featuring their clips or was
+	// excluded, or a clip in the pack was removed, so it is not served.
+	Withdrawn bool `json:"withdrawn"`
 }
 
 // ClipPackClip is one clip chosen for a pack. Position 1 has the most views.
@@ -53,4 +56,5 @@ type ClipPackFile struct {
 	Status    string
 	ExpiresAt *time.Time
 	Deleted   bool
+	Withdrawn bool
 }

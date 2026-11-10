@@ -39,7 +39,11 @@ func (f *fakeStatsReader) VideoStats(_ context.Context, ids []string) (map[strin
 	}
 	out := map[string]YouTubeVideoStats{}
 	for i, id := range ids {
-		if id != "gone" {
+		switch id {
+		case "gone":
+		case "rejected":
+			out[id] = YouTubeVideoStats{PrivacyStatus: "public", UploadStatus: "rejected"}
+		default:
 			out[id] = YouTubeVideoStats{ViewCount: int64(i), PrivacyStatus: "public"}
 		}
 	}
@@ -48,7 +52,7 @@ func (f *fakeStatsReader) VideoStats(_ context.Context, ids []string) (map[strin
 
 func TestCountdownStatsRefresherBatchesAndMarksMissing(t *testing.T) {
 	now := time.Date(2026, 11, 10, 3, 0, 0, 0, time.UTC)
-	store := &fakeStatsStore{ids: []string{"gone"}}
+	store := &fakeStatsStore{ids: []string{"gone", "rejected"}}
 	for i := 0; i < 120; i++ {
 		store.ids = append(store.ids, fmt.Sprintf("vid%03d", i))
 	}
@@ -60,7 +64,7 @@ func TestCountdownStatsRefresherBatchesAndMarksMissing(t *testing.T) {
 	if len(reader.calls) != 3 || len(reader.calls[0]) != 50 || len(reader.calls[2]) != 1 {
 		t.Fatalf("calls = %d, sizes %d/%d", len(reader.calls), len(reader.calls[0]), len(reader.calls[len(reader.calls)-1]))
 	}
-	if len(store.saved) != 100 || len(store.missing) != 1 || store.missing[0] != "gone" {
+	if len(store.saved) != 99 || len(store.missing) != 2 || store.missing[0] != "gone" || store.missing[1] != "rejected" {
 		t.Fatalf("saved %d, missing %v", len(store.saved), store.missing)
 	}
 	if store.listed[0] != now.Add(-90*24*time.Hour) || store.listed[1] != now.Add(-6*time.Hour) {

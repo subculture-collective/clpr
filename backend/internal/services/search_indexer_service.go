@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/http"
 	"strings"
 	"time"
 
@@ -134,6 +135,9 @@ func (s *SearchIndexerService) IndexClip(ctx context.Context, clip *models.Clip)
 	// Preserve submission provenance without making it a search eligibility rule
 	if clip.SubmittedByUserID != nil {
 		doc["submitted_by_user_id"] = clip.SubmittedByUserID.String()
+	}
+	if clip.Transcript != nil {
+		doc["transcript"] = *clip.Transcript
 	}
 
 	return s.indexDocument(ctx, ClipsIndex, clip.ID.String(), doc)
@@ -340,6 +344,9 @@ func (s *SearchIndexerService) BulkIndexClips(ctx context.Context, clips []model
 		if clip.SubmittedByUserID != nil {
 			doc["submitted_by_user_id"] = clip.SubmittedByUserID.String()
 		}
+		if clip.Transcript != nil {
+			doc["transcript"] = *clip.Transcript
+		}
 
 		docJSON, _ := json.Marshal(doc)
 		buf.Write(docJSON)
@@ -441,6 +448,13 @@ func getClipIndexMapping() string {
 "es": {"type": "text", "analyzer": "spanish_analyzer"},
 "fr": {"type": "text", "analyzer": "french_analyzer"},
 "de": {"type": "text", "analyzer": "german_analyzer"}
+}
+},
+"transcript": {
+"type": "text",
+"analyzer": "standard_multilang",
+"fields": {
+"en": {"type": "text", "analyzer": "english_analyzer"}
 }
 },
 "creator_name": {
@@ -609,4 +623,49 @@ func (s *SearchIndexerService) IndexGameSearchResult(ctx context.Context, game *
 	}
 
 	return s.indexDocument(ctx, GamesIndex, game.ID, doc)
+}
+
+// UpdateClipTranscripts sets the transcript field of indexed clips (#87). A
+// clip the index does not hold yet is skipped; the next full index run
+// reads its transcript from the database.
+func (s *SearchIndexerService) UpdateClipTranscripts(ctx context.Context, transcripts map[uuid.UUID]string) error {
+	if len(transcripts) == 0 {
+		return nil
+	}
+	var buf bytes.Buffer
+	for id, text := range transcripts {
+		meta, _ := json.Marshal(map[string]any{"update": map[string]any{"_index": ClipsIndex, "_id": id.String()}})
+		doc, _ := json.Marshal(map[string]any{"doc": map[string]any{"transcript": text}})
+		buf.Write(meta)
+		buf.WriteByte('\n')
+		buf.Write(doc)
+		buf.WriteByte('\n')
+	}
+	res, err := opensearchapi.BulkRequest{Body: &buf}.Do(ctx, s.osClient.GetClient())
+	if err != nil {
+		return fmt.Errorf("bulk transcript update failed: %w", err)
+	}
+	defer res.Body.Close()
+	if res.IsError() {
+		return fmt.Errorf("bulk transcript update error: %s", res.Status())
+	}
+	var bulkRes struct {
+		Items []map[string]struct {
+			Status int `json:"status"`
+			Error  *struct {
+				Type string `json:"type"`
+			} `json:"error"`
+		} `json:"items"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&bulkRes); err != nil {
+		return fmt.Errorf("failed to parse bulk response: %w", err)
+	}
+	for _, item := range bulkRes.Items {
+		for _, result := range item {
+			if result.Error != nil && result.Status != http.StatusNotFound {
+				return fmt.Errorf("transcript update rejected: status=%d type=%s", result.Status, result.Error.Type)
+			}
+		}
+	}
+	return nil
 }

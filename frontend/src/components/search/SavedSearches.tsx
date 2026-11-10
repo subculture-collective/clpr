@@ -14,7 +14,8 @@ export function SavedSearches({ className = '' }: SavedSearchesProps) {
   const navigate = useNavigate();
 
   const handleSearchClick = (search: SavedSearch) => {
-    const params = new URLSearchParams({ q: search.query });
+    const params = new URLSearchParams();
+    if (search.query) params.set('q', search.query);
     
     if (search.filters) {
       const filters = search.filters;
@@ -27,6 +28,7 @@ export function SavedSearches({ className = '' }: SavedSearchesProps) {
       if (filters.tags && filters.tags.length > 0) {
         params.append('tags', filters.tags.join(','));
       }
+      if (filters.said) params.append('said', filters.said);
     }
     
     navigate(`/search?${params.toString()}`);
@@ -73,7 +75,7 @@ export function SavedSearches({ className = '' }: SavedSearchesProps) {
             >
               <div className="flex flex-col gap-1">
                 <span className="text-sm text-white truncate">
-                  {search.name || search.query}
+                  {search.name || search.query || (search.filters?.said ? `said "${search.filters.said}"` : '')}
                 </span>
                 {search.name && (
                   <span className="text-xs text-muted-foreground truncate">
@@ -89,6 +91,7 @@ export function SavedSearches({ className = '' }: SavedSearchesProps) {
                     search.filters.dateTo,
                     typeof search.filters.minVotes === 'number' && !isNaN(search.filters.minVotes) && search.filters.minVotes > 0,
                     Array.isArray(search.filters.tags) && search.filters.tags.length > 0,
+                    search.filters.said,
                   ].filter(Boolean).length;
                   
                   return filterCount > 0 ? (

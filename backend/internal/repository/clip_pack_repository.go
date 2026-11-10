@@ -54,8 +54,20 @@ func (r *CountdownRepository) EnsureWeeklyPacks(ctx context.Context, weekStart t
 	return created, err
 }
 
+// clipPackStillAllowed: the broadcaster still features their clips and is
+// not left out of countdowns. p is the clip_packs row.
+const clipPackStillAllowed = `EXISTS (SELECT 1 FROM broadcaster_feature_optins o WHERE o.broadcaster_id = p.broadcaster_id)
+	AND NOT EXISTS (SELECT 1 FROM countdown_exclusions x WHERE x.broadcaster_id = p.broadcaster_id)`
+
+// clipPackClipAllowed: a chosen clip may still go in the pack. c is the clip.
+const clipPackClipAllowed = `c.is_removed = false AND c.is_hidden = false AND COALESCE(c.dmca_removed, false) = false
+	AND NOT EXISTS (SELECT 1 FROM countdown_exclusions x WHERE x.clip_id = c.id)`
+
 // ClaimPackForBuild moves the oldest pending pack to "building" and returns
-// it with its clips. A claim older than staleAfter is taken again.
+// it with its clips that may still go in: clips removed, hidden, taken down
+// or excluded since the pack was queued are left out, and a broadcaster who
+// stopped featuring their clips or was excluded gets none. A claim older
+// than staleAfter is taken again.
 func (r *CountdownRepository) ClaimPackForBuild(ctx context.Context, staleAfter time.Duration) (*models.ClipPack, error) {
 	var p models.ClipPack
 	err := r.pool.QueryRow(ctx, `
@@ -75,13 +87,14 @@ func (r *CountdownRepository) ClaimPackForBuild(ctx context.Context, staleAfter 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.pool.Query(ctx, `
+	rows, err := r.pool.Query(ctx, fmt.Sprintf(`
 		SELECT pc.position, c.id, c.title, c.broadcaster_name, c.broadcaster_id, c.twitch_clip_id, c.twitch_clip_url,
 		       c.duration, COALESCE(c.view_count, 0)
 		FROM clip_pack_clips pc
+		JOIN clip_packs p ON p.id = pc.pack_id
 		JOIN clips c ON c.id = pc.clip_id
-		WHERE pc.pack_id = $1
-		ORDER BY pc.position`, p.ID)
+		WHERE pc.pack_id = $1 AND %s AND %s
+		ORDER BY pc.position`, clipPackStillAllowed, clipPackClipAllowed), p.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,14 +175,22 @@ func (r *CountdownRepository) MarkPackDeleted(ctx context.Context, id uuid.UUID)
 	return err
 }
 
+// clipPackWithdrawn: since the pack was made, the broadcaster stopped
+// featuring their clips or was excluded, or a clip in it was removed,
+// hidden, taken down or excluded. Such a pack is no longer served.
+var clipPackWithdrawn = fmt.Sprintf(`NOT (%s) OR EXISTS (
+	SELECT 1 FROM clip_pack_clips pc JOIN clips c ON c.id = pc.clip_id
+	WHERE pc.pack_id = p.id AND NOT (%s))`, clipPackStillAllowed, clipPackClipAllowed)
+
 // PackFile returns what the zip server needs about a pack, or nil when there
 // is no such pack.
 func (r *CountdownRepository) PackFile(ctx context.Context, id uuid.UUID) (*models.ClipPackFile, error) {
 	var f models.ClipPackFile
 	var name *string
 	err := r.pool.QueryRow(ctx, `
-		SELECT file_name, status, expires_at, deleted_at IS NOT NULL FROM clip_packs WHERE id = $1`, id).
-		Scan(&name, &f.Status, &f.ExpiresAt, &f.Deleted)
+		SELECT p.file_name, p.status, p.expires_at, p.deleted_at IS NOT NULL, `+clipPackWithdrawn+`
+		FROM clip_packs p WHERE p.id = $1`, id).
+		Scan(&name, &f.Status, &f.ExpiresAt, &f.Deleted, &f.Withdrawn)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -185,11 +206,11 @@ func (r *CountdownRepository) PackFile(ctx context.Context, id uuid.UUID) (*mode
 // ListBroadcasterPacks returns the broadcaster's packs, newest week first.
 func (r *CountdownRepository) ListBroadcasterPacks(ctx context.Context, broadcasterID string, limit int) ([]models.ClipPack, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT id, broadcaster_id, broadcaster_name, to_char(week_start, 'YYYY-MM-DD'), status, sha256, bytes, clip_count,
-		       ready_at, expires_at
-		FROM clip_packs
-		WHERE broadcaster_id = $1
-		ORDER BY week_start DESC
+		SELECT p.id, p.broadcaster_id, p.broadcaster_name, to_char(p.week_start, 'YYYY-MM-DD'), p.status, p.sha256, p.bytes,
+		       p.clip_count, p.ready_at, p.expires_at, `+clipPackWithdrawn+`
+		FROM clip_packs p
+		WHERE p.broadcaster_id = $1
+		ORDER BY p.week_start DESC
 		LIMIT $2`, broadcasterID, limit)
 	if err != nil {
 		return nil, err
@@ -199,7 +220,7 @@ func (r *CountdownRepository) ListBroadcasterPacks(ctx context.Context, broadcas
 	for rows.Next() {
 		var p models.ClipPack
 		if err := rows.Scan(&p.ID, &p.BroadcasterID, &p.BroadcasterName, &p.WeekStart, &p.Status, &p.SHA256, &p.Bytes,
-			&p.ClipCount, &p.ReadyAt, &p.ExpiresAt); err != nil {
+			&p.ClipCount, &p.ReadyAt, &p.ExpiresAt, &p.Withdrawn); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

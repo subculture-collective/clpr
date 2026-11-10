@@ -5,6 +5,7 @@ import { Container, SEO } from '../components';
 import { ClipCard } from '../components/clip';
 import { SearchBar, SearchFilters } from '../components/search';
 import { SearchErrorAlert } from '../components/search/SearchErrorAlert';
+import { SaidFilter, TranscriptSnippet } from '../components/search/TranscriptSearch';
 import { TrendingSearches } from '../components/search/TrendingSearches';
 import { SearchHistory } from '../components/search/SearchHistory';
 import { SavedSearches } from '../components/search/SavedSearches';
@@ -41,6 +42,7 @@ export function SearchPage() {
     const dateToParam = searchParams.get('date_to') || undefined;
     const minVotesParam = searchParams.get('min_votes');
     const tagsParam = searchParams.get('tags');
+    const saidParam = searchParams.get('said')?.trim() || undefined;
 
     type SearchType = NonNullable<SearchRequest['type']>;
     type SortType = NonNullable<SearchRequest['sort']>;
@@ -55,6 +57,7 @@ export function SearchPage() {
         dateTo: dateToParam,
         minVotes: minVotesParam ? parseInt(minVotesParam, 10) : undefined,
         tags: tagsParam ? tagsParam.split(',') : undefined,
+        said: saidParam,
     });
 
     const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
@@ -74,19 +77,19 @@ export function SearchPage() {
     }, [searchParamsString]);
 
     useEffect(() => {
-        if (query || hasRestoredParams.current) return;
+        if (query || saidParam || hasRestoredParams.current) return;
 
         const stored = sessionStorage.getItem('search:lastParams');
         if (stored) {
             hasRestoredParams.current = true;
             setSearchParams(new URLSearchParams(stored), { replace: true });
         }
-    }, [query, setSearchParams]);
+    }, [query, saidParam, setSearchParams]);
 
     useEffect(() => {
         const handlePopState = () => {
             const current = new URL(window.location.href);
-            if (current.searchParams.get('q')) return;
+            if (current.searchParams.get('q') || current.searchParams.get('said')) return;
 
             const stored = sessionStorage.getItem('search:lastParams');
             if (stored) {
@@ -134,6 +137,7 @@ export function SearchPage() {
                     dateTo: filters.dateTo,
                     minVotes: filters.minVotes,
                     tags: filters.tags,
+                    said: filters.said,
                 });
 
                 // Add to search history
@@ -142,7 +146,8 @@ export function SearchPage() {
                     (result.counts.creators || 0) +
                     (result.counts.twitch_categories || result.counts.games || 0) +
                     (result.counts.tags || 0);
-                addToHistory(query, totalResults);
+                // A said-only search has no query to remember.
+                if (query) addToHistory(query, totalResults);
 
                 // Check for failover indicators even on successful responses
                 // Note: This requires the API client to expose response headers
@@ -154,7 +159,7 @@ export function SearchPage() {
                 throw err;
             }
         },
-        enabled: query.length > 0,
+        enabled: query.length > 0 || !!filters.said,
         retry: false, // We handle retries manually
     });
 
@@ -199,9 +204,11 @@ export function SearchPage() {
                 minVotes:
                     minVotesParam ? parseInt(minVotesParam, 10) : undefined,
                 tags: tagsParam ? tagsParam.split(',') : undefined,
+                said: saidParam,
             });
         });
     }, [
+        saidParam,
         languageParam,
         twitchCategoryIdParam,
         dateFromParam,
@@ -288,6 +295,12 @@ export function SearchPage() {
             newParams.delete('min_votes');
         }
 
+        if (newFilters.said?.trim()) {
+            newParams.set('said', newFilters.said.trim());
+        } else {
+            newParams.delete('said');
+        }
+
         // Add tags (as comma-separated)
         if (Array.isArray(newFilters.tags) && newFilters.tags.length > 0) {
             newParams.set('tags', newFilters.tags.join(','));
@@ -309,7 +322,8 @@ export function SearchPage() {
             (typeof filters.minVotes === 'number' &&
                 !isNaN(filters.minVotes) &&
                 filters.minVotes > 0) ||
-            (Array.isArray(filters.tags) && filters.tags.length > 0);
+            (Array.isArray(filters.tags) && filters.tags.length > 0) ||
+            !!filters.said;
 
         const activeFilters = hasActiveFilters ? filters : undefined;
         saveSearch(query, activeFilters, name || undefined);
@@ -340,7 +354,7 @@ export function SearchPage() {
             `Search results for "${query}" on clpr. Find Twitch clips, creators, tags, and categories matching your query.`
         :   'Search Twitch clips, creators, tags, and categories on clpr.';
 
-    if (!query.trim()) {
+    if (!query.trim() && !saidParam) {
         return (
             <>
                 <SEO
@@ -431,7 +445,9 @@ export function SearchPage() {
                             data-testid='results-count'
                         >
                             Found {data?.meta.total_items || 0} results for:{' '}
-                            <span className='font-semibold'>"{query}"</span>
+                            {query && <span className='font-semibold'>"{query}"</span>}
+                            {query && saidParam && ' '}
+                            {saidParam && <span className='font-semibold'>said &ldquo;{saidParam}&rdquo;</span>}
                         </p>
                     </div>
                     <button
@@ -500,6 +516,14 @@ export function SearchPage() {
                         <option value='popular'>Popular</option>
                     </select>
                 </div>
+
+                {/* Said in the clip (#87) */}
+                {(activeTab === 'all' || activeTab === 'clips') && (
+                    <SaidFilter
+                        value={filters.said}
+                        onChange={said => handleFiltersChange({ ...filters, said })}
+                    />
+                )}
 
                 {/* Filters */}
                 {(activeTab === 'all' || activeTab === 'clips') &&
@@ -573,10 +597,12 @@ export function SearchPage() {
                                     </h2>
                                     <div className='space-y-6'>
                                         {data.results.clips.map(clip => (
-                                            <ClipCard
-                                                key={clip.id}
-                                                clip={clip}
-                                            />
+                                            <div key={clip.id}>
+                                                <ClipCard clip={clip} />
+                                                {clip.transcript_snippet && (
+                                                    <TranscriptSnippet snippet={clip.transcript_snippet} />
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                 </section>
