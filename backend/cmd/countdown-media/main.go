@@ -153,6 +153,11 @@ func run() error {
 			// media directory and its 24-hour sweep.
 			WorkDir: filepath.Join(dir, ".captions"),
 		}
+		// Every edition clip is transcribed for transcript search (#87)
+		// while its media is on the render host.
+		if os.Getenv("COUNTDOWN_TRANSCRIPTS") != "off" {
+			renders.Transcripts = store
+		}
 	}
 	// YouTube publishing (#79) runs once the channel is authorized.
 	youTube, err := youTubeClientFromEnv()
@@ -217,8 +222,8 @@ func run() error {
 	utils.Info("Countdown media worker started", map[string]interface{}{
 		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
-		"captions": renders.Captioner != nil,
-		"youtube":  publisher != nil, "youtube_privacy": privacy,
+		"captions": renders.Captioner != nil, "transcripts": renders.Transcripts != nil,
+		"youtube": publisher != nil, "youtube_privacy": privacy,
 		"clip_packs": packs != nil,
 	})
 	ticker := time.NewTicker(interval)

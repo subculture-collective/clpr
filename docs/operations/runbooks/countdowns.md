@@ -19,7 +19,7 @@ Each day clpr selects the fastest-rising Twitch clips for every enabled countdow
 |-------|---------|----------------|
 | Selection, at each series' `selection_hour_utc` | API scheduler | `selected` (or `failed` when too few clips are eligible) |
 | Media fetch | `countdown-media` worker on the render host | `fetching` → `fetched` |
-| Render | same worker | `rendering` → `rendered`; the page at `/countdowns/<date>/<series>` goes public |
+| Render, with each clip's transcript stored for search | same worker | `rendering` → `rendered`; the page at `/countdowns/<date>/<series>` goes public |
 | Publish to YouTube | same worker, once the channel is authorized | `publishing` → `published` |
 | View counts for the creator dashboard, hourly | same worker, once the channel is authorized | unchanged |
 | Weekly clip packs, from Monday 06:00 UTC | same worker, once `CLIP_PACK_LINK_SECRET` is set | separate `clip_packs` rows: `pending` → `building` → `ready` → `expired` after 7 days |
@@ -147,4 +147,4 @@ Stop the worker: nothing else depends on it. Editions wait in their current stat
 
 ---
 
-**See also:** [Countdown editions](../../features/countdown-editions.md) · [YouTube API usage](../../compliance/youtube-api-usage.md) · [Runbooks](./README.md)
+**See also:** [Countdown editions](../../features/countdown-editions.md) · [Transcript search](../../features/transcript-search.md) · [YouTube API usage](../../compliance/youtube-api-usage.md) · [Runbooks](./README.md)

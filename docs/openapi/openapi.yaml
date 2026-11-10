@@ -1882,16 +1882,22 @@ paths:
     get:
       tags: [Search]
       summary: Search clips
-      description: Full-text search for clips (rate limited - 60/minute)
+      description: >-
+        Full-text search for clips (rate limited - 60/minute). Clip text search also covers clip transcripts. Pass `q`,
+        `said`, or both. A clip whose transcript matched carries `transcript_snippet`.
       operationId: search
       security: []
       parameters:
         - name: q
           in: query
-          required: true
           schema:
             type: string
-          description: Search query
+          description: Search query; required unless `said` is given
+        - name: said
+          in: query
+          schema: {type: string, maxLength: 200}
+          description: >-
+            Only clips whose transcript contains this phrase, in this order. Without `q`, only clips are searched.
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - name: type
@@ -11558,6 +11564,11 @@ components:
           type: string
         broadcaster_id:
           type: [string, "null"]
+        transcript_snippet:
+          type: string
+          description: >-
+            In search results only: the part of the clip's transcript that matched, with each matched word between
+            U+E000 and U+E001.
         game_id:
           type: [string, "null"]
         game_name:

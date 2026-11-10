@@ -256,8 +256,22 @@ func (s *AutoTagScheduler) processTranscriptionClips(ctx context.Context) {
 	for i := range clips {
 		clip := &clips[i]
 		clipCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		started := time.Now()
 		result, transcribeErr := s.transcription.TranscribeClip(clipCtx, clip)
 		cancel()
+		// Whisper runs locally, so its cost is compute time (#87). A
+		// provider-wide failure or a missing authorization did no work.
+		if !errors.Is(transcribeErr, services.ErrTranscriptionProviderUnavailable) &&
+			!errors.Is(transcribeErr, services.ErrClipTranscriptionNotAuthorized) {
+			usage := repository.TranscriptionUsage{Day: started, Source: repository.TranscriptSourceAuthorized,
+				Transcribed: transcribeErr == nil, ComputeSeconds: time.Since(started).Seconds()}
+			if clip.Duration != nil {
+				usage.AudioSeconds = *clip.Duration
+			}
+			if err := s.clipRepo.RecordTranscriptionUsage(ctx, usage); err != nil {
+				utils.Warn("Transcription usage not recorded", map[string]interface{}{"error": err.Error()})
+			}
+		}
 		if transcribeErr != nil {
 			utils.Warn("Authorized clip transcription failed", map[string]interface{}{
 				"clip_id": clip.ID.String(),
