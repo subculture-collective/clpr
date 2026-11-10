@@ -15,7 +15,8 @@ concurrency:
 jobs:
   candidate:
     name: Build, scan, sign, and publish immutable candidate
-    runs-on: ubuntu-24.04
+    # Homelab deploy keys accept only Kvant's address (Kvant and its Kuznya VM); the kvant label keeps this job off Buran.
+    runs-on: [ubuntu-24.04, kvant]
     timeout-minutes: 240
     env:
       OCI_SOURCE: https://git.subcult.tv/subculture-collective/clpr
@@ -219,7 +220,8 @@ jobs:
     name: Deliver signed frontend
     needs: candidate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.server_url == 'https://git.subcult.tv'
-    runs-on: ubuntu-24.04
+    # Homelab deploy keys accept only Kvant's address (Kvant and its Kuznya VM); the kvant label keeps this job off Buran.
+    runs-on: [ubuntu-24.04, kvant]
     timeout-minutes: 20
     env:
       REGISTRY_ROOT: ghcr.io/subculture-collective/clpr
