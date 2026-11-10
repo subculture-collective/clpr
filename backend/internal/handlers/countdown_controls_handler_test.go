@@ -43,6 +43,15 @@ func (f *fakeControlsStore) ResolveRemoval(_ context.Context, in *models.Countdo
 	return nil
 }
 
+func (f *fakeControlsStore) ListBroadcasterPlacements(_ context.Context, id string, limit int) ([]models.CountdownPlacement, error) {
+	if limit != 50 {
+		return nil, nil
+	}
+	views := int64(1200)
+	return []models.CountdownPlacement{{EditionDate: "2026-11-09", SeriesSlug: "overall", Position: 2, Title: id,
+		Countdown: &models.CountdownVideo{YouTubeVideoID: "vid_A", ViewCount: &views}}}, nil
+}
+
 type fakeControlsUsers map[uuid.UUID]*models.User
 
 func (f fakeControlsUsers) GetByID(_ context.Context, id uuid.UUID) (*models.User, error) {
@@ -73,6 +82,7 @@ func TestCountdownControlsHandler(t *testing.T) {
 	router.PUT("/me/countdowns/exclusion", h.SetMyCountdownExclusion)
 	router.DELETE("/me/countdowns/feature", h.DeleteMyFeatureOptIn)
 	router.POST("/admin/removals", h.ResolveRemoval)
+	router.GET("/me/countdowns/placements", h.ListMyPlacements)
 
 	do := func(method, path, user, body string) (int, models.BroadcasterCountdownState) {
 		req := httptest.NewRequest(method, path, strings.NewReader(body))
@@ -110,6 +120,30 @@ func TestCountdownControlsHandler(t *testing.T) {
 	}
 	if code, state := do("DELETE", "/me/countdowns/feature", streamer.String(), ""); code != 200 || state.Featured {
 		t.Fatalf("stop featuring = %d %+v", code, state)
+	}
+
+	placements := func(user string) (int, []models.CountdownPlacement) {
+		req := httptest.NewRequest("GET", "/me/countdowns/placements", nil)
+		if user != "" {
+			req.Header.Set("X-User", user)
+		}
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		var resp struct {
+			Data []models.CountdownPlacement `json:"data"`
+		}
+		_ = json.Unmarshal(w.Body.Bytes(), &resp)
+		return w.Code, resp.Data
+	}
+	if code, _ := placements(""); code != http.StatusUnauthorized {
+		t.Fatalf("anonymous placements = %d", code)
+	}
+	if code, _ := placements(viewer.String()); code != http.StatusConflict {
+		t.Fatalf("placements without Twitch = %d", code)
+	}
+	if code, got := placements(streamer.String()); code != 200 || len(got) != 1 || got[0].Title != "1234" ||
+		got[0].Countdown == nil || *got[0].Countdown.ViewCount != 1200 {
+		t.Fatalf("placements = %d %+v", code, got)
 	}
 
 	render, clip := uuid.New(), uuid.New()

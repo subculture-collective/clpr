@@ -2,7 +2,7 @@
 // cycle it fetches the clip media of selected countdown editions (#77) and
 // renders fetched editions into a countdown video, a thumbnail and Shorts
 // (#78), then uploads rendered editions to YouTube when the channel is
-// authorized (#79; see "countdown-media youtube-auth"). Downloaded clips are deleted when their edition finishes rendering,
+// authorized (#79; see "countdown-media youtube-auth") and reads their view counts (#84). Downloaded clips are deleted when their edition finishes rendering,
 // and within 24 hours in any case (ADR-002). It never runs on the API host
 // and never writes media to object storage.
 package main
@@ -160,7 +160,10 @@ func run() error {
 		return err
 	}
 	var publisher *services.CountdownPublisher
+	var viewCounts *services.CountdownStatsRefresher
 	if youTube != nil {
+		// View counts for the creator dashboard (#84).
+		viewCounts = &services.CountdownStatsRefresher{Store: store, YouTube: youTube}
 		publisher = &services.CountdownPublisher{
 			Store:           store,
 			YouTube:         youTube,
@@ -206,7 +209,7 @@ func run() error {
 	for {
 		err := errors.Join(worker.RunOnce(ctx), renders.RunOnce(ctx))
 		if publisher != nil {
-			err = errors.Join(err, publisher.RunOnce(ctx))
+			err = errors.Join(err, publisher.RunOnce(ctx), viewCounts.RunOnce(ctx))
 		}
 		err = errors.Join(err, progress.Update(ctx, time.Now()))
 		if err != nil && ctx.Err() == nil {

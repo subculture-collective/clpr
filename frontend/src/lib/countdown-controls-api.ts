@@ -40,9 +40,32 @@ export interface CountdownRemovalTask {
   due_at: string;
 }
 
+/** A countdown video or Short viewers can open on YouTube. */
+export interface CountdownVideo {
+  youtube_video_id: string;
+  view_count?: number;
+  views_updated_at?: string;
+}
+
+/** One of the broadcaster's clips in a public countdown (#84). */
+export interface CountdownPlacement {
+  edition_date: string;
+  series_slug: string;
+  series_name: string;
+  position: number;
+  clip_id: string;
+  title: string;
+  thumbnail_url?: string;
+  countdown?: CountdownVideo;
+  short?: CountdownVideo;
+}
+
 export const countdownControlsApi = {
   get: async (): Promise<CountdownControls> =>
     (await apiClient.get<{ data: CountdownControls }>('/users/me/countdowns')).data.data,
+
+  placements: async (): Promise<CountdownPlacement[]> =>
+    (await apiClient.get<{ data: CountdownPlacement[] }>('/users/me/countdowns/placements')).data.data ?? [],
 
   setExcluded: async (excluded: boolean): Promise<CountdownControls> =>
     (await apiClient.put<{ data: CountdownControls }>('/users/me/countdowns/exclusion', { excluded })).data.data,
@@ -67,6 +90,11 @@ export const countdownControlsApi = {
     await apiClient.post('/admin/countdowns/removals', input);
   },
 };
+
+export function youTubeVideoUrl(video: CountdownVideo, kind: 'countdown' | 'short'): string {
+  const id = encodeURIComponent(video.youtube_video_id);
+  return kind === 'short' ? `https://www.youtube.com/shorts/${id}` : `https://www.youtube.com/watch?v=${id}`;
+}
 
 /** Where "Feature my clips" sends the broadcaster to grant channel:manage:clips. */
 export function featureMyClipsUrl(returnTo = '/settings'): string {

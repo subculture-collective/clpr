@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -318,4 +319,44 @@ func (c *YouTubeClient) AddToPlaylist(ctx context.Context, playlistID, videoID s
 	_, err = c.do(ctx, http.MethodPost, orDefault(c.APIBase, youTubeAPIBase)+"/playlistItems?part=snippet",
 		"application/json", bytes.NewReader(body), int64(len(body)), nil)
 	return err
+}
+
+// VideoStats reads the view count and privacy of up to 50 videos with one
+// videos.list call (1 quota unit). Videos YouTube no longer returns, because
+// they were deleted or removed, are missing from the result.
+func (c *YouTubeClient) VideoStats(ctx context.Context, ids []string) (map[string]YouTubeVideoStats, error) {
+	if len(ids) == 0 {
+		return map[string]YouTubeVideoStats{}, nil
+	}
+	if len(ids) > 50 {
+		return nil, errors.New("youtube: videos.list takes at most 50 IDs")
+	}
+	target := orDefault(c.APIBase, youTubeAPIBase) + "/videos?part=statistics,status&maxResults=50&id=" + url.QueryEscape(strings.Join(ids, ","))
+	var body struct {
+		Items []struct {
+			ID         string `json:"id"`
+			Statistics struct {
+				ViewCount string `json:"viewCount"`
+			} `json:"statistics"`
+			Status struct {
+				PrivacyStatus string `json:"privacyStatus"`
+			} `json:"status"`
+		} `json:"items"`
+	}
+	if _, err := c.do(ctx, http.MethodGet, target, "", nil, -1, &body); err != nil {
+		return nil, err
+	}
+	out := make(map[string]YouTubeVideoStats, len(body.Items))
+	for _, item := range body.Items {
+		// viewCount is a decimal string; it is absent when the owner hides it.
+		views, _ := strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
+		out[item.ID] = YouTubeVideoStats{ViewCount: views, PrivacyStatus: item.Status.PrivacyStatus}
+	}
+	return out, nil
+}
+
+// YouTubeVideoStats is one video's view count and privacy.
+type YouTubeVideoStats struct {
+	ViewCount     int64
+	PrivacyStatus string
 }

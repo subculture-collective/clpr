@@ -8,6 +8,7 @@ import { fetchCreatorClips, updateClipMetadata, updateClipVisibility } from '../
 import { Container, Button, ResourceUnavailable } from '../components';
 import type { Clip } from '../types/clip';
 import { CreatorEvents, trackEvent } from '../lib/telemetry';
+import { CountdownPlacementsCard } from '../components/countdown/CountdownPlacementsCard';
 
 export function CreatorDashboardPage() {
   const { user } = useAuth();
@@ -111,6 +112,10 @@ export function CreatorDashboardPage() {
             Manage your clips - edit titles and control visibility
           </p>
         </div>
+
+        {user.twitch_id === creatorId && (
+          <CountdownPlacementsCard returnTo={`/creator/${encodeURIComponent(creatorId)}/dashboard`} />
+        )}
 
         {data?.clips?.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">

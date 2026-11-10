@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Container, SEO, Spinner } from '../components';
 import { Button } from '../components/ui';
+import { CreatorConnectOffer } from '../components/countdown/CreatorConnectOffer';
 import {
   countdownApi,
   countdownPath,
@@ -68,6 +69,7 @@ export function CountdownsPage() {
         <p className='text-muted-foreground mb-8'>
           The Twitch clips that drew views fastest each day, counted down. Every clip belongs to its broadcaster.
         </p>
+        <CreatorConnectOffer />
         {isLoading ? (
           <div className='flex justify-center py-16'>
             <Spinner size='xl' />
