@@ -129,11 +129,16 @@ More reading: the [development guide](DEVELOPMENT.md), the
 
 ## Contributing
 
-Open a pull request on GitHub against `main`. CI runs the backend and frontend
-test suites, linting, end-to-end browser tests and documentation checks on every
-pull request; the `Mirror CI gate` check must pass before a pull request can
-merge. For documentation changes, run `npm run docs:check` first. See the
-[contributor guide](docs/contributing.md).
+- Report bugs and request features in
+  [GitHub issues](https://github.com/subculture-collective/clpr/issues).
+- Ask questions and share ideas in
+  [GitHub Discussions](https://github.com/subculture-collective/clpr/discussions).
+- Send code as a pull request on GitHub against `main`.
+
+CI runs the backend and frontend test suites, linting, end-to-end browser tests
+and documentation checks on every pull request; the `Mirror CI gate` check must
+pass before a pull request can merge. For documentation changes, run
+`npm run docs:check` first. See the [contributor guide](docs/contributing.md).
 
 ## License
 
