@@ -8,6 +8,7 @@ import { fetchCreatorClips, updateClipMetadata, updateClipVisibility } from '../
 import { Container, Button, ResourceUnavailable } from '../components';
 import type { Clip } from '../types/clip';
 import { CreatorEvents, trackEvent } from '../lib/telemetry';
+import { ClipPacksCard } from '../components/countdown/ClipPacksCard';
 
 export function CreatorDashboardPage() {
   const { user } = useAuth();
@@ -111,6 +112,8 @@ export function CreatorDashboardPage() {
             Manage your clips - edit titles and control visibility
           </p>
         </div>
+
+        {user.twitch_id === creatorId && <ClipPacksCard />}
 
         {data?.clips?.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">

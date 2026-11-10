@@ -2,7 +2,9 @@
 // cycle it fetches the clip media of selected countdown editions (#77) and
 // renders fetched editions into a countdown video, a thumbnail and Shorts
 // (#78), then uploads rendered editions to YouTube when the channel is
-// authorized (#79; see "countdown-media youtube-auth"). Downloaded clips are deleted when their edition finishes rendering,
+// authorized (#79; see "countdown-media youtube-auth"). It also builds the
+// weekly clip packs of broadcasters who feature their clips and serves them
+// by expiring link (#86). Downloaded clips are deleted when their edition finishes rendering,
 // and within 24 hours in any case (ADR-002). It never runs on the API host
 // and never writes media to object storage.
 package main
@@ -167,6 +169,10 @@ func run() error {
 			Metrics:         services.NewCountdownPublishMetrics(registry),
 		}
 	}
+	packs, packServer, err := clipPacksFromEnv(cfg, store, fetcher, prober, renderer, renders.Captioner, dir, registry)
+	if err != nil {
+		return err
+	}
 	progress := services.NewCountdownProgress(store, publisher != nil, registry)
 	lastRun := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "clpr_countdown_media_last_run_timestamp_seconds",
@@ -189,12 +195,21 @@ func run() error {
 		}()
 		defer server.Close()
 	}
+	if packServer != nil {
+		go func() {
+			if err := packServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				utils.Error("Clip pack server failed", err)
+			}
+		}()
+		defer packServer.Close()
+	}
 
 	utils.Info("Countdown media worker started", map[string]interface{}{
 		"dir": dir, "render_dir": renderDir, "interval": interval.String(), "retention": retention.String(),
 		"render_retention": renders.Retention.String(), "helix": fetcher.Downloads != nil,
 		"captions": renders.Captioner != nil,
 		"youtube":  publisher != nil, "youtube_privacy": privacy,
+		"clip_packs": packs != nil,
 	})
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -204,6 +219,9 @@ func run() error {
 			err = errors.Join(err, publisher.RunOnce(ctx))
 		}
 		err = errors.Join(err, progress.Update(ctx, time.Now()))
+		if packs != nil {
+			err = errors.Join(err, packs.RunOnce(ctx))
+		}
 		if err != nil && ctx.Err() == nil {
 			utils.Error("Countdown media cycle failed", err)
 		} else if err == nil {

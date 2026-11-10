@@ -71,7 +71,10 @@ type TwitchClipMediaFetcher struct {
 	Downloads  ClipDownloadURLProvider
 	HTTPClient *http.Client
 	YTDLPPath  string
-	Now        func() time.Time
+	// HelixOnly refuses the player fallback: weekly clip packs (#86) use only
+	// the broadcaster's own authorized download.
+	HelixOnly bool
+	Now       func() time.Time
 }
 
 func (f *TwitchClipMediaFetcher) now() time.Time {
@@ -96,10 +99,16 @@ func (f *TwitchClipMediaFetcher) Fetch(ctx context.Context, clip *models.Countdo
 					return models.CountdownMediaSourceHelix, nil
 				}
 			}
+			if f.HelixOnly {
+				return "", fmt.Errorf("%w: Helix clip download failed: %v", ErrCountdownMediaUnavailable, err)
+			}
 			utils.Warn("Helix clip download failed; using the player files", map[string]interface{}{
 				"clip_id": clip.ClipID.String(), "error": err.Error(),
 			})
 		}
+	}
+	if f.HelixOnly {
+		return "", fmt.Errorf("%w: the broadcaster has not authorized clip downloads", ErrCountdownMediaUnavailable)
 	}
 	if err := f.ytdlp(ctx, clip.TwitchClipURL, dest); err != nil {
 		return "", err

@@ -125,6 +125,16 @@ Every upload is recorded in `countdown_uploads` as soon as it finishes, so a ret
 - Angle brackets, which YouTube rejects, become ‹ and ›.
 - Titles stop at 100 characters, descriptions at 5,000 bytes and tags at 500 characters.
 
+## Weekly clip packs
+
+Broadcasters who feature their clips get a weekly clip pack (#86): their most-viewed clips of the past week, ready to post.
+
+- **When:** from Monday 06:00 UTC, the `countdown-media` worker queues a pack for the week that ended (Monday to Monday, UTC) for each broadcaster with a "feature my clips" opt-in and at least one clip that week. It checks again every hour, so a broadcaster who opts in later in the week still gets last week's pack. Broadcasters left out of countdowns, and clips removed, hidden, taken down or excluded, are skipped.
+- **What:** up to 10 clips, most views first. Each becomes a captioned 9:16 video (the Short layout), and together they make a 16:9 highlight reel (the countdown layout, with a "This week's top clips" outro). The zip holds the reel, the 9:16 files and `credits.txt` with each clip's title, views and Twitch link.
+- **Source:** clips are fetched only through Helix with the broadcaster's own `channel:manage:clips` token. A clip that cannot be downloaded is left out; a pack with none fails. Downloads and intermediate files are deleted once the pack is built.
+- **Delivery:** the zip stays on the render host in `COUNTDOWN_PACK_DIR` (default `/var/lib/clpr-clip-packs`) for 7 days, then the worker deletes it and marks the pack `expired`. `GET /api/v1/users/me/clip-packs` lists the broadcaster's packs, and the creator dashboard shows them with a Download button. The link points at the worker's pack server (`CLIP_PACK_BASE_URL/packs/<id>.zip`), is signed with `CLIP_PACK_LINK_SECRET` (HMAC-SHA256), lasts 24 hours and never outlasts the pack. The server answers 403 for a bad or expired link and 410 for a pack that is gone.
+- **Metrics:** `clpr_clip_packs_total{outcome}` and `clpr_clip_pack_files_deleted_total`.
+
 ## Operations
 
 Series setup, the worker deployment, metrics, alerts and what to do when they fire are in the [[../operations/runbooks/countdowns|countdowns runbook]]. The alert rules are the `clpr-countdowns` group in `monitoring/prometheus/clpr-slo-rules.yml`, with controlled-failure tests in `monitoring/prometheus/clpr-countdown-rules.test.yml` (`promtool test rules`).
@@ -154,6 +164,7 @@ An exclusion affects editions selected afterwards. Clips it covers in videos alr
 - `backend/internal/repository/countdown_public_repository_integration_test.go`, `backend/internal/handlers/countdown_public_handler_test.go`, `frontend/src/pages/CountdownPages.test.tsx` and `frontend/e2e/mocked/countdowns.spec.ts`: which editions and clips are public, paging by day, placements, request validation, the sitemap entries, and both pages in a browser, including a phone-width check.
 - `backend/internal/services/youtube_client_test.go`, `backend/internal/services/countdown_youtube_test.go` and `backend/internal/repository/countdown_publish_repository_integration_test.go`: the YouTube calls against a fake API (token refresh and caching, resumable upload, thumbnail, playlist, error reasons); titles, chapters, credits and limits; publishing with quota, authorization, temporary and permanent errors without uploading anything twice; scheduled publish times; claiming, recording and finishing in the database.
 - `backend/internal/repository/countdown_controls_repository_integration_test.go`, `backend/internal/handlers/countdown_controls_handler_test.go`, `frontend/src/components/countdown/CountdownSettingsCard.test.tsx`, `frontend/src/pages/admin/AdminCountdownsPage.test.tsx` and `frontend/e2e/mocked/broadcaster-controls.spec.ts`: the self-service toggle (an admin's exclusion survives it), removal tasks for countdowns and Shorts and their resolution, the admin path for a broadcaster without an account, and the "feature my clips" grant and its removal.
+- `backend/internal/repository/clip_pack_repository_integration_test.go`, `backend/internal/services/clip_pack_worker_test.go`, `backend/internal/handlers/clip_pack_handler_test.go` and `frontend/src/components/countdown/ClipPacksCard.test.tsx`: which broadcasters and clips get a pack, claiming and finishing, the zip's contents, a clip that cannot be downloaded, the week boundaries, deleting expired zips, signed links (tampered, expired, past the pack's expiry) and the pack server's answers, and the dashboard list.
 - `backend/internal/handlers/countdown_handler_test.go` and `backend/internal/scheduler/playlist_script_scheduler_test.go`: status codes and the scheduler hook.
 
 ---

@@ -139,6 +139,11 @@ export const handlers = [
         });
     }),
 
+    // GET /api/users/me/clip-packs - The creator dashboard lists weekly clip packs.
+    http.get(`${API_BASE_URL}/users/me/clip-packs`, () => {
+        return HttpResponse.json({ success: true, data: [] });
+    }),
+
     // POST /api/clips/:id/vote - Vote on clip
     http.post(`${API_BASE_URL}/clips/:id/vote`, () => {
         return HttpResponse.json({ success: true });
