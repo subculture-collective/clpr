@@ -53,6 +53,7 @@ containers. No production credentials are needed:
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+docker network create clpr-hosted-tests   # the test Compose file expects this network
 task test:setup
 task test
 npm --prefix frontend ci
