@@ -158,7 +158,7 @@ test.describe('real-backend launch smoke', () => {
 
         expect(response.status()).toBe(400);
         await expect(response.json()).resolves.toEqual({
-            error: "Query parameter 'q' is required",
+            error: "Query parameter 'q' or 'said' is required",
         });
     });
 
