@@ -16,6 +16,9 @@ on:
         required: false
         default: 'clpr-backups-prod'
 
+permissions:
+  contents: read
+
 jobs:
   preflight:
     name: Check backup-validation configuration
