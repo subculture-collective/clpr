@@ -69,8 +69,8 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react-swc": "^4.2.0",
-    "@vitest/coverage-v8": "^4.0.8",
-    "@vitest/ui": "^4.0.7",
+    "@vitest/coverage-v8": "^4.1.12",
+    "@vitest/ui": "^4.1.12",
     "autoprefixer": "^10.4.21",
     "axe-core": "^4.11.0",
     "baseline-browser-mapping": "^2.11.13",
@@ -89,6 +89,6 @@
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3",
-    "vitest": "^4.0.7"
+    "vitest": "^4.1.12"
   }
 }
