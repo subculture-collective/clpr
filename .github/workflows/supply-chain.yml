@@ -57,7 +57,7 @@ jobs:
           path: .
           format: spdx-json
           output-file: clpr-source.spdx.json
-      - uses: sigstore/cosign-installer@v3.8.2
+      - uses: sigstore/cosign-installer@v3.10.1
       - name: Keyless-sign the SBOM
         if: github.event_name == 'push'
         run: cosign sign-blob --yes --bundle clpr-source.spdx.sigstore.json clpr-source.spdx.json
@@ -96,7 +96,7 @@ jobs:
           tags: clpr-${{ matrix.name }}:ci
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-      - uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
           image-ref: clpr-${{ matrix.name }}:ci
           format: sarif
