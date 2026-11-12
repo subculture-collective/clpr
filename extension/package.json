@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.320",
-    "esbuild": "^0.25.0",
+    "@types/chrome": "^0.3.7",
+    "esbuild": "^0.28.2",
     "typescript": "^5.7.0"
   }
 }
