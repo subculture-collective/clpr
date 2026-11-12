@@ -1,13 +1,13 @@
 # Green pull requests in this organization merge themselves, so every
 # ecosystem groups minor and patch updates into one pull request, ignores
-# major versions and keeps at most two pull requests open.
+# major versions, runs monthly and keeps at most one pull request open.
 version: 2
 updates:
   - package-ecosystem: gomod
     directory: /backend
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 2
+      interval: monthly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -23,8 +23,8 @@ updates:
       - /frontend
       - /extension
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 2
+      interval: monthly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -53,8 +53,8 @@ updates:
       - /backend
       - /frontend
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 2
+      interval: monthly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -73,8 +73,8 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 2
+      interval: monthly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
