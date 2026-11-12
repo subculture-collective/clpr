@@ -20,6 +20,9 @@ on:
         required: false
         default: 'localhost'
 
+permissions:
+  contents: read
+
 jobs:
   preflight:
     name: Check restore-drill configuration

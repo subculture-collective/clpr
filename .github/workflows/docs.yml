@@ -36,6 +36,10 @@ on:
       - '.lycheeignore'
       - 'package.json'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   docs-quality-check:
     name: Documentation Quality Enforcement

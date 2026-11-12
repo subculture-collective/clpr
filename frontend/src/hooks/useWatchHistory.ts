@@ -3,7 +3,9 @@ import { apiClient } from '@/lib/api';
 
 // Generate a unique session ID for tracking watch sessions
 function generateSessionId(): string {
-  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const bytes = crypto.getRandomValues(new Uint8Array(7));
+  const suffix = Array.from(bytes, byte => (byte % 36).toString(36)).join('');
+  return `session_${Date.now()}_${suffix}`;
 }
 
 export interface UseWatchHistoryOptions {
