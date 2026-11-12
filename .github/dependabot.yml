@@ -28,6 +28,21 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # 7.1 adds a lint rule that needs code changes first.
+      - dependency-name: eslint-plugin-react-hooks
+        update-types: ["version-update:semver-minor"]
+      # Pre-1.0 or build-pipeline packages whose minor releases can break the
+      # build, and packages whose minor releases can change rendered output.
+      - dependency-name: esbuild
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: rolldown
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: lucide-react
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: tailwindcss
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "@tailwindcss/postcss"
+        update-types: ["version-update:semver-minor"]
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
@@ -46,6 +61,11 @@ updates:
       # The Go builder image is pinned by scripts/verify-go-toolchain-contract.sh
       # and must change together with backend/go.mod.
       - dependency-name: golang
+      # A new Python or Alpine minor is a runtime upgrade, not a routine bump.
+      - dependency-name: python
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: alpine
+        update-types: ["version-update:semver-minor"]
     groups:
       docker-minor-patch:
         update-types: [minor, patch]
