@@ -5,6 +5,7 @@ import {
     Badge,
     Button,
     Card,
+    ConfirmModal,
     Container,
     Modal,
     Spinner,
@@ -20,15 +21,13 @@ import {
     type ModerationQueueItem,
     type ModerationQueueStats,
 } from '../../lib/moderation-api';
-
-// Helper function to extract error message from API error
-function getErrorMessage(error: unknown): string {
-    if (typeof error === 'object' && error !== null && 'response' in error) {
-        const apiError = error as { response?: { data?: { error?: string } } };
-        return apiError.response?.data?.error || 'An error occurred';
-    }
-    return 'An error occurred';
-}
+import { getErrorMessage } from '../../lib/error-utils';
+import { QueueItemContent } from '../../components/moderation/QueueItemContent';
+import {
+    bulkResultMessage,
+    isQueueShortcutEvent,
+    isStaleQueueError,
+} from '../../components/moderation/queueUtils';
 
 // Helper function to format confidence score
 function formatConfidenceScore(score: number | undefined): string {
@@ -56,6 +55,7 @@ export function AdminModerationQueuePage() {
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
 
     // Data loaders
     const loadQueue = useCallback(async () => {
@@ -69,7 +69,7 @@ export function AdminModerationQueuePage() {
             );
             setItems(response.data || []);
         } catch (err: unknown) {
-            setError(getErrorMessage(err) || 'Failed to load moderation queue');
+            setError(getErrorMessage(err, 'Failed to load moderation queue'));
         } finally {
             setIsLoading(false);
         }
@@ -84,6 +84,20 @@ export function AdminModerationQueuePage() {
         }
     }, []);
 
+    // Shows the error and, when the item is gone or already reviewed,
+    // reloads so the list matches the server again.
+    const handleActionError = useCallback(
+        (err: unknown, fallback: string) => {
+            if (isStaleQueueError(err)) {
+                setSelectedIds(new Set());
+                loadQueue();
+                loadStats();
+            }
+            setError(getErrorMessage(err, fallback));
+        },
+        [loadQueue, loadStats]
+    );
+
     // Bulk action handlers must be defined before effects that reference them
     const handleBulkApprove = useCallback(async () => {
         if (selectedIds.size === 0) return;
@@ -93,16 +107,14 @@ export function AdminModerationQueuePage() {
                 item_ids: Array.from(selectedIds),
                 action: 'approve',
             });
-            setSuccess(
-                `${result.processed} of ${result.total} items approved successfully!`
-            );
+            setSuccess(bulkResultMessage(result, 'items', 'approved successfully'));
             setSelectedIds(new Set());
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err) || 'Failed to approve items');
+            handleActionError(err, 'Failed to approve items');
         }
-    }, [selectedIds, loadQueue, loadStats]);
+    }, [selectedIds, loadQueue, loadStats, handleActionError]);
 
     const handleBulkReject = useCallback(async () => {
         if (selectedIds.size === 0) return;
@@ -112,42 +124,44 @@ export function AdminModerationQueuePage() {
                 item_ids: Array.from(selectedIds),
                 action: 'reject',
             });
-            setSuccess(
-                `${result.processed} of ${result.total} items rejected successfully!`
-            );
+            setSuccess(bulkResultMessage(result, 'items', 'rejected and removed'));
             setSelectedIds(new Set());
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err) || 'Failed to reject items');
+            handleActionError(err, 'Failed to reject items');
         }
-    }, [selectedIds, loadQueue, loadStats]);
+    }, [selectedIds, loadQueue, loadStats, handleActionError]);
 
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
-            // Only handle shortcuts when not in an input field
+            // Shortcuts apply to pending items only, never with Ctrl/Cmd/Alt,
+            // and not while typing in a field or while a dialog is open.
             if (
-                e.target instanceof HTMLInputElement ||
-                e.target instanceof HTMLTextAreaElement
+                statusFilter !== 'pending' ||
+                selectedIds.size === 0 ||
+                rejectModalOpen ||
+                bulkRejectOpen ||
+                !isQueueShortcutEvent(e)
             ) {
                 return;
             }
 
-            if (e.key === 'a' && selectedIds.size > 0) {
+            if (e.key === 'a') {
                 // Approve selected
                 e.preventDefault();
                 handleBulkApprove();
-            } else if (e.key === 'r' && selectedIds.size > 0) {
-                // Reject selected
+            } else if (e.key === 'r') {
+                // Rejecting removes content, so ask first.
                 e.preventDefault();
-                handleBulkReject();
+                setBulkRejectOpen(true);
             }
         };
 
         document.addEventListener('keydown', handleKeyPress);
         return () => document.removeEventListener('keydown', handleKeyPress);
-    }, [selectedIds, handleBulkApprove, handleBulkReject]);
+    }, [selectedIds, statusFilter, rejectModalOpen, bulkRejectOpen, handleBulkApprove]);
 
     // (moved above)
 
@@ -183,7 +197,7 @@ export function AdminModerationQueuePage() {
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err) || 'Failed to approve item');
+            handleActionError(err, 'Failed to approve item');
         }
     };
 
@@ -200,14 +214,17 @@ export function AdminModerationQueuePage() {
 
         try {
             await rejectQueueItem(selectedItemId, rejectionReason || undefined);
-            setSuccess('Item rejected successfully!');
+            setSuccess('Item rejected. Rejected comments and clips are removed from the site.');
             setRejectModalOpen(false);
             setSelectedItemId(null);
             setRejectionReason('');
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err) || 'Failed to reject item');
+            // Close the dialog so the error and the reloaded list are visible.
+            setRejectModalOpen(false);
+            setSelectedItemId(null);
+            handleActionError(err, 'Failed to reject item');
         }
     };
 
@@ -243,7 +260,7 @@ export function AdminModerationQueuePage() {
                         Moderation Queue
                     </h1>
                     <p className='text-muted-foreground'>
-                        Review and moderate flagged content with bulk actions
+                        Review content that was flagged automatically. Approve keeps it; Reject removes it.
                     </p>
                     <p className='text-muted-foreground text-sm mt-2'>
                         Keyboard shortcuts: A approve • R reject (when items chosen)
@@ -358,7 +375,7 @@ export function AdminModerationQueuePage() {
                 </Card>
 
                 {/* Bulk Actions Bar */}
-                {selectedIds.size > 0 && (
+                {statusFilter === 'pending' && selectedIds.size > 0 && (
                     <Card className='bg-blue-50 dark:bg-blue-900/20 p-4 mb-4'>
                         <div className='flex justify-between items-center'>
                             <span className='font-medium'>
@@ -373,7 +390,7 @@ export function AdminModerationQueuePage() {
                                     Approve All (A)
                                 </Button>
                                 <Button
-                                    onClick={handleBulkReject}
+                                    onClick={() => setBulkRejectOpen(true)}
                                     className='bg-red-600/90 hover:bg-red-600 text-white'
                                 >
                                     Reject All (R)
@@ -404,17 +421,20 @@ export function AdminModerationQueuePage() {
                     ) : (
                         <div className='space-y-4'>
                             {/* Select All */}
-                            <div className='flex items-center gap-2 pb-2 border-b'>
-                                <input
-                                    type='checkbox'
-                                    checked={selectedIds.size === items.length && items.length > 0}
-                                    onChange={toggleSelectAll}
-                                    className='rounded'
-                                />
-                                <span className='text-sm font-medium'>
-                                    Select All
-                                </span>
-                            </div>
+                            {statusFilter === 'pending' && (
+                                <div className='flex items-center gap-2 pb-2 border-b'>
+                                    <input
+                                        type='checkbox'
+                                        checked={selectedIds.size === items.length && items.length > 0}
+                                        onChange={toggleSelectAll}
+                                        className='rounded'
+                                        aria-label='Select all items'
+                                    />
+                                    <span className='text-sm font-medium'>
+                                        Select All
+                                    </span>
+                                </div>
+                            )}
 
                             {items.map((item) => (
                                 <div
@@ -423,12 +443,15 @@ export function AdminModerationQueuePage() {
                                 >
                                     <div className='flex gap-4 items-start'>
                                         {/* Checkbox */}
-                                        <input
-                                            type='checkbox'
-                                            checked={selectedIds.has(item.id)}
-                                            onChange={() => toggleSelection(item.id)}
-                                            className='mt-1 rounded'
-                                        />
+                                        {statusFilter === 'pending' && (
+                                            <input
+                                                type='checkbox'
+                                                checked={selectedIds.has(item.id)}
+                                                onChange={() => toggleSelection(item.id)}
+                                                className='mt-1 rounded'
+                                                aria-label={`Select ${item.content_type} ${item.content_id}`}
+                                            />
+                                        )}
 
                                         {/* Content */}
                                         <div className='flex-1'>
@@ -464,10 +487,10 @@ export function AdminModerationQueuePage() {
                                                 <p>
                                                     <span className='font-medium'>Reason:</span> {item.reason}
                                                 </p>
-                                                <p>
-                                                    <span className='font-medium'>Content ID:</span>{' '}
-                                                    {item.content_id}
-                                                </p>
+                                                <QueueItemContent
+                                                    item={item}
+                                                    idLabel='Content ID'
+                                                />
                                                 <p>
                                                     <span className='font-medium'>Created:</span>{' '}
                                                     {new Date(item.created_at).toLocaleString()}
@@ -516,7 +539,7 @@ export function AdminModerationQueuePage() {
                 >
                     <div className='space-y-4'>
                         <p className='text-muted-foreground'>
-                            Please provide a reason for rejecting this item (optional).
+                            Rejecting a comment or clip removes it from the site. You can add a reason (optional).
                         </p>
                         <TextArea
                             value={rejectionReason}
@@ -546,6 +569,16 @@ export function AdminModerationQueuePage() {
                     </div>
                 </Modal>
             )}
+
+            <ConfirmModal
+                open={bulkRejectOpen}
+                onClose={() => setBulkRejectOpen(false)}
+                onConfirm={handleBulkReject}
+                title={`Reject ${selectedIds.size} item${selectedIds.size !== 1 ? 's' : ''}?`}
+                message='Rejected comments and clips are removed from the site.'
+                confirmText='Reject and remove'
+                variant='danger'
+            />
         </Container>
     );
 }

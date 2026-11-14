@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     AlertTriangle,
     Check,
@@ -8,6 +8,7 @@ import {
     Clock3,
     Radio,
     RefreshCw,
+    RotateCcw,
     Square,
     X,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import {
     useUpdateStreamerClipRoomSubmissions,
 } from '@/hooks/useStreamerClipRoom';
 import { useStreamerClipRoomWebSocket } from '@/hooks/useStreamerClipRoomWebSocket';
+import { StreamerClipRoomApiError } from '@/lib/streamer-clip-room-api';
 import { getTwitchBotAuthorizationUrl } from '@/lib/twitch-api';
 import type { StreamerClipRoomItem } from '@/types/streamerClipRoom';
 
@@ -48,6 +50,88 @@ function formatRemaining(milliseconds: number) {
     return hours > 0
         ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
         : `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function describeSkipReason(reason: string) {
+    switch (reason) {
+        case 'clip_not_imported':
+            return 'Clpr could not import this clip.';
+        case 'clip_unavailable':
+            return 'This clip was removed or is not available.';
+        default:
+            return 'This link could not be added.';
+    }
+}
+
+interface RoomErrorNotice {
+    message: string;
+    /** Label for the Twitch authorize button, when authorizing fixes the error. */
+    authorizeLabel?: string;
+}
+
+function describeRoomError(
+    error: unknown,
+    fallback: string,
+    twitchUsername?: string,
+): RoomErrorNotice {
+    const code = error instanceof StreamerClipRoomApiError ? error.code : undefined;
+
+    switch (code) {
+        case 'TWITCH_CHANNEL_MISMATCH':
+            return {
+                message: twitchUsername
+                    ? `You can only start the listener in your own Twitch channel. You are connected as ${twitchUsername}.`
+                    : 'You can only start the listener in your own Twitch channel.',
+            };
+        case 'TWITCH_AUTH_REQUIRED':
+            return {
+                message: 'Connect your Twitch account before you start the listener.',
+                authorizeLabel: 'Connect Twitch',
+            };
+        case 'TWITCH_BOT_AUTH_REQUIRED':
+            return {
+                message: 'Authorize the Clpr bot for your channel before you start the listener.',
+                authorizeLabel: 'Authorize Clpr bot',
+            };
+        case 'TWITCH_CLIP_DOWNLOAD_AUTH_REQUIRED':
+            return {
+                message: 'Allow Clpr to download your Twitch clips before you start the listener.',
+                authorizeLabel: 'Authorize clip downloads',
+            };
+        case 'TWITCH_BOT_NOT_CONFIGURED':
+            return {
+                message: 'The Clpr Twitch bot is not set up on this server. Try again later.',
+            };
+        case 'RATE_LIMITED':
+            return { message: 'Too many requests. Wait a minute, then try again.' };
+        default:
+            return {
+                message: error instanceof Error && error.message ? error.message : fallback,
+            };
+    }
+}
+
+function describeOAuthResult(params: URLSearchParams): { tone: 'success' | 'error'; message: string } | null {
+    const error = params.get('error');
+    if (error === 'oauth_denied') {
+        return {
+            tone: 'error',
+            message: 'Twitch authorization was cancelled. Clpr still needs access before the listener can start.',
+        };
+    }
+    if (error === 'oauth_config_error') {
+        return {
+            tone: 'error',
+            message: 'Twitch authorization is not set up on this server. Try again later.',
+        };
+    }
+    if (error) {
+        return { tone: 'error', message: 'Twitch authorization failed. Try again.' };
+    }
+    if (params.get('twitch_connected') === 'true') {
+        return { tone: 'success', message: 'Twitch is connected.' };
+    }
+    return null;
 }
 
 function ItemBadge({
@@ -122,7 +206,7 @@ function PendingApprovalCard({
                 {item.skip_reason && (
                     <div className='sm:col-span-2'>
                         <dt className='uppercase tracking-[0.2em] text-white/35'>Skip reason</dt>
-                        <dd className='mt-1 text-amber-200'>{item.skip_reason}</dd>
+                        <dd className='mt-1 text-amber-200'>{describeSkipReason(item.skip_reason)}</dd>
                     </div>
                 )}
             </dl>
@@ -151,11 +235,13 @@ function PendingApprovalCard({
 function PendingApprovalsRail({
     pendingItems,
     skippedItems,
+    rejectedItems,
     onApprove,
     onReject,
 }: {
     pendingItems: StreamerClipRoomItem[];
     skippedItems: StreamerClipRoomItem[];
+    rejectedItems: StreamerClipRoomItem[];
     onApprove: (itemId: string) => void;
     onReject: (itemId: string) => void;
 }) {
@@ -214,9 +300,46 @@ function PendingApprovalsRail({
                                 </p>
                                 {item.skip_reason && (
                                     <p className='mt-1 text-amber-200'>
-                                        {item.skip_reason}
+                                        {describeSkipReason(item.skip_reason)}
                                     </p>
                                 )}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {rejectedItems.length > 0 && (
+                <section className='space-y-3'>
+                    <div className='flex items-center justify-between gap-3'>
+                        <p className='text-sm font-semibold text-white'>Rejected</p>
+                        <ItemBadge tone='neutral'>{rejectedItems.length}</ItemBadge>
+                    </div>
+
+                    <div className='space-y-2'>
+                        {rejectedItems.map(item => (
+                            <div
+                                key={item.id}
+                                className='rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/70'
+                            >
+                                <div className='flex flex-wrap items-center gap-2'>
+                                    {item.twitch_username && (
+                                        <ItemBadge tone='neutral'>@{item.twitch_username}</ItemBadge>
+                                    )}
+                                    <span className='text-white/55'>{formatDateTime(item.detected_at)}</span>
+                                </div>
+                                <p className='mt-2 line-clamp-2 text-white/85'>
+                                    {item.clip?.title ?? item.source_url}
+                                </p>
+                                <Button
+                                    size='sm'
+                                    variant='outline'
+                                    className='mt-2'
+                                    onClick={() => onApprove(item.id)}
+                                    leftIcon={<RotateCcw className='h-4 w-4' />}
+                                >
+                                    Restore
+                                </Button>
                             </div>
                         ))}
                     </div>
@@ -229,6 +352,19 @@ function PendingApprovalsRail({
 export function StreamerClipRoomPage() {
     const { channel = '' } = useParams<{ channel: string }>();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    // Twitch sends the creator back here with ?error=... or ?twitch_connected=true.
+    // Keep the result in state, then drop the params so a reload does not repeat it.
+    const [oauthResult, setOauthResult] = useState(() => describeOAuthResult(searchParams));
+
+    useEffect(() => {
+        if (!searchParams.has('error') && !searchParams.has('twitch_connected')) return;
+
+        const next = new URLSearchParams(searchParams);
+        next.delete('error');
+        next.delete('twitch_connected');
+        setSearchParams(next, { replace: true });
+    }, [searchParams, setSearchParams]);
 
     const {
         data,
@@ -250,6 +386,10 @@ export function StreamerClipRoomPage() {
     const skippedItems = useMemo(
         () => data?.skipped_items ?? [],
         [data?.skipped_items],
+    );
+    const rejectedItems = useMemo(
+        () => data?.rejected_items ?? [],
+        [data?.rejected_items],
     );
 
     const startRoom = useStartStreamerClipRoom();
@@ -398,12 +538,28 @@ export function StreamerClipRoomPage() {
             <PendingApprovalsRail
                 pendingItems={pendingItems}
                 skippedItems={skippedItems}
+                rejectedItems={rejectedItems}
                 onApprove={handleApprove}
                 onReject={handleReject}
             />
         ),
-        [handleApprove, handleReject, pendingItems, skippedItems],
+        [handleApprove, handleReject, pendingItems, rejectedItems, skippedItems],
     );
+
+    const twitchUsername = botAuthorization.data?.twitch_username;
+    const mutationErrors: Array<RoomErrorNotice & { key: string }> = [
+        { key: 'start', mutation: startRoom, fallback: 'Could not start the listener. Try again.' },
+        { key: 'stop', mutation: stopRoom, fallback: 'Could not stop the listener. Try again.' },
+        { key: 'submissions', mutation: updateSubmissions, fallback: 'Could not update submissions. Try again.' },
+        { key: 'approve', mutation: approveItem, fallback: 'Could not approve the clip. Try again.' },
+        { key: 'reject', mutation: rejectItem, fallback: 'Could not reject the clip. Try again.' },
+        { key: 'reorder', mutation: reorderItems, fallback: 'Could not save the new order. Try again.' },
+    ]
+        .filter(({ mutation }) => mutation.isError)
+        .map(({ key, mutation, fallback }) => ({
+            key,
+            ...describeRoomError(mutation.error, fallback, twitchUsername),
+        }));
 
     const hasApprovedItems = theatreItems.length > 0;
     const isListenerLive = room?.is_active ?? false;
@@ -575,12 +731,14 @@ export function StreamerClipRoomPage() {
                                     </span>
                                 </span>
                             )}
-                            <span>
-                                Listener started{' '}
-                                <span className='text-white/85'>
-                                    {formatDateTime(room.listener_started_at)}
+                            {isListenerLive && room.listener_started_at && (
+                                <span>
+                                    Listener started{' '}
+                                    <span className='text-white/85'>
+                                        {formatDateTime(room.listener_started_at)}
+                                    </span>
                                 </span>
-                            </span>
+                            )}
                             <span>
                                 Updated{' '}
                                 <span className='text-white/85'>
@@ -629,7 +787,7 @@ export function StreamerClipRoomPage() {
                             </label>
                             <Button
                                 size='sm'
-                                onClick={() => handleOpenSubmissions(submissionDurationMinutes)}
+                                onClick={() => handleOpenSubmissions(Math.round(submissionDurationMinutes))}
                                 disabled={!isListenerLive || submissionDurationMinutes < 1 || submissionDurationMinutes > 1440}
                                 loading={updateSubmissions.isPending}
                             >
@@ -646,13 +804,44 @@ export function StreamerClipRoomPage() {
                             </Button>
                         </div>
 
-                        {updateSubmissions.isError && (
-                            <div className='text-xs text-rose-200'>
-                                {updateSubmissions.error instanceof Error
-                                    ? updateSubmissions.error.message
-                                    : 'Failed to update submissions'}
+                        {oauthResult && (
+                            <div
+                                role={oauthResult.tone === 'error' ? 'alert' : 'status'}
+                                className={`flex items-start justify-between gap-3 rounded-2xl border px-3 py-2 text-sm ${
+                                    oauthResult.tone === 'error'
+                                        ? 'border-rose-400/20 bg-rose-500/10 text-rose-100'
+                                        : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100'
+                                }`}
+                            >
+                                <p>{oauthResult.message}</p>
+                                <button
+                                    type='button'
+                                    onClick={() => setOauthResult(null)}
+                                    aria-label='Dismiss message'
+                                    className='shrink-0 rounded p-0.5 opacity-70 hover:opacity-100'
+                                >
+                                    <X className='h-4 w-4' />
+                                </button>
                             </div>
                         )}
+
+                        {mutationErrors.map(notice => (
+                            <div
+                                key={notice.key}
+                                role='alert'
+                                className='flex items-start justify-between gap-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-100'
+                            >
+                                <div className='flex items-start gap-2'>
+                                    <CircleAlert className='mt-0.5 h-4 w-4 shrink-0' />
+                                    <p>{notice.message}</p>
+                                </div>
+                                {notice.authorizeLabel && (
+                                    <Button size='sm' onClick={handleAuthorizeBot}>
+                                        {notice.authorizeLabel}
+                                    </Button>
+                                )}
+                            </div>
+                        ))}
 
                         {room.last_listener_error && (
                             <div className='flex items-start gap-2 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-100'>
@@ -707,6 +896,7 @@ export function StreamerClipRoomPage() {
                         items={theatreItems}
                         currentItemId={currentItemId}
                         onItemClick={handleItemClick}
+                        onItemRemove={handleReject}
                         onReorder={handleReorder}
                         onClose={() => navigate('/')}
                         pendingLabel='Approved clips'
@@ -789,6 +979,7 @@ export function StreamerClipRoomPage() {
                                 <PendingApprovalsRail
                                     pendingItems={pendingItems}
                                     skippedItems={skippedItems}
+                                    rejectedItems={rejectedItems}
                                     onApprove={handleApprove}
                                     onReject={handleReject}
                                 />

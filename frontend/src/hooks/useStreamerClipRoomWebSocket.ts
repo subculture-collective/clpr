@@ -17,7 +17,7 @@ interface UseStreamerClipRoomWebSocketReturn {
 }
 
 const streamerClipRoomQueryKey = ['streamer-clip-room'] as const;
-const MAX_RECONNECT_ATTEMPTS = 10;
+const MAX_RECONNECT_DELAY_MS = 30000;
 
 export function useStreamerClipRoomWebSocket({
     roomId,
@@ -54,6 +54,18 @@ export function useStreamerClipRoomWebSocket({
         let socket: WebSocket | null = null;
         let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
         let reconnectAttempts = 0;
+
+        // Refetch the room first: it catches up on events missed while
+        // disconnected, and the authenticated request renews an expired
+        // session cookie before the socket upgrade needs it.
+        const reconnect = async () => {
+            try {
+                await queryClient.refetchQueries({ queryKey: streamerClipRoomQueryKey });
+            } catch (err) {
+                console.error('Streamer clip room refresh before reconnect failed:', err);
+            }
+            await connect();
+        };
 
         const connect = async () => {
             if (cancelled) return;
@@ -114,15 +126,16 @@ export function useStreamerClipRoomWebSocket({
                 socket = null;
                 setIsConnected(false);
 
-                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                    const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                    reconnectAttempts += 1;
-                    reconnectTimer = setTimeout(() => {
-                        void connect();
-                    }, backoffDelay);
-                } else {
-                    setError('Connection lost. Unable to reconnect after multiple attempts.');
-                }
+                // Keep retrying for as long as the page is open; the delay
+                // grows to a cap so a long outage still recovers on its own.
+                const backoffDelay = Math.min(
+                    1000 * Math.pow(2, reconnectAttempts),
+                    MAX_RECONNECT_DELAY_MS,
+                );
+                reconnectAttempts += 1;
+                reconnectTimer = setTimeout(() => {
+                    void reconnect();
+                }, backoffDelay);
             };
         };
 
@@ -144,7 +157,7 @@ export function useStreamerClipRoomWebSocket({
             }
             setIsConnected(false);
         };
-    }, [enabled, invalidateRoomQueries, roomId]);
+    }, [enabled, invalidateRoomQueries, queryClient, roomId]);
 
     return {
         isConnected,

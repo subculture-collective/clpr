@@ -398,6 +398,17 @@ func (s *AuthService) fetchTwitchUser(accessToken string) (*TwitchUser, error) {
 	return &result.Data[0], nil
 }
 
+const (
+	accountStatusActive    = "active"
+	accountStatusUnclaimed = "unclaimed"
+)
+
+// activatesOnTwitchLogin reports whether a Twitch sign-in should turn this account active.
+// Only unclaimed accounts change; pending and merged accounts keep their status.
+func activatesOnTwitchLogin(user *models.User) bool {
+	return user.AccountStatus == accountStatusUnclaimed
+}
+
 // createOrUpdateUser creates a new user or updates an existing one
 func (s *AuthService) createOrUpdateUser(ctx context.Context, twitchUser *TwitchUser) (*models.User, error) {
 	// Try to get existing user
@@ -416,6 +427,14 @@ func (s *AuthService) createOrUpdateUser(ctx context.Context, twitchUser *Twitch
 
 		if err := s.userRepo.Update(ctx, existingUser); err != nil {
 			return nil, err
+		}
+
+		// Signing in with Twitch proves ownership of an account that clip sync created
+		if activatesOnTwitchLogin(existingUser) {
+			if err := s.userRepo.UpdateAccountStatus(ctx, existingUser.ID, accountStatusActive); err != nil {
+				return nil, err
+			}
+			existingUser.AccountStatus = accountStatusActive
 		}
 
 		return existingUser, nil

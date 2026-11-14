@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import {
     getAuditLogs,
@@ -31,6 +31,56 @@ interface AuditLogFilters {
     offset: number;
 }
 
+// Action values the backend writes to moderation_audit_logs. The API filters
+// by exact match, so every value here must be one the backend stores.
+const AUDIT_ACTIONS: ReadonlyArray<readonly [value: string, label: string]> = [
+    ['ban_user', 'User banned'],
+    ['unban_user', 'User unbanned'],
+    ['suspend_comment_privileges', 'Comment privileges suspended'],
+    ['lift_comment_suspension', 'Comment suspension lifted'],
+    ['enable_comment_review', 'Comment review turned on'],
+    ['disable_comment_review', 'Comment review turned off'],
+    ['update_user_role', 'User role changed'],
+    ['update_user_karma', 'User karma changed'],
+    ['award_badge', 'Badge awarded'],
+    ['remove_badge', 'Badge removed'],
+    ['approve', 'Submission approved'],
+    ['reject', 'Submission rejected'],
+    ['resolve_appeal', 'Appeal resolved'],
+    ['add_moderator', 'Channel moderator added'],
+    ['remove_moderator', 'Channel moderator removed'],
+    ['update_moderator_permissions', 'Channel moderator role changed'],
+    ['clip_hidden', 'Clip hidden'],
+    ['clip_unhidden', 'Clip unhidden'],
+    ['clip_metadata_updated', 'Clip details updated'],
+    ['dmca_notice_received', 'DMCA notice received'],
+    ['dmca_notice_reviewed', 'DMCA notice reviewed'],
+    ['dmca_takedown_processed', 'DMCA takedown processed'],
+    ['dmca_strike_issued', 'DMCA strike issued'],
+    ['dmca_user_suspended', 'DMCA user suspended'],
+    ['dmca_user_terminated', 'DMCA user terminated'],
+    ['dmca_counter_notice_received', 'DMCA counter-notice received'],
+    ['dmca_counter_notice_forwarded', 'DMCA counter-notice forwarded'],
+    ['dmca_content_reinstated', 'DMCA content reinstated'],
+    ['dmca_lawsuit_filed', 'DMCA lawsuit filed'],
+    ['account_deletion_requested', 'Account deletion requested'],
+    ['account_deletion_cancelled', 'Account deletion cancelled'],
+];
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// The API rejects actor and target values that are not UUIDs, so anything
+// else is left out of the request.
+const validUserId = (value: string): string => {
+    const trimmed = value.trim();
+    return UUID_PATTERN.test(trimmed) ? trimmed : '';
+};
+
+const isIncompleteUserId = (value: string): boolean =>
+    value.trim() !== '' && validUserId(value) === '';
+
+const ID_FILTER_DEBOUNCE_MS = 300;
+
 // Utility function to truncate IDs for display
 const truncateId = (id: string, length: number = 8): string => {
     return id.length > length ? `${id.substring(0, length)}...` : id;
@@ -53,20 +103,52 @@ export function AuditLogViewer() {
         offset: 0,
     });
 
+    // Actor and target reach the API only as complete UUIDs, after a pause in typing.
+    const [appliedIds, setAppliedIds] = useState({ actor: '', target: '' });
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const next = {
+                actor: validUserId(filters.actor),
+                target: validUserId(filters.target),
+            };
+            setAppliedIds((prev) =>
+                prev.actor === next.actor && prev.target === next.target ? prev : next
+            );
+        }, ID_FILTER_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [filters.actor, filters.target]);
+
+    // Convert date filters to RFC3339 format for API consistency
+    const apiFilters = useMemo(
+        () => ({
+            actor: appliedIds.actor,
+            target: appliedIds.target,
+            action: filters.action,
+            search: filters.search,
+            limit: filters.limit,
+            offset: filters.offset,
+            startDate: filters.startDate
+                ? new Date(filters.startDate + 'T00:00:00').toISOString()
+                : '',
+            endDate: filters.endDate
+                ? new Date(filters.endDate + 'T23:59:59').toISOString()
+                : '',
+        }),
+        [
+            appliedIds,
+            filters.action,
+            filters.search,
+            filters.limit,
+            filters.offset,
+            filters.startDate,
+            filters.endDate,
+        ]
+    );
+
     const loadLogs = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
-            // Convert date filters to RFC3339 format for API consistency
-            const apiFilters = {
-                ...filters,
-                startDate: filters.startDate
-                    ? new Date(filters.startDate + 'T00:00:00').toISOString()
-                    : '',
-                endDate: filters.endDate
-                    ? new Date(filters.endDate + 'T23:59:59').toISOString()
-                    : '',
-            };
             const response = await getAuditLogs(apiFilters);
             setLogs(response.logs);
             setTotal(response.total);
@@ -76,7 +158,7 @@ export function AuditLogViewer() {
         } finally {
             setLoading(false);
         }
-    }, [filters]);
+    }, [apiFilters]);
 
     useEffect(() => {
         loadLogs();
@@ -87,9 +169,9 @@ export function AuditLogViewer() {
             setExporting(true);
             // Convert date filters to RFC3339 format for API consistency
             const blob = await exportAuditLogs({
-                actor: filters.actor || undefined,
+                actor: validUserId(filters.actor) || undefined,
                 action: filters.action || undefined,
-                target: filters.target || undefined,
+                target: validUserId(filters.target) || undefined,
                 startDate: filters.startDate
                     ? new Date(filters.startDate + 'T00:00:00').toISOString()
                     : undefined,
@@ -124,10 +206,10 @@ export function AuditLogViewer() {
         const iconClass = 'h-4 w-4';
         switch (action.toLowerCase()) {
             case 'ban':
-            case 'user_banned':
+            case 'ban_user':
                 return <Ban className={iconClass} />;
             case 'unban':
-            case 'user_unbanned':
+            case 'unban_user':
                 return <CheckCircle className={iconClass} />;
             case 'timeout':
             case 'user_timeout':
@@ -152,12 +234,12 @@ export function AuditLogViewer() {
     const getActionColor = (action: string) => {
         switch (action.toLowerCase()) {
             case 'ban':
-            case 'user_banned':
+            case 'ban_user':
             case 'reject':
             case 'rejected':
                 return 'bg-red-100 text-red-800';
             case 'unban':
-            case 'user_unbanned':
+            case 'unban_user':
             case 'approve':
             case 'approved':
                 return 'bg-green-100 text-green-800';
@@ -231,17 +313,11 @@ export function AuditLogViewer() {
                             className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="">All Actions</option>
-                            <option value="ban">Ban</option>
-                            <option value="unban">Unban</option>
-                            <option value="timeout">Timeout</option>
-                            <option value="warn">Warning</option>
-                            <option value="approve">Approve</option>
-                            <option value="reject">Reject</option>
-                            <option value="sync">Sync</option>
-                            <option value="user_banned">User Banned</option>
-                            <option value="user_unbanned">User Unbanned</option>
-                            <option value="clip_approved">Clip Approved</option>
-                            <option value="clip_rejected">Clip Rejected</option>
+                            {AUDIT_ACTIONS.map(([value, label]) => (
+                                <option key={value} value={value}>
+                                    {label}
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <div>
@@ -259,8 +335,14 @@ export function AuditLogViewer() {
                                 setFilters({ ...filters, actor: e.target.value, offset: 0 })
                             }
                             placeholder="Filter by actor ID..."
+                            aria-describedby={isIncompleteUserId(filters.actor) ? 'actor-filter-hint' : undefined}
                             className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
+                        {isIncompleteUserId(filters.actor) && (
+                            <p id="actor-filter-hint" className="mt-1 text-xs text-gray-600">
+                                Enter the full user ID to filter.
+                            </p>
+                        )}
                     </div>
                     <div>
                         <label
@@ -277,8 +359,14 @@ export function AuditLogViewer() {
                                 setFilters({ ...filters, target: e.target.value, offset: 0 })
                             }
                             placeholder="Filter by target ID..."
+                            aria-describedby={isIncompleteUserId(filters.target) ? 'target-filter-hint' : undefined}
                             className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
+                        {isIncompleteUserId(filters.target) && (
+                            <p id="target-filter-hint" className="mt-1 text-xs text-gray-600">
+                                Enter the full user ID to filter.
+                            </p>
+                        )}
                     </div>
                     <div>
                         <label

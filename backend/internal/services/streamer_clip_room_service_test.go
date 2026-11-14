@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +13,8 @@ import (
 )
 
 type fakeStreamerClipRoomRepository struct {
+	// mu lets listener goroutines and the test read and write concurrently.
+	mu                   sync.Mutex
 	roomsByID            map[uuid.UUID]*models.StreamerClipRoom
 	roomIDsByOwnerAndKey map[string]uuid.UUID
 	itemsByRoomID        map[uuid.UUID]map[uuid.UUID]*models.StreamerClipRoomItem
@@ -42,6 +46,8 @@ func (f *fakeStreamerClipRoomRepository) roomKey(ownerID uuid.UUID, channel stri
 }
 
 func (f *fakeStreamerClipRoomRepository) GetOrCreateRoom(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	key := f.roomKey(ownerUserID, channel)
 	if id, ok := f.roomIDsByOwnerAndKey[key]; ok {
 		return f.cloneRoom(f.roomsByID[id]), nil
@@ -59,6 +65,8 @@ func (f *fakeStreamerClipRoomRepository) GetOrCreateRoom(ctx context.Context, ow
 }
 
 func (f *fakeStreamerClipRoomRepository) GetRoomByOwnerChannel(ctx context.Context, ownerUserID uuid.UUID, channel string) (*models.StreamerClipRoom, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if roomID, ok := f.roomIDsByOwnerAndKey[f.roomKey(ownerUserID, channel)]; ok {
 		return f.cloneRoom(f.roomsByID[roomID]), nil
 	}
@@ -66,6 +74,8 @@ func (f *fakeStreamerClipRoomRepository) GetRoomByOwnerChannel(ctx context.Conte
 }
 
 func (f *fakeStreamerClipRoomRepository) GetRoomByID(ctx context.Context, roomID uuid.UUID) (*models.StreamerClipRoom, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	room, ok := f.roomsByID[roomID]
 	if !ok {
 		return nil, nil
@@ -74,6 +84,8 @@ func (f *fakeStreamerClipRoomRepository) GetRoomByID(ctx context.Context, roomID
 }
 
 func (f *fakeStreamerClipRoomRepository) SetRoomActive(ctx context.Context, roomID uuid.UUID, active bool, listenerError *string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	room, ok := f.roomsByID[roomID]
 	if !ok {
 		return nil
@@ -93,6 +105,8 @@ func (f *fakeStreamerClipRoomRepository) SetRoomActive(ctx context.Context, room
 }
 
 func (f *fakeStreamerClipRoomRepository) SetSubmissionWindow(_ context.Context, roomID uuid.UUID, open bool, closeAt *time.Time) (*models.StreamerClipRoom, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	room, ok := f.roomsByID[roomID]
 	if !ok {
 		return nil, nil
@@ -108,6 +122,8 @@ func (f *fakeStreamerClipRoomRepository) SetSubmissionWindow(_ context.Context, 
 }
 
 func (f *fakeStreamerClipRoomRepository) CreateItem(ctx context.Context, item *models.StreamerClipRoomItem) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.createCalls++
 	if item.ID == uuid.Nil {
 		item.ID = uuid.New()
@@ -127,6 +143,8 @@ func (f *fakeStreamerClipRoomRepository) CreateItem(ctx context.Context, item *m
 }
 
 func (f *fakeStreamerClipRoomRepository) ListItems(ctx context.Context, roomID uuid.UUID, status string, limit int) ([]models.StreamerClipRoomItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	items := f.itemsByRoomID[roomID]
 	results := make([]models.StreamerClipRoomItem, 0, len(items))
 	for _, item := range items {
@@ -139,6 +157,8 @@ func (f *fakeStreamerClipRoomRepository) ListItems(ctx context.Context, roomID u
 }
 
 func (f *fakeStreamerClipRoomRepository) GetItem(ctx context.Context, roomID, itemID uuid.UUID) (*models.StreamerClipRoomItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	items := f.itemsByRoomID[roomID]
 	item, ok := items[itemID]
 	if !ok {
@@ -148,6 +168,8 @@ func (f *fakeStreamerClipRoomRepository) GetItem(ctx context.Context, roomID, it
 }
 
 func (f *fakeStreamerClipRoomRepository) ApproveItem(ctx context.Context, roomID, itemID, approverID uuid.UUID) (*models.StreamerClipRoomItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.approveCalls++
 	item, ok := f.itemsByRoomID[roomID][itemID]
 	if !ok {
@@ -172,6 +194,8 @@ func (f *fakeStreamerClipRoomRepository) ApproveItem(ctx context.Context, roomID
 }
 
 func (f *fakeStreamerClipRoomRepository) RejectItem(ctx context.Context, roomID, itemID, rejecterID uuid.UUID) (*models.StreamerClipRoomItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.rejectCalls++
 	item, ok := f.itemsByRoomID[roomID][itemID]
 	if !ok {
@@ -189,6 +213,8 @@ func (f *fakeStreamerClipRoomRepository) RejectItem(ctx context.Context, roomID,
 }
 
 func (f *fakeStreamerClipRoomRepository) ReorderApprovedItems(ctx context.Context, roomID uuid.UUID, itemIDs []uuid.UUID) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.reorderCalls++
 	for idx, itemID := range itemIDs {
 		item, ok := f.itemsByRoomID[roomID][itemID]
@@ -199,6 +225,39 @@ func (f *fakeStreamerClipRoomRepository) ReorderApprovedItems(ctx context.Contex
 		item.Position = &pos
 	}
 	return nil
+}
+
+func (f *fakeStreamerClipRoomRepository) ListActiveRooms(ctx context.Context) ([]models.StreamerClipRoom, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	rooms := []models.StreamerClipRoom{}
+	for _, room := range f.roomsByID {
+		if room.IsActive {
+			rooms = append(rooms, *f.cloneRoom(room))
+		}
+	}
+	return rooms, nil
+}
+
+func (f *fakeStreamerClipRoomRepository) HasItemForClip(ctx context.Context, roomID uuid.UUID, clipID *uuid.UUID, sourceURL string, statuses []string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, item := range f.itemsByRoomID[roomID] {
+		if !slices.Contains(statuses, item.Status) {
+			continue
+		}
+		if item.SourceURL == sourceURL || (clipID != nil && item.ClipID != nil && *item.ClipID == *clipID) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// room returns a copy of the stored room for assertions.
+func (f *fakeStreamerClipRoomRepository) room(roomID uuid.UUID) *models.StreamerClipRoom {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.cloneRoom(f.roomsByID[roomID])
 }
 
 func (f *fakeStreamerClipRoomRepository) cloneRoom(room *models.StreamerClipRoom) *models.StreamerClipRoom {
@@ -687,5 +746,142 @@ func TestStreamerClipRoomServiceRejectsInvalidChannel(t *testing.T) {
 	svc := newStreamerClipRoomService(newFakeStreamerClipRoomRepository(), newFakeClipLookupRepository())
 	if _, err := svc.GetOrCreateRoom(context.Background(), uuid.New(), "bad-channel!"); err == nil {
 		t.Fatal("expected invalid channel error")
+	}
+}
+
+func newOpenStreamerClipRoom(rooms *fakeStreamerClipRoomRepository, approvalMode string) *models.StreamerClipRoom {
+	room := &models.StreamerClipRoom{
+		ID:              uuid.New(),
+		OwnerUserID:     uuid.New(),
+		TwitchChannel:   "moonmoon",
+		ApprovalMode:    approvalMode,
+		IsActive:        true,
+		SubmissionsOpen: true,
+	}
+	rooms.seedRoom(room)
+	return room
+}
+
+func TestStreamerClipRoomServiceSkipsClipAlreadyQueued(t *testing.T) {
+	for _, mode := range []string{models.StreamerClipRoomApprovalManual, models.StreamerClipRoomApprovalAuto} {
+		t.Run(mode, func(t *testing.T) {
+			rooms := newFakeStreamerClipRoomRepository()
+			clips := newFakeClipLookupRepository()
+			room := newOpenStreamerClipRoom(rooms, mode)
+			clipID := uuid.New()
+			clips.clipsByID[clipID] = &models.Clip{ID: clipID, Title: "Clip"}
+			svc := newStreamerClipRoomService(rooms, clips)
+
+			first, err := svc.IngestChatMessage(context.Background(), TwitchChatClipMessage{
+				RoomID: room.ID, TwitchMessageID: "msg-1", TwitchUserID: "1",
+				MessageText: "https://clpr.tv/clip/" + clipID.String(),
+			})
+			if err != nil || len(first) != 1 {
+				t.Fatalf("expected the first link to be queued, got %d (%v)", len(first), err)
+			}
+			// A different viewer posts the same clip with a tracking query string.
+			second, err := svc.IngestChatMessage(context.Background(), TwitchChatClipMessage{
+				RoomID: room.ID, TwitchMessageID: "msg-2", TwitchUserID: "2",
+				MessageText: "https://clpr.tv/clip/" + clipID.String() + "?ref=chat",
+			})
+			if err != nil || len(second) != 0 {
+				t.Fatalf("expected the repeated clip to be skipped, got %d (%v)", len(second), err)
+			}
+			if rooms.createCalls != 1 || rooms.approveCalls > 1 {
+				t.Fatalf("expected one item and at most one approval, got %d creates and %d approvals", rooms.createCalls, rooms.approveCalls)
+			}
+		})
+	}
+}
+
+func TestStreamerClipRoomServiceListsUnresolvedLinkOnce(t *testing.T) {
+	rooms := newFakeStreamerClipRoomRepository()
+	room := newOpenStreamerClipRoom(rooms, models.StreamerClipRoomApprovalManual)
+	svc := newStreamerClipRoomService(rooms, newFakeClipLookupRepository())
+
+	for i, user := range []string{"1", "2"} {
+		items, err := svc.IngestChatMessage(context.Background(), TwitchChatClipMessage{
+			RoomID: room.ID, TwitchUserID: user, MessageText: "https://clips.twitch.tv/UnknownSlug",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if want := 1 - i; len(items) != want {
+			t.Fatalf("message %d: expected %d items, got %d", i+1, want, len(items))
+		}
+	}
+}
+
+func TestStreamerClipRoomServiceAllowsResubmittingRejectedClip(t *testing.T) {
+	rooms := newFakeStreamerClipRoomRepository()
+	clips := newFakeClipLookupRepository()
+	room := newOpenStreamerClipRoom(rooms, models.StreamerClipRoomApprovalManual)
+	clipID := uuid.New()
+	clips.clipsByID[clipID] = &models.Clip{ID: clipID, Title: "Clip"}
+	svc := newStreamerClipRoomService(rooms, clips)
+	svc.chatterCooldown = 0
+
+	message := TwitchChatClipMessage{RoomID: room.ID, TwitchUserID: "1", MessageText: "https://clpr.tv/clip/" + clipID.String()}
+	first, err := svc.IngestChatMessage(context.Background(), message)
+	if err != nil || len(first) != 1 {
+		t.Fatalf("expected the first link to be queued, got %d (%v)", len(first), err)
+	}
+	if _, err := svc.RejectItem(context.Background(), room.OwnerUserID, room.ID, first[0].ID); err != nil {
+		t.Fatalf("failed to reject: %v", err)
+	}
+	again, err := svc.IngestChatMessage(context.Background(), message)
+	if err != nil || len(again) != 1 {
+		t.Fatalf("expected a rejected clip to be accepted again, got %d (%v)", len(again), err)
+	}
+}
+
+func TestStreamerClipRoomServiceCapsLinksPerMessage(t *testing.T) {
+	rooms := newFakeStreamerClipRoomRepository()
+	room := newOpenStreamerClipRoom(rooms, models.StreamerClipRoomApprovalManual)
+	svc := newStreamerClipRoomService(rooms, newFakeClipLookupRepository())
+
+	text := ""
+	for _, slug := range []string{"A", "B", "C", "D", "E", "F", "G"} {
+		text += "https://clips.twitch.tv/Slug" + slug + " "
+	}
+	items, err := svc.IngestChatMessage(context.Background(), TwitchChatClipMessage{RoomID: room.ID, TwitchUserID: "1", MessageText: text})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != maxClipLinksPerChatMessage {
+		t.Fatalf("expected %d items, got %d", maxClipLinksPerChatMessage, len(items))
+	}
+}
+
+func TestStreamerClipRoomServiceAppliesChatterCooldown(t *testing.T) {
+	rooms := newFakeStreamerClipRoomRepository()
+	room := newOpenStreamerClipRoom(rooms, models.StreamerClipRoomApprovalManual)
+	svc := newStreamerClipRoomService(rooms, newFakeClipLookupRepository())
+	svc.chatterCooldown = time.Hour
+
+	ingest := func(user, slug string) int {
+		t.Helper()
+		items, err := svc.IngestChatMessage(context.Background(), TwitchChatClipMessage{
+			RoomID: room.ID, TwitchUserID: user, MessageText: "https://clips.twitch.tv/" + slug,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		return len(items)
+	}
+
+	if got := ingest("1", "First"); got != 1 {
+		t.Fatalf("expected the first link to be accepted, got %d", got)
+	}
+	if got := ingest("1", "Second"); got != 0 {
+		t.Fatalf("expected the same chatter to be on cooldown, got %d", got)
+	}
+	if got := ingest("2", "Third"); got != 1 {
+		t.Fatalf("expected another chatter to be accepted, got %d", got)
+	}
+
+	svc.chatterCooldown = time.Nanosecond
+	if got := ingest("1", "Fourth"); got != 1 {
+		t.Fatalf("expected the chatter to be accepted after the cooldown, got %d", got)
 	}
 }

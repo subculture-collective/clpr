@@ -38,8 +38,24 @@ func NewBanReasonTemplateService(
 	}
 }
 
-// GetTemplate retrieves a template by ID
-func (s *BanReasonTemplateService) GetTemplate(ctx context.Context, id uuid.UUID) (*models.BanReasonTemplate, error) {
+// canManageBanTemplates reports whether caller may read and change the
+// templates of a broadcaster's channel: the broadcaster themselves, or an
+// admin or platform moderator. A nil broadcasterID means templates that belong
+// to no channel, which only admins and platform moderators manage.
+func canManageBanTemplates(caller *models.User, broadcasterID *string) bool {
+	if caller == nil {
+		return false
+	}
+	if caller.Role == models.RoleAdmin || caller.Role == models.RoleModerator {
+		return true
+	}
+	return broadcasterID != nil && *broadcasterID != "" &&
+		caller.TwitchID != nil && *caller.TwitchID == *broadcasterID
+}
+
+// GetTemplate retrieves a template by ID. Default templates are open to every
+// signed-in user; other templates need rights on the channel they belong to.
+func (s *BanReasonTemplateService) GetTemplate(ctx context.Context, caller *models.User, id uuid.UUID) (*models.BanReasonTemplate, error) {
 	template, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get template: %w", err)
@@ -47,11 +63,18 @@ func (s *BanReasonTemplateService) GetTemplate(ctx context.Context, id uuid.UUID
 	if template == nil {
 		return nil, ErrTemplateNotFound
 	}
+	if !template.IsDefault && !canManageBanTemplates(caller, template.BroadcasterID) {
+		return nil, ErrUnauthorizedTemplate
+	}
 	return template, nil
 }
 
-// ListTemplates retrieves templates for a broadcaster or defaults
-func (s *BanReasonTemplateService) ListTemplates(ctx context.Context, broadcasterID *string, includeDefaults bool) ([]models.BanReasonTemplate, error) {
+// ListTemplates retrieves templates for a broadcaster or defaults. Listing a
+// broadcaster's templates needs rights on that channel.
+func (s *BanReasonTemplateService) ListTemplates(ctx context.Context, caller *models.User, broadcasterID *string, includeDefaults bool) ([]models.BanReasonTemplate, error) {
+	if (broadcasterID != nil || !includeDefaults) && !canManageBanTemplates(caller, broadcasterID) {
+		return nil, ErrUnauthorizedTemplate
+	}
 	templates, err := s.repo.List(ctx, broadcasterID, includeDefaults)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list templates: %w", err)
@@ -60,13 +83,12 @@ func (s *BanReasonTemplateService) ListTemplates(ctx context.Context, broadcaste
 }
 
 // CreateTemplate creates a new template
-func (s *BanReasonTemplateService) CreateTemplate(ctx context.Context, userID uuid.UUID, req *models.CreateBanReasonTemplateRequest) (*models.BanReasonTemplate, error) {
-	// Verify user has permission to create templates for this broadcaster
-	if req.BroadcasterID != nil {
-		// Check if user is broadcaster or moderator for this channel
-		// For now, we'll allow any authenticated user to create channel-specific templates
-		// In production, you'd check moderator status
+func (s *BanReasonTemplateService) CreateTemplate(ctx context.Context, caller *models.User, req *models.CreateBanReasonTemplateRequest) (*models.BanReasonTemplate, error) {
+	// Only the broadcaster and platform staff may add templates to a channel
+	if !canManageBanTemplates(caller, req.BroadcasterID) {
+		return nil, ErrUnauthorizedTemplate
 	}
+	userID := caller.ID
 
 	template := &models.BanReasonTemplate{
 		Name:            req.Name,
@@ -98,7 +120,7 @@ func (s *BanReasonTemplateService) CreateTemplate(ctx context.Context, userID uu
 }
 
 // UpdateTemplate updates an existing template
-func (s *BanReasonTemplateService) UpdateTemplate(ctx context.Context, userID uuid.UUID, templateID uuid.UUID, req *models.UpdateBanReasonTemplateRequest) (*models.BanReasonTemplate, error) {
+func (s *BanReasonTemplateService) UpdateTemplate(ctx context.Context, caller *models.User, templateID uuid.UUID, req *models.UpdateBanReasonTemplateRequest) (*models.BanReasonTemplate, error) {
 	// Get existing template
 	template, err := s.repo.GetByID(ctx, templateID)
 	if err != nil {
@@ -113,9 +135,7 @@ func (s *BanReasonTemplateService) UpdateTemplate(ctx context.Context, userID uu
 		return nil, ErrCannotDeleteDefault
 	}
 
-	if template.CreatedBy != nil && *template.CreatedBy != userID {
-		// In production, check if user is broadcaster or moderator
-		// For now, only allow creator to update
+	if !canManageBanTemplates(caller, template.BroadcasterID) {
 		return nil, ErrUnauthorizedTemplate
 	}
 
@@ -142,7 +162,7 @@ func (s *BanReasonTemplateService) UpdateTemplate(ctx context.Context, userID uu
 
 	s.logger.Info("Updated ban reason template", map[string]interface{}{
 		"template_id": templateID,
-		"updated_by":  userID,
+		"updated_by":  caller.ID,
 	})
 
 	// Fetch updated template
@@ -150,7 +170,7 @@ func (s *BanReasonTemplateService) UpdateTemplate(ctx context.Context, userID uu
 }
 
 // DeleteTemplate deletes a template
-func (s *BanReasonTemplateService) DeleteTemplate(ctx context.Context, userID uuid.UUID, templateID uuid.UUID) error {
+func (s *BanReasonTemplateService) DeleteTemplate(ctx context.Context, caller *models.User, templateID uuid.UUID) error {
 	// Get template to check permissions
 	template, err := s.repo.GetByID(ctx, templateID)
 	if err != nil {
@@ -165,8 +185,7 @@ func (s *BanReasonTemplateService) DeleteTemplate(ctx context.Context, userID uu
 		return ErrCannotDeleteDefault
 	}
 
-	if template.CreatedBy != nil && *template.CreatedBy != userID {
-		// In production, check if user is broadcaster or moderator
+	if !canManageBanTemplates(caller, template.BroadcasterID) {
 		return ErrUnauthorizedTemplate
 	}
 
@@ -180,7 +199,7 @@ func (s *BanReasonTemplateService) DeleteTemplate(ctx context.Context, userID uu
 
 	s.logger.Info("Deleted ban reason template", map[string]interface{}{
 		"template_id": templateID,
-		"deleted_by":  userID,
+		"deleted_by":  caller.ID,
 	})
 
 	return nil
@@ -205,8 +224,12 @@ func (s *BanReasonTemplateService) UseTemplate(ctx context.Context, templateID u
 	return s.repo.GetByID(ctx, templateID)
 }
 
-// GetUsageStats retrieves usage statistics for templates
-func (s *BanReasonTemplateService) GetUsageStats(ctx context.Context, broadcasterID *string) ([]models.BanReasonTemplate, error) {
+// GetUsageStats retrieves usage statistics for templates. Stats for a
+// broadcaster's templates need rights on that channel.
+func (s *BanReasonTemplateService) GetUsageStats(ctx context.Context, caller *models.User, broadcasterID *string) ([]models.BanReasonTemplate, error) {
+	if broadcasterID != nil && !canManageBanTemplates(caller, broadcasterID) {
+		return nil, ErrUnauthorizedTemplate
+	}
 	stats, err := s.repo.GetUsageStats(ctx, broadcasterID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get usage stats: %w", err)

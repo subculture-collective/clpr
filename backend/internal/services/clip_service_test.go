@@ -1,9 +1,11 @@
 package services
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
 )
 
@@ -739,5 +741,19 @@ func TestWatchProgressFieldConsistency(t *testing.T) {
 	// Verify WatchedAt is empty (performance optimization)
 	if result.WatchedAt != "" {
 		t.Errorf("WatchedAt should be empty for performance, got %s", result.WatchedAt)
+	}
+}
+
+func TestCheckClipCanBeShown(t *testing.T) {
+	if err := checkClipCanBeShown(&models.Clip{IsHidden: true}); err != nil {
+		t.Errorf("hidden clip without a takedown: error = %v, want nil", err)
+	}
+
+	err := checkClipCanBeShown(&models.Clip{IsHidden: true, DMCARemoved: true})
+	if !errors.Is(err, ErrClipDMCARemoved) {
+		t.Errorf("DMCA-removed clip: error = %v, want ErrClipDMCARemoved", err)
+	}
+	if errors.Is(err, ErrUnauthorized) {
+		t.Error("DMCA refusal must be distinct from ErrUnauthorized")
 	}
 }

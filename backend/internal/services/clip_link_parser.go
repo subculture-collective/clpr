@@ -21,11 +21,7 @@ func ExtractClipLinks(message string) []DetectedClipLink {
 	links := make([]DetectedClipLink, 0, len(matches))
 
 	for _, raw := range matches {
-		cleaned := strings.TrimRight(raw, ".,!?)]}")
-		if seen[cleaned] {
-			continue
-		}
-		parsed, err := url.Parse(cleaned)
+		parsed, err := url.Parse(strings.TrimRight(raw, ".,!?)]}"))
 		if err != nil || parsed.Host == "" {
 			continue
 		}
@@ -33,6 +29,13 @@ func ExtractClipLinks(message string) []DetectedClipLink {
 		host := strings.ToLower(parsed.Host)
 		path := strings.Trim(parsed.Path, "/")
 		parts := strings.Split(path, "/")
+
+		// Normalize so the same clip posted with a different query string,
+		// fragment or host casing is recognized as the same link.
+		cleaned := strings.ToLower(parsed.Scheme) + "://" + host + "/" + path
+		if seen[cleaned] {
+			continue
+		}
 
 		if (host == "clpr.tv" || strings.HasSuffix(host, ".clpr.tv")) && len(parts) == 2 && (parts[0] == "clip" || parts[0] == "clips") {
 			seen[cleaned] = true

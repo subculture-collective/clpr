@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import apiClient from './api';
 import type {
     StreamerClipRoom,
@@ -14,37 +15,96 @@ interface StandardResponse<T> {
     };
 }
 
+/** A failed clip room request, carrying the backend's error code and message. */
+export class StreamerClipRoomApiError extends Error {
+    readonly code?: string;
+    readonly status?: number;
+
+    constructor(message: string, code?: string, status?: number) {
+        super(message);
+        this.name = 'StreamerClipRoomApiError';
+        this.code = code;
+        this.status = status;
+    }
+}
+
 const unwrapResponse = <T>(response: StandardResponse<T>, fallbackMessage: string): T => {
     if (!response.success || response.data === undefined) {
-        throw new Error(response.error?.message || fallbackMessage);
+        throw new StreamerClipRoomApiError(
+            response.error?.message || fallbackMessage,
+            response.error?.code,
+        );
     }
 
     return response.data;
 };
 
+// axios rejects non-2xx responses before unwrapResponse runs, so the backend's
+// code and message have to be read from the error's response body.
+const toApiError = (error: unknown, fallbackMessage: string): Error => {
+    if (error instanceof StreamerClipRoomApiError) return error;
+    if (!isAxiosError(error) || !error.response) {
+        return new StreamerClipRoomApiError(fallbackMessage);
+    }
+
+    const status = error.response.status;
+    // Handlers send { error: { code, message } }; the rate limiter sends { error: string }.
+    const body = (error.response.data as { error?: unknown } | undefined)?.error;
+    let code: string | undefined;
+    let message: string | undefined;
+    if (typeof body === 'string') {
+        message = body;
+    } else if (body && typeof body === 'object') {
+        const info = body as { code?: unknown; message?: unknown };
+        if (typeof info.code === 'string') code = info.code;
+        if (typeof info.message === 'string') message = info.message;
+    }
+    if (status === 429) code = 'RATE_LIMITED';
+
+    return new StreamerClipRoomApiError(message || fallbackMessage, code, status);
+};
+
+const request = async <T>(
+    call: () => Promise<{ data: StandardResponse<T> }>,
+    fallbackMessage: string,
+): Promise<T> => {
+    try {
+        const response = await call();
+        return unwrapResponse(response.data, fallbackMessage);
+    } catch (error) {
+        throw toApiError(error, fallbackMessage);
+    }
+};
+
 export const streamerClipRoomApi = {
     async getRoom(channel: string): Promise<StreamerClipRoomWithItems> {
-        const response = await apiClient.get<StandardResponse<StreamerClipRoomWithItems>>(
-            `/streamer-clip-rooms/${encodeURIComponent(channel)}`,
+        return request(
+            () =>
+                apiClient.get<StandardResponse<StreamerClipRoomWithItems>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(channel)}`,
+                ),
+            'Failed to load streamer clip room',
         );
-
-        return unwrapResponse(response.data, 'Failed to load streamer clip room');
     },
 
     async startRoom(channel: string): Promise<void> {
-        const response = await apiClient.post<StandardResponse<StreamerClipRoom>>(
-            `/streamer-clip-rooms/${encodeURIComponent(channel)}/start`,
+        await request(
+            () =>
+                apiClient.post<StandardResponse<StreamerClipRoom>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(channel)}/start`,
+                ),
+            'Could not start the listener. Try again.',
         );
-
-        unwrapResponse(response.data, 'Failed to start streamer clip room');
     },
 
     async stopRoom(channel: string): Promise<void> {
-        const response = await apiClient.post<StandardResponse<StreamerClipRoom>>(
-            `/streamer-clip-rooms/${encodeURIComponent(channel)}/stop`,
+        await request(
+            () =>
+                apiClient.post<StandardResponse<StreamerClipRoom>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(channel)}/stop`,
+                ),
+            'Could not stop the listener. Try again.',
         );
-
-        unwrapResponse(response.data, 'Failed to stop streamer clip room');
     },
 
     async updateSubmissions(
@@ -52,55 +112,65 @@ export const streamerClipRoomApi = {
         enabled: boolean,
         durationMinutes?: number,
     ): Promise<StreamerClipRoom> {
-        const response = await apiClient.put<StandardResponse<StreamerClipRoom>>(
-            `/streamer-clip-rooms/${encodeURIComponent(channel)}/submissions`,
-            {
-                enabled,
-                ...(durationMinutes === undefined
-                    ? {}
-                    : { duration_minutes: durationMinutes }),
-            },
+        return request(
+            () =>
+                apiClient.put<StandardResponse<StreamerClipRoom>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(channel)}/submissions`,
+                    {
+                        enabled,
+                        ...(durationMinutes === undefined
+                            ? {}
+                            : { duration_minutes: durationMinutes }),
+                    },
+                ),
+            'Could not update submissions. Try again.',
         );
-
-        return unwrapResponse(response.data, 'Failed to update clip submissions');
     },
 
     async getRoomItems(
         roomId: string,
         status: 'pending' | 'approved' | 'rejected' | 'skipped' | 'all' = 'all',
     ): Promise<StreamerClipRoomItem[]> {
-        const response = await apiClient.get<StandardResponse<StreamerClipRoomItem[]>>(
-            `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items`,
-            {
-                params: { status },
-            },
+        return request(
+            () =>
+                apiClient.get<StandardResponse<StreamerClipRoomItem[]>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items`,
+                    {
+                        params: { status },
+                    },
+                ),
+            'Failed to load streamer clip room items',
         );
-
-        return unwrapResponse(response.data, 'Failed to load streamer clip room items');
     },
 
     async approveItem(roomId: string, itemId: string): Promise<StreamerClipRoomItem> {
-        const response = await apiClient.post<StandardResponse<StreamerClipRoomItem>>(
-            `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items/${encodeURIComponent(itemId)}/approve`,
+        return request(
+            () =>
+                apiClient.post<StandardResponse<StreamerClipRoomItem>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items/${encodeURIComponent(itemId)}/approve`,
+                ),
+            'Could not approve the clip. Try again.',
         );
-
-        return unwrapResponse(response.data, 'Failed to approve streamer clip room item');
     },
 
     async rejectItem(roomId: string, itemId: string): Promise<StreamerClipRoomItem> {
-        const response = await apiClient.post<StandardResponse<StreamerClipRoomItem>>(
-            `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items/${encodeURIComponent(itemId)}/reject`,
+        return request(
+            () =>
+                apiClient.post<StandardResponse<StreamerClipRoomItem>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items/${encodeURIComponent(itemId)}/reject`,
+                ),
+            'Could not reject the clip. Try again.',
         );
-
-        return unwrapResponse(response.data, 'Failed to reject streamer clip room item');
     },
 
     async reorderItems(roomId: string, itemIds: string[]): Promise<void> {
-        const response = await apiClient.put<StandardResponse<{ message: string }>>(
-            `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items/order`,
-            { item_ids: itemIds },
+        await request(
+            () =>
+                apiClient.put<StandardResponse<{ message: string }>>(
+                    `/streamer-clip-rooms/${encodeURIComponent(roomId)}/items/order`,
+                    { item_ids: itemIds },
+                ),
+            'Could not save the new order. Try again.',
         );
-
-        unwrapResponse(response.data, 'Failed to reorder streamer clip room items');
     },
 };

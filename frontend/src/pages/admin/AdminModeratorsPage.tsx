@@ -1,17 +1,26 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Container, Input, Spinner } from '../../components';
-import { platformModeratorApi } from '../../lib/platform-moderator-api';
+import { Button, ConfirmModal, Container, Input, Spinner } from '../../components';
+import { getErrorMessage } from '../../lib/error-utils';
+import {
+    platformModeratorApi,
+    type PlatformModerator,
+} from '../../lib/platform-moderator-api';
 
 export function AdminModeratorsPage() {
     const queryClient = useQueryClient();
     const [userId, setUserId] = useState('');
     const [reason, setReason] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [revokeTarget, setRevokeTarget] = useState<PlatformModerator | null>(
+        null,
+    );
     const query = useQuery({
-        queryKey: ['platform-moderators'],
-        queryFn: () => platformModeratorApi.list(),
+        queryKey: ['platform-moderators', page],
+        queryFn: () => platformModeratorApi.list(page),
     });
+    const totalPages = query.data?.total_pages ?? 1;
     const refresh = () =>
         queryClient.invalidateQueries({ queryKey: ['platform-moderators'] });
     const add = useMutation({
@@ -23,7 +32,10 @@ export function AdminModeratorsPage() {
             setError(null);
             void refresh();
         },
-        onError: () => setError('Could not add the platform moderator.'),
+        onError: (err: unknown) =>
+            setError(
+                getErrorMessage(err, 'Could not add the platform moderator.'),
+            ),
     });
     const update = useMutation({
         mutationFn: (id: string) =>
@@ -35,7 +47,13 @@ export function AdminModeratorsPage() {
             setError(null);
             void refresh();
         },
-        onError: () => setError('Could not update the platform moderator.'),
+        onError: (err: unknown) =>
+            setError(
+                getErrorMessage(
+                    err,
+                    'Could not update the platform moderator.',
+                ),
+            ),
     });
     const revoke = useMutation({
         mutationFn: (id: string) =>
@@ -45,9 +63,19 @@ export function AdminModeratorsPage() {
             ),
         onSuccess: () => {
             setError(null);
+            // Revoking the only moderator on the last page leaves it empty.
+            if (query.data?.items.length === 1 && page > 1) {
+                setPage(page - 1);
+            }
             void refresh();
         },
-        onError: () => setError('Could not revoke the platform moderator.'),
+        onError: (err: unknown) =>
+            setError(
+                getErrorMessage(
+                    err,
+                    'Could not revoke the platform moderator.',
+                ),
+            ),
     });
 
     return (
@@ -136,7 +164,7 @@ export function AdminModeratorsPage() {
                                 </Button>
                                 <Button
                                     variant="danger"
-                                    onClick={() => revoke.mutate(moderator.id)}
+                                    onClick={() => setRevokeTarget(moderator)}
                                 >
                                     Revoke
                                 </Button>
@@ -145,6 +173,40 @@ export function AdminModeratorsPage() {
                     ))}
                 </ul>
             )}
+            {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                    <Button
+                        variant="secondary"
+                        onClick={() => setPage(page - 1)}
+                        disabled={page <= 1}
+                    >
+                        Previous
+                    </Button>
+                    <span className="px-4">
+                        Page {page} of {totalPages}
+                    </span>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setPage(page + 1)}
+                        disabled={page >= totalPages}
+                    >
+                        Next
+                    </Button>
+                </div>
+            )}
+            <ConfirmModal
+                open={revokeTarget !== null}
+                onClose={() => setRevokeTarget(null)}
+                onConfirm={() => {
+                    if (revokeTarget) {
+                        revoke.mutate(revokeTarget.id);
+                    }
+                }}
+                title="Revoke moderator access?"
+                message={`${revokeTarget?.display_name || revokeTarget?.username || 'This user'} will lose site-wide moderator access.`}
+                confirmText="Revoke"
+                variant="danger"
+            />
         </Container>
     );
 }

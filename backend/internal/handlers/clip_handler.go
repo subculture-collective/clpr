@@ -1214,6 +1214,16 @@ func (h *ClipHandler) UpdateClipVisibility(c *gin.Context) {
 			})
 			return
 		}
+		if errors.Is(err, services.ErrClipDMCARemoved) {
+			c.JSON(http.StatusConflict, StandardResponse{
+				Success: false,
+				Error: &ErrorInfo{
+					Code:    "DMCA_REMOVED",
+					Message: "This clip was removed for a DMCA takedown. It cannot be shown again.",
+				},
+			})
+			return
+		}
 
 		c.JSON(http.StatusInternalServerError, StandardResponse{
 			Success: false,

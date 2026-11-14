@@ -16,6 +16,10 @@ import (
 // ErrUnauthorized is returned when a user doesn't have permission to manage a clip
 var ErrUnauthorized = errors.New("user does not have permission to manage this clip")
 
+// ErrClipDMCARemoved is returned when someone tries to un-hide a clip that was removed for a DMCA takedown.
+// Only DMCA reinstatement may make such a clip visible again.
+var ErrClipDMCARemoved = errors.New("this clip was removed for a DMCA takedown and cannot be shown again")
+
 // ClipService handles business logic for clips
 type ClipService struct {
 	clipRepo            *repository.ClipRepository
@@ -761,6 +765,14 @@ func (s *ClipService) UpdateClipMetadata(ctx context.Context, userID uuid.UUID, 
 	return nil
 }
 
+// checkClipCanBeShown reports whether a hidden clip may be made visible again.
+func checkClipCanBeShown(clip *models.Clip) error {
+	if clip.DMCARemoved {
+		return ErrClipDMCARemoved
+	}
+	return nil
+}
+
 // UpdateClipVisibility updates clip visibility (hidden status) - only accessible by creator or admin
 func (s *ClipService) UpdateClipVisibility(ctx context.Context, userID uuid.UUID, clipID uuid.UUID, isHidden bool) error {
 	// Check authorization
@@ -772,9 +784,23 @@ func (s *ClipService) UpdateClipVisibility(ctx context.Context, userID uuid.UUID
 		return ErrUnauthorized
 	}
 
+	// A DMCA-removed clip stays hidden for every role, staff included
+	if !isHidden {
+		clip, err := s.clipRepo.GetByID(ctx, clipID)
+		if err != nil {
+			return fmt.Errorf("failed to get clip: %w", err)
+		}
+		if err := checkClipCanBeShown(clip); err != nil {
+			return err
+		}
+	}
+
 	// Update visibility
 	err = s.clipRepo.UpdateVisibility(ctx, clipID, isHidden)
 	if err != nil {
+		if errors.Is(err, repository.ErrClipDMCARemoved) {
+			return ErrClipDMCARemoved
+		}
 		return err
 	}
 

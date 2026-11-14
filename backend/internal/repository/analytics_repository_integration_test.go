@@ -98,3 +98,42 @@ func TestAdminIdentitySummarySeparatesUsersCreatorsAndStaff(t *testing.T) {
 		t.Fatalf("unexpected identity summary: %#v", summary)
 	}
 }
+
+func TestCreatorAnalyticsClipQueriesSkipHiddenAndDMCARemovedClips(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	repo := NewAnalyticsRepository(pool)
+	creator := "analytics-" + uuid.NewString()[:8]
+
+	visible := insertVisibilityClip(t, pool, creator, creator, false, false)
+	hidden := insertVisibilityClip(t, pool, creator, creator, true, false)
+	dmca := insertVisibilityClip(t, pool, creator, creator, false, true)
+	for _, clipID := range []uuid.UUID{visible, hidden, dmca} {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO analytics_events (event_type, clip_id, user_agent)
+			VALUES ('clip_view', $1, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')`, clipID); err != nil {
+			t.Fatalf("insert view event: %v", err)
+		}
+		t.Cleanup(func() {
+			_, _ = pool.Exec(context.Background(), `DELETE FROM analytics_events WHERE clip_id = $1`, clipID)
+		})
+	}
+
+	for _, sortBy := range []string{"votes", "views", "comments"} {
+		clips, err := repo.GetCreatorTopClips(ctx, creator, sortBy, 10)
+		if err != nil {
+			t.Fatalf("GetCreatorTopClips(%s): %v", sortBy, err)
+		}
+		if len(clips) != 1 || clips[0].ID != visible {
+			t.Fatalf("top clips by %s = %d clips, want only the visible clip %s", sortBy, len(clips), visible)
+		}
+	}
+
+	insights, err := repo.GetCreatorAudienceInsights(ctx, creator, 10)
+	if err != nil {
+		t.Fatalf("GetCreatorAudienceInsights: %v", err)
+	}
+	if insights.TotalViews != 1 {
+		t.Fatalf("audience total_views = %d, want 1 view of the visible clip", insights.TotalViews)
+	}
+}

@@ -53,6 +53,7 @@ export interface StreamerClipRoomWithItems {
     pending_items: StreamerClipRoomItem[];
     approved_items: StreamerClipRoomItem[];
     skipped_items: StreamerClipRoomItem[];
+    rejected_items?: StreamerClipRoomItem[];
 }
 
 export interface StreamerClipRoomEvent {
