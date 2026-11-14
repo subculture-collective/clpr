@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -97,8 +96,7 @@ func (h *StreamerClipRoomHandler) StartRoom(c *gin.Context) {
 		return
 	}
 
-	botUsername := strings.TrimSpace(os.Getenv("TWITCH_BOT_USERNAME"))
-	botOAuthToken := strings.TrimSpace(strings.TrimPrefix(os.Getenv("TWITCH_BOT_OAUTH_TOKEN"), "oauth:"))
+	botUsername, botOAuthToken := services.TwitchBotCredentialsFromEnv()
 	if botUsername == "" || botOAuthToken == "" {
 		c.JSON(http.StatusServiceUnavailable, StandardResponse{Success: false, Error: &ErrorInfo{Code: "TWITCH_BOT_NOT_CONFIGURED", Message: "The Clpr Twitch bot is not configured"}})
 		return
@@ -110,7 +108,9 @@ func (h *StreamerClipRoomHandler) StartRoom(c *gin.Context) {
 		return
 	}
 
-	err = h.listener.StartWithUsername(c.Request.Context(), room.ID, room.TwitchChannel, botUsername, botOAuthToken)
+	// The listener runs on the manager's own context, not this request's, so
+	// it keeps running after the response is sent.
+	err = h.listener.StartWithUsername(room.ID, room.TwitchChannel, botUsername, botOAuthToken)
 	if err != nil {
 		_, _ = h.service.StopRoom(c.Request.Context(), userID, channel)
 		c.JSON(http.StatusInternalServerError, StandardResponse{Success: false, Error: &ErrorInfo{Code: "INTERNAL_ERROR", Message: "Failed to start Twitch listener"}})

@@ -131,4 +131,45 @@ describe('useStreamerClipRoomWebSocket', () => {
         await flushAsync();
         expect(FakeWebSocket.instances).toHaveLength(2);
     });
+
+    it('keeps reconnecting at the capped delay after many failures', async () => {
+        renderHook(() => useStreamerClipRoomWebSocket({ roomId: ROOM_A }), { wrapper });
+        await flushAsync();
+
+        // Fail well past the old 10-attempt limit; 30 s always covers the capped delay.
+        for (let attempt = 0; attempt < 15; attempt += 1) {
+            act(() => {
+                FakeWebSocket.instances[FakeWebSocket.instances.length - 1].serverClose();
+            });
+            await act(async () => {
+                vi.advanceTimersByTime(30_000);
+            });
+            await flushAsync();
+        }
+
+        expect(FakeWebSocket.instances).toHaveLength(16);
+    });
+
+    it('refreshes the room query before reconnecting', async () => {
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+        const refetch = vi.spyOn(client, 'refetchQueries').mockResolvedValue(undefined);
+        renderHook(() => useStreamerClipRoomWebSocket({ roomId: ROOM_A }), {
+            wrapper: ({ children }: { children: ReactNode }) => (
+                <QueryClientProvider client={client}>{children}</QueryClientProvider>
+            ),
+        });
+        await flushAsync();
+        expect(refetch).not.toHaveBeenCalled();
+
+        act(() => {
+            FakeWebSocket.instances[0].serverClose();
+        });
+        await act(async () => {
+            vi.advanceTimersByTime(1000);
+        });
+        await flushAsync();
+
+        expect(refetch).toHaveBeenCalledWith({ queryKey: ['streamer-clip-room'] });
+        expect(FakeWebSocket.instances).toHaveLength(2);
+    });
 });

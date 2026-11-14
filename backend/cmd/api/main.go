@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/config"
+	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	sentrypkg "git.subcult.tv/subculture-collective/clpr/pkg/sentry"
 	telemetrypkg "git.subcult.tv/subculture-collective/clpr/pkg/telemetry"
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
@@ -94,6 +95,9 @@ func main() {
 	registerPlatformRoutes(v1, h, svcs, infra)
 	registerAdminRoutes(v1, h, svcs, infra)
 
+	// Reconnect chat listeners for rooms that were live before this process started
+	resumeStreamerClipRoomListeners(svcs)
+
 	// Start background schedulers
 	schedulers := startSchedulers(svcs, repos, infra)
 
@@ -110,6 +114,21 @@ func main() {
 
 	// Block until shutdown signal, then gracefully stop everything
 	gracefulShutdown(srv, svcs, schedulers, infra)
+}
+
+func resumeStreamerClipRoomListeners(svcs *Services) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	botUsername, botOAuthToken := services.TwitchBotCredentialsFromEnv()
+	resumed, err := svcs.StreamerClipRoomListener.ResumeActiveRooms(ctx, botUsername, botOAuthToken)
+	if err != nil {
+		log.Printf("WARNING: Failed to resume streamer clip room listeners: %v", err)
+		return
+	}
+	if resumed > 0 {
+		log.Printf("Resumed %d streamer clip room listener(s)", resumed)
+	}
 }
 
 func newHTTPServer(port string, handler http.Handler) *http.Server {
