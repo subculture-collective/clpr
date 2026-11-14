@@ -113,7 +113,7 @@ func (h *Handler) Search(c *gin.Context) {
 	var req models.SearchRequest
 
 	// Bind query parameters
-	if err := c.ShouldBindQuery(&req); err != nil {
+	if err := bindSearchQuery(c.Request.URL.Query(), &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid query parameters",
 		})
@@ -366,7 +366,7 @@ func (h *Handler) SearchWithScores(c *gin.Context) {
 	var req models.SearchRequest
 
 	// Bind query parameters
-	if err := c.ShouldBindQuery(&req); err != nil {
+	if err := bindSearchQuery(c.Request.URL.Query(), &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid query parameters",
 		})
