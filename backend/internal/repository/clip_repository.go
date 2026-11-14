@@ -1612,13 +1612,14 @@ func (r *ClipRepository) ListForSitemap(ctx context.Context) ([]models.Clip, err
 	return clips, nil
 }
 
-// ListClipsByBroadcaster retrieves clips for a specific broadcaster with pagination and sorting
+// ListClipsByBroadcaster retrieves the visible clips for a specific broadcaster with pagination and sorting.
+// Automatically imported and user-submitted clips are both listed, so the total matches the broadcaster's clip count.
 func (r *ClipRepository) ListClipsByBroadcaster(ctx context.Context, broadcasterID, sort string, limit, offset int) ([]models.Clip, int, error) {
 	// Get total count
 	countQuery := `
 		SELECT COUNT(*)
 		FROM clips
-		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND submitted_by_user_id IS NOT NULL
+		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND COALESCE(dmca_removed, false) = false
 	`
 	var total int
 	if err := r.pool.QueryRow(ctx, countQuery, broadcasterID).Scan(&total); err != nil {
@@ -1640,7 +1641,7 @@ func (r *ClipRepository) ListClipsByBroadcaster(ctx context.Context, broadcaster
 		SELECT
 			%s
 		FROM clips
-		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND submitted_by_user_id IS NOT NULL
+		WHERE broadcaster_id = $1 AND is_removed = false AND is_hidden = false AND COALESCE(dmca_removed, false) = false
 		ORDER BY %s
 		LIMIT $2 OFFSET $3
 	`, clipSelectColumns, orderBy)
@@ -1680,16 +1681,24 @@ func (r *ClipRepository) UpdateMetadata(ctx context.Context, clipID uuid.UUID, t
 }
 
 // UpdateVisibility updates the visibility status of a clip
+// ErrClipDMCARemoved is returned when an un-hide is refused because the clip was removed for a DMCA takedown.
+var ErrClipDMCARemoved = errors.New("clip was removed for a DMCA takedown")
+
 func (r *ClipRepository) UpdateVisibility(ctx context.Context, clipID uuid.UUID, isHidden bool) error {
+	// A DMCA-removed clip can be hidden again but never shown again from here.
 	query := `
 UPDATE clips
 SET is_hidden = $2
 WHERE id = $1
+  AND ($2 OR COALESCE(dmca_removed, false) = false)
 `
 
-	_, err := r.pool.Exec(ctx, query, clipID, isHidden)
+	tag, err := r.pool.Exec(ctx, query, clipID, isHidden)
 	if err != nil {
 		return fmt.Errorf("failed to update clip visibility: %w", err)
+	}
+	if !isHidden && tag.RowsAffected() == 0 {
+		return ErrClipDMCARemoved
 	}
 
 	return nil

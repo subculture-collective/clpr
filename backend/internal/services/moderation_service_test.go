@@ -195,9 +195,6 @@ func TestModerationService_BanUser_SiteModerator(t *testing.T) {
 	// This test only validates permission and scope checks
 	err := service.validateModerationPermission(ctx, siteMod, communityID)
 	assert.NoError(t, err)
-
-	err = service.validateModerationScope(siteMod, communityID)
-	assert.NoError(t, err)
 }
 
 func TestModerationService_BanUser_CommunityModerator_Authorized(t *testing.T) {
@@ -214,6 +211,7 @@ func TestModerationService_BanUser_CommunityModerator_Authorized(t *testing.T) {
 		UserID:      communityMod.ID,
 		Role:        models.CommunityRoleMod,
 	}
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
 	mockCommunityRepo.On("GetMember", ctx, communityID, communityMod.ID).Return(member, nil)
 
 	service := &ModerationService{
@@ -224,29 +222,129 @@ func TestModerationService_BanUser_CommunityModerator_Authorized(t *testing.T) {
 	err := service.validateModerationPermission(ctx, communityMod, communityID)
 	assert.NoError(t, err)
 
-	err = service.validateModerationScope(communityMod, communityID)
-	assert.NoError(t, err)
-
 	mockCommunityRepo.AssertExpectations(t)
 }
 
 func TestModerationService_BanUser_CommunityModerator_Unauthorized(t *testing.T) {
+	ctx := context.Background()
 	communityID := uuid.New()
 	otherCommunityID := uuid.New()
-	communityMod := createCommunityModerator(otherCommunityID) // Authorized for different community
+	communityMod := createCommunityModerator(otherCommunityID) // Moderates a different community
 
 	mockCommunityRepo := new(MockCommunityRepository)
 	mockUserRepo := new(MockModerationUserRepository)
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
+	mockCommunityRepo.On("GetMember", ctx, communityID, communityMod.ID).Return(nil, nil)
 
 	service := &ModerationService{
 		communityRepo: mockCommunityRepo,
 		userRepo:      mockUserRepo,
 	}
 
-	// Should fail scope validation
-	err := service.validateModerationScope(communityMod, communityID)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not authorized to moderate this community")
+	// Not a mod of this community, so the check fails
+	err := service.validateModerationPermission(ctx, communityMod, communityID)
+	assert.ErrorIs(t, err, ErrModerationPermissionDenied)
+}
+
+// Platform moderators (role moderator) can moderate any community and list all bans.
+func TestModerationService_PlatformModerator_Allowed(t *testing.T) {
+	ctx := context.Background()
+	platformMod := &models.User{ID: uuid.New(), Role: models.RoleModerator, AccountType: models.AccountTypeMember}
+
+	mockCommunityRepo := new(MockCommunityRepository)
+	mockUserRepo := new(MockModerationUserRepository)
+	mockUserRepo.On("GetByID", ctx, platformMod.ID).Return(platformMod, nil)
+	mockCommunityRepo.On("ListAllBans", ctx, 20, 0).Return([]*models.CommunityBan{}, 0, nil)
+
+	service := &ModerationService{communityRepo: mockCommunityRepo, userRepo: mockUserRepo}
+
+	assert.NoError(t, service.validateModerationPermission(ctx, platformMod, uuid.New()))
+	_, _, err := service.GetAllBans(ctx, platformMod.ID, 1, 20)
+	assert.NoError(t, err)
+	mockCommunityRepo.AssertNotCalled(t, "GetCommunityByID", mock.Anything, mock.Anything)
+}
+
+// A community owner can moderate their own community without any account_type setup.
+func TestModerationService_CommunityOwner_Allowed(t *testing.T) {
+	ctx := context.Background()
+	communityID := uuid.New()
+	owner := createRegularUser()
+
+	mockCommunityRepo := new(MockCommunityRepository)
+	mockUserRepo := new(MockModerationUserRepository)
+	mockUserRepo.On("GetByID", ctx, owner.ID).Return(owner, nil)
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: owner.ID}, nil)
+	mockCommunityRepo.On("ListBans", ctx, communityID, 20, 0).Return([]*models.CommunityBan{}, 0, nil)
+
+	service := &ModerationService{communityRepo: mockCommunityRepo, userRepo: mockUserRepo}
+
+	_, _, err := service.GetBans(ctx, communityID, owner.ID, 1, 20)
+	assert.NoError(t, err)
+	mockCommunityRepo.AssertNotCalled(t, "GetMember", mock.Anything, mock.Anything, mock.Anything)
+
+	// The same owner has no rights in someone else's community, and cannot list all bans.
+	otherID := uuid.New()
+	mockCommunityRepo.On("GetCommunityByID", ctx, otherID).Return(&models.Community{ID: otherID, OwnerID: uuid.New()}, nil)
+	mockCommunityRepo.On("GetMember", ctx, otherID, owner.ID).Return(nil, nil)
+	_, _, err = service.GetBans(ctx, otherID, owner.ID, 1, 20)
+	assert.ErrorIs(t, err, ErrModerationPermissionDenied)
+	_, _, err = service.GetAllBans(ctx, owner.ID, 1, 20)
+	assert.ErrorIs(t, err, ErrModerationPermissionDenied)
+}
+
+func TestModerationService_BanUser_RejectsSelfBan(t *testing.T) {
+	ctx := context.Background()
+	communityID := uuid.New()
+	admin := createAdmin()
+
+	mockCommunityRepo := new(MockCommunityRepository)
+	mockUserRepo := new(MockModerationUserRepository)
+	mockUserRepo.On("GetByID", ctx, admin.ID).Return(admin, nil)
+
+	service := &ModerationService{communityRepo: mockCommunityRepo, userRepo: mockUserRepo}
+
+	err := service.BanUser(ctx, communityID, admin.ID, admin.ID, nil)
+	assert.ErrorIs(t, err, ErrModerationCannotBanSelf)
+	mockCommunityRepo.AssertNotCalled(t, "BanMember", mock.Anything, mock.Anything)
+}
+
+func TestModerationService_BanUser_UnknownTargetUser(t *testing.T) {
+	ctx := context.Background()
+	communityID := uuid.New()
+	targetUserID := uuid.New()
+	admin := createAdmin()
+
+	mockCommunityRepo := new(MockCommunityRepository)
+	mockUserRepo := new(MockModerationUserRepository)
+	mockUserRepo.On("GetByID", ctx, admin.ID).Return(admin, nil)
+	mockUserRepo.On("GetByID", ctx, targetUserID).Return(nil, repository.ErrUserNotFound)
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
+
+	service := &ModerationService{communityRepo: mockCommunityRepo, userRepo: mockUserRepo}
+
+	err := service.BanUser(ctx, communityID, admin.ID, targetUserID, nil)
+	assert.ErrorIs(t, err, ErrModerationUserNotFound)
+	mockCommunityRepo.AssertNotCalled(t, "BanMember", mock.Anything, mock.Anything)
+}
+
+func TestModerationService_BanUser_CommunityModCannotBanCommunityStaff(t *testing.T) {
+	ctx := context.Background()
+	communityID := uuid.New()
+	communityMod := createCommunityModerator(communityID)
+	targetUserID := uuid.New()
+
+	mockCommunityRepo := new(MockCommunityRepository)
+	mockUserRepo := new(MockModerationUserRepository)
+	mockUserRepo.On("GetByID", ctx, communityMod.ID).Return(communityMod, nil)
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
+	mockCommunityRepo.On("GetMember", ctx, communityID, communityMod.ID).Return(&models.CommunityMember{UserID: communityMod.ID, Role: models.CommunityRoleMod}, nil)
+	mockCommunityRepo.On("GetMember", ctx, communityID, targetUserID).Return(&models.CommunityMember{UserID: targetUserID, Role: models.CommunityRoleAdmin}, nil)
+
+	service := &ModerationService{communityRepo: mockCommunityRepo, userRepo: mockUserRepo}
+
+	_, err := service.BanUserWithResult(ctx, communityID, communityMod.ID, targetUserID, nil)
+	assert.ErrorIs(t, err, ErrModerationPermissionDenied)
+	mockCommunityRepo.AssertNotCalled(t, "BanMember", mock.Anything, mock.Anything)
 }
 
 func TestModerationService_BanUser_RegularUser_Denied(t *testing.T) {
@@ -261,6 +359,9 @@ func TestModerationService_BanUser_RegularUser_Denied(t *testing.T) {
 		communityRepo: mockCommunityRepo,
 		userRepo:      mockUserRepo,
 	}
+
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
+	mockCommunityRepo.On("GetMember", ctx, communityID, regularUser.ID).Return(nil, nil)
 
 	// Should fail permission validation
 	err := service.validateModerationPermission(ctx, regularUser, communityID)
@@ -357,9 +458,6 @@ func TestModerationService_Admin_CanModerateAnywhere(t *testing.T) {
 	// Admin should pass both permission and scope validation
 	err := service.validateModerationPermission(ctx, admin, communityID)
 	assert.NoError(t, err)
-
-	err = service.validateModerationScope(admin, communityID)
-	assert.NoError(t, err)
 }
 
 func TestModerationService_CommunityModerator_NotMember_Denied(t *testing.T) {
@@ -371,6 +469,7 @@ func TestModerationService_CommunityModerator_NotMember_Denied(t *testing.T) {
 	mockUserRepo := new(MockModerationUserRepository)
 
 	// Mock that moderator is not a member of the community
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
 	mockCommunityRepo.On("GetMember", ctx, communityID, communityMod.ID).Return(nil, nil)
 
 	service := &ModerationService{
@@ -401,6 +500,7 @@ func TestModerationService_CommunityModerator_InsufficientRole_Denied(t *testing
 		UserID:      communityMod.ID,
 		Role:        models.CommunityRoleMember, // Not a mod!
 	}
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
 	mockCommunityRepo.On("GetMember", ctx, communityID, communityMod.ID).Return(member, nil)
 
 	service := &ModerationService{
@@ -472,6 +572,7 @@ func TestModerationService_BanUser_FullFlow(t *testing.T) {
 
 	// Setup mocks
 	mockUserRepo.On("GetByID", ctx, moderatorID).Return(siteMod, nil)
+	mockUserRepo.On("GetByID", ctx, targetUserID).Return(&models.User{ID: targetUserID}, nil)
 	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(community, nil)
 	mockCommunityRepo.On("RemoveMember", ctx, communityID, targetUserID).Return(nil)
 	mockCommunityRepo.On("BanMember", ctx, mock.AnythingOfType("*models.CommunityBan")).Return(nil)
@@ -776,6 +877,7 @@ func TestModerationService_BanUser_BanMemberError(t *testing.T) {
 	}
 
 	mockUserRepo.On("GetByID", ctx, moderatorID).Return(siteMod, nil)
+	mockUserRepo.On("GetByID", ctx, targetUserID).Return(&models.User{ID: targetUserID}, nil)
 	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(community, nil)
 	mockCommunityRepo.On("RemoveMember", ctx, communityID, targetUserID).Return(nil)
 	mockCommunityRepo.On("BanMember", ctx, mock.AnythingOfType("*models.CommunityBan")).Return(errors.New("db error"))
@@ -819,6 +921,7 @@ func TestModerationService_BanUser_AuditLogError(t *testing.T) {
 	}
 
 	mockUserRepo.On("GetByID", ctx, moderatorID).Return(siteMod, nil)
+	mockUserRepo.On("GetByID", ctx, targetUserID).Return(&models.User{ID: targetUserID}, nil)
 	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(community, nil)
 	mockCommunityRepo.On("RemoveMember", ctx, communityID, targetUserID).Return(nil)
 	mockCommunityRepo.On("BanMember", ctx, mock.AnythingOfType("*models.CommunityBan")).Return(nil)
@@ -856,6 +959,7 @@ func TestModerationService_BanUserWithResult_UsesAtomicWriter(t *testing.T) {
 	}
 
 	userRepo.On("GetByID", ctx, moderatorID).Return(moderator, nil)
+	userRepo.On("GetByID", ctx, targetUserID).Return(&models.User{ID: targetUserID}, nil)
 	communityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
 	banWriter.On("CreateBanWithAudit", ctx, mock.AnythingOfType("*models.CommunityBan"), mock.AnythingOfType("*models.ModerationAuditLog")).Return(nil)
 
@@ -890,6 +994,7 @@ func TestModerationService_BanUserWithResult_AtomicWriterFailureReturnsNoBan(t *
 	}
 
 	userRepo.On("GetByID", ctx, moderatorID).Return(moderator, nil)
+	userRepo.On("GetByID", ctx, targetUserID).Return(&models.User{ID: targetUserID}, nil)
 	communityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
 	banWriter.On("CreateBanWithAudit", ctx, mock.AnythingOfType("*models.CommunityBan"), mock.AnythingOfType("*models.ModerationAuditLog")).Return(errors.New("audit insert failed"))
 
@@ -1099,6 +1204,7 @@ func TestModerationService_validateModerationPermission_GetMemberError(t *testin
 		ModerationChannels: []uuid.UUID{communityID},
 	}
 
+	mockCommunityRepo.On("GetCommunityByID", ctx, communityID).Return(&models.Community{ID: communityID, OwnerID: uuid.New()}, nil)
 	mockCommunityRepo.On("GetMember", ctx, communityID, communityModID).Return(nil, errors.New("db error"))
 
 	service := &ModerationService{

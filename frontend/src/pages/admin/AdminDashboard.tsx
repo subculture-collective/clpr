@@ -4,7 +4,7 @@ import { adminNavGroups } from '../../components/admin/adminNavigation';
 import { SEO } from '../../components';
 
 const priorityActions = [
-    { label: 'Review moderation queue', href: '/admin/moderation', description: 'Work through the highest-priority reports and flagged content.', icon: ShieldCheck },
+    { label: 'Review moderation queue', href: '/admin/moderation', description: 'Review comments and clips that were flagged automatically. User reports are on the Reports page.', icon: ShieldCheck },
     { label: 'Check collection automation', href: '/admin/playlist-scripts', description: 'Inspect generated playlists and scheduling rules.', icon: Sparkles },
 ];
 

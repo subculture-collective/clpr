@@ -42,7 +42,7 @@ export function DMCAPage() {
           <Card><CardBody>
             <h2 className='text-2xl font-semibold mb-4'>Repeat infringement and misrepresentation</h2>
             <p className='text-muted-foreground mb-3'>When appropriate, we may terminate accounts of repeat infringers. Knowingly making a material misrepresentation in a notice or counter-notice may create liability under 17 U.S.C. § 512(f).</p>
-            <p className='text-muted-foreground'>DMCA notices are legal documents. For non-copyright reports, use the report control on the relevant content or contact <a href='mailto:support@clpr.tv' className='text-link underline underline-offset-2'>support@clpr.tv</a>.</p>
+            <p className='text-muted-foreground'>DMCA notices are legal documents. For other reports, use the report option on a comment, or email a link to the clip to <a href='mailto:support@clpr.tv' className='text-link underline underline-offset-2'>support@clpr.tv</a>.</p>
           </CardBody></Card>
         </div>
       </Container>

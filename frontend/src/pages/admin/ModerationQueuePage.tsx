@@ -20,6 +20,8 @@ import {
 import type { ClipSubmissionWithUser } from '../../types/submission';
 import type { UserRole } from '../../lib/roles';
 import { ModerationEvents, trackEvent } from '../../lib/telemetry';
+import { getErrorMessage } from '../../lib/error-utils';
+import { isStaleQueueError } from '../../components/moderation/queueUtils';
 
 export function ModerationQueuePage() {
     const { isAuthenticated, isModeratorOrAdmin } = useAuth();
@@ -46,14 +48,16 @@ export function ModerationQueuePage() {
             setIsLoading(true);
             setError(null);
             const response = await getPendingSubmissions(page, 20);
-            setSubmissions(response.data || []);
+            const data = response.data || [];
+            setSubmissions(data);
             setTotalPages(response.meta.total_pages);
             setTotal(response.meta.total);
+            // The last page was emptied: step back to the new last page.
+            if (data.length === 0 && page > 1) {
+                setPage(Math.min(page - 1, Math.max(1, response.meta.total_pages)));
+            }
         } catch (err: unknown) {
-            const error = err as { response?: { data?: { error?: string } } };
-            setError(
-                error.response?.data?.error || 'Failed to load submissions'
-            );
+            setError(getErrorMessage(err, 'Failed to load submissions'));
         } finally {
             setIsLoading(false);
         }
@@ -69,6 +73,15 @@ export function ModerationQueuePage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, isModeratorOrAdmin, navigate, page]);
 
+    // Shows the error and, when the submission is gone or already reviewed,
+    // reloads so the list matches the server again.
+    const handleActionError = (err: unknown, fallback: string) => {
+        if (isStaleQueueError(err)) {
+            loadSubmissions();
+        }
+        setError(getErrorMessage(err, fallback));
+    };
+
     const handleApprove = async (submissionId: string) => {
         try {
             await approveSubmission(submissionId);
@@ -76,10 +89,7 @@ export function ModerationQueuePage() {
             setSuccess('Submission approved successfully!');
             loadSubmissions(); // Reload the list
         } catch (err: unknown) {
-            const error = err as { response?: { data?: { error?: string } } };
-            setError(
-                error.response?.data?.error || 'Failed to approve submission'
-            );
+            handleActionError(err, 'Failed to approve submission');
         }
     };
 
@@ -104,10 +114,11 @@ export function ModerationQueuePage() {
             setRejectionReason('');
             loadSubmissions(); // Reload the list
         } catch (err: unknown) {
-            const error = err as { response?: { data?: { error?: string } } };
-            setError(
-                error.response?.data?.error || 'Failed to reject submission'
-            );
+            if (isStaleQueueError(err)) {
+                setRejectModalOpen(false);
+                setSelectedSubmissionId(null);
+            }
+            handleActionError(err, 'Failed to reject submission');
         }
     };
 

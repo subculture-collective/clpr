@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModerationQueueView } from './ModerationQueueView';
 import * as moderationApi from '../../lib/moderation-api';
@@ -397,12 +397,47 @@ describe('ModerationQueueView', () => {
             });
             await user.click(bulkRejectButton);
 
+            // Rejecting removes content, so nothing happens until it is confirmed.
+            expect(moderationApi.bulkModerate).not.toHaveBeenCalled();
+            await user.click(
+                await screen.findByRole('button', { name: 'Reject and remove' }),
+            );
+
             await waitFor(() => {
                 expect(moderationApi.bulkModerate).toHaveBeenCalledWith({
                     item_ids: ['item-1', 'item-2'],
                     action: 'reject',
                 });
             });
+        });
+
+        it('does not treat Ctrl+R or Cmd+R as the reject shortcut', async () => {
+            const user = userEvent.setup();
+
+            renderWithRouter(
+                <ModerationQueueView
+                    contentType='clip'
+                    title='Clip Moderation'
+                    description='Review flagged clips'
+                />,
+            );
+
+            await waitFor(() => {
+                expect(screen.getByText('clip-1')).toBeInTheDocument();
+            });
+            await user.click(screen.getAllByRole('checkbox')[1]);
+
+            fireEvent.keyDown(document.body, { key: 'r', ctrlKey: true });
+            fireEvent.keyDown(document.body, { key: 'r', metaKey: true });
+            fireEvent.keyDown(document.body, { key: 'a', ctrlKey: true });
+
+            expect(moderationApi.bulkModerate).not.toHaveBeenCalled();
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+            // The plain key still works, and reject asks first.
+            fireEvent.keyDown(document.body, { key: 'r' });
+            expect(await screen.findByRole('dialog')).toBeInTheDocument();
+            expect(moderationApi.bulkModerate).not.toHaveBeenCalled();
         });
     });
 

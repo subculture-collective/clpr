@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Container, Card, Button, Badge, Spinner, Alert, Modal, TextArea } from '../../components';
+import { Container, Card, Button, Badge, Spinner, Alert, Modal } from '../../components';
 import { Film, MessageSquare, User as UserIcon, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { listReports, updateReport } from '../../lib/report-api';
+import { getErrorMessage } from '../../lib/error-utils';
 import type { Report, UpdateReportRequest } from '../../types/report';
 
 export function AdminReportsPage() {
@@ -23,7 +24,6 @@ export function AdminReportsPage() {
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [actionType, setActionType] = useState<string>('');
-  const [actionNotes, setActionNotes] = useState('');
 
   const loadReports = async () => {
     try {
@@ -34,8 +34,7 @@ export function AdminReportsPage() {
       setTotalPages(response.meta?.total_pages ?? 1);
       setTotal(response.meta?.total ?? 0);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to load reports');
+      setError(getErrorMessage(err, 'Failed to load reports'));
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +54,6 @@ export function AdminReportsPage() {
     setSelectedReport(report);
     setActionType(action);
     setActionModalOpen(true);
-    setActionNotes('');
   };
 
   const handleAction = async () => {
@@ -74,11 +72,9 @@ export function AdminReportsPage() {
       setActionModalOpen(false);
       setSelectedReport(null);
       setActionType('');
-      setActionNotes('');
       loadReports();
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || 'Failed to process report');
+      setError(getErrorMessage(err, 'Failed to process report'));
     }
   };
 
@@ -187,7 +183,7 @@ export function AdminReportsPage() {
       {/* Stats */}
       <Card className="p-4 mb-6">
         <div className="text-2xl font-bold">{total}</div>
-        <div className="text-sm text-muted-foreground">Total Reports</div>
+        <div className="text-sm text-muted-foreground">Reports matching these filters</div>
       </Card>
 
       {/* Reports List */}
@@ -232,20 +228,26 @@ export function AdminReportsPage() {
                 <div className="flex gap-2">
                   {report.status === 'pending' && (
                     <>
-                      <Button
-                        size="sm"
-                        onClick={() => openActionModal(report, 'remove_content')}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Remove Content
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => openActionModal(report, 'ban_user')}
-                      >
-                        Ban User
-                      </Button>
+                      {/* The API accepts Remove Content for clips and comments,
+                          and Ban User for comments and users. */}
+                      {report.reportable_type !== 'user' && (
+                        <Button
+                          size="sm"
+                          onClick={() => openActionModal(report, 'remove_content')}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Remove Content
+                        </Button>
+                      )}
+                      {report.reportable_type !== 'clip' && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openActionModal(report, 'ban_user')}
+                        >
+                          Ban User
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="secondary"
@@ -293,7 +295,6 @@ export function AdminReportsPage() {
             setActionModalOpen(false);
             setSelectedReport(null);
             setActionType('');
-            setActionNotes('');
           }}
           title={`${actionType === 'dismiss' ? 'Dismiss' : 'Action'} Report`}
         >
@@ -303,16 +304,6 @@ export function AdminReportsPage() {
               {actionType === 'ban_user' && 'This will ban the user who created the reported content.'}
               {actionType === 'dismiss' && 'This will mark the report as dismissed (false report).'}
             </p>
-
-            <div>
-              <label htmlFor="report-action-notes" className="block text-sm font-medium mb-2">Notes (optional)</label>
-              <TextArea
-                value={actionNotes}
-                onChange={(e) => setActionNotes(e.target.value)}
-                placeholder="Add any notes about this action..."
-                rows={3}
-              />
-            </div>
 
             <div className="flex gap-3">
               <Button
@@ -326,7 +317,6 @@ export function AdminReportsPage() {
                   setActionModalOpen(false);
                   setSelectedReport(null);
                   setActionType('');
-                  setActionNotes('');
                 }}
                 variant="secondary"
                 className="flex-1"

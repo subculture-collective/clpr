@@ -103,6 +103,7 @@ func (r *AnalyticsRepository) GetCreatorTopClips(ctx context.Context, creatorNam
 		FROM clips c
 		LEFT JOIN clip_analytics ca ON c.id = ca.clip_id
 		WHERE c.creator_name = $1 AND c.is_removed = false
+		  AND c.is_hidden = false AND COALESCE(c.dmca_removed, false) = false
 		ORDER BY %s DESC
 		LIMIT $2
 	`, sortColumn)
@@ -558,6 +559,7 @@ func (r *AnalyticsRepository) GetCreatorAudienceInsights(ctx context.Context, cr
 	clipsQuery := `
 		SELECT id FROM clips
 		WHERE creator_name = $1 AND is_removed = false
+		  AND is_hidden = false AND COALESCE(dmca_removed, false) = false
 	`
 
 	rows, err := r.db.Query(ctx, clipsQuery, creatorName)

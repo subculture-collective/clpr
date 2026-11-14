@@ -23,3 +23,14 @@ func TestExtractClipLinksDeduplicates(t *testing.T) {
 		t.Fatalf("expected 1 link, got %d", len(links))
 	}
 }
+
+func TestExtractClipLinksNormalizesSourceURL(t *testing.T) {
+	input := "https://Clips.Twitch.tv/FunnySlug?tt_medium=redt https://clips.twitch.tv/FunnySlug/#x"
+	links := ExtractClipLinks(input)
+	if len(links) != 1 {
+		t.Fatalf("expected 1 link, got %d", len(links))
+	}
+	if links[0].SourceURL != "https://clips.twitch.tv/FunnySlug" || links[0].TwitchClipID != "FunnySlug" {
+		t.Fatalf("unexpected link: %#v", links[0])
+	}
+}

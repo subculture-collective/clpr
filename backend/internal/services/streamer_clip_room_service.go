@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
@@ -34,6 +35,8 @@ type streamerClipRoomRepository interface {
 	ApproveItem(ctx context.Context, roomID, itemID, approverID uuid.UUID) (*models.StreamerClipRoomItem, error)
 	RejectItem(ctx context.Context, roomID, itemID, rejecterID uuid.UUID) (*models.StreamerClipRoomItem, error)
 	ReorderApprovedItems(ctx context.Context, roomID uuid.UUID, itemIDs []uuid.UUID) error
+	ListActiveRooms(ctx context.Context) ([]models.StreamerClipRoom, error)
+	HasItemForClip(ctx context.Context, roomID uuid.UUID, clipID *uuid.UUID, sourceURL string, statuses []string) (bool, error)
 }
 
 type clipLookupRepository interface {
@@ -51,7 +54,19 @@ type StreamerClipRoomService struct {
 	clips            clipLookupRepository
 	importer         streamerClipImporter
 	eventBroadcaster func(roomID uuid.UUID, eventType string, data map[string]interface{})
+
+	// Per-room, per-chatter time of the last accepted message with clip links.
+	chatterCooldown time.Duration
+	chatterMu       sync.Mutex
+	chatterLastSeen map[string]time.Time
 }
+
+const (
+	// maxClipLinksPerChatMessage caps how many links one chat message can queue.
+	maxClipLinksPerChatMessage = 5
+	// defaultChatterCooldown is how long a chatter waits between submissions.
+	defaultChatterCooldown = 5 * time.Second
+)
 
 // SetClipImporter enables on-demand import when chat contains a Twitch clip
 // that is not already present in Clpr.
@@ -63,11 +78,16 @@ func (s *StreamerClipRoomService) SetClipImporter(importer streamerClipImporter)
 }
 
 func NewStreamerClipRoomService(rooms *repository.StreamerClipRoomRepository, clips *repository.ClipRepository) *StreamerClipRoomService {
-	return &StreamerClipRoomService{rooms: rooms, clips: clips}
+	return newStreamerClipRoomService(rooms, clips)
 }
 
 func newStreamerClipRoomService(rooms streamerClipRoomRepository, clips clipLookupRepository) *StreamerClipRoomService {
-	return &StreamerClipRoomService{rooms: rooms, clips: clips}
+	return &StreamerClipRoomService{
+		rooms:           rooms,
+		clips:           clips,
+		chatterCooldown: defaultChatterCooldown,
+		chatterLastSeen: make(map[string]time.Time),
+	}
 }
 
 func (s *StreamerClipRoomService) SetEventBroadcaster(broadcaster func(roomID uuid.UUID, eventType string, data map[string]interface{})) {
@@ -254,12 +274,21 @@ func (s *StreamerClipRoomService) IngestChatMessage(ctx context.Context, msg Twi
 	if len(links) == 0 {
 		return nil, nil
 	}
+	if len(links) > maxClipLinksPerChatMessage {
+		links = links[:maxClipLinksPerChatMessage]
+	}
+	if !s.allowChatter(room.ID, msg) {
+		return nil, nil
+	}
 
 	items := make([]models.StreamerClipRoomItem, 0, len(links))
 	for _, link := range links {
 		item, err := s.ingestLink(ctx, room, msg, link)
 		if err != nil {
 			return nil, err
+		}
+		if item == nil {
+			continue
 		}
 		item, err = s.hydrateItem(ctx, item)
 		if err != nil {
@@ -270,6 +299,39 @@ func (s *StreamerClipRoomService) IngestChatMessage(ctx context.Context, msg Twi
 	}
 
 	return items, nil
+}
+
+// allowChatter applies the per-chatter cooldown. Messages without a chatter
+// identity are let through.
+func (s *StreamerClipRoomService) allowChatter(roomID uuid.UUID, msg TwitchChatClipMessage) bool {
+	chatter := strings.TrimSpace(msg.TwitchUserID)
+	if chatter == "" {
+		chatter = strings.ToLower(strings.TrimSpace(msg.TwitchUsername))
+	}
+	if s.chatterCooldown <= 0 || chatter == "" {
+		return true
+	}
+
+	key := roomID.String() + "|" + chatter
+	now := time.Now()
+
+	s.chatterMu.Lock()
+	defer s.chatterMu.Unlock()
+	if last, ok := s.chatterLastSeen[key]; ok && now.Sub(last) < s.chatterCooldown {
+		return false
+	}
+	if len(s.chatterLastSeen) >= 4096 {
+		for k, last := range s.chatterLastSeen {
+			if now.Sub(last) >= s.chatterCooldown {
+				delete(s.chatterLastSeen, k)
+			}
+		}
+	}
+	if s.chatterLastSeen == nil {
+		s.chatterLastSeen = make(map[string]time.Time)
+	}
+	s.chatterLastSeen[key] = now
+	return true
 }
 
 func (s *StreamerClipRoomService) ApproveItem(ctx context.Context, actorUserID, roomID, itemID uuid.UUID) (*models.StreamerClipRoomItem, error) {
@@ -308,7 +370,9 @@ func (s *StreamerClipRoomService) MarkListenerStopped(roomID uuid.UUID, err erro
 	if message == "" {
 		return
 	}
-	_ = s.rooms.SetRoomActive(context.Background(), roomID, false, &message)
+	ctx, cancel := context.WithTimeout(context.Background(), listenerStatusWriteTimeout)
+	_ = s.rooms.SetRoomActive(ctx, roomID, false, &message)
+	cancel()
 	if s.eventBroadcaster != nil {
 		s.eventBroadcaster(roomID, "room_status_changed", map[string]interface{}{
 			"room_id":             roomID.String(),
@@ -316,6 +380,23 @@ func (s *StreamerClipRoomService) MarkListenerStopped(roomID uuid.UUID, err erro
 			"last_listener_error": message,
 		})
 	}
+}
+
+// markListenerStarted records that a listener is running for the room.
+func (s *StreamerClipRoomService) markListenerStarted(ctx context.Context, roomID uuid.UUID) error {
+	if err := s.rooms.SetRoomActive(ctx, roomID, true, nil); err != nil {
+		return fmt.Errorf("failed to mark listener started: %w", err)
+	}
+	return nil
+}
+
+// activeRooms lists rooms whose listener should be running.
+func (s *StreamerClipRoomService) activeRooms(ctx context.Context) ([]models.StreamerClipRoom, error) {
+	rooms, err := s.rooms.ListActiveRooms(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list active streamer clip rooms: %w", err)
+	}
+	return rooms, nil
 }
 
 func (s *StreamerClipRoomService) ReorderApprovedItems(ctx context.Context, actorUserID, roomID uuid.UUID, itemIDs []uuid.UUID) error {
@@ -357,6 +438,20 @@ func (s *StreamerClipRoomService) ingestLink(ctx context.Context, room *models.S
 	if skipReason != nil {
 		item.Status = models.StreamerClipRoomItemStatusSkipped
 		item.SkipReason = skipReason
+	}
+
+	// Skip a clip the room already has waiting or queued; for links that end
+	// up skipped, do not list the same one twice.
+	statuses := []string{models.StreamerClipRoomItemStatusPending, models.StreamerClipRoomItemStatusApproved}
+	if item.Status == models.StreamerClipRoomItemStatusSkipped {
+		statuses = []string{models.StreamerClipRoomItemStatusSkipped}
+	}
+	duplicate, err := s.rooms.HasItemForClip(ctx, room.ID, item.ClipID, item.SourceURL, statuses)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check for an existing streamer clip room item: %w", err)
+	}
+	if duplicate {
+		return nil, nil
 	}
 
 	if err := s.rooms.CreateItem(ctx, item); err != nil {

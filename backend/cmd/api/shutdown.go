@@ -22,6 +22,10 @@ func gracefulShutdown(srv *http.Server, svcs *Services, schedulers *SchedulerGro
 	// Shutdown WebSocket server first to close all connections
 	svcs.WSServer.Shutdown()
 
+	// Disconnect chat listeners but leave their rooms active, so the next
+	// process resumes them.
+	svcs.StreamerClipRoomListener.Shutdown()
+
 	// Stop event tracker
 	svcs.CancelEventTracker()
 

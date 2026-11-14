@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuditLogViewer } from './AuditLogViewer';
 import * as moderationApi from '../../lib/moderation-api';
@@ -155,11 +155,11 @@ describe('AuditLogViewer', () => {
             });
 
             const actionSelect = screen.getByLabelText('Action');
-            await user.selectOptions(actionSelect, 'ban');
+            await user.selectOptions(actionSelect, 'ban_user');
 
             await waitFor(() => {
                 expect(moderationApi.getAuditLogs).toHaveBeenCalledWith(
-                    expect.objectContaining({ action: 'ban', offset: 0 })
+                    expect.objectContaining({ action: 'ban_user', offset: 0 })
                 );
             });
         });
@@ -172,14 +172,56 @@ describe('AuditLogViewer', () => {
                 expect(screen.getByLabelText('Target (User ID)')).toBeInTheDocument();
             });
 
+            const targetId = '3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b';
             const targetInput = screen.getByLabelText('Target (User ID)');
-            await user.type(targetInput, 'target-123');
+            await user.type(targetInput, targetId);
 
             await waitFor(() => {
                 expect(moderationApi.getAuditLogs).toHaveBeenCalledWith(
-                    expect.objectContaining({ target: 'target-123', offset: 0 })
+                    expect.objectContaining({ target: targetId, offset: 0 })
                 );
             });
+            // Partial IDs typed on the way are never sent: the API rejects them.
+            for (const [params] of vi.mocked(moderationApi.getAuditLogs).mock.calls) {
+                expect(['', targetId]).toContain(params.target);
+            }
+        });
+
+        it('does not send an actor or target that is not a full user ID', async () => {
+            const user = userEvent.setup();
+            render(<AuditLogViewer />);
+
+            await waitFor(() => {
+                expect(screen.getByLabelText('Actor (User ID)')).toBeInTheDocument();
+            });
+            const callsBefore = vi.mocked(moderationApi.getAuditLogs).mock.calls.length;
+
+            await user.type(screen.getByLabelText('Actor (User ID)'), 'some-username');
+
+            expect(await screen.findByText('Enter the full user ID to filter.')).toBeInTheDocument();
+            // Wait past the debounce, then check nothing was requested.
+            await act(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 400));
+            });
+            expect(vi.mocked(moderationApi.getAuditLogs).mock.calls.length).toBe(callsBefore);
+            expect(screen.queryByText('Failed to load audit logs')).not.toBeInTheDocument();
+        });
+
+        it('offers the action values the backend stores', async () => {
+            render(<AuditLogViewer />);
+
+            await waitFor(() => {
+                expect(screen.getByLabelText('Action')).toBeInTheDocument();
+            });
+            const values = Array.from(
+                (screen.getByLabelText('Action') as HTMLSelectElement).options
+            ).map((option) => option.value);
+
+            expect(values).toEqual(
+                expect.arrayContaining(['ban_user', 'unban_user', 'update_user_role', 'add_moderator'])
+            );
+            expect(values).not.toContain('user_banned');
+            expect(values).not.toContain('clip_approved');
         });
 
         it('applies search filter', async () => {
@@ -209,7 +251,7 @@ describe('AuditLogViewer', () => {
             });
 
             const actionSelect = screen.getByLabelText('Action');
-            await user.selectOptions(actionSelect, 'ban');
+            await user.selectOptions(actionSelect, 'ban_user');
 
             await waitFor(() => {
                 expect(moderationApi.getAuditLogs).toHaveBeenCalledWith(
