@@ -200,7 +200,7 @@ export function BroadcasterPage() {
                                     clickable={true}
                                     onClick={() =>
                                         window.open(
-                                            `https://twitch.tv/${broadcasterId}`,
+                                            profile.twitch_url,
                                             '_blank',
                                             'noopener,noreferrer',
                                         )

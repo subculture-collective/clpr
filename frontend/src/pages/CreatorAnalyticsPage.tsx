@@ -85,12 +85,7 @@ const CreatorAnalyticsPage: React.FC = () => {
           kicker="No analytics yet"
           title={creatorName ? `No analytics for ${creatorName} yet` : 'No creator selected'}
           description="Analytics appear once clpr has tracked clips from this creator."
-          links={[
-            ...(creatorName
-              ? [{ label: 'View creator page', href: `/creator/${encodeURIComponent(creatorName)}` }]
-              : []),
-            { label: 'Browse creators', href: '/creators' },
-          ]}
+          links={[{ label: 'Browse creators', href: '/creators' }]}
         />
       </div>
     );

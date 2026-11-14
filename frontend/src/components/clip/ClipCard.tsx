@@ -224,7 +224,7 @@ export function ClipCard({
                             <span className='inline-flex items-center gap-1'>
                                 Clipped by{' '}
                                 <Link
-                                    to={`/user/${clip.creator_id}`}
+                                    to={`/creator/${encodeURIComponent(clip.creator_id)}`}
                                     className='hover:text-foreground transition-colors cursor-pointer'
                                 >
                                     {clip.creator_name}
