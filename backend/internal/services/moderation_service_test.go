@@ -264,6 +264,32 @@ func TestModerationService_PlatformModerator_Allowed(t *testing.T) {
 	mockCommunityRepo.AssertNotCalled(t, "GetCommunityByID", mock.Anything, mock.Anything)
 }
 
+// A moderator limited to community scope is not platform staff: outside the
+// communities they belong to as a mod, and for a missing community, the answer is 403.
+func TestModerationService_CommunityScopedModerator_NotPlatformStaff(t *testing.T) {
+	ctx := context.Background()
+	scoped := &models.User{
+		ID:                 uuid.New(),
+		Role:               models.RoleModerator,
+		AccountType:        models.AccountTypeMember,
+		ModeratorScope:     models.ModeratorScopeCommunity,
+		ModerationChannels: []uuid.UUID{uuid.New()},
+	}
+	missingID := uuid.New()
+
+	mockCommunityRepo := new(MockCommunityRepository)
+	mockUserRepo := new(MockModerationUserRepository)
+	mockUserRepo.On("GetByID", ctx, scoped.ID).Return(scoped, nil)
+	mockCommunityRepo.On("GetCommunityByID", ctx, missingID).Return(nil, errors.New("not found"))
+
+	service := &ModerationService{communityRepo: mockCommunityRepo, userRepo: mockUserRepo}
+
+	_, err := service.BanUserWithResult(ctx, missingID, scoped.ID, uuid.New(), nil)
+	assert.ErrorIs(t, err, ErrModerationPermissionDenied)
+	_, _, err = service.GetAllBans(ctx, scoped.ID, 1, 20)
+	assert.ErrorIs(t, err, ErrModerationPermissionDenied)
+}
+
 // A community owner can moderate their own community without any account_type setup.
 func TestModerationService_CommunityOwner_Allowed(t *testing.T) {
 	ctx := context.Background()

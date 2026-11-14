@@ -371,12 +371,17 @@ func (s *ModerationService) GetAllBans(ctx context.Context, moderatorID uuid.UUI
 }
 
 // isPlatformStaff reports whether a user may moderate every community:
-// admins and platform moderators (role moderator).
+// admins and platform moderators (role moderator). A moderator whose scope is
+// limited to particular communities is not platform staff.
 func isPlatformStaff(user *models.User) bool {
-	if user.Role == models.RoleAdmin || user.Role == models.RoleModerator || user.AccountType == models.AccountTypeAdmin {
+	if user.Role == models.RoleAdmin || user.AccountType == models.AccountTypeAdmin {
 		return true
 	}
-	return user.AccountType == models.AccountTypeModerator && user.ModeratorScope == models.ModeratorScopeSite
+	if user.ModeratorScope == models.ModeratorScopeCommunity {
+		return false
+	}
+	return user.Role == models.RoleModerator ||
+		(user.AccountType == models.AccountTypeModerator && user.ModeratorScope == models.ModeratorScopeSite)
 }
 
 // validateModerationPermission checks if a user may moderate a community.
