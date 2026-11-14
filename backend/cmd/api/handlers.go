@@ -5,6 +5,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/docscontent"
 	"git.subcult.tv/subculture-collective/clpr/internal/handlers"
+	"git.subcult.tv/subculture-collective/clpr/internal/search"
 	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/internal/storage"
 )
@@ -20,7 +21,7 @@ type Handlers struct {
 	Favorite            *handlers.FavoriteHandler
 	Tag                 *handlers.TagHandler
 	TagPromotion        *handlers.TagPromotionHandler
-	Search              *handlers.SearchHandler
+	Search              *search.Handler
 	Report              *handlers.ReportHandler
 	Reputation          *handlers.ReputationHandler
 	Notification        *handlers.NotificationHandler
@@ -90,14 +91,14 @@ func initHandlers(svcs *Services, repos *Repositories, infra *Infrastructure) *H
 	if infra.Redis != nil {
 		tagHandler.SetResponseCache(infra.Redis)
 	}
-	searchHandler := handlers.NewSearchHandler(repos.Search, svcs.Auth)
+	searchHandler := search.NewHandler(repos.Search)
 	if svcs.HybridSearch != nil {
 		// Use hybrid search (BM25 + vector similarity)
-		searchHandler = handlers.NewSearchHandlerWithHybridSearch(repos.Search, svcs.HybridSearch, svcs.Auth)
+		searchHandler = search.NewHandlerWithHybridSearch(repos.Search, svcs.HybridSearch)
 		log.Println("Using hybrid search handler (BM25 + vector similarity)")
 	} else if svcs.OpenSearch != nil {
 		// Use OpenSearch-enhanced handler (BM25 only)
-		searchHandler = handlers.NewSearchHandlerWithOpenSearch(repos.Search, svcs.OpenSearch, svcs.Auth)
+		searchHandler = search.NewHandlerWithOpenSearch(repos.Search, svcs.OpenSearch)
 		log.Println("Using OpenSearch handler (BM25 only)")
 	} else {
 		log.Println("Using PostgreSQL FTS handler (fallback)")

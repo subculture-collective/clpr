@@ -2102,49 +2102,49 @@
   {
     "method": "GET",
     "path": "/api/v1/search",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).Search-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).Search-fm",
     "operation_id": "search",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/search/analytics",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetSearchAnalytics-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).GetSearchAnalytics-fm",
     "operation_id": "getSearchAnalytics",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/search/failed",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetFailedSearches-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).GetFailedSearches-fm",
     "operation_id": "getFailedSearches",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/search/history",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetSearchHistory-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).GetSearchHistory-fm",
     "operation_id": "getSearchHistory",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/search/scores",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).SearchWithScores-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).SearchWithScores-fm",
     "operation_id": "searchWithScores",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/search/suggestions",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetSuggestions-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).GetSuggestions-fm",
     "operation_id": "getSearchSuggestions",
     "contract_level": "route-specific"
   },
   {
     "method": "GET",
     "path": "/api/v1/search/trending",
-    "handler": "git.subcult.tv/subculture-collective/clpr/internal/handlers.(*SearchHandler).GetTrendingSearches-fm",
+    "handler": "git.subcult.tv/subculture-collective/clpr/internal/search.(*Handler).GetTrendingSearches-fm",
     "operation_id": "getTrendingSearches",
     "contract_level": "route-specific"
   },

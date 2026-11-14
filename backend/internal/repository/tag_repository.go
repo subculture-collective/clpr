@@ -9,6 +9,7 @@ import (
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	"git.subcult.tv/subculture-collective/clpr/internal/tagtaxonomy"
+	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -112,16 +113,6 @@ func (r *TagRepository) GetBySlug(ctx context.Context, slug string) (*models.Tag
 	return &tag, nil
 }
 
-// visibleTagPredicate excludes blacklisted and suppressed tags for the tags
-// row aliased as alias. It matches is_tag_blacklisted() but is written inline
-// so PostgreSQL hash-joins exact-match patterns (blacklisted_tags.literal_slug,
-// migration 000144) instead of calling the function once per tag.
-func visibleTagPredicate(alias string) string {
-	return `NOT EXISTS (SELECT 1 FROM blacklisted_tags b WHERE b.literal_slug = lower(` + alias + `.slug))
-		  AND NOT EXISTS (SELECT 1 FROM blacklisted_tags b WHERE b.literal_slug IS NULL AND ` + alias + `.slug ILIKE b.like_pattern ESCAPE '\')
-		  AND NOT EXISTS (SELECT 1 FROM tag_suppressions s WHERE s.tag_id = ` + alias + `.id)`
-}
-
 // tagLanePredicate returns a SQL predicate on alias t for a tagtaxonomy lane.
 // slugs is the placeholder bound to the catalog content slugs; every branch
 // references it so the argument count never varies. An empty or unknown lane
@@ -154,7 +145,7 @@ func (r *TagRepository) List(ctx context.Context, sort, lane string, limit, offs
 	if sort == "curated" {
 		sort, lane = "popularity", string(tagtaxonomy.LaneDetected)
 	}
-	visible := visibleTagPredicate("t")
+	visible := utils.VisibleTagPredicate("t")
 	laneClause := tagLanePredicate(lane, "$3")
 	var query string
 	switch sort {
@@ -222,7 +213,7 @@ func (r *TagRepository) List(ctx context.Context, sort, lane string, limit, offs
 func (r *TagRepository) Count(ctx context.Context, lane string) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM tags t
-		WHERE ` + visibleTagPredicate("t") + `
+		WHERE ` + utils.VisibleTagPredicate("t") + `
 		  AND ` + tagLanePredicate(lane, "$1")
 	err := r.pool.QueryRow(ctx, query, tagtaxonomy.DetectedSlugs()).Scan(&count)
 	if err != nil {
@@ -237,7 +228,7 @@ func (r *TagRepository) Search(ctx context.Context, query string, limit int) ([]
 		SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at
 		FROM tags t
 		WHERE (t.name ILIKE $1 OR t.slug ILIKE $1)
-		  AND ` + visibleTagPredicate("t") + `
+		  AND ` + utils.VisibleTagPredicate("t") + `
 		ORDER BY t.usage_count DESC
 		LIMIT $2
 	`
@@ -597,13 +588,13 @@ func (r *TagRepository) GetTagTree(ctx context.Context, rootSlug string, childLi
 			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at, 0 AS depth
 			FROM tags t
 			WHERE t.slug = $1
-			  AND ` + visibleTagPredicate("t") + `
+			  AND ` + utils.VisibleTagPredicate("t") + `
 			UNION ALL
 			SELECT t.id, t.name, t.slug, t.parent_slug, t.description, t.color, t.usage_count, t.created_at, tt.depth + 1
 			FROM tags t
 			INNER JOIN tag_tree tt ON t.parent_slug = tt.slug
 			WHERE tt.depth < $3
-			  AND ` + visibleTagPredicate("t") + `
+			  AND ` + utils.VisibleTagPredicate("t") + `
 		),
 		child_counts AS (
 			SELECT parent_slug, COUNT(*)::int AS child_count
@@ -634,7 +625,7 @@ func (r *TagRepository) GetTagForest(ctx context.Context, childLimit int) ([]Tag
 			SELECT c.parent_slug, COUNT(*)::int AS child_count
 			FROM tags c
 			WHERE c.parent_slug IS NOT NULL
-			  AND ` + visibleTagPredicate("c") + `
+			  AND ` + utils.VisibleTagPredicate("c") + `
 			GROUP BY c.parent_slug
 		),
 		roots AS (
@@ -643,7 +634,7 @@ func (r *TagRepository) GetTagForest(ctx context.Context, childLimit int) ([]Tag
 			FROM tags t
 			INNER JOIN child_counts cc ON cc.parent_slug = t.slug
 			WHERE t.parent_slug IS NULL
-			  AND ` + visibleTagPredicate("t") + `
+			  AND ` + utils.VisibleTagPredicate("t") + `
 		),
 		children AS (
 			SELECT c.id, c.name, c.slug, c.parent_slug, c.description, c.color, c.usage_count, c.created_at,
@@ -652,7 +643,7 @@ func (r *TagRepository) GetTagForest(ctx context.Context, childLimit int) ([]Tag
 			FROM tags c
 			INNER JOIN roots ON c.parent_slug = roots.slug
 			LEFT JOIN child_counts gc ON gc.parent_slug = c.slug
-			WHERE ` + visibleTagPredicate("c") + `
+			WHERE ` + utils.VisibleTagPredicate("c") + `
 		)
 		SELECT id, name, slug, parent_slug, description, color, usage_count, created_at, depth, child_count
 		FROM (
