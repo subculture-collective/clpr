@@ -406,7 +406,9 @@ func (s *ModerationService) validateModerationPermission(ctx context.Context, mo
 	if err != nil || community == nil {
 		result = "denied"
 		reason = "community_not_found"
-		return ErrModerationCommunityNotFound
+		// Callers without staff rights get the same answer for a missing
+		// community as for one they cannot moderate.
+		return ErrModerationPermissionDenied
 	}
 	if community.OwnerID == moderator.ID {
 		result = "allowed"
