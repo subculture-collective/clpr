@@ -5,6 +5,7 @@ import {
     Badge,
     Button,
     Card,
+    ConfirmModal,
     Modal,
     Spinner,
     TextArea,
@@ -21,6 +22,8 @@ import {
     type ModerationQueueStats,
 } from '../../lib/moderation-api';
 import { getErrorMessage } from '../../lib/error-utils';
+import { QueueItemContent } from './QueueItemContent';
+import { bulkResultMessage, isQueueShortcutEvent, isStaleQueueError } from './queueUtils';
 
 interface ModerationQueueViewProps {
     contentType: 'clip' | 'comment';
@@ -51,6 +54,10 @@ export function ModerationQueueView({
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
+
+    // Capitalize first letter for display
+    const contentTypeLabel = contentType.charAt(0).toUpperCase() + contentType.slice(1);
 
     // Data loaders
     const loadQueue = useCallback(async () => {
@@ -79,6 +86,20 @@ export function ModerationQueueView({
         }
     }, []);
 
+    // Shows the error and, when the item is gone or already reviewed,
+    // reloads so the list matches the server again.
+    const handleActionError = useCallback(
+        (err: unknown, fallback: string) => {
+            if (isStaleQueueError(err)) {
+                setSelectedIds(new Set());
+                loadQueue();
+                loadStats();
+            }
+            setError(getErrorMessage(err, fallback));
+        },
+        [loadQueue, loadStats]
+    );
+
     // Bulk action handlers
     const handleBulkApprove = useCallback(async () => {
         if (selectedIds.size === 0) return;
@@ -88,16 +109,14 @@ export function ModerationQueueView({
                 item_ids: Array.from(selectedIds),
                 action: 'approve',
             });
-            setSuccess(
-                `${result.processed} of ${result.total} ${contentType}s approved successfully!`
-            );
+            setSuccess(bulkResultMessage(result, `${contentType}s`, 'approved successfully'));
             setSelectedIds(new Set());
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err, `Failed to approve ${contentType}s`));
+            handleActionError(err, `Failed to approve ${contentType}s`);
         }
-    }, [selectedIds, contentType, loadQueue, loadStats]);
+    }, [selectedIds, contentType, loadQueue, loadStats, handleActionError]);
 
     const handleBulkReject = useCallback(async () => {
         if (selectedIds.size === 0) return;
@@ -107,42 +126,43 @@ export function ModerationQueueView({
                 item_ids: Array.from(selectedIds),
                 action: 'reject',
             });
-            setSuccess(
-                `${result.processed} of ${result.total} ${contentType}s rejected successfully!`
-            );
+            setSuccess(bulkResultMessage(result, `${contentType}s`, 'rejected and removed'));
             setSelectedIds(new Set());
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err, `Failed to reject ${contentType}s`));
+            handleActionError(err, `Failed to reject ${contentType}s`);
         }
-    }, [selectedIds, contentType, loadQueue, loadStats]);
+    }, [selectedIds, contentType, loadQueue, loadStats, handleActionError]);
 
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
-            // Only handle shortcuts when not in an input field
+            // Shortcuts apply to pending items only, never with Ctrl/Cmd/Alt,
+            // and not while typing in a field or while a dialog is open.
             if (
-                e.target instanceof HTMLInputElement ||
-                e.target instanceof HTMLTextAreaElement ||
-                e.target instanceof HTMLSelectElement ||
-                (e.target instanceof HTMLElement && e.target.isContentEditable)
+                statusFilter !== 'pending' ||
+                selectedIds.size === 0 ||
+                rejectModalOpen ||
+                bulkRejectOpen ||
+                !isQueueShortcutEvent(e)
             ) {
                 return;
             }
 
-            if (e.key === 'a' && selectedIds.size > 0) {
+            if (e.key === 'a') {
                 e.preventDefault();
                 handleBulkApprove();
-            } else if (e.key === 'r' && selectedIds.size > 0) {
+            } else if (e.key === 'r') {
+                // Rejecting removes content, so ask first.
                 e.preventDefault();
-                handleBulkReject();
+                setBulkRejectOpen(true);
             }
         };
 
         document.addEventListener('keydown', handleKeyPress);
         return () => document.removeEventListener('keydown', handleKeyPress);
-    }, [selectedIds, handleBulkApprove, handleBulkReject]);
+    }, [selectedIds, statusFilter, rejectModalOpen, bulkRejectOpen, handleBulkApprove]);
 
     useEffect(() => {
         if (!isAuthenticated || !isModeratorOrAdmin) {
@@ -176,7 +196,7 @@ export function ModerationQueueView({
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err, `Failed to approve ${contentType}`));
+            handleActionError(err, `Failed to approve ${contentType}`);
         }
     };
 
@@ -193,14 +213,17 @@ export function ModerationQueueView({
 
         try {
             await rejectQueueItem(selectedItemId, rejectionReason || undefined);
-            setSuccess(`${contentType} rejected successfully!`);
+            setSuccess(`${contentTypeLabel} rejected and removed.`);
             setRejectModalOpen(false);
             setSelectedItemId(null);
             setRejectionReason('');
             loadQueue();
             loadStats();
         } catch (err: unknown) {
-            setError(getErrorMessage(err, `Failed to reject ${contentType}`));
+            // Close the dialog so the error and the reloaded list are visible.
+            setRejectModalOpen(false);
+            setSelectedItemId(null);
+            handleActionError(err, `Failed to reject ${contentType}`);
         }
     };
 
@@ -233,9 +256,6 @@ export function ModerationQueueView({
               high_priority: items.filter((i) => i.priority >= 75).length,
           }
         : null;
-
-    // Capitalize first letter for display
-    const contentTypeLabel = contentType.charAt(0).toUpperCase() + contentType.slice(1);
 
     return (
         <Container className='py-8'>
@@ -319,7 +339,7 @@ export function ModerationQueueView({
                 </Card>
 
                 {/* Bulk Actions Bar */}
-                {selectedIds.size > 0 && (
+                {statusFilter === 'pending' && selectedIds.size > 0 && (
                     <Card className='bg-blue-50 dark:bg-blue-900/20 p-4 mb-4'>
                         <div className='flex justify-between items-center'>
                             <span className='font-medium'>
@@ -335,7 +355,7 @@ export function ModerationQueueView({
                                     Approve All (A)
                                 </Button>
                                 <Button
-                                    onClick={handleBulkReject}
+                                    onClick={() => setBulkRejectOpen(true)}
                                     className='bg-red-600/90 hover:bg-red-600 text-white'
                                 >
                                     Reject All (R)
@@ -366,16 +386,18 @@ export function ModerationQueueView({
                     ) : (
                         <div className='space-y-4'>
                             {/* Select All */}
-                            <div className='flex items-center gap-2 pb-2 border-b'>
-                                <input
-                                    type='checkbox'
-                                    checked={selectedIds.size === items.length && items.length > 0}
-                                    onChange={toggleSelectAll}
-                                    className='rounded'
-                                    aria-label={`Select all ${contentType}s for bulk moderation`}
-                                />
-                                <span className='text-sm font-medium'>Select All</span>
-                            </div>
+                            {statusFilter === 'pending' && (
+                                <div className='flex items-center gap-2 pb-2 border-b'>
+                                    <input
+                                        type='checkbox'
+                                        checked={selectedIds.size === items.length && items.length > 0}
+                                        onChange={toggleSelectAll}
+                                        className='rounded'
+                                        aria-label={`Select all ${contentType}s for bulk moderation`}
+                                    />
+                                    <span className='text-sm font-medium'>Select All</span>
+                                </div>
+                            )}
 
                             {items.map((item) => (
                                 <div
@@ -384,13 +406,15 @@ export function ModerationQueueView({
                                 >
                                     <div className='flex gap-4 items-start'>
                                         {/* Checkbox */}
-                                        <input
-                                            type='checkbox'
-                                            checked={selectedIds.has(item.id)}
-                                            onChange={() => toggleSelection(item.id)}
-                                            className='mt-1 rounded'
-                                            aria-label={`Select ${contentType} ${item.content_id} for bulk moderation`}
-                                        />
+                                        {statusFilter === 'pending' && (
+                                            <input
+                                                type='checkbox'
+                                                checked={selectedIds.has(item.id)}
+                                                onChange={() => toggleSelection(item.id)}
+                                                className='mt-1 rounded'
+                                                aria-label={`Select ${contentType} ${item.content_id} for bulk moderation`}
+                                            />
+                                        )}
 
                                         {/* Content */}
                                         <div className='flex-1'>
@@ -427,12 +451,10 @@ export function ModerationQueueView({
                                                     <span className='font-medium'>Reason:</span>{' '}
                                                     {item.reason}
                                                 </p>
-                                                <p>
-                                                    <span className='font-medium'>
-                                                        {contentTypeLabel} ID:
-                                                    </span>{' '}
-                                                    {item.content_id}
-                                                </p>
+                                                <QueueItemContent
+                                                    item={item}
+                                                    idLabel={`${contentTypeLabel} ID`}
+                                                />
                                                 <p>
                                                     <span className='font-medium'>Created:</span>{' '}
                                                     {new Date(item.created_at).toLocaleString()}
@@ -481,7 +503,7 @@ export function ModerationQueueView({
                 >
                     <div className='space-y-4'>
                         <p className='text-muted-foreground'>
-                            Please provide a reason for rejecting this {contentType} (optional).
+                            Rejecting removes this {contentType} from the site. You can add a reason (optional).
                         </p>
                         <TextArea
                             value={rejectionReason}
@@ -511,6 +533,16 @@ export function ModerationQueueView({
                     </div>
                 </Modal>
             )}
+
+            <ConfirmModal
+                open={bulkRejectOpen}
+                onClose={() => setBulkRejectOpen(false)}
+                onConfirm={handleBulkReject}
+                title={`Reject ${selectedIds.size} ${contentType}${selectedIds.size !== 1 ? 's' : ''}?`}
+                message={`Rejecting removes the selected ${contentType}s from the site.`}
+                confirmText='Reject and remove'
+                variant='danger'
+            />
         </Container>
     );
 }

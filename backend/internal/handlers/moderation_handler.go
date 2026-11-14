@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +18,8 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -171,6 +176,10 @@ func (h *ModerationHandler) MarkEventReviewed(c *gin.Context) {
 
 	err = h.moderationEventService.MarkEventReviewed(c.Request.Context(), eventID, reviewerID)
 	if err != nil {
+		if errors.Is(err, services.ErrModerationEventNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to mark event as reviewed",
 		})
@@ -212,6 +221,10 @@ func (h *ModerationHandler) ProcessEvent(c *gin.Context) {
 
 	err = h.moderationEventService.ProcessEvent(c.Request.Context(), eventID, reviewerID, req.Action)
 	if err != nil {
+		if errors.Is(err, services.ErrModerationEventNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to process event",
 		})
@@ -312,13 +325,31 @@ func (h *ModerationHandler) GetModerationQueue(c *gin.Context) {
 		}
 	}
 
-	// Build query with filters
+	// Build query with filters. The joins add a short preview of the flagged
+	// comment or clip; they yield NULL for other content types and for content
+	// that no longer exists.
 	query := `
 		SELECT mq.id, mq.content_type, mq.content_id, mq.reason, mq.priority,
 		       mq.status, mq.assigned_to, mq.reported_by, mq.report_count,
 		       mq.auto_flagged, mq.confidence_score, mq.created_at,
-		       mq.reviewed_at, mq.reviewed_by
+		       mq.reviewed_at, mq.reviewed_by,
+		       CASE mq.content_type
+		           WHEN 'comment' THEN LEFT(cm.content, ` + strconv.Itoa(queueExcerptLength) + `)
+		           WHEN 'clip' THEN cl.title
+		       END AS content_excerpt,
+		       CASE mq.content_type
+		           WHEN 'comment' THEN cmu.username
+		           WHEN 'clip' THEN COALESCE(clu.username, cl.creator_name)
+		       END AS content_author,
+		       CASE mq.content_type
+		           WHEN 'comment' THEN '/clip/' || cm.clip_id::text || '#comment-' || cm.id::text
+		           WHEN 'clip' THEN '/clip/' || cl.id::text
+		       END AS content_url
 		FROM moderation_queue mq
+		LEFT JOIN comments cm ON mq.content_type = 'comment' AND cm.id = mq.content_id
+		LEFT JOIN users cmu ON cmu.id = cm.user_id
+		LEFT JOIN clips cl ON mq.content_type = 'clip' AND cl.id = mq.content_id
+		LEFT JOIN users clu ON clu.id = cl.submitted_by_user_id
 		WHERE mq.status = $1
 	`
 	args := []interface{}{status}
@@ -342,14 +373,15 @@ func (h *ModerationHandler) GetModerationQueue(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var items []models.ModerationQueueItem
+	var items []moderationQueueListItem
 	for rows.Next() {
-		var item models.ModerationQueueItem
+		var item moderationQueueListItem
 		err := rows.Scan(
 			&item.ID, &item.ContentType, &item.ContentID, &item.Reason,
 			&item.Priority, &item.Status, &item.AssignedTo, &item.ReportedBy,
 			&item.ReportCount, &item.AutoFlagged, &item.ConfidenceScore,
 			&item.CreatedAt, &item.ReviewedAt, &item.ReviewedBy,
+			&item.ContentExcerpt, &item.ContentAuthor, &item.ContentURL,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read moderation queue"})
@@ -373,10 +405,9 @@ func (h *ModerationHandler) GetModerationQueue(c *gin.Context) {
 	})
 }
 
-// ApproveContent approves a moderation queue item
+// ApproveContent approves a moderation queue item. The flagged content is left as it is.
 // POST /admin/moderation/:id/approve
 func (h *ModerationHandler) ApproveContent(c *gin.Context) {
-	ctx := c.Request.Context()
 	itemID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -391,53 +422,7 @@ func (h *ModerationHandler) ApproveContent(c *gin.Context) {
 		return
 	}
 
-	// Begin transaction
-	tx, err := h.db.Begin(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to begin transaction",
-		})
-		return
-	}
-	defer tx.Rollback(ctx)
-
-	// Update queue item
-	cmdTag, err := tx.Exec(ctx, `
-		UPDATE moderation_queue
-		SET status = 'approved', reviewed_by = $1
-		WHERE id = $2 AND status = 'pending'
-	`, moderatorID, itemID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to approve item",
-		})
-		return
-	}
-
-	// Check if any rows were updated
-	if cmdTag.RowsAffected() == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Item not found or not in pending status",
-		})
-		return
-	}
-
-	// Record decision
-	_, err = tx.Exec(ctx, `
-		INSERT INTO moderation_decisions (queue_item_id, moderator_id, action)
-		VALUES ($1, $2, 'approve')
-	`, itemID, moderatorID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to record decision",
-		})
-		return
-	}
-
-	if err = tx.Commit(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to commit transaction",
-		})
+	if !h.decideQueueItem(c, itemID, moderatorID, "approve", nil) {
 		return
 	}
 
@@ -447,10 +432,10 @@ func (h *ModerationHandler) ApproveContent(c *gin.Context) {
 	})
 }
 
-// RejectContent rejects a moderation queue item
+// RejectContent rejects a moderation queue item and soft-removes the flagged
+// comment or clip in the same transaction.
 // POST /admin/moderation/:id/reject
 func (h *ModerationHandler) RejectContent(c *gin.Context) {
-	ctx := c.Request.Context()
 	itemID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -486,53 +471,7 @@ func (h *ModerationHandler) RejectContent(c *gin.Context) {
 		}
 	}
 
-	// Begin transaction
-	tx, err := h.db.Begin(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to begin transaction",
-		})
-		return
-	}
-	defer tx.Rollback(ctx)
-
-	// Update queue item
-	cmdTag, err := tx.Exec(ctx, `
-		UPDATE moderation_queue
-		SET status = 'rejected', reviewed_by = $1
-		WHERE id = $2 AND status = 'pending'
-	`, moderatorID, itemID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to reject item",
-		})
-		return
-	}
-
-	// Check if any rows were updated
-	if cmdTag.RowsAffected() == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Item not found or not in pending status",
-		})
-		return
-	}
-
-	// Record decision
-	_, err = tx.Exec(ctx, `
-		INSERT INTO moderation_decisions (queue_item_id, moderator_id, action, reason)
-		VALUES ($1, $2, 'reject', $3)
-	`, itemID, moderatorID, req.Reason)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to record decision",
-		})
-		return
-	}
-
-	if err = tx.Commit(ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to commit transaction",
-		})
+	if !h.decideQueueItem(c, itemID, moderatorID, "reject", req.Reason) {
 		return
 	}
 
@@ -578,6 +517,11 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 		itemIDs = append(itemIDs, id)
 	}
 
+	// Lock rows in one order so two overlapping bulk requests cannot deadlock
+	sort.Slice(itemIDs, func(i, j int) bool {
+		return bytes.Compare(itemIDs[i][:], itemIDs[j][:]) < 0
+	})
+
 	// Begin transaction
 	tx, err := h.db.Begin(ctx)
 	if err != nil {
@@ -588,39 +532,20 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 	}
 	defer tx.Rollback(ctx)
 
-	// Determine status based on action
-	status := "approved"
-	if req.Action == "reject" {
-		status = "rejected"
-	} else if req.Action == "escalate" {
-		status = "escalated"
-	}
-
-	// Update all items
+	// Apply the action to every item that is still open. Items another
+	// moderator already handled are skipped and reported back.
+	processed := make([]uuid.UUID, 0, len(itemIDs))
+	skipped := make([]uuid.UUID, 0)
 	for _, itemID := range itemIDs {
-		// Update queue item
-		cmdTag, err := tx.Exec(ctx, `
-			UPDATE moderation_queue
-			SET status = $1, reviewed_by = $2
-			WHERE id = $3 AND status = 'pending'
-		`, status, moderatorID, itemID)
+		outcome, _, err := applyQueueDecision(ctx, tx, itemID, moderatorID, req.Action, "bulk_"+req.Action, req.Reason)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to moderate items"})
 			return
 		}
-		if cmdTag.RowsAffected() == 0 {
-			c.JSON(http.StatusConflict, gin.H{"error": "One or more items are missing or no longer pending"})
-			return
-		}
-
-		// Record decision
-		_, err = tx.Exec(ctx, `
-			INSERT INTO moderation_decisions (queue_item_id, moderator_id, action, reason)
-			VALUES ($1, $2, $3, $4)
-		`, itemID, moderatorID, req.Action, req.Reason)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record moderation decisions"})
-			return
+		if outcome == queueDecisionApplied {
+			processed = append(processed, itemID)
+		} else {
+			skipped = append(skipped, itemID)
 		}
 	}
 
@@ -631,13 +556,179 @@ func (h *ModerationHandler) BulkModerate(c *gin.Context) {
 		return
 	}
 
-	response := gin.H{
-		"success":   true,
-		"processed": len(itemIDs),
-		"total":     len(itemIDs),
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"processed":     len(processed),
+		"processed_ids": processed,
+		"skipped":       skipped,
+		"total":         len(itemIDs),
+	})
+}
+
+// queueExcerptLength is the most characters of a flagged comment shown in the queue.
+const queueExcerptLength = 280
+
+// moderationQueueListItem is a queue item with a preview of the flagged content.
+type moderationQueueListItem struct {
+	models.ModerationQueueItem
+	ContentExcerpt *string `json:"content_excerpt,omitempty"`
+	ContentAuthor  *string `json:"content_author,omitempty"`
+	ContentURL     *string `json:"content_url,omitempty"`
+}
+
+type queueDecisionOutcome int
+
+const (
+	queueDecisionApplied  queueDecisionOutcome = iota
+	queueDecisionNotFound                      // no queue item has this ID
+	queueDecisionStale                         // the item was already handled
+)
+
+// queueDecisionStatus maps a queue action to the status it sets.
+var queueDecisionStatus = map[string]string{
+	"approve":  "approved",
+	"reject":   "rejected",
+	"escalate": "escalated",
+}
+
+// applyQueueDecision applies approve, reject or escalate to one queue item
+// inside tx. Approve and reject work on pending and escalated items; escalate
+// works on pending items only. A reject also soft-removes the flagged comment
+// or clip, with the same update as CommentRepository.RemoveComment and
+// ClipRepository.RemoveClip. Every applied decision writes a
+// moderation_decisions row and a moderation_audit_logs row under auditAction.
+// For a stale item it returns the item's current status and changes nothing.
+func applyQueueDecision(ctx context.Context, tx pgx.Tx, itemID, moderatorID uuid.UUID, action, auditAction string, reason *string) (queueDecisionOutcome, string, error) {
+	newStatus, ok := queueDecisionStatus[action]
+	if !ok {
+		return 0, "", fmt.Errorf("unknown moderation action %q", action)
 	}
 
-	c.JSON(http.StatusOK, response)
+	var contentType, queueReason, currentStatus string
+	var contentID uuid.UUID
+	err := tx.QueryRow(ctx, `
+		SELECT content_type, content_id, reason, status
+		FROM moderation_queue
+		WHERE id = $1
+		FOR UPDATE
+	`, itemID).Scan(&contentType, &contentID, &queueReason, &currentStatus)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return queueDecisionNotFound, "", nil
+	}
+	if err != nil {
+		return 0, "", fmt.Errorf("load moderation queue item: %w", err)
+	}
+	if currentStatus != "pending" && (currentStatus != "escalated" || action == "escalate") {
+		return queueDecisionStale, currentStatus, nil
+	}
+
+	if _, err = tx.Exec(ctx, `
+		UPDATE moderation_queue
+		SET status = $1, reviewed_by = $2, reviewed_at = NOW()
+		WHERE id = $3
+	`, newStatus, moderatorID, itemID); err != nil {
+		return 0, "", fmt.Errorf("update moderation queue item: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO moderation_decisions (queue_item_id, moderator_id, action, reason)
+		VALUES ($1, $2, $3, $4)
+	`, itemID, moderatorID, action, reason); err != nil {
+		return 0, "", fmt.Errorf("record moderation decision: %w", err)
+	}
+
+	contentRemoved := false
+	if action == "reject" {
+		removedReason := "Content removed: " + queueReason
+		if reason != nil && strings.TrimSpace(*reason) != "" {
+			removedReason = *reason
+		}
+		var tag pgconn.CommandTag
+		switch contentType {
+		case "comment":
+			tag, err = tx.Exec(ctx, `
+				UPDATE comments
+				SET is_removed = true, removed_reason = $2
+				WHERE id = $1
+			`, contentID, removedReason)
+		case "clip":
+			tag, err = tx.Exec(ctx, `
+				UPDATE clips
+				SET is_removed = true, removed_reason = $2
+				WHERE id = $1
+			`, contentID, removedReason)
+		}
+		if err != nil {
+			return 0, "", fmt.Errorf("remove rejected %s: %w", contentType, err)
+		}
+		// False when the content was already deleted
+		contentRemoved = tag.RowsAffected() > 0
+	}
+
+	metadata, err := json.Marshal(map[string]interface{}{
+		"content_type":    contentType,
+		"content_id":      contentID.String(),
+		"previous_status": currentStatus,
+		"new_status":      newStatus,
+		"content_removed": contentRemoved,
+	})
+	if err != nil {
+		return 0, "", fmt.Errorf("marshal moderation audit metadata: %w", err)
+	}
+	if _, err = tx.Exec(ctx, `
+		INSERT INTO moderation_audit_logs (
+			id, action, entity_type, entity_id, moderator_id, actor_id, reason, metadata, created_at
+		) VALUES ($1, $2, 'moderation_queue', $3, $4, $4, $5, $6, $7)
+	`, uuid.New(), auditAction, itemID, moderatorID, reason, metadata, time.Now().UTC()); err != nil {
+		return 0, "", fmt.Errorf("insert moderation audit log: %w", err)
+	}
+
+	return queueDecisionApplied, newStatus, nil
+}
+
+// decideQueueItem applies one approve or reject and writes the error response
+// when it does not go through. It reports whether the decision was committed.
+func (h *ModerationHandler) decideQueueItem(c *gin.Context, itemID, moderatorID uuid.UUID, action string, reason *string) bool {
+	ctx := c.Request.Context()
+
+	tx, err := h.db.Begin(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to begin transaction",
+		})
+		return false
+	}
+	defer tx.Rollback(ctx)
+
+	outcome, currentStatus, err := applyQueueDecision(ctx, tx, itemID, moderatorID, action, action, reason)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to " + action + " item",
+		})
+		return false
+	}
+	switch outcome {
+	case queueDecisionNotFound:
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Item not found",
+		})
+		return false
+	case queueDecisionStale:
+		c.JSON(http.StatusConflict, gin.H{
+			"error":  "This item was already handled. It is now " + currentStatus + ".",
+			"code":   "ALREADY_HANDLED",
+			"status": currentStatus,
+		})
+		return false
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to commit transaction",
+		})
+		return false
+	}
+	return true
 }
 
 // GetModerationStats returns statistics about the moderation queue
@@ -661,7 +752,7 @@ func (h *ModerationHandler) GetModerationStats(c *gin.Context) {
 				COUNT(*) FILTER (WHERE status = 'pending' AND auto_flagged = true) as auto_flagged_count,
 				COUNT(*) FILTER (WHERE status = 'pending' AND report_count > 0) as user_reported_count,
 				COUNT(*) FILTER (WHERE status = 'pending' AND priority >= 75) as high_priority_count,
-				EXTRACT(EPOCH FROM (NOW() - MIN(created_at) FILTER (WHERE status = 'pending')))/`+fmt.Sprintf("%d", secondsPerHour)+` as oldest_age
+				FLOOR(EXTRACT(EPOCH FROM (NOW() - MIN(created_at) FILTER (WHERE status = 'pending')))/`+fmt.Sprintf("%d", secondsPerHour)+`)::int as oldest_age
 			FROM moderation_queue
 		),
 		type_counts AS (
@@ -676,15 +767,15 @@ func (h *ModerationHandler) GetModerationStats(c *gin.Context) {
 			WHERE status = 'pending'
 			GROUP BY reason
 		)
-		SELECT 'status' as type, NULL as name,
+		SELECT 'status' as type, NULL::text as name, 0::bigint as count,
 			   total_pending, total_approved, total_rejected, total_escalated,
 			   auto_flagged_count, user_reported_count, high_priority_count, oldest_age
 		FROM status_counts
 		UNION ALL
-		SELECT category, name, count, 0, 0, 0, 0, 0, 0, 0
+		SELECT category, name::text, count, 0, 0, 0, 0, 0, 0, 0, NULL::int
 		FROM type_counts
 		UNION ALL
-		SELECT category, name, count, 0, 0, 0, 0, 0, 0, 0
+		SELECT category, name::text, count, 0, 0, 0, 0, 0, 0, 0, NULL::int
 		FROM reason_counts
 	`)
 	if err != nil {
@@ -707,7 +798,10 @@ func (h *ModerationHandler) GetModerationStats(c *gin.Context) {
 			&totalRejected, &totalEscalated, &autoFlagged, &userReported,
 			&highPriority, &oldestAge)
 		if err != nil {
-			continue
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to read stats",
+			})
+			return
 		}
 
 		if rowType == "status" {
@@ -725,6 +819,12 @@ func (h *ModerationHandler) GetModerationStats(c *gin.Context) {
 		} else if rowType == "reason" && name != nil {
 			stats.ByReason[*name] = count
 		}
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to read stats",
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1241,15 +1341,24 @@ func (h *ModerationHandler) GetModerationAuditLogs(c *gin.Context) {
 	logs := []models.ModerationDecisionWithDetails{}
 	for rows.Next() {
 		var log models.ModerationDecisionWithDetails
+		// The moderator is NULL once their account is deleted.
+		var moderatorID *uuid.UUID
+		var moderatorName *string
 		err := rows.Scan(
-			&log.ID, &log.QueueItemID, &log.ModeratorID,
-			&log.ModeratorName, &log.Action,
+			&log.ID, &log.QueueItemID, &moderatorID,
+			&moderatorName, &log.Action,
 			&log.ContentType, &log.ContentID,
 			&log.Reason, &log.Metadata, &log.CreatedAt,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read audit logs"})
 			return
+		}
+		if moderatorID != nil {
+			log.ModeratorID = *moderatorID
+		}
+		if moderatorName != nil {
+			log.ModeratorName = *moderatorName
 		}
 		logs = append(logs, log)
 	}
@@ -1483,7 +1592,7 @@ func (h *ModerationHandler) CreateBan(c *gin.Context) {
 			})
 			return
 		}
-		if errors.Is(err, services.ErrModerationCannotBanOwner) {
+		if errors.Is(err, services.ErrModerationCannotBanOwner) || errors.Is(err, services.ErrModerationCannotBanSelf) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
@@ -1871,6 +1980,21 @@ func (h *ModerationHandler) AddModerator(c *gin.Context) {
 		return
 	}
 
+	// A banned user cannot be made a moderator; the ban has to be lifted first
+	banned, err := h.communityRepo.IsBanned(ctx, channelID, targetUserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to check ban status",
+		})
+		return
+	}
+	if banned {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "This user is banned from the channel. Lift the ban before making them a moderator.",
+		})
+		return
+	}
+
 	// Check if user is already a member
 	existingMember, err := h.communityRepo.GetMember(ctx, channelID, targetUserID)
 	if err == nil && existingMember != nil {
@@ -1895,6 +2019,7 @@ func (h *ModerationHandler) AddModerator(c *gin.Context) {
 			CommunityID: channelID,
 			UserID:      targetUserID,
 			Role:        models.CommunityRoleMod,
+			JoinedAt:    time.Now(),
 		}
 		if err := h.communityRepo.AddMember(ctx, member); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -2197,7 +2322,7 @@ func (h *ModerationHandler) UpdateModeratorPermissions(c *gin.Context) {
 func (h *ModerationHandler) getUserDetails(ctx context.Context, userID uuid.UUID) (*models.User, error) {
 	var user models.User
 	err := h.db.QueryRow(ctx, `
-		SELECT id, role, account_type, moderator_scope
+		SELECT id, role, COALESCE(account_type, ''), COALESCE(moderator_scope, '')
 		FROM users
 		WHERE id = $1
 	`, userID).Scan(&user.ID, &user.Role, &user.AccountType, &user.ModeratorScope)
@@ -2207,9 +2332,10 @@ func (h *ModerationHandler) getUserDetails(ctx context.Context, userID uuid.UUID
 	return &user, nil
 }
 
-// isAdminOrSiteModerator checks if a user has admin or site-wide moderator privileges
+// isAdminOrSiteModerator checks if a user has admin or site-wide moderator privileges.
+// Platform moderators are users with role moderator.
 func isAdminOrSiteModerator(user *models.User) bool {
-	if user.Role == models.RoleAdmin || user.AccountType == models.AccountTypeAdmin {
+	if user.Role == models.RoleAdmin || user.Role == models.RoleModerator || user.AccountType == models.AccountTypeAdmin {
 		return true
 	}
 	if user.AccountType == models.AccountTypeModerator && user.ModeratorScope == models.ModeratorScopeSite {
@@ -2286,7 +2412,8 @@ func (h *ModerationHandler) validateModeratorScope(ctx context.Context, channelI
 	var user models.User
 	var moderationChannels []uuid.UUID
 	err := h.db.QueryRow(ctx, `
-		SELECT id, role, account_type, moderator_scope, moderation_channels
+		SELECT id, role, COALESCE(account_type, ''), COALESCE(moderator_scope, ''),
+		       COALESCE(moderation_channels, '{}'::uuid[])
 		FROM users
 		WHERE id = $1
 	`, userID).Scan(&user.ID, &user.Role, &user.AccountType, &user.ModeratorScope, &moderationChannels)
@@ -2305,6 +2432,12 @@ func (h *ModerationHandler) validateModeratorScope(ctx context.Context, channelI
 		return services.ErrModerationCommunityNotFound
 	}
 	if community.OwnerID == userID {
+		return nil
+	}
+
+	// Channel admins manage their own channel
+	member, err := h.communityRepo.GetMember(ctx, channelID, userID)
+	if err == nil && member != nil && member.Role == models.CommunityRoleAdmin {
 		return nil
 	}
 

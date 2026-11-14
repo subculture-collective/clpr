@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -10,7 +11,11 @@ import (
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
 	redispkg "git.subcult.tv/subculture-collective/clpr/pkg/redis"
 	"github.com/google/uuid"
+	goredis "github.com/redis/go-redis/v9"
 )
+
+// ErrModerationEventNotFound is returned when an event ID is unknown or its record has expired.
+var ErrModerationEventNotFound = errors.New("moderation event not found")
 
 // ModerationEventType represents types of moderation events
 type ModerationEventType string
@@ -158,26 +163,64 @@ func (s *ModerationEventService) EmitAbuseEvent(ctx context.Context, eventType M
 	return s.EmitEvent(ctx, event)
 }
 
-// GetPendingEvents retrieves pending moderation events
+// pendingEventBatchSize is how many queued events are checked against their
+// stored records per Redis round trip.
+const pendingEventBatchSize = 100
+
+// GetPendingEvents retrieves pending moderation events, newest first.
+// The queue list keeps the copy written when the event was emitted, so each
+// entry is checked against its per-event record, which holds the current
+// status. Reviewed, processed and expired events are left out.
 func (s *ModerationEventService) GetPendingEvents(ctx context.Context, limit int) ([]*ModerationEvent, error) {
 	queueKey := "moderation:queue"
 
 	// Get events from queue (non-destructive peek)
-	items, err := s.redisClient.ListRange(ctx, queueKey, 0, int64(limit-1))
+	items, err := s.redisClient.ListRange(ctx, queueKey, 0, -1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get events from queue: %w", err)
 	}
 
-	events := make([]*ModerationEvent, 0, len(items))
-	for _, item := range items {
-		var event ModerationEvent
-		if err := json.Unmarshal([]byte(item), &event); err != nil {
-			log.Printf("Failed to unmarshal event: %v", err)
+	events := make([]*ModerationEvent, 0, limit)
+	// The list is appended to, so walk it from the end to read newest first.
+	for end := len(items); end > 0 && len(events) < limit; end -= pendingEventBatchSize {
+		start := end - pendingEventBatchSize
+		if start < 0 {
+			start = 0
+		}
+
+		keys := make([]string, 0, end-start)
+		for i := end - 1; i >= start; i-- {
+			var event ModerationEvent
+			if err := json.Unmarshal([]byte(items[i]), &event); err != nil {
+				log.Printf("Failed to unmarshal event: %v", err)
+				continue
+			}
+			keys = append(keys, fmt.Sprintf("moderation:event:%s", event.ID.String()))
+		}
+		if len(keys) == 0 {
 			continue
 		}
 
-		if event.Status == "pending" {
-			events = append(events, &event)
+		current, err := s.redisClient.MGet(ctx, keys...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get event records: %w", err)
+		}
+		for _, raw := range current {
+			if len(events) >= limit {
+				break
+			}
+			stored, ok := raw.(string)
+			if !ok {
+				continue // record expired
+			}
+			var event ModerationEvent
+			if err := json.Unmarshal([]byte(stored), &event); err != nil {
+				log.Printf("Failed to unmarshal event: %v", err)
+				continue
+			}
+			if event.Status == "pending" {
+				events = append(events, &event)
+			}
 		}
 	}
 
@@ -213,6 +256,9 @@ func (s *ModerationEventService) MarkEventReviewed(ctx context.Context, eventID 
 	// Get event
 	eventJSON, err := s.redisClient.Get(ctx, eventKey)
 	if err != nil {
+		if errors.Is(err, goredis.Nil) {
+			return ErrModerationEventNotFound
+		}
 		return fmt.Errorf("failed to get event: %w", err)
 	}
 
@@ -295,7 +341,8 @@ func (s *ModerationEventService) notifyModerators(ctx context.Context, event *Mo
 		event.Type, event.Severity, event.UserID)
 }
 
-// ProcessEvent processes an event and removes it from the queue
+// ProcessEvent records the action taken on an event. The event then no longer
+// appears in GetPendingEvents.
 func (s *ModerationEventService) ProcessEvent(ctx context.Context, eventID uuid.UUID, reviewerID uuid.UUID, action string) error {
 	switch action {
 	case "approve", "reject", "escalate":
@@ -305,6 +352,9 @@ func (s *ModerationEventService) ProcessEvent(ctx context.Context, eventID uuid.
 	eventKey := fmt.Sprintf("moderation:event:%s", eventID.String())
 	eventJSON, err := s.redisClient.Get(ctx, eventKey)
 	if err != nil {
+		if errors.Is(err, goredis.Nil) {
+			return ErrModerationEventNotFound
+		}
 		return fmt.Errorf("failed to get event: %w", err)
 	}
 	var event ModerationEvent

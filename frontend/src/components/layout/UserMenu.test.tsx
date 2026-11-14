@@ -6,6 +6,7 @@ import { UserMenu } from './UserMenu';
 const auth = vi.hoisted(() => ({
     user: null as null | Record<string, unknown>,
     logout: vi.fn(),
+    isAdmin: false,
     isModeratorOrAdmin: false,
 }));
 
@@ -51,5 +52,29 @@ describe('UserMenu clip room link', () => {
 
         expect(screen.queryByRole('menuitem', { name: /Stream Clip Room/ })).not.toBeInTheDocument();
         expect(screen.queryByRole('menuitem', { name: /Creator Dashboard/ })).not.toBeInTheDocument();
+    });
+});
+
+describe('UserMenu staff link', () => {
+    it('sends a moderator who is not an admin to the review queue', async () => {
+        auth.user = { ...baseUser, role: 'moderator' };
+        Object.assign(auth, { isAdmin: false, isModeratorOrAdmin: true });
+        try {
+            await openMenu();
+            expect(screen.getByRole('menuitem', { name: /Moderation/ })).toHaveAttribute('href', '/admin/moderation');
+        } finally {
+            Object.assign(auth, { isAdmin: false, isModeratorOrAdmin: false });
+        }
+    });
+
+    it('sends an admin to the admin dashboard', async () => {
+        auth.user = { ...baseUser, role: 'admin' };
+        Object.assign(auth, { isAdmin: true, isModeratorOrAdmin: true });
+        try {
+            await openMenu();
+            expect(screen.getByRole('menuitem', { name: /Admin Panel/ })).toHaveAttribute('href', '/admin/dashboard');
+        } finally {
+            Object.assign(auth, { isAdmin: false, isModeratorOrAdmin: false });
+        }
     });
 });

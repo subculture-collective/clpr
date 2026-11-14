@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '../../context/AuthContext';
 import * as submissionApi from '../../lib/submission-api';
+import userEvent from '@testing-library/user-event';
 import { render, screen, waitFor } from '../../test/test-utils';
 import { ModerationQueuePage } from './ModerationQueuePage';
 
@@ -177,6 +178,71 @@ describe('ModerationQueuePage', () => {
                     screen.getByText('Failed to fetch submissions')
                 ).toBeInTheDocument();
             });
+        });
+    });
+
+    describe('Structured errors', () => {
+        it('renders an MFA_REQUIRED error as text', async () => {
+            mockGetPendingSubmissions.mockRejectedValue({
+                response: {
+                    status: 403,
+                    data: { error: { code: 'MFA_REQUIRED', message: 'Set up two-factor authentication to continue.' } },
+                },
+            });
+
+            render(<ModerationQueuePage />);
+
+            expect(
+                await screen.findByText('Set up two-factor authentication to continue.')
+            ).toBeInTheDocument();
+        });
+    });
+
+    describe('Pagination', () => {
+        const submission = (id: string, title: string) => ({
+            id,
+            user_id: 'user-1',
+            twitch_clip_id: id,
+            twitch_clip_url: `https://twitch.tv/${id}`,
+            title,
+            is_nsfw: false,
+            status: 'pending' as const,
+            view_count: 1,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+        });
+        const pageOf = (page: number, data: ReturnType<typeof submission>[], total: number, totalPages: number) =>
+            ({
+                success: true,
+                data,
+                meta: { page, limit: 20, total, total_pages: totalPages },
+            }) as unknown as Awaited<ReturnType<typeof submissionApi.getPendingSubmissions>>;
+
+        it('steps back when the last page is emptied', async () => {
+            let approved = false;
+            mockGetPendingSubmissions.mockImplementation(async (page = 1) => {
+                if (page === 1) {
+                    return pageOf(1, [submission('sub-1', 'First page clip')], approved ? 1 : 2, approved ? 1 : 2);
+                }
+                return approved
+                    ? pageOf(2, [], 1, 1)
+                    : pageOf(2, [submission('sub-2', 'Second page clip')], 2, 2);
+            });
+            vi.mocked(submissionApi.approveSubmission).mockImplementation(async () => {
+                approved = true;
+                return { success: true } as unknown as Awaited<ReturnType<typeof submissionApi.approveSubmission>>;
+            });
+            const user = userEvent.setup();
+
+            render(<ModerationQueuePage />);
+            await screen.findByText('First page clip');
+            await user.click(screen.getByRole('button', { name: 'Next' }));
+            await screen.findByText('Second page clip');
+
+            await user.click(screen.getByRole('button', { name: /approve/i }));
+
+            expect(await screen.findByText('First page clip')).toBeInTheDocument();
+            expect(mockGetPendingSubmissions).toHaveBeenLastCalledWith(1, 20);
         });
     });
 });

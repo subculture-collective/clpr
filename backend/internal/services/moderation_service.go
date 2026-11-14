@@ -21,6 +21,7 @@ var (
 	ErrModerationUserNotFound      = errors.New("user not found")
 	ErrModerationNotBanned         = errors.New("user is not banned from this community")
 	ErrModerationCannotBanOwner    = errors.New("cannot ban the community owner")
+	ErrModerationCannotBanSelf     = errors.New("you cannot ban yourself")
 )
 
 // ModerationCommunityRepo defines the methods needed from CommunityRepository
@@ -106,6 +107,10 @@ func (s *ModerationService) BanUserWithResult(ctx context.Context, communityID, 
 				errorType = "community_not_found"
 			} else if errors.Is(err, ErrModerationCannotBanOwner) {
 				errorType = "cannot_ban_owner"
+			} else if errors.Is(err, ErrModerationCannotBanSelf) {
+				errorType = "cannot_ban_self"
+			} else if errors.Is(err, ErrModerationUserNotFound) {
+				errorType = "user_not_found"
 			} else {
 				errorType = "database_error"
 			}
@@ -119,13 +124,13 @@ func (s *ModerationService) BanUserWithResult(ctx context.Context, communityID, 
 		return nil, fmt.Errorf("failed to get moderator: %w", err)
 	}
 
-	// Validate scope first for better error messages
-	if err = s.validateModerationScope(moderator, communityID); err != nil {
+	// Validate permission
+	if err = s.validateModerationPermission(ctx, moderator, communityID); err != nil {
 		return nil, err
 	}
 
-	// Validate permission
-	if err = s.validateModerationPermission(ctx, moderator, communityID); err != nil {
+	if targetUserID == moderatorID {
+		err = ErrModerationCannotBanSelf
 		return nil, err
 	}
 
@@ -138,6 +143,28 @@ func (s *ModerationService) BanUserWithResult(ctx context.Context, communityID, 
 	if community.OwnerID == targetUserID {
 		err = ErrModerationCannotBanOwner
 		return nil, err
+	}
+
+	// A community mod or admin can only be banned by the owner or platform staff
+	if !isPlatformStaff(moderator) && community.OwnerID != moderatorID {
+		var targetMember *models.CommunityMember
+		targetMember, err = s.communityRepo.GetMember(ctx, communityID, targetUserID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get target member: %w", err)
+		}
+		if targetMember != nil && (targetMember.Role == models.CommunityRoleMod || targetMember.Role == models.CommunityRoleAdmin) {
+			err = ErrModerationPermissionDenied
+			return nil, err
+		}
+	}
+
+	// Check the target exists so a bad ID is a 404, not a foreign key error
+	if _, err = s.userRepo.GetByID(ctx, targetUserID); err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			err = ErrModerationUserNotFound
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to get target user: %w", err)
 	}
 
 	// Create ban record
@@ -225,11 +252,6 @@ func (s *ModerationService) UnbanUser(ctx context.Context, communityID, moderato
 		return fmt.Errorf("failed to get moderator: %w", err)
 	}
 
-	// Validate scope first for better error messages
-	if err = s.validateModerationScope(moderator, communityID); err != nil {
-		return err
-	}
-
 	// Validate permission
 	if err = s.validateModerationPermission(ctx, moderator, communityID); err != nil {
 		return err
@@ -260,6 +282,7 @@ func (s *ModerationService) UnbanUser(ctx context.Context, communityID, moderato
 		EntityID:    communityID, // Using community ID as entity since ban is deleted
 		ModeratorID: moderatorID,
 		Metadata:    metadata,
+		ChannelID:   &communityID,
 	}
 
 	if s.banWriter != nil {
@@ -299,11 +322,6 @@ func (s *ModerationService) GetBans(ctx context.Context, communityID, moderatorI
 		return nil, 0, fmt.Errorf("failed to get moderator: %w", err)
 	}
 
-	// Validate scope first for better error messages
-	if err := s.validateModerationScope(moderator, communityID); err != nil {
-		return nil, 0, err
-	}
-
 	// Validate permission
 	if err := s.validateModerationPermission(ctx, moderator, communityID); err != nil {
 		return nil, 0, err
@@ -332,10 +350,8 @@ func (s *ModerationService) GetAllBans(ctx context.Context, moderatorID uuid.UUI
 		return nil, 0, fmt.Errorf("failed to get moderator: %w", err)
 	}
 
-	// Only admins and site moderators can list all bans
-	isAdmin := moderator.AccountType == models.AccountTypeAdmin || moderator.Role == models.RoleAdmin
-	isSiteMod := moderator.AccountType == models.AccountTypeModerator && moderator.ModeratorScope == models.ModeratorScopeSite
-	if !isAdmin && !isSiteMod {
+	// Only admins and platform moderators can list all bans
+	if !isPlatformStaff(moderator) {
 		return nil, 0, ErrModerationPermissionDenied
 	}
 
@@ -354,7 +370,18 @@ func (s *ModerationService) GetAllBans(ctx context.Context, moderatorID uuid.UUI
 	return s.communityRepo.ListAllBans(ctx, limit, offset)
 }
 
-// validateModerationPermission checks if a user has permission to perform moderation actions
+// isPlatformStaff reports whether a user may moderate every community:
+// admins and platform moderators (role moderator).
+func isPlatformStaff(user *models.User) bool {
+	if user.Role == models.RoleAdmin || user.Role == models.RoleModerator || user.AccountType == models.AccountTypeAdmin {
+		return true
+	}
+	return user.AccountType == models.AccountTypeModerator && user.ModeratorScope == models.ModeratorScopeSite
+}
+
+// validateModerationPermission checks if a user may moderate a community.
+// Platform staff may moderate anywhere. Everyone else must own the community
+// or be a mod or admin member of it, as recorded in the community tables.
 func (s *ModerationService) validateModerationPermission(ctx context.Context, moderator *models.User, communityID uuid.UUID) error {
 	start := time.Now()
 	permissionType := "moderation"
@@ -370,72 +397,39 @@ func (s *ModerationService) validateModerationPermission(ctx context.Context, mo
 		}
 	}()
 
-	// Site moderators (AccountType=moderator with ModeratorScope=site) can moderate anywhere
-	if moderator.AccountType == models.AccountTypeModerator && moderator.ModeratorScope == models.ModeratorScopeSite {
+	if isPlatformStaff(moderator) {
 		result = "allowed"
 		return nil
 	}
 
-	// Admins can moderate anywhere
-	if moderator.AccountType == models.AccountTypeAdmin || moderator.Role == models.RoleAdmin {
+	community, err := s.communityRepo.GetCommunityByID(ctx, communityID)
+	if err != nil || community == nil {
+		result = "denied"
+		reason = "community_not_found"
+		return ErrModerationCommunityNotFound
+	}
+	if community.OwnerID == moderator.ID {
 		result = "allowed"
 		return nil
 	}
 
-	// Community moderators need to be checked for specific community authorization
-	// The scope check handles which communities they can moderate
-	// Here we just check if they have the moderator role in the community
-	if moderator.AccountType == models.AccountTypeCommunityModerator {
-		member, err := s.communityRepo.GetMember(ctx, communityID, moderator.ID)
-		if err != nil {
-			result = "denied"
-			reason = "database_error"
-			return fmt.Errorf("failed to get member: %w", err)
-		}
-		if member == nil {
-			result = "denied"
-			reason = "not_member"
-			return ErrModerationPermissionDenied
-		}
-		if member.Role != models.CommunityRoleMod && member.Role != models.CommunityRoleAdmin {
-			result = "denied"
-			reason = "insufficient_permissions"
-			return ErrModerationPermissionDenied
-		}
-		result = "allowed"
-		return nil
+	member, err := s.communityRepo.GetMember(ctx, communityID, moderator.ID)
+	if err != nil {
+		result = "denied"
+		reason = "database_error"
+		return fmt.Errorf("failed to get member: %w", err)
 	}
-
-	result = "denied"
-	reason = "insufficient_permissions"
-	return ErrModerationPermissionDenied
-}
-
-// validateModerationScope checks if a community moderator is authorized for the specific community
-func (s *ModerationService) validateModerationScope(moderator *models.User, communityID uuid.UUID) error {
-	// Site moderators and admins have no scope restrictions
-	if moderator.AccountType == models.AccountTypeModerator && moderator.ModeratorScope == models.ModeratorScopeSite {
-		return nil
+	if member == nil {
+		result = "denied"
+		reason = "not_member"
+		return ErrModerationPermissionDenied
 	}
-	if moderator.AccountType == models.AccountTypeAdmin || moderator.Role == models.RoleAdmin {
-		return nil
+	if member.Role != models.CommunityRoleMod && member.Role != models.CommunityRoleAdmin {
+		result = "denied"
+		reason = "insufficient_permissions"
+		return ErrModerationPermissionDenied
 	}
-
-	// Community moderators must have the community in their moderation channels
-	if moderator.AccountType == models.AccountTypeCommunityModerator {
-		if moderator.ModeratorScope != models.ModeratorScopeCommunity {
-			return ErrModerationPermissionDenied
-		}
-
-		// Check if this community is in their authorized moderation scope
-		for _, authorizedCommunityID := range moderator.ModerationChannels {
-			if authorizedCommunityID == communityID {
-				return nil
-			}
-		}
-		return ErrModerationNotAuthorized
-	}
-
+	result = "allowed"
 	return nil
 }
 
@@ -448,15 +442,5 @@ func (s *ModerationService) HasModerationPermission(ctx context.Context, communi
 		return fmt.Errorf("failed to get moderator: %w", err)
 	}
 
-	// Validate permission
-	if err := s.validateModerationPermission(ctx, moderator, communityID); err != nil {
-		return err
-	}
-
-	// Validate scope for community moderators
-	if err := s.validateModerationScope(moderator, communityID); err != nil {
-		return err
-	}
-
-	return nil
+	return s.validateModerationPermission(ctx, moderator, communityID)
 }
