@@ -124,7 +124,7 @@ func main() {
 
 	js.Global().Set("goHandle", js.FuncOf(func(_ js.Value, a []js.Value) any {
 		method, url := a[0].String(), a[1].String()
-		return js.Global().Get("Promise").New(js.FuncOf(func(_ js.Value, pr []js.Value) any {
+		executor := js.FuncOf(func(_ js.Value, pr []js.Value) any {
 			resolve := pr[0]
 			go func() {
 				rec := httptest.NewRecorder()
@@ -149,7 +149,11 @@ func main() {
 				resolve.Invoke(o)
 			}()
 			return nil
-		}))
+		})
+		// Promise invokes its executor synchronously. The request goroutine
+		// keeps resolve alive, but no longer needs the executor itself.
+		defer executor.Release()
+		return js.Global().Get("Promise").New(executor)
 	}))
 	js.Global().Set("goReady", true)
 	select {}
