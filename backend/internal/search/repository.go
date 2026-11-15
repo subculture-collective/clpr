@@ -1,4 +1,4 @@
-package repository
+package search
 
 import (
 	"context"
@@ -13,18 +13,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SearchRepository handles search operations
-type SearchRepository struct {
+// Repository handles search operations
+type Repository struct {
 	db *pgxpool.Pool
 }
 
-// NewSearchRepository creates a new SearchRepository
-func NewSearchRepository(db *pgxpool.Pool) *SearchRepository {
-	return &SearchRepository{db: db}
+// NewRepository creates a new Repository
+func NewRepository(db *pgxpool.Pool) *Repository {
+	return &Repository{db: db}
 }
 
 // Search performs a universal search across all types
-func (r *SearchRepository) Search(ctx context.Context, req *models.SearchRequest) (*models.SearchResponse, error) {
+func (r *Repository) Search(ctx context.Context, req *models.SearchRequest) (*models.SearchResponse, error) {
 	response := &models.SearchResponse{
 		Query:   req.Query,
 		Results: models.EmptySearchResults(),
@@ -96,7 +96,7 @@ func (r *SearchRepository) Search(ctx context.Context, req *models.SearchRequest
 }
 
 // searchClips searches for clips
-func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Clip, int, error) {
+func (r *Repository) searchClips(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Clip, int, error) {
 	// Build WHERE clause with filters
 	// Imported and submitted clips share the public catalog.
 	whereClause := "c.is_removed = false AND c.is_hidden = false AND c.dmca_removed = false"
@@ -245,7 +245,7 @@ func (r *SearchRepository) searchClips(ctx context.Context, tsQuery string, req 
 }
 
 // searchCreators searches for creators (users)
-func (r *SearchRepository) searchCreators(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.User, int, error) {
+func (r *Repository) searchCreators(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.User, int, error) {
 	whereClause := "u.is_banned = false"
 	args := []interface{}{}
 	argPos := 1
@@ -314,7 +314,7 @@ func (r *SearchRepository) searchCreators(ctx context.Context, tsQuery string, r
 }
 
 // searchGames searches for games (aggregated from clips)
-func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.GameSearchResult, int, error) {
+func (r *Repository) searchGames(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.GameSearchResult, int, error) {
 	whereClause := "c.game_id IS NOT NULL AND COALESCE(c.game_name,g.name) IS NOT NULL AND c.is_removed = false AND c.is_hidden = false AND c.dmca_removed = false"
 	args := []interface{}{}
 	argPos := 1
@@ -378,8 +378,8 @@ func (r *SearchRepository) searchGames(ctx context.Context, tsQuery string, req 
 }
 
 // searchTags searches for tags
-func (r *SearchRepository) searchTags(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Tag, int, error) {
-	whereClause := visibleTagPredicate("t")
+func (r *Repository) searchTags(ctx context.Context, tsQuery string, req *models.SearchRequest) ([]models.Tag, int, error) {
+	whereClause := utils.VisibleTagPredicate("t")
 	args := []interface{}{}
 	argPos := 1
 
@@ -441,7 +441,7 @@ func (r *SearchRepository) searchTags(ctx context.Context, tsQuery string, req *
 }
 
 // GetSuggestions returns search suggestions for autocomplete
-func (r *SearchRepository) GetSuggestions(ctx context.Context, query string, limit int) ([]models.SearchSuggestion, error) {
+func (r *Repository) GetSuggestions(ctx context.Context, query string, limit int) ([]models.SearchSuggestion, error) {
 	if query == "" || len(query) < 2 {
 		return []models.SearchSuggestion{}, nil
 	}
@@ -509,7 +509,7 @@ func (r *SearchRepository) GetSuggestions(ctx context.Context, query string, lim
 // collectSuggestionNames runs a single-text-column suggestion query and
 // returns the names. Suggestions are best effort, so callers log the error and
 // keep whatever other suggestion types succeeded.
-func (r *SearchRepository) collectSuggestionNames(ctx context.Context, query, pattern string, limit int) ([]string, error) {
+func (r *Repository) collectSuggestionNames(ctx context.Context, query, pattern string, limit int) ([]string, error) {
 	rows, err := r.db.Query(ctx, query, pattern, limit)
 	if err != nil {
 		return nil, err
@@ -528,7 +528,7 @@ func (r *SearchRepository) collectSuggestionNames(ctx context.Context, query, pa
 }
 
 // TrackSearch records a search query for analytics
-func (r *SearchRepository) TrackSearch(ctx context.Context, userID *uuid.UUID, query string, resultCount int) error {
+func (r *Repository) TrackSearch(ctx context.Context, userID *uuid.UUID, query string, resultCount int) error {
 	_, err := r.db.Exec(ctx, `
 		INSERT INTO search_queries (user_id, query, result_count)
 		VALUES ($1, $2, $3)
@@ -537,7 +537,7 @@ func (r *SearchRepository) TrackSearch(ctx context.Context, userID *uuid.UUID, q
 }
 
 // GetTrendingSearches returns the most popular search queries in a given time period
-func (r *SearchRepository) GetTrendingSearches(ctx context.Context, days int, limit int) ([]models.TrendingSearch, error) {
+func (r *Repository) GetTrendingSearches(ctx context.Context, days int, limit int) ([]models.TrendingSearch, error) {
 	if days <= 0 {
 		days = 7
 	}
@@ -582,7 +582,7 @@ func (r *SearchRepository) GetTrendingSearches(ctx context.Context, days int, li
 }
 
 // GetFailedSearches returns searches that returned no results
-func (r *SearchRepository) GetFailedSearches(ctx context.Context, days int, limit int) ([]models.FailedSearch, error) {
+func (r *Repository) GetFailedSearches(ctx context.Context, days int, limit int) ([]models.FailedSearch, error) {
 	if days <= 0 {
 		days = 7
 	}
@@ -627,7 +627,7 @@ func (r *SearchRepository) GetFailedSearches(ctx context.Context, days int, limi
 }
 
 // GetUserSearchHistory returns a user's recent search queries
-func (r *SearchRepository) GetUserSearchHistory(ctx context.Context, userID uuid.UUID, limit int) ([]models.SearchHistoryItem, error) {
+func (r *Repository) GetUserSearchHistory(ctx context.Context, userID uuid.UUID, limit int) ([]models.SearchHistoryItem, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -666,7 +666,7 @@ func (r *SearchRepository) GetUserSearchHistory(ctx context.Context, userID uuid
 }
 
 // GetSearchAnalyticsSummary returns overall search analytics
-func (r *SearchRepository) GetSearchAnalyticsSummary(ctx context.Context, days int) (*models.SearchAnalyticsSummary, error) {
+func (r *Repository) GetSearchAnalyticsSummary(ctx context.Context, days int) (*models.SearchAnalyticsSummary, error) {
 	if days <= 0 {
 		days = 7
 	}

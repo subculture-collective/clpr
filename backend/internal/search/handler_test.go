@@ -1,4 +1,4 @@
-package handlers
+package search
 
 import (
 	"strings"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestSearchValidationAcceptsSaidAlone(t *testing.T) {
-	h := &SearchHandler{}
+	h := &Handler{}
 	if err := h.validateAndSetDefaults(&models.SearchRequest{}); err == nil {
 		t.Fatal("a request without q or said was accepted")
 	}

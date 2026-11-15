@@ -1,4 +1,4 @@
-package handlers
+package search
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func performSearchRequest(t *testing.T, provider *searchContractProvider, target
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.GET("/api/v1/search", NewSearchHandlerWithHybridProvider(nil, provider, nil).Search)
+	router.GET("/api/v1/search", NewHandlerWithHybridProvider(nil, provider).Search)
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, target, nil))
 	return response

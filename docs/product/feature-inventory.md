@@ -498,9 +498,9 @@ counts that included planned or missing artifacts.
 - **Status**: ✅ complete (hybrid search)
 - **Backend**: `/api/v1/search`, `/api/v1/search/suggestions`, `/api/v1/search/scores`
 - **Frontend**: `SearchPage.tsx`
-- **Handlers**: `search_handler.go`
+- **Handlers**: `internal/search/handler.go`
 - **Services**: `opensearch_search_service.go`, `hybrid_search_service.go`, `embedding_service.go`
-- **Repository**: `search_repository.go`
+- **Repository**: `internal/search/repository.go`
 - **Tests**: ✅ Unit tests exist
 - **Typing**: ✅ Complete
 - **Docs**: Search Feature, Semantic Search

@@ -2,6 +2,7 @@ package main
 
 import (
 	"git.subcult.tv/subculture-collective/clpr/internal/repository"
+	"git.subcult.tv/subculture-collective/clpr/internal/search"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,7 +21,7 @@ type Repositories struct {
 	Favorite          *repository.FavoriteRepository
 	CreatorModeration *repository.CreatorModerationRepository
 	Tag               *repository.TagRepository
-	Search            *repository.SearchRepository
+	Search            *search.Repository
 	Submission        *repository.SubmissionRepository
 	Report            *repository.ReportRepository
 	Reputation        *repository.ReputationRepository
@@ -72,7 +73,7 @@ func initRepositories(pool *pgxpool.Pool) *Repositories {
 		Favorite:          repository.NewFavoriteRepository(pool),
 		CreatorModeration: repository.NewCreatorModerationRepository(pool),
 		Tag:               repository.NewTagRepository(pool),
-		Search:            repository.NewSearchRepository(pool),
+		Search:            search.NewRepository(pool),
 		Submission:        repository.NewSubmissionRepository(pool),
 		Report:            repository.NewReportRepository(pool),
 		Reputation:        repository.NewReputationRepository(pool),
