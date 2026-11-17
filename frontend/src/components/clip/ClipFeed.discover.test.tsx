@@ -36,11 +36,11 @@ afterEach(() => vi.restoreAllMocks());
 describe('ClipFeed discover mode', () => {
     it('plays a discover clip when its play button is pressed, one clip at a time', async () => {
         render(<ClipFeed discoverMode />);
-        await userEvent.click(await screen.findByRole('button', { name: 'Play Clip 0' }));
+        await userEvent.click(await screen.findByRole('button', { name: /^Play Clip 0\b/ }));
         expect(screen.getByTitle('Clip 0')).toHaveAttribute('src', expect.stringContaining('clip=Slug0'));
         expect(screen.queryByText('NSFW')).not.toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('button', { name: 'Play Clip 1' }));
+        await userEvent.click(screen.getByRole('button', { name: /^Play Clip 1\b/ }));
         expect(screen.getByTitle('Clip 1')).toBeInTheDocument();
         expect(screen.queryByTitle('Clip 0')).not.toBeInTheDocument();
         expect(screen.getByText('NSFW')).toBeInTheDocument();

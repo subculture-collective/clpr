@@ -72,7 +72,7 @@ export function TwitchEmbed({
         }}
         className='absolute inset-0 block w-full group cursor-pointer'
       >
-        <span className='sr-only'>Play {title}</span>
+        <span className='sr-only'>Play {title}</span>{' '}
         {thumbnail}
         <span className='absolute inset-0 bg-black/20' />
         <span className='absolute left-1/2 top-1/2 grid size-14 -translate-x-1/2 -translate-y-1/2 place-items-center bg-primary-400 text-background transition-colors group-hover:bg-primary-300'>
