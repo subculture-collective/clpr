@@ -43,6 +43,25 @@ test('search collections cannot become null or disappear', () => {
   }
 });
 
+test('empty taxonomy and category pages preserve nullable repository results', () => {
+  for (const [empty, populated, key] of [
+    ['tags-empty', 'tags-populated', 'tags'],
+    ['categories-empty', 'categories-populated', 'games'],
+  ]) {
+    const { body, validate } = sample(empty);
+    assert.equal(body[key], null, `${empty} must reflect the nil repository slice`);
+    assert.equal(validate(body), true);
+    body[key] = [];
+    assert.equal(validate(body), true);
+    body[key] = sample(populated).body[key];
+    assert.equal(validate(body), true);
+    body[key] = {};
+    assert.equal(validate(body), false);
+    delete body[key];
+    assert.equal(validate(body), false, `${key} must still be present`);
+  }
+});
+
 test('countdown cursor is required, accepts null, and rejects an invalid date', () => {
   const { body, validate } = sample('countdowns-empty');
   assert.equal(body.meta.next_before, null);

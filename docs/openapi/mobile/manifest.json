@@ -109,7 +109,8 @@
     "status": 200,
     "provenance": "constructed-from-wire-types",
     "sources": [
-      "backend/internal/handlers/tag_handler.go#ListTags"
+      "backend/internal/handlers/tag_handler.go#ListTags",
+      "backend/internal/repository/tag_repository.go#List"
     ]
   },
   {
@@ -129,7 +130,8 @@
     "status": 200,
     "provenance": "constructed-from-wire-types",
     "sources": [
-      "backend/internal/handlers/game_handler.go#GetTrendingGames"
+      "backend/internal/handlers/game_handler.go#GetTrendingGames",
+      "backend/internal/repository/game_repository.go#GetTrending"
     ]
   },
   {
