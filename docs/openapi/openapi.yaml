@@ -1705,7 +1705,8 @@ paths:
                 required: [tags, total, page, limit, has_more]
                 properties:
                   tags:
-                    type: array
+                    type: [array, 'null']
+                    description: Empty repository results serialize as null; clients should normalize them to an empty list.
                     items:
                       $ref: '#/components/schemas/Tag'
                   total:
@@ -11659,7 +11660,8 @@ components:
         limit: {type: integer, minimum: 1, maximum: 100}
         has_more: {type: boolean}
         games:
-          type: array
+          type: [array, 'null']
+          description: Empty or exhausted repository pages serialize as null; clients should normalize them to an empty list.
           items:
             type: object
             required: [id, twitch_game_id, name, recent_clip_count, total_vote_score, follower_count]
