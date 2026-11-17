@@ -1,61 +1,30 @@
 ---
-title: "Mobile Documentation"
-summary: "React Native mobile app architecture and implementation guides."
-tags: ["mobile", "hub", "index"]
+title: "Archived mobile planning"
+summary: "Earlier React Native/Expo proposals; no app was built from this material."
+tags: ["mobile", "archive"]
 area: "mobile"
-status: "stable"
+status: "archived"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2025-12-01
-aliases: ["mobile hub", "app docs"]
+last_reviewed: 2026-11-16
 ---
 
-# Mobile Documentation
+# Archived mobile planning
 
-This section covers the Clipper mobile apps built with React Native 0.76 and Expo 52.
+The earlier React Native and Expo documents described a proposed client, not
+shipped apps. No native workspace or binary was produced from them. Their
+framework versions, implementation claims and platform support are historical.
 
-## Quick Links
+On November 16, 2026 the owner requested two separate native apps. Use the
+[new SwiftUI iOS and Kotlin/Jetpack Compose Android plan](../../product/native-apps-plan.md)
+for current work. These references do not prescribe its framework or scope.
 
-- [[architecture|Architecture]] - App structure and patterns
-- [[implementation|Implementation Guide]] - Setup and development
-- [[deep-linking|Deep Linking]] - Universal links and app navigation
-- [[deep-linking-examples|Deep Linking Examples]] - Code examples
-- [[deep-linking-test-cases|Deep Linking Test Cases]] - Testing guide
-- [[oauth-pkce|OAuth PKCE]] - Secure authentication flow
-- [[offline-caching|Offline Caching]] - Offline-first architecture
-- [[i18n|Internationalization]] - Multi-language support
-- [[submit-flow-documentation|Submit Flow Documentation]] - Clip submission flow
-- [[submit-flow-diagram|Submit Flow Diagram]] - Visual flow diagram
-- [[responsive-qa|Responsive QA]] - Responsive design testing
-- [[first-visual-examples|First Visual Examples]] - First contentful paint optimization
-- [[analytics-readme|Analytics README]] - Analytics overview
-- [[analytics-dashboards|Analytics Dashboards]] - PostHog dashboard setup and configuration
-- [[analytics-dashboard-setup|Quick Setup Guide]] - Step-by-step dashboard implementation
-- [[posthog-dashboard-queries|Dashboard Queries]] - Quick reference for PostHog queries
-- [[dashboard-implementation-summary|Dashboard Summary]] - Implementation status and overview
+## Historical references
 
-## Documentation Index
+- [Earlier framework-selection RFC](../rfcs/001-mobile-framework-selection.md)
+- [Analytics notes](analytics-readme.md)
+- [Analytics dashboards](analytics-dashboards.md)
+- [Dashboard setup](analytics-dashboard-setup.md)
+- [PostHog queries](posthog-dashboard-queries.md)
 
-```dataview
-TABLE title, summary, status, last_reviewed
-FROM "docs/mobile"
-WHERE file.name != "index"
-SORT title ASC
-```
-
-## Tech Stack
-
-- **React Native 0.76** with Expo 52
-- **Expo Router** for navigation
-- **NativeWind** (TailwindCSS) for styling
-- **TanStack Query** for server state
-- **Zustand** for client state
-
-## Platform Support
-
-- **iOS**: 13+
-- **Android**: 8.0+ (API 26+)
-
----
-
-**See also:** [[../frontend/architecture|Web Frontend]] · [[../backend/api|API Reference]] · [[../index|Documentation Home]]
+See the [archive policy](../index.md) and [current scope](../../LAUNCH_FEATURE_INVENTORY.md).

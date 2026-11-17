@@ -60,6 +60,29 @@ receipt when assembling a later native release, rather than recreating an older
 frontend from the native manifest. Keep native credentials in their existing
 private files and deployment diagnostics in the private host state directory.
 
+### When frontend delivery is refused
+
+Read the failed release's private `pre-deploy.log` and the delivery diagnostic.
+An image can transfer and verify successfully while admission refuses activation.
+In that case, the public build marker continues to identify the previous frontend.
+
+Admission pins the backend source tree, native release and schema, as well as
+the frontend image environment and startup contract. A patched nginx base can
+change `NGINX_VERSION` even when the frontend command and healthcheck are identical.
+A later backend tree can require a paired native release and migrations before
+the frontend is compatible. Review each mismatch; do not remove these checks or
+copy the candidate's fields over the contract without evidence.
+
+For a paired release, retain the previous manifests and admission, verify the
+exact qualified image manifests/configuration/layers, take a backup, rehearse the
+required migration path, and use the existing guarded native deployment procedure.
+Refresh admission from the healthy runtime and the specifically reviewed frontend
+image, then run predeploy and the receiver's delivery/native-verification steps.
+Compare public marker queries and asset hashes with the activated image. Keep
+application journeys, fresh OAuth, backup readability and a full restore as
+separate results. A manual recovery does not change the historical failed CI run;
+the next automatic main delivery needs its own passing result.
+
 ## Candidate manifest contract
 
 The repository-owned manifest schema is version 1:

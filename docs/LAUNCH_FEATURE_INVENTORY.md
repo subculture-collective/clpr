@@ -13,8 +13,9 @@ configuration.
 ## Removed in November 2026
 
 These features were removed from the backend, frontend and API contract, not
-just disabled. None had passed its promotion gate or had active users. Their
-database tables remain until the drop migrations in issue #72.
+just disabled. None had passed its promotion gate or had active users. Migration 148 dropped the retired-feature tables and views
+([#1401](https://github.com/subculture-collective/clpr/issues/1401)). Retained
+billing and audit history follows its separate retention contract.
 
 | Capability | Removed in |
 | --- | --- |
@@ -29,7 +30,13 @@ database tables remain until the drop migrations in issue #72.
 
 Paid subscriptions and the Stripe runtime were retired in September 2026; see
 the [billing retirement verification](testing/stripe-subscription-testing.md).
-Native mobile planning material is in the [archive](archive/index.md).
+MFA is retained by the owner's November 7 decision in
+[#1395](https://github.com/subculture-collective/clpr/issues/1395); the closed
+removal proposal does not mean it was removed.
+
+Earlier native mobile material is in the [archive](archive/index.md). New work
+on [separate native iOS and Android apps](product/native-apps-plan.md) is in
+planning, with no buildable native workspace or production support yet.
 
 ## Executable evidence
 

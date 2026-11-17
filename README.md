@@ -9,8 +9,9 @@ remember, save clips into playlists, and send a playlist to the people who
 missed the stream.
 
 clpr is a responsive web app, live at [clpr.tv](https://clpr.tv). The
-[launch feature inventory](docs/LAUNCH_FEATURE_INVENTORY.md) lists what is
-supported today and which features were removed.
+[launch feature inventory](docs/LAUNCH_FEATURE_INVENTORY.md) lists current scope
+and removed features. Separate [native iOS and Android apps](docs/product/native-apps-plan.md)
+are in planning; no native app is available yet.
 
 ![clpr home and clip discovery](https://subcult.tv/screenshots/clpr-home-1440.webp)
 
