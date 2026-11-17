@@ -7,7 +7,13 @@ api_port=${E2E_API_PORT:-18088}
 api_origin="http://127.0.0.1:${api_port}"
 seed_clip_id="00000000-0000-4000-8000-000000000001"
 seed_user_id="00000000-0000-4000-8000-000000000002"
-playwright_image="${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.57.0-noble@sha256:3bed4b1a12f2338642f3d8cba28e291deef3c66bd4a964bbeb3e57bbff511dbd}"
+playwright_image="${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe}"
+playwright_version=$(node -p 'require(process.argv[1]).version' "$repo_root/frontend/node_modules/@playwright/test/package.json")
+if [[ "$playwright_image" == mcr.microsoft.com/playwright:v* ]] \
+    && [[ "$playwright_image" != mcr.microsoft.com/playwright:v"$playwright_version"-* ]]; then
+    echo "Playwright client $playwright_version does not match the pinned browser image; update both together" >&2
+    exit 1
+fi
 log_file="$repo_root/.tmp/backend-e2e.log"
 pid_file="$repo_root/.tmp/backend-e2e.pid"
 api_binary="$repo_root/.tmp/backend-e2e-api"
