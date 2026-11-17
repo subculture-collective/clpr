@@ -25,7 +25,10 @@ accounts are free. See the
 
 ## Native mobile
 
-No native client was ever built. These are the planning documents for one.
+No native client was built from these earlier React Native/Expo plans. They
+remain historical; the November 16, 2026 effort for
+[separate native iOS and Android apps](../product/native-apps-plan.md) has its
+own plan.
 
 - [Mobile documentation](mobile/index.md)
 - [Mobile analytics quick start](mobile/analytics-readme.md)

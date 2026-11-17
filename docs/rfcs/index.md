@@ -35,14 +35,19 @@ SORT file.name ASC
 ## Available RFCs
 
 - [[002-advanced-query-language|RFC-002: Advanced Query Language]] - Advanced search syntax (Accepted, 2025-11)
-- [[003-infrastructure-modernization|RFC-003: Infrastructure Modernization]] - Infrastructure modernization proposal (Proposed, 2025-11)
+- [[003-infrastructure-modernization|RFC-003: Infrastructure Modernization]] - Historical infrastructure design (Accepted, 2025-11; deployment claims require current evidence)
 
 | RFC | Title | Status | Date |
 |-----|-------|--------|------|
 | [[002-advanced-query-language\|RFC-002]] | Advanced Query Language | Accepted | 2025-11 |
-| [[003-infrastructure-modernization\|RFC-003]] | Infrastructure Modernization | Proposed | 2025-11 |
+| [[003-infrastructure-modernization\|RFC-003]] | Infrastructure Modernization | Accepted (historical design) | 2025-11 |
 
-RFC-001 (mobile framework selection) is in the [archive](../archive/index.md); no native client is planned.
+RFC-001 (the earlier React Native/Expo proposal) is in the
+[archive](../archive/index.md). The owner requested separate native iOS and
+Android planning on November 16, 2026; use the
+[current native plan](../product/native-apps-plan.md). There is no buildable
+native client yet. Historical RFC completion labels do not establish current
+production topology or qualification.
 
 ## RFC Process
 

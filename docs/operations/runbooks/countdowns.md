@@ -146,7 +146,7 @@ A broadcaster's request or a claim against a clip becomes a countdown exclusion 
 
 ## Rollback
 
-Stop the worker: nothing else depends on it. Editions wait in their current status and resume when it runs again. To roll back the database, migrations 149 to 155 have down files; take a dump first, because down migrations drop the countdown tables.
+Stop the worker: nothing else depends on it. Editions wait in their current status and resume when it runs again. Select the retained image and manifests from the exact release receipt; the current worker uses schema additions through migration 162. A code rollback and a database rollback are separate operations. Review new transcript sources, VOD media sources and any records written since deployment before using older code or a down migration. Take a dump first: down migrations can delete transcript records, columns and countdown tables. Retaining additive schema is preferable when the previous release has been checked against it.
 
 ---
 

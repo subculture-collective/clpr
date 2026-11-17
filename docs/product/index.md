@@ -1,77 +1,41 @@
 ---
-title: "Product Documentation"
-summary: "Product features, roadmap, and glossary."
-tags: ["product", "hub", "index"]
+title: "Product documentation"
+summary: "Current scope, delivery status and active plans."
+tags: ["product", "status"]
 area: "product"
 status: "stable"
 owner: "team-core"
 version: "1.0"
-last_reviewed: 2025-12-01
-aliases: ["product hub"]
+last_reviewed: 2026-11-16
 ---
 
-# Product Documentation
+# Product documentation
 
-This section covers product-level documentation including features, roadmap, and terminology.
+CLPR is a deployed responsive web app with a Go API. Accounts are free.
+Implementation, hosted verification, deployment and provider acceptance are
+separate states; use the evidence for the revision being discussed.
 
-## Quick Links
+## Maintained references
 
-- [[features|Features]] - Complete feature list
-- [[feature-inventory|Feature Inventory]] - Detailed feature tracking
-- [[feature-test-coverage|Feature Test Coverage]] - Test coverage by feature
-- [[feature-audit-issues-tracking|Feature Audit Issues]] - Known issues tracking
-- [[FEATURE_INVENTORY_SWEEP_II_SUMMARY|Feature Inventory Sweep II]] - Comprehensive review
-- [[FEATURE_INVENTORY_SWEEP_II_VERIFICATION|Feature Inventory Verification]] - Verification results
-- [[roadmap|Roadmap]] - Upcoming features and milestones
-- [[roadmap-5.0|Roadmap 5.0]] - Current roadmap details
-- [[rfc-003-implementation-summary|RFC-003 Implementation]] - Infrastructure modernization
-- [[../glossary|Glossary]] - Terms and definitions
-- [[quick-reference|Quick Reference]] - Command and keyboard shortcuts
-- [[keyboard-shortcuts|Keyboard Shortcuts]] - Interface shortcuts
+- [Development status and active plan](development-status.md)
+- [Feature inventory and verification map](feature-inventory.md)
+- [Launch scope and disabled capabilities](../LAUNCH_FEATURE_INVENTORY.md)
+- [Separate native iOS and Android apps: planning](native-apps-plan.md)
+- [Feature guides](../features/index.md)
+- [Architecture decisions](../adr/index.md)
+- [API reference](../openapi/README.md)
+- [Testing](../testing/TESTING.md)
+- [Release evidence requirements](../../release-evidence/README.md)
 
-## Documentation Index
+## Planning ownership
 
-```dataview
-TABLE title, summary, status, last_reviewed
-FROM "docs/product"
-WHERE file.name != "index"
-SORT title ASC
-```
+[GitHub issues](https://github.com/subculture-collective/clpr/issues) and
+[milestones](https://github.com/subculture-collective/clpr/milestones) hold current
+work. Historical roadmap numbers, Q2 2025 targets and percentage-complete claims
+are not a release schedule. Gitea mirrors code and still runs the homelab
+release workflows; it is not the issue or PR editing master.
 
-## Product Areas
-
-### Features & Discovery
-- [[features|Features]] - Complete feature list
-- [[feature-inventory|Feature Inventory]] - Detailed feature tracking
-- [[discovery-lists|Discovery Lists]] - Content discovery features
-- [[clip-serving-strategy|Clip Serving Strategy]] - Content delivery optimization
-- [[scraped-clips|Scraped Clips]] - Automated clip ingestion
-- [[ad-slot-specification|Ad Slot Specification]] - Advertising placement
-
-### Search & Query
-- [[query-grammar|Query Grammar]] - Advanced search syntax
-- [[query-language-examples|Query Language Examples]] - Search examples
-
-### User Systems
-- [[reputation-system|Reputation System]] - Karma and trust scores
-- [[trust-system|Trust System]] - User trust and moderation
-- [[tagging-system|Tagging System]] - Clip categorization
-
-### Analytics
-- [[analytics|Analytics]] - User engagement tracking
-- [[analytics-setup|Analytics Setup]] - Analytics configuration
-- [[engagement-metrics|Engagement Metrics]] - Metric definitions
-
-### Security & Threat Model
-- [[threat-model|Threat Model]] - Security threat analysis
-- [[threat-model-quickref|Threat Model Quick Reference]] - Quick security reference
-
-## Project Status
-
-**Current Version**: v0.x (Pre-release)  
-**Status**: Active Development  
-**Target**: MVP Release Q2 2025
-
----
-
-**See also:** [[../users/index|User Documentation]] · [[../index|Documentation Home]]
+The November plan reduced the product, implemented countdowns/Shorts and added
+streamer services. YouTube provider acceptance and a seven-day publishing run
+remain open. Native iOS and Android work begins with the new plan above; there
+are no native binaries or app workspaces yet.

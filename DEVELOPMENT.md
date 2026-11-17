@@ -4,17 +4,19 @@
 
 > A deployed, full-stack Twitch clip curation platform built to make discovery, community context, and moderation usable in one place.
 
-[![CI status](https://git.subcult.tv/subculture-collective/clpr/actions/workflows/verify.yml/badge.svg)](https://git.subcult.tv/subculture-collective/clpr/actions/workflows/verify.yml)
+[![CI status](https://github.com/subculture-collective/clpr/actions/workflows/mirror-ci.yml/badge.svg)](https://github.com/subculture-collective/clpr/actions/workflows/mirror-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Live product:** [clpr.tv](https://clpr.tv) · **API contract:** [OpenAPI](docs/openapi/openapi.yaml) · **License:** [MIT](LICENSE)
 
-> **1.0 scope:** CLPR ships a responsive web client and
-> Go API. Native mobile clients are design/planning work only; there is no
-> buildable `mobile/` workspace in this tree. Stream clip extraction, CDN
-> mirroring, live feed, and watch parties remain disabled while their production
-> acceptance gates are completed. See the
-> [launch feature contract](docs/LAUNCH_FEATURE_INVENTORY.md).
+> **Current scope:** CLPR ships a responsive web client and Go API. Separate
+> SwiftUI iOS and Kotlin/Jetpack Compose Android apps are now in
+> [planning](docs/product/native-apps-plan.md); no native workspace is buildable
+> yet. Stream extraction, CDN mirroring, live feed and watch parties were
+> removed in November 2026. Automated account deletion and full personal-data
+> export remain disabled. MFA is retained. See the
+> [launch scope contract](docs/LAUNCH_FEATURE_INVENTORY.md) and
+> [current status](docs/product/development-status.md).
 
 ## What it demonstrates
 
