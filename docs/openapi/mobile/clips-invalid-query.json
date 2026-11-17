@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "INVALID_UUID",
+    "message": "Invalid submitted_by_user_id: must be a valid UUID"
+  },
+  "success": false
+}

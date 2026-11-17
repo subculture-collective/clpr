@@ -877,14 +877,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  clips:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Clip'
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+                $ref: '#/components/schemas/ClipListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -896,14 +889,18 @@ paths:
       operationId: getClip
       security: []
       parameters:
-        - $ref: '#/components/parameters/ClipId'
+        - name: id
+          in: path
+          required: true
+          description: Internal clip UUID or Twitch clip slug.
+          schema: {type: string}
       responses:
         '200':
           description: Clip details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClipDetailed'
+                $ref: '#/components/schemas/ClipResponse'
         '404':
           $ref: '#/components/responses/NotFound'
     put:
@@ -8569,9 +8566,15 @@ paths:
       description: Returns strictly paginated game rankings calculated from visible clips.
       operationId: getApiV1GamesTrending
       security: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
-          $ref: '#/components/responses/RouterDerivedSuccess'
+          description: Trending Twitch categories using the legacy games route.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TrendingGamesResponse'}
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9193,6 +9196,7 @@ paths:
       tags: [Playlists]
       summary: Get a visible playlist and paginated clips
       operationId: getPlaylist
+      security: []
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
         - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
@@ -11414,8 +11418,21 @@ components:
         - error
       properties:
         error:
-          type: string
-          description: Error message
+          description: Error text from middleware/search, or a structured handler error.
+          oneOf:
+            - type: string
+            - type: object
+              required: [code, message]
+              properties:
+                code: {type: string}
+                message: {type: string}
+        success:
+          type: boolean
+          const: false
+        retry_after:
+          type: integer
+          minimum: 0
+          description: Retry delay in seconds when present on a rate-limit response.
         code:
           type: string
           description: Error code
@@ -11613,6 +11630,47 @@ components:
         imported_at:
           type: string
           format: date-time
+
+    ClipListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: {type: boolean, const: true}
+        data:
+          type: array
+          items: {$ref: '#/components/schemas/Clip'}
+        meta:
+          allOf:
+            - $ref: '#/components/schemas/Pagination'
+            - required: [page, limit, total, total_pages, has_next, has_prev]
+
+    ClipResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success: {type: boolean, const: true}
+        data: {$ref: '#/components/schemas/ClipDetailed'}
+
+    TrendingGamesResponse:
+      type: object
+      required: [games, page, limit, has_more]
+      properties:
+        page: {type: integer, minimum: 1}
+        limit: {type: integer, minimum: 1, maximum: 100}
+        has_more: {type: boolean}
+        games:
+          type: array
+          items:
+            type: object
+            required: [id, twitch_game_id, name, recent_clip_count, total_vote_score, follower_count]
+            properties:
+              id: {type: string, format: uuid}
+              twitch_game_id: {type: string}
+              name: {type: string}
+              box_art_url: {type: string, format: uri}
+              recent_clip_count: {type: integer}
+              total_vote_score: {type: integer}
+              follower_count: {type: integer}
 
     ClipDetailed:
       allOf:

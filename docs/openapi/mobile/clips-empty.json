@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": [],
+  "meta": {
+    "page": 1,
+    "limit": 25,
+    "total": 0,
+    "total_pages": 0,
+    "has_next": false,
+    "has_prev": false
+  }
+}

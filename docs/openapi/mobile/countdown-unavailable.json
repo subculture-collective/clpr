@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Countdown not found"
+  },
+  "success": false
+}

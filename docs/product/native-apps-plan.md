@@ -21,8 +21,9 @@ and clip-room workflows come later, after that journey is qualified.
 There is no buildable native app in this repository. The earlier React Native
 and Expo material is [historical planning](../archive/mobile/index.md). This
 document starts a new effort; it does not establish a release date or authorize
-store publication. Implementation issues should be published after the first
-two spikes settle the authentication and playback contracts.
+store publication. [Roadmap #1436](https://github.com/subculture-collective/clpr/issues/1436)
+tracks the shared prerequisites and separate platform issues. Implementation
+issues remain blocked until the relevant spikes settle their contracts.
 
 ## Architecture decisions
 
@@ -38,6 +39,8 @@ two spikes settle the authentication and playback contracts.
 
 Both apps use the existing Go API and its authorization rules. Share OpenAPI
 contracts, JSON fixtures, localization keys, brand tokens and acceptance journeys.
+The [native API contract pack](../openapi/mobile/index.md) provides the shared
+response fixtures and `task mobile:contracts` check.
 Each app owns its UI, navigation, storage and platform integration. Choose the
 minimum supported OS versions, signing owners, application identifiers and CI
 build hosts during the build spike; no choice is represented as configured.
@@ -178,4 +181,4 @@ The first beta audience is confirmed: viewers, with creator tools later.
 Remaining decisions: supported OS/device range,
 signing/distribution ownership, the native session callback contract, and the
 qualified playback approach. The first two spikes turn the technical unknowns
-into evidence before a dated implementation roadmap is published.
+into evidence before implementation dates are committed.

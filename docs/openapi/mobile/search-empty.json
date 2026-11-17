@@ -1,0 +1,32 @@
+{
+  "counts": {
+    "clips": 0,
+    "creators": 0,
+    "games": 0,
+    "tags": 0,
+    "twitch_categories": 0
+  },
+  "facets": {
+    "date_range": {
+      "last_day": 0,
+      "last_hour": 0,
+      "last_month": 0,
+      "last_week": 0,
+      "older": 0
+    }
+  },
+  "meta": {
+    "limit": 20,
+    "page": 1,
+    "total_items": 0,
+    "total_pages": 0
+  },
+  "query": "fixture",
+  "results": {
+    "clips": [],
+    "creators": [],
+    "games": [],
+    "tags": [],
+    "twitch_categories": []
+  }
+}

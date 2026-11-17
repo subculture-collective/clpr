@@ -16,6 +16,9 @@ OpenAPI 3.0 specifications for the Clipper REST API.
 
 ## Available Specifications
 
+- [Native viewer API contract fixtures](mobile/index.md): shared JSON examples,
+  paging/error rules and `task mobile:contracts` for iOS and Android clients.
+
 ### Clip Submission API
 
 - **File**: [[clip-submission-api.yaml]]

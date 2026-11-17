@@ -460,6 +460,14 @@ tasks:
     aliases: [openapi-validate]
     cmds:
       - npm run openapi:validate
+
+  mobile:contracts:
+    desc: Check shared native JSON fixtures against current Go responses, routes and OpenAPI
+    cmds:
+      - cd backend && go test -count=1 ./cmd/api -run TestNativeContractFixtures
+      - node --test scripts/tests/mobile-contracts.test.mjs
+      - node scripts/verify-mobile-contracts.mjs
+
   openapi:serve:
     desc: Start Swagger UI server on http://localhost:8081
     aliases: [openapi-serve]

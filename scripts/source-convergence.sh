@@ -251,6 +251,8 @@ NODE
 phase_api_docs() {
     mkdir -p "$artifact_dir/openapi"
     node --test scripts/tests/verify-openapi-lint-result.test.js
+    node --test scripts/tests/mobile-contracts.test.mjs
+    node scripts/verify-mobile-contracts.mjs
     npm run openapi:lint
     npm run openapi:embed:check
     ./node_modules/.bin/redocly bundle docs/openapi/openapi.yaml \
