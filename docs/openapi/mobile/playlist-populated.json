@@ -1,0 +1,61 @@
+{
+  "success": true,
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "user_id": "00000000-0000-4000-8000-000000000002",
+    "title": "Public fixture playlist",
+    "visibility": "public",
+    "view_count": 0,
+    "share_count": 0,
+    "like_count": 0,
+    "follower_count": 0,
+    "bookmark_count": 0,
+    "is_curated": false,
+    "is_featured": false,
+    "display_order": 0,
+    "created_at": "2026-11-16T12:00:00.123Z",
+    "updated_at": "2026-11-16T12:00:00.123Z",
+    "clip_count": 1,
+    "clips": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "twitch_clip_id": "CLPRNativeFixture",
+        "twitch_clip_url": "https://clips.twitch.tv/CLPRNativeFixture",
+        "embed_url": "https://clips.twitch.tv/embed?clip=CLPRNativeFixture",
+        "title": "Native contract fixture",
+        "creator_name": "Fixture creator",
+        "broadcaster_name": "Fixture channel",
+        "game_id": "fixture-category",
+        "game_name": "Fixture category",
+        "view_count": 42,
+        "created_at": "2026-11-16T12:00:00.123Z",
+        "imported_at": "2026-11-16T12:00:00.123Z",
+        "vote_score": 3,
+        "comment_count": 0,
+        "favorite_count": 0,
+        "is_featured": false,
+        "is_nsfw": false,
+        "is_removed": false,
+        "is_hidden": false,
+        "dmca_removed": false,
+        "source_type": "twitch",
+        "source_platform": "twitch",
+        "duration_verified": false,
+        "twitch_category_id": "fixture-category",
+        "twitch_category_name": "Fixture category",
+        "order": 0
+      }
+    ],
+    "is_liked": false,
+    "is_followed": false,
+    "is_bookmarked": false
+  },
+  "meta": {
+    "page": 1,
+    "limit": 25,
+    "total": 1,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
+  }
+}

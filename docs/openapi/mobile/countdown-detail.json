@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "data": {
+    "edition_date": "2026-11-16",
+    "series_slug": "overall",
+    "series_name": "Overall",
+    "size": 10,
+    "clips": [
+      {
+        "position": 2,
+        "clip_id": "00000000-0000-4000-8000-000000000001",
+        "title": "Native contract fixture",
+        "broadcaster_name": "Fixture channel",
+        "twitch_clip_id": "CLPRNativeFixture",
+        "twitch_clip_url": "https://clips.twitch.tv/CLPRNativeFixture"
+      }
+    ]
+  }
+}

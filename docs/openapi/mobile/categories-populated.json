@@ -1,0 +1,15 @@
+{
+  "games": [
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "twitch_game_id": "fixture-category",
+      "name": "Fixture category",
+      "recent_clip_count": 1,
+      "total_vote_score": 0,
+      "follower_count": 0
+    }
+  ],
+  "has_more": false,
+  "limit": 20,
+  "page": 1
+}

@@ -1,0 +1,246 @@
+[
+  {
+    "file": "clips-populated.json",
+    "method": "GET",
+    "path": "/api/v1/clips",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/clip_handler.go#ListClips",
+      "backend/internal/services/clip_service.go#ClipWithUserData"
+    ]
+  },
+  {
+    "file": "clips-empty.json",
+    "method": "GET",
+    "path": "/api/v1/clips",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/clip_handler.go#ListClips"
+    ]
+  },
+  {
+    "file": "clip-detail.json",
+    "method": "GET",
+    "path": "/api/v1/clips/{id}",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/clip_handler.go#GetClip"
+    ]
+  },
+  {
+    "file": "clips-invalid-query.json",
+    "method": "GET",
+    "path": "/api/v1/clips",
+    "status": 400,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/handlers/clip_handler.go#ListClips"
+    ]
+  },
+  {
+    "file": "clip-removed.json",
+    "method": "GET",
+    "path": "/api/v1/clips/{id}",
+    "status": 404,
+    "provenance": "constructed-negative-case",
+    "sources": [
+      "backend/internal/handlers/clip_handler.go#GetClip"
+    ]
+  },
+  {
+    "file": "search-empty.json",
+    "method": "GET",
+    "path": "/api/v1/search",
+    "status": 200,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/search/handler.go#Search"
+    ]
+  },
+  {
+    "file": "search-populated.json",
+    "method": "GET",
+    "path": "/api/v1/search",
+    "status": 200,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/search/handler.go#Search",
+      "backend/internal/models/models.go#Clip"
+    ]
+  },
+  {
+    "file": "search-invalid.json",
+    "method": "GET",
+    "path": "/api/v1/search",
+    "status": 400,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/search/handler.go#Search"
+    ]
+  },
+  {
+    "file": "search-rate-limited.json",
+    "method": "GET",
+    "path": "/api/v1/search",
+    "status": 429,
+    "provenance": "constructed-negative-case",
+    "sources": [
+      "backend/internal/middleware/ratelimit_middleware.go#RateLimitMiddleware"
+    ]
+  },
+  {
+    "file": "tags-populated.json",
+    "method": "GET",
+    "path": "/api/v1/tags",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/tag_handler.go#ListTags",
+      "backend/internal/models/tag_json.go#MarshalJSON"
+    ]
+  },
+  {
+    "file": "tags-empty.json",
+    "method": "GET",
+    "path": "/api/v1/tags",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/tag_handler.go#ListTags"
+    ]
+  },
+  {
+    "file": "categories-populated.json",
+    "method": "GET",
+    "path": "/api/v1/games/trending",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/game_handler.go#GetTrendingGames"
+    ]
+  },
+  {
+    "file": "categories-empty.json",
+    "method": "GET",
+    "path": "/api/v1/games/trending",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/game_handler.go#GetTrendingGames"
+    ]
+  },
+  {
+    "file": "clip-topics.json",
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/topics",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/topic_handler.go#ListClipTopics"
+    ]
+  },
+  {
+    "file": "clip-topics-empty.json",
+    "method": "GET",
+    "path": "/api/v1/clips/{id}/topics",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/topic_handler.go#ListClipTopics"
+    ]
+  },
+  {
+    "file": "creators-populated.json",
+    "method": "GET",
+    "path": "/api/v1/broadcasters/discover",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/creator_discovery_handler.go#ListCreatorDiscovery"
+    ]
+  },
+  {
+    "file": "creators-empty.json",
+    "method": "GET",
+    "path": "/api/v1/broadcasters/discover",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/creator_discovery_handler.go#ListCreatorDiscovery"
+    ]
+  },
+  {
+    "file": "countdowns-populated.json",
+    "method": "GET",
+    "path": "/api/v1/countdowns",
+    "status": 200,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/handlers/countdown_public_handler.go#ListEditions"
+    ]
+  },
+  {
+    "file": "countdowns-empty.json",
+    "method": "GET",
+    "path": "/api/v1/countdowns",
+    "status": 200,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/handlers/countdown_public_handler.go#ListEditions"
+    ]
+  },
+  {
+    "file": "countdown-detail.json",
+    "method": "GET",
+    "path": "/api/v1/countdowns/{date}/{series}",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/countdown_public_handler.go#GetEdition"
+    ]
+  },
+  {
+    "file": "countdown-unavailable.json",
+    "method": "GET",
+    "path": "/api/v1/countdowns/{date}/{series}",
+    "status": 404,
+    "provenance": "handler-with-owned-stub",
+    "sources": [
+      "backend/internal/handlers/countdown_public_handler.go#GetEdition"
+    ]
+  },
+  {
+    "file": "playlist-populated.json",
+    "method": "GET",
+    "path": "/api/v1/playlists/{id}",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/playlist_handler.go#GetPlaylist",
+      "backend/internal/models/models.go#PlaylistWithClips"
+    ]
+  },
+  {
+    "file": "playlist-empty.json",
+    "method": "GET",
+    "path": "/api/v1/playlists/{id}",
+    "status": 200,
+    "provenance": "constructed-from-wire-types",
+    "sources": [
+      "backend/internal/handlers/playlist_handler.go#GetPlaylist"
+    ]
+  },
+  {
+    "file": "playlist-private-or-missing.json",
+    "method": "GET",
+    "path": "/api/v1/playlists/{id}",
+    "status": 404,
+    "provenance": "constructed-negative-case",
+    "sources": [
+      "backend/internal/handlers/playlist_handler.go#GetPlaylist"
+    ]
+  }
+]
