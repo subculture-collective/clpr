@@ -256,3 +256,61 @@ func TestModerationEventService_ProcessEvent(t *testing.T) {
 	err = service.ProcessEvent(ctx, event.ID, reviewerID, "delete")
 	require.Error(t, err)
 }
+
+func TestModerationEventService_HandledEventsLeavePendingList(t *testing.T) {
+	redisClient := setupTestRedis(t)
+	if redisClient == nil {
+		return
+	}
+	defer redisClient.Close()
+
+	service := NewModerationEventService(redisClient, nil)
+	ctx := context.Background()
+	reviewerID := uuid.New()
+
+	emitted := make([]*ModerationEvent, 0, 4)
+	for i := 0; i < 4; i++ {
+		event := &ModerationEvent{
+			Type:      ModerationEventSubmissionSuspicious,
+			Severity:  "warning",
+			UserID:    uuid.New(),
+			IPAddress: "192.168.1.1",
+		}
+		require.NoError(t, service.EmitEvent(ctx, event))
+		emitted = append(emitted, event)
+	}
+
+	require.NoError(t, service.ProcessEvent(ctx, emitted[0].ID, reviewerID, "approve"))
+	require.NoError(t, service.MarkEventReviewed(ctx, emitted[1].ID, reviewerID))
+
+	events, err := service.GetPendingEvents(ctx, 10)
+	require.NoError(t, err)
+	require.Len(t, events, 2)
+	// Newest first.
+	assert.Equal(t, emitted[3].ID, events[0].ID)
+	assert.Equal(t, emitted[2].ID, events[1].ID)
+
+	// The limit applies to pending events, not to queue positions.
+	events, err = service.GetPendingEvents(ctx, 1)
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	assert.Equal(t, emitted[3].ID, events[0].ID)
+
+	stats, err := service.GetEventStats(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 2, stats["pending_warning"])
+}
+
+func TestModerationEventService_UnknownEventIsNotFound(t *testing.T) {
+	redisClient := setupTestRedis(t)
+	if redisClient == nil {
+		return
+	}
+	defer redisClient.Close()
+
+	service := NewModerationEventService(redisClient, nil)
+	ctx := context.Background()
+
+	assert.ErrorIs(t, service.ProcessEvent(ctx, uuid.New(), uuid.New(), "approve"), ErrModerationEventNotFound)
+	assert.ErrorIs(t, service.MarkEventReviewed(ctx, uuid.New(), uuid.New()), ErrModerationEventNotFound)
+}

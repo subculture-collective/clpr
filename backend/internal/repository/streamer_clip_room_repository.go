@@ -168,6 +168,52 @@ func (r *StreamerClipRoomRepository) SetRoomActive(ctx context.Context, roomID u
 	return nil
 }
 
+// ListActiveRooms lists rooms whose chat listener should be running.
+func (r *StreamerClipRoomRepository) ListActiveRooms(ctx context.Context) ([]models.StreamerClipRoom, error) {
+	const query = `SELECT id, owner_user_id, twitch_channel, approval_mode, is_active,
+		submissions_open, submissions_close_at,
+		last_listener_error, listener_started_at, created_at, updated_at
+		FROM streamer_clip_rooms WHERE is_active = true`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list active streamer clip rooms: %w", err)
+	}
+	defer rows.Close()
+
+	rooms := []models.StreamerClipRoom{}
+	for rows.Next() {
+		room, err := scanStreamerClipRoom(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan active streamer clip room: %w", err)
+		}
+		rooms = append(rooms, *room)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to list active streamer clip rooms: %w", err)
+	}
+	return rooms, nil
+}
+
+// HasItemForClip reports whether the room already has an item in one of the
+// given statuses for the same clip or the same source URL.
+func (r *StreamerClipRoomRepository) HasItemForClip(ctx context.Context, roomID uuid.UUID, clipID *uuid.UUID, sourceURL string, statuses []string) (bool, error) {
+	const query = `
+		SELECT EXISTS (
+			SELECT 1 FROM streamer_clip_room_items
+			WHERE room_id = $1
+				AND status = ANY($4::text[])
+				AND (($2::uuid IS NOT NULL AND clip_id = $2::uuid) OR source_url = $3)
+		)
+	`
+
+	var exists bool
+	if err := r.pool.QueryRow(ctx, query, roomID, clipID, sourceURL, statuses).Scan(&exists); err != nil {
+		return false, fmt.Errorf("failed to check streamer clip room items: %w", err)
+	}
+	return exists, nil
+}
+
 // SetSubmissionWindow opens or closes chat submissions, optionally until a deadline.
 func (r *StreamerClipRoomRepository) SetSubmissionWindow(ctx context.Context, roomID uuid.UUID, open bool, closeAt *time.Time) (*models.StreamerClipRoom, error) {
 	const query = `

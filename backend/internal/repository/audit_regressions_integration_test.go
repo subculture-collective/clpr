@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/search"
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	"github.com/google/uuid"
@@ -107,7 +108,7 @@ func TestSearchSuggestionsAndSpecialCharacterQueries(t *testing.T) {
 	}
 	createAuditTestClip(t, clipRepo, "suggest rare", "Suggestable Rare", "suggestcreator", now, &now, &submitter)
 
-	repo := NewSearchRepository(pool)
+	repo := search.NewRepository(pool)
 	suggestions, err := repo.GetSuggestions(ctx, "suggest", 10)
 	if err != nil {
 		t.Fatalf("GetSuggestions: %v", err)

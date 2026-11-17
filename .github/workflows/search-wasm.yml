@@ -1,0 +1,73 @@
+name: Search WebAssembly
+
+on:
+  pull_request:
+    paths: ['backend/**', 'scripts/build-search-wasm.py', 'scripts/search-wasm-test/**', '.github/workflows/search-wasm.yml']
+  push:
+    branches: [main]
+    paths: ['backend/**', 'scripts/build-search-wasm.py', 'scripts/search-wasm-test/**', '.github/workflows/search-wasm.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: search-wasm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and exercise the browser search artifact
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # PR manifests identify the actual PR commit, not GitHub's synthetic merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.11'
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: scripts/search-wasm-test/package-lock.json
+      - name: Build and enforce the 6 MB gzip budget
+        run: python3 scripts/build-search-wasm.py
+      - name: Test the package and query-binding contract
+        working-directory: backend
+        run: go test -race ./internal/search ./internal/utils
+      - name: Apply every migration and run the Wasm handler against PGlite
+        run: |
+          npm ci --prefix scripts/search-wasm-test
+          node scripts/search-wasm-test/smoke.mjs dist/search-wasm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clpr-search-wasm
+          path: dist/search-wasm/
+          if-no-files-found: error
+
+  publish:
+    name: Publish the pinned search release
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: clpr-search-wasm
+          path: artifact
+      - name: Publish once per commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          gh release create "search-wasm-$SHA" artifact/* --target "$SHA" --latest=false \
+            --title "Browser search at $SHA" \
+            --notes 'Clpr search WebAssembly, its matching Go runtime, all up migrations, and a manifest with sizes and SHA-256 hashes. Built and exercised against PGlite in Clpr CI.'

@@ -81,6 +81,8 @@ describe('CreatorAnalyticsPage', () => {
 
         expect(await screen.findByRole('heading', { level: 1, name: 'No analytics for nobody yet' })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'Browse creators' })).toHaveAttribute('href', '/creators');
+        // The creator page is keyed by Twitch ID, which this page does not have.
+        expect(screen.queryByRole('link', { name: 'View creator page' })).not.toBeInTheDocument();
         expect(screen.queryByText(/status code/)).not.toBeInTheDocument();
     });
 

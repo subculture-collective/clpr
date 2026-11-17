@@ -19,8 +19,6 @@ export type { KeyboardControlHandlers } from './useKeyboardControls';
 export { useWatchHistory } from './useWatchHistory';
 export type { UseWatchHistoryOptions, UseWatchHistoryReturn } from './useWatchHistory';
 export { useDesktopNotifications } from './useDesktopNotifications';
-export { useCheckBanStatus } from './useCheckBanStatus';
-export type { UseBanStatusReturn } from './useCheckBanStatus';
 export { useSubmissionDraft } from './useSubmissionDraft';
 export type { SubmissionDraft } from './useSubmissionDraft';
 export { useAutoSave, useDraftStorage } from './useAutoSave';

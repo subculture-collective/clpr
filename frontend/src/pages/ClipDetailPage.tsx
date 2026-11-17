@@ -405,7 +405,7 @@ export function ClipDetailPage() {
                         </button>
 
                         <button
-                            aria-label={clip.is_favorited ? 'Remove from saved clips' : 'Save clip'}
+                            aria-label={`${clip.favorite_count} favorites. ${clip.is_favorited ? 'Remove from saved clips' : 'Save clip'}`}
                             aria-pressed={!!clip.is_favorited}
                             onClick={() => handleFavorite()}
                             disabled={!isAuthenticated || isBanned}

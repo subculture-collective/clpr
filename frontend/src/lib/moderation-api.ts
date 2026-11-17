@@ -15,7 +15,12 @@ export interface ModerationQueueItem {
     created_at: string;
     reviewed_at?: string;
     reviewed_by?: string;
-    content?: unknown;
+    /** Short text of the flagged content, when the API can load it. */
+    content_excerpt?: string;
+    /** Username of the person who posted the flagged content. */
+    content_author?: string;
+    /** Link to the flagged content on the site. */
+    content_url?: string;
 }
 
 export interface ModerationQueueStats {
@@ -56,6 +61,8 @@ export interface BulkModerationResponse {
     success: boolean;
     processed: number;
     total: number;
+    /** Items left untouched, for example because someone else reviewed them first. */
+    skipped?: string[];
 }
 
 /**
@@ -121,97 +128,6 @@ export async function bulkModerate(
 export async function getModerationStats(): Promise<ModerationStatsResponse> {
     const response = await apiClient.get<ModerationStatsResponse>(
         '/admin/moderation/queue/stats'
-    );
-    return response.data;
-}
-
-// ==================== APPEALS ====================
-
-export interface ModerationAppeal {
-    id: string;
-    user_id: string;
-    moderation_action_id: string;
-    reason: string;
-    status: 'pending' | 'approved' | 'rejected';
-    resolved_by?: string;
-    resolution?: string;
-    created_at: string;
-    resolved_at?: string;
-    // Additional fields for detailed views
-    username?: string;
-    display_name?: string;
-    decision_action?: string;
-    decision_reason?: string;
-    content_type?: string;
-    content_id?: string;
-}
-
-export interface AppealResponse {
-    success: boolean;
-    data: ModerationAppeal[];
-    meta?: {
-        count: number;
-        limit: number;
-        status: string;
-    };
-}
-
-export interface CreateAppealRequest {
-    moderation_action_id: string;
-    reason: string;
-}
-
-export interface ResolveAppealRequest {
-    decision: 'approve' | 'reject';
-    resolution?: string;
-}
-
-/**
- * Create a new appeal for a moderation decision (user-facing)
- */
-export async function createAppeal(
-    request: CreateAppealRequest
-): Promise<{ success: boolean; appeal_id: string; message: string }> {
-    const response = await apiClient.post('/moderation/appeals', request);
-    return response.data;
-}
-
-/**
- * Get appeals for the authenticated user
- */
-export async function getUserAppeals(): Promise<AppealResponse> {
-    const response = await apiClient.get<AppealResponse>('/moderation/appeals');
-    return response.data;
-}
-
-/**
- * Get appeals for admin review
- */
-export async function getAdminAppeals(
-    status: 'pending' | 'approved' | 'rejected' = 'pending',
-    limit: number = 50
-): Promise<AppealResponse> {
-    const params = new URLSearchParams({
-        status,
-        limit: limit.toString(),
-    });
-
-    const response = await apiClient.get<AppealResponse>(
-        `/admin/moderation/appeals?${params.toString()}`
-    );
-    return response.data;
-}
-
-/**
- * Resolve an appeal (admin only)
- */
-export async function resolveAppeal(
-    appealId: string,
-    request: ResolveAppealRequest
-): Promise<{ success: boolean; message: string; status: string }> {
-    const response = await apiClient.post(
-        `/admin/moderation/appeals/${appealId}/resolve`,
-        request
     );
     return response.data;
 }
@@ -352,56 +268,22 @@ export async function exportAuditLogs(params: {
     return response.data;
 }
 
-// ==================== BAN STATUS ====================
-
-export interface BanStatus {
-    isBanned: boolean;
-    banReason?: string;
-    bannedAt?: string;
-    expiresAt?: string | null;
-}
-
-export interface BanStatusResponse {
-    success: boolean;
-    data: BanStatus;
-}
-
-/**
- * Check if the authenticated user is banned from a specific channel
- */
-export async function checkBanStatus(channelId: string): Promise<BanStatus> {
-    const queryParams = new URLSearchParams();
-    queryParams.append('channelId', channelId);
-
-    const response = await apiClient.get<BanStatusResponse>(
-        `/moderation/ban-status?${queryParams.toString()}`
-    );
-    return response.data.data;
-}
-
 // ==================== CHANNEL MODERATOR MANAGEMENT ====================
 
+/** A channel member with a moderation role, as the moderators API returns it. */
 export interface ChannelModerator {
     id: string;
+    community_id: string;
     user_id: string;
-    channel_id: string;
-    role: 'moderator' | 'admin' | 'owner';
-    assigned_by?: string;
-    assigned_at: string;
-    // User details
-    username?: string;
-    display_name?: string;
-    avatar_url?: string;
+    role: 'mod' | 'admin';
+    joined_at: string;
 }
 
 export interface ListModeratorsResponse {
-    success: boolean;
-    data: ChannelModerator[];
-    meta: {
-        total: number;
-        limit: number;
-        offset: number;
-    };
+    moderators: ChannelModerator[] | null;
+    total: number;
+    limit: number;
+    offset: number;
 }
 
 export interface AddModeratorRequest {
@@ -416,7 +298,7 @@ export interface RemoveModeratorResponse {
 }
 
 export interface UpdateModeratorPermissionsRequest {
-    role: 'moderator' | 'admin';
+    role: 'mod' | 'admin';
 }
 
 /**

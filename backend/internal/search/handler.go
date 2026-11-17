@@ -1,4 +1,8 @@
-package handlers
+// Package search holds Clpr's search HTTP handler and its PostgreSQL
+// repository. It imports only the models and utils leaf packages, metrics and
+// third-party libraries, so the same code can be built on its own (for example
+// for js/wasm) as well as served by cmd/api.
+package search
 
 import (
 	"context"
@@ -10,83 +14,75 @@ import (
 	"unicode/utf8"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
-	"git.subcult.tv/subculture-collective/clpr/internal/repository"
-	"git.subcult.tv/subculture-collective/clpr/internal/services"
 	"git.subcult.tv/subculture-collective/clpr/pkg/metrics"
 	"github.com/gin-gonic/gin"
 )
 
-// SearchHandler handles search-related requests
-type SearchHandler struct {
-	searchRepo          *repository.SearchRepository
-	openSearchService   openSearchProvider
-	hybridSearchService hybridSearchProvider
-	authService         *services.AuthService
+// Handler handles search-related requests
+type Handler struct {
+	searchRepo          *Repository
+	openSearchService   OpenSearchProvider
+	hybridSearchService HybridSearchProvider
 	useOpenSearch       bool
 	useHybridSearch     bool
 }
 
-// openSearchProvider defines the subset of methods needed from the OpenSearch service.
-type openSearchProvider interface {
+// OpenSearchProvider defines the subset of methods needed from the OpenSearch service.
+type OpenSearchProvider interface {
 	Search(ctx context.Context, req *models.SearchRequest) (*models.SearchResponse, error)
 	GetSuggestions(ctx context.Context, query string, limit int) ([]models.SearchSuggestion, error)
 }
 
-// hybridSearchProvider defines the interface required for hybrid search operations.
-type hybridSearchProvider interface {
+// HybridSearchProvider defines the interface required for hybrid search operations.
+type HybridSearchProvider interface {
 	Search(ctx context.Context, req *models.SearchRequest) (*models.SearchResponse, error)
 	SearchWithScores(ctx context.Context, req *models.SearchRequest) (*models.SearchResponseWithScores, error)
 }
 
-// NewSearchHandler creates a new SearchHandler with PostgreSQL FTS
-func NewSearchHandler(searchRepo *repository.SearchRepository, authService *services.AuthService) *SearchHandler {
-	return &SearchHandler{
+// NewHandler creates a new Handler with PostgreSQL FTS
+func NewHandler(searchRepo *Repository) *Handler {
+	return &Handler{
 		searchRepo:      searchRepo,
-		authService:     authService,
 		useOpenSearch:   false,
 		useHybridSearch: false,
 	}
 }
 
-// NewSearchHandlerWithOpenSearch creates a new SearchHandler with OpenSearch
-func NewSearchHandlerWithOpenSearch(searchRepo *repository.SearchRepository, openSearchService *services.OpenSearchService, authService *services.AuthService) *SearchHandler {
-	return &SearchHandler{
+// NewHandlerWithOpenSearch creates a new Handler with OpenSearch
+func NewHandlerWithOpenSearch(searchRepo *Repository, openSearchService OpenSearchProvider) *Handler {
+	return &Handler{
 		searchRepo:        searchRepo,
 		openSearchService: openSearchService,
-		authService:       authService,
 		useOpenSearch:     true,
 		useHybridSearch:   false,
 	}
 }
 
-// NewSearchHandlerWithOpenSearchProvider allows injecting a custom OpenSearch provider (useful for testing)
-func NewSearchHandlerWithOpenSearchProvider(searchRepo *repository.SearchRepository, provider openSearchProvider, authService *services.AuthService) *SearchHandler {
-	return &SearchHandler{
+// NewHandlerWithOpenSearchProvider allows injecting a custom OpenSearch provider (useful for testing)
+func NewHandlerWithOpenSearchProvider(searchRepo *Repository, provider OpenSearchProvider) *Handler {
+	return &Handler{
 		searchRepo:        searchRepo,
 		openSearchService: provider,
-		authService:       authService,
 		useOpenSearch:     provider != nil,
 		useHybridSearch:   false,
 	}
 }
 
-// NewSearchHandlerWithHybridSearch creates a new SearchHandler with hybrid BM25 + vector search
-func NewSearchHandlerWithHybridSearch(searchRepo *repository.SearchRepository, hybridSearchService *services.HybridSearchService, authService *services.AuthService) *SearchHandler {
-	return &SearchHandler{
+// NewHandlerWithHybridSearch creates a new Handler with hybrid BM25 + vector search
+func NewHandlerWithHybridSearch(searchRepo *Repository, hybridSearchService HybridSearchProvider) *Handler {
+	return &Handler{
 		searchRepo:          searchRepo,
 		hybridSearchService: hybridSearchService,
-		authService:         authService,
 		useOpenSearch:       false,
 		useHybridSearch:     true,
 	}
 }
 
-// NewSearchHandlerWithHybridProvider allows injecting a custom hybrid search provider (useful for testing)
-func NewSearchHandlerWithHybridProvider(searchRepo *repository.SearchRepository, hybridProvider hybridSearchProvider, authService *services.AuthService) *SearchHandler {
-	return &SearchHandler{
+// NewHandlerWithHybridProvider allows injecting a custom hybrid search provider (useful for testing)
+func NewHandlerWithHybridProvider(searchRepo *Repository, hybridProvider HybridSearchProvider) *Handler {
+	return &Handler{
 		searchRepo:          searchRepo,
 		hybridSearchService: hybridProvider,
-		authService:         authService,
 		useOpenSearch:       false,
 		useHybridSearch:     hybridProvider != nil,
 	}
@@ -113,11 +109,11 @@ func parseIntQueryParam(c *gin.Context, key string, defaultValue, min, max int) 
 
 // Search handles universal search requests
 // GET /api/v1/search
-func (h *SearchHandler) Search(c *gin.Context) {
+func (h *Handler) Search(c *gin.Context) {
 	var req models.SearchRequest
 
 	// Bind query parameters
-	if err := c.ShouldBindQuery(&req); err != nil {
+	if err := bindSearchQuery(c.Request.URL.Query(), &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid query parameters",
 		})
@@ -260,7 +256,7 @@ func getFailoverReason(err error) string {
 }
 
 // validateAndSetDefaults validates search request parameters and sets defaults
-func (h *SearchHandler) validateAndSetDefaults(req *models.SearchRequest) error {
+func (h *Handler) validateAndSetDefaults(req *models.SearchRequest) error {
 	if req.Said != nil {
 		said := strings.TrimSpace(*req.Said)
 		if utf8.RuneCountInString(said) > 200 {
@@ -298,7 +294,7 @@ func (h *SearchHandler) validateAndSetDefaults(req *models.SearchRequest) error 
 
 // GetSuggestions handles autocomplete suggestions
 // GET /api/v1/search/suggestions
-func (h *SearchHandler) GetSuggestions(c *gin.Context) {
+func (h *Handler) GetSuggestions(c *gin.Context) {
 	query := c.Query("q")
 
 	if query == "" || len(query) < 2 {
@@ -366,11 +362,11 @@ func (h *SearchHandler) GetSuggestions(c *gin.Context) {
 
 // SearchWithScores handles search requests that include similarity scores
 // GET /api/v1/search/scores
-func (h *SearchHandler) SearchWithScores(c *gin.Context) {
+func (h *Handler) SearchWithScores(c *gin.Context) {
 	var req models.SearchRequest
 
 	// Bind query parameters
-	if err := c.ShouldBindQuery(&req); err != nil {
+	if err := bindSearchQuery(c.Request.URL.Query(), &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid query parameters",
 		})
@@ -422,7 +418,7 @@ func (h *SearchHandler) SearchWithScores(c *gin.Context) {
 
 // GetTrendingSearches returns the most popular search queries
 // GET /api/v1/search/trending
-func (h *SearchHandler) GetTrendingSearches(c *gin.Context) {
+func (h *Handler) GetTrendingSearches(c *gin.Context) {
 	days := parseIntQueryParam(c, "days", 7, 1, 365)
 
 	limit := parseIntQueryParam(c, "limit", 20, 1, 100)
@@ -444,7 +440,7 @@ func (h *SearchHandler) GetTrendingSearches(c *gin.Context) {
 
 // GetFailedSearches returns searches that returned no results
 // GET /api/v1/search/failed
-func (h *SearchHandler) GetFailedSearches(c *gin.Context) {
+func (h *Handler) GetFailedSearches(c *gin.Context) {
 	days := parseIntQueryParam(c, "days", 7, 1, 365)
 
 	limit := parseIntQueryParam(c, "limit", 20, 1, 100)
@@ -466,7 +462,7 @@ func (h *SearchHandler) GetFailedSearches(c *gin.Context) {
 
 // GetSearchHistory returns a user's recent search queries
 // GET /api/v1/search/history
-func (h *SearchHandler) GetSearchHistory(c *gin.Context) {
+func (h *Handler) GetSearchHistory(c *gin.Context) {
 	// Get user from context (requires authentication)
 	userVal, exists := c.Get("user")
 	if !exists {
@@ -502,7 +498,7 @@ func (h *SearchHandler) GetSearchHistory(c *gin.Context) {
 
 // GetSearchAnalytics returns overall search analytics (admin only)
 // GET /api/v1/search/analytics
-func (h *SearchHandler) GetSearchAnalytics(c *gin.Context) {
+func (h *Handler) GetSearchAnalytics(c *gin.Context) {
 	// Check if user is admin (requires authentication and admin role)
 	userVal, exists := c.Get("user")
 	if !exists {

@@ -28,7 +28,7 @@
     "frontend/src/pages/SearchPage.test.tsx",
     "backend/internal/repository/cursor_pagination_test.go",
     "backend/internal/query/parser_test.go",
-    "backend/internal/handlers/search_handler_contract_test.go"
+    "backend/internal/search/handler_contract_test.go"
   ],
   "Playback and queue state": [
     "frontend/src/components/clip/TwitchEmbed.test.tsx",

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export function UserMenu() {
-    const { user, logout, isModeratorOrAdmin } = useAuth();
+    const { user, logout, isAdmin, isModeratorOrAdmin } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -210,13 +210,13 @@ export function UserMenu() {
                             <>
                                 <div className='border-t border-border my-1'></div>
                                 <Link
-                                    to='/admin/dashboard'
+                                    to={isAdmin ? '/admin/dashboard' : '/admin/moderation'}
                                     className='flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors text-link cursor-pointer focus-visible:outline-none focus-visible:bg-muted'
                                     onClick={() => setIsOpen(false)}
                                     role='menuitem'
                                     tabIndex={-1}
                                 >
-                                    <Shield size={16} strokeWidth={1.75} /> Admin Panel
+                                    <Shield size={16} strokeWidth={1.75} /> {isAdmin ? 'Admin Panel' : 'Moderation'}
                                 </Link>
                             </>
                         )}

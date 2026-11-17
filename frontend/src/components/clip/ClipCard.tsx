@@ -224,7 +224,7 @@ export function ClipCard({
                             <span className='inline-flex items-center gap-1'>
                                 Clipped by{' '}
                                 <Link
-                                    to={`/user/${clip.creator_id}`}
+                                    to={`/creator/${encodeURIComponent(clip.creator_id)}`}
                                     className='hover:text-foreground transition-colors cursor-pointer'
                                 >
                                     {clip.creator_name}
@@ -376,10 +376,12 @@ export function ClipCard({
                                 :   'cursor-pointer',
                             )}
                             aria-label={
+                                `${formatCompactNumber(clip.favorite_count)} favorites. ${
                                 !isAuthenticated ? 'Log in to favorite'
                                 : clip.is_favorited ?
                                     'Remove from favorites'
                                 :   'Add to favorites'
+                                }`
                             }
                             aria-disabled={!isAuthenticated}
                             title={

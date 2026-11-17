@@ -171,6 +171,12 @@ describe('ClipCard', () => {
         expect(screen.getByText('Featured')).toBeInTheDocument();
     });
 
+    it('links the clipper to the creator page by Twitch ID', () => {
+        render(<ClipCard clip={{ ...mockClip, creator_id: '987654' }} />);
+
+        expect(screen.getByRole('link', { name: 'TestCreator' })).toHaveAttribute('href', '/creator/987654');
+    });
+
     it('has a link to clip detail page', () => {
         render(<ClipCard clip={mockClip} />);
 

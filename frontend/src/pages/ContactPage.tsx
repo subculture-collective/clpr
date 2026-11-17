@@ -210,8 +210,10 @@ export function ContactPage() {
             <div>
               <h3 className="font-medium text-foreground mb-1">Report Content</h3>
               <p className="text-sm text-muted-foreground">
-                To report specific clips or comments, use the report button on the content itself 
-                for faster moderation.
+                To report a comment, use the report option on that comment. To report a clip, email{' '}
+                <a href="mailto:support@clpr.tv" className="text-link underline underline-offset-2">support@clpr.tv</a>{' '}
+                with a link to it. For copyright claims, see the{' '}
+                <Link to="/dmca" className="text-link underline underline-offset-2">DMCA page</Link>.
               </p>
             </div>
             <div><h3 className="font-medium text-foreground mb-1">Email support</h3><p className="text-sm text-muted-foreground">For account, bug, or feature questions, email <a href="mailto:support@clpr.tv" className="text-link underline underline-offset-2">support@clpr.tv</a>.</p></div>

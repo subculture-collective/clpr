@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/models"
+	"git.subcult.tv/subculture-collective/clpr/internal/search"
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
 	"github.com/google/uuid"
 )
@@ -107,9 +108,9 @@ func TestTranscriptSearchStorage(t *testing.T) {
 	}
 
 	// The database search finds the clip by what was said.
-	search := NewSearchRepository(pool)
+	searchRepo := search.NewRepository(pool)
 	said := "cleanest ace"
-	res, err := search.Search(ctx, &models.SearchRequest{Type: "clips", Said: &said, Page: 1, Limit: 10, Sort: "relevance"})
+	res, err := searchRepo.Search(ctx, &models.SearchRequest{Type: "clips", Said: &said, Page: 1, Limit: 10, Sort: "relevance"})
 	if err != nil || len(res.Results.Clips) != 1 || res.Results.Clips[0].ID != ids["said-it"] {
 		t.Fatalf("said search = %+v, %v", res, err)
 	}
@@ -118,10 +119,10 @@ func TestTranscriptSearchStorage(t *testing.T) {
 		t.Fatalf("snippet = %v", snippet)
 	}
 	other := "ace cleanest"
-	if res, err := search.Search(ctx, &models.SearchRequest{Type: "clips", Said: &other, Page: 1, Limit: 10}); err != nil || len(res.Results.Clips) != 0 {
+	if res, err := searchRepo.Search(ctx, &models.SearchRequest{Type: "clips", Said: &other, Page: 1, Limit: 10}); err != nil || len(res.Results.Clips) != 0 {
 		t.Fatalf("out-of-order phrase matched: %+v, %v", res, err)
 	}
-	if res, err := search.Search(ctx, &models.SearchRequest{Type: "clips", Query: "said", Page: 1, Limit: 10}); err != nil || res.Results.Clips == nil {
+	if res, err := searchRepo.Search(ctx, &models.SearchRequest{Type: "clips", Query: "said", Page: 1, Limit: 10}); err != nil || res.Results.Clips == nil {
 		t.Fatalf("search without said = %+v, %v", res, err)
 	}
 }

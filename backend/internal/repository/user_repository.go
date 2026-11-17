@@ -115,7 +115,7 @@ func (r *UserRepository) GetByTwitchID(ctx context.Context, twitchID string) (*m
 			karma_points, role, account_type, is_banned, created_at, updated_at, last_login_at,
 			COALESCE(moderator_scope, '') AS moderator_scope,
 			COALESCE(moderation_channels, '{}'::uuid[]) AS moderation_channels,
-			moderation_started_at
+			moderation_started_at, account_status
 		FROM users
 		WHERE twitch_id = $1
 	`
@@ -125,7 +125,7 @@ func (r *UserRepository) GetByTwitchID(ctx context.Context, twitchID string) (*m
 		&user.ID, &user.TwitchID, &user.Username, &user.DisplayName, &user.Email,
 		&user.AvatarURL, &user.Bio, &user.KarmaPoints, &user.Role, &user.AccountType, &user.IsBanned,
 		&user.CreatedAt, &user.UpdatedAt, &user.LastLoginAt,
-		&user.ModeratorScope, &user.ModerationChannels, &user.ModerationStartedAt,
+		&user.ModeratorScope, &user.ModerationChannels, &user.ModerationStartedAt, &user.AccountStatus,
 	)
 
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"git.subcult.tv/subculture-collective/clpr/internal/testutil"
+	"git.subcult.tv/subculture-collective/clpr/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -53,7 +54,7 @@ func TestTagTreeLimitsChildrenAndHonoursVisibility(t *testing.T) {
 
 	for _, slug := range []string{root + "/c6", root + "/c5", root + "/c5x", root + "/c3"} {
 		var inline, function bool
-		if err := pool.QueryRow(ctx, `SELECT is_tag_blacklisted($1), NOT (`+visibleTagPredicate("t")+`) FROM (SELECT gen_random_uuid() AS id, $1::text AS slug) t`, slug).Scan(&function, &inline); err != nil {
+		if err := pool.QueryRow(ctx, `SELECT is_tag_blacklisted($1), NOT (`+utils.VisibleTagPredicate("t")+`) FROM (SELECT gen_random_uuid() AS id, $1::text AS slug) t`, slug).Scan(&function, &inline); err != nil {
 			t.Fatalf("compare predicates: %v", err)
 		}
 		if inline != function {

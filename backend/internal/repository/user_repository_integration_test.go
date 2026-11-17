@@ -39,3 +39,28 @@ func TestUserRepository_GetUserIDsActiveSinceSkipsIdleAccounts(t *testing.T) {
 		t.Fatalf("active users = %v, want [%s %s]", ids, recentLogin, recentActivity)
 	}
 }
+
+func TestUserRepository_GetByTwitchIDReturnsAccountStatus(t *testing.T) {
+	pool := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	repo := NewUserRepository(pool)
+
+	for _, status := range []string{"active", "unclaimed"} {
+		id := uuid.New()
+		twitchID := "tw-" + id.String()
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO users (id, twitch_id, username, display_name, account_status)
+			VALUES ($1, $2, $3, $3, $4)`, id, twitchID, "status-"+id.String()[:18], status); err != nil {
+			t.Fatalf("insert %s user: %v", status, err)
+		}
+		t.Cleanup(func() { _, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, id) })
+
+		user, err := repo.GetByTwitchID(ctx, twitchID)
+		if err != nil {
+			t.Fatalf("GetByTwitchID(%s): %v", status, err)
+		}
+		if user.ID != id || user.AccountStatus != status {
+			t.Fatalf("user id=%s account_status=%q, want %s %q", user.ID, user.AccountStatus, id, status)
+		}
+	}
+}
