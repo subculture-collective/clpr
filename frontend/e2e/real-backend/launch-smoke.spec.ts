@@ -127,7 +127,9 @@ test.describe('real-backend launch smoke', () => {
         expect(payload.results.clips.map(clip => clip.id)).not.toEqual(
             expect.arrayContaining(['00000000-0000-4000-8000-000000000092']),
         );
-        await expect(page.getByText('CLPR release smoke clip')).toBeVisible();
+        await expect(
+            page.getByRole('heading', { name: 'CLPR release smoke clip', exact: true }),
+        ).toBeVisible();
     });
 
     test('public filtered search applies the seeded game filter', async ({

@@ -376,10 +376,12 @@ export function ClipCard({
                                 :   'cursor-pointer',
                             )}
                             aria-label={
+                                `${formatCompactNumber(clip.favorite_count)} favorites. ${
                                 !isAuthenticated ? 'Log in to favorite'
                                 : clip.is_favorited ?
                                     'Remove from favorites'
                                 :   'Add to favorites'
+                                }`
                             }
                             aria-disabled={!isAuthenticated}
                             title={
