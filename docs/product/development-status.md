@@ -39,7 +39,7 @@ export are still disabled.
 | [Stabilize and shrink](https://github.com/subculture-collective/clpr/milestone/6) | Closed, 17 tracked issues closed | Source/tracker completion; removed scope is listed in the launch contract. MFA was retained. |
 | [Countdowns and Shorts](https://github.com/subculture-collective/clpr/milestone/5) | Open, eight issues closed and two acceptance issues open | YouTube audit/private-upload acceptance, then seven consecutive publishing days and live alert-delivery proof. |
 | [Streamer service](https://github.com/subculture-collective/clpr/milestone/7) | Closed after reconciliation, five tracked issues closed | Clip-pack signing/routing, email configuration, real provider results and natural scheduled execution require their own evidence. |
-| Separate native apps | Planning started by owner request November 16 | No app workspace, native binary or platform qualification yet; see the [new plan](native-apps-plan.md). |
+| [Separate native apps](https://github.com/subculture-collective/clpr/milestone/8) | Planning started by owner request November 16; viewer-first beta confirmed | No app workspace, native binary or platform qualification yet; see the [new plan](native-apps-plan.md). |
 
 The old MVP/Beta/GA/Post-GA buckets were closed as historical or retired
 planning buckets. Their closure does not establish a beta or GA release.

@@ -14,9 +14,9 @@ last_reviewed: 2026-11-16
 ## Goal and current state
 
 On November 16, 2026 the owner requested planning for two separate native apps.
-The proposed first beta helps viewers discover a clip, watch it through Twitch,
-save it and share a collection. Viewer-first scope is a planning assumption;
-creator and clip-room workflows can follow after that journey is qualified.
+The owner confirmed a viewer-first private beta: discovery, search, Twitch
+playback, saved clips/playlists and submitting an existing clip. Creator tools
+and clip-room workflows come later, after that journey is qualified.
 
 There is no buildable native app in this repository. The earlier React Native
 and Expo material is [historical planning](../archive/mobile/index.md). This
@@ -174,7 +174,8 @@ Official guidance checked November 16, 2026:
 - [Twitch OAuth token flows](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/)
 - [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 
-Remaining decisions: confirm the first beta audience, supported OS/device range,
+The first beta audience is confirmed: viewers, with creator tools later.
+Remaining decisions: supported OS/device range,
 signing/distribution ownership, the native session callback contract, and the
 qualified playback approach. The first two spikes turn the technical unknowns
 into evidence before a dated implementation roadmap is published.
