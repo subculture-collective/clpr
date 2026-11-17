@@ -2662,7 +2662,11 @@
                   ],
                   "properties": {
                     "tags": {
-                      "type": "array",
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "description": "Empty repository results serialize as null; clients should normalize them to an empty list.",
                       "items": {
                         "$ref": "#/components/schemas/Tag"
                       }
@@ -24382,7 +24386,11 @@
             "type": "boolean"
           },
           "games": {
-            "type": "array",
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Empty or exhausted repository pages serialize as null; clients should normalize them to an empty list.",
             "items": {
               "type": "object",
               "required": [

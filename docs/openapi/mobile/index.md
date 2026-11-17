@@ -29,8 +29,8 @@ The authoritative schema is [openapi.yaml](../openapi.yaml).
 | Ranked clips | `GET /api/v1/clips` | `success`, array `data`, and `meta` with `page`, `limit`, `total`, `total_pages`, `has_next`, `has_prev`; defaults page 1 and limit 25 |
 | Clip detail | `GET /api/v1/clips/{id}` | `success` and object `data`; the identifier accepts an internal UUID or Twitch clip slug |
 | Text and spoken phrases | `GET /api/v1/search?q=...&said=...` | `query`, `results`, `counts`, `meta`; all five result arrays exist, including empty arrays; paging uses `total_items` rather than `total` |
-| Tags and taxonomy lanes | `GET /api/v1/tags` | `tags`, `total`, `page`, `limit`, `has_more`; default limit 50; retain the server's lane/display labels |
-| Twitch categories | `GET /api/v1/games/trending` | Legacy route and `games` key; `page`, `limit`, `has_more`; default limit 20 |
+| Tags and taxonomy lanes | `GET /api/v1/tags` | nullable `tags`, `total`, `page`, `limit`, `has_more`; default limit 50; retain the server's lane/display labels |
+| Twitch categories | `GET /api/v1/games/trending` | Legacy route and nullable `games` key; `page`, `limit`, `has_more`; default limit 20 |
 | Clip topics | `GET /api/v1/clips/{id}/topics` | `topics` array with topic identity, confidence, evidence and dates |
 | Creator rails | `GET /api/v1/broadcasters/discover` | `success`, object `data` containing `trending`, `rising`, `new`; bounded rail limit, without a page cursor |
 | Countdown editions | `GET /api/v1/countdowns` | `success`, array `data`, `meta.next_before`; pass that date as `before` for the next page; null ends paging |
@@ -45,8 +45,10 @@ The fixtures include retained `game_*` names and the `twitch_category_*` aliases
 Treat omitted optional metadata as absent. Do not require optional thumbnails,
 duration, descriptions, permissions or user-specific fields just because one
 populated example contains them. `next_before` is a required key whose value can
-be null. Do not turn an empty search result array into null. Ignore additional
-response fields so an additive server change does not break decoding.
+be null. Tag lists and trending-category pages also serialize empty repository
+results as `tags: null` and `games: null`; normalize those values to empty lists.
+Their keys still exist. Search result collections are always arrays. Ignore
+additional response fields so an additive server change does not break decoding.
 
 Search snippets are optional excerpts supplied by the API. Matched words are
 delimited by U+E000 and U+E001. Render those markers as native text emphasis;
